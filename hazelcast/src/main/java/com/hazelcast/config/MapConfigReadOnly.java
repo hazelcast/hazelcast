@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -23,9 +25,38 @@ import java.util.List;
  */
 public class MapConfigReadOnly extends MapConfig {
 
-
     MapConfigReadOnly(MapConfig config) {
         super(config);
+    }
+
+    public MaxSizeConfig getMaxSizeConfig() {
+        return super.getMaxSizeConfig().getAsReadOnly();
+    }
+
+    public WanReplicationRef getWanReplicationRef() {
+        return super.getWanReplicationRef().getAsReadOnly();
+    }
+
+    public List<EntryListenerConfig> getEntryListenerConfigs() {
+        final List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
+        final List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
+        for (EntryListenerConfig listenerConfig : listenerConfigs) {
+            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyListenerConfigs);
+    }
+
+    public List<MapIndexConfig> getMapIndexConfigs() {
+        final List<MapIndexConfig> mapIndexConfigs = super.getMapIndexConfigs();
+        final List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
+        for (MapIndexConfig mapIndexConfig : mapIndexConfigs) {
+            readOnlyMapIndexConfigs.add(mapIndexConfig.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyMapIndexConfigs);
+    }
+
+    public PartitioningStrategyConfig getPartitioningStrategyConfig() {
+        return super.getPartitioningStrategyConfig().getAsReadOnly();
     }
 
     public MapConfig setName(String name) {
