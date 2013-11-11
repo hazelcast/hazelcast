@@ -6,8 +6,7 @@ package com.hazelcast.config;
 public class MaxSizeConfigReadOnly extends MaxSizeConfig {
 
     public MaxSizeConfigReadOnly(MaxSizeConfig config) {
-        this.setSize(config.getSize());
-        this.setMaxSizePolicy(config.getMaxSizePolicy());
+        super(config);
     }
 
     public MaxSizeConfig setSize(int size) {

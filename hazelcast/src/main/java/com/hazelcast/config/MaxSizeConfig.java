@@ -23,6 +23,14 @@ public class MaxSizeConfig {
     private int size = MapConfig.DEFAULT_MAX_SIZE;
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
+    public MaxSizeConfig() {
+    }
+
+    public MaxSizeConfig(MaxSizeConfig config) {
+        this.size = config.size;
+        this.maxSizePolicy = config.maxSizePolicy;
+    }
+
     public enum MaxSizePolicy {
         PER_NODE, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
     }

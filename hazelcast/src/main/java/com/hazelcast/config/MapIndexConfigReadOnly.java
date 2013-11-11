@@ -6,8 +6,8 @@ package com.hazelcast.config;
 public class MapIndexConfigReadOnly extends MapIndexConfig {
 
     public MapIndexConfigReadOnly(MapIndexConfig config) {
-        this.setAttribute(config.getAttribute());
-        this.setOrdered(config.isOrdered());
+        super.setAttribute(config.getAttribute());
+        super.setOrdered(config.isOrdered());
     }
 
     public MapIndexConfig setAttribute(String attribute) {

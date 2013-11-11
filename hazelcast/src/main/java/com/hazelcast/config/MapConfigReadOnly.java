@@ -30,11 +30,19 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     public MaxSizeConfig getMaxSizeConfig() {
-        return super.getMaxSizeConfig().getAsReadOnly();
+        final MaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
+        if (maxSizeConfig == null){
+            return null;
+        }
+        return maxSizeConfig.getAsReadOnly();
     }
 
     public WanReplicationRef getWanReplicationRef() {
-        return super.getWanReplicationRef().getAsReadOnly();
+        final WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
+        if (wanReplicationRef == null){
+            return null;
+        }
+        return wanReplicationRef.getAsReadOnly();
     }
 
     public List<EntryListenerConfig> getEntryListenerConfigs() {
@@ -56,15 +64,27 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {
-        return super.getPartitioningStrategyConfig().getAsReadOnly();
+        final PartitioningStrategyConfig partitioningStrategyConfig = super.getPartitioningStrategyConfig();
+        if (partitioningStrategyConfig == null){
+            return null;
+        }
+        return partitioningStrategyConfig.getAsReadOnly();
     }
 
     public MapStoreConfig getMapStoreConfig() {
-        return super.getMapStoreConfig().getAsReadOnly();
+        final MapStoreConfig mapStoreConfig = super.getMapStoreConfig();
+        if (mapStoreConfig == null) {
+            return null;
+        }
+        return mapStoreConfig.getAsReadOnly();
     }
 
     public NearCacheConfig getNearCacheConfig() {
-        return super.getNearCacheConfig().getAsReadOnly();
+        final NearCacheConfig nearCacheConfig = super.getNearCacheConfig();
+        if (nearCacheConfig == null) {
+            return null;
+        }
+        return nearCacheConfig.getAsReadOnly();
     }
 
     public MapConfig setName(String name) {

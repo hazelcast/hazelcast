@@ -8,8 +8,8 @@ import com.hazelcast.core.PartitioningStrategy;
 public class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
 
     public PartitioningStrategyConfigReadOnly(PartitioningStrategyConfig config) {
-        this.setPartitioningStrategyClass(config.getPartitioningStrategyClass());
-        this.setPartitionStrategy(config.getPartitioningStrategy());
+        super.setPartitioningStrategyClass(config.getPartitioningStrategyClass());
+        super.setPartitionStrategy(config.getPartitioningStrategy());
     }
 
     public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
