@@ -11,12 +11,12 @@ import java.util.Properties;
 public class QueueStoreConfigReadOnly extends QueueStoreConfig {
 
     public QueueStoreConfigReadOnly(QueueStoreConfig config) {
-        this.setClassName(config.getClassName());
-        this.setStoreImplementation(config.getStoreImplementation());
-        this.setFactoryClassName(config.getFactoryClassName());
-        this.setFactoryImplementation(config.getFactoryImplementation());
-        this.setProperties(config.getProperties());
-        this.setEnabled(config.isEnabled());
+        super.setClassName(config.getClassName());
+        super.setStoreImplementation(config.getStoreImplementation());
+        super.setFactoryClassName(config.getFactoryClassName());
+        super.setFactoryImplementation(config.getFactoryImplementation());
+        super.setProperties(config.getProperties());
+        super.setEnabled(config.isEnabled());
     }
 
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {

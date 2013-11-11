@@ -10,9 +10,9 @@ import java.util.EventListener;
 public class ItemListenerConfigReadOnly extends ItemListenerConfig {
 
     public ItemListenerConfigReadOnly(ItemListenerConfig config) {
-        this.setImplementation(config.getImplementation());
-        this.setClassName(config.getClassName());
-        this.setIncludeValue(config.isIncludeValue());
+        super.setImplementation(config.getImplementation());
+        super.setClassName(config.getClassName());
+        super.setIncludeValue(config.isIncludeValue());
     }
 
     public ItemListenerConfig setImplementation(ItemListener implementation) {

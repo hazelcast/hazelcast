@@ -39,7 +39,11 @@ public class QueueConfigReadOnly extends QueueConfig {
     }
 
     public QueueStoreConfig getQueueStoreConfig() {
-        return super.getQueueStoreConfig().getAsReadOnly();
+        final QueueStoreConfig queueStoreConfig = super.getQueueStoreConfig();
+        if (queueStoreConfig == null ){
+            return null;
+        }
+        return queueStoreConfig.getAsReadOnly();
     }
 
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
