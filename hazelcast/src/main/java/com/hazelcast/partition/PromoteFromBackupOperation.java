@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -27,38 +28,30 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.Collection;
 
+/**
+ * @author mdogan 07/11/13
+ */
+
 // runs locally...
-final class FinalizeMigrationOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation {
+final class PromoteFromBackupOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation{
 
-    private final MigrationEndpoint endpoint;
-    private final boolean success;
-
-    public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final boolean success) {
-        this.endpoint = endpoint;
-        this.success = success;
-    }
-
-    public void run() {
-        PartitionServiceImpl partitionService = getService();
-        MigrationInfo migrationInfo = partitionService.getActiveMigration(getPartitionId());
+    @Override
+    public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        if (migrationInfo != null) {
-            final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
-            final PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
-            for (MigrationAwareService service : services) {
-                try {
-                    if (success) {
-                        service.commitMigration(event);
-                    } else {
-                        service.rollbackMigration(event);
-                    }
-                } catch (Throwable e) {
-                    getLogger().warning("Error while finalizing migration -> " + event, e);
-                }
-            }
-            partitionService.removeActiveMigration(getPartitionId());
-            if (success) {
-                nodeEngine.onPartitionMigrate(migrationInfo);
+        Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
+        int partitionId = getPartitionId();
+        PartitionMigrationEvent event = new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, partitionId);
+
+        ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Promoting partition " + partitionId);
+        }
+        for (MigrationAwareService service : services) {
+            try {
+                service.beforeMigration(event);
+                service.commitMigration(event);
+            } catch (Exception e) {
+                logger.warning("While promoting partition " + partitionId, e);
             }
         }
     }

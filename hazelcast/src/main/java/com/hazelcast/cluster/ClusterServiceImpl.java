@@ -626,11 +626,13 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    void startJoin() {
+    private void startJoin() {
         logger.finest( "Starting Join.");
         lock.lock();
         try {
             joinInProgress = true;
+            // pause migrations until join, member-update and post-join operations are completed.
+            node.getPartitionService().pauseMigration();
             final Collection<MemberImpl> members = getMemberList();
             final Collection<MemberInfo> memberInfos = createMemberInfos(members);
             for (MemberInfo memberJoining : setJoins) {
@@ -657,12 +659,13 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 try {
                     future.get(10, TimeUnit.SECONDS);
                 } catch (TimeoutException ignored) {
-                    logger.finest( "Finalize join call timed-out: " + future);
+                    logger.finest("Finalize join call timed-out: " + future);
                 } catch (Exception e) {
                     logger.warning("While waiting finalize join calls...", e);
                 }
             }
         } finally {
+            node.getPartitionService().resumeMigration();
             lock.unlock();
         }
     }
@@ -756,7 +759,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void setMembers(MemberImpl... members) {
         if (members == null || members.length == 0) return;
-        logger.finest( "Updating members -> " + Arrays.toString(members));
+        logger.finest("Updating members -> " + Arrays.toString(members));
         lock.lock();
         try {
             Map<Address, MemberImpl> oldMemberMap = membersRef.get();

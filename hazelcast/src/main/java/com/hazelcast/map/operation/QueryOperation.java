@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.QueryResult;
@@ -31,7 +32,9 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,7 +56,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     @Override
     public void run() throws Exception {
-        List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
+        List<Integer> initialPartitions = mapService.getOwnedPartitions();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
@@ -69,7 +72,7 @@ public class QueryOperation extends AbstractMapOperation {
             // run in parallel
             runParallel(initialPartitions);
         }
-        List<Integer> finalPartitions = mapService.getOwnedPartitions().get();
+        List<Integer> finalPartitions = mapService.getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
@@ -128,6 +131,17 @@ public class QueryOperation extends AbstractMapOperation {
                 }
             }
         }
+    }
+
+    @Override
+    public ExceptionAction onException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        if (throwable instanceof TargetNotMemberException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        return super.onException(throwable);
     }
 
     @Override

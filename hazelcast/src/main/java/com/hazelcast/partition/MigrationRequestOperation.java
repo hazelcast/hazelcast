@@ -70,11 +70,17 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         if (source == null || !source.equals(nodeEngine.getThisAddress())) {
             throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
         }
+
+        PartitionServiceImpl partitionService = getService();
+        PartitionImpl partition = partitionService.getPartition(migrationInfo.getPartitionId());
+        final Address owner = partition.getOwner();
+        if (owner == null) {
+            throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
+                    + migrationInfo);
+        }
+
         if (migrationInfo.startProcessing()) {
             try {
-                PartitionServiceImpl partitionService = getService();
-                PartitionImpl partition = partitionService.getPartition(migrationInfo.getPartitionId());
-                final Address owner = partition.getOwner();
                 if (!source.equals(owner)) {
                     throw new HazelcastException("Cannot migrate! This node is not owner of the partition => "
                             + migrationInfo + " -> " + partition);
