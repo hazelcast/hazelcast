@@ -826,7 +826,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (attribute == null) throw new IllegalArgumentException("attribute name cannot be null");
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
-            Map<Integer, Object> results = nodeEngine.getOperationService()
+            nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, nodeEngine));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

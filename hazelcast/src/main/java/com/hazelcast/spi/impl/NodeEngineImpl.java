@@ -314,10 +314,6 @@ public class NodeEngineImpl implements NodeEngine {
         if (eventPostJoinOp != null) {
             postJoinOps.add(eventPostJoinOp);
         }
-        Operation proxyPostJoinOp = proxyService.getPostJoinOperation();
-        if (proxyPostJoinOp != null) {
-            postJoinOps.add(proxyPostJoinOp);
-        }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
             final Operation pjOp = service.getPostJoinOperation();

@@ -22,6 +22,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * @author mdogan 12/24/12
@@ -97,5 +98,13 @@ public class PostJoinOperation extends AbstractOperation {
         for (int i = 0; i < len; i++) {
             operations[i] = in.readObject();
         }
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("PostJoinOperation{");
+        sb.append("operations=").append(Arrays.toString(operations));
+        sb.append('}');
+        return sb.toString();
     }
 }
