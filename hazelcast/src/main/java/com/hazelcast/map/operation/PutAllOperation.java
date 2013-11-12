@@ -119,7 +119,8 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public boolean shouldBackup() {
-        return !backupEntrySet.getEntrySet().isEmpty();
+        mapService = getService();
+        return  (mapService.getMapContainer(name).getTotalBackupCount() != 0 && !backupEntrySet.getEntrySet().isEmpty());
     }
 
     public final int getAsyncBackupCount() {

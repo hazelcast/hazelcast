@@ -157,7 +157,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 //                    if (prevCallId != 0) {
 //                        operationService.deregisterRemoteCall(prevCallId);
 //                    }
-                    if (callback == null && op instanceof BackupAwareOperation) {
+                    if (callback == null && op instanceof BackupAwareOperation && ((BackupAwareOperation) op).shouldBackup()) {
                         final long callId = operationService.newCallId();
                         registerBackups((BackupAwareOperation) op, callId);
                         OperationAccessor.setCallId(op, callId);
@@ -179,7 +179,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     boolean sent = operationService.send(op, invTarget);
                     if (!sent) {
                         operationService.deregisterRemoteCall(callId);
-                        operationService.deregisterBackupCall(callId);
+                        if(op instanceof BackupAwareOperation && ((BackupAwareOperation) op).shouldBackup())
+                            operationService.deregisterBackupCall(callId);
                         notify(new RetryableIOException("Packet not sent to -> " + invTarget));
                     }
                 }
@@ -193,7 +194,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (oldCallId != 0) {
             operationService.deregisterBackupCall(oldCallId);
         }
-        operationService.registerBackupCall(callId);
+        if(op.shouldBackup())
+            operationService.registerBackupCall(callId);
     }
 
     public void notify(Object obj) {
@@ -294,7 +296,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
             if (response instanceof Response) {
-                if (op instanceof BackupAwareOperation && callback == null) {
+                if (op instanceof BackupAwareOperation && callback == null && ((BackupAwareOperation) op).shouldBackup()) {
                     final Object obj = waitForBackupsAndGetResponse((Response) response);
                     if (obj == RETRY_RESPONSE) {
                         final Future f = resetAndReInvoke();

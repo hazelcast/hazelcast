@@ -48,7 +48,8 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     public boolean shouldBackup() {
-        return successful;
+        mapService = getService();
+        return (mapService.getMapContainer(name).getTotalBackupCount() != 0 && successful);
     }
 
     public void onWaitExpire() {

@@ -50,7 +50,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public boolean shouldBackup() {
-        return shouldBackup;
+        return (mapService.getMapContainer(name).getTotalBackupCount() != 0 && shouldBackup);
     }
 
     public int getSyncBackupCount() {

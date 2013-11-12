@@ -51,7 +51,8 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     }
 
     public boolean shouldBackup() {
-        return successful;
+        mapService = getService();
+        return (mapService.getMapContainer(name).getTotalBackupCount() != 0 && successful);
     }
 
     @Override

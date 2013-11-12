@@ -74,7 +74,8 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public boolean shouldBackup() {
-        return evicted;
+        mapService = getService();
+        return (mapService.getMapContainer(name).getTotalBackupCount() != 0 && evicted);
     }
 
     public void afterRun() {

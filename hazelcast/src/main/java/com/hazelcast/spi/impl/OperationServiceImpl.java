@@ -279,6 +279,7 @@ final class OperationServiceImpl implements OperationService {
                 final BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
                 int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
+                    logger.info("*** Operation should be backed up and is an instance of BackupAwareOperation");
                     syncBackupCount = sendBackups(backupAwareOp);
                 }
                 if (returnsResponse) {
