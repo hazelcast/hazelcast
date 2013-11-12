@@ -592,17 +592,7 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, -1);
             records.put(dataKey, record);
             // increase size.
@@ -616,17 +606,7 @@ public class DefaultRecordStore implements RecordStore {
                 accessRecord(record);
             }//otherwise this is a full update operation.
             else {
-                if (mapContainer.getStore() != null) {
-                    if (mapContainer.getWriteDelayMillis() <= 0) {
-                        value = mapService.toObject(value);
-                        mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                        if (record != null) {
-                            record.onStore();
-                        }
-                    } else {
-                        mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                    }
-                }
+                value = writeMapStore(dataKey, value, record);
                 // if key exists before, first reduce size
                 updateSizeEstimator(-calculateRecordSize(record));
                 setRecordValue(record, value);
@@ -647,16 +627,7 @@ public class DefaultRecordStore implements RecordStore {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
             value = mapService.interceptPut(name, null, value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null)
-                        record.onStore();
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -670,16 +641,7 @@ public class DefaultRecordStore implements RecordStore {
                 updateTtl(record, ttl);
             }//otherwise this is a full update operation.
             else {
-                if (mapContainer.getStore() != null) {
-                    if (mapContainer.getWriteDelayMillis() <= 0) {
-                        value = mapService.toObject(value);
-                        mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                        if (record != null)
-                            record.onStore();
-                    } else {
-                        mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                    }
-                }
+                value = writeMapStore(dataKey, value, record);
                 // if key exists before, first reduce size
                 updateSizeEstimator(-calculateRecordSize(record));
                 setRecordValue(record, value);
@@ -698,34 +660,14 @@ public class DefaultRecordStore implements RecordStore {
         boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
             newRecord = true;
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
@@ -738,23 +680,28 @@ public class DefaultRecordStore implements RecordStore {
         return newRecord;
     }
 
+    private Object writeMapStore(Data dataKey, Object value, Record record) {
+        if (mapContainer.getStore() != null) {
+            if (mapContainer.getWriteDelayMillis() <= 0) {
+                value = mapService.toObject(value);
+                mapContainer.getStore().store(mapService.toObject(dataKey), value);
+                if (record != null) {
+                    record.onStore();
+                }
+            } else {
+                mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
+            }
+        }
+        return value;
+    }
+
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         Record record = records.get(dataKey);
         Object newValue = null;
         if (record == null) {
             newValue = mergingEntry.getValue();
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    newValue = mapService.toObject(newValue);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), newValue);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, newValue, mapContainer.getWriteDelayMillis());
-                }
-            }
+            newValue = writeMapStore(dataKey, newValue, record);
             record = mapService.createRecord(name, dataKey, newValue, -1);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -775,17 +722,7 @@ public class DefaultRecordStore implements RecordStore {
             if (mapService.compare(name, newValue, oldValue)) {
                 return true;
             }
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    newValue = mapService.toObject(newValue);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), newValue);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, newValue, mapContainer.getWriteDelayMillis());
-                }
-            }
+            newValue = writeMapStore(dataKey, newValue, record);
             updateSizeEstimator(-calculateRecordSize(record));
             recordFactory.setValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
@@ -801,17 +738,7 @@ public class DefaultRecordStore implements RecordStore {
         if (record != null && record.getValue() != null) {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             updateSizeEstimator(calculateRecordSize(record));
@@ -830,17 +757,7 @@ public class DefaultRecordStore implements RecordStore {
             return false;
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    newValue = mapService.toObject(newValue);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), newValue);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, newValue, mapContainer.getWriteDelayMillis());
-                }
-            }
+            newValue = writeMapStore(dataKey, newValue, record);
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
@@ -892,33 +809,13 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             updateSizeEstimator(calculateRecordSize(record));
@@ -948,17 +845,7 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (oldValue == null) {
             value = mapService.interceptPut(name, null, value);
-            if (mapContainer.getStore() != null) {
-                if (mapContainer.getWriteDelayMillis() <= 0) {
-                    value = mapService.toObject(value);
-                    mapContainer.getStore().store(mapService.toObject(dataKey), value);
-                    if (record != null) {
-                        record.onStore();
-                    }
-                } else {
-                    mapService.scheduleMapStoreWrite(name, dataKey, value, mapContainer.getWriteDelayMillis());
-                }
-            }
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -993,8 +880,9 @@ public class DefaultRecordStore implements RecordStore {
             if (writeDelayMillis == 0) {
                 store.delete(mapService.toObject(key));
                 // todo ea record will be deleted then why calling onStore
-                if (record != null)
+                if (record != null){
                     record.onStore();
+                }
             } else {
                 mapService.scheduleMapStoreDelete(name, key, writeDelayMillis);
                 toBeRemovedKeys.add(key);
