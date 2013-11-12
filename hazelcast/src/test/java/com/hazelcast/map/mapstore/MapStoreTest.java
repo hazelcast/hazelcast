@@ -877,6 +877,35 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1000, map.values().size());
     }
 
+    @Test
+    public void testIssue11142ExceptionWhenLoadAllReturnsNull() {
+        Config config = new Config();
+        String mapname = "testIssue11142ExceptionWhenLoadAllReturnsNull";
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>(){
+            @Override
+            public Set<String> loadAllKeys() {
+                Set keys = new HashSet();
+                keys.add("key");
+                return keys;
+            }
+
+            public Map loadAll(Collection keys) {
+                System.out.println("Loader.loadAll keys " + keys);
+                return null;
+            }
+        });
+        config.getMapConfig(mapname).setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final IMap map = instance.getMap(mapname);
+        for (int i = 0; i < 300; i++) {
+            map.put(i, i);
+        }
+        assertEquals(300, map.size());
+    }
+
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
     }
