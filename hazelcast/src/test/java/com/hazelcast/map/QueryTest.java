@@ -725,13 +725,18 @@ public class QueryTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate predicate = e.is("active").and(e.get("name").equal(null).and(e.get("city").isNull()));
+
         IMap imap1 = h1.getMap("employees");
         IMap imap2 = h2.getMap("employees");
+
         for (int i = 0; i < 5000; i++) {
-            imap1.put(String.valueOf(i), new Employee((i % 2 == 0) ? null : "name" + i, i % 60, true, Double.valueOf(i)));
+            boolean test = i % 2 == 0;
+            imap1.put(String.valueOf(i), new Employee(test ? null : "name" + i,
+                    test ? null : "city" + i, i % 60, true, (double) i));
         }
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.is("active").and(e.get("name").equal(null));
         long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap2.entrySet(predicate);
         long tookWithout = (Clock.currentTimeMillis() - start);
@@ -739,18 +744,22 @@ public class QueryTest extends HazelcastTestSupport {
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
             assertNull(c.getName());
+            assertNull(c.getCity());
         }
         imap1.destroy();
+
         imap1 = h1.getMap("employees2");
         imap2 = h2.getMap("employees2");
         imap1.addIndex("name", false);
+        imap1.addIndex("city", true);
         imap1.addIndex("age", true);
         imap1.addIndex("active", false);
+
         for (int i = 0; i < 5000; i++) {
-            imap1.put(String.valueOf(i), new Employee((i % 2 == 0) ? null : "name" + i, i % 60, true, Double.valueOf(i)));
+            boolean test = i % 2 == 0;
+            imap1.put(String.valueOf(i), new Employee(test ? null : "name" + i,
+                    test ? null : "city" + i, i % 60, true, (double) i));
         }
-        e = new PredicateBuilder().getEntryObject();
-        predicate = e.is("active").and(e.get("name").equal(null));
         start = Clock.currentTimeMillis();
         entries = imap2.entrySet(predicate);
         long tookWithIndex = (Clock.currentTimeMillis() - start);
@@ -758,6 +767,7 @@ public class QueryTest extends HazelcastTestSupport {
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
             assertNull(c.getName());
+            assertNull(c.getCity());
         }
         assertTrue("WithIndex: " + tookWithIndex + ", without: " + tookWithout, tookWithIndex < tookWithout);
     }
