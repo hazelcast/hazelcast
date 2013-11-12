@@ -896,8 +896,9 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
         });
         config.getMapConfig(mapname).setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final IMap map = instance.getMap(mapname);
         for (int i = 0; i < 300; i++) {
             map.put(i, i);
