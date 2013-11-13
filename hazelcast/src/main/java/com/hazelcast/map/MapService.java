@@ -177,7 +177,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName), MapService.this);
+            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName), MapService.this);
         }
     };
 

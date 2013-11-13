@@ -29,6 +29,8 @@ public class ExecutorConfig {
 
     private boolean statisticsEnabled = true;
 
+    private ExecutorConfigReadOnly readOnly;
+
     public ExecutorConfig() {
     }
 
@@ -39,6 +41,20 @@ public class ExecutorConfig {
     public ExecutorConfig(String name, int poolSize) {
         this.name = name;
         this.poolSize = poolSize;
+    }
+
+    public ExecutorConfig(ExecutorConfig config) {
+        this.name = config.name;
+        this.poolSize = config.poolSize;
+        this.queueCapacity = config.queueCapacity;
+        this.statisticsEnabled = config.statisticsEnabled;
+    }
+
+    public ExecutorConfigReadOnly getAsReadOnly() {
+        if (readOnly == null){
+            readOnly = new ExecutorConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public String getName() {

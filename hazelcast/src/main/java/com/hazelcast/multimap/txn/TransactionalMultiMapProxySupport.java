@@ -53,7 +53,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
-        this.config = nodeEngine.getConfig().getMultiMapConfig(name);
+        this.config = nodeEngine.getConfig().findMultiMapConfig(name);
     }
 
     protected void checkTransactionState(){

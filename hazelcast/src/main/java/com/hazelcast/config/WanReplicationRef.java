@@ -21,6 +21,15 @@ public class WanReplicationRef {
     String name;
     String mergePolicy;
 
+    private WanReplicationRefReadOnly readOnly;
+
+    public WanReplicationRefReadOnly getAsReadOnly() {
+        if (readOnly == null ) {
+            readOnly = new WanReplicationRefReadOnly(this);
+        }
+        return readOnly;
+    }
+
     public String getName() {
         return name;
     }
