@@ -893,16 +893,18 @@ public class MapStoreTest extends HazelcastTestSupport {
         assert map.get(keyWithNullValue) == null;
     }
 
+    class ProcessingStore extends MapStoreAdapter<Integer, Employee> implements PostProcessingMapStore {
+        @Override
+        public void store(Integer key, Employee employee) {
+            employee.setSalary(employee.getAge()*1000);
+        }
+    }
+
     @Test
     public void testIssue1115EnablingMapstoreMutatingValue() throws InterruptedException {
         Config cfg = new Config();
         String mapName = "testIssue1115";
-        MapStore mapStore = new MapStoreAdapter<Integer,Employee>(){
-            @Override
-            public void store(Integer key, Employee employee) {
-                employee.setSalary(employee.getAge()*1000);
-            }
-        };
+        MapStore mapStore = new ProcessingStore();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(mapStore);

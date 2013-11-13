@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.core.PostProcessingMapStore;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -126,6 +127,10 @@ public class MapStoreWrapper implements MapStore {
             return mapLoader.loadAll(keys);
         }
         return null;
+    }
+
+    public boolean isPostProcessingMapStore() {
+        return isMapStore() && mapStore instanceof PostProcessingMapStore;
     }
 
     @Override

@@ -592,7 +592,8 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             record = mapService.createRecord(name, dataKey, value, -1);
             records.put(dataKey, record);
             // increase size.
@@ -606,7 +607,8 @@ public class DefaultRecordStore implements RecordStore {
                 accessRecord(record);
             }//otherwise this is a full update operation.
             else {
-                value = writeMapStore(dataKey, value, record);
+                Object modifiedValue = writeMapStore(dataKey, value, record);
+                value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
                 // if key exists before, first reduce size
                 updateSizeEstimator(-calculateRecordSize(record));
                 setRecordValue(record, value);
@@ -627,7 +629,8 @@ public class DefaultRecordStore implements RecordStore {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -641,7 +644,8 @@ public class DefaultRecordStore implements RecordStore {
                 updateTtl(record, ttl);
             }//otherwise this is a full update operation.
             else {
-                value = writeMapStore(dataKey, value, record);
+                Object modifiedValue = writeMapStore(dataKey, value, record);
+                value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
                 // if key exists before, first reduce size
                 updateSizeEstimator(-calculateRecordSize(record));
                 setRecordValue(record, value);
@@ -660,14 +664,16 @@ public class DefaultRecordStore implements RecordStore {
         boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
             newRecord = true;
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
@@ -701,7 +707,8 @@ public class DefaultRecordStore implements RecordStore {
         Object newValue = null;
         if (record == null) {
             newValue = mergingEntry.getValue();
-            newValue = writeMapStore(dataKey, newValue, record);
+            Object modifiedValue = writeMapStore(dataKey, newValue, record);
+            newValue = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : newValue;
             record = mapService.createRecord(name, dataKey, newValue, -1);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -722,7 +729,8 @@ public class DefaultRecordStore implements RecordStore {
             if (mapService.compare(name, newValue, oldValue)) {
                 return true;
             }
-            newValue = writeMapStore(dataKey, newValue, record);
+            Object modifiedValue = writeMapStore(dataKey, newValue, record);
+            newValue = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : newValue;
             updateSizeEstimator(-calculateRecordSize(record));
             recordFactory.setValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
@@ -738,7 +746,8 @@ public class DefaultRecordStore implements RecordStore {
         if (record != null && record.getValue() != null) {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             updateSizeEstimator(calculateRecordSize(record));
@@ -757,7 +766,8 @@ public class DefaultRecordStore implements RecordStore {
             return false;
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
-            newValue = writeMapStore(dataKey, newValue, record);
+            Object modifiedValue = writeMapStore(dataKey, newValue, record);
+            newValue = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : newValue;
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
@@ -809,13 +819,15 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             updateSizeEstimator(calculateRecordSize(record));
@@ -845,7 +857,8 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (oldValue == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            Object modifiedValue = writeMapStore(dataKey, value, record);
+            value = mapContainer.getStore().isPostProcessingMapStore() ? modifiedValue : value;
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
