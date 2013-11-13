@@ -22,7 +22,6 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -885,15 +884,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         IMap map = instance.getMap("default");
 
-        assert map.keySet().equals(mapForStore.keySet());
-        assert new HashSet(map.values()).equals(new HashSet(mapForStore.values()));
-        assert map.entrySet().equals(mapForStore.entrySet());
+        assertEquals(map.keySet(), mapForStore.keySet());
+        assertEquals(new HashSet(map.values()), new HashSet(mapForStore.values()));
+        assertEquals(map.entrySet(), mapForStore.entrySet());
 
-        assert !map.containsKey(keyWithNullValue);
-        assert map.get(keyWithNullValue) == null;
+        assertFalse(map.containsKey(keyWithNullValue));
+        assertNull(map.get(keyWithNullValue));
     }
 
-    class ProcessingStore extends MapStoreAdapter<Integer, Employee> implements PostProcessingMapStore {
+    static class ProcessingStore extends MapStoreAdapter<Integer, Employee> implements PostProcessingMapStore {
         @Override
         public void store(Integer key, Employee employee) {
             employee.setSalary(employee.getAge()*1000);
@@ -962,8 +961,6 @@ public class MapStoreTest extends HazelcastTestSupport {
             assertEquals(employee.getAge()*1000, employee.getSalary(), 0);
         }
 
-
-
     }
 
     @Test
@@ -1020,7 +1017,6 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
 
             public Map loadAll(Collection keys) {
-                System.out.println("Loader.loadAll keys " + keys);
                 return null;
             }
         });

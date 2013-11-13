@@ -264,58 +264,6 @@ public final class SampleObjects {
             this.state = state;
         }
 
-        public long getId() {
-            return id;
-        }
-
-        public void setId(long id) {
-            this.id = id;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public void setCity(String city) {
-            this.city = city;
-        }
-
-        public void setAge(int age) {
-            this.age = age;
-        }
-
-        public void setActive(boolean active) {
-            this.active = active;
-        }
-
-        public void setSalary(double salary) {
-            this.salary = salary;
-        }
-
-        public void setDate(Timestamp date) {
-            this.date = date;
-        }
-
-        public Date getCreateDate() {
-            return createDate;
-        }
-
-        public void setCreateDate(Date createDate) {
-            this.createDate = createDate;
-        }
-
-        public java.sql.Date getSqlDate() {
-            return sqlDate;
-        }
-
-        public void setSqlDate(java.sql.Date sqlDate) {
-            this.sqlDate = sqlDate;
-        }
-
-        public void setBigDecimal(BigDecimal bigDecimal) {
-            this.bigDecimal = bigDecimal;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
