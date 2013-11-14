@@ -25,8 +25,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
-
 /**
  * @author mdogan 6/11/13
  */
