@@ -53,7 +53,7 @@ public class MapConfigAdapter implements DataSerializable {
         config.setMaxSizeConfig(new MaxSizeConfig().setSize(in.readInt())
                 .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
         config.setReadBackupData(in.readBoolean());
-        config.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(upperCaseInternal(in.readUTF())));
+        config.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(in.readUTF()));
         config.setMergePolicy(in.readUTF());
     }
 
