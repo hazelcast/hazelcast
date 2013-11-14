@@ -41,6 +41,8 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
+
 /**
  * A XML {@link ConfigBuilder} implementation.
  */
@@ -58,7 +60,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Constructs a XmlConfigBuilder that reads from the provided file.
      *
-     * @param xmlFileName  the name of the XML file
+     * @param xmlFileName the name of the XML file
      * @throws FileNotFoundException if the file can't be found.
      */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
@@ -68,11 +70,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Constructs a XmlConfigBuilder that reads from the given InputStream.
      *
-     * @param inputStream  the InputStream containing the XML configuration.
+     * @param inputStream the InputStream containing the XML configuration.
      * @throws IllegalArgumentException if inputStream is null.
      */
     public XmlConfigBuilder(InputStream inputStream) {
-        if(inputStream == null){
+        if (inputStream == null) {
             throw new IllegalArgumentException("inputStream can't be null");
         }
         this.in = inputStream;
@@ -90,7 +92,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
-                    logger.warning( msg);
+                    logger.warning(msg);
                     configurationFile = null;
                 }
             }
@@ -144,7 +146,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Gets the current used properties. Can be null if no properties are set.
      *
-     * @return  the used properties.
+     * @return the used properties.
      * @see #setProperties(java.util.Properties)
      */
     public Properties getProperties() {
@@ -153,7 +155,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     /**
      * Sets the used properties. Can be null if no properties should be used.
-     *
+     * <p/>
      * Properties are used to resolve ${variable} occurrences in the XML file.
      *
      * @param properties the new properties.
@@ -642,7 +644,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
             if ("auto-increment".equals(att.getNodeName())) {
                 networkConfig.setPortAutoIncrement(checkTrue(value));
-            } else if("port-count".equals(att.getNodeName())){
+            } else if ("port-count".equals(att.getNodeName())) {
                 int portCount = Integer.parseInt(value);
                 networkConfig.setPortCount(portCount);
             }
@@ -808,9 +810,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
                 final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
                 if (maxSizePolicy != null) {
-                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getTextContent(maxSizePolicy)));
+                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size = 0;
+                int size ;
                 if (value.length() < 2) {
                     size = Integer.parseInt(value);
                 } else {
