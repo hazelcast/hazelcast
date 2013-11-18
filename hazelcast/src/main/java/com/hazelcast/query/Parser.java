@@ -17,6 +17,7 @@
 package com.hazelcast.query;
 
 import java.util.*;
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 
 class Parser {
     private static final String SPLIT_EXPRESSION = " ";
@@ -136,11 +137,11 @@ class Parser {
     }
 
     boolean hasHigherPrecedence(String operator1, String operator2) {
-        return precedence.get(operator1.toLowerCase(Locale.ENGLISH)) > precedence.get(operator2.toLowerCase(Locale.ENGLISH));
+        return precedence.get(lowerCaseInternal(operator1)) > precedence.get(lowerCaseInternal(operator2));
     }
 
     boolean isOperand(String string) {
-        return precedence.containsKey(string.toLowerCase(Locale.ENGLISH));
+        return precedence.containsKey(lowerCaseInternal(string));
     }
 
     private boolean openParanthesesFound(List<String> stack) {
