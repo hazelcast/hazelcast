@@ -295,22 +295,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             }
 
             invocationFuture.set(response);
-            try {
-                final Object realResponse;
-                if (response instanceof Response) {
-                    final Response responseObj = (Response) response;
-                    // no need to deregister backup call, since backups are not registered for async invocations.
-                    realResponse = responseObj.response;
-                } else if (response == NULL_RESPONSE) {
-                    realResponse = null;
-                } else {
-                    realResponse = response;
-                }
-                if (callback != null)
-                    callback.notify(realResponse);
-            } catch (Throwable e) {
-                logger.severe(e);
-            }
         }
     }
 
@@ -362,6 +346,23 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         public void set(Object response){
             responseQ.offer(response);
+
+            try {
+                final Object realResponse;
+                if (response instanceof Response) {
+                    final Response responseObj = (Response) response;
+                    // no need to deregister backup call, since backups are not registered for async invocations.
+                    realResponse = responseObj.response;
+                } else if (response == NULL_RESPONSE) {
+                    realResponse = null;
+                } else {
+                    realResponse = response;
+                }
+                if (callback != null)
+                    callback.notify(realResponse);
+            } catch (Throwable e) {
+                logger.severe(e);
+            }
         }
 
         @Override
