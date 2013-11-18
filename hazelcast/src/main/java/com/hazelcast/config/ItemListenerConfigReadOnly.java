@@ -11,8 +11,10 @@ public class ItemListenerConfigReadOnly extends ItemListenerConfig {
 
     public ItemListenerConfigReadOnly(ItemListenerConfig config) {
         super.setImplementation(config.getImplementation());
-        super.setClassName(config.getClassName());
         super.setIncludeValue(config.isIncludeValue());
+        if (config.getClassName() != null) {
+            super.setClassName(config.getClassName());
+        }
     }
 
     public ItemListenerConfig setImplementation(ItemListener implementation) {
