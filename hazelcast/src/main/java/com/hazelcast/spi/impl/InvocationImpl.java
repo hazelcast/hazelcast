@@ -93,7 +93,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
         this.callback = callback;
-   //     this.responseProcessor = callback == null ? new DefaultResponseProcessor() : new CallbackResponseProcessor();
         this.logger = nodeEngine.getLogger(Invocation.class.getName());
     }
 
@@ -176,6 +175,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 return;
             }
         }
+
         final Address invTarget = getTarget();
         target = invTarget;
         invokeCount++;
@@ -187,57 +187,57 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
-        } else {
-            final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
-            if (!OperationAccessor.isJoinOperation(op) && member == null) {
-                notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
-            } else {
-                if (op.getPartitionId() != partitionId) {
-                    notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
-                            " is not equal to the partition id of invocation: " + partitionId));
-                    return;
-                }
-                if (op.getReplicaIndex() != replicaIndex) {
-                    notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
-                            " is not equal to the replica index of invocation: " + replicaIndex));
-                    return;
-                }
-                final OperationServiceImpl operationService = nodeEngine.operationService;
-                OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
+            return;
+        }
 
-                if (thisAddress.equals(invTarget)) {
-                    remote = false;
-                    // OperationService.onMemberLeft handles removing call
+        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
+        if (!OperationAccessor.isJoinOperation(op) && member == null) {
+            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            return;
+        }
+        if (op.getPartitionId() != partitionId) {
+            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+                    " is not equal to the partition id of invocation: " + partitionId));
+            return;
+        }
+        if (op.getReplicaIndex() != replicaIndex) {
+            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+                    " is not equal to the replica index of invocation: " + replicaIndex));
+            return;
+        }
+        final OperationServiceImpl operationService = nodeEngine.operationService;
+        OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
+
+        remote = !thisAddress.equals(invTarget);
+        if (remote) {
+            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
+            final long callId = operationService.registerRemoteCall(call);
+            if (op instanceof BackupAwareOperation) {
+                registerBackups((BackupAwareOperation) op, callId);
+            }
+            OperationAccessor.setCallId(op, callId);
+            boolean sent = operationService.send(op, invTarget);
+            if (!sent) {
+                operationService.deregisterRemoteCall(callId);
+                operationService.deregisterBackupCall(callId);
+                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
+            }
+        } else {
+            // OperationService.onMemberLeft handles removing call
 //                    final long prevCallId = op.getCallId();
 //                    if (prevCallId != 0) {
 //                        operationService.deregisterRemoteCall(prevCallId);
 //                    }
-                    if (op instanceof BackupAwareOperation) {
-                        final long callId = operationService.newCallId();
-                        registerBackups((BackupAwareOperation) op, callId);
-                        OperationAccessor.setCallId(op, callId);
-                    }
-                    ResponseHandlerFactory.setLocalResponseHandler(op, this);
-                    if (!nodeEngine.operationService.isAllowedToRunInCurrentThread(op)) {
-                        operationService.executeOperation(op);
-                    } else {
-                        operationService.runOperation(op);
-                    }
-                } else {
-                    remote = true;
-                    final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
-                    final long callId = operationService.registerRemoteCall(call);
-                    if (op instanceof BackupAwareOperation) {
-                        registerBackups((BackupAwareOperation) op, callId);
-                    }
-                    OperationAccessor.setCallId(op, callId);
-                    boolean sent = operationService.send(op, invTarget);
-                    if (!sent) {
-                        operationService.deregisterRemoteCall(callId);
-                        operationService.deregisterBackupCall(callId);
-                        notify(new RetryableIOException("Packet not sent to -> " + invTarget));
-                    }
-                }
+            if (op instanceof BackupAwareOperation) {
+                final long callId = operationService.newCallId();
+                registerBackups((BackupAwareOperation) op, callId);
+                OperationAccessor.setCallId(op, callId);
+            }
+            ResponseHandlerFactory.setLocalResponseHandler(op, this);
+            if (!nodeEngine.operationService.isAllowedToRunInCurrentThread(op)) {
+                operationService.executeOperation(op);
+            } else {
+                operationService.runOperation(op);
             }
         }
     }
