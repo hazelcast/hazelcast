@@ -42,12 +42,9 @@ public class HazelcastClientCountDownLatchTest {
     }
 
     @Before
-    public void setUp() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
     @After
     public void tearDown() throws Exception {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

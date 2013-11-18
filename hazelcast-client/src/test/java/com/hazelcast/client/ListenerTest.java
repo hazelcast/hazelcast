@@ -41,8 +41,8 @@ public class ListenerTest {
     @After
     @Before
     public void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test

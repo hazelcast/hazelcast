@@ -29,14 +29,13 @@ import org.junit.Test;
 import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotSame;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 public class ClientMapGuavaCacheTest {
 
     @After
     public void shutdown(){
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

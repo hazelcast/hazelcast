@@ -44,8 +44,8 @@ public class SocketInterceptorTest {
     @After
     @Before
     public void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test(timeout = 120000)
