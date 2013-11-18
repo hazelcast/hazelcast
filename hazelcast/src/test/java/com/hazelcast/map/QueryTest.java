@@ -1592,7 +1592,7 @@ public class QueryTest extends HazelcastTestSupport {
             }.start();
         }
 
-        Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
+        Assert.assertTrue(latch.await(5, TimeUnit.MINUTES));
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
         Assert.assertEquals(nodes, instances.size());
 

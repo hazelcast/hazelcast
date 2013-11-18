@@ -891,7 +891,6 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
 
             public Map loadAll(Collection keys) {
-                System.out.println("Loader.loadAll keys " + keys);
                 return null;
             }
         });
