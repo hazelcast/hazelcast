@@ -35,6 +35,34 @@ import java.util.concurrent.*;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
+    private static final Object NULL_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::NULL_RESPONSE";
+        }
+    };
+    private static final Object RETRY_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::RETRY_RESPONSE";
+        }
+    };
+    private static final Object WAIT_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::WAIT_RESPONSE";
+        }
+    };
+    private static final Object TIMEOUT_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::TIMEOUT_RESPONSE";
+        }
+    };
+
+    private static long decrementTimeout(long timeout, long diff) {
+        if (timeout != Long.MAX_VALUE) {
+            timeout -= diff;
+        }
+        return timeout;
+    }
+
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
@@ -65,6 +93,31 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         this.callback = callback;
         this.responseProcessor = callback == null ? new DefaultResponseProcessor() : new CallbackResponseProcessor();
         this.logger = nodeEngine.getLogger(Invocation.class.getName());
+    }
+
+    abstract ExceptionAction onException(Throwable t);
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    PartitionView getPartition() {
+        return nodeEngine.getPartitionService().getPartition(partitionId);
+    }
+
+    public int getReplicaIndex() {
+        return replicaIndex;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    private Future resetAndReInvoke() {
+        responseQ.clear();
+        invokeCount = 0;
+        doInvoke();
+        return new InvocationFuture();
     }
 
     private long getCallTimeout(long callTimeout) {
@@ -196,6 +249,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         operationService.registerBackupCall(callId);
     }
 
+    @Override
     public void notify(Object obj) {
         final Object response;
         if (obj == null) {
@@ -226,7 +280,22 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         responseProcessor.process(response);
     }
 
-    abstract ExceptionAction onException(Throwable t);
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("InvocationImpl");
+        sb.append("{ serviceName='").append(serviceName).append('\'');
+        sb.append(", op=").append(op);
+        sb.append(", partitionId=").append(partitionId);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", tryCount=").append(tryCount);
+        sb.append(", tryPauseMillis=").append(tryPauseMillis);
+        sb.append(", invokeCount=").append(invokeCount);
+        sb.append(", callTimeout=").append(callTimeout);
+        sb.append(", target=").append(target);
+        sb.append('}');
+        return sb.toString();
+    }
 
     private interface ResponseProcessor {
         void process(final Object response);
@@ -281,6 +350,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         volatile boolean done = false;
 
+        @Override
         public Object get() throws InterruptedException, ExecutionException {
             try {
                 return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -290,6 +360,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             }
         }
 
+        @Override
         public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
@@ -434,15 +505,18 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return response;
         }
 
+        @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             done = true;
             return false;
         }
 
+        @Override
         public boolean isCancelled() {
             return false;
         }
 
+        @Override
         public boolean isDone() {
             return done;
         }
@@ -455,13 +529,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             sb.append('}');
             return sb.toString();
         }
-    }
-
-    private Future resetAndReInvoke() {
-        responseQ.clear();
-        invokeCount = 0;
-        doInvoke();
-        return new InvocationFuture();
     }
 
     private boolean isOperationExecuting(Address target) {
@@ -480,29 +547,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         // TODO: @mm - improve logging (see SystemLogService)
         logger.warning("'is-executing': " + executing + " -> " + toString());
         return executing;
-    }
-
-    private static long decrementTimeout(long timeout, long diff) {
-        if (timeout != Long.MAX_VALUE) {
-            timeout -= diff;
-        }
-        return timeout;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    PartitionView getPartition() {
-        return nodeEngine.getPartitionService().getPartition(partitionId);
-    }
-
-    public int getReplicaIndex() {
-        return replicaIndex;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
     }
 
     public static class IsStillExecuting extends AbstractOperation {
@@ -540,42 +584,4 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             out.writeLong(operationCallId);
         }
     }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("InvocationImpl");
-        sb.append("{ serviceName='").append(serviceName).append('\'');
-        sb.append(", op=").append(op);
-        sb.append(", partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append(", tryCount=").append(tryCount);
-        sb.append(", tryPauseMillis=").append(tryPauseMillis);
-        sb.append(", invokeCount=").append(invokeCount);
-        sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", target=").append(target);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    private static final Object NULL_RESPONSE = new Object() {
-        public String toString() {
-            return "Invocation::NULL_RESPONSE";
-        }
-    };
-    private static final Object RETRY_RESPONSE = new Object() {
-        public String toString() {
-            return "Invocation::RETRY_RESPONSE";
-        }
-    };
-    private static final Object WAIT_RESPONSE = new Object() {
-        public String toString() {
-            return "Invocation::WAIT_RESPONSE";
-        }
-    };
-    private static final Object TIMEOUT_RESPONSE = new Object() {
-        public String toString() {
-            return "Invocation::TIMEOUT_RESPONSE";
-        }
-    };
 }
