@@ -66,7 +66,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         return timeout;
     }
 
-    private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
@@ -116,7 +115,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     }
 
     private Future resetAndReInvoke() {
-        responseQ.clear();
+        //responseQ.clear();
         invokeCount = 0;
         doInvoke();
         return new InvocationFuture();
@@ -295,7 +294,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 }
             }
 
-            responseQ.offer(response);
+            invocationFuture.set(response);
             try {
                 final Object realResponse;
                 if (response instanceof Response) {
@@ -359,6 +358,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private class InvocationFuture implements Future {
 
         volatile boolean done = false;
+        private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
+
+        public void set(Object response){
+            responseQ.offer(response);
+        }
 
         @Override
         public Object get() throws InterruptedException, ExecutionException {
