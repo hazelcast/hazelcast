@@ -81,6 +81,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private volatile int invokeCount = 0;
     private volatile Address target;
     private boolean remote = false;
+    private final InvocationFuture invocationFuture = new InvocationFuture();
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback) {
@@ -162,7 +163,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 throw ExceptionUtil.rethrow(e);
             }
         }
-        return new InvocationFuture();
+        return invocationFuture;
     }
 
     private void doInvoke() {
