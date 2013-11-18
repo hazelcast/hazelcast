@@ -13,7 +13,9 @@ public class EntryListenerConfigReadOnly extends EntryListenerConfig {
         super.setImplementation(config.getImplementation());
         super.setIncludeValue(config.isIncludeValue());
         super.setLocal(config.isLocal());
-        super.setClassName(config.getClassName());
+        if (config.getClassName() != null ) {
+            super.setClassName(config.getClassName());
+        }
     }
 
     public EntryListenerConfig setImplementation(EntryListener implementation) {
