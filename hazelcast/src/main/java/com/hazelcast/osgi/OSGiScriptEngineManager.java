@@ -16,10 +16,13 @@
 
 package com.hazelcast.osgi;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import javax.script.*;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -193,7 +196,18 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         try {
             for (String factoryName : findFactoryCandidates(context)) {
                 //We do not really need the class, but we need the classloader
-                ClassLoader factoryLoader = Class.forName(factoryName).getClassLoader();
+                ClassLoader factoryLoader;
+                try {
+                    factoryLoader = Class.forName(factoryName).getClassLoader();
+                }
+                catch (ClassNotFoundException cnfe) {
+                    // may fail if script implementation is not in environment
+                    logger.warning("Found ScriptEngineFactory candidate for " + factoryName + ", but cannot load class! -> " + cnfe);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(cnfe);
+                    }
+                    continue;
+                }
                 ScriptEngineManager manager = new ScriptEngineManager(factoryLoader);
                 manager.setBindings(bindings);
                 managers.put(manager, factoryLoader);
@@ -201,8 +215,6 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
             return managers;
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
-        } catch (ClassNotFoundException cnfe) {
-            throw new RuntimeException(cnfe);
         }
     }
 
@@ -215,7 +227,6 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         Bundle[] bundles = context.getBundles();
         List<String> factoryCandidates = new ArrayList<String>();
         for (Bundle bundle : bundles) {
-            System.out.println(bundle.getSymbolicName());
             if (bundle.getSymbolicName().equals("system.bundle")) continue;
             Enumeration urls = bundle.findEntries("META-INF/services", "javax.script.ScriptEngineFactory", false);
             if (urls == null)
@@ -234,4 +245,6 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         factoryCandidates.add("com.sun.script.javascript.RhinoScriptEngineFactory");
         return factoryCandidates;
     }
+
+    private final ILogger logger = Logger.getLogger(getClass());
 }
