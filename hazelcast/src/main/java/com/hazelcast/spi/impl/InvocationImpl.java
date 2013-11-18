@@ -40,16 +40,19 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return "Invocation::NULL_RESPONSE";
         }
     };
+
     private static final Object RETRY_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::RETRY_RESPONSE";
         }
     };
+
     private static final Object WAIT_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::WAIT_RESPONSE";
         }
     };
+
     private static final Object TIMEOUT_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::TIMEOUT_RESPONSE";
@@ -339,10 +342,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             }
         }
 
-        private class ScheduledInv implements Runnable {
-            public void run() {
-                doInvoke();
-            }
+    }
+
+    private class ScheduledInv implements Runnable {
+        public void run() {
+            doInvoke();
         }
     }
 
