@@ -76,7 +76,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     protected final int tryCount;
     protected final long tryPauseMillis;
     protected final Callback<Object> callback;
-    protected final ResponseProcessor responseProcessor;
     protected final ILogger logger;
 
     private volatile int invokeCount = 0;
@@ -94,7 +93,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
         this.callback = callback;
-        this.responseProcessor = callback == null ? new DefaultResponseProcessor() : new CallbackResponseProcessor();
+   //     this.responseProcessor = callback == null ? new DefaultResponseProcessor() : new CallbackResponseProcessor();
         this.logger = nodeEngine.getLogger(Invocation.class.getName());
     }
 
@@ -213,7 +212,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 //                    if (prevCallId != 0) {
 //                        operationService.deregisterRemoteCall(prevCallId);
 //                    }
-                    if (callback == null && op instanceof BackupAwareOperation) {
+                    if (op instanceof BackupAwareOperation) {
                         final long callId = operationService.newCallId();
                         registerBackups((BackupAwareOperation) op, callId);
                         OperationAccessor.setCallId(op, callId);
@@ -228,7 +227,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     remote = true;
                     final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
                     final long callId = operationService.registerRemoteCall(call);
-                    if (callback == null && op instanceof BackupAwareOperation) {
+                    if (op instanceof BackupAwareOperation) {
                         registerBackups((BackupAwareOperation) op, callId);
                     }
                     OperationAccessor.setCallId(op, callId);
@@ -254,7 +253,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     @Override
     public void notify(Object obj) {
-        final Object response;
+         Object response;
         if (obj == null) {
             response = NULL_RESPONSE;
         } else if (obj instanceof CallTimeoutException) {
@@ -280,7 +279,60 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         } else {
             response = obj;
         }
-        responseProcessor.process(response);
+
+        if (response == RETRY_RESPONSE) {
+            final ExecutionService ex = nodeEngine.getExecutionService();
+            ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
+                    new ScheduledInv()), tryPauseMillis, TimeUnit.MILLISECONDS);
+        } else if (response == WAIT_RESPONSE) {
+            //no-op for the time being.
+        } else {
+            if (response instanceof Response) {
+                if (op instanceof BackupAwareOperation) {
+                    final Object x = waitForBackupsAndGetResponse((Response) response);
+                    if (x == RETRY_RESPONSE) {
+                       resetAndReInvoke();
+                       return;
+                    }
+                }
+            }
+
+            responseQ.offer(response);
+            try {
+                final Object realResponse;
+                if (response instanceof Response) {
+                    final Response responseObj = (Response) response;
+                    // no need to deregister backup call, since backups are not registered for async invocations.
+                    realResponse = responseObj.response;
+                } else if (response == NULL_RESPONSE) {
+                    realResponse = null;
+                } else {
+                    realResponse = response;
+                }
+                if (callback != null)
+                    callback.notify(realResponse);
+            } catch (Throwable e) {
+                logger.severe(e);
+            }
+        }
+    }
+
+    private Object waitForBackupsAndGetResponse(Response response) {
+        if (op instanceof BackupAwareOperation) {
+            try {
+                final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
+                if (!ok) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Backup response cannot be received -> " + InvocationImpl.this.toString());
+                    }
+                    if (nodeEngine.getClusterService().getMember(target) == null) {
+                        return RETRY_RESPONSE;
+                    }
+                }
+            } catch (InterruptedException ignored) {
+            }
+        }
+        return response.response;
     }
 
     @Override
@@ -298,50 +350,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         sb.append(", target=").append(target);
         sb.append('}');
         return sb.toString();
-    }
-
-    private interface ResponseProcessor {
-        void process(final Object response);
-    }
-
-    private class DefaultResponseProcessor implements ResponseProcessor {
-        public void process(final Object response) {
-            responseQ.offer(response);
-        }
-    }
-
-    private class CallbackResponseProcessor implements ResponseProcessor {
-        public void process(final Object response) {
-            if (response == RETRY_RESPONSE) {
-                responseQ.offer(WAIT_RESPONSE); // wait on poll while retrying invocation!
-                final ExecutionService ex = nodeEngine.getExecutionService();
-                ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
-                        new ScheduledInv()), tryPauseMillis, TimeUnit.MILLISECONDS);
-            } else if (response == WAIT_RESPONSE) {
-                responseQ.offer(WAIT_RESPONSE);
-            } else {
-                responseQ.offer(response);
-                final Callback<Object> callbackLocal = callback;
-                if (callbackLocal != null) {
-                    try {
-                        final Object realResponse;
-                        if (response instanceof Response) {
-                            final Response responseObj = (Response) response;
-                            // no need to deregister backup call, since backups are not registered for async invocations.
-                            realResponse = responseObj.response;
-                        } else if (response == NULL_RESPONSE) {
-                            realResponse = null;
-                        } else {
-                            realResponse = response;
-                        }
-                        callbackLocal.notify(realResponse);
-                    } catch (Throwable e) {
-                        logger.severe(e);
-                    }
-                }
-            }
-        }
-
     }
 
     private class ScheduledInv implements Runnable {
@@ -369,16 +377,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
             if (response instanceof Response) {
-                if (op instanceof BackupAwareOperation && callback == null) {
-                    final Object obj = waitForBackupsAndGetResponse((Response) response);
-                    if (obj == RETRY_RESPONSE) {
-                        final Future f = resetAndReInvoke();
-                        return f.get(timeout, unit);
-                    }
-                    return obj;
-                } else {
-                    return ((Response) response).response;
-                }
+                return ((Response) response).response;
             }
             return response;
         }
@@ -413,27 +412,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 }
                 pollCount++;
 
-                if (response == RETRY_RESPONSE) {
-                    if (interrupted != null) {
-                        return interrupted;
-                    }
-                    if (timeout > 0) {
-                        if (invokeCount > 5) {
-                            final long sleepTime = tryPauseMillis;
-                            try {
-                                Thread.sleep(sleepTime);
-                                timeout = decrementTimeout(timeout, sleepTime);
-                            } catch (InterruptedException e) {
-                                return e;
-                            }
-                        }
-                        doInvoke();
-                    } else {
-                        return TIMEOUT_RESPONSE;
-                    }
-                } else if (response == WAIT_RESPONSE) {
-                    continue;
-                } else if (response != null) {
+                if (response != null) {
                     if (interrupted != null) {
                         Thread.currentThread().interrupt();
                     }
@@ -462,23 +441,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return TIMEOUT_RESPONSE;
         }
 
-        private Object waitForBackupsAndGetResponse(Response response) {
-            if (op instanceof BackupAwareOperation) {
-                try {
-                    final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
-                    if (!ok) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest( "Backup response cannot be received -> " + InvocationImpl.this.toString());
-                        }
-                        if (nodeEngine.getClusterService().getMember(target) == null) {
-                            return RETRY_RESPONSE;
-                        }
-                    }
-                } catch (InterruptedException ignored) {
-                }
-            }
-            return response.response;
-        }
 
         private Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
             if (response instanceof Throwable) {
