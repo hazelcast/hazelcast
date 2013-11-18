@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author mdogan 12/14/12
  */
-public class EventServiceImpl implements EventService, PostJoinAwareService {
+public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
     private final ILogger logger;

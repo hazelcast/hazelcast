@@ -16,6 +16,9 @@
 
 package com.hazelcast.management;
 
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Set;
@@ -83,17 +86,27 @@ public class ThreadMonitoringService {
             threadGroup.enumerate(threads);
             long now = System.nanoTime();
             for (Thread thread : threads) {
-                ThreadCpuInfo t = knownThreads.get(thread.getId());
-                if (t == null) {
-                    t = new ThreadCpuInfo(thread);
-                    knownThreads.putIfAbsent(thread.getId(), t);
-                }
+                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads,thread.getId(),new ThreadCpuInfoConstructor(thread));
                 int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * 100);
                 monitoredThreads.add(new MonitoredThread(thread.getName(), thread.getId(), percentage));
             }
             return monitoredThreads;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
+
+        private Thread thread;
+
+        private ThreadCpuInfoConstructor(Thread thread){
+            this.thread = thread;
+        }
+
+        @Override
+        public ThreadCpuInfo createNew(Long notUsed) {
+            return new ThreadCpuInfo(thread);
         }
     }
 

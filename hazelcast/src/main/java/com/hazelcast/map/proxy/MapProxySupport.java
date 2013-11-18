@@ -21,6 +21,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.executor.ExecutionCallbackAdapter;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
 import com.hazelcast.map.operation.*;
@@ -631,6 +632,31 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             throw ExceptionUtil.rethrow(t);
         }
     }
+    public Future executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        EntryOperation operation = new EntryOperation(name, key, entryProcessor);
+        operation.setThreadId(ThreadUtil.getThreadId());
+        try {
+            Invocation invocation;
+            if(callback == null)
+            {
+                invocation = nodeEngine.getOperationService()
+                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .build();
+            }
+            else
+            {
+                invocation = nodeEngine.getOperationService()
+                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .setCallback(new ExecutionCallbackAdapter(callback))
+                        .build();
+            }
+            return invocation.invoke();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
 
     public Map executeOnEntries(EntryProcessor entryProcessor) {
         Map result = new HashMap();
@@ -800,7 +826,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (attribute == null) throw new IllegalArgumentException("attribute name cannot be null");
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
-            Map<Integer, Object> results = nodeEngine.getOperationService()
+            nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, nodeEngine));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

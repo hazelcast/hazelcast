@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,7 +28,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class PartitionStateOperation extends AbstractOperation implements MigrationCycleOperation {
+public final class PartitionStateOperation extends AbstractOperation
+        implements MigrationCycleOperation, JoinOperation {
 
     private PartitionRuntimeState partitionState;
 

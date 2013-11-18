@@ -41,6 +41,7 @@ import static java.lang.String.format;
  */
 public class TestApp implements EntryListener, ItemListener, MessageListener {
 
+    public static final int LOAD_EXECUTORS_COUNT = 16;
     private IQueue<Object> queue = null;
 
     private ITopic<Object> topic = null;
@@ -133,6 +134,17 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public void start(String[] args) throws Exception {
+        getMap().size();
+        getList().size();
+        getSet().size();
+        getQueue().size();
+        getTopic().getLocalTopicStats();
+        getMultiMap().size();
+        hazelcast.getExecutorService("default").getLocalExecutorStats();
+        for(int k=1;k<=LOAD_EXECUTORS_COUNT;k++){
+            hazelcast.getExecutorService("e"+k).getLocalExecutorStats();
+        }
+
         if (lineReader == null) {
             lineReader = new DefaultLineReader();
         }
@@ -323,6 +335,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapRemoveMany(args);
         } else if (command.equalsIgnoreCase("m.localKeys")) {
             handleMapLocalKeys();
+        } else if (command.equalsIgnoreCase("m.localSize")) {
+            handleMapLocalSize();
         } else if (command.equals("m.keys")) {
             handleMapKeys();
         } else if (command.equals("m.values")) {
@@ -422,8 +436,19 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
         IExecutorService executor = hazelcast.getExecutorService("e"+threadCount);
         List<Future> futures = new LinkedList<Future>();
+        List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
+
+        int totalThreadCount = hazelcast.getCluster().getMembers().size()*threadCount;
+
+        int latchId = 0;
         for(int k=0;k<taskCount;k++){
-            Future f = executor.submit(new SimulateLoadTask(durationSec, k));
+            Member member = members.get(k%members.size());
+            if(taskCount%totalThreadCount==0){
+                latchId = taskCount/totalThreadCount;
+                hazelcast.getCountDownLatch("latch"+latchId).trySetCount(totalThreadCount);
+
+            }
+            Future f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);
             futures.add(f);
         }
 
@@ -441,23 +466,32 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println(format("Executed %s tasks in %s ms", taskCount,durationMs));
     }
 
-    private static class SimulateLoadTask implements Runnable,Serializable{
+    private static class SimulateLoadTask implements Callable,Serializable, HazelcastInstanceAware{
         private final int delay;
         private final int taskId;
-
-        private SimulateLoadTask(int delay, int taskId) {
+        private final String latchId;
+         private transient HazelcastInstance hz;
+        private SimulateLoadTask(int delay, int taskId, String latchId) {
             this.delay = delay;
             this.taskId = taskId;
+            this.latchId = latchId;
         }
 
         @Override
-        public void run() {
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hz = hazelcastInstance;
+        }
+
+        @Override
+        public Object call() throws Exception {
             try {
                 Thread.sleep(delay*1000);
             } catch (InterruptedException e) {
             }
 
+            hz.getCountDownLatch(latchId).countDown();
             System.out.println("Finished task:"+taskId);
+            return null;
         }
     }
 
@@ -784,6 +818,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             println(it.next());
         }
         println("Total " + count);
+    }
+
+    protected void handleMapLocalSize() {
+        println("Local Size = " + getMap().localKeySet().size());
     }
 
     protected void handleMapKeys() {
@@ -1486,6 +1524,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("m.entries                            //iterates the entries of the map");
         println("m.iterator [remove]                  //iterates the keys of the map, remove if specified");
         println("m.size                               //size of the map");
+        println("m.localSize                          //local size of the map");
         println("m.clear                              //clears the map");
         println("m.destroy                            //destroys the map");
         println("m.lock <key>                         //locks the key");
@@ -1554,13 +1593,33 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public static void main(String[] args) throws Exception {
-        Config config = new Config();
+        String version = getVersion();
 
-        for(int k=1;k<=16;k++){
+        Config config = new Config();
+        config.getManagementCenterConfig().setEnabled(true);
+        config.getManagementCenterConfig().setUrl("http://localhost:8080/mancenter-"+version);
+
+        for(int k=1;k<= LOAD_EXECUTORS_COUNT;k++){
             config.addExecutorConfig(new ExecutorConfig("e"+k).setPoolSize(k));
         }
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
         testApp.start(args);
+    }
+
+    private static String getVersion() throws IOException {
+        InputStream in = TestApp.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+        if (in == null) {
+            throw new IOException("hazelcast-runtime.properties is not found");
+        }
+
+        try {
+            Properties props = new Properties();
+            props.load(in);
+
+            return props.getProperty("hazelcast.version");
+        } finally {
+            in.close();
+        }
     }
 
 }

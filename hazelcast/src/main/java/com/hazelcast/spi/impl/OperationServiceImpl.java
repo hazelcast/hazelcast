@@ -335,7 +335,7 @@ final class OperationServiceImpl implements OperationService {
             callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallerUuid(), op.getCallId());
             RemoteCallKey current;
             if ((current = executingCalls.put(callKey, callKey)) != null) {
-                logger.severe("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
+                logger.warning("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
             }
         }
         return callKey;

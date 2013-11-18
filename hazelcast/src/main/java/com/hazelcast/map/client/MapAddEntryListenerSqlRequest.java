@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.map.client;
 
 import com.hazelcast.map.MapPortableHook;
@@ -23,43 +7,49 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SqlPredicate;
 
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest {
+/**
+ * User: sancar
+ * Date: 11/11/13
+ * Time: 11:03
+ */
+public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRequest {
 
-    private Predicate predicate;
+    private String predicate;
+    transient private Predicate cachedPredicate;
 
-    public MapAddEntryListenerRequest() {
+    public MapAddEntryListenerSqlRequest() {
         super();
     }
 
-    public MapAddEntryListenerRequest(String name, boolean includeValue) {
+    public MapAddEntryListenerSqlRequest(String name, boolean includeValue) {
         super(name, includeValue);
     }
 
-    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue) {
+    public MapAddEntryListenerSqlRequest(String name, Data key, boolean includeValue) {
         super(name, key, includeValue);
     }
 
-    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue, Predicate predicate) {
+    public MapAddEntryListenerSqlRequest(String name, Data key, boolean includeValue, String predicate) {
         super(name, key, includeValue);
         this.predicate = predicate;
     }
 
-    public int getClassId() {
-        return MapPortableHook.ADD_ENTRY_LISTENER;
+    protected Predicate getPredicate() {
+        if (cachedPredicate == null && predicate != null) {
+            cachedPredicate = new SqlPredicate(predicate);
+        }
+        return cachedPredicate;
     }
 
-    @Override
-    protected Predicate getPredicate() {
-        return predicate;
+    public int getClassId() {
+        return MapPortableHook.ADD_ENTRY_LISTENER_SQL;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("name", name);
-        writer.writeBoolean("i", includeValue);
-
         final boolean hasKey = key != null;
         writer.writeBoolean("key", hasKey);
         if (predicate == null) {
@@ -70,8 +60,8 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
             }
         } else {
             writer.writeBoolean("pre", true);
+            writer.writeUTF("p", predicate);
             final ObjectDataOutput out = writer.getRawDataOutput();
-            out.writeObject(predicate);
             if (hasKey) {
                 key.writeData(out);
             }
@@ -82,11 +72,10 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
-
         boolean hasKey = reader.readBoolean("key");
         if (reader.readBoolean("pre")) {
+            predicate = reader.readUTF("p");
             final ObjectDataInput in = reader.getRawDataInput();
-            predicate = in.readObject();
             if (hasKey) {
                 key = new Data();
                 key.readData(in);
@@ -96,7 +85,6 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
             key = new Data();
             key.readData(in);
         }
-
     }
 
 }

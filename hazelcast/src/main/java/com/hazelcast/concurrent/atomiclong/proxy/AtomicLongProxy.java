@@ -67,7 +67,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         try {
             SetOperation operation = new SetOperation(name, newValue);
             Invocation inv = getNodeEngine().getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
-            inv.invoke();
+            inv.invoke().get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
