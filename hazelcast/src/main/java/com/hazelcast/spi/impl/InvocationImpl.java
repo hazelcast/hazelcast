@@ -288,12 +288,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             //no-op for the time being.
         } else {
             if (response instanceof Response) {
-                if (op instanceof BackupAwareOperation) {
-                    final Object x = waitForBackupsAndGetResponse((Response) response);
-                    if (x == RETRY_RESPONSE) {
-                       resetAndReInvoke();
-                       return;
-                    }
+                if (reinvokeNeeded((Response) response)) {
+                    resetAndReInvoke();
+                    return;
                 }
             }
 
@@ -317,7 +314,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    private Object waitForBackupsAndGetResponse(Response response) {
+    private boolean reinvokeNeeded(Response response) {
         if (op instanceof BackupAwareOperation) {
             try {
                 final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
@@ -326,13 +323,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                         logger.finest( "Backup response cannot be received -> " + InvocationImpl.this.toString());
                     }
                     if (nodeEngine.getClusterService().getMember(target) == null) {
-                        return RETRY_RESPONSE;
+                        return true;
                     }
                 }
             } catch (InterruptedException ignored) {
             }
         }
-        return response.response;
+        return false;
     }
 
     @Override
