@@ -151,6 +151,7 @@ function init {
 	OUTPUT_DIR="target"
 	MULTI_HTML_OUTPUT_DIR="multi_html"
 	SINGLE_HTML_OUTPUT_DIR="single_html"
+	PDF_OUTPUT_DIR="pdf"
 	PDF_FILE_NAME="hazelcast-documentation.pdf"
 	MANIFEST_FILE_NAME="manifest.json"
 	MERGED_FILE_NAME="hazelcast-documentation.md"
@@ -168,7 +169,10 @@ function cleanIfExists {
 	echo "Creating $OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR	
 	echo "Creating $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"
-	mkdir $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR	
+	mkdir $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR
+	echo "Creating $OUTPUT_DIR/$PDF_OUTPUT_DIR"
+	mkdir $OUTPUT_DIR/$PDF_OUTPUT_DIR	
+		
 		
 }
 
@@ -178,7 +182,7 @@ cleanIfExists
 createMultiHTML
 
 createPDF
-mv $PDF_FILE_NAME ./$OUTPUT_DIR/$PDF_FILE_NAME
+mv $PDF_FILE_NAME ./$OUTPUT_DIR/$PDF_OUTPUT_DIR/$PDF_FILE_NAME
 echo "Move merged file from $MERGED_FILE_NAME to /src/$MERGED_FILE_NAME"
 mv $MERGED_FILE_NAME ./src/$MERGED_FILE_NAME
 #########
