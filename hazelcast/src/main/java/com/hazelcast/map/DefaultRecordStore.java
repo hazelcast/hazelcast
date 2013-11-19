@@ -212,9 +212,9 @@ public class DefaultRecordStore implements RecordStore {
                 indexService.removeEntryIndex(key);
             }
         }
+        cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAssociatedSchedulers(records.keySet());
 
     }
 
@@ -251,6 +251,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public boolean isEmpty() {
+        checkIfLoaded();
         return records.isEmpty();
     }
 
