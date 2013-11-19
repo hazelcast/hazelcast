@@ -127,7 +127,7 @@ public class IndexImpl implements Index {
         return ordered;
     }
 
-    final static class NullObject implements Comparable {
+    public final static class NullObject implements Comparable {
 
         public int compareTo(Object o) {
             if (o == this || o instanceof NullObject) return 0;

@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.cluster.AbstractJoiner;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
@@ -33,6 +34,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -50,6 +52,21 @@ final class TestNodeRegistry {
 
     NodeContext createNodeContext(Address address) {
         return new MockNodeContext(address);
+    }
+
+    HazelcastInstance getInstance(Address address) {
+        NodeEngineImpl nodeEngine = nodes.get(address);
+        return nodeEngine != null && nodeEngine.isActive() ? nodeEngine.getHazelcastInstance() : null;
+    }
+
+    Collection<HazelcastInstance> getAllHazelcastInstances() {
+        Collection<HazelcastInstance> all = new LinkedList<HazelcastInstance>();
+        for (NodeEngineImpl nodeEngine : nodes.values()) {
+            if (nodeEngine.isActive()) {
+                all.add(nodeEngine.getHazelcastInstance());
+            }
+        }
+        return all;
     }
 
     void shutdown() {

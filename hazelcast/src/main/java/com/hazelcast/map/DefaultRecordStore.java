@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.PutAllOperation;
 import com.hazelcast.map.record.Record;
@@ -56,6 +57,8 @@ public class DefaultRecordStore implements RecordStore {
     private final MapService mapService;
     private final LockStore lockStore;
     private final RecordFactory recordFactory;
+    private final ILogger logger;
+
     final SizeEstimator sizeEstimator;
     final AtomicBoolean loaded = new AtomicBoolean(false);
 
@@ -64,6 +67,7 @@ public class DefaultRecordStore implements RecordStore {
         this.partitionId = partitionId;
         this.mapService = mapService;
         this.mapContainer = mapService.getMapContainer(name);
+        this.logger =  mapService.getNodeEngine().getLogger(this.getName());
         recordFactory = mapContainer.getRecordFactory();
         NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
@@ -906,9 +910,9 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void cancelAssociatedSchedulers(Set<Data> keySet) {
-        if (keySet == null || keySet.isEmpty()) return;
+        if(keySet == null || keySet.isEmpty() ) return;
 
-        for (Data key : keySet) {
+        for (Data key : keySet ){
             cancelAssociatedSchedulers(key);
         }
     }
@@ -928,42 +932,46 @@ public class DefaultRecordStore implements RecordStore {
         public void run() {
             final NodeEngine nodeEngine = mapService.getNodeEngine();
 
-            Map values = mapContainer.getStore().loadAll(keys.values());
-            if (values == null || values.isEmpty()) {
-                loaded.set(true);
-                return;
-            }
-
-            MapEntrySet entrySet = new MapEntrySet();
-            for (Data dataKey : keys.keySet()) {
-                Object key = keys.get(dataKey);
-                Object value = values.get(key);
-                if (value != null) {
-                    Data dataValue = mapService.toData(value);
-                    entrySet.add(dataKey, dataValue);
+            try {
+                Map values = mapContainer.getStore().loadAll(keys.values());
+                if(values == null || values.isEmpty()) {
+                    loaded.set(true);
+                    return;
                 }
-            }
-            PutAllOperation operation = new PutAllOperation(name, entrySet, true);
-            operation.setNodeEngine(nodeEngine);
-            operation.setResponseHandler(new ResponseHandler() {
-                @Override
-                public void sendResponse(Object obj) {
-                    if (!(obj instanceof Exception)) {
-                        loaded.set(true);
-                    } else {
-                        Exception e = (Exception) obj;
-                        nodeEngine.getLogger(RecordStore.class).finest(e.getMessage());
+
+                MapEntrySet entrySet = new MapEntrySet();
+                for (Data dataKey : keys.keySet()) {
+                    Object key = keys.get(dataKey);
+                    Object value = values.get(key);
+                    if (value != null) {
+                        Data dataValue = mapService.toData(value);
+                        entrySet.add(dataKey, dataValue);
                     }
                 }
+                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
+                operation.setNodeEngine(nodeEngine);
+                operation.setResponseHandler(new ResponseHandler() {
+                    @Override
+                    public void sendResponse(Object obj) {
+                        if (!(obj instanceof Exception)) {
+                            loaded.set(true);
+                        } else {
+                            Exception e = (Exception) obj;
+                            logger.finest(e.getMessage());
+                        }
+                    }
 
-                public boolean isLocal() {
-                    return true;
-                }
-            });
-            operation.setPartitionId(partitionId);
-            OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-            operation.setServiceName(MapService.SERVICE_NAME);
-            nodeEngine.getOperationService().executeOperation(operation);
+                    public boolean isLocal() {
+                        return true;
+                    }
+                });
+                operation.setPartitionId(partitionId);
+                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
+                operation.setServiceName(MapService.SERVICE_NAME);
+                nodeEngine.getOperationService().executeOperation(operation);
+            } catch (Exception e) {
+                logger.warning("Exception while load all task:"+e.toString());
+            }
         }
     }
 }
