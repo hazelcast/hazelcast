@@ -24,6 +24,8 @@ public class PartitioningStrategyConfig {
 
     private PartitioningStrategy partitionStrategy;
 
+    private PartitioningStrategyConfigReadOnly readOnly;
+
     public PartitioningStrategyConfig() {
     }
 
@@ -33,6 +35,13 @@ public class PartitioningStrategyConfig {
 
     public PartitioningStrategyConfig(PartitioningStrategy partitionStrategy) {
         this.partitionStrategy = partitionStrategy;
+    }
+
+    public PartitioningStrategyConfigReadOnly getAsReadOnly() {
+        if (readOnly == null){
+            readOnly = new PartitioningStrategyConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public String getPartitioningStrategyClass() {

@@ -32,6 +32,7 @@ public class QueueStoreConfig {
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
+    private QueueStoreConfigReadOnly readOnly;
 
     public QueueStoreConfig() {
     }
@@ -43,6 +44,13 @@ public class QueueStoreConfig {
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
         this.storeImplementation = storeImplementation;
         return this;
+    }
+
+    public QueueStoreConfigReadOnly getAsReadOnly() {
+        if (readOnly == null){
+            readOnly = new QueueStoreConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public boolean isEnabled() {

@@ -35,7 +35,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     protected CollectionConfig getConfig(NodeEngine nodeEngine) {
-        return nodeEngine.getConfig().getListConfig(name);
+        return nodeEngine.getConfig().findListConfig(name);
     }
 
     public void add(int index, E e) {
