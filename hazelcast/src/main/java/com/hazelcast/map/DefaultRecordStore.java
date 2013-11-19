@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -42,8 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.hazelcast.config.InMemoryFormat;
 
 /**
  * @author enesakar 1/17/13
@@ -194,9 +193,9 @@ public class DefaultRecordStore implements RecordStore {
                 indexService.removeEntryIndex(key);
             }
         }
+        cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAssociatedSchedulers(records.keySet());
 
     }
 
@@ -233,6 +232,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public boolean isEmpty() {
+        checkIfLoaded();
         return records.isEmpty();
     }
 

@@ -22,14 +22,12 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.Clock;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1015,21 +1013,21 @@ public class BasicTest extends HazelcastTestSupport {
     	MapStoreConfig storeConfig = new MapStoreConfig();
     	storeConfig.setFactoryImplementation(loader);
     	mapConfig.setMapStoreConfig(storeConfig);
-    	
+
     	IMap<Integer, SampleIndexableObject> map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
     	for (int i = 0; i < 10; i++) {
     		map.put(i, new SampleIndexableObject("My-" + i, i));
     	}
-    	
+
     	SqlPredicate predicate = new SqlPredicate("name='My-5'");
     	Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
     	assertEquals(1, result.size());
     	assertEquals(5, (int) result.iterator().next().getValue().value);
-    	
+
     	map.destroy();
     	loader.preloadValues = true;
-    	
     	map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
+        assertFalse(map.isEmpty());
 
     	predicate = new SqlPredicate("name='My-5'");
     	result = map.entrySet(predicate);
