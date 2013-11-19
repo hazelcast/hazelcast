@@ -342,7 +342,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     private class InvocationFuture implements Future {
 
-        volatile boolean done = false;
         volatile Object response;
 
         public void set(Object response){
@@ -351,11 +350,14 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             }
 
             synchronized (this) {
-                //todo: check if response already has been set.
+                if(this.response!=null){
+                     throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
+                }
                 this.response = response;
                 this.notifyAll();
             }
 
+            //todo: we need to offload this to another thread.
             try {
                 final Object realResponse;
                 if (response instanceof Response) {
@@ -387,9 +389,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         @Override
         public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            final Object response = resolveResponse(waitForResponse(timeout, unit));
-            done = true;
-            return response;
+            return resolveResponse(waitForResponse(timeout, unit));
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
@@ -497,7 +497,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            done = true;
+            //done = true;
             return false;
         }
 
@@ -508,14 +508,14 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         @Override
         public boolean isDone() {
-            return done;
+            return response!=null;
         }
 
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder("InvocationFuture{");
             sb.append("invocation=").append(InvocationImpl.this.toString());
-            sb.append(", done=").append(done);
+            sb.append(", done=").append(isDone());
             sb.append('}');
             return sb.toString();
         }
