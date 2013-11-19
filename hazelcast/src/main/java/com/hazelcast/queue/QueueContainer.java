@@ -84,11 +84,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
+                long maxId = -1;
                 for (Long key : keys) {
                     QueueItem item = new QueueItem(this, key, null);
                     getItemQueue().offer(item);
-                    nextId();
+                    maxId = Math.max(maxId, key);
                 }
+                idGenerator = maxId;
             }
         }
     }
