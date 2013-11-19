@@ -379,9 +379,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
-            if (response instanceof Response) {
-                return ((Response) response).response;
-            }
             return response;
         }
 
@@ -465,6 +462,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 }
                 throw new ExecutionException((Throwable) response);
             }
+            if (response instanceof Response) {
+                return ((Response) response).response;
+            }
             if (response == NULL_RESPONSE) {
                 return null;
             }
@@ -498,24 +498,24 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             sb.append('}');
             return sb.toString();
         }
-    }
 
-    private boolean isOperationExecuting(Address target) {
-        // ask if op is still being executed?
-        Boolean executing = Boolean.FALSE;
-        try {
-            final Invocation inv = new TargetInvocationImpl(nodeEngine, serviceName,
-                    new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null);
-            Future f = inv.invoke();
+        private boolean isOperationExecuting(Address target) {
+            // ask if op is still being executed?
+            Boolean executing = Boolean.FALSE;
+            try {
+                final Invocation inv = new TargetInvocationImpl(nodeEngine, serviceName,
+                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null);
+                Future f = inv.invoke();
+                // TODO: @mm - improve logging (see SystemLogService)
+                logger.warning("Asking if operation execution has been started: " + toString());
+                executing = (Boolean) nodeEngine.toObject(f.get(5000, TimeUnit.MILLISECONDS));
+            } catch (Exception e) {
+                logger.warning("While asking 'is-executing': " + toString(), e);
+            }
             // TODO: @mm - improve logging (see SystemLogService)
-            logger.warning("Asking if operation execution has been started: " + toString());
-            executing = (Boolean) nodeEngine.toObject(f.get(5000, TimeUnit.MILLISECONDS));
-        } catch (Exception e) {
-            logger.warning("While asking 'is-executing': " + toString(), e);
+            logger.warning("'is-executing': " + executing + " -> " + toString());
+            return executing;
         }
-        // TODO: @mm - improve logging (see SystemLogService)
-        logger.warning("'is-executing': " + executing + " -> " + toString());
-        return executing;
     }
 
     public static class IsStillExecuting extends AbstractOperation {
