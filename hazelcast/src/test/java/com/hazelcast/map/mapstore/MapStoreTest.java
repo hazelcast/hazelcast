@@ -864,10 +864,11 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>());
-        config.getMapConfig("map").setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        final IMap map = instance.getMap("map");
+        config.getMapConfig("testIssue1019").setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final IMap map = instance.getMap("testIssue1019");
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
         }
