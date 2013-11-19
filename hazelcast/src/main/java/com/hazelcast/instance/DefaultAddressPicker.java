@@ -118,9 +118,9 @@ class DefaultAddressPicker implements AddressPicker {
             serverSocketChannel.configureBlocking(false);
             bindAddress = createAddress(bindAddressDef, port);
             log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
-            AddressDefinition publicAddressDef = getPublicAddress(node.getConfig());
+            AddressDefinition publicAddressDef = getPublicAddress(node.getConfig(), port);
             if (publicAddressDef != null) {
-                publicAddress = createAddress(publicAddressDef, port);
+                publicAddress = createAddress(publicAddressDef, publicAddressDef.port);
                 log(Level.INFO, "Using public address: " + publicAddress);
             } else {
                 publicAddress = bindAddress;
@@ -251,7 +251,7 @@ class DefaultAddressPicker implements AddressPicker {
         return null;
     }
 
-    private AddressDefinition getPublicAddress(Config config) throws UnknownHostException {
+    private AddressDefinition getPublicAddress(Config config, int defaultPort) throws UnknownHostException {
         String address = config.getProperty("hazelcast.local.publicAddress");
         if (address == null) {
             address = config.getNetworkConfig().getPublicAddress();
@@ -261,7 +261,9 @@ class DefaultAddressPicker implements AddressPicker {
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress();
             } else {
-                return new AddressDefinition(address, InetAddress.getByName(address));
+                // Allow port to be defined in same string in the form of <host>:<port>. i.e. 10.0.0.0:1234
+                AddressUtil.AddressHolder holder = AddressUtil.getAddressHolder(address, defaultPort);
+                return new AddressDefinition(holder.address, holder.port, InetAddress.getByName(holder.address));
             }
         }
         return null;
@@ -378,6 +380,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     private class AddressDefinition extends InterfaceDefinition {
         InetAddress inetAddress;
+        int port;
 
         private AddressDefinition() {
         }
@@ -390,6 +393,12 @@ class DefaultAddressPicker implements AddressPicker {
         private AddressDefinition(final String host, final InetAddress inetAddress) {
             super(host, inetAddress.getHostAddress());
             this.inetAddress = inetAddress;
+        }
+
+        private AddressDefinition(final String host, final int port, final InetAddress inetAddress) {
+            super(host, inetAddress.getHostAddress());
+            this.inetAddress = inetAddress;
+            this.port = port;
         }
     }
 }
