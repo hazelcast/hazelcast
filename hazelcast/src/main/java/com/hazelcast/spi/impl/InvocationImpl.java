@@ -342,10 +342,21 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private class InvocationFuture implements Future {
 
         volatile boolean done = false;
-        private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
+        volatile Object response;
+
+        //todo: instead of creating an additional object, we could also use 'this' as monitor.
+        final Object monitor = new Object();
 
         public void set(Object response){
-            responseQ.offer(response);
+            if(response == null){
+                throw new IllegalArgumentException("response can't be null");
+            }
+
+            synchronized (monitor) {
+                //todo: check if response already has been set.
+                this.response = response;
+                monitor.notifyAll();
+            }
 
             try {
                 final Object realResponse;
@@ -383,26 +394,41 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
-            long timeout = unit.toMillis(time);
-            if (timeout < 0) timeout = 0;
+            //if(response!=null){
+            //    return response;
+            //}
+
+            long timeoutMs = unit.toMillis(time);
+            if (timeoutMs < 0) timeoutMs = 0;
 
             final long maxCallTimeout = callTimeout * 2 > 0 ? callTimeout * 2 : Long.MAX_VALUE;
-            final boolean longPolling = timeout > maxCallTimeout;
+            final boolean longPolling = timeoutMs > maxCallTimeout;
             int pollCount = 0;
             InterruptedException interrupted = null;
 
-            while (timeout >= 0) {
-                final long pollTimeout = Math.min(maxCallTimeout, timeout);
-                final long start = Clock.currentTimeMillis();
-                final Object response;
+            while (timeoutMs >= 0) {
+                final long pollTimeoutMs = Math.min(maxCallTimeout, timeoutMs);
+                final long startMs = Clock.currentTimeMillis();
                 final long lastPollTime;
                 try {
-                    response = responseQ.poll(pollTimeout, TimeUnit.MILLISECONDS);
-                    lastPollTime = Clock.currentTimeMillis() - start;
-                    timeout = decrementTimeout(timeout, lastPollTime);
+                    synchronized (monitor) {
+                        if (response == null) {
+                            monitor.wait(pollTimeoutMs);
+                        }
+                    }
+
+                    if (response != null) {
+                        if (interrupted != null) {
+                            Thread.currentThread().interrupt();
+                        }
+                        return response;
+                    }
+
+                    lastPollTime = Clock.currentTimeMillis() - startMs;
+                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
                 } catch (InterruptedException e) {
                     // do not allow interruption while waiting for a response!
-                    logger.finest( Thread.currentThread().getName() + " is interrupted while waiting " +
+                    logger.finest(Thread.currentThread().getName() + " is interrupted while waiting " +
                             "response for operation " + op);
                     interrupted = e;
                     if (!nodeEngine.isActive()) {
@@ -412,12 +438,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 }
                 pollCount++;
 
-                if (response != null) {
-                    if (interrupted != null) {
-                        Thread.currentThread().interrupt();
-                    }
-                    return response;
-                } else if (/* response == null && */ longPolling) {
+                if (/* response == null && */ longPolling) {
                     // no response!
                     final Address target = getTarget();
                     if (nodeEngine.getThisAddress().equals(target)) {
@@ -429,18 +450,16 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
                     boolean executing = isOperationExecuting(target);
                     if (!executing) {
-                        Object obj = responseQ.peek(); // real response might arrive before "is-executing" response.
-                        if (obj != null) {
+                       if (response != null) {
                             continue;
                         }
-                        return new OperationTimeoutException("No response for " + (pollTimeout * pollCount)
+                        return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount)
                                 + " ms. Aborting invocation! " + toString());
                     }
                 }
             }
             return TIMEOUT_RESPONSE;
         }
-
 
         private Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
             if (response instanceof Throwable) {
