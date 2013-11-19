@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -42,8 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.hazelcast.config.InMemoryFormat;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author enesakar 1/17/13
@@ -67,13 +67,15 @@ public class DefaultRecordStore implements RecordStore {
         this.partitionId = partitionId;
         this.mapService = mapService;
         this.mapContainer = mapService.getMapContainer(name);
-        this.logger =  mapService.getNodeEngine().getLogger(this.getName());
+        this.logger = mapService.getNodeEngine().getLogger(this.getName());
         recordFactory = mapContainer.getRecordFactory();
         NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
+        final int mapLoadChunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
+        final Queue<Map> chunks = new LinkedList<Map>();
         if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
             if (mapContainer.getStore() != null && !loaded.get()) {
                 Map<Data, Object> loadedKeys = mapContainer.getInitialKeys();
@@ -85,13 +87,30 @@ public class DefaultRecordStore implements RecordStore {
                         final Data data = entry.getKey();
                         if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
                             partitionKeys.put(data, entry.getValue());
+                            //split into chunks
+                            if (partitionKeys.size() >= mapLoadChunkSize) {
+                                chunks.add(partitionKeys);
+                                partitionKeys = new HashMap<Data, Object>();
+                            }
                             iterator.remove();
                         }
                     }
-                    try {
-                        nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(partitionKeys));
-                    } catch (Throwable t) {
-                        throw ExceptionUtil.rethrow(t);
+                    if (!partitionKeys.isEmpty()) {
+                        chunks.add(partitionKeys);
+                    }
+                    if (!chunks.isEmpty()) {
+                        try {
+                            Map<Data, Object> chunkedKeys;
+                            final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
+                            while ((chunkedKeys = chunks.poll()) != null) {
+                                nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
+                            }
+                        } catch (Throwable t) {
+                            throw ExceptionUtil.rethrow(t);
+                        }
+                    }
+                    else {
+                        loaded.set(true);
                     }
                 } else {
                     loaded.set(true);
@@ -910,9 +929,9 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void cancelAssociatedSchedulers(Set<Data> keySet) {
-        if(keySet == null || keySet.isEmpty() ) return;
+        if (keySet == null || keySet.isEmpty()) return;
 
-        for (Data key : keySet ){
+        for (Data key : keySet) {
             cancelAssociatedSchedulers(key);
         }
     }
@@ -924,9 +943,11 @@ public class DefaultRecordStore implements RecordStore {
 
     private class MapLoadAllTask implements Runnable {
         private Map<Data, Object> keys;
+        private AtomicInteger checkIfMapLoaded;
 
-        private MapLoadAllTask(Map<Data, Object> keys) {
+        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger checkIfMapLoaded) {
             this.keys = keys;
+            this.checkIfMapLoaded = checkIfMapLoaded;
         }
 
         public void run() {
@@ -934,7 +955,7 @@ public class DefaultRecordStore implements RecordStore {
 
             try {
                 Map values = mapContainer.getStore().loadAll(keys.values());
-                if(values == null || values.isEmpty()) {
+                if (values == null || values.isEmpty()) {
                     loaded.set(true);
                     return;
                 }
@@ -953,11 +974,8 @@ public class DefaultRecordStore implements RecordStore {
                 operation.setResponseHandler(new ResponseHandler() {
                     @Override
                     public void sendResponse(Object obj) {
-                        if (!(obj instanceof Exception)) {
+                        if (checkIfMapLoaded.decrementAndGet() == 0) {
                             loaded.set(true);
-                        } else {
-                            Exception e = (Exception) obj;
-                            logger.finest(e.getMessage());
                         }
                     }
 
@@ -970,7 +988,7 @@ public class DefaultRecordStore implements RecordStore {
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             } catch (Exception e) {
-                logger.warning("Exception while load all task:"+e.toString());
+                logger.warning("Exception while load all task:" + e.toString());
             }
         }
     }
