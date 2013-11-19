@@ -90,7 +90,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                     getItemQueue().offer(item);
                     maxId = Math.max(maxId, key);
                 }
-                idGenerator = maxId;
+                idGenerator = maxId + 1;
             }
         }
     }
