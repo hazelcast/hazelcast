@@ -193,6 +193,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         continue;
                     }
                 }
+                if (e instanceof IOException && !active) {
+                    continue;
+                }
                 throw ExceptionUtil.rethrow(e, IOException.class);
             } finally {
                 if (release && conn != null) {
@@ -294,6 +297,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         beforeRetry();
                         continue;
                     }
+                }
+                if (e instanceof IOException && !active) {
+                    continue;
                 }
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }

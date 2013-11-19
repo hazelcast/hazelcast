@@ -17,9 +17,15 @@
 package com.hazelcast.client.nearcache;
 
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.ListenerSupport;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -50,6 +56,7 @@ public class ClientNearCache {
     final AtomicBoolean canCleanUp;
     final AtomicBoolean canEvict;
     final ConcurrentMap<Data, CacheRecord> cache;
+    ListenerSupport listenerSupport = null;
     public static final Object NULL_OBJECT = new Object();
 
     public ClientNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
@@ -65,6 +72,30 @@ public class ClientNearCache {
         canCleanUp = new AtomicBoolean(true);
         canEvict = new AtomicBoolean(true);
         lastCleanup = Clock.currentTimeMillis();
+        if (invalidateOnChange) {
+            addInvalidateListener();
+        }
+    }
+
+    private void addInvalidateListener(){
+        try {
+            MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(mapName, false);
+            EventHandler<PortableEntryEvent> handler = new EventHandler<PortableEntryEvent>() {
+                public void handle(PortableEntryEvent event) {
+                    cache.remove(event.getKey());
+                }
+            };
+            listenerSupport = new ListenerSupport(context, request, handler, null);
+            listenerSupport.listen(new Callback<Exception>() {
+                public void notify(Exception ignored) {
+                    cache.clear();
+                }
+            });
+
+        } catch (Exception e) {
+            Logger.getLogger(ClientNearCache.class).severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+        }
+
     }
 
     static enum EvictionPolicy {
@@ -161,13 +192,13 @@ public class ClientNearCache {
         }
     }
 
-    public void invalidate(Data key) {
-        cache.remove(key);
-    }
-
-    public void clear() {
+    public void destroy() {
+        if (listenerSupport != null){
+            listenerSupport.stop();
+        }
         cache.clear();
     }
+
 
     class CacheRecord implements Comparable<CacheRecord> {
         final Data key;
