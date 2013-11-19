@@ -5,7 +5,7 @@ Hazelcast can be configured through xml or using configuration api or even mix o
 
 1.**XML Configuration**
 
-If you are using default Hazelcast instance (`Hazelcast.getDefaultInstance()`) or creating new Hazelcast instance with passing `null` parameter (`Hazelcast.newHazelcastInstance(null)`), Hazelcast will look into two places for the configuration file:
+If you are creating new Hazelcast instance with passing `null` parameter to `Hazelcast.newHazelcastInstance(null)` or just using empty factory method (`Hazelcast.newHazelcastInstance()`), Hazelcast will look into two places for the configuration file:
 
 -   **System property:** Hazelcast will first check if "`hazelcast.config`" system property is set to a file path. Example: `-Dhazelcast.config=C:/myhazelcast.xml`.
 
@@ -37,7 +37,7 @@ cfg.setPort(5900);
 cfg.setPortAutoIncrement(false);
         
 NetworkConfig network = cfg.getNetworkConfig();
-Join join = network.getJoin();
+JoinConfig join = network.getJoin();
 join.getMulticastConfig().setEnabled(false);
 join.getTcpIpConfig().addMember("10.45.67.32").addMember("10.45.67.100")
             .setRequiredMember("192.168.10.100").setEnabled(true);
@@ -59,11 +59,9 @@ mapCfg.setNearCacheConfig(nearCacheConfig);
 
 cfg.addMapConfig(mapCfg);
 ```
-After creating `Config` object, you can use it to initialize default Hazelcast instance or create a new Hazelcast instance.
+After creating `Config` object, you can use it to create a new Hazelcast instance.
 
--   `Hazelcast.init(cfg);`
-
--   `Hazelcast.newHazelcastInstance(cfg);`
+-   `HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(cfg);`
 <a name="named-hazelcastinstance"></a>
 -   To create a named `HazelcastInstance` you should set `instanceName` of `Config` object. 
 
