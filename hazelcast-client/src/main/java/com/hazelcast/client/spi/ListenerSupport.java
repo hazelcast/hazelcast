@@ -18,6 +18,8 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.spi.Callback;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -39,18 +41,19 @@ public final class ListenerSupport  {
     private Object partitionKey;
     final CountDownLatch latch = new CountDownLatch(1);
 
-    public ListenerSupport(ClientContext context, Object registrationRequest, EventHandler handler) {
+
+    public ListenerSupport(ClientContext context, Object registrationRequest, EventHandler handler, Object partitionKey) {
         this.context = context;
         this.registrationRequest = registrationRequest;
         this.handler = handler;
-    }
-
-    public ListenerSupport(ClientContext context, Object registrationRequest, EventHandler handler, Object partitionKey) {
-        this(context,registrationRequest, handler);
         this.partitionKey = partitionKey;
     }
 
     public String listen() {
+        return listen(null);
+    }
+
+    public String listen(final Callback callback){
         future = context.getExecutionService().submit(new Runnable() {
             public void run() {
                 while (active && !Thread.currentThread().isInterrupted()) {
@@ -61,7 +64,16 @@ public final class ListenerSupport  {
                         } else {
                             context.getInvocationService().invokeOnKeyOwner(registrationRequest, partitionKey, eventResponseHandler);
                         }
-                    } catch (Exception ignored) {
+                    } catch (Exception e) {
+                        if (callback != null) {
+                            callback.notify(null);
+                        }
+                        if (e instanceof HazelcastInstanceNotActiveException){
+                            try {
+                                Thread.sleep(context.getClientConfig().getConnectionAttemptPeriod());
+                            } catch (InterruptedException ignored) {
+                            }
+                        }
                     }
                 }
             }
