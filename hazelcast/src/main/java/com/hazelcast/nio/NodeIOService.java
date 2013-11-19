@@ -147,6 +147,10 @@ public class NodeIOService implements IOService {
         return node.getConfig().getNetworkConfig().getPort();
     }
 
+    public boolean isSocketBind() {
+        return node.groupProperties.SOCKET_CLIENT_BIND.getBoolean();
+    }
+
     public boolean isSocketBindAny() {
         return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
     }
