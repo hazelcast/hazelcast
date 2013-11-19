@@ -25,6 +25,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -59,7 +60,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         final Address destination = migrationInfo.getDestination();
         final Member target = nodeEngine.getClusterService().getMember(destination);
         if (target == null) {
-            throw new RetryableHazelcastException("Destination of migration could not be found! => " + toString());
+            throw new TargetNotMemberException("Destination of migration could not be found! => " + toString());
         }
         if (destination.equals(source)) {
             getLogger().warning("Source and destination addresses are the same! => " + toString());
@@ -141,6 +142,18 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);
             success = false;
         }
+    }
+
+
+    @Override
+    public ExceptionAction onException(Throwable throwable) {
+        if (throwable instanceof TargetNotMemberException) {
+            NodeEngine nodeEngine = getNodeEngine();
+            if (nodeEngine != null && nodeEngine.getClusterService().getMember(migrationInfo.getDestination()) == null) {
+                return ExceptionAction.THROW_EXCEPTION;
+            }
+        }
+        return super.onException(throwable);
     }
 
     @Override
