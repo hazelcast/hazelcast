@@ -906,9 +906,9 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void cancelAssociatedSchedulers(Set<Data> keySet) {
-        if(keySet == null || keySet.isEmpty() ) return;
+        if (keySet == null || keySet.isEmpty()) return;
 
-        for (Data key : keySet ){
+        for (Data key : keySet) {
             cancelAssociatedSchedulers(key);
         }
     }
@@ -929,6 +929,10 @@ public class DefaultRecordStore implements RecordStore {
             final NodeEngine nodeEngine = mapService.getNodeEngine();
 
             Map values = mapContainer.getStore().loadAll(keys.values());
+            if (values == null || values.isEmpty()) {
+                loaded.set(true);
+                return;
+            }
 
             MapEntrySet entrySet = new MapEntrySet();
             for (Data dataKey : keys.keySet()) {
