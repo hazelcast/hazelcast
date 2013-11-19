@@ -51,15 +51,7 @@
 			      <arguments>
 			         <argument>${project.version}</argument>
 			      </arguments>
-			      <workingDirectory>${env.PROJECT_HOME}</workingDirectory>
-			      <postProcess>
-                      <copy todir="${project.build.directory}/docbook/multi_html/">
-                          <fileset dir="${basedir}/dist/multi_html">
-                              <include name="**/*.html"/>
-                          </fileset>
-                      </copy>
-                  </postProcess>
-            
+			      <workingDirectory>${env.PROJECT_HOME}</workingDirectory>            
 			    </configuration>
 			  </execution>
 			  </executions>

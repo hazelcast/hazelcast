@@ -69,7 +69,7 @@ if [ -e "./$COPYRIGHT_FILE_NAME" ]; then
 	$(rm -rf "./$COPYRIGHT_FILE_NAME")
 fi
 
-echo -e $COPYRIGHT_TEXT >> $COPYRIGHT_FILE_NAME
+printf $COPYRIGHT_TEXT >> $COPYRIGHT_FILE_NAME
 
 echo "Copyright text created successfully"
 
