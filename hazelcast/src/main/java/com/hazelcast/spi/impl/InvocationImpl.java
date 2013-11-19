@@ -298,6 +298,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
+    //todo: this is a blocking call, offloading needed.
     private boolean reinvokeNeeded(Response response) {
         if (op instanceof BackupAwareOperation) {
             try {
@@ -344,18 +345,15 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         volatile boolean done = false;
         volatile Object response;
 
-        //todo: instead of creating an additional object, we could also use 'this' as monitor.
-        final Object monitor = new Object();
-
         public void set(Object response){
             if(response == null){
                 throw new IllegalArgumentException("response can't be null");
             }
 
-            synchronized (monitor) {
+            synchronized (this) {
                 //todo: check if response already has been set.
                 this.response = response;
-                monitor.notifyAll();
+                this.notifyAll();
             }
 
             try {
@@ -369,8 +367,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 } else {
                     realResponse = response;
                 }
-                if (callback != null)
+                if (callback != null){
                     callback.notify(realResponse);
+                }
             } catch (Throwable e) {
                 logger.severe(e);
             }
@@ -394,9 +393,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
-            //if(response!=null){
-            //    return response;
-            //}
+            if(response!=null){
+                return response;
+            }
 
             long timeoutMs = unit.toMillis(time);
             if (timeoutMs < 0) timeoutMs = 0;
@@ -411,9 +410,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 final long startMs = Clock.currentTimeMillis();
                 final long lastPollTime;
                 try {
-                    synchronized (monitor) {
-                        if (response == null) {
-                            monitor.wait(pollTimeoutMs);
+                    //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
+                    if (pollTimeoutMs > 0) {
+                        synchronized (this) {
+                            if (response == null) {
+                                this.wait(pollTimeoutMs);
+                            }
                         }
                     }
 
