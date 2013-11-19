@@ -35,6 +35,8 @@ import java.util.concurrent.*;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
+    public final static Executor EXECUTOR_SERVICE = Executors.newScheduledThreadPool(10);
+
     private static final Object NULL_RESPONSE = new Object() {
         @Override
         public String toString() {
@@ -305,16 +307,39 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
 
         if (response instanceof Response && op instanceof BackupAwareOperation) {
-            if (reinvokeNeeded((Response) response)) {
-                resetAndReInvoke();
-                return;
-            }
-        }
+            final Response resp = (Response)response;
+            if(resp.backupCount > 0){
+                //todo:
+                //instead of using a blocking call to the semaphore, we could creating a semaphore with an asyncAndThen
+                //this prevent us from consuming a thread executionService threadpool.
+                //todo:
+                //do we need to wait for all backups to complete, or would 1 be enough?
+                final Semaphore semaphore = nodeEngine.operationService.getBackupCallSemaphore(resp.callId);
+                boolean backupsCompleted = resp.backupCount- semaphore.availablePermits() == 0;
 
-        invocationFuture.set(response);
+                //we are only going to create a task for waiting for the backups, if it is really needed.
+                if(!backupsCompleted){
+                    EXECUTOR_SERVICE.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(reinvokeNeeded(resp)){
+                                resetAndReInvoke();
+                                return;
+                            }
+
+                            invocationFuture.set(resp);
+                        }
+                    });
+                    return;
+                }
+            }
+
+            invocationFuture.set(response);
+        }else{
+            invocationFuture.set(response);
+        }
     }
 
-    //todo: this is a blocking call, offloading needed.
     private boolean reinvokeNeeded(Response response) {
         try {
             final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);

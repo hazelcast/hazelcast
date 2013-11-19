@@ -626,6 +626,14 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
+    Semaphore getBackupCallSemaphore(long callId){
+        final Semaphore lock = backupCalls.get(callId);
+        if (lock == null) {
+            throw new IllegalStateException("No backup record found for call -> " + callId);
+        }
+        return lock;
+    }
+
     @PrivateApi
     boolean waitForBackups(long callId, int backupCount, long timeout, TimeUnit unit) throws InterruptedException {
         final Semaphore lock = backupCalls.get(callId);
