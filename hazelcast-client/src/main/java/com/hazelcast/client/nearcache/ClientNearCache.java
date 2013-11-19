@@ -86,8 +86,8 @@ public class ClientNearCache {
                 }
             };
             listenerSupport = new ListenerSupport(context, request, handler, null);
-            listenerSupport.listen(new Callback() {
-                public void notify(Object object) {
+            listenerSupport.listen(new Callback<Exception>() {
+                public void notify(Exception ignored) {
                     cache.clear();
                 }
             });

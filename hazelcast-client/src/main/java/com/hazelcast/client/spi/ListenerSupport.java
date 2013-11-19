@@ -53,7 +53,7 @@ public final class ListenerSupport  {
         return listen(null);
     }
 
-    public String listen(final Callback callback){
+    public String listen(final Callback<Exception> callback){
         future = context.getExecutionService().submit(new Runnable() {
             public void run() {
                 while (active && !Thread.currentThread().isInterrupted()) {
@@ -66,7 +66,7 @@ public final class ListenerSupport  {
                         }
                     } catch (Exception e) {
                         if (callback != null) {
-                            callback.notify(null);
+                            callback.notify(e);
                         }
                         if (e instanceof HazelcastInstanceNotActiveException){
                             try {
