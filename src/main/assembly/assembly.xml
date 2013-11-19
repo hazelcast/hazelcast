@@ -94,10 +94,10 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>hazelcast-documentation/target/docbook</directory>
+            <directory>hazelcast-documentation/target/</directory>
             <outputDirectory>docs/manual</outputDirectory>
             <includes>
-                <include>pdf/hazelcast-documentation.pdf</include>
+                <include>hazelcast-documentation.pdf</include>
                 <include>single_html/**</include>
                 <include>multi_html/**</include>
             </includes>

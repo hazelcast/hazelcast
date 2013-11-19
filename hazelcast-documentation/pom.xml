@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>3.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <name>hazelcast-documentation</name>
+    <artifactId>hazelcast-documentation</artifactId>
+    <packaging>pom</packaging>
+
+    <properties>
+        <maven.build.timestamp.format>dd MMMMM yyyy</maven.build.timestamp.format>
+        <timestamp>${maven.build.timestamp}</timestamp>
+    </properties>
+
+    <build>
+        <plugins>
+    		<plugin>
+			  <artifactId>exec-maven-plugin</artifactId>
+			  <groupId>org.codehaus.mojo</groupId>
+			  <executions>
+			  <execution>
+			    <id>GenerateDocumentation</id>
+			    <phase>compile</phase>
+			    <goals>
+			      <goal>exec</goal>
+			    </goals>
+			    <configuration>
+			      <executable>./build.sh</executable>
+			      <arguments>
+			         <argument>${project.version}</argument>
+			      </arguments>
+			      <workingDirectory>${env.PROJECT_HOME}</workingDirectory>
+			      <postProcess>
+                      <copy todir="${project.build.directory}/docbook/multi_html/">
+                          <fileset dir="${basedir}/dist/multi_html">
+                              <include name="**/*.html"/>
+                          </fileset>
+                      </copy>
+                  </postProcess>
+            
+			    </configuration>
+			  </execution>
+			  </executions>
+			
+			</plugin>
+		</plugins>
+    </build>
+</project>

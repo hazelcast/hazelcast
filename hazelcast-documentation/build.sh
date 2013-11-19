@@ -5,8 +5,6 @@ function delete {
 	$(rm -rf "./$COPYRIGHT_FILE_NAME")
 	$(rm -rf "./title.txt")
 	$(rm -rf "./src/images")
-	
-	
 }
 
 function createMultiHTML {
@@ -35,7 +33,7 @@ if [[ $? -ge 0 ]]; then
 else
   echo "Error writing manifest file"
   delete
-  exit
+  exit -1
 fi
 
 echo "Creating multi_html documentation"
@@ -46,7 +44,7 @@ if [[ $? -ge 0 ]]; then
 else
   echo "Error creating Multi HTML documentation"
   delete
-  exit
+  exit -1
 fi
 }
 
@@ -87,7 +85,7 @@ echo "Creating concatenated markdown file for pdf/single html."
 for file in `ls src/*.md`
 do
  cat $file >> $MERGED_FILE_NAME
- echo -e "\n" >> $MERGED_FILE_NAME
+ printf "\n" >> $MERGED_FILE_NAME
 done 
 
 if [[ -e "./title.txt" ]]; then
@@ -110,6 +108,7 @@ else
   echo "Error creating PDF documentation"
   echo $createPDF
   delete
+  exit -1
 fi
 
 
@@ -132,6 +131,7 @@ else
   echo "Error writing manifest file"
   echo $writeManifest
   delete
+  exit -1
 fi
 
 echo "Creating single_html documentation"
@@ -142,12 +142,13 @@ if [[ $? -eq 0 ]]; then
   
 else
   echo "Error creating Single HTML documentation"
+  exit -1
   delete
 fi 
 }
 
 function init {
-	OUTPUT_DIR="dist"
+	OUTPUT_DIR="target"
 	MULTI_HTML_OUTPUT_DIR="multi_html"
 	SINGLE_HTML_OUTPUT_DIR="single_html"
 	PDF_FILE_NAME="hazelcast-documentation.pdf"
