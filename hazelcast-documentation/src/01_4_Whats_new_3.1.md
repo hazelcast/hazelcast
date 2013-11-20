@@ -1,14 +1,13 @@
 
-
 ## What's new in 3.1?
 
 **Elastic Memory (Enterprise Edition Only):**
 
-- Elastic Memory is now available. For additional info see [Elastic Memory](#elastic-memory) section.
+- Elastic Memory is now available. For additional info see [Elastic Memory](#elastic-memory-enterprise-edition-only) section.
 
 **Security (Enterprise Edition Only):**
 
-- Hazelcast Security is now available. For additional info see [Security](#security) section.
+- Hazelcast Security is now available. For additional info see [Security](#security-enterprise-edition-only) section.
 
 **JCA**
 
