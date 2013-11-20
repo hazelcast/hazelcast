@@ -135,7 +135,17 @@
         <emphasis role="bold">Fixed Issues</emphasis>
         <itemizedlist>
             <listitem>
-                <link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=23&amp;state=closed">Version `3.1</link>
+                <link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=23&amp;state=closed">Version 3.1</link>
+            </listitem>
+        </itemizedlist>
+        <itemizedlist>
+            <listitem>
+                <link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=30&amp;state=closed">Version 3.1.1</link>
+            </listitem>
+        </itemizedlist>
+        <itemizedlist>
+            <listitem>
+                <link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=33&amp;state=closed">Version 3.1.2</link>
             </listitem>
         </itemizedlist>
     </para>
