@@ -11,6 +11,8 @@ function createMultiHTML {
 
 MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
 \"rootDir\": \".\",
+\"date\": \"$date\",
+\"version\": \"$version\",
 \"maxTocLevel\":3,
 \"files\":"
 MANIFEST_FILE_BODY+="["
@@ -55,21 +57,17 @@ if [ -e "./$COPYRIGHT_FILE_NAME" ]; then
 fi
 
 
-echo "Preparing Copyright Text"
-
-COPYRIGHT_TEXT="In-Memory Data Grid - Hazelcast | Documentation: version $version \n\n" 
-date=`date +%d\ %b\ %Y`
-COPYRIGHT_TEXT+="Publication date $date \n\n"
-year=`date +%Y`
-COPYRIGHT_TEXT+="Copyright © $year Hazelcast, Inc.\n\n\n"
-COPYRIGHT_TEXT+="Permission to use, copy, modify and distribute this document for any purpose and without fee is hereby granted in perpetuity, provided that the above copyright notice
-and this paragraph appear in all copies."
 
 if [ -e "./$COPYRIGHT_FILE_NAME" ]; then
 	$(rm -rf "./$COPYRIGHT_FILE_NAME")
 fi
 
-printf $COPYRIGHT_TEXT >> $COPYRIGHT_FILE_NAME
+echo "Preparing Copyright Text"
+printf "In-Memory Data Grid - Hazelcast | Documentation: version $version \n\n" >> $COPYRIGHT_FILE_NAME
+printf "Publication date $date \n\n" >> $COPYRIGHT_FILE_NAME
+printf "Copyright © $year Hazelcast, Inc.\n\n\n" >> $COPYRIGHT_FILE_NAME
+printf "Permission to use, copy, modify and distribute this document for any purpose and without fee is hereby granted in perpetuity, provided that the above copyright notice
+and this paragraph appear in all copies." >> $COPYRIGHT_FILE_NAME
 
 echo "Copyright text created successfully"
 
@@ -94,7 +92,6 @@ fi
 
 echo "Creating title page"
 echo "%Hazelcast Documentation" >> title.txt
-date=`date +%b\ %d\,\ %Y`
 echo "%version "$version >> title.txt
 echo "%"$date >> title.txt
 
@@ -118,6 +115,8 @@ function createSingleHTML {
 
 MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
 \"rootDir\": \".\",
+\"date\": \"$date\",
+\"version\": \"$version\",
 \"maxTocLevel\":3,
 \"files\":[\"./src/$MERGED_FILE_NAME\"]}" 
 
@@ -156,6 +155,8 @@ function init {
 	MANIFEST_FILE_NAME="manifest.json"
 	MERGED_FILE_NAME="hazelcast-documentation.md"
 	COPYRIGHT_FILE_NAME="copyright.txt"
+	date=`date +%b\ %d\,\ %Y`
+	year=`date +%Y`
 	
 }
 
@@ -175,9 +176,8 @@ function cleanIfExists {
 		
 		
 }
-
-init
 version=$1
+init
 cleanIfExists
 createMultiHTML
 
