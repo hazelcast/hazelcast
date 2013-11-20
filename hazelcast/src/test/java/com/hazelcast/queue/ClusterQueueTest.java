@@ -125,6 +125,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
+        warmUpPartitions(h2, h1);
+
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
         for (int i = 0; i < 40; i++) {
