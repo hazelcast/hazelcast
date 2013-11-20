@@ -606,7 +606,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     //the response that is going to be set on the future.
     private volatile Object response;
 
-    public boolean backupCallsComplete() {
+    public synchronized boolean backupCallsComplete() {
         //todo: this check should not be needed.
         if(expectedBackupCount == -1){
             return false;
@@ -615,7 +615,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         return expectedBackupCount == completedBackupCount;
     }
 
-    public void notifyBackupCall() {
+    public synchronized void notifyBackupCall() {
         int currentCompletedBackupCount = completedBackupCountUpdater.incrementAndGet(this);
 
         if(expectedBackupCount == -1){
@@ -641,7 +641,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    public  void onBackupCallsComplete(int expectedBackupCount, Object response) {
+    public  synchronized void onBackupCallsComplete(int expectedBackupCount, Object response) {
         if (expectedBackupCount < 0) {
             throw new IllegalArgumentException("expectedBackupCount can't be smaller than 0");
         }
@@ -673,7 +673,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return;
         }
 
-        //so the backs are complete, try to get back the response that has been set.
+        //so the backups are complete, try to get back the response that has been set.
         //and call the future.set. Either we are going to do it, or the other caller.
         if (responseUpdater.compareAndSet(this, response, null)) {
             invocationFuture.set(response);
