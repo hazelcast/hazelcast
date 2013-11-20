@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -267,7 +268,7 @@ public class LockTest extends HazelcastTestSupport {
         }
 
         final ILock lock = instance1.getLock(key);
-        lock.lock(5, TimeUnit.SECONDS);
+        lock.lock(10, TimeUnit.SECONDS);
         assertTrue(lock.getRemainingLeaseTime() > 0);
         Assert.assertTrue(lock.isLocked());
 
@@ -281,7 +282,7 @@ public class LockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
     @Test
@@ -648,62 +649,27 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-
-        final Lock lock = hz.getLock("testLockInterruption");
-        Random rand = new Random();
-        for (int i = 0; i < 30; i++) {
-            Thread t = new Thread() {
-                public void run() {
-                    try {
-                        lock.lock();
-                        sleep(1);
-                    } catch (InterruptedException e) {
-                    } finally {
-                        lock.unlock();
-                    }
-                }
-            };
-
-            t.start();
-            Thread.sleep(rand.nextInt(3));
-            t.interrupt();
-            t.join();
-
-            if (!lock.tryLock(3, TimeUnit.SECONDS)) {
-                fail("Could not acquire lock!");
-            } else {
-                lock.unlock();
-            }
-            Thread.sleep(100);
-        }
-    }
-
-    @Test
-    public void testLockInterruption2() throws InterruptedException {
-        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
 
         final Lock lock = hz.getLock("testLockInterruption2");
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
                     lock.tryLock(60, TimeUnit.SECONDS);
                 } catch (InterruptedException ignored) {
-                } finally {
-                    lock.unlock();
+                    latch.countDown();
                 }
             }
         });
         lock.lock();
         t.start();
-        Thread.sleep(250);
+        Thread.sleep(2000);
         t.interrupt();
-        Thread.sleep(1000);
+        assertTrue("tryLock() is not interrupted!", latch.await(30, TimeUnit.SECONDS));
         lock.unlock();
-        Thread.sleep(500);
         assertTrue("Could not acquire lock!", lock.tryLock());
     }
 
