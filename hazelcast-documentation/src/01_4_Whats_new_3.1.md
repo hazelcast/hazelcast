@@ -45,6 +45,8 @@
 **Fixed Issues**
 
 - [Version 3.1](https://github.com/hazelcast/hazelcast/issues?milestone=23&state=closed)
+- [Version 3.1.1](https://github.com/hazelcast/hazelcast/issues?milestone=30&state=closed)
+- [Version 3.1.2](https://github.com/hazelcast/hazelcast/issues?milestone=33&state=closed)
 
 
 
