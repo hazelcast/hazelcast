@@ -620,7 +620,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
-        latch.await(30, TimeUnit.SECONDS);
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
         Assert.assertEquals(nsize, map.size());
 
         thread.interrupt();
