@@ -35,8 +35,6 @@ import java.util.concurrent.*;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
-    public final static Executor EXECUTOR_SERVICE = Executors.newScheduledThreadPool(10);
-
     private static final Object NULL_RESPONSE = new Object() {
         @Override
         public String toString() {
@@ -88,6 +86,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private volatile int invokeCount = 0;
     private volatile Address target;
     private boolean remote = false;
+    private BackupSynchronizer backupSynchronizer;
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback) {
@@ -262,7 +261,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (oldCallId != 0) {
             operationService.deregisterBackupCall(oldCallId);
         }
-        operationService.registerBackupCall(callId);
+
+        backupSynchronizer = operationService.registerBackupCall(callId);
     }
 
     @Override
@@ -308,25 +308,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         if (response instanceof Response && op instanceof BackupAwareOperation) {
             final Response resp = (Response)response;
-            if(resp.backupCount > 0){
-                //todo:
-                //instead of using a blocking call to the semaphore, we could creating a semaphore with an asyncAndThen
-                //this prevent us from consuming a thread executionService threadpool.
-                //todo:
-                //do we need to wait for all backups to complete, or would 1 be enough?
-                final Semaphore semaphore = nodeEngine.operationService.getBackupCallSemaphore(resp.callId);
-                boolean backupsCompleted = resp.backupCount- semaphore.availablePermits() == 0;
-
-                //we are only going to create a task for waiting for the backups, if it is really needed.
-                if(!backupsCompleted){
-                    EXECUTOR_SERVICE.execute(new Runnable() {
+            if(backupSynchronizer!=null){
+                if(!backupSynchronizer.isFinished()){
+                    backupSynchronizer.onBackupComplete(resp.backupCount,new Runnable() {
                         @Override
                         public void run() {
-                            if(reinvokeNeeded(resp)){
-                                resetAndReInvoke();
-                                return;
-                            }
-
                             invocationFuture.set(resp);
                         }
                     });
@@ -340,21 +326,21 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    private boolean reinvokeNeeded(Response response) {
-        try {
-            final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
-            if (!ok) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Backup response cannot be received -> " + this);
-                }
-                if (nodeEngine.getClusterService().getMember(target) == null) {
-                    return true;
-                }
-            }
-        } catch (InterruptedException ignored) {
-        }
-        return false;
-    }
+    //private boolean reinvokeNeeded(Response response) {
+    //    try {
+    //        final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
+    //        if (!ok) {
+    //            if (logger.isFinestEnabled()) {
+    //                logger.finest("Backup response cannot be received -> " + this);
+    //            }
+    //            if (nodeEngine.getClusterService().getMember(target) == null) {
+    //                return true;
+    //            }
+    //        }
+    //    } catch (InterruptedException ignored) {
+    //    }
+    //    return false;
+    //}
 
     @Override
     public String toString() {

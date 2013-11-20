@@ -65,7 +65,7 @@ final class OperationServiceImpl implements OperationService {
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-    private final ConcurrentMap<Long, Semaphore> backupCalls;
+    private final ConcurrentMap<Long, BackupSynchronizer> backupCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
@@ -100,7 +100,7 @@ final class OperationServiceImpl implements OperationService {
                         node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
+        backupCalls = new ConcurrentHashMap<Long, BackupSynchronizer>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
@@ -620,39 +620,19 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     void notifyBackupCall(long callId) {
-        final Semaphore lock = backupCalls.get(callId);
+        final BackupSynchronizer lock = backupCalls.get(callId);
         if (lock != null) {
-            lock.release();
-        }
-    }
-
-    Semaphore getBackupCallSemaphore(long callId){
-        final Semaphore lock = backupCalls.get(callId);
-        if (lock == null) {
-            throw new IllegalStateException("No backup record found for call -> " + callId);
-        }
-        return lock;
-    }
-
-    @PrivateApi
-    boolean waitForBackups(long callId, int backupCount, long timeout, TimeUnit unit) throws InterruptedException {
-        final Semaphore lock = backupCalls.get(callId);
-        if (lock == null) {
-            throw new IllegalStateException("No backup record found for call -> " + callId);
-        }
-        try {
-            return backupCount == 0 || lock.tryAcquire(backupCount, timeout, unit);
-        } finally {
-            backupCalls.remove(callId);
+            lock.signalBackupComplete();
         }
     }
 
     @PrivateApi
-    void registerBackupCall(long callId) {
-        final Semaphore current = backupCalls.put(callId, new Semaphore(0));
+    BackupSynchronizer registerBackupCall(long callId) {
+        final BackupSynchronizer current = backupCalls.put(callId, new BackupSynchronizer());
         if (current != null) {
             logger.warning( "Already registered a backup record for call[" + callId + "]!");
         }
+        return  current;
     }
 
     @PrivateApi
