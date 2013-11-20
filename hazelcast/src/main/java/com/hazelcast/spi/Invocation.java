@@ -25,4 +25,6 @@ public interface Invocation {
     Future invoke();
 
     Address getTarget();
+
+    void notifyBackupCall();
 }
