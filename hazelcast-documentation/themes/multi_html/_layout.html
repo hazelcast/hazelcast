@@ -23,9 +23,21 @@
     <script type="text/javascript" src="<%= @baseUrl %>assets/js/viewer.js"></script>
 
     <script type="text/javascript">
-        $(function(){
-			$("#sidebar").stick_in_parent()
-        });
+  	$(function(){
+		$.urlParam = function(name){
+		var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+		if(results==null)
+		return null;
+		return results[1] || 0;
+		}
+		
+		$("#sidebar").stick_in_parent()
+
+		if($.urlParam("noheader") == "true")
+		{ 
+			$("#header").hide();
+		}
+	});
     </script>
 
     <% if @manifest.options.googleAnalytics: %>
