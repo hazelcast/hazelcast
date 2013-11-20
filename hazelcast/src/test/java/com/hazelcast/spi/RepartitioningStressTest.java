@@ -17,6 +17,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
@@ -27,10 +29,11 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private TestHazelcastInstanceFactory instanceFactory;
 
     private final static long DURATION_SECONDS = 120;
+    private final static int THREAD_COUNT = 10;
 
     @Before
     public void setUp() {
-        instanceFactory = this.createHazelcastInstanceFactory(10000);
+        instanceFactory = this.createHazelcastInstanceFactory(100000);
         hz = instanceFactory.newHazelcastInstance();
 
         for (int k = 0; k < 5; k++) {
@@ -39,9 +42,9 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void callWithBackups() {
-        Map<Integer, Integer> map = hz.getMap("map");
-        int itemCount = 10000;
+    public void callWithBackups() throws InterruptedException {
+        final Map<Integer, Integer> map = hz.getMap("map");
+        final int itemCount = 10000;
         for (int k = 0; k < itemCount; k++) {
             map.put(k, k);
         }
@@ -49,31 +52,46 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         RestartThread restartThread = new RestartThread();
         restartThread.start();
 
-        Random random = new Random();
-        long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
-        int k = 0;
-        for (; ; ) {
-            int key = random.nextInt(itemCount);
-            assertEquals(new Integer(key), map.put(key, key));
+        TestThread[] testThreads = new TestThread[THREAD_COUNT];
+        for (int l = 0; l < testThreads.length; l++) {
+            testThreads[l] = new TestThread("Thread-" + l) {
+                @Override
+                void doRun() {
+                    long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
 
-            if (k % 10000 == 0) {
-                System.out.println("at: " + k);
-            }
+                    Random random = new Random();
+                    int k = 0;
+                    for (; ; ) {
+                        int key = random.nextInt(itemCount);
+                        assertEquals(new Integer(key), map.put(key, key));
 
-            k++;
+                        if (k % 10000 == 0) {
+                            System.out.println(getName() + " at: " + k);
+                        }
 
-            if (System.currentTimeMillis() > endTime) {
-                break;
-            }
+                        k++;
+
+                        if (System.currentTimeMillis() > endTime) {
+                            break;
+                        }
+                    }
+                }
+            };
+            testThreads[l].start();
+        }
+
+        for (TestThread t : testThreads) {
+            t.join();
+            t.assertNotProblems();
         }
 
         restartThread.stop = true;
     }
 
     @Test
-    public void callWithoutBackups() {
-        Map<Integer, Integer> map = hz.getMap("map");
-        int itemCount = 10000;
+    public void callWithoutBackups() throws InterruptedException {
+        final Map<Integer, Integer> map = hz.getMap("map");
+        final int itemCount = 10000;
         for (int k = 0; k < itemCount; k++) {
             map.put(k, k);
         }
@@ -81,26 +99,66 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         RestartThread restartThread = new RestartThread();
         restartThread.start();
 
-        long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
+        TestThread[] testThreads = new TestThread[THREAD_COUNT];
+        for (int k = 0; k < testThreads.length; k++) {
+            testThreads[k] = new TestThread("GetThread-" + k) {
+                @Override
+                void doRun() {
+                    long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
 
-        Random random = new Random();
-        int k = 0;
-        for (; ; ) {
-            int key = random.nextInt(itemCount);
-            assertEquals(new Integer(key), map.get(key));
+                    Random random = new Random();
+                    int k = 0;
+                    for (; ; ) {
+                        int key = random.nextInt(itemCount);
+                        assertEquals(new Integer(key), map.get(key));
 
-            if (k % 10000 == 0) {
-                System.out.println("at: " + k);
-            }
+                        if (k % 10000 == 0) {
+                            System.out.println(getName() + " at: " + k);
+                        }
 
-            k++;
+                        k++;
 
-            if (System.currentTimeMillis() > endTime) {
-                break;
-            }
+                        if (System.currentTimeMillis() > endTime) {
+                            break;
+                        }
+                    }
+                }
+            };
+            testThreads[k].start();
+        }
+
+        for (TestThread t : testThreads) {
+            t.join();
+            t.assertNotProblems();
         }
 
         restartThread.stop = true;
+    }
+
+    private abstract class TestThread extends Thread {
+        private volatile Throwable t;
+
+        protected TestThread(String name) {
+            super(name);
+        }
+
+        public final void run() {
+            try {
+                doRun();
+            } catch (Throwable t) {
+                this.t = t;
+                t.printStackTrace();
+            }
+        }
+
+        abstract void doRun();
+
+        public void assertNotProblems() {
+            if(t!=null){
+                t.printStackTrace();
+                fail(getName()+" failed with an exception:"+t.getMessage());
+            }
+        }
     }
 
 
@@ -109,7 +167,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         private volatile boolean stop;
 
         public void run() {
-            while (!stop)
+            while (!stop) {
                 try {
                     Thread.sleep(10000);
                     HazelcastInstance hz = queue.take();
@@ -117,7 +175,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
                     queue.add(instanceFactory.newHazelcastInstance());
                 } catch (InterruptedException e) {
                 }
-
+            }
         }
     }
 }
