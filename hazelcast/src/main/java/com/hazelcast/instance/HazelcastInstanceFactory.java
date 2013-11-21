@@ -22,7 +22,6 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.jmx.ManagementService;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -87,8 +86,9 @@ public final class HazelcastInstanceFactory {
         }
         HazelcastInstanceProxy proxy;
         try {
-            Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
-
+            if (tccl == null) {
+                Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
+            }
             final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             OutOfMemoryErrorDispatcher.register(hazelcastInstance);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
