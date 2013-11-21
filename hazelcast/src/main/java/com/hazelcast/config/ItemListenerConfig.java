@@ -22,6 +22,8 @@ public class ItemListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
 
+    private ItemListenerConfigReadOnly readOnly;
+
     public ItemListenerConfig() {
         super();
     }
@@ -34,6 +36,13 @@ public class ItemListenerConfig extends ListenerConfig {
     public ItemListenerConfig(ItemListener implementation, boolean includeValue) {
         super(implementation);
         this.includeValue = includeValue;
+    }
+
+    public ItemListenerConfigReadOnly getAsReadOnly() {
+        if (readOnly == null ){
+            readOnly = new ItemListenerConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public ItemListener getImplementation() {

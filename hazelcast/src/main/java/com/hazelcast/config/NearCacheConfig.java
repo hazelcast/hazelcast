@@ -37,6 +37,8 @@ public class NearCacheConfig {
 
     private String name="default";
 
+    private NearCacheConfigReadOnly readOnly;
+
     public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
@@ -44,6 +46,13 @@ public class NearCacheConfig {
         this.maxIdleSeconds = maxIdleSeconds;
         this.invalidateOnChange = invalidateOnChange;
         this.inMemoryFormat = inMemoryFormat;
+    }
+
+    public NearCacheConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new NearCacheConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public NearCacheConfig() {

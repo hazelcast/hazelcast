@@ -60,7 +60,7 @@ public class NearCache {
         this.nodeEngine = mapService.getNodeEngine();
         this.mapContainer = mapService.getMapContainer(mapName);
         Config config = nodeEngine.getConfig();
-        NearCacheConfig nearCacheConfig = config.getMapConfig(mapName).getNearCacheConfig();
+        NearCacheConfig nearCacheConfig = config.findMapConfig(mapName).getNearCacheConfig();
         maxSize = nearCacheConfig.getMaxSize() <= 0 ? Integer.MAX_VALUE : nearCacheConfig.getMaxSize();
         maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();

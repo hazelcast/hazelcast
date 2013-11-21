@@ -42,7 +42,7 @@ public class ListContainer extends CollectionContainer {
 
     public ListConfig getConfig() {
         if (config == null){
-            config = new ListConfig(nodeEngine.getConfig().getListConfig(name));
+            config = nodeEngine.getConfig().findListConfig(name);
         }
         return config;
     }

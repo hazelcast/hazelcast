@@ -26,7 +26,7 @@ public class SetContainer extends CollectionContainer {
 
     protected SetConfig getConfig() {
         if (config == null){
-            config = new SetConfig(nodeEngine.getConfig().getSetConfig(name));
+            config = nodeEngine.getConfig().findSetConfig(name);
         }
         return config;
     }

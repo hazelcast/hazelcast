@@ -23,7 +23,10 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.*;
+import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.ScheduledTaskRunner;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -32,7 +35,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 12/14/12
@@ -108,7 +110,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
                 public ManagedExecutorService createNew(String name) {
-                    final ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfig(name);
+                    final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
                     return new ManagedExecutorService(name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
                 }

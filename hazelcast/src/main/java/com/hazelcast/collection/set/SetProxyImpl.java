@@ -15,7 +15,7 @@ public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> 
     }
 
     protected CollectionConfig getConfig(NodeEngine nodeEngine) {
-        return nodeEngine.getConfig().getSetConfig(name);
+        return nodeEngine.getConfig().findSetConfig(name);
     }
 
     public String getServiceName() {
