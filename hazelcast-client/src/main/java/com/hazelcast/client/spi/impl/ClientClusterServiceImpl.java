@@ -320,13 +320,18 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public String addMembershipListener(MembershipListener listener) {
         final String id = UUID.randomUUID().toString();
-        if (listener instanceof InitialMembershipListener) {
-            // TODO: needs sync with membership events...
-            final Cluster cluster = client.getCluster();
-            ((InitialMembershipListener) listener).init(new InitialMembershipEvent(cluster, cluster.getMembers()));
-        }
         listeners.put(id, listener);
         return id;
+    }
+
+    private void initMembershipListener(){
+        for (MembershipListener membershipListener : listeners.values()) {
+            if (membershipListener instanceof InitialMembershipListener) {
+                // TODO: needs sync with membership events...
+                final Cluster cluster = client.getCluster();
+                ((InitialMembershipListener) membershipListener).init(new InitialMembershipEvent(cluster, cluster.getMembers()));
+            }
+        }
     }
 
     public boolean removeMembershipListener(String registrationId) {
@@ -361,6 +366,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 throw new HazelcastException(e);
             }
         }
+        initMembershipListener();
         active = true;
         // started
     }
