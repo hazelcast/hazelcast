@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -61,10 +60,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void run() {
-
-        final boolean isInMemoryObjectFormat = InMemoryFormat.OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
-        oldValue = isInMemoryObjectFormat ?
-                recordStore.getMapEntryObject(dataKey).getValue() : recordStore.getMapEntryData(dataKey).getValue();
+        oldValue = recordStore.getMapEntryData(dataKey).getValue();
         final Object valueBeforeProcess = mapService.toObject(oldValue);
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
