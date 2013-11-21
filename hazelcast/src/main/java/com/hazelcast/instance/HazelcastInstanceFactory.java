@@ -122,8 +122,9 @@ public final class HazelcastInstanceFactory {
 
         HazelcastInstanceProxy proxy;
         try {
-            Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
-
+            if (tccl == null) {
+                Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
+            }
             final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             OutOfMemoryErrorDispatcher.register(hazelcastInstance);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
