@@ -619,10 +619,10 @@ final class OperationServiceImpl implements OperationService {
     }
 
     @PrivateApi
-    void notifyBackupCall(long callId) {
+    void notifyOneBackupComplete(long callId) {
         final Invocation invocation = backupCalls.get(callId);
         if (invocation != null) {
-            invocation.notifyBackupCall();
+            invocation.signalOneBackupComplete();
         }
     }
 

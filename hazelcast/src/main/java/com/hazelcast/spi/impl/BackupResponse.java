@@ -37,7 +37,7 @@ final class BackupResponse extends AbstractOperation implements IdentifiedDataSe
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final long callId = getCallId();
         final OperationServiceImpl operationService = nodeEngine.operationService;
-        operationService.notifyBackupCall(callId);
+        operationService.notifyOneBackupComplete(callId);
     }
 
     @Override

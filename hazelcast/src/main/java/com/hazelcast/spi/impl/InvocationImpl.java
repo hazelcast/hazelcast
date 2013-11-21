@@ -32,8 +32,6 @@ import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import java.io.IOException;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
@@ -262,7 +260,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (oldCallId != 0) {
             operationService.deregisterBackupCall(oldCallId);
         }
-
         operationService.registerBackupCall(callId,this);
     }
 
@@ -308,30 +305,71 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
 
         if (response instanceof Response && op instanceof BackupAwareOperation) {
-            //it is an invocation with backups, so we need to make sure to wait sending the response till
-            //all backups have completed.
-            Response resp = (Response)response;
-            onBackupCallsComplete(resp.backupCount, resp);
+            final Response resp = (Response)response;
+            if(resp.backupCount > 0){
+                //todo:
+                //instead of using a blocking call to the semaphore, we could creating a semaphore with an asyncAndThen
+                //this prevent us from consuming a thread executionService threadpool.
+                //todo:
+                //do we need to wait for all backups to complete, or would 1 be enough?
+                boolean backupsCompleted = resp.backupCount- availableBackups() == 0;
+
+                //we are only going to create a task for waiting for the backups, if it is really needed.
+                if(!backupsCompleted){
+                    EXECUTOR_SERVICE.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(reinvokeNeeded(resp)){
+                                resetAndReInvoke();
+                                return;
+                            }
+
+                            invocationFuture.set(resp);
+                        }
+                    });
+                    return;
+                }
+            }
+
+            invocationFuture.set(response);
         }else{
             invocationFuture.set(response);
         }
     }
 
-    //private boolean reinvokeNeeded(Response response) {
-    //    try {
-    //        final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.expectedBackupCount, 5, TimeUnit.SECONDS);
-    //        if (!ok) {
-    //            if (logger.isFinestEnabled()) {
-    //                logger.finest("Backup response cannot be received -> " + this);
-    //            }
-    //            if (nodeEngine.getClusterService().getMember(target) == null) {
-    //                return true;
-    //            }
-    //        }
-    //    } catch (InterruptedException ignored) {
-    //    }
-    //    return false;
-    //}
+    private boolean reinvokeNeeded(Response response) {
+        if(response.backupCount==0){
+            return false;
+        }
+
+        try{
+            if(waitForBackups(response.backupCount, 5, TimeUnit.SECONDS)){
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Backup response cannot be received -> " + this);
+                }
+                if (nodeEngine.getClusterService().getMember(target) == null) {
+                    return true;
+                }
+            }
+        }catch(InterruptedException ignored){
+        }
+
+        return false;
+
+        //try {
+        //    final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
+        //    if (!ok) {
+        //        if (logger.isFinestEnabled()) {
+        //            logger.finest("Backup response cannot be received -> " + this);
+        //        }
+        //        if (nodeEngine.getClusterService().getMember(target) == null) {
+        //            return true;
+        //        }
+        //    }
+        //} catch (InterruptedException ignored) {
+        //}
+        //return false;
+    }
 
     @Override
     public String toString() {
@@ -360,13 +398,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         volatile Object response;
 
-        public void set(Object response) {
-            if (response == null) {
+        public void set(Object response){
+            if(response == null){
                 throw new IllegalArgumentException("response can't be null");
             }
 
             synchronized (this) {
-                if (this.response != null) {
+                if(this.response!=null){
                     throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
                 }
                 this.response = response;
@@ -385,7 +423,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 } else {
                     realResponse = response;
                 }
-                if (callback != null) {
+                if (callback != null){
                     callback.notify(realResponse);
                 }
             } catch (Throwable e) {
@@ -591,92 +629,41 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    // =========================== contains the logic for synchronising on backup completion =====================
-    // this logic is integrated in this class instead of a separate one, to prevent object creation.
+    public final static Executor EXECUTOR_SERVICE = Executors.newScheduledThreadPool(10);
 
-    private static final AtomicReferenceFieldUpdater<InvocationImpl, Object> responseUpdater =
-            AtomicReferenceFieldUpdater.newUpdater(InvocationImpl.class, Object.class, "response");
-    private static final AtomicIntegerFieldUpdater<InvocationImpl> completedBackupCountUpdater =
-            AtomicIntegerFieldUpdater.newUpdater(InvocationImpl.class, "completedBackupCount");
+    private volatile int availableBackups;
 
-    //
-    //we start with -1 to indicate that we don't know yet how many expected backups there are.
-    private volatile int expectedBackupCount = -1;
-    private volatile int completedBackupCount = 0;
-    //the response that is going to be set on the future.
-    private volatile Object response;
-
-    public synchronized boolean backupCallsComplete() {
-        //todo: this check should not be needed.
-        if(expectedBackupCount == -1){
-            return false;
-        }
-
-        return expectedBackupCount == completedBackupCount;
-    }
-
-    public synchronized void notifyBackupCall() {
-        int currentCompletedBackupCount = completedBackupCountUpdater.incrementAndGet(this);
-
-        if(expectedBackupCount == -1){
-            return;
-        }
-
-        //if the backups have not yet all returned we are done.
-        if (expectedBackupCount - currentCompletedBackupCount != 0) {
-            return;
-        }
-
-        //if there is no registered response, we are done. It will be the task
-        //of the onBackupCallsComplete method to make sure that the future.set is called.
-        if (response == null) {
-            return;
-        }
-
-        //so there is a registered response and all backups are returned,
-        //try to remove the response. If that is done, the response can be set on the future.
-        Object response = responseUpdater.getAndSet(this, null);
-        if (response != null) {
-            invocationFuture.set(response);
+    public void signalOneBackupComplete() {
+        synchronized (this) {
+            availableBackups++;
+            notifyAll();
         }
     }
 
-    public  synchronized void onBackupCallsComplete(int expectedBackupCount, Object response) {
-        if (expectedBackupCount < 0) {
-            throw new IllegalArgumentException("expectedBackupCount can't be smaller than 0");
-        }
-        if (response == null) {
-            throw new IllegalArgumentException("response can't be null");
-        }
-        if (this.expectedBackupCount != -1) {
-            throw new IllegalStateException("Can't set the expectedBackupCount twice");
+    public boolean waitForBackups(int backupCount, long timeout, TimeUnit unit) throws InterruptedException {
+        long timeoutMs = unit.toMillis(timeout);
+
+        synchronized (this) {
+            while (true) {
+                if (backupCount <= availableBackups) {
+                    availableBackups -= backupCount;
+                    return true;
+                }
+
+                if (timeoutMs <= 0) {
+                    return false;
+                }
+
+
+                long startMs = System.currentTimeMillis();
+                wait(timeoutMs);
+                timeoutMs -= System.currentTimeMillis() - startMs;
+            }
         }
 
-        this.expectedBackupCount = expectedBackupCount;
+    }
 
-        //if all backups are complete, the response can be set immediately.
-        if (backupCallsComplete()) {
-            invocationFuture.set(response);
-            return;
-        }
-
-        //the backups have not completed yet, so we are going to set the response so that the
-        //notifybackup will call the future.set.
-        responseUpdater.set(this, response);
-
-        //if the backups have not completed yet, then we are done since we have
-        //stored the response and now it will somebody else his responsibility to
-        //call the future.set.
-        //This check is needed to prevent that we are going to store a response when all the backups
-        //just completed.
-        if (!backupCallsComplete()) {
-            return;
-        }
-
-        //so the backups are complete, try to get back the response that has been set.
-        //and call the future.set. Either we are going to do it, or the other caller.
-        if (responseUpdater.compareAndSet(this, response, null)) {
-            invocationFuture.set(response);
-        }
+    public int availableBackups() {
+        return availableBackups;
     }
 }
