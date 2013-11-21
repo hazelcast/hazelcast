@@ -101,7 +101,7 @@ public interface RecordStore {
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
-    Map.Entry<Data, Data> getMapEntryData(Data dataKey);
+    Map.Entry<Data, Object> getMapEntryData(Data dataKey);
 
     Map.Entry<Data, Object> getMapEntryObject(Data dataKey);
 
