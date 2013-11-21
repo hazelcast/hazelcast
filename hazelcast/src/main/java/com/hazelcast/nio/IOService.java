@@ -76,6 +76,8 @@ public interface IOService {
 
     int getSocketPort();
 
+    boolean isSocketBind();
+
     boolean isSocketBindAny();
 
     boolean isSocketPortAutoIncrement();
