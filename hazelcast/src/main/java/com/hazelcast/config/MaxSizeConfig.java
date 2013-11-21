@@ -26,6 +26,11 @@ public class MaxSizeConfig {
     public MaxSizeConfig() {
     }
 
+    public MaxSizeConfig(int size, MaxSizePolicy maxSizePolicy) {
+        this.size = size;
+        this.maxSizePolicy = maxSizePolicy;
+    }
+
     public MaxSizeConfig(MaxSizeConfig config) {
         this.size = config.size;
         this.maxSizePolicy = config.maxSizePolicy;

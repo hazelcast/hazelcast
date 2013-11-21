@@ -49,11 +49,9 @@ public class ListenerConfig {
        setClassName(className);
     }
 
-    public ListenerConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ListenerConfigReadOnly(this);
-        }
-        return readOnly;
+    public ListenerConfig(ListenerConfig config) {
+        implementation = config.getImplementation();
+        className = config.getClassName();
     }
 
     /**
@@ -64,6 +62,13 @@ public class ListenerConfig {
      */
     public ListenerConfig(EventListener implementation) {
         this.implementation = isNotNull(implementation,"implementation");
+    }
+
+    public ListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ListenerConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

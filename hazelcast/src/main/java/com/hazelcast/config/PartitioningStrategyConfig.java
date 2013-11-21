@@ -29,6 +29,11 @@ public class PartitioningStrategyConfig {
     public PartitioningStrategyConfig() {
     }
 
+    public PartitioningStrategyConfig(PartitioningStrategyConfig config) {
+        partitioningStrategyClass = config.getPartitioningStrategyClass();
+        partitionStrategy = config.getPartitioningStrategy();
+    }
+
     public PartitioningStrategyConfig(String partitioningStrategyClass) {
         this.partitioningStrategyClass = partitioningStrategyClass;
     }

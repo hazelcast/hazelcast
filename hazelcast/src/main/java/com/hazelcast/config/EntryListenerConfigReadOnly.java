@@ -10,12 +10,7 @@ import java.util.EventListener;
 public class EntryListenerConfigReadOnly extends EntryListenerConfig {
 
     public EntryListenerConfigReadOnly(EntryListenerConfig config) {
-        super.setImplementation(config.getImplementation());
-        super.setIncludeValue(config.isIncludeValue());
-        super.setLocal(config.isLocal());
-        if (config.getClassName() != null ) {
-            super.setClassName(config.getClassName());
-        }
+        super(config);
     }
 
     public EntryListenerConfig setImplementation(EntryListener implementation) {

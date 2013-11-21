@@ -38,6 +38,12 @@ public class ItemListenerConfig extends ListenerConfig {
         this.includeValue = includeValue;
     }
 
+    public ItemListenerConfig(ItemListenerConfig config) {
+        includeValue = config.isIncludeValue();
+        implementation = config.getImplementation();
+        className = config.getClassName();
+    }
+
     public ItemListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null ){
             readOnly = new ItemListenerConfigReadOnly(this);

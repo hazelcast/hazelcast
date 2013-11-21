@@ -6,8 +6,7 @@ package com.hazelcast.config;
 public class WanReplicationRefReadOnly extends WanReplicationRef {
 
     public WanReplicationRefReadOnly(WanReplicationRef ref) {
-        this.name = ref.name;
-        this.mergePolicy = ref.mergePolicy;
+        super(ref);
     }
 
     public WanReplicationRef setName(String name) {

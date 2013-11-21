@@ -6,13 +6,7 @@ package com.hazelcast.config;
 public class NearCacheConfigReadOnly extends NearCacheConfig {
 
     public NearCacheConfigReadOnly(NearCacheConfig config) {
-        super.setName(config.getName());
-        super.setEvictionPolicy(config.getEvictionPolicy());
-        super.setInMemoryFormat(config.getInMemoryFormat());
-        super.setInvalidateOnChange(config.isInvalidateOnChange());
-        super.setMaxIdleSeconds(config.getMaxIdleSeconds());
-        super.setMaxSize(config.getMaxSize());
-        super.setTimeToLiveSeconds(config.getTimeToLiveSeconds());
+        super(config);
     }
 
     public void setName(String name) {

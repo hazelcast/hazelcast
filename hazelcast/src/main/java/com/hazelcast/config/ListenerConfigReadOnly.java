@@ -8,10 +8,7 @@ import java.util.EventListener;
 public class ListenerConfigReadOnly extends ListenerConfig {
 
     public ListenerConfigReadOnly(ListenerConfig config) {
-        if (config.getClassName() != null ) {
-            super.setClassName(config.getClassName());
-        }
-        super.setImplementation(config.getImplementation());
+        super(config);
     }
 
     public ListenerConfig setClassName(String className) {

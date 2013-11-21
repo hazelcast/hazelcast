@@ -48,6 +48,11 @@ public class MapIndexConfig {
         setOrdered(ordered);
     }
 
+    public MapIndexConfig(MapIndexConfig config) {
+        attribute = config.getAttribute();
+        ordered = config.isOrdered();
+    }
+
     public MapIndexConfigReadOnly getAsReadOnly() {
         if (readOnly == null ){
             readOnly = new MapIndexConfigReadOnly(this);

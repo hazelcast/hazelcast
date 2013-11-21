@@ -11,12 +11,7 @@ import java.util.Properties;
 public class QueueStoreConfigReadOnly extends QueueStoreConfig {
 
     public QueueStoreConfigReadOnly(QueueStoreConfig config) {
-        super.setClassName(config.getClassName());
-        super.setStoreImplementation(config.getStoreImplementation());
-        super.setFactoryClassName(config.getFactoryClassName());
-        super.setFactoryImplementation(config.getFactoryImplementation());
-        super.setProperties(config.getProperties());
-        super.setEnabled(config.isEnabled());
+        super(config);
     }
 
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
