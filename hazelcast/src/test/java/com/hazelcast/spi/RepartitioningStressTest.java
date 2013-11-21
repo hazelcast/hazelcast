@@ -81,7 +81,10 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         }
 
         for (TestThread t : testThreads) {
-            t.join();
+            t.join(TimeUnit.MINUTES.toMillis(5));
+            if(t.isAlive()){
+                fail();
+            }
             t.assertNotProblems();
         }
 
@@ -128,7 +131,10 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         }
 
         for (TestThread t : testThreads) {
-            t.join();
+            t.join(TimeUnit.MINUTES.toMillis(5));
+            if(t.isAlive()){
+                fail();
+            }
             t.assertNotProblems();
         }
 

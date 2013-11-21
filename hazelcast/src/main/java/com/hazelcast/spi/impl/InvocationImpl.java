@@ -62,7 +62,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return "Invocation::TIMEOUT_RESPONSE";
         }
     };
-
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
             timeout -= diff;
@@ -117,13 +116,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     public int getPartitionId() {
         return partitionId;
-    }
-
-    private Future resetAndReInvoke() {
-        //responseQ.clear();
-        invokeCount = 0;
-        doInvoke();
-        return new InvocationFuture();
     }
 
     private long getCallTimeout(long callTimeout) {
@@ -263,113 +255,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         operationService.registerBackupCall(callId,this);
     }
 
-    @Override
-    public void notify(Object obj) {
-        Object response;
-        if (obj == null) {
-            response = NULL_RESPONSE;
-        } else if (obj instanceof CallTimeoutException) {
-            response = RETRY_RESPONSE;
-            if (logger.isFinestEnabled()) {
-                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
-            }
-            invokeCount--;
-        } else if (obj instanceof Throwable) {
-            final Throwable error = (Throwable) obj;
-            final ExceptionAction action = onException(error);
-            final int localInvokeCount = invokeCount;
-            if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-                response = RETRY_RESPONSE;
-                if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                    logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
-                }
-            } else if (action == ExceptionAction.CONTINUE_WAIT) {
-                response = WAIT_RESPONSE;
-            } else {
-                response = obj;
-            }
-        } else {
-            response = obj;
-        }
-
-        if (response == RETRY_RESPONSE) {
-            final ExecutionService ex = nodeEngine.getExecutionService();
-            ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
-                    new ScheduledInv()), tryPauseMillis, TimeUnit.MILLISECONDS);
-            return;
-        }
-
-        if (response == WAIT_RESPONSE) {
-            //no-op for the time being.
-            return;
-        }
-
-        if (response instanceof Response && op instanceof BackupAwareOperation) {
-            final Response resp = (Response)response;
-            if(resp.backupCount > 0){
-                //todo:
-                //instead of using a blocking call to the semaphore, we could creating a semaphore with an asyncAndThen
-                //this prevent us from consuming a thread executionService threadpool.
-                //todo:
-                //do we need to wait for all backups to complete, or would 1 be enough?
-                boolean backupsCompleted = resp.backupCount- availableBackups() == 0;
-
-                //we are only going to create a task for waiting for the backups, if it is really needed.
-                if(!backupsCompleted){
-                    EXECUTOR_SERVICE.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            if(reinvokeNeeded(resp)){
-                                resetAndReInvoke();
-                                return;
-                            }
-
-                            invocationFuture.set(resp);
-                        }
-                    });
-                    return;
-                }
-            }
-
-            invocationFuture.set(response);
-        }else{
-            invocationFuture.set(response);
-        }
-    }
-
-    private boolean reinvokeNeeded(Response response) {
-        if(response.backupCount==0){
-            return false;
-        }
-
-        try{
-            if(waitForBackups(response.backupCount, 5, TimeUnit.SECONDS)){
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Backup response cannot be received -> " + this);
-                }
-                if (nodeEngine.getClusterService().getMember(target) == null) {
-                    return true;
-                }
-            }
-        }catch(InterruptedException ignored){
-        }
-
-        return false;
-
-        //try {
-        //    final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
-        //    if (!ok) {
-        //        if (logger.isFinestEnabled()) {
-        //            logger.finest("Backup response cannot be received -> " + this);
-        //        }
-        //        if (nodeEngine.getClusterService().getMember(target) == null) {
-        //            return true;
-        //        }
-        //    }
-        //} catch (InterruptedException ignored) {
-        //}
-        //return false;
-    }
 
     @Override
     public String toString() {
@@ -405,7 +290,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
             synchronized (this) {
                 if(this.response!=null){
-                    throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
+                    return;//throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
                 }
                 this.response = response;
                 this.notifyAll();
@@ -629,41 +514,193 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    public final static Executor EXECUTOR_SERVICE = Executors.newScheduledThreadPool(10);
+    public final static ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(10);
 
     private volatile int availableBackups;
+    private volatile Response potentialResponse;
+    private volatile int expectedBackupCount;
 
     public void signalOneBackupComplete() {
         synchronized (this) {
             availableBackups++;
+
+            if(expectedBackupCount==-1){
+                return;
+            }
+
+            if(expectedBackupCount!=availableBackups){
+                return;
+            }
+
+            if(potentialResponse!=null){
+                invocationFuture.set(potentialResponse);
+            }
+
             notifyAll();
         }
     }
 
-    public boolean waitForBackups(int backupCount, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean waitForBackups(int backupCount, long timeout, TimeUnit unit, Response response)  {
         long timeoutMs = unit.toMillis(timeout);
 
         synchronized (this) {
-            while (true) {
-                if (backupCount <= availableBackups) {
-                    availableBackups -= backupCount;
-                    return true;
-                }
+            this.expectedBackupCount = backupCount;
 
-                if (timeoutMs <= 0) {
-                    return false;
-                }
-
-
-                long startMs = System.currentTimeMillis();
-                wait(timeoutMs);
-                timeoutMs -= System.currentTimeMillis() - startMs;
+            if(availableBackups==expectedBackupCount){
+                invocationFuture.set(response);
+                return true;
             }
+
+            this.potentialResponse = response;
+
+            //while (true) {
+            //    if (backupCount <= availableBackups) {
+            //        availableBackups -= backupCount;
+            //        return true;
+            //    }
+            //
+            //    if (timeoutMs <= 0) {
+            //        return false;
+            //    }
+            //
+            //    long startMs = System.currentTimeMillis();
+            //    wait(timeoutMs);
+            //    timeoutMs -= System.currentTimeMillis() - startMs;
+            //}
         }
 
+        EXECUTOR_SERVICE.schedule(new Runnable() {
+            @Override
+            public void run() {
+                synchronized(InvocationImpl.this){
+                    if(expectedBackupCount == availableBackups){
+                        return;
+                    }
+               }
+
+                if (nodeEngine.getClusterService().getMember(target) != null) {
+                    return;
+                }
+
+                resetAndReInvoke();
+            }
+        },timeout,unit);
+        return true;
     }
 
     public int availableBackups() {
         return availableBackups;
     }
+
+    private Future resetAndReInvoke() {
+        //responseQ.clear();
+        invokeCount = 0;
+        potentialResponse=null;
+        expectedBackupCount=-1;
+        doInvoke();
+        return new InvocationFuture();
+    }
+
+    @Override
+    public void notify(Object obj) {
+        Object response;
+        if (obj == null) {
+            response = NULL_RESPONSE;
+        } else if (obj instanceof CallTimeoutException) {
+            response = RETRY_RESPONSE;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+            }
+            invokeCount--;
+        } else if (obj instanceof Throwable) {
+            final Throwable error = (Throwable) obj;
+            final ExceptionAction action = onException(error);
+            final int localInvokeCount = invokeCount;
+            if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
+                response = RETRY_RESPONSE;
+                if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
+                    logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+                }
+            } else if (action == ExceptionAction.CONTINUE_WAIT) {
+                response = WAIT_RESPONSE;
+            } else {
+                response = obj;
+            }
+        } else {
+            response = obj;
+        }
+
+        if (response == RETRY_RESPONSE) {
+            final ExecutionService ex = nodeEngine.getExecutionService();
+            ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
+                    new ScheduledInv()), tryPauseMillis, TimeUnit.MILLISECONDS);
+            return;
+        }
+
+        if (response == WAIT_RESPONSE) {
+            //no-op for the time being.
+            return;
+        }
+
+        if (response instanceof Response && op instanceof BackupAwareOperation) {
+            final Response resp = (Response)response;
+            if(resp.backupCount > 0){
+                waitForBackups(resp.backupCount,5,TimeUnit.SECONDS,resp);
+
+                //todo:
+                //instead of using a blocking call to the semaphore, we could creating a semaphore with an asyncAndThen
+                //this prevent us from consuming a thread executionService threadpool.
+                //todo:
+                //do we need to wait for all backups to complete, or would 1 be enough?
+//                boolean backupsCompleted = resp.backupCount- availableBackups() == 0;
+//
+//
+//                //we are only going to create a task for waiting for the backups, if it is really needed.
+//                if(!backupsCompleted){
+//
+//                    EXECUTOR_SERVICE.execute(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            try{
+//                            if(failedToWaitForBackups(resp)){
+//                                resetAndReInvoke();
+//                                return;
+//                            }
+//
+//                            invocationFuture.set(resp);
+//                            }catch(RuntimeException e){
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    });
+//                    return;
+//                }
+            }
+
+            invocationFuture.set(response);
+        }else{
+            invocationFuture.set(response);
+        }
+    }
+
+//    private boolean failedToWaitForBackups(Response response) {
+//        if(response.backupCount==0){
+//            return false;
+//        }
+//
+//        try{
+//            if(waitForBackups(response.backupCount, 5, TimeUnit.SECONDS,response)){
+//                if (logger.isFinestEnabled()) {
+//                    logger.finest("Backup response cannot be received -> " + this);
+//                }
+//                if (nodeEngine.getClusterService().getMember(target) == null) {
+//                    return true;
+//                }
+//            }
+//        }catch(InterruptedException ignored){
+//        }
+//
+//        return false;
+//    }
+
 }
