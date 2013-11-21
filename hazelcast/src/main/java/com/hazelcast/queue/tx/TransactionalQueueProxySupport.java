@@ -53,7 +53,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         this.name = name;
         this.tx = tx;
         partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-        config = nodeEngine.getConfig().getQueueConfig(name);
+        config = nodeEngine.getConfig().findQueueConfig(name);
     }
 
     protected void checkTransactionState(){

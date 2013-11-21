@@ -25,7 +25,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
  */
-public final class TopicConfig {
+public class TopicConfig {
 
     public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
 
@@ -33,6 +33,7 @@ public final class TopicConfig {
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
     private boolean statisticsEnabled = true;
     private List<ListenerConfig> listenerConfigs;
+    private TopicConfigReadOnly readOnly;
 
     /**
      * Creates a TopicConfig.
@@ -50,6 +51,13 @@ public final class TopicConfig {
         this.name = config.name;
         this.globalOrderingEnabled = config.globalOrderingEnabled;
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
+    }
+
+    public TopicConfigReadOnly getAsReadOnly() {
+        if (readOnly == null){
+            readOnly = new TopicConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

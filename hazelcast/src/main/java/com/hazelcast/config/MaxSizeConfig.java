@@ -18,11 +18,28 @@ package com.hazelcast.config;
 
 public class MaxSizeConfig {
 
+    private MaxSizeConfigReadOnly readOnly;
+
     private int size = MapConfig.DEFAULT_MAX_SIZE;
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
+    public MaxSizeConfig() {
+    }
+
+    public MaxSizeConfig(MaxSizeConfig config) {
+        this.size = config.size;
+        this.maxSizePolicy = config.maxSizePolicy;
+    }
+
     public enum MaxSizePolicy {
         PER_NODE, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
+    }
+
+    public MaxSizeConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MaxSizeConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public int getSize() {

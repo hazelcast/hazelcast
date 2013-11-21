@@ -130,7 +130,7 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
     @ManagedAnnotation("config")
     @ManagedDescription("QueueConfig")
     public String getConfig(){
-        return service.instance.getConfig().getQueueConfig(managedObject.getName()).toString();
+        return service.instance.getConfig().findQueueConfig(managedObject.getName()).toString();
     }
 
     @ManagedAnnotation(value = "clear", operation = true)

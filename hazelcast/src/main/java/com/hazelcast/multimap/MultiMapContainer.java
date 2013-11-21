@@ -60,7 +60,7 @@ public class MultiMapContainer {
         this.service = service;
         this.nodeEngine = service.getNodeEngine();
         this.partitionId = partitionId;
-        this.config = nodeEngine.getConfig().getMultiMapConfig(name);
+        this.config = nodeEngine.getConfig().findMultiMapConfig(name);
 
         this.lockNamespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
