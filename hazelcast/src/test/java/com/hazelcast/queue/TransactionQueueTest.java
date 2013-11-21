@@ -206,7 +206,11 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             public void run() {
                 while (active && count.get() != numberOfMessages && hazelcastInstance.getLifecycleService().isRunning()) {
                     TransactionContext transactionContext = hazelcastInstance.newTransactionContext();
-                    transactionContext.beginTransaction();
+                    try {
+                        transactionContext.beginTransaction();
+                    } catch (HazelcastInstanceNotActiveException ignored) {
+                        break;
+                    }
                     try {
                         TransactionalQueue<Object> queue = transactionContext.getQueue(inQueueName);
                         Object value = queue.poll();

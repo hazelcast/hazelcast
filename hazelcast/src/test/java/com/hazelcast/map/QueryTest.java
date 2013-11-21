@@ -716,7 +716,7 @@ public class QueryTest extends HazelcastTestSupport {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
-        assertTrue(tookWithIndex < (tookWithout / 2));
+        assertTrue("tookWithIndex: " + tookWithIndex + ", tookWithoutIndex: " + tookWithout,  tookWithIndex < (tookWithout / 2));
     }
 
     @Test
