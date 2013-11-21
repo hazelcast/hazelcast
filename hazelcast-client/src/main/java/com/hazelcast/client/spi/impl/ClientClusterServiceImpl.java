@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Connection;
-import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.client.spi.ResponseStream;
@@ -321,13 +320,18 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public String addMembershipListener(MembershipListener listener) {
         final String id = UUID.randomUUID().toString();
-        if (listener instanceof InitialMembershipListener) {
-            // TODO: needs sync with membership events...
-            final Cluster cluster = new ClientClusterProxy(this);
-            ((InitialMembershipListener) listener).init(new InitialMembershipEvent(cluster, cluster.getMembers()));
-        }
         listeners.put(id, listener);
         return id;
+    }
+
+    private void initMembershipListener(){
+        for (MembershipListener membershipListener : listeners.values()) {
+            if (membershipListener instanceof InitialMembershipListener) {
+                // TODO: needs sync with membership events...
+                final Cluster cluster = client.getCluster();
+                ((InitialMembershipListener) membershipListener).init(new InitialMembershipEvent(cluster, cluster.getMembers()));
+            }
+        }
     }
 
     public boolean removeMembershipListener(String registrationId) {
@@ -362,6 +366,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 throw new HazelcastException(e);
             }
         }
+        initMembershipListener();
         active = true;
         // started
     }
