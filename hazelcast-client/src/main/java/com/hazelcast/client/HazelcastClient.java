@@ -148,6 +148,7 @@ public final class HazelcastClient implements HazelcastInstance {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             final HazelcastClient client = new HazelcastClient(config);
             client.start();
+
             proxy = new HazelcastClientProxy(client);
             CLIENTS.put(client.id, proxy);
         } finally {

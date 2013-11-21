@@ -217,4 +217,31 @@ public class ClientIssueTest {
 
     }
 
+    /**
+     * add membership listener
+     */
+    @Test
+    public void testIssue1181() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
+            public void init(InitialMembershipEvent event) {
+                for (int i=0; i<event.getMembers().size(); i++){
+                    latch.countDown();
+                }
+            }
+
+            public void memberAdded(MembershipEvent membershipEvent) {
+
+            }
+
+            public void memberRemoved(MembershipEvent membershipEvent) {
+
+            }
+        }));
+        HazelcastClient.newHazelcastClient(clientConfig);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
 }
