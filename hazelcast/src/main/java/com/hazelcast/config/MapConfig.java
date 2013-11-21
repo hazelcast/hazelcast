@@ -94,20 +94,24 @@ public class MapConfig {
     public MapConfig(MapConfig config) {
         this.name = config.name;
         this.backupCount = config.backupCount;
+        this.asyncBackupCount = config.asyncBackupCount;
         this.evictionPercentage = config.evictionPercentage;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
-        this.maxSizeConfig = config.maxSizeConfig;
+        this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
         this.evictionPolicy = config.evictionPolicy;
         this.inMemoryFormat = config.inMemoryFormat;
-        this.mapStoreConfig = config.mapStoreConfig;
-        this.nearCacheConfig = config.nearCacheConfig;
+        this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
+        this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
         this.readBackupData = config.readBackupData;
+        this.optimizeQueries = config.optimizeQueries;
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
-        this.wanReplicationRef = config.wanReplicationRef;
+        this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
-        this.partitioningStrategyConfig = config.partitioningStrategyConfig;
+        this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
+        this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
+                ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
     }
 
     public MapConfigReadOnly getAsReadOnly(){

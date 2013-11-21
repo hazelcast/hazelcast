@@ -42,6 +42,13 @@ public class EntryListenerConfig extends ListenerConfig {
         this.includeValue = includeValue;
     }
 
+    public EntryListenerConfig(EntryListenerConfig config) {
+        includeValue = config.isIncludeValue();
+        local = config.isLocal();
+        implementation = config.getImplementation();
+        className = config.getClassName();
+    }
+
     public EntryListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new EntryListenerConfigReadOnly(this);

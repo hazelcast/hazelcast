@@ -8,13 +8,7 @@ import java.util.Properties;
 public class MapStoreConfigReadOnly extends MapStoreConfig {
 
     public MapStoreConfigReadOnly(MapStoreConfig config) {
-        super.setClassName(config.getClassName());
-        super.setImplementation(config.getImplementation());
-        super.setProperties(config.getProperties());
-        super.setEnabled(config.isEnabled());
-        super.setFactoryClassName(config.getFactoryClassName());
-        super.setFactoryImplementation(config.getFactoryImplementation());
-        super.setWriteDelaySeconds(config.getWriteDelaySeconds());
+        super(config);
     }
 
     public MapStoreConfig setClassName(String className) {

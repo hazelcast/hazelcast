@@ -37,6 +37,16 @@ public class MapStoreConfig {
     public MapStoreConfig() {
     }
 
+    public MapStoreConfig(MapStoreConfig config) {
+        enabled = config.isEnabled();
+        className = config.getClassName();
+        implementation = config.getImplementation();
+        factoryClassName = config.getFactoryClassName();
+        factoryImplementation = config.getFactoryImplementation();
+        writeDelaySeconds = config.getWriteDelaySeconds();
+        properties = config.getProperties() != null ? new Properties(config.getProperties()) : null;
+    }
+
     public MapStoreConfigReadOnly getAsReadOnly() {
         if (readOnly == null ) {
             readOnly = new MapStoreConfigReadOnly(this);

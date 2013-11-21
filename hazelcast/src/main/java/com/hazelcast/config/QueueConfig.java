@@ -46,7 +46,8 @@ public class QueueConfig {
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
         this.emptyQueueTtl = config.emptyQueueTtl;
-        this.queueStoreConfig = config.queueStoreConfig;
+        this.statisticsEnabled = config.statisticsEnabled;
+        this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
 
