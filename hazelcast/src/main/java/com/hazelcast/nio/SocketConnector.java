@@ -91,7 +91,9 @@ public class SocketConnector implements Runnable {
             throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
-        bindSocket(socketChannel);
+        if (connectionManager.ioService.isSocketBind()) {
+            bindSocket(socketChannel);
+        }
         final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
                 + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
         final Level level = silent ? Level.FINEST : Level.INFO;

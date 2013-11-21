@@ -40,6 +40,7 @@ public class GroupProperties {
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
+    public static final String PROP_SOCKET_CLIENT_BIND = "hazelcast.socket.client.bind";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
     public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
@@ -120,6 +121,8 @@ public class GroupProperties {
     public final GroupProperty SOCKET_SERVER_BIND_ANY;
 
     public final GroupProperty SOCKET_CLIENT_BIND_ANY;
+
+    public final GroupProperty SOCKET_CLIENT_BIND;
 
     public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE; // number of kilobytes
 
@@ -229,6 +232,7 @@ public class GroupProperties {
         final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);
         SOCKET_CLIENT_BIND_ANY = new GroupProperty(config, PROP_SOCKET_CLIENT_BIND_ANY, SOCKET_BIND_ANY);
+        SOCKET_CLIENT_BIND = new GroupProperty(config, PROP_SOCKET_CLIENT_BIND, "true");
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
         SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");
         SOCKET_LINGER_SECONDS = new GroupProperty(config, PROP_SOCKET_LINGER_SECONDS, "0");
