@@ -233,8 +233,10 @@ public class LockTest extends HazelcastTestSupport {
             }
         }).start();
 
+        Thread.sleep(1000);
         keyOwner.getLifecycleService().shutdown();
         Assert.assertTrue(lock1.isLocked());
+        Assert.assertTrue(lock1.isLockedByCurrentThread());
         Assert.assertTrue(lock1.tryLock());
         lock1.unlock();
         lock1.unlock();

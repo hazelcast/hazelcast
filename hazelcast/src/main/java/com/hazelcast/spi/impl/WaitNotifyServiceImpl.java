@@ -223,7 +223,11 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     final Operation op = waitingOp.getOperation();
                     // only for local invocations, remote ones will be expired via #onMemberLeft()
                     if (thisAddress.equals(op.getCallerAddress())) {
-                        op.getResponseHandler().sendResponse(response);
+                        try {
+                            op.getResponseHandler().sendResponse(response);
+                        } catch (Exception e) {
+                            logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
+                        }
                     }
                 }
             }
