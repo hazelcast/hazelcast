@@ -440,6 +440,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 if (member.localMember())
                     continue;
                 InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
+                operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
