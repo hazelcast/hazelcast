@@ -189,7 +189,11 @@ public class NearCache {
         }
     }
 
-    void clear() {
+    public int size() {
+        return cache.size();
+    }
+
+    public void clear() {
         cache.clear();
         resetSizeEstimator();
     }

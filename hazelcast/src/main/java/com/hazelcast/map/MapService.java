@@ -424,7 +424,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     };
 
-    private NearCache getNearCache(String mapName) {
+    NearCache getNearCache(String mapName) {
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
@@ -444,8 +444,10 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void clearNearCache(String mapName) {
-        NearCache nearCache = getNearCache(mapName);
-        nearCache.clear();
+        final NearCache nearCache = nearCacheMap.get(mapName);
+        if (nearCache != null) {
+            nearCache.clear();
+        }
     }
 
     public void invalidateAllNearCaches(String mapName, Data key) {
@@ -454,7 +456,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             try {
                 if (member.localMember())
                     continue;
-                InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
+                Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
@@ -470,23 +472,10 @@ public class MapService implements ManagedService, MigrationAwareService,
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
     }
 
-    public void invalidateAllNearCaches(String mapName) {
-        sendNearCacheOperation(new NearCacheClearOperation(mapName));
-        // clear local near cache.
-        clearNearCache(mapName);
-    }
-
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
         if (keys == null || keys.isEmpty()) return;
         //send operation.
-        sendNearCacheOperation(new NearCacheKeySetInvalidationOperation(mapName, keys));
-        // below local invalidation is for the case the data is cached before partition is owned/migrated
-        for (final Data key : keys) {
-            invalidateNearCache(mapName, key);
-        }
-    }
-
-    private void sendNearCacheOperation(Operation operation) {
+        Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
@@ -494,8 +483,12 @@ public class MapService implements ManagedService, MigrationAwareService,
                     continue;
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
-                throw new HazelcastException(throwable);
+                logger.warning(throwable);
             }
+        }
+        // below local invalidation is for the case the data is cached before partition is owned/migrated
+        for (final Data key : keys) {
+            invalidateNearCache(mapName, key);
         }
     }
 

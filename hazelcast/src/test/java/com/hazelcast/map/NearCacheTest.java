@@ -8,10 +8,13 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,6 +32,62 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class NearCacheTest extends HazelcastTestSupport {
+
+    @Test
+    public void testBasicUsage() throws Exception {
+        int n = 3;
+        String mapName = "test";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+
+        HazelcastInstance[] instances = factory.newInstances(config);
+        IMap<Object, Object> map = instances[0].getMap(mapName);
+
+        int count = 5000;
+        for (int i = 0; i < count; i++) {
+            map.put(i, i);
+        }
+
+        for (HazelcastInstance instance : instances) {
+            IMap<Object, Object> m = instance.getMap(mapName);
+            for (int i = 0; i < count; i++) {
+                Assert.assertNotNull(m.get(i));
+            }
+        }
+
+        for (int i = 0; i < count; i++) {
+            map.put(i, i * 2);
+        }
+
+        for (HazelcastInstance instance : instances) {
+            IMap<Object, Object> m = instance.getMap(mapName);
+            for (int i = 0; i < count; i++) {
+                Assert.assertNotNull(m.get(i));
+            }
+        }
+
+        for (HazelcastInstance instance : instances) {
+            NearCache nearCache = getNearCache(mapName, instance);
+            int size = nearCache.size();
+            Assert.assertTrue("NearCache Size: " + size, size > 0);
+        }
+
+        map.clear();
+        for (HazelcastInstance instance : instances) {
+            NearCache nearCache = getNearCache(mapName, instance);
+            int size = nearCache.size();
+            Assert.assertEquals(0, size);
+        }
+
+    }
+
+    private NearCache getNearCache(String mapName, HazelcastInstance instance) {
+        NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
+        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
+        return service.getNearCache(mapName);
+    }
 
     @Test
     public void testNearCacheEvictionByUsingMapClear() throws InterruptedException {
