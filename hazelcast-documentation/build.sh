@@ -144,12 +144,23 @@ else
   exit -1
   delete
 fi 
+echo "Creating no_header documentation"
+createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR )
+if [[ $? -eq 0 ]]; then
+  echo "No Header HTML created succesfully "
+  
+else
+  echo "Error creating No Header HTML documentation"
+  exit -1
+  delete
+fi 
 }
 
 function init {
 	OUTPUT_DIR="target"
 	MULTI_HTML_OUTPUT_DIR="multi_html"
 	SINGLE_HTML_OUTPUT_DIR="single_html"
+	NOHEADER_HTML_OUTPUT_DIR="no_header"
 	PDF_OUTPUT_DIR="pdf"
 	PDF_FILE_NAME="hazelcast-documentation.pdf"
 	MANIFEST_FILE_NAME="manifest.json"
@@ -171,6 +182,8 @@ function cleanIfExists {
 	mkdir $OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR	
 	echo "Creating $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR
+	echo "Creating $OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR"
+	mkdir $OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$PDF_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$PDF_OUTPUT_DIR	
 		
@@ -189,11 +202,13 @@ mv $MERGED_FILE_NAME ./src/$MERGED_FILE_NAME
 mkdir ./src/images
 cp -a ./images/*.jpg ./src/images/
 mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
+mkdir ./$OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR"/images/"
 createSingleHTML
 
 # Move images manually, BeautifulDocs is not working reliable when copying images. Bug reported about that.
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
+cp -a ./images/*.jpg ./$OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR"/images/"
 delete
 
 echo "Done"

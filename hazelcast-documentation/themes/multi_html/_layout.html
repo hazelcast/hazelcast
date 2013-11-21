@@ -24,19 +24,7 @@
 
     <script type="text/javascript">
   	$(function(){
-		$.urlParam = function(name){
-		var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
-		if(results==null)
-		return null;
-		return results[1] || 0;
-		}
-		
 		$("#sidebar").stick_in_parent()
-
-		if($.urlParam("noheader") == "true")
-		{ 
-			$("#header").hide();
-		}
 	});
     </script>
 

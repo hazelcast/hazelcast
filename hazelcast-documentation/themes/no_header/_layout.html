@@ -34,6 +34,7 @@
   	$(function(){
 		$("#sidebar").stick_in_parent()
 	});
+
     </script>
 
     <% if @manifest.options.googleAnalytics: %>
@@ -52,18 +53,6 @@
 <body>
     <div id="page">
         <a name="top" />
-        <header id="header">
-			<div style="overflow:hidden">
-				<div style="float:left">
-					<img src="<%= @baseUrl %>assets/img/logo.png"/>
-					
-				</div>	
-				<div style="float:left;padding-top: 15px;padding-left: 30px;">
-		            <h1><a href="<%= @baseUrl %>"><%= @manifest.title or @title %> <span style="font-size:12px"> Version: <%= @manifest.options.version %> - Publication Date : <%= @manifest.options.date %> </span></a></h1>
-
-				</div>
-			</div>
-        </header>
 	        <%- @include "_sidebar.html" %>
 	        <div id="content">
 	            <%- @content %>
