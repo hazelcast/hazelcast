@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -76,7 +75,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, dataValue));
             }
 
-            EntryEventType eventType = null;
+            EntryEventType eventType;
             if (valueAfterProcess == null) {
                 recordStore.remove(dataKey);
                 eventType = EntryEventType.REMOVED;
@@ -90,7 +89,10 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 } else {
                     eventType = EntryEventType.UPDATED;
                 }
-                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
+                // todo if a read only operation, record access operations should be done anyway.
+                if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                    recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
+                }
             }
 
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
