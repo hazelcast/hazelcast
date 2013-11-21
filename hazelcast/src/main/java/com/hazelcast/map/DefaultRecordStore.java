@@ -331,7 +331,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey);
+            record = getRecordInternal(dataKey,true);
         } else {
             accessRecord(record);
         }
@@ -343,7 +343,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey);
+            record = getRecordInternal(dataKey,false);
         } else {
             accessRecord(record);
         }
@@ -351,14 +351,16 @@ public class DefaultRecordStore implements RecordStore {
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value);
     }
 
-    private Record getRecordInternal(Data dataKey){
+    private Record getRecordInternal(Data dataKey, boolean enableIndex) {
         Record record = null;
         if (mapContainer.getStore() != null) {
             final Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
             if (value != null) {
                 record = mapService.createRecord(name, dataKey, value, -1);
                 records.put(dataKey, record);
-                saveIndex(record);
+                if (enableIndex) {
+                    saveIndex(record);
+                }
                 updateSizeEstimator(calculateRecordSize(record));
             }
         }
@@ -890,6 +892,7 @@ public class DefaultRecordStore implements RecordStore {
             indexService.saveEntryIndex(queryableEntry);
         }
     }
+
     private void mapStoreDelete(Record record, Data key) {
         final MapStoreWrapper store = mapContainer.getStore();
         if (store != null) {
@@ -897,7 +900,7 @@ public class DefaultRecordStore implements RecordStore {
             if (writeDelayMillis == 0) {
                 store.delete(mapService.toObject(key));
                 // todo ea record will be deleted then why calling onStore
-                if (record != null){
+                if (record != null) {
                     record.onStore();
                 }
             } else {
