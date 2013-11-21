@@ -419,7 +419,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     };
 
-    private NearCache getNearCache(String mapName) {
+    NearCache getNearCache(String mapName) {
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
@@ -439,7 +439,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             try {
                 if (member.localMember())
                     continue;
-                InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
+                Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
@@ -452,6 +452,13 @@ public class MapService implements ManagedService, MigrationAwareService,
     public Object getFromNearCache(String mapName, Data key) {
         NearCache nearCache = getNearCache(mapName);
         return nearCache.get(key);
+    }
+
+    public void clearNearCache(String mapName) {
+        final NearCache nearCache = nearCacheMap.get(mapName);
+        if (nearCache != null) {
+            nearCache.clear();
+        }
     }
 
     public NodeEngine getNodeEngine() {
