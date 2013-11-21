@@ -37,25 +37,22 @@ public class NearCache {
 
     public static final Object NULL_OBJECT = new Object();
 
-    static final int evictionPercentage = 20;
-    static final int cleanupInterval = 5000;
-    final int maxSize;
-    volatile long lastCleanup;
-    final long maxIdleMillis;
-    final long timeToLiveMillis;
-    final boolean invalidateOnChange;
-    final EvictionPolicy evictionPolicy;
-    final InMemoryFormat inMemoryFormat;
-    final String mapName;
-    final MapService mapService;
-    final NodeEngine nodeEngine;
-    final AtomicBoolean canCleanUp;
-    final AtomicBoolean canEvict;
-    final ConcurrentMap<Data, CacheRecord> cache;
-    final MapContainer mapContainer;
+    private static final int evictionPercentage = 20;
+    private static final int cleanupInterval = 5000;
+    private final int maxSize;
+    private volatile long lastCleanup;
+    private final long maxIdleMillis;
+    private final long timeToLiveMillis;
+    private final EvictionPolicy evictionPolicy;
+    private final InMemoryFormat inMemoryFormat;
+    private final MapService mapService;
+    private final NodeEngine nodeEngine;
+    private final AtomicBoolean canCleanUp;
+    private final AtomicBoolean canEvict;
+    private final ConcurrentMap<Data, CacheRecord> cache;
+    private final MapContainer mapContainer;
 
     public NearCache(String mapName, MapService mapService) {
-        this.mapName = mapName;
         this.mapService = mapService;
         this.nodeEngine = mapService.getNodeEngine();
         this.mapContainer = mapService.getMapContainer(mapName);
@@ -65,7 +62,6 @@ public class NearCache {
         maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * 1000;
-        invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
         cache = new ConcurrentHashMap<Data, CacheRecord>();
         canCleanUp = new AtomicBoolean(true);
