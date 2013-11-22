@@ -61,8 +61,4 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
     public String toString() {
         return "NearCacheKeySetInvalidationOperation{}";
     }
-
-    public final String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
 }

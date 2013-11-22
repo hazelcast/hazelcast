@@ -102,4 +102,4 @@ public void cleanup() throws Exception {
     Hazelcast.shutdownAll();
 }
 ```
-Need more info? [Check out existing tests.](https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/test/java/com/hazelcast/impl/ClusterTest.java)
+Need more info? [Check out existing tests.](https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/java/com/hazelcast/cluster)
