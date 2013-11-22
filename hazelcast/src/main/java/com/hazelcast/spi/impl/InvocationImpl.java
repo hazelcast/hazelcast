@@ -517,6 +517,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
+    //todo: will be removed once the blocking semaphore code is removed.
     public final static ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(100);
 
     private volatile int availableBackups;
@@ -569,7 +570,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             this.potentialResponse = response;
         }
 
-        EXECUTOR_SERVICE.schedule(new Runnable() {
+        nodeEngine.getExecutionService().schedule(new Runnable() {
             @Override
             public void run() {
                 synchronized (InvocationImpl.this) {
