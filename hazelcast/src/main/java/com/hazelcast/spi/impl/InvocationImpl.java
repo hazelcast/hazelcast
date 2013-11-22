@@ -62,6 +62,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return "Invocation::TIMEOUT_RESPONSE";
         }
     };
+
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
             timeout -= diff;
@@ -289,8 +290,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             }
 
             synchronized (this) {
-                if(this.response!=null){
-                    return;//throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
+                if (this.response != null) {
+                    throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
                 }
                 this.response = response;
                 this.notifyAll();
@@ -324,7 +325,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             try {
                 return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
-                logger.finest(e);
+                logger.severe("Unexpected timeout while processing " + this, e);
                 return null;
             }
         }
@@ -517,9 +518,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    //todo: will be removed once the blocking semaphore code is removed.
-    public final static ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(100);
-
     private volatile int availableBackups;
     private volatile Response potentialResponse;
     private volatile int expectedBackupCount;
@@ -542,29 +540,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
        }
     }
 
-     public void signalOneBackupComplete_bak() {
-        synchronized (this) {
-            availableBackups++;
-
-            if(expectedBackupCount==-1){
-                return;
-            }
-
-            if(expectedBackupCount!=availableBackups){
-                return;
-            }
-
-            notifyAll();
-        }
-    }
-
-    public boolean waitForBackups(int backupCount, long timeout, TimeUnit unit, Response response) throws InterruptedException {
+    private void waitForBackups(int backupCount, long timeout, TimeUnit unit, Response response) {
         synchronized (this) {
             this.expectedBackupCount = backupCount;
 
             if (availableBackups == expectedBackupCount) {
                 invocationFuture.set(response);
-                return true;
+                return;
             }
 
             this.potentialResponse = response;
@@ -580,8 +562,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 }
 
                 if (nodeEngine.getClusterService().getMember(target) != null) {
-                    synchronized (InvocationImpl.this){
-                        if(InvocationImpl.this.potentialResponse!=null){
+                    synchronized (InvocationImpl.this) {
+                        if (InvocationImpl.this.potentialResponse != null) {
                             invocationFuture.set(InvocationImpl.this.potentialResponse);
                             InvocationImpl.this.potentialResponse = null;
                         }
@@ -592,37 +574,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 resetAndReInvoke();
             }
         }, timeout, unit);
-        return true;
-    }
-
-    public boolean waitForBackups_bak(int backupCount, long timeout, TimeUnit unit, Response response) throws InterruptedException {
-        long timeoutMs = unit.toMillis(timeout);
-
-        synchronized (this) {
-            this.expectedBackupCount = backupCount;
-
-            if(availableBackups==expectedBackupCount){
-                invocationFuture.set(response);
-                return true;
-            }
-
-            this.potentialResponse = response;
-
-            while (true) {
-                if (backupCount <= availableBackups) {
-                    availableBackups -= backupCount;
-                    return true;
-                }
-
-                if (timeoutMs <= 0) {
-                    return false;
-                }
-
-                long startMs = System.currentTimeMillis();
-                wait(timeoutMs);
-                timeoutMs -= System.currentTimeMillis() - startMs;
-            }
-        }
     }
 
     private void resetAndReInvoke() {
@@ -676,63 +627,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (response instanceof Response && op instanceof BackupAwareOperation) {
             final Response resp = (Response) response;
             if (resp.backupCount > 0) {
-                if (true) {
-                    try {
-                        waitForBackups(resp.backupCount, 5, TimeUnit.SECONDS, resp);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-                    return;
-                } else {
-                    boolean backupsCompleted = resp.backupCount - availableBackups == 0;
-
-                    //we are only going to create a task for waiting for the backups, if it is really needed.
-                    if (!backupsCompleted) {
-
-                        EXECUTOR_SERVICE.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    if (failedToWaitForBackups(resp)) {
-                                        resetAndReInvoke();
-                                        return;
-                                    }
-
-                                    invocationFuture.set(resp);
-                                } catch (RuntimeException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                        return;
-                    }
-                }
+                waitForBackups(resp.backupCount, 5, TimeUnit.SECONDS, resp);
+                return;
             }
 
-            invocationFuture.set(response);
-        } else {
-            invocationFuture.set(response);
         }
+
+        invocationFuture.set(response);
     }
-
-    private boolean failedToWaitForBackups(Response response) {
-        if(response.backupCount==0){
-            return false;
-        }
-
-        try{
-            if(waitForBackups(response.backupCount, 5, TimeUnit.SECONDS,response)){
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Backup response cannot be received -> " + this);
-                }
-                if (nodeEngine.getClusterService().getMember(target) == null) {
-                    return true;
-                }
-            }
-        }catch(InterruptedException ignored){
-        }
-
-        return false;
-    }
-
 }
