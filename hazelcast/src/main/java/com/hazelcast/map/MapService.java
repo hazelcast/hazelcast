@@ -728,7 +728,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     @SuppressWarnings("unchecked")
     public void dispatchEvent(EventData eventData, EntryListener listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getSource(),
+        EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getMapName(),
                 eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
         switch (event.getEventType()) {
             case ADDED:
