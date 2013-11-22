@@ -720,15 +720,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
-        checkIfMapLoaded("default",h1);
-        checkIfMapLoaded("default",h2);
+        checkIfMapLoaded("default", h1);
+        checkIfMapLoaded("default", h2);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         IMap map3 = h3.getMap("default");
-        checkIfMapLoaded("default",h3);
+        checkIfMapLoaded("default", h3);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals("value1", map3.get(1));
@@ -747,10 +747,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         boolean loaded = false;
-
         final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
-
-        while (!loaded){
+        while (!loaded) {
             for (int i = 0; i < partitionCount; i++) {
                 final RecordStore recordStore = service.getPartitionContainer(i).getRecordStore(mapName);
                 if (recordStore != null) {
@@ -760,10 +758,11 @@ public class MapStoreTest extends HazelcastTestSupport {
                     }
                 }
             }
-            if( System.currentTimeMillis() >= end ){
+            if (System.currentTimeMillis() >= end) {
                 break;
             }
-
+            //give a rest to cpu.
+            Thread.sleep(10);
         }
         return loaded;
     }
