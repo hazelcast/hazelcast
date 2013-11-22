@@ -31,7 +31,7 @@
                 <para>Ready-to-go Hazelcast Cache Server Image for Amazon EC2</para>
             </listitem>
             <listitem>
-                <para>Symmetric Encryption and SSL support for Java Client</para>
+                <para>Symmetric Encryption for Java Client</para>
             </listitem>
             <listitem>
                 <para>Distributed

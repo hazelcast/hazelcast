@@ -107,7 +107,7 @@
             </para>
         </listitem>
         <listitem>
-            <para>Add hazelcast.jar file into your classpath
+            <para>Add hazelcast-_version_.jar file into your classpath
             </para>
         </listitem>
     </itemizedlist>

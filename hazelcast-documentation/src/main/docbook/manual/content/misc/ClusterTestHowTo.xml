@@ -106,7 +106,7 @@ public void cleanup() throws Exception {
     Hazelcast.shutdownAll();
 }
 ]]></programlisting>Need more info?
-        <link xlink:href="https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/test/java/com/hazelcast/impl/ClusterTest.java">
+        <link xlink:href="https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/java/com/hazelcast/cluster">
             Check out existing tests.
         </link>
     </para>

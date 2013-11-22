@@ -22,7 +22,7 @@
       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Upgrading from 2.x versions</title>
     <para>
-        In this section, we list the changes what users should take into account before upgrading to Hazelcast 3.0 from
+        In this section, we list the changes what users should take into account before upgrading to Hazelcast 3.1 from
         earlier versions of Hazelcast.
     </para>
     <para>
