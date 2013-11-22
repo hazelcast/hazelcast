@@ -763,7 +763,8 @@ public class MapStoreTest extends HazelcastTestSupport {
             if( System.currentTimeMillis() >= end ){
                 break;
             }
-
+            //give a rest to cpu.
+            Thread.sleep(10);
         }
         return loaded;
     }
