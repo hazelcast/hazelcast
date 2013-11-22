@@ -748,6 +748,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         boolean loaded = false;
 
+        final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
+
         while (!loaded){
             for (int i = 0; i < partitionCount; i++) {
                 final RecordStore recordStore = service.getPartitionContainer(i).getRecordStore(mapName);
@@ -757,6 +759,9 @@ public class MapStoreTest extends HazelcastTestSupport {
                         break;
                     }
                 }
+            }
+            if( System.currentTimeMillis() >= end ){
+                break;
             }
 
         }
