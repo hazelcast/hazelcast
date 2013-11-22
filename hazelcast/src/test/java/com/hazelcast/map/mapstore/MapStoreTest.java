@@ -21,7 +21,10 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -717,13 +720,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
-        Thread.sleep(10000);
+        checkIfMapLoaded("default", h1);
+        checkIfMapLoaded("default", h2);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         IMap map3 = h3.getMap("default");
+        checkIfMapLoaded("default", h3);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals("value1", map3.get(1));
@@ -735,6 +740,31 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
+    }
+
+    private boolean checkIfMapLoaded(String mapName, HazelcastInstance instance) throws InterruptedException {
+        NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
+        boolean loaded = false;
+        final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
+        while (!loaded) {
+            for (int i = 0; i < partitionCount; i++) {
+                final RecordStore recordStore = service.getPartitionContainer(i).getRecordStore(mapName);
+                if (recordStore != null) {
+                    loaded = recordStore.isLoaded();
+                    if (!loaded) {
+                        break;
+                    }
+                }
+            }
+            if (System.currentTimeMillis() >= end) {
+                break;
+            }
+            //give a rest to cpu.
+            Thread.sleep(10);
+        }
+        return loaded;
     }
 
     /*
@@ -790,7 +820,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                 failed = true;
                 throw new RuntimeException("duplicate is not allowed");
             }
-            System.err.println("store:"+key);
+            System.err.println("store:" + key);
             super.store(key, value);
         }
 
@@ -883,7 +913,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         String mapname = "testIssue11142ExceptionWhenLoadAllReturnsNull";
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>(){
+        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>() {
             @Override
             public Set<String> loadAllKeys() {
                 Set keys = new HashSet();
@@ -939,7 +969,7 @@ public class MapStoreTest extends HazelcastTestSupport {
             @Override
             public void entryEvicted(EntryEvent event) {
             }
-        },true);
+        }, true);
         // create all partition recordstores.
         map.size();
         //wait map load.
