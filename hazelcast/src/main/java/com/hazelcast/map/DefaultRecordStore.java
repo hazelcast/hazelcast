@@ -327,31 +327,29 @@ public class DefaultRecordStore implements RecordStore {
         return temp.entrySet();
     }
 
-    public Map.Entry<Data, Object> getMapEntryData(Data dataKey) {
+    public Map.Entry<Data, Object> getMapEntry(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey, true);
+            record = getRecordInternal(dataKey,true);
         } else {
             accessRecord(record);
         }
-        final boolean isInMemoryObjectFormat =
-                InMemoryFormat.OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
-        final Object data = record != null ?
-                (isInMemoryObjectFormat ? record.getValue() : mapService.toData(record.getValue())) : null;
+        final Object data = record != null ? record.getValue() : null;
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
+
+    public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey, false);
+            record = getRecordInternal(dataKey,false);
         } else {
             accessRecord(record);
         }
-        final Object value = record != null ? mapService.toObject(record.getValue()) : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value);
+        final Object data = record != null ? record.getValue() : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
     private Record getRecordInternal(Data dataKey, boolean enableIndex) {
