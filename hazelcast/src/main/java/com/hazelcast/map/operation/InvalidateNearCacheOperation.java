@@ -17,7 +17,6 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,10 +26,8 @@ import java.io.IOException;
 
 public class InvalidateNearCacheOperation extends AbstractOperation {
 
-    MapService mapService;
-    Data key;
-    String mapName;
-
+    private Data key;
+    private String mapName;
 
     public InvalidateNearCacheOperation(String mapName, Data key) {
         this.key = key;
@@ -41,11 +38,12 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     }
 
     public void run() {
-        mapService = (MapService) getService();
+        MapService mapService = getService();
         if (mapService.getMapContainer(mapName).isNearCacheEnabled()) {
             mapService.invalidateNearCache(mapName, key);
         } else {
-            getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for " + mapName + " map. Possible configuration conflict among nodes.");
+            getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
+                    + mapName + " map. Possible configuration conflict among nodes.");
         }
     }
 
