@@ -60,7 +60,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void run() {
-        oldValue = recordStore.getMapEntryData(dataKey).getValue();
+        oldValue = recordStore.getMapEntry(dataKey).getValue();
         final Object valueBeforeProcess = mapService.toObject(oldValue);
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
