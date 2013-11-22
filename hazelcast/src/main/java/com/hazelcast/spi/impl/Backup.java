@@ -99,7 +99,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
                 OperationAccessor.setCallId(backupResponse, callId);
                 operationService.send(backupResponse, originalCaller);
             } else {
-                operationService.notifyOneBackupComplete(callId);
+                operationService.notifyBackupCall(callId);
             }
         }
     }

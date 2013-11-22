@@ -619,16 +619,18 @@ final class OperationServiceImpl implements OperationService {
     }
 
     @PrivateApi
-    void notifyOneBackupComplete(long callId) {
+    void notifyBackupCall(long callId) {
         final Invocation invocation = backupCalls.get(callId);
         if (invocation != null) {
             invocation.signalOneBackupComplete();
         }
     }
 
+
+
     @PrivateApi
     void registerBackupCall(long callId, Invocation invocation) {
-        final Invocation current = backupCalls.put(callId, invocation);
+        Invocation current = backupCalls.put(callId,invocation);
         if (current != null) {
             logger.warning( "Already registered a backup record for call[" + callId + "]!");
         }
