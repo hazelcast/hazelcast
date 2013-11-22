@@ -517,7 +517,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    public final static ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(10);
+    public final static ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(100);
 
     private volatile int availableBackups;
     private volatile Response potentialResponse;
@@ -579,6 +579,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 }
 
                 if (nodeEngine.getClusterService().getMember(target) != null) {
+                    synchronized (InvocationImpl.this){
+                        if(InvocationImpl.this.potentialResponse!=null){
+                            invocationFuture.set(InvocationImpl.this.potentialResponse);
+                            InvocationImpl.this.potentialResponse = null;
+                        }
+                    }
                     return;
                 }
 
