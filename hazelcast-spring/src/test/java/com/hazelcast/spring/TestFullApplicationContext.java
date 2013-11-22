@@ -123,7 +123,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(8, config.getMapConfigs().size());
+        assertEquals(6, config.getMapConfigs().size());
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
