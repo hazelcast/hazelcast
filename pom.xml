@@ -440,7 +440,7 @@
             </build>
         </profile>
 
-        <profile>
+        <!--- profile>
             <id>sonar</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
@@ -463,7 +463,6 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <!-- 1C means 1 process per cpu core -->
                             <forkCount>1C</forkCount>
                             <reuseForks>true</reuseForks>
 
@@ -483,7 +482,7 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
+        </profile -->
 
         <!-- use this profile if you only want to run the benchmarks-->
         <profile>
