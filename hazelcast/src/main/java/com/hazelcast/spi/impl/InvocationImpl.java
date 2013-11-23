@@ -443,14 +443,15 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
+    //todo: which executor should we use.
     private final static Executor executor = Executors.newFixedThreadPool(10);
 
-    private static class CallbackNode<E>{
+    private static class ExecutionCallbackNode<E>{
         private final ExecutionCallback<E> callback;
         private final Executor executor;
-        private final CallbackNode<E> next;
+        private final ExecutionCallbackNode<E> next;
 
-        private CallbackNode(ExecutionCallback<E> callback, Executor executor, CallbackNode<E> next) {
+        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
             this.callback = callback;
             this.executor = executor;
             this.next = next;
@@ -477,12 +478,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     private class InvocationFuture<E> implements CompletionFuture<E> {
 
-        volatile CallbackNode<E> callbackHead;
+        volatile ExecutionCallbackNode<E> callbackHead;
         volatile Object response;
 
         private InvocationFuture(final Callback<E> callback) {
            if(callback != null){
-               callbackHead = new CallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),executor,null);
+               callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),executor,null);
            }
         }
 
@@ -496,7 +497,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     return;
                 }
 
-                this.callbackHead = new CallbackNode<E>(callback, executor, callbackHead);
+                this.callbackHead = new ExecutionCallbackNode<E>(callback, executor, callbackHead);
             }
         }
 
@@ -533,7 +534,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 throw new IllegalArgumentException("response can't be null");
             }
 
-            CallbackNode<E> callbackChain;
+            ExecutionCallbackNode<E> callbackChain;
             synchronized (this) {
                 if (this.response != null) {
                     throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
