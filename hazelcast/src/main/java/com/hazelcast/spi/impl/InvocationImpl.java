@@ -35,6 +35,8 @@ import com.hazelcast.util.executor.ScheduledTaskRunner;
 import java.io.IOException;
 import java.util.concurrent.*;
 
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     private static final Object NULL_RESPONSE = new Object() {
@@ -443,40 +445,66 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     private final static Executor executor = Executors.newFixedThreadPool(10);
 
-    private class InvocationFuture<E> implements CompletionFuture<E> {
+    private static class CallbackNode<E>{
+        private final ExecutionCallback<E> callback;
+        private final Executor executor;
+        private final CallbackNode<E> next;
 
-        protected volatile ExecutionCallback<E> callback;
+        private CallbackNode(ExecutionCallback<E> callback, Executor executor, CallbackNode<E> next) {
+            this.callback = callback;
+            this.executor = executor;
+            this.next = next;
+        }
+    }
 
-        private InvocationFuture(final Callback callback) {
-            if (callback != null) {
-                this.callback = new ExecutionCallback() {
-                    @Override
-                    public void onResponse(Object response) {
-                        callback.notify(response);
-                    }
+    private static class ExecutorCallbackAdapter<E> implements ExecutionCallback<E>{
+        private final Callback  callback;
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        callback.notify(t);
-                    }
-                };
-            }
+        private ExecutorCallbackAdapter(Callback callback) {
+            this.callback = callback;
         }
 
+        @Override
+        public void onResponse(E response) {
+            callback.notify(response);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            callback.notify(t);
+        }
+    }
+
+    private class InvocationFuture<E> implements CompletionFuture<E> {
+
+        volatile CallbackNode<E> callbackHead;
         volatile Object response;
 
-        public void andThen(ExecutionCallback<E> callback) {
+        private InvocationFuture(final Callback<E> callback) {
+           if(callback != null){
+               callbackHead = new CallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),executor,null);
+           }
+        }
+
+        public void andThen(ExecutionCallback<E> callback, Executor executor) {
+            isNotNull(callback, "callback");
+            isNotNull(executor, "executor");
+
             synchronized (this) {
                 if (response != null) {
-                    runAsynchronous(callback);
+                    runAsynchronous(callback, executor);
                     return;
                 }
 
-                this.callback = callback;
+                this.callbackHead = new CallbackNode<E>(callback, executor, callbackHead);
             }
         }
 
-        private void runAsynchronous(final ExecutionCallback<E> callback) {
+        public void andThen(ExecutionCallback<E> callback) {
+            andThen(callback, executor);
+        }
+
+        private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -505,19 +533,23 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 throw new IllegalArgumentException("response can't be null");
             }
 
+            CallbackNode<E> callbackChain;
             synchronized (this) {
                 if (this.response != null) {
                     throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
                 }
                 this.response = response;
+                callbackChain = callbackHead;
+                callbackHead = null;
                 this.notifyAll();
             }
 
             //we need to deregister the backup call to make sure that there is no memory leak.
             nodeEngine.operationService.deregisterBackupCall(op.getCallId());
 
-            if (callback != null) {
-                runAsynchronous(callback);
+            while(callbackChain!=null){
+                runAsynchronous(callbackChain.callback,callbackChain.executor);
+                callbackChain = callbackChain.next;
             }
         }
 
