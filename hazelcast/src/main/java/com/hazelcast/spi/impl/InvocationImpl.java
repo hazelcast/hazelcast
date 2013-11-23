@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.CompletionFuture;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
@@ -78,10 +80,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     protected final int replicaIndex;
     protected final int tryCount;
     protected final long tryPauseMillis;
-    protected final Callback<Object> callback;
     protected final ILogger logger;
     //todo: in the future we could get rid of this object, just let the InvocationImpl implement the Future interface.
-    private final InvocationFuture invocationFuture = new InvocationFuture();
+    private final InvocationFuture invocationFuture;
 
     private volatile int invokeCount = 0;
     private volatile Address target;
@@ -98,7 +99,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.callback = callback;
+        this.invocationFuture = new InvocationFuture(callback);
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -152,7 +153,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            OperationAccessor.setAsync(op, callback != null);
+            //todo: callback stuff
+            OperationAccessor.setAsync(op, false/*callback != null*/);
             if (!nodeEngine.operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -233,12 +235,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
-            if (callback == null) {
-                throw new HazelcastInstanceNotActiveException();
-            } else {
-                notify(new HazelcastInstanceNotActiveException());
-                return;
-            }
+            //if (callback == null) {
+            //    throw new HazelcastInstanceNotActiveException();
+            //} else {
+            notify(new HazelcastInstanceNotActiveException());
+            return;
+            //}
         }
 
         final Address invTarget = getTarget();
@@ -316,7 +318,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (oldCallId != 0) {
             operationService.deregisterBackupCall(oldCallId);
         }
-        operationService.registerBackupCall(callId,this);
+        operationService.registerBackupCall(callId, this);
     }
 
 
@@ -346,18 +348,18 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         synchronized (this) {
             availableBackups++;
 
-            if(expectedBackupCount==-1){
+            if (expectedBackupCount == -1) {
                 return;
             }
 
-            if(expectedBackupCount!=availableBackups){
+            if (expectedBackupCount != availableBackups) {
                 return;
             }
 
-            if(potentialResponse!=null){
+            if (potentialResponse != null) {
                 invocationFuture.set(potentialResponse);
             }
-       }
+        }
     }
 
     private void waitForBackups(int backupCount, long timeout, TimeUnit unit, Response response) {
@@ -439,12 +441,67 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
     }
 
-    private class InvocationFuture implements Future {
+    private final static Executor executor = Executors.newFixedThreadPool(10);
+
+    private class InvocationFuture<E> implements CompletionFuture<E> {
+
+        protected volatile ExecutionCallback<E> callback;
+
+        private InvocationFuture(final Callback callback) {
+            if (callback != null) {
+                this.callback = new ExecutionCallback() {
+                    @Override
+                    public void onResponse(Object response) {
+                        callback.notify(response);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        callback.notify(t);
+                    }
+                };
+            }
+        }
 
         volatile Object response;
 
-        public void set(Object response){
-            if(response == null){
+        public void andThen(ExecutionCallback<E> callback) {
+            synchronized (this) {
+                if (response != null) {
+                    runAsynchronous(callback);
+                    return;
+                }
+
+                this.callback = callback;
+            }
+        }
+
+        private void runAsynchronous(final ExecutionCallback<E> callback) {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (response instanceof Response) {
+                            final Response responseObj = (Response) response;
+                            // no need to deregister backup call, since backups are not registered for async invocations.
+                            callback.onResponse((E) responseObj.response);
+                        } else if (response == NULL_RESPONSE) {
+                            callback.onResponse(null);
+                        } else if(response instanceof Throwable){
+                            callback.onFailure((Throwable) response);
+                        } else{
+                            callback.onResponse((E)response);
+                        }
+                    } catch (Throwable t) {
+                        //todo: improved error message
+                        logger.severe("Failed to async for "+InvocationImpl.this,t);
+                    }
+                }
+            });
+        }
+
+        public void set(Object response) {
+            if (response == null) {
                 throw new IllegalArgumentException("response can't be null");
             }
 
@@ -459,28 +516,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             //we need to deregister the backup call to make sure that there is no memory leak.
             nodeEngine.operationService.deregisterBackupCall(op.getCallId());
 
-            //todo: we need to offload this to another thread.
-            try {
-                final Object realResponse;
-                if (response instanceof Response) {
-                    final Response responseObj = (Response) response;
-                    // no need to deregister backup call, since backups are not registered for async invocations.
-                    realResponse = responseObj.response;
-                } else if (response == NULL_RESPONSE) {
-                    realResponse = null;
-                } else {
-                    realResponse = response;
-                }
-                if (callback != null){
-                    callback.notify(realResponse);
-                }
-            } catch (Throwable e) {
-                logger.severe(e);
+            if (callback != null) {
+                runAsynchronous(callback);
             }
         }
 
         @Override
-        public Object get() throws InterruptedException, ExecutionException {
+        public E get() throws InterruptedException, ExecutionException {
             try {
                 return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
@@ -490,8 +532,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
 
         @Override
-        public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return resolveResponse(waitForResponse(timeout, unit));
+        public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return (E) resolveResponse(waitForResponse(timeout, unit));
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
