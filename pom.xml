@@ -167,6 +167,7 @@
                     <threadCount>1</threadCount>
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <parallel>methods</parallel>
+                    <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
 
                     <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
@@ -393,6 +394,7 @@
                             <threadCount>1</threadCount>
                             <perCoreThreadCount>true</perCoreThreadCount>
                             <parallel>methods</parallel>
+                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
 
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
@@ -417,6 +419,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
+                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                             <parallel>none</parallel>
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
@@ -440,6 +443,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
+                            <forkedProcessTimeoutInSeconds>600</forkedProcessTimeoutInSeconds>
                             <parallel>none</parallel>
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
