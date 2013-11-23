@@ -16,12 +16,18 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class StringPartitioningStrategyTest {
 
     @Test

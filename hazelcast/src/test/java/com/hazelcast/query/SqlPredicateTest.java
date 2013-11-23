@@ -16,9 +16,16 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import static org.junit.Assert.*;
 
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class SqlPredicateTest
 {
     @Test
