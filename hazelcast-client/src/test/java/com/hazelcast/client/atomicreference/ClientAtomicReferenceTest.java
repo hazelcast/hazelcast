@@ -10,8 +10,6 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
@@ -40,7 +38,7 @@ public class ClientAtomicReferenceTest {
 
     @Before
     @After
-    public void clear() {
+    public void after() {
         serverReference.set(null);
     }
 
@@ -76,6 +74,16 @@ public class ClientAtomicReferenceTest {
         assertEquals("bar",serverReference.get());
 
         clientReference.set(null);
+        assertTrue(serverReference.isNull());
+    }
+
+    @Test
+    public void clear() throws Exception {
+        clientReference.clear();
+        assertTrue(serverReference.isNull());
+
+        serverReference.set("foo");
+        clientReference.clear();
         assertTrue(serverReference.isNull());
     }
 

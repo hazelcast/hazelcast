@@ -32,4 +32,6 @@ public interface IAtomicReference<E> extends DistributedObject {
     E setAndGet(E update);
 
     boolean isNull();
+
+    void clear();
 }

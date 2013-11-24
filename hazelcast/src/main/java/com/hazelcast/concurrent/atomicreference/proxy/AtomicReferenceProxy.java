@@ -23,6 +23,11 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
+    public void clear() {
+        set(null);
+    }
+
+    @Override
     public boolean compareAndSet(E expect, E update) {
         final NodeEngine nodeEngine = getNodeEngine();
 
