@@ -294,6 +294,7 @@
     <xs:element name="executorService" type="hazelcast-type"/>
     <xs:element name="idGenerator" type="hazelcast-type"/>
     <xs:element name="atomicLong" type="hazelcast-type"/>
+    <xs:element name="atomicReference" type="hazelcast-type"/>
     <xs:element name="countDownLatch" type="hazelcast-type"/>
     <xs:element name="semaphore" type="hazelcast-type"/>
     <xs:element name="lock" type="hazelcast-type"/>

@@ -175,6 +175,7 @@
     <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="client" name="idGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
+    <hz:atomicReference id="atomicReference" instance-ref="client" name="atomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="client" name="semaphore"/>
 
