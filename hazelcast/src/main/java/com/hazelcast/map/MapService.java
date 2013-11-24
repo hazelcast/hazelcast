@@ -29,6 +29,7 @@ import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
@@ -52,6 +53,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.*;
@@ -332,7 +334,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        final MapReplicationOperation operation = new MapReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
+        final MapReplicationOperation operation = new MapReplicationOperation(this, container, event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
     }
 
@@ -394,12 +396,11 @@ public class MapService implements ManagedService, MigrationAwareService,
         Record record = mapContainer.getRecordFactory().newRecord(dataKey, value);
 
         if (shouldSchedule) {
+            // if ttl is 0 then no eviction. if ttl is -1 then default configured eviction is applied
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
                 scheduleTtlEviction(name, record, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
             } else if (ttl > 0) {
                 scheduleTtlEviction(name, record, ttl);
-            } else if (mapContainer.getStore() != null) { // following line cancels eviction due to evictable-null optimization. Optimization is only possible with mapstore usage
-                mapContainer.getTtlEvictionScheduler().cancel(record.getKey());
             }
             if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
                 scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
@@ -678,6 +679,43 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public boolean removeEventListener(String mapName, String registrationId) {
         return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
+    }
+
+    public void applyRecordReplicationInfo(Record record, String mapName, RecordReplicationInfo replicationInfo) {
+        record.setStatistics(replicationInfo.getStatistics());
+        if (replicationInfo.getIdleDelayMillis() >= 0) {
+            scheduleIdleEviction(mapName, record.getKey(), replicationInfo.getIdleDelayMillis());
+        }
+        if (replicationInfo.getTtlDelayMillis() >= 0) {
+            scheduleTtlEviction(mapName, record, replicationInfo.getTtlDelayMillis());
+        }
+        if (replicationInfo.getMapStoreWriteDelayMillis() >= 0) {
+            scheduleMapStoreWrite(mapName, record.getKey(), record.getValue(), replicationInfo.getMapStoreWriteDelayMillis());
+        }
+        if (replicationInfo.getMapStoreDeleteDelayMillis() >= 0) {
+            scheduleMapStoreDelete(mapName, record.getKey(), replicationInfo.getMapStoreDeleteDelayMillis());
+        }
+    }
+
+    public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
+        ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(key);
+        long idleDelay = idleScheduledEntry == null ? -1 : findDelayMillis(idleScheduledEntry);
+
+        ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
+        long ttlDelay = ttlScheduledEntry == null ? -1 : findDelayMillis(ttlScheduledEntry);
+
+        ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
+        long writeDelay = writeScheduledEntry == null ? -1 : findDelayMillis(writeScheduledEntry);
+
+        ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
+        long deleteDelay = deleteScheduledEntry == null ? -1 : findDelayMillis(deleteScheduledEntry);
+
+        return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), record.getStatistics(),
+                idleDelay, ttlDelay, writeDelay, deleteDelay);
+    }
+
+    public long findDelayMillis(ScheduledEntry entry) {
+        return Math.max(0, entry.getScheduledDelayMillis() - (Clock.currentTimeMillis() - entry.getScheduleTime()));
     }
 
     public Object toObject(Object data) {

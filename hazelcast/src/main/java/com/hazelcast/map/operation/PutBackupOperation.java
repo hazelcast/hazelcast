@@ -18,6 +18,7 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,14 +29,21 @@ import java.io.IOException;
 
 public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
+    // todo unlockKey is a logic just used in transactional put operations. It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
     private boolean unlockKey = false;
+    private RecordReplicationInfo replicationInfo;
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        super(name, dataKey, dataValue, ttl);
+    public PutBackupOperation(String name, Data dataKey, Data dataValue) {
+        super(name, dataKey, dataValue);
     }
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl, boolean unlockKey) {
-        super(name, dataKey, dataValue, ttl);
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordReplicationInfo replicationInfo) {
+        super(name, dataKey, dataValue);
+        this.replicationInfo = replicationInfo;
+    }
+
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, boolean unlockKey) {
+        super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
     }
 
@@ -53,6 +61,11 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             mapContainer.getRecordFactory().setValue(record, dataValue);
             updateSizeEstimator(calculateRecordSize(record));
         }
+
+        if(replicationInfo != null) {
+            mapService.applyRecordReplicationInfo(record, name, replicationInfo);
+        }
+
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
         }
@@ -66,11 +79,14 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
+        replicationInfo.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
+        replicationInfo = new RecordReplicationInfo();
+        replicationInfo.readData(in);
     }
 
     @Override

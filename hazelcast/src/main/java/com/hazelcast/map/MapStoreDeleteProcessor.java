@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -53,18 +54,27 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
         if (entries.isEmpty())
             return;
 
+        NodeEngine nodeEngine = mapService.getNodeEngine();
         final ILogger logger = mapService.getNodeEngine().getLogger(getClass());
         if (entries.size() == 1) {
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
-            Exception e = tryDelete(scheduler, entry);
-            if (e != null) {
-                logger.severe(e);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
+            // execute operation if the node is owner of the key (it can be backup)
+            if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                Exception e = tryDelete(scheduler, entry);
+                if (e != null) {
+                    logger.severe(e);
+                }
             }
         } else {
             Set keys = new HashSet();
             Exception e = null;
             for (ScheduledEntry<Data, Object> entry : entries) {
-                keys.add(mapService.toObject(entry.getKey()));
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
+                // execute operation if the node is owner of the key (it can be backup)
+                if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                    keys.add(mapService.toObject(entry.getKey()));
+                }
             }
             try {
                 mapContainer.getStore().deleteAll(keys);

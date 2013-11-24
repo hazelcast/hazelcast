@@ -75,7 +75,7 @@ public class MergeOperation extends BasePutOperation {
             return new RemoveBackupOperation(name, dataKey);
         }
         else {
-            return new PutBackupOperation(name, dataKey, dataValue, ttl);
+            return new PutBackupOperation(name, dataKey, dataValue);
         }
     }
 

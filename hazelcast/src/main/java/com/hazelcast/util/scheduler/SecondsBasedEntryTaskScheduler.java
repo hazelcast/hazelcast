@@ -129,6 +129,20 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return null;
     }
 
+    public ScheduledEntry<K, V> get(K key) {
+        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
+            return getComparingTimeKey(key);
+        }
+        final Integer second = secondsOfKeys.get(key);
+        if (second != null) {
+            final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+            if (entries != null) {
+                return entries.get(key);
+            }
+        }
+        return null;
+    }
+
     public ScheduledEntry<K, V> cancelComparingTimeKey(K key) {
         Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
         for (Object tkey : secondsOfKeys.keySet()) {
@@ -148,7 +162,27 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 }
             }
         }
+        return result;
+    }
 
+    public ScheduledEntry<K, V> getComparingTimeKey(K key) {
+        Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
+        for (Object tkey : secondsOfKeys.keySet()) {
+            TimeKey timeKey = (TimeKey) tkey;
+            if (timeKey.getKey().equals(key)) {
+                candidateKeys.add(timeKey);
+            }
+        }
+        ScheduledEntry<K, V> result = null;
+        for (TimeKey timeKey : candidateKeys) {
+            final Integer second = secondsOfKeys.get(timeKey);
+            if (second != null) {
+                final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+                if (entries != null) {
+                    result = entries.get(key);
+                }
+            }
+        }
         return result;
     }
 
