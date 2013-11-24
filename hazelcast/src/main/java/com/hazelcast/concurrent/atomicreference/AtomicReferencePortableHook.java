@@ -12,10 +12,9 @@ public class AtomicReferencePortableHook implements PortableHook {
     public static final int GET = 1;
     public static final int SET = 2;
     public static final int GET_AND_SET = 3;
-    public static final int SET_AND_GET = 4;
-    public static final int IS_NULL = 5;
-    public static final int COMPARE_AND_SET = 6;
-    public static final int CONTAINS = 7;
+    public static final int IS_NULL = 4;
+    public static final int COMPARE_AND_SET = 5;
+    public static final int CONTAINS = 6;
 
     public int getFactoryId() {
         return F_ID;
@@ -31,9 +30,7 @@ public class AtomicReferencePortableHook implements PortableHook {
                         return new SetRequest();
                     case GET_AND_SET:
                         return new GetAndSetRequest();
-                    case SET_AND_GET:
-                        return new SetAndGetRequest();
-                    case IS_NULL:
+                     case IS_NULL:
                         return new IsNullRequest();
                     case COMPARE_AND_SET:
                         return new CompareAndSetRequest();

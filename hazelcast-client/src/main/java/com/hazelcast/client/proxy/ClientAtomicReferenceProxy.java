@@ -48,7 +48,8 @@ public class ClientAtomicReferenceProxy<E>  extends ClientProxy implements IAtom
 
     @Override
     public E setAndGet(E update) {
-        return invoke(new SetAndGetRequest(name, toData(update)));
+        invoke(new SetRequest(name, toData(update)));
+        return update;
     }
 
     @Override

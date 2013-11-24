@@ -130,33 +130,6 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
     }
 
     @Test
-    public void setAndGet() throws Exception {
-        IAtomicReference<String> reference = getAtomicReference();
-
-        final SimpleClient client = getClient();
-
-        client.send(new SetAndGetRequest(name, toData(null)));
-        assertNull(client.receive());
-        assertNull(reference.get());
-
-        client.send(new SetAndGetRequest(name, toData("foo")));
-        assertEquals("foo", client.receive());
-        assertEquals("foo",reference.get());
-
-        client.send(new SetAndGetRequest(name, toData("foo")));
-        assertEquals("foo", client.receive());
-        assertEquals("foo",reference.get());
-
-        client.send(new SetAndGetRequest(name, toData("bar")));
-        assertEquals("bar", client.receive());
-        assertEquals("bar",reference.get());
-
-        client.send(new SetAndGetRequest(name, toData(null)));
-        assertNull(client.receive());
-        assertNull(reference.get());
-    }
-
-    @Test
     public void compareAndSet() throws Exception {
         IAtomicReference<String> reference = getAtomicReference();
 
