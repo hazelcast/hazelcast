@@ -1,6 +1,7 @@
 package com.hazelcast.concurrent.atomicreference.proxy;
 
 import com.hazelcast.concurrent.atomicreference.*;
+import com.hazelcast.core.Function;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -10,6 +11,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
+
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicReferenceService> implements IAtomicReference<E> {
 
@@ -22,6 +25,55 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
+    private <E> E invoke(Operation operation, NodeEngine nodeEngine) {
+        try {
+            Invocation inv = nodeEngine
+                    .getOperationService()
+                    .createInvocationBuilder(AtomicReferenceService.SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future<Data> f = inv.invoke();
+            return nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    @Override
+    public void alter(Function<E, E> function) {
+        isNotNull(function,"function");
+
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new AlterOperation(name, nodeEngine.toData(function));
+        invoke(operation,nodeEngine);
+    }
+
+    @Override
+    public E alterAndGet(Function<E, E> function) {
+        isNotNull(function,"function");
+
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new AlterAndGetOperation(name, nodeEngine.toData(function));
+        return invoke(operation,nodeEngine);
+    }
+
+    @Override
+    public E getAndAlter(Function<E, E> function) {
+        isNotNull(function,"function");
+
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new GetAndAlterOperation(name, nodeEngine.toData(function));
+        return invoke(operation,nodeEngine);
+    }
+
+    @Override
+    public <R> R apply(Function<E, R> function) {
+        isNotNull(function,"function");
+
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new ApplyOperation(name, nodeEngine.toData(function));
+        return invoke(operation,nodeEngine);
+    }
+
     @Override
     public void clear() {
         set(null);
@@ -29,101 +81,50 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        final NodeEngine nodeEngine = getNodeEngine();
-
-        try {
-            CompareAndSetOperation operation = new CompareAndSetOperation(name, nodeEngine.toData(expect), nodeEngine.toData(update));
-            Invocation inv = newInvocation(operation);
-            Future<Data> f = inv.invoke();
-            return nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    private Invocation newInvocation(Operation operation) {
-        return getNodeEngine().getOperationService().createInvocationBuilder(AtomicReferenceService.SERVICE_NAME, operation, partitionId).build();
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new CompareAndSetOperation(name, nodeEngine.toData(expect), nodeEngine.toData(update));
+        return invoke(operation,nodeEngine);
     }
 
     @Override
     public E get() {
-        final NodeEngine nodeEngine = getNodeEngine();
-
-        try {
-            GetOperation operation = new GetOperation(name);
-            Invocation inv = newInvocation(operation);
-            Future<Data> f = inv.invoke();
-            return nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        Operation operation = new GetOperation(name);
+        return invoke(operation,getNodeEngine());
     }
 
     @Override
     public boolean contains(E expected) {
-        final NodeEngine nodeEngine = getNodeEngine();
-
-        try {
-            ContainsOperation operation = new ContainsOperation(name,nodeEngine.toData(expected));
-            Invocation inv = newInvocation(operation);
-            Future<Data> f = inv.invoke();
-            return nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new ContainsOperation(name,nodeEngine.toData(expected));
+        return invoke(operation,nodeEngine);
     }
 
     @Override
     public void set(E newValue) {
-        final NodeEngine nodeEngine = getNodeEngine();
-
-        try {
-            SetOperation operation = new SetOperation(name, nodeEngine.toData(newValue));
-            Invocation inv = newInvocation(operation);
-            Future<Data> f = inv.invoke();
-            f.get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new SetOperation(name, nodeEngine.toData(newValue));
+        invoke(operation,nodeEngine);
     }
 
     @Override
     public E getAndSet(E newValue) {
-        final NodeEngine nodeEngine = getNodeEngine();
-
-        try {
-            GetAndSetOperation operation = new GetAndSetOperation(name, nodeEngine.toData(newValue));
-            Invocation inv = newInvocation(operation);
-            Future<Data> f = inv.invoke();
-            return nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new GetAndSetOperation(name, nodeEngine.toData(newValue));
+        return invoke(operation,nodeEngine);
     }
 
     @Override
     public E setAndGet(E newValue) {
-        final NodeEngine nodeEngine = getNodeEngine();
-
-        try {
-            SetOperation operation = new SetOperation(name, nodeEngine.toData(newValue));
-            Invocation inv = newInvocation(operation);
-            inv.invoke().get();
-            return newValue;
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        NodeEngine nodeEngine = getNodeEngine();
+        Operation operation = new SetOperation(name, nodeEngine.toData(newValue));
+        invoke(operation,nodeEngine);
+        return newValue;
     }
 
     @Override
     public boolean isNull() {
-        try {
-            IsNullOperation operation = new IsNullOperation(name);
-            Invocation inv = newInvocation(operation);
-            return (Boolean) inv.invoke().get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        Operation operation = new IsNullOperation(name);
+        return invoke(operation,getNodeEngine());
     }
 
     @Override

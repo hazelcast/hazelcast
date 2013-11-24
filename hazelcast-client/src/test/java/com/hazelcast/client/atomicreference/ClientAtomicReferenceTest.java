@@ -1,6 +1,7 @@
 package com.hazelcast.client.atomicreference;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.Function;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
@@ -158,5 +159,97 @@ public class ClientAtomicReferenceTest {
 
         assertTrue(clientReference.compareAndSet("bar", null));
         assertNull(serverReference.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void apply_whenCalledWithNullFunction() {
+        clientReference.apply(null);
+    }
+
+    @Test
+    public void apply() {
+        assertEquals("null",clientReference.apply(new AppendFunction("")));
+        assertEquals(null,clientReference.get());
+
+        clientReference.set("foo");
+        assertEquals("foobar", clientReference.apply(new AppendFunction("bar")));
+        assertEquals("foo",clientReference.get());
+
+        assertEquals(null, clientReference.apply(new NullFunction()));
+        assertEquals("foo",clientReference.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void alter_whenCalledWithNullFunction() {
+        clientReference.alter(null);
+    }
+
+    @Test
+    public void alter() {
+        clientReference.alter(new NullFunction());
+        assertEquals(null,clientReference.get());
+
+        clientReference.set("foo");
+        clientReference.alter(new AppendFunction("bar"));
+        assertEquals("foobar",clientReference.get());
+
+        clientReference.alter(new NullFunction());
+        assertEquals(null,clientReference.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void alterAndGet_whenCalledWithNullFunction() {
+        clientReference.alterAndGet(null);
+    }
+
+    @Test
+    public void alterAndGet() {
+        assertNull(clientReference.alterAndGet(new NullFunction()));
+        assertEquals(null,clientReference.get());
+
+        clientReference.set("foo");
+        assertEquals("foobar",clientReference.alterAndGet(new AppendFunction("bar")));
+        assertEquals("foobar",clientReference.get());
+
+        assertEquals(null,clientReference.alterAndGet(new NullFunction()));
+        assertEquals(null,clientReference.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getAndAlter_whenCalledWithNullFunction() {
+        clientReference.alterAndGet(null);
+    }
+
+    @Test
+    public void getAndAlter() {
+        assertNull(clientReference.getAndAlter(new NullFunction()));
+        assertEquals(null,clientReference.get());
+
+        clientReference.set("foo");
+        assertEquals("foo",clientReference.getAndAlter(new AppendFunction("bar")));
+        assertEquals("foobar",clientReference.get());
+
+        assertEquals("foobar",clientReference.getAndAlter(new NullFunction()));
+        assertEquals(null,clientReference.get());
+    }
+
+    private static class AppendFunction implements Function<String,String> {
+        private String add;
+
+        private AppendFunction(String add) {
+            this.add = add;
+        }
+
+        @Override
+        public String apply(String input) {
+            return input+add;
+        }
+    }
+
+    private static class NullFunction implements Function<String,String>{
+        @Override
+        public String apply(String input) {
+            return null;
+        }
     }
 }

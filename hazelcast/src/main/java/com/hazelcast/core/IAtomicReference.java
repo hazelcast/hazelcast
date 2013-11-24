@@ -36,4 +36,12 @@ public interface IAtomicReference<E> extends DistributedObject {
     void clear();
 
     boolean contains(E value);
+
+    void alter(Function<E, E> function);
+
+    E alterAndGet(Function<E, E> function);
+
+    E getAndAlter(Function<E, E> function);
+
+    <R> R apply(Function<E, R> function);
 }

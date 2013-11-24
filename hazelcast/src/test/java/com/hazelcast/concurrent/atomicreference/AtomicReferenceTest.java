@@ -1,6 +1,7 @@
 package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Function;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -144,6 +145,205 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
 
         assertTrue(ref.compareAndSet("bar", null));
         assertNull(ref.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @ClientCompatibleTest
+    public void apply_whenCalledWithNullFunction() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("apply_whenCalledWithNullFunction");
+
+        ref.apply(null);
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void apply() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("apply");
+
+        assertEquals("null", ref.apply(new AppendFunction("")));
+        assertEquals(null, ref.get());
+
+        ref.set("foo");
+        assertEquals("foobar", ref.apply(new AppendFunction("bar")));
+        assertEquals("foo", ref.get());
+
+        assertEquals(null, ref.apply(new NullFunction()));
+        assertEquals("foo", ref.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void apply_whenException() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("apply");
+        ref.set("foo");
+
+        try {
+            ref.apply(new FailingFunction());
+            fail();
+        } catch (WoohaaException expected) {
+        }
+
+        assertEquals("foo", ref.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @ClientCompatibleTest
+    public void alter_whenCalledWithNullFunction() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alter_whenCalledWithNullFunction");
+
+        ref.alter(null);
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void alter_whenException() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alter_whenException");
+        ref.set("foo");
+
+        try {
+            ref.alter(new FailingFunction());
+            fail();
+        } catch (WoohaaException expected) {
+        }
+
+        assertEquals("foo", ref.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void alter() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alter");
+
+        ref.alter(new NullFunction());
+        assertEquals(null, ref.get());
+
+        ref.set("foo");
+        ref.alter(new AppendFunction("bar"));
+        assertEquals("foobar", ref.get());
+
+        ref.alter(new NullFunction());
+        assertEquals(null, ref.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @ClientCompatibleTest
+    public void alterAndGet_whenCalledWithNullFunction() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alterAndGet_whenCalledWithNullFunction");
+
+        ref.alterAndGet(null);
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void alterAndGet_whenException() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alterAndGet_whenException");
+        ref.set("foo");
+
+        try {
+            ref.alterAndGet(new FailingFunction());
+            fail();
+        } catch (WoohaaException expected) {
+        }
+
+        assertEquals("foo", ref.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void alterAndGet() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alterAndGet");
+
+        assertNull(ref.alterAndGet(new NullFunction()));
+        assertEquals(null, ref.get());
+
+        ref.set("foo");
+        assertEquals("foobar", ref.alterAndGet(new AppendFunction("bar")));
+        assertEquals("foobar", ref.get());
+
+        assertEquals(null, ref.alterAndGet(new NullFunction()));
+        assertEquals(null, ref.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @ClientCompatibleTest
+    public void getAndAlter_whenCalledWithNullFunction() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("getAndAlter_whenCalledWithNullFunction");
+
+        ref.getAndAlter(null);
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void getAndAlter_whenException() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("getAndAlter_whenException");
+        ref.set("foo");
+
+        try {
+            ref.getAndAlter(new FailingFunction());
+            fail();
+        } catch (WoohaaException expected) {
+        }
+
+        assertEquals("foo", ref.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void getAndAlter() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("getAndAlter");
+
+        assertNull(ref.getAndAlter(new NullFunction()));
+        assertEquals(null, ref.get());
+
+        ref.set("foo");
+        assertEquals("foo", ref.getAndAlter(new AppendFunction("bar")));
+        assertEquals("foobar", ref.get());
+
+        assertEquals("foobar", ref.getAndAlter(new NullFunction()));
+        assertEquals(null, ref.get());
+    }
+
+    private static class AppendFunction implements Function<String, String> {
+        private String add;
+
+        private AppendFunction(String add) {
+            this.add = add;
+        }
+
+        @Override
+        public String apply(String input) {
+            return input + add;
+        }
+    }
+
+    private static class NullFunction implements Function<String, String> {
+        @Override
+        public String apply(String input) {
+            return null;
+        }
+    }
+
+    private static class FailingFunction implements Function<String, String> {
+        @Override
+        public String apply(String input) {
+            throw new WoohaaException();
+        }
+    }
+
+    private static class WoohaaException extends RuntimeException {
+
     }
 
     @Test
