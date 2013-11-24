@@ -12,4 +12,4 @@ com.hazelcast.concurrent.lock.LockPortableHook
 com.hazelcast.concurrent.semaphore.SemaphorePortableHook
 com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook
 com.hazelcast.concurrent.countdownlatch.CountDownLatchPortableHook
-
+com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook

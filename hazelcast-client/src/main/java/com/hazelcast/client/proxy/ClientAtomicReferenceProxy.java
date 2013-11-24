@@ -1,8 +1,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.atomiclong.client.*;
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.concurrent.atomicreference.client.*;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
@@ -19,34 +18,35 @@ public class ClientAtomicReferenceProxy<E>  extends ClientProxy implements IAtom
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        throw new UnsupportedOperationException();
+        return invoke(new CompareAndSetRequest(name,toData(expect),toData(update)));
     }
 
     @Override
     public E get() {
-        throw new UnsupportedOperationException();
+        return invoke(new GetRequest(name));
     }
 
     @Override
     public void set(E newValue) {
-        throw new UnsupportedOperationException();
+        invoke(new SetRequest(name, toData(newValue)));
     }
 
     @Override
     public E getAndSet(E newValue) {
-        throw new UnsupportedOperationException();
+        return invoke(new GetAndSetRequest(name, toData(newValue)));
     }
 
     @Override
     public E setAndGet(E update) {
-        throw new UnsupportedOperationException();
+        return invoke(new SetAndGetRequest(name, toData(update)));
     }
 
     @Override
     public boolean isNull() {
-        throw new UnsupportedOperationException();
+        return invoke(new IsNullRequest(name));
     }
 
+    @Override
     protected void onDestroy() {
     }
 
@@ -60,9 +60,13 @@ public class ClientAtomicReferenceProxy<E>  extends ClientProxy implements IAtom
 
     private Data getKey(){
         if (key == null){
-            key = getContext().getSerializationService().toData(name);
+            key = toData(name);
         }
         return key;
+    }
+
+    private Data toData(Object object) {
+        return getContext().getSerializationService().toData(object);
     }
 }
 
