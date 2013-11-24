@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -91,6 +92,7 @@ final class ServiceManager {
                 registerService(SetService.SERVICE_NAME, new SetService(nodeEngine));
                 registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
                 registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
+                registerService(AtomicReferenceService.SERVICE_NAME, new AtomicReferenceService());
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
                 registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));

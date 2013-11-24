@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.lock.proxy.LockProxy;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -218,6 +219,13 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             throw new NullPointerException("Retrieving an atomic-long instance with a null key is not allowed!");
         }
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
+    }
+
+    public <E> IAtomicReference<E> getAtomicReference(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving an atomic-reference instance with a null key is not allowed!");
+        }
+        return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {
