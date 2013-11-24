@@ -4,9 +4,11 @@ import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
 import com.hazelcast.concurrent.atomicreference.client.*;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,6 +55,27 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
         reference.set("foo");
         client.send(new IsNullRequest(name));
+        assertEquals(Boolean.FALSE,client.receive());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void contains()throws Exception {
+        IAtomicReference<String> reference = getAtomicReference();
+        final SimpleClient client = getClient();
+
+        client.send(new ContainsRequest(name, toData(null)));
+        assertEquals(Boolean.TRUE, client.receive());
+
+        reference.set("foo");
+
+        client.send(new ContainsRequest(name, toData(null)));
+        assertEquals(Boolean.FALSE, client.receive());
+
+        client.send(new ContainsRequest(name, toData("foo")));
+        assertEquals(Boolean.TRUE,client.receive());
+
+        client.send(new ContainsRequest(name, toData("bar")));
         assertEquals(Boolean.FALSE,client.receive());
     }
 
@@ -149,7 +172,7 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
         client.send(new CompareAndSetRequest(name, toData(null), toData("foo")));
         assertEquals(Boolean.TRUE, client.receive());
-        assertEquals("foo",reference.get());
+        assertEquals("foo", reference.get());
 
         client.send(new CompareAndSetRequest(name, toData("foo"), toData("foo")));
         assertEquals(Boolean.TRUE, client.receive());

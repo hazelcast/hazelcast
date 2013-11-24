@@ -22,6 +22,11 @@ public class ClientAtomicReferenceProxy<E>  extends ClientProxy implements IAtom
     }
 
     @Override
+    public boolean contains(E expected) {
+        return invoke(new ContainsRequest(name,toData(expected)));
+    }
+
+    @Override
     public E get() {
         return invoke(new GetRequest(name));
     }

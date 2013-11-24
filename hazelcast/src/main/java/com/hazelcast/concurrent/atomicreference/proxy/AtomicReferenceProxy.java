@@ -60,6 +60,20 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
+    public boolean contains(E expected) {
+        final NodeEngine nodeEngine = getNodeEngine();
+
+        try {
+            ContainsOperation operation = new ContainsOperation(name,nodeEngine.toData(expected));
+            Invocation inv = newInvocation(operation);
+            Future<Data> f = inv.invoke();
+            return nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    @Override
     public void set(E newValue) {
         final NodeEngine nodeEngine = getNodeEngine();
 

@@ -15,14 +15,14 @@ public class AtomicReferenceWrapper {
     }
 
     public boolean compareAndSet(Data expect, Data value) {
-        if (!equals(expect)) {
+        if (!contains(expect)) {
             return false;
         }
         this.value = value;
         return true;
     }
 
-    private boolean equals(Data expected) {
+    public boolean contains(Data expected) {
         if (value == null) {
             return expected == null;
         }

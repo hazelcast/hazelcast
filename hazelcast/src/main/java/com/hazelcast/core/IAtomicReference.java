@@ -34,4 +34,6 @@ public interface IAtomicReference<E> extends DistributedObject {
     boolean isNull();
 
     void clear();
+
+    boolean contains(E value);
 }

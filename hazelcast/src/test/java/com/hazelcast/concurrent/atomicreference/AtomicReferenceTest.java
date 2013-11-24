@@ -106,6 +106,22 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
+    public void contains() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("clear");
+
+        assertTrue(ref.contains(null));
+        assertFalse(ref.contains("foo"));
+
+        ref.set("foo");
+
+        assertFalse(ref.contains(null));
+        assertTrue(ref.contains("foo"));
+        assertFalse(ref.contains("bar"));
+    }
+
+    @Test
+    @ClientCompatibleTest
     public void compareAndSet() {
         HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("compareAndSet");

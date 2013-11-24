@@ -60,6 +60,18 @@ public class ClientAtomicReferenceTest {
     }
 
     @Test
+    public void contains() {
+        assertTrue(clientReference.contains(null));
+        assertFalse(clientReference.contains("foo"));
+
+        serverReference.set("foo");
+
+        assertFalse(clientReference.contains(null));
+        assertTrue(clientReference.contains("foo"));
+        assertFalse(clientReference.contains("bar"));
+    }
+
+    @Test
     public void set() throws Exception {
         clientReference.set(null);
         assertTrue(serverReference.isNull());
@@ -71,7 +83,7 @@ public class ClientAtomicReferenceTest {
         assertEquals("foo", serverReference.get());
 
         clientReference.set("bar");
-        assertEquals("bar",serverReference.get());
+        assertEquals("bar", serverReference.get());
 
         clientReference.set(null);
         assertTrue(serverReference.isNull());
@@ -95,13 +107,13 @@ public class ClientAtomicReferenceTest {
         assertNull(clientReference.getAndSet("foo"));
         assertEquals("foo", serverReference.get());
 
-        assertEquals("foo",clientReference.getAndSet("foo"));
+        assertEquals("foo", clientReference.getAndSet("foo"));
         assertEquals("foo", serverReference.get());
 
         assertEquals("foo", clientReference.getAndSet("bar"));
-        assertEquals("bar",serverReference.get());
+        assertEquals("bar", serverReference.get());
 
-        assertEquals("bar",clientReference.getAndSet(null));
+        assertEquals("bar", clientReference.getAndSet(null));
         assertTrue(serverReference.isNull());
     }
 
@@ -111,14 +123,14 @@ public class ClientAtomicReferenceTest {
         assertNull(clientReference.setAndGet(null));
         assertTrue(serverReference.isNull());
 
-        assertEquals("foo",clientReference.setAndGet("foo"));
+        assertEquals("foo", clientReference.setAndGet("foo"));
         assertEquals("foo", serverReference.get());
 
-        assertEquals("foo",clientReference.setAndGet("foo"));
+        assertEquals("foo", clientReference.setAndGet("foo"));
         assertEquals("foo", serverReference.get());
 
         assertEquals("bar", clientReference.setAndGet("bar"));
-        assertEquals("bar",serverReference.get());
+        assertEquals("bar", serverReference.get());
 
         assertNull(clientReference.setAndGet(null));
         assertTrue(serverReference.isNull());
@@ -126,25 +138,25 @@ public class ClientAtomicReferenceTest {
 
     @Test
     public void compareAndSet() throws Exception {
-        assertTrue(clientReference.compareAndSet(null,null));
+        assertTrue(clientReference.compareAndSet(null, null));
         assertTrue(serverReference.isNull());
 
-        assertFalse(clientReference.compareAndSet("foo",null));
+        assertFalse(clientReference.compareAndSet("foo", null));
         assertTrue(serverReference.isNull());
 
-        assertTrue(clientReference.compareAndSet(null,"foo"));
-        assertEquals("foo",serverReference.get());
+        assertTrue(clientReference.compareAndSet(null, "foo"));
+        assertEquals("foo", serverReference.get());
 
-        assertTrue(clientReference.compareAndSet("foo","foo"));
-        assertEquals("foo",serverReference.get());
+        assertTrue(clientReference.compareAndSet("foo", "foo"));
+        assertEquals("foo", serverReference.get());
 
-        assertFalse(clientReference.compareAndSet("bar","foo"));
-        assertEquals("foo",serverReference.get());
+        assertFalse(clientReference.compareAndSet("bar", "foo"));
+        assertEquals("foo", serverReference.get());
 
-        assertTrue(clientReference.compareAndSet("foo","bar"));
-        assertEquals("bar",serverReference.get());
+        assertTrue(clientReference.compareAndSet("foo", "bar"));
+        assertEquals("bar", serverReference.get());
 
-        assertTrue(clientReference.compareAndSet("bar",null));
+        assertTrue(clientReference.compareAndSet("bar", null));
         assertNull(serverReference.get());
     }
 }
