@@ -25,6 +25,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Rule;
@@ -38,7 +39,7 @@ import java.util.Set;
  * @author mdogan 5/14/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
-public abstract class ClientTestSupport {
+public abstract class ClientTestSupport extends HazelcastTestSupport{
 
     @Rule
     public final ClientTestResource clientResource = new ClientTestResource(createConfig());

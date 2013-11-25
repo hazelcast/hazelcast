@@ -94,6 +94,9 @@ public class TestClientApplicationContext {
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
 
+    @Resource(name = "atomicReference")
+    private IAtomicReference atomicReference;
+
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
 
@@ -198,6 +201,7 @@ public class TestClientApplicationContext {
         assertNotNull(executorService);
         assertNotNull(idGenerator);
         assertNotNull(atomicLong);
+        assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
         assertEquals("map1", map1.getName());
@@ -209,6 +213,7 @@ public class TestClientApplicationContext {
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }

@@ -12,3 +12,4 @@ com.hazelcast.concurrent.lock.LockDataSerializerHook
 com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook
 com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook
 com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook
+com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook

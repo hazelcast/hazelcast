@@ -32,6 +32,7 @@ import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.lock.proxy.LockProxy;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.multimap.MultiMapService;
@@ -298,6 +299,11 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public IAtomicLong getAtomicLong(String name) {
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
     @Override

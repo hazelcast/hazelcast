@@ -105,6 +105,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getAtomicLong(name);
     }
 
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        return getOriginal().getAtomicReference(name);
+    }
+
     public ICountDownLatch getCountDownLatch(String name) {
         return getOriginal().getCountDownLatch(name);
     }
