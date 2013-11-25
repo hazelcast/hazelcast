@@ -71,7 +71,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         final int partitionId = event.getPartitionId();
         for (String name : references.keySet()) {
             if (partitionId == nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name))) {
-                //data.put(name, references.get(name).get());
+                data.put(name, references.get(name).get());
             }
         }
         return data.isEmpty() ? null : new AtomicReferenceReplicationOperation(data);

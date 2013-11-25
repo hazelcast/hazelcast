@@ -83,7 +83,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     public boolean compareAndSet(E expect, E update) {
         NodeEngine nodeEngine = getNodeEngine();
         Operation operation = new CompareAndSetOperation(name, nodeEngine.toData(expect), nodeEngine.toData(update));
-        return invoke(operation,nodeEngine);
+        return (Boolean) invoke(operation,nodeEngine);
     }
 
     @Override
@@ -96,7 +96,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     public boolean contains(E expected) {
         NodeEngine nodeEngine = getNodeEngine();
         Operation operation = new ContainsOperation(name,nodeEngine.toData(expected));
-        return invoke(operation,nodeEngine);
+        return (Boolean)invoke(operation,nodeEngine);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     @Override
     public boolean isNull() {
         Operation operation = new IsNullOperation(name);
-        return invoke(operation,getNodeEngine());
+        return (Boolean)invoke(operation,getNodeEngine());
     }
 
     @Override

@@ -45,12 +45,12 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return invoke(new CompareAndSetRequest(name, toData(expect), toData(update)));
+        return (Boolean)invoke(new CompareAndSetRequest(name, toData(expect), toData(update)));
     }
 
     @Override
     public boolean contains(E expected) {
-        return invoke(new ContainsRequest(name, toData(expected)));
+        return (Boolean)invoke(new ContainsRequest(name, toData(expected)));
     }
 
     @Override
@@ -81,7 +81,7 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
 
     @Override
     public boolean isNull() {
-        return invoke(new IsNullRequest(name));
+        return (Boolean)invoke(new IsNullRequest(name));
     }
 
     @Override
