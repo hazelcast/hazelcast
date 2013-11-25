@@ -33,6 +33,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -95,9 +96,11 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             testThreads[l].start();
         }
 
+        Thread.sleep(TimeUnit.SECONDS.toMillis(DURATION_SECONDS));
+
         for (TestThread t : testThreads) {
-            t.join();
-            t.assertNotProblems();
+            t.join(TimeUnit.MINUTES.toMillis(1));
+            t.assertDiedPeacefully();
         }
 
         restartThread.stop = true;
@@ -142,9 +145,11 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             testThreads[k].start();
         }
 
+        Thread.sleep(TimeUnit.SECONDS.toMillis(DURATION_SECONDS));
+
         for (TestThread t : testThreads) {
-            t.join();
-            t.assertNotProblems();
+            t.join(TimeUnit.MINUTES.toMillis(1));
+            t.assertDiedPeacefully();
         }
 
         restartThread.stop = true;
@@ -168,7 +173,9 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
         abstract void doRun();
 
-        public void assertNotProblems() {
+        public void assertDiedPeacefully() {
+            assertFalse(isAlive());
+
             if(t!=null){
                 t.printStackTrace();
                 fail(getName()+" failed with an exception:"+t.getMessage());

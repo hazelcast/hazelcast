@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mdogan 9/16/13
@@ -48,16 +49,11 @@ public class InvocationTest extends HazelcastTestSupport {
         HazelcastInstance hz = factory.newHazelcastInstance(new Config());
         final IQueue<Object> q = hz.getQueue("queue");
 
-        final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Thread thread = new OpThread(interruptedFlag, latch) {
-            protected void doOp() {
-                try {
-                    assertNotNull(q.poll(1, TimeUnit.MINUTES));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        Thread thread = new OpThread(latch) {
+            protected void doOp()throws InterruptedException {
+                q.poll(1, TimeUnit.MINUTES);
             }
         };
         thread.start();
@@ -67,7 +63,6 @@ public class InvocationTest extends HazelcastTestSupport {
         q.offer("new item!");
 
         assertTrue(latch.await(1, TimeUnit.MINUTES));
-        assertTrue(interruptedFlag.get());
     }
 
     @Test
@@ -78,17 +73,11 @@ public class InvocationTest extends HazelcastTestSupport {
         lock.lock();
         assertTrue(lock.isLockedByCurrentThread());
 
-        final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Thread thread = new OpThread(interruptedFlag, latch) {
-            protected void doOp() {
-                try {
-                    assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
-                    assertTrue(lock.isLockedByCurrentThread());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        Thread thread = new OpThread(latch) {
+            protected void doOp() throws InterruptedException {
+                assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
             }
         };
         thread.start();
@@ -98,28 +87,23 @@ public class InvocationTest extends HazelcastTestSupport {
         lock.unlock();
 
         assertTrue(latch.await(1, TimeUnit.MINUTES));
-        assertTrue(interruptedFlag.get());
     }
 
     private abstract class OpThread extends Thread {
-        final AtomicBoolean interruptedFlag;
         final CountDownLatch latch;
 
-        protected OpThread(AtomicBoolean interruptedFlag, CountDownLatch latch) {
-            this.interruptedFlag = interruptedFlag;
+        protected OpThread(CountDownLatch latch) {
             this.latch = latch;
         }
 
         public void run() {
-            doOp();
-            interruptedFlag.set(isInterrupted());
             try {
-                sleep(1000 * 60);
+                doOp();
             } catch (InterruptedException e) {
                 latch.countDown();
             }
         }
 
-        protected abstract void doOp();
+        protected abstract void doOp()throws InterruptedException;
     }
 }
