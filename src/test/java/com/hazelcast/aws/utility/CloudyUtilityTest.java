@@ -17,7 +17,11 @@
 package com.hazelcast.aws.utility;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,6 +30,8 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class CloudyUtilityTest {
     String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
             "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2011-05-15/\">\n" +
@@ -175,8 +181,8 @@ public class CloudyUtilityTest {
     public void testNoTags() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("");
-        awsConfig.setSecretKey("");
+        awsConfig.setAccessKey("some-access-key");
+        awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
         List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(2, result.size());
@@ -186,8 +192,8 @@ public class CloudyUtilityTest {
     public void testTagsBothNodeHave() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("");
-        awsConfig.setSecretKey("");
+        awsConfig.setAccessKey("some-access-key");
+        awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("Name1");
         awsConfig.setTagValue("value1");
@@ -199,8 +205,8 @@ public class CloudyUtilityTest {
     public void testTagOnlyOneNodeHave() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("");
-        awsConfig.setSecretKey("");
+        awsConfig.setAccessKey("some-access-key");
+        awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("name");
         awsConfig.setTagValue("");
