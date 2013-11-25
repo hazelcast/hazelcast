@@ -100,7 +100,14 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     public long get() {
-        return getAndAdd(0);
+        try {
+            GetOperation operation = new GetOperation(name);
+            Invocation inv = getNodeEngine().getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Long) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
     }
 
     public long incrementAndGet() {
