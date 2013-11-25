@@ -29,7 +29,6 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 4/5/13

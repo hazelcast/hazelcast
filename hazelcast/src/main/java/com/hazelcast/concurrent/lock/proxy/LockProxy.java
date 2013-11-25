@@ -19,6 +19,8 @@ package com.hazelcast.concurrent.lock.proxy;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.core.AsyncLock;
+import com.hazelcast.core.CompletionFuture;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
@@ -34,7 +36,7 @@ import java.util.concurrent.locks.Condition;
 /**
  * @author mdogan 2/12/13
  */
-public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
+public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements AsyncLock {
 
     private final String name;
     private final LockProxySupport lockSupport;
@@ -47,62 +49,132 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
         lockSupport = new LockProxySupport(new InternalLockNamespace(name));
     }
 
+    @Override
     public boolean isLocked() {
         return lockSupport.isLocked(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncIsLocked() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean isLockedByCurrentThread() {
         return lockSupport.isLockedByCurrentThread(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncIsLockedByCurrentThread() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int getLockCount() {
         return lockSupport.getLockCount(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Integer> asyncGetLockCount() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public long getRemainingLeaseTime() {
         return lockSupport.getRemainingLeaseTime(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Long> asyncGetRemainingLeaseTime() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void lock() {
         lockSupport.lock(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Void> asyncLock() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void lock(long ttl, TimeUnit timeUnit) {
         lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(ttl));
     }
 
+    @Override
+    public CompletionFuture<Void> asyncLock(long leaseTime, TimeUnit timeUnit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void lockInterruptibly() throws InterruptedException {
         lock();
     }
 
+    @Override
+    public CompletionFuture<Void> asyncLockInterruptibly() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean tryLock() {
         return lockSupport.tryLock(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncTryLock() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         return lockSupport.tryLock(getNodeEngine(), key, time, unit);
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncTryLock(long time, TimeUnit unit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void unlock() {
         lockSupport.unlock(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Void> asyncUnlock() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void forceUnlock() {
         lockSupport.forceUnlock(getNodeEngine(), key);
     }
 
+    @Override
+    public CompletionFuture<Void> asyncForceUnlock() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Condition newCondition() {
         throw new UnsupportedOperationException("Use ICondition.newCondition(String name) instead!");
     }
 
+    @Override
     public ICondition newCondition(String name) {
         return new ConditionImpl(this, name);
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
     }

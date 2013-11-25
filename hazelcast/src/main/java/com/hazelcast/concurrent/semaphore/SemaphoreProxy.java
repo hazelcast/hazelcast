@@ -16,6 +16,8 @@
 
 package com.hazelcast.concurrent.semaphore;
 
+import com.hazelcast.core.AsyncSemaphore;
+import com.hazelcast.core.CompletionFuture;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
@@ -27,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author ali 1/22/13
  */
-public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> implements ISemaphore {
+public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> implements AsyncSemaphore {
 
     final String name;
 
@@ -39,23 +41,37 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public boolean init(int permits) {
         checkNegative(permits);
         try {
-            return (Boolean) invoke(new InitOperation(name, permits));
+            return invoke(new InitOperation(name, permits));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncInit(int permits) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void acquire() throws InterruptedException {
         acquire(1);
     }
 
+    @Override
+    public CompletionFuture<Void> asyncAcquire() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
         try {
@@ -65,22 +81,40 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
+    public CompletionFuture<Void> asyncAcquire(int permits) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int availablePermits() {
         try {
-            return (Integer) invoke(new AvailableOperation(name));
+            return  invoke(new AvailableOperation(name));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
+    public CompletionFuture<Integer> asyncAvailablePermits() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int drainPermits() {
         try {
-            return (Integer) invoke(new DrainOperation(name));
+            return invoke(new DrainOperation(name));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
+    public CompletionFuture<Integer> asyncDrainPermits() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void reducePermits(int reduction) {
         checkNegative(reduction);
         try {
@@ -90,10 +124,22 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
+    public CompletionFuture<Void> asyncReducePermits(int reduction) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void release() {
         release(1);
     }
 
+    @Override
+    public CompletionFuture<Void> asyncRelease() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void release(int permits) {
         checkNegative(permits);
         try {
@@ -103,6 +149,12 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
+    public CompletionFuture<Void> asyncRelease(int permits) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean tryAcquire() {
         try {
             return tryAcquire(1, 0, TimeUnit.MILLISECONDS);
@@ -111,6 +163,12 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncTryAcquire() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean tryAcquire(int permits) {
         try {
             return tryAcquire(permits, 0, TimeUnit.MILLISECONDS);
@@ -119,10 +177,22 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncTryAcquire(int permits) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
         return tryAcquire(1, timeout, unit);
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncTryAcquire(long timeout, TimeUnit unit) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         checkNegative(permits);
         try {
@@ -132,11 +202,16 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
+    public CompletionFuture<Boolean> asyncTryAcquire(int permits, long timeout, TimeUnit unit) {
+        throw new UnsupportedOperationException();
+    }
+
     private <T> T invoke(SemaphoreOperation operation) throws ExecutionException, InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SemaphoreService.SERVICE_NAME, operation, partitionId).build();
         Future f = inv.invoke();
-        return (T) nodeEngine.toObject(f.get());
+        return nodeEngine.toObject(f.get());
     }
 
     private void checkNegative(int permits) {
@@ -145,6 +220,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
     }

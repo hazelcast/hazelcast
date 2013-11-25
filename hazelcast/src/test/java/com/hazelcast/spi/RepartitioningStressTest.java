@@ -43,7 +43,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private HazelcastInstance hz;
     private TestHazelcastInstanceFactory instanceFactory;
 
-    private final static long DURATION_SECONDS = 120;
+    private final static long DURATION_SECONDS = 240;
     private final static int THREAD_COUNT = 10;
 
     @Before
@@ -96,7 +96,10 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         }
 
         for (TestThread t : testThreads) {
-            t.join();
+            t.join(TimeUnit.MINUTES.toMillis(5));
+            if(t.isAlive()){
+                fail();
+            }
             t.assertNotProblems();
         }
 
@@ -143,7 +146,10 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         }
 
         for (TestThread t : testThreads) {
-            t.join();
+            t.join(TimeUnit.MINUTES.toMillis(5));
+            if(t.isAlive()){
+                fail();
+            }
             t.assertNotProblems();
         }
 
