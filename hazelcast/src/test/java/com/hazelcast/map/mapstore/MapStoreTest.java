@@ -736,15 +736,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
-        checkIfMapLoaded("default",h1);
-        checkIfMapLoaded("default",h2);
+        checkIfMapLoaded("default", h1);
+        checkIfMapLoaded("default", h2);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         IMap map3 = h3.getMap("default");
-        checkIfMapLoaded("default",h3);
+        checkIfMapLoaded("default", h3);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals("value1", map3.get(1));
@@ -766,7 +766,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
 
-        while (!loaded){
+        while (!loaded) {
             for (int i = 0; i < partitionCount; i++) {
                 final RecordStore recordStore = service.getPartitionContainer(i).getRecordStore(mapName);
                 if (recordStore != null) {
@@ -776,7 +776,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                     }
                 }
             }
-            if( System.currentTimeMillis() >= end ){
+            if (System.currentTimeMillis() >= end) {
                 break;
             }
             //give a rest to cpu.
@@ -943,7 +943,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     static class ProcessingStore extends MapStoreAdapter<Integer, Employee> implements PostProcessingMapStore {
         @Override
         public void store(Integer key, Employee employee) {
-            employee.setSalary(employee.getAge()*1000);
+            employee.setSalary(employee.getAge() * 1000);
         }
     }
 
@@ -959,54 +959,54 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer,Employee> map = instance1.getMap(mapName);
+        IMap<Integer, Employee> map = instance1.getMap(mapName);
         Random random = new Random();
         // testing put with new object
         for (int i = 0; i < 10; i++) {
             Employee emp = new Employee();
-            emp.setAge(random.nextInt(20)+20);
+            emp.setAge(random.nextInt(20) + 20);
             map.put(i, emp);
         }
 
         for (int i = 0; i < 10; i++) {
             Employee employee = map.get(i);
-            assertEquals(employee.getAge()*1000, employee.getSalary(), 0);
+            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
         }
 
         // testing put with existing object
         for (int i = 0; i < 10; i++) {
             Employee emp = map.get(i);
-            emp.setAge(random.nextInt(20)+20);
+            emp.setAge(random.nextInt(20) + 20);
             map.put(i, emp);
         }
 
         for (int i = 0; i < 10; i++) {
             Employee employee = map.get(i);
-            assertEquals(employee.getAge()*1000, employee.getSalary(), 0);
+            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
         }
 
         // testing put with replace
         for (int i = 0; i < 10; i++) {
             Employee emp = map.get(i);
-            emp.setAge(random.nextInt(20)+20);
+            emp.setAge(random.nextInt(20) + 20);
             map.replace(i, emp);
         }
 
         for (int i = 0; i < 10; i++) {
             Employee employee = map.get(i);
-            assertEquals(employee.getAge()*1000, employee.getSalary(), 0);
+            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
         }
 
         // testing put with putIfAbsent
         for (int i = 10; i < 20; i++) {
             Employee emp = new Employee();
-            emp.setAge(random.nextInt(20)+20);
+            emp.setAge(random.nextInt(20) + 20);
             map.putIfAbsent(i, emp);
         }
 
         for (int i = 10; i < 20; i++) {
             Employee employee = map.get(i);
-            assertEquals(employee.getAge()*1000, employee.getSalary(), 0);
+            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
         }
 
     }
@@ -1056,7 +1056,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         String mapname = "testIssue1142ExceptionWhenLoadAllReturnsNull";
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>(){
+        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>() {
             @Override
             public Set<String> loadAllKeys() {
                 Set keys = new HashSet();
@@ -1100,6 +1100,24 @@ public class MapStoreTest extends HazelcastTestSupport {
         instance2.shutdown();
         instance3.shutdown();
         mapStore.awaitStores();
+    }
+
+    @Test
+    public void testWriteBehindSameSecondSameKey() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        IMap<Object, Object> map = h1.getMap("map");
+
+        for (int i = 0; i < 100; i++) {
+            map.put("key", "value" + i);
+        }
+        map.put("key", "the_last_value");
+
+        testMapStore.latchStore.await(5, TimeUnit.SECONDS);
+        assertEquals("the_last_value", testMapStore.getStore().get("key"));
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
