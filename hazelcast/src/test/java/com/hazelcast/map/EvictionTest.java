@@ -670,6 +670,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     /**
      * Test for issue 614
+     *
      * @throws InterruptedException
      */
     @Test
@@ -698,7 +699,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(size);
         final IMap map = instance.getMap("testIssue1085EvictionBackup");
-        map.addEntryListener(new EntryAdapter(){
+        map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
                 super.entryEvicted(event);
@@ -710,7 +711,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
         instance2.shutdown();
         instance3.shutdown();
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
+        assertTrue("map size:" + map.size(), latch.await(30, TimeUnit.SECONDS));
     }
 
     /**

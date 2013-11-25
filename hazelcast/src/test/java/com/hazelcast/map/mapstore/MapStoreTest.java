@@ -830,6 +830,31 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1000, map.values().size());
     }
 
+    @Test
+    public void testIssue1085WriteBehindBackup() throws InterruptedException {
+        Config config = new Config();
+        MapConfig writeBehindBackup = config.getMapConfig("testIssue1085WriteBehindBackup");
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setWriteDelaySeconds(3);
+        SimpleMapStore mapStore = new SimpleMapStore();
+        mapStoreConfig.setImplementation(mapStore);
+        writeBehindBackup.setMapStoreConfig(mapStoreConfig);
+        int size = 100;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        final IMap map = instance.getMap("testIssue1085WriteBehindBackup");
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        instance2.shutdown();
+        instance3.shutdown();
+        Thread.sleep(10000);
+        assertEquals(size, mapStore.store.size());
+    }
+
+
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
     }

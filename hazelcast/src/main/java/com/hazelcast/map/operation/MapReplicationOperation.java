@@ -22,13 +22,12 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.map.record.RecordReplicationInfo;
+import com.hazelcast.map.record.RecordInfoForReplication;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,7 +41,7 @@ import java.util.Set;
  */
 public class MapReplicationOperation extends AbstractOperation {
 
-    private Map<String, Set<RecordReplicationInfo>> data;
+    private Map<String, Set<RecordInfoForReplication>> data;
     private Map<String, Boolean> mapInitialLoadInfo;
 
     public MapReplicationOperation() {
@@ -51,7 +50,7 @@ public class MapReplicationOperation extends AbstractOperation {
     public MapReplicationOperation(MapService mapService, PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         SerializationService ss = container.getMapService().getSerializationService();
-        data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
+        data = new HashMap<String, Set<RecordInfoForReplication>>(container.getMaps().size());
         mapInitialLoadInfo = new HashMap<String, Boolean>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
@@ -67,11 +66,11 @@ public class MapReplicationOperation extends AbstractOperation {
                 mapInitialLoadInfo.put(name, recordStore.isLoaded());
             }
             // now prepare data to migrate records
-            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
+            Set<RecordInfoForReplication> recordSet = new HashSet<RecordInfoForReplication>(recordStore.size());
             for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
                 Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();
-                RecordReplicationInfo recordReplicationInfo;
+                RecordInfoForReplication recordReplicationInfo;
                 recordReplicationInfo = mapService.createRecordReplicationInfo(mapContainer, record, key);
                 recordSet.add(recordReplicationInfo);
             }
@@ -83,14 +82,14 @@ public class MapReplicationOperation extends AbstractOperation {
     public void run() {
         MapService mapService = getService();
         if (data != null) {
-            for (Entry<String, Set<RecordReplicationInfo>> dataEntry : data.entrySet()) {
-                Set<RecordReplicationInfo> recordReplicationInfos = dataEntry.getValue();
+            for (Entry<String, Set<RecordInfoForReplication>> dataEntry : data.entrySet()) {
+                Set<RecordInfoForReplication> recordReplicationInfos = dataEntry.getValue();
                 final String mapName = dataEntry.getKey();
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
-                for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
+                for (RecordInfoForReplication recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
-                    mapService.applyRecordReplicationInfo(newRecord, mapName, recordReplicationInfo);
+                    mapService.applyRecordInfo(newRecord, mapName, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
                 }
             }
@@ -109,13 +108,13 @@ public class MapReplicationOperation extends AbstractOperation {
 
     protected void readInternal(final ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        data = new HashMap<String, Set<RecordReplicationInfo>>(size);
+        data = new HashMap<String, Set<RecordInfoForReplication>>(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int mapSize = in.readInt();
-            Set<RecordReplicationInfo> recordReplicationInfos = new HashSet<RecordReplicationInfo>(mapSize);
+            Set<RecordInfoForReplication> recordReplicationInfos = new HashSet<RecordInfoForReplication>(mapSize);
             for (int j = 0; j < mapSize; j++) {
-                RecordReplicationInfo recordReplicationInfo = in.readObject();
+                RecordInfoForReplication recordReplicationInfo = in.readObject();
                 recordReplicationInfos.add(recordReplicationInfo);
             }
             data.put(name, recordReplicationInfos);
@@ -131,11 +130,11 @@ public class MapReplicationOperation extends AbstractOperation {
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
         out.writeInt(data.size());
-        for (Entry<String, Set<RecordReplicationInfo>> mapEntry : data.entrySet()) {
+        for (Entry<String, Set<RecordInfoForReplication>> mapEntry : data.entrySet()) {
             out.writeUTF(mapEntry.getKey());
-            Set<RecordReplicationInfo> recordReplicationInfos = mapEntry.getValue();
+            Set<RecordInfoForReplication> recordReplicationInfos = mapEntry.getValue();
             out.writeInt(recordReplicationInfos.size());
-            for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
+            for (RecordInfoForReplication recordReplicationInfo : recordReplicationInfos) {
                 out.writeObject(recordReplicationInfo);
             }
         }

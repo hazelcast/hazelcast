@@ -389,14 +389,14 @@ public class DefaultRecordStore implements RecordStore {
         }
 
         clearRecordsMap(lockedRecords);
-        cancelAllSchedulers();
+        cancelAssociatedSchedulers(keysToDelete);
     }
 
     public void reset() {
         checkIfLoaded();
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAllSchedulers();
+        cancelAssociatedSchedulers(records.keySet());
     }
 
     public Object remove(Data dataKey) {
@@ -911,11 +911,6 @@ public class DefaultRecordStore implements RecordStore {
         for (Data key : keySet ){
             cancelAssociatedSchedulers(key);
         }
-    }
-
-    private void cancelAllSchedulers() {
-        mapContainer.getIdleEvictionScheduler().cancelAll();
-        mapContainer.getTtlEvictionScheduler().cancelAll();
     }
 
     private class MapLoadAllTask implements Runnable {
