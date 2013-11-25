@@ -11,7 +11,7 @@ public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareO
 
     protected Data function;
     protected Object response;
-    protected Data update;
+    protected Data backup;
 
     public AbstractAlterOperation() {
         super();
@@ -20,6 +20,18 @@ public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareO
     public AbstractAlterOperation(String name, Data function) {
         super(name);
         this.function = function;
+    }
+
+    protected boolean equals(Object o1, Object o2){
+        if(o1 == null){
+            return o2 == null;
+        }
+
+        if(o1 == o2){
+            return true;
+        }
+
+        return o1.equals(o2);
     }
 
     @Override
@@ -40,6 +52,6 @@ public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareO
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, update);
+        return new SetBackupOperation(name, backup);
     }
 }

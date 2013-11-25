@@ -22,7 +22,10 @@ public class GetAndAlterOperation  extends AbstractAlterOperation {
         Object input = nodeEngine.toObject(reference.get());
         response = input;
         Object output = f.apply(input);
-        update = nodeEngine.toData(output);
-        reference.set(update);
+        shouldBackup = !equals(input,output);
+        if(shouldBackup){
+            backup = nodeEngine.toData(output);
+            reference.set(backup);
+        }
     }
 }
