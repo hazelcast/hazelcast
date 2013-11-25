@@ -25,7 +25,6 @@ import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
 import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
 import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
 import com.hazelcast.concurrent.atomiclong.client.SetRequest;
-import com.hazelcast.concurrent.atomicreference.client.*;
 import com.hazelcast.core.Function;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.serialization.Data;
