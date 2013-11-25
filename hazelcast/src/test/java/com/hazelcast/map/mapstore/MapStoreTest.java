@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.SerialTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -312,7 +311,6 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SerialTest.class)
     public void testOneMemberWriteBehindWithEvictions() throws Exception {
         final String mapName = "testOneMemberWriteBehindWithEvictions";
         final TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
