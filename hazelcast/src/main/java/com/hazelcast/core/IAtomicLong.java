@@ -101,7 +101,7 @@ public interface IAtomicLong extends DistributedObject {
     void set(long newValue);
 
     /**
-     * Alters the currently stored reference by applying a function on it.
+     * Alters the currently stored value by applying a function on it.
      *
      * @param function the function
      * @throws IllegalArgumentException if function is null.
@@ -109,7 +109,7 @@ public interface IAtomicLong extends DistributedObject {
     void alter(Function<Long, Long> function);
 
     /**
-     * Alters the currently stored reference by applying a function on it and gets the result.
+     * Alters the currently stored value by applying a function on it and gets the result.
      *
      * @param function the function
      * @return the new value.
@@ -118,7 +118,7 @@ public interface IAtomicLong extends DistributedObject {
     long alterAndGet(Function<Long, Long> function);
 
     /**
-     * Alters the currently stored reference by applying a function on it on and gets the old value.
+     * Alters the currently stored value by applying a function on it on and gets the old value.
      *
      * @param function the function
      * @return  the old value
