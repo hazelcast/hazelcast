@@ -18,12 +18,9 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.util.Clock;
 
-<<<<<<< HEAD
 import java.util.HashSet;
 import java.util.Set;
-=======
 import java.util.*;
->>>>>>> 5bae1af... entry task scheduler sort entries and map store write processor  improvement
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;

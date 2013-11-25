@@ -60,20 +60,12 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             final Queue<ScheduledEntry> duplicateKeys = new LinkedList<ScheduledEntry>();
             final Map map = new HashMap(entries.size());
             for (ScheduledEntry<Data, Object> entry : entries) {
-<<<<<<< HEAD
-                map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
-=======
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
-                // execute operation if the node is owner of the key (it can be backup)
-                if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
-                    final Object key = mapService.toObject(entry.getKey());
-                    if (map.get(key) != null) {
-                        duplicateKeys.offer(entry);
-                        continue;
-                    }
-                    map.put(key, mapService.toObject(entry.getValue()));
+                final Object key = mapService.toObject(entry.getKey());
+                if (map.get(key) != null) {
+                    duplicateKeys.offer(entry);
+                    continue;
                 }
->>>>>>> 5bae1af... entry task scheduler sort entries and map store write processor  improvement
+                map.put(key, mapService.toObject(entry.getValue()));
             }
             Exception exception = null;
             try {

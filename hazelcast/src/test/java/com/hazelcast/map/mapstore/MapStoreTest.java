@@ -764,10 +764,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         boolean loaded = false;
         final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
-<<<<<<< HEAD
-=======
-
->>>>>>> 5bae1af... entry task scheduler sort entries and map store write processor  improvement
         while (!loaded) {
             for (int i = 0; i < partitionCount; i++) {
                 final RecordStore recordStore = service.getPartitionContainer(i).getRecordStore(mapName);
@@ -917,7 +913,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         config.getMapConfig("testIssue1019").setMapStoreConfig(mapStoreConfig);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-<<<<<<< HEAD
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final IMap map = instance.getMap("testIssue1019");
         for (int i = 0; i < 1000; i++) {
@@ -925,22 +920,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
         for (int i = 10000; i < 10100; i++) {
             map.get(i);
-=======
-        IMap map = instance.getMap("default");
-
-        assertEquals(map.keySet(), mapForStore.keySet());
-        assertEquals(new HashSet(map.values()), new HashSet(mapForStore.values()));
-        assertEquals(map.entrySet(), mapForStore.entrySet());
-
-        assertFalse(map.containsKey(keyWithNullValue));
-        assertNull(map.get(keyWithNullValue));
-    }
-
-    static class ProcessingStore extends MapStoreAdapter<Integer, Employee> implements PostProcessingMapStore {
-        @Override
-        public void store(Integer key, Employee employee) {
-            employee.setSalary(employee.getAge() * 1000);
->>>>>>> 5bae1af... entry task scheduler sort entries and map store write processor  improvement
         }
         assertEquals(1000, map.values().size());
     }
@@ -950,7 +929,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         String mapname = "testIssue11142ExceptionWhenLoadAllReturnsNull";
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-<<<<<<< HEAD
         mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>() {
             @Override
             public Set<String> loadAllKeys() {
@@ -970,62 +948,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         final IMap map = instance.getMap(mapname);
         for (int i = 0; i < 300; i++) {
             map.put(i, i);
-=======
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(mapStore);
-        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer, Employee> map = instance1.getMap(mapName);
-        Random random = new Random();
-        // testing put with new object
-        for (int i = 0; i < 10; i++) {
-            Employee emp = new Employee();
-            emp.setAge(random.nextInt(20) + 20);
-            map.put(i, emp);
-        }
-
-        for (int i = 0; i < 10; i++) {
-            Employee employee = map.get(i);
-            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
-        }
-
-        // testing put with existing object
-        for (int i = 0; i < 10; i++) {
-            Employee emp = map.get(i);
-            emp.setAge(random.nextInt(20) + 20);
-            map.put(i, emp);
-        }
-
-        for (int i = 0; i < 10; i++) {
-            Employee employee = map.get(i);
-            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
-        }
-
-        // testing put with replace
-        for (int i = 0; i < 10; i++) {
-            Employee emp = map.get(i);
-            emp.setAge(random.nextInt(20) + 20);
-            map.replace(i, emp);
-        }
-
-        for (int i = 0; i < 10; i++) {
-            Employee employee = map.get(i);
-            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
-        }
-
-        // testing put with putIfAbsent
-        for (int i = 10; i < 20; i++) {
-            Employee emp = new Employee();
-            emp.setAge(random.nextInt(20) + 20);
-            map.putIfAbsent(i, emp);
-        }
-
-        for (int i = 10; i < 20; i++) {
-            Employee employee = map.get(i);
-            assertEquals(employee.getAge() * 1000, employee.getSalary(), 0);
->>>>>>> 5bae1af... entry task scheduler sort entries and map store write processor  improvement
         }
         assertEquals(300, map.size());
     }
@@ -1070,60 +992,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         latch.await();
         assertEquals(mapSize, map.size());
     }
-
-<<<<<<< HEAD
-=======
-    @Test
-    public void testIssue1142ExceptionWhenLoadAllReturnsNull() {
-        Config config = new Config();
-        String mapname = "testIssue1142ExceptionWhenLoadAllReturnsNull";
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>() {
-            @Override
-            public Set<String> loadAllKeys() {
-                Set keys = new HashSet();
-                keys.add("key");
-                return keys;
-            }
-
-            public Map loadAll(Collection keys) {
-                return null;
-            }
-        });
-        config.getMapConfig(mapname).setMapStoreConfig(mapStoreConfig);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        final IMap map = instance.getMap(mapname);
-        for (int i = 0; i < 300; i++) {
-            map.put(i, i);
-        }
-        assertEquals(300, map.size());
-    }
-
-    @Test
-    public void testIssue1085WriteBehindBackup() throws InterruptedException {
-        Config config = new Config();
-        MapConfig writeBehindBackup = config.getMapConfig("testIssue1085WriteBehindBackup");
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setWriteDelaySeconds(3);
-        int size = 100;
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 100);
-        mapStoreConfig.setImplementation(mapStore);
-        writeBehindBackup.setMapStoreConfig(mapStoreConfig);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        final IMap map = instance.getMap("testIssue1085WriteBehindBackup");
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-        instance2.shutdown();
-        instance3.shutdown();
-        mapStore.awaitStores();
-    }
->>>>>>> 5bae1af... entry task scheduler sort entries and map store write processor  improvement
 
     @Test
     public void testWriteBehindSameSecondSameKey() throws Exception {
