@@ -22,10 +22,7 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
+import java.util.*;
 
 public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
@@ -60,9 +57,23 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                 logger.severe(exception);
             }
         } else {   // if entries size > 0, we will call storeAll
-            Map map = new HashMap(entries.size());
+            final Queue<ScheduledEntry> duplicateKeys = new LinkedList<ScheduledEntry>();
+            final Map map = new HashMap(entries.size());
             for (ScheduledEntry<Data, Object> entry : entries) {
+<<<<<<< HEAD
                 map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+=======
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
+                // execute operation if the node is owner of the key (it can be backup)
+                if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                    final Object key = mapService.toObject(entry.getKey());
+                    if (map.get(key) != null) {
+                        duplicateKeys.offer(entry);
+                        continue;
+                    }
+                    map.put(key, mapService.toObject(entry.getValue()));
+                }
+>>>>>>> 5bae1af... entry task scheduler sort entries and map store write processor  improvement
             }
             Exception exception = null;
             try {
@@ -74,6 +85,13 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                     if (temp != null) {
                         exception = temp;
                     }
+                }
+            }
+            ScheduledEntry entry;
+            while ((entry = duplicateKeys.poll()) != null) {
+                final Exception temp = tryStore(scheduler, entry);
+                if (temp != null) {
+                    exception = temp;
                 }
             }
             if (exception != null) {

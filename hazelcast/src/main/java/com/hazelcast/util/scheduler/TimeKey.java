@@ -55,4 +55,13 @@ final class TimeKey {
         result = 31 * result + (int) (time ^ (time >>> 32));
         return result;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("TimeKey{");
+        sb.append("key=").append(key);
+        sb.append(",time=").append(time);
+        sb.append('}');
+        return sb.toString();
+    }
 }
