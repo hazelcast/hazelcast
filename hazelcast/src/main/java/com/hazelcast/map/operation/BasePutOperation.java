@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
-import com.hazelcast.map.record.RecordInfoForReplication;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;

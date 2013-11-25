@@ -30,7 +30,7 @@ import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
-import com.hazelcast.map.record.RecordInfoForReplication;
+import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
@@ -697,7 +697,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    public RecordInfoForReplication createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
+    public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(key);
         long idleDelay = idleScheduledEntry == null ? -1 : findDelayMillis(idleScheduledEntry);
 
@@ -710,7 +710,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
         long deleteDelay = deleteScheduledEntry == null ? -1 : findDelayMillis(deleteScheduledEntry);
 
-        return new RecordInfoForReplication(record.getKey(), toData(record.getValue()), record.getStatistics(),
+        return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), record.getStatistics(),
                 idleDelay, ttlDelay, writeDelay, deleteDelay);
     }
 

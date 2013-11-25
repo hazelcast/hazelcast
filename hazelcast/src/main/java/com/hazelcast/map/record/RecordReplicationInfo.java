@@ -23,14 +23,14 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class RecordInfoForReplication extends RecordInfo implements DataSerializable {
+public class RecordReplicationInfo extends RecordInfo implements DataSerializable {
 
     private Data key;
     private Data value;
 
-    public RecordInfoForReplication(Data key, Data value, RecordStatistics statistics,
-                                    long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
-                                    long mapStoreDeleteDelayMillis) {
+    public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics,
+                                 long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
+                                 long mapStoreDeleteDelayMillis) {
         this.key = key;
         this.value = value;
         this.statistics = statistics;
@@ -40,7 +40,7 @@ public class RecordInfoForReplication extends RecordInfo implements DataSerializ
         this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
-    public RecordInfoForReplication() {
+    public RecordReplicationInfo() {
     }
 
     public Data getKey() {

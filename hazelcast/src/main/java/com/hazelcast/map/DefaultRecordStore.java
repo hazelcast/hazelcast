@@ -189,10 +189,9 @@ public class DefaultRecordStore implements RecordStore {
                 indexService.removeEntryIndex(key);
             }
         }
+        cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAssociatedSchedulers(records.keySet());
-
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -394,9 +393,9 @@ public class DefaultRecordStore implements RecordStore {
 
     public void reset() {
         checkIfLoaded();
+        cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAssociatedSchedulers(records.keySet());
     }
 
     public Object remove(Data dataKey) {
