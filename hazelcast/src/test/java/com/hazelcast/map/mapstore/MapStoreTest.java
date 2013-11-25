@@ -1063,6 +1063,28 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(300, map.size());
     }
 
+    @Test
+    public void testIssue1085WriteBehindBackup() throws InterruptedException {
+        Config config = new Config();
+        MapConfig writeBehindBackup = config.getMapConfig("testIssue1085WriteBehindBackup");
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setWriteDelaySeconds(3);
+        int size = 100;
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 100);
+        mapStoreConfig.setImplementation(mapStore);
+        writeBehindBackup.setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        final IMap map = instance.getMap("testIssue1085WriteBehindBackup");
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        instance2.shutdown();
+        instance3.shutdown();
+        mapStore.awaitStores();
+    }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
@@ -1076,6 +1098,36 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return config;
+    }
+
+    public static class MapStoreWithStoreCount extends SimpleMapStore {
+        final CountDownLatch latch;
+        final int waitSecond;
+
+        public MapStoreWithStoreCount(int expectedStore, int seconds) {
+            latch = new CountDownLatch(expectedStore);
+            waitSecond = seconds;
+        }
+
+        public void awaitStores() {
+            try {
+                assertTrue("Store remaining: " + latch.getCount(), latch.await(waitSecond, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+            }
+        }
+
+        @Override
+        public void store(Object key, Object value) {
+            latch.countDown();
+        }
+
+        @Override
+        public void storeAll(Map map) {
+            for (Object o : map.keySet()) {
+                latch.countDown();
+            }
+            super.storeAll(map);
+        }
     }
 
     public static class TestEventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapStore<K, V> {

@@ -39,8 +39,8 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     public TxnSetOperation() {
     }
 
-    public TxnSetOperation(String name, Data dataKey, Data value, long ttl, long version) {
-        super(name, dataKey, value, ttl);
+    public TxnSetOperation(String name, Data dataKey, Data value, long version) {
+        super(name, dataKey, value);
         this.version = version;
     }
 
@@ -72,7 +72,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     public Operation getBackupOperation() {
-        return new PutBackupOperation(name, dataKey, dataValue, ttl, true);
+        return new PutBackupOperation(name, dataKey, dataValue, true);
     }
 
     public void onWaitExpire() {

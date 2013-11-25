@@ -23,15 +23,10 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class RecordReplicationInfo implements DataSerializable {
+public class RecordReplicationInfo extends RecordInfo implements DataSerializable {
 
     private Data key;
     private Data value;
-    private RecordStatistics statistics;
-    private long idleDelayMillis = -1;
-    private long ttlDelayMillis = -1;
-    private long mapStoreWriteDelayMillis = -1;
-    private long mapStoreDeleteDelayMillis = -1;
 
     public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics,
                                  long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
@@ -45,12 +40,6 @@ public class RecordReplicationInfo implements DataSerializable {
         this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
-    public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics) {
-        this.key = key;
-        this.value = value;
-        this.statistics = statistics;
-    }
-
     public RecordReplicationInfo() {
     }
 
@@ -62,57 +51,19 @@ public class RecordReplicationInfo implements DataSerializable {
         return value;
     }
 
-    public RecordStatistics getStatistics() {
-        return statistics;
-    }
-
-    public long getIdleDelayMillis() {
-        return idleDelayMillis;
-    }
-
-    public long getTtlDelayMillis() {
-        return ttlDelayMillis;
-    }
-
-    public long getMapStoreWriteDelayMillis() {
-        return mapStoreWriteDelayMillis;
-    }
-
-    public long getMapStoreDeleteDelayMillis() {
-        return mapStoreDeleteDelayMillis;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
         key.writeData(out);
         value.writeData(out);
-        if (statistics != null) {
-            out.writeBoolean(true);
-            statistics.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
-        out.writeLong(idleDelayMillis);
-        out.writeLong(ttlDelayMillis);
-        out.writeLong(mapStoreWriteDelayMillis);
-        out.writeLong(mapStoreDeleteDelayMillis);
-
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
         key = new Data();
         key.readData(in);
         value = new Data();
         value.readData(in);
-        boolean statsEnabled = in.readBoolean();
-        if (statsEnabled) {
-            statistics = new RecordStatistics();
-            statistics.readData(in);
-        }
-        idleDelayMillis = in.readLong();
-        ttlDelayMillis = in.readLong();
-        mapStoreWriteDelayMillis = in.readLong();
-        mapStoreDeleteDelayMillis = in.readLong();
     }
 }

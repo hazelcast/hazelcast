@@ -980,6 +980,31 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(4, map.keySet(predicate).size());
     }
 
+    @Test
+    public void testShutDown() {
+        Config cfg = new Config();
+        cfg.getMapConfig("testShutDown").addMapIndexConfig(new MapIndexConfig("typeName", false));
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance.getMap("testShutDown");
+        int allsize = 10000;
+        int targetSize = 3000;
+        for (int i = 0; i < allsize; i++) {
+            map.put(i, new ValueType("type"+i));
+        }
+
+        for (int i = allsize; i < allsize+targetSize; i++) {
+            map.put(i, new ValueType("typex"));
+        }
+        assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
+        instance2.shutdown();
+        assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
+        instance3.shutdown();
+        assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
+    }
+
     /**
      * Github issues 98 and 131
      */
