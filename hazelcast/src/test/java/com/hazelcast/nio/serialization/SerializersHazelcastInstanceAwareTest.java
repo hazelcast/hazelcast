@@ -21,14 +21,20 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
     @Test

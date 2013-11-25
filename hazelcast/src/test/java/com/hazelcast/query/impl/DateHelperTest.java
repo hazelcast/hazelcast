@@ -16,8 +16,12 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -28,6 +32,8 @@ import java.util.Locale;
 /**
  * @author mdogan 7/4/13
  */
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class DateHelperTest {
 
     @Test

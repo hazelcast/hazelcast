@@ -4,7 +4,9 @@ import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.TestEnvironment;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -17,6 +19,8 @@ import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +28,8 @@ import java.net.ServerSocket;
 import java.util.Map.Entry;
 import java.util.Random;
 
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public abstract class AbstractWebfilterTestCase {
 
     static {
