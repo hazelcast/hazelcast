@@ -17,6 +17,13 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.client.*;
+import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
+import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
+import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
+import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.client.SetRequest;
 import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
@@ -33,6 +40,10 @@ public class AtomicLongPortableHook implements PortableHook {
     public static final int GET_AND_ADD = 3;
     public static final int GET_AND_SET = 4;
     public static final int SET = 5;
+    public static final int APPLY = 6;
+    public static final int ALTER = 7;
+    public static final int ALTER_AND_GET = 8;
+    public static final int GET_AND_ALTER = 9;
 
 
     public int getFactoryId() {
@@ -53,6 +64,14 @@ public class AtomicLongPortableHook implements PortableHook {
                         return new GetAndSetRequest();
                     case SET:
                         return new SetRequest();
+                    case APPLY:
+                        return new ApplyRequest();
+                    case ALTER:
+                        return new AlterRequest();
+                    case ALTER_AND_GET:
+                        return new AlterAndGetRequest();
+                    case GET_AND_ALTER:
+                        return new GetAndAlterRequest();
                 }
                 return null;
             }
