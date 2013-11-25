@@ -80,7 +80,10 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 } else {
                     eventType = EntryEventType.UPDATED;
                 }
-                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
+                // todo if this is a read only operation, record access statistics should be updated.
+                if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                    recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
+                }
             }
 
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {

@@ -108,8 +108,7 @@ public class DefaultRecordStore implements RecordStore {
                         } catch (Throwable t) {
                             throw ExceptionUtil.rethrow(t);
                         }
-                    }
-                    else {
+                    } else {
                         loaded.set(true);
                     }
                 } else {
@@ -328,32 +327,44 @@ public class DefaultRecordStore implements RecordStore {
         return temp.entrySet();
     }
 
-    public Map.Entry<Data, Data> getMapEntryData(Data dataKey) {
+    public Map.Entry<Data, Object> getMapEntry(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object value;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                value = mapContainer.getStore().load(mapService.toObject(dataKey));
-                if (value != null) {
-                    record = mapService.createRecord(name, dataKey, value, -1);
-                    records.put(dataKey, record);
-                    saveIndex(record);
-                    updateSizeEstimator(calculateRecordSize(record));
-                }
-            }
+            record = getRecordInternal(dataKey,true);
         } else {
             accessRecord(record);
         }
-        Data data = record != null ? mapService.toData(record.getValue()) : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, data);
+        final Object data = record != null ? record.getValue() : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
+    public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object value = record != null ? mapService.toObject(record.getValue()) : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value);
+        if (record == null) {
+            record = getRecordInternal(dataKey,false);
+        } else {
+            accessRecord(record);
+        }
+        final Object data = record != null ? record.getValue() : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
+    }
+
+    private Record getRecordInternal(Data dataKey, boolean enableIndex) {
+        Record record = null;
+        if (mapContainer.getStore() != null) {
+            final Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
+            if (value != null) {
+                record = mapService.createRecord(name, dataKey, value, -1);
+                records.put(dataKey, record);
+                if (enableIndex) {
+                    saveIndex(record);
+                }
+                updateSizeEstimator(calculateRecordSize(record));
+            }
+        }
+        return record;
     }
 
     public Set<Data> keySet() {
