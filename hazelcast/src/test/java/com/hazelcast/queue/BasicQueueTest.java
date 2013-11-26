@@ -22,6 +22,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -42,8 +43,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 2/12/13
  */
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test

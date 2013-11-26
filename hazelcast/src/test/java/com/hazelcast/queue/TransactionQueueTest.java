@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,8 +45,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 3/11/13
  */
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test

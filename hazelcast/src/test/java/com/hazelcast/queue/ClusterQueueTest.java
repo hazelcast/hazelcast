@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -36,8 +37,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
