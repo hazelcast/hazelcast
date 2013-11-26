@@ -53,7 +53,7 @@ import static org.junit.Assert.*;
  * @author mdogan 8/21/13
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(QuickTest.class)
 public class PartitionControlledIdTest extends HazelcastTestSupport {
 
     private HazelcastInstance[] instances;
