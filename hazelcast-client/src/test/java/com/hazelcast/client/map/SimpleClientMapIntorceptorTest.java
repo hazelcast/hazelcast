@@ -19,13 +19,11 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 
 /**
- * Created with IntelliJ IDEA.
- * User: danny
- * Date: 11/25/13
- * Time: 6:02 PM
- * To change this template use File | Settings | File Templates.
+ * User: danny Date: 11/26/13
  */
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
@@ -74,13 +72,15 @@ public class SimpleClientMapIntorceptorTest {
         map.put(6, "Cairo");
         map.put(7, "Hong Kong");
 
-        try {
-            map.remove(1);
-        } catch (Exception ignore) {}
+        map.remove(1);
+
 
         try {
             map.remove(2);
-        } catch (Exception ignore) {}
+            fail();
+        } catch (Exception ignore) {
+
+        }
 
         assertEquals(map.size(), 6);
         assertEquals(map.get(1), null);

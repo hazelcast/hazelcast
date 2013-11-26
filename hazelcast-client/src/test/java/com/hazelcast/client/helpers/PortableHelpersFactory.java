@@ -3,13 +3,11 @@ package com.hazelcast.client.helpers;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 
+
 /**
- * Created with IntelliJ IDEA.
- * User: danny
- * Date: 11/25/13
- * Time: 9:41 PM
- * To change this template use File | Settings | File Templates.
+ * User: danny Date: 11/26/13
  */
+
 public class PortableHelpersFactory implements PortableFactory {
 
     public static final int ID = 666;
