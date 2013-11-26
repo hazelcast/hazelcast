@@ -30,6 +30,7 @@ public class MapStoreWrapper implements MapStore {
 
     private final MapLoader mapLoader;
     private final MapStore mapStore;
+
     private final Object impl;
     private final String mapName;
     private final AtomicBoolean enabled = new AtomicBoolean(false);
@@ -48,6 +49,10 @@ public class MapStoreWrapper implements MapStore {
         this.mapLoader = loader;
         this.mapStore = store;
         this.enabled.set(enabled);
+    }
+
+    public MapStore getMapStore() {
+        return mapStore;
     }
 
     public void enable() {
