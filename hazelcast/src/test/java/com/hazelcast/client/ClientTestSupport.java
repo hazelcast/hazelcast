@@ -24,7 +24,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -38,7 +38,7 @@ import java.util.Set;
 /**
  * @author mdogan 5/14/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class ClientTestSupport extends HazelcastTestSupport{
 
     @Rule

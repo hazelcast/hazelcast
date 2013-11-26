@@ -17,7 +17,8 @@
 package com.hazelcast.wm.test;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.junit.Test;
@@ -34,7 +35,7 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
-@Category(SerialTest.class)
+@Category(QuickTest.class)
 public class WebfilterTestCase extends AbstractWebfilterTestCase {
 
     @Parameters(name = "Executing: {0}")

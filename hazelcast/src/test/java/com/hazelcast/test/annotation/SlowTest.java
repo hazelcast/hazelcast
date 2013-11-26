@@ -17,8 +17,8 @@
 package com.hazelcast.test.annotation;
 
 /**
- * @author mdogan 5/24/13
+ * @author mdogan 5/21/13
  */
 
-public final class ParallelTest {
+public final class SlowTest {
 }

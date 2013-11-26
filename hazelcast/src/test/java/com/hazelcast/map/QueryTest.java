@@ -23,11 +23,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,8 +46,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.query.SampleObjects.*;
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class QueryTest extends HazelcastTestSupport {
 
     @Test
@@ -321,7 +322,7 @@ public class QueryTest extends HazelcastTestSupport {
 
     @Test
     // TODO: fails @mm - Test fails randomly!
-    @Category(SerialTest.class)
+    @Category(SlowTest.class)
     public void testQueryWithTTL() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();

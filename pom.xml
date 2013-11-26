@@ -159,13 +159,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <!-- 1C means 1 process per cpu core -->
-                    <forkCount>1C</forkCount>
+                    <!-- forkCount>1C</forkCount>
                     <reuseForks>true</reuseForks>
 
                     <threadCount>1</threadCount>
                     <perCoreThreadCount>true</perCoreThreadCount>
-                    <parallel>methods</parallel>
+                    <parallel>methods</parallel -->
 
                     <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
@@ -173,8 +174,8 @@
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
                     </argLine>
-                    <groups>com.hazelcast.test.annotation.ParallelTest</groups>
-                    <excludedGroups>com.hazelcast.test.annotation.SerialTest</excludedGroups>
+                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                    <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
                 </configuration>
             </plugin>
 
@@ -377,7 +378,7 @@
         </profile>
 
         <profile>
-            <id>parallel-test</id>
+            <id>quick-test</id>
             <build>
                 <plugins>
                     <plugin>
@@ -385,22 +386,14 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <!-- 1C means 1 process per cpu core -->
-                            <forkCount>1C</forkCount>
-                            <reuseForks>true</reuseForks>
-
-                            <threadCount>1</threadCount>
-                            <perCoreThreadCount>true</perCoreThreadCount>
-                            <parallel>methods</parallel>
-
-                            <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
+                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.ParallelTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.SerialTest</excludedGroups>
+                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -408,7 +401,7 @@
         </profile>
 
         <profile>
-            <id>serial-test</id>
+            <id>slow-test</id>
             <build>
                 <plugins>
                     <plugin>
@@ -423,7 +416,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.SerialTest</groups>
+                            <groups>com.hazelcast.test.annotation.SlowTest</groups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -446,7 +439,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.ParallelTest,com.hazelcast.test.annotation.SerialTest</groups>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -489,8 +482,8 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.ParallelTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.SerialTest</excludedGroups>
+                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -553,8 +546,8 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.ParallelTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.SerialTest</excludedGroups>
+                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -593,7 +586,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.SerialTest</groups>
+                            <groups>com.hazelcast.test.annotation.SlowTest</groups>
                         </configuration>
                     </plugin>
                     <plugin>

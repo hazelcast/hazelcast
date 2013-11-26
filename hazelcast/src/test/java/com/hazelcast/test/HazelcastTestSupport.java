@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
  * @author mdogan 5/24/13
  */
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
