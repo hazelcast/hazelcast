@@ -93,6 +93,7 @@ public final class ScheduledEntry<K, V> {
                 ", value=" + value +
                 ", scheduledDelayMillis=" + scheduledDelayMillis +
                 ", actualDelaySeconds=" + actualDelaySeconds +
+                ", scheduleTime=" + scheduleTime +
                 '}';
     }
 }

@@ -22,19 +22,18 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
+import java.util.*;
 
 public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
     private final MapContainer mapContainer;
     private final MapService mapService;
+    private final ILogger logger;
 
     public MapStoreWriteProcessor(MapContainer mapContainer, MapService mapService) {
         this.mapContainer = mapContainer;
         this.mapService = mapService;
+        this.logger = mapService.getNodeEngine().getLogger(getClass());
     }
 
     private Exception tryStore(EntryTaskScheduler<Data, Object> scheduler, ScheduledEntry<Data, Object> entry) {
@@ -42,6 +41,8 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
         try {
             mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
         } catch (Exception e) {
+            logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> store failed, " +
+                                        "now Hazelcast reschedules this operation ", e);
             exception = e;
             scheduler.schedule(mapContainer.getWriteDelayMillis(), entry.getKey(), entry.getValue());
         }
@@ -60,20 +61,35 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                 logger.severe(exception);
             }
         } else {   // if entries size > 0, we will call storeAll
-            Map map = new HashMap(entries.size());
+            final Queue<ScheduledEntry> duplicateKeys = new LinkedList<ScheduledEntry>();
+            final Map map = new HashMap(entries.size());
             for (ScheduledEntry<Data, Object> entry : entries) {
-                map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+                final Object key = mapService.toObject(entry.getKey());
+                if (map.get(key) != null) {
+                    duplicateKeys.offer(entry);
+                    continue;
+                }
+                map.put(key, mapService.toObject(entry.getValue()));
             }
             Exception exception = null;
             try {
                 mapContainer.getStore().storeAll(map);
             } catch (Exception e) {
+                logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> storeAll was failed, " +
+                                                "now Hazelcast is trying to store one by one: ", e);
                 // if store all throws exception we will try to put insert them one by one.
                 for (ScheduledEntry<Data, Object> entry : entries) {
                     Exception temp = tryStore(scheduler, entry);
                     if (temp != null) {
                         exception = temp;
                     }
+                }
+            }
+            ScheduledEntry entry;
+            while ((entry = duplicateKeys.poll()) != null) {
+                final Exception temp = tryStore(scheduler, entry);
+                if (temp != null) {
+                    exception = temp;
                 }
             }
             if (exception != null) {

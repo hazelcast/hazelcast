@@ -993,6 +993,23 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(mapSize, map.size());
     }
 
+    @Test
+    public void testWriteBehindSameSecondSameKey() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        IMap<Object, Object> map = h1.getMap("map");
+
+        for (int i = 0; i < 100; i++) {
+            map.put("key", "value" + i);
+        }
+        map.put("key", "the_last_value");
+
+        testMapStore.latchStore.await(5, TimeUnit.SECONDS);
+        assertEquals("the_last_value", testMapStore.getStore().get("key"));
+    }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
@@ -1087,6 +1104,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                 storeLatch.countDown();
             }
             events.offer(STORE_EVENTS.STORE);
+
         }
 
         public V load(K key) {
