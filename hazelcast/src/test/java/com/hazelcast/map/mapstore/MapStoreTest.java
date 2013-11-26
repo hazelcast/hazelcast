@@ -1104,6 +1104,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                 storeLatch.countDown();
             }
             events.offer(STORE_EVENTS.STORE);
+
         }
 
         public V load(K key) {
