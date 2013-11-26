@@ -16,8 +16,8 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -26,8 +26,8 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBas
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class StringPartitioningStrategyTest {
 
     @Test

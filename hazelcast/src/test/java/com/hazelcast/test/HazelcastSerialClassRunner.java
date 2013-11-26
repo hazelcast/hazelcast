@@ -28,7 +28,7 @@ import java.util.Random;
 /**
  * Run the tests randomly and log the running test.
  */
-public class HazelcastJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+public class HazelcastSerialClassRunner extends BlockJUnit4ClassRunner {
 
     static {
         final String logging = "hazelcast.logging.type";
@@ -52,15 +52,15 @@ public class HazelcastJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
 
-    public HazelcastJUnit4ClassRunner(Class<?> klass) throws InitializationError {
+    public HazelcastSerialClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
     }
 
-    protected List<FrameworkMethod> computeTestMethods() {
-        List<FrameworkMethod> methods = super.computeTestMethods();
-        Collections.shuffle(methods);
-        return methods;
-    }
+    //protected List<FrameworkMethod> computeTestMethods() {
+    //    List<FrameworkMethod> methods = super.computeTestMethods();
+    //    Collections.shuffle(methods);
+    //    return methods;
+    //}
 
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {

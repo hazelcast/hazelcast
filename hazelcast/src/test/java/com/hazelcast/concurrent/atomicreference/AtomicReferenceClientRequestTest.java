@@ -22,9 +22,9 @@ import com.hazelcast.concurrent.atomicreference.client.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,8 +32,8 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";
