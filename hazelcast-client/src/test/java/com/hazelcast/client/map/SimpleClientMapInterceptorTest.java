@@ -90,7 +90,6 @@ public class SimpleClientMapInterceptorTest {
         assertEquals(map.get(7), "HONG KONG:");
 
         map.removeInterceptor(id);
-        Thread.sleep(2000);
         map.put(8, "Moscow");
 
         assertEquals(map.get(8), "Moscow");
