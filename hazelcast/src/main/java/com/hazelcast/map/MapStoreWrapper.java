@@ -52,6 +52,11 @@ public class MapStoreWrapper implements MapStore {
         this.enabled.set(enabled);
     }
 
+
+    public MapStore getMapStore() {
+        return mapStore;
+    }
+
     public void enable() {
         enabled.set(true);
     }

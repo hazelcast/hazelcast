@@ -29,10 +29,12 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
 
     private final MapContainer mapContainer;
     private final MapService mapService;
+    private final ILogger logger;
 
     public MapStoreWriteProcessor(MapContainer mapContainer, MapService mapService) {
         this.mapContainer = mapContainer;
         this.mapService = mapService;
+        this.logger = mapService.getNodeEngine().getLogger(getClass());
     }
 
     private Exception tryStore(EntryTaskScheduler<Data, Object> scheduler, ScheduledEntry<Data, Object> entry) {
@@ -40,6 +42,8 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
         try {
             mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
         } catch (Exception e) {
+            logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> store failed, " +
+                    "now Hazelcast reschedules this operation ", e);
             exception = e;
             scheduler.schedule(mapContainer.getWriteDelayMillis(), entry.getKey(), entry.getValue());
         }
@@ -50,7 +54,6 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
         if (entries.isEmpty())
             return;
         NodeEngine nodeEngine = mapService.getNodeEngine();
-        final ILogger logger = mapService.getNodeEngine().getLogger(getClass());
         if (entries.size() == 1) {
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
@@ -80,6 +83,8 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             try {
                 mapContainer.getStore().storeAll(map);
             } catch (Exception e) {
+                logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> storeAll was failed, " +
+                        "now Hazelcast is trying to store one by one: ", e);
                 // if store all throws exception we will try to put insert them one by one.
                 for (ScheduledEntry<Data, Object> entry : entries) {
                     Exception temp = tryStore(scheduler, entry);
