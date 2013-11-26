@@ -18,7 +18,6 @@ package com.hazelcast.hibernate;
 
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -32,7 +31,7 @@ import java.util.Date;
 import java.util.Properties;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 
     protected Properties getCacheProperties() {
