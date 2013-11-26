@@ -207,4 +207,69 @@ public class IssuesTest extends HazelcastTestSupport {
     private static class DummyValue {
     }
 
+    @Test
+    public void testMapInterceptorInstanceAware() {
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        IMap<Object,Object> map = hz1.getMap("test");
+
+        InstanceAwareMapInterceptorImpl interceptor = new InstanceAwareMapInterceptorImpl();
+        map.addInterceptor(interceptor);
+        assertNotNull(interceptor.hazelcastInstance);
+        assertEquals(hz1, interceptor.hazelcastInstance);
+
+        for (int i=0; i<100; i++){
+            map.put(i, i);
+        }
+
+        for (int i=0; i<100; i++){
+            assertEquals("notNull", map.get(i));
+        }
+
+
+    }
+
+    static class InstanceAwareMapInterceptorImpl implements MapInterceptor, HazelcastInstanceAware {
+
+        transient HazelcastInstance hazelcastInstance;
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+
+        @Override
+        public Object interceptGet(Object value) {
+            return null;
+        }
+
+        @Override
+        public void afterGet(Object value) {
+
+        }
+
+        @Override
+        public Object interceptPut(Object oldValue, Object newValue) {
+            if (hazelcastInstance != null){
+                return "notNull";
+            }
+            return ">null";
+        }
+
+        @Override
+        public void afterPut(Object value) {
+
+        }
+
+        @Override
+        public Object interceptRemove(Object removedValue) {
+            return null;
+        }
+
+        @Override
+        public void afterRemove(Object value) {
+
+        }
+    }
+
 }
