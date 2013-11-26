@@ -33,11 +33,9 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author ali 5/22/13
@@ -190,32 +188,18 @@ public class ClientMapTest {
     public void testAsyncGet() throws Exception{
         fillMap();
         Future f = map.getAsync("key1");
-        Object o = null;
-        try {
-            o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e){
-        }
-        assertNull(o);
-        o = f.get();
-        assertEquals("value1",o);
+        Object o = f.get();
+        assertEquals("value1", o);
     }
 
     @Test
     public void testAsyncPut() throws Exception{
         fillMap();
         Future f = map.putAsync("key3", "value");
-
-        Object o = null;
-        try {
-            o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e){
-        }
-        assertNull(o);
-        o = f.get();
-        assertEquals("value3",o);
+        Object o = f.get();
+        assertEquals("value3", o);
         assertEquals("value", map.get("key3"));
     }
-
 
     @Test
     public void testAsyncPutWithTtl() throws Exception{
@@ -239,13 +223,7 @@ public class ClientMapTest {
     public void testAsyncRemove() throws Exception {
         fillMap();
         Future f = map.removeAsync("key4");
-        Object o = null;
-        try {
-            o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e){
-        }
-        assertNull(o);
-        o = f.get();
+        Object o = f.get();
         assertEquals("value4", o);
         assertEquals(9, map.size());
     }
@@ -453,9 +431,9 @@ public class ClientMapTest {
 
     @Test
     public void testReplace() throws Exception {
-        assertNull(map.replace("key1","value1"));
-        map.put("key1","value1");
-        assertEquals("value1", map.replace("key1","value2"));
+        assertNull(map.replace("key1", "value1"));
+        map.put("key1", "value1");
+        assertEquals("value1", map.replace("key1", "value2"));
         assertEquals("value2", map.get("key1"));
 
         assertFalse(map.replace("key1", "value1", "value3"));
@@ -539,7 +517,7 @@ public class ClientMapTest {
         final AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
         tradeMap.put(key2, 1);
         assertFalse(countDownLatch.await(15, TimeUnit.SECONDS));
-        assertEquals(0,atomicInteger.get());
+        assertEquals(0, atomicInteger.get());
     }
 
     @Test
@@ -550,8 +528,8 @@ public class ClientMapTest {
         final Set set = map.keySet(new SqlPredicate("this == value1"));
         assertEquals("key1", set.iterator().next());
         final Set<Map.Entry<String, String>> set1 = map.entrySet(new SqlPredicate("this == value1"));
-        assertEquals("key1",set1.iterator().next().getKey());
-        assertEquals("value1",set1.iterator().next().getValue());
+        assertEquals("key1", set1.iterator().next().getKey());
+        assertEquals("value1", set1.iterator().next().getValue());
     }
 
     private void fillMap(){
