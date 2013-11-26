@@ -23,6 +23,7 @@ import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,7 +48,7 @@ import static org.junit.Assert.*;
  * Time: 5:12 PM
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(SlowTest.class)
+@Category(QuickTest.class)
 public class LockTest extends HazelcastTestSupport {
 
     @Test
