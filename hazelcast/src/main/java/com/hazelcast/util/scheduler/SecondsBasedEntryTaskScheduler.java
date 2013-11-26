@@ -248,25 +248,17 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
-    private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
+    private List<ScheduledEntry<K,V>> sortForEntryProcessing(Set<ScheduledEntry<K,V>> coll) {
         if (coll == null || coll.isEmpty()) return Collections.EMPTY_LIST;
 
-<<<<<<< HEAD
         final List<ScheduledEntry<K,V>> sortedEntries = new ArrayList<ScheduledEntry<K,V>>(coll);
-=======
-        final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);
->>>>>>> ee3aebe... make comparator static
         Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
 
         return sortedEntries;
 
     }
 
-<<<<<<< HEAD
     private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR =  new Comparator<ScheduledEntry>() {
-=======
-    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
->>>>>>> ee3aebe... make comparator static
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
             if (o1.getScheduleTime() > o2.getScheduleTime()) {
@@ -278,10 +270,6 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     };
 
-<<<<<<< HEAD
-=======
-
->>>>>>> ee3aebe... make comparator static
     @Override
     public int size() {
         return secondsOfKeys.size();
