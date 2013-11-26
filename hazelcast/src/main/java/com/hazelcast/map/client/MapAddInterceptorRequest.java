@@ -43,6 +43,7 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
 
     private String name;
     private MapInterceptor mapInterceptor;
+    private transient String id;
 
     public MapAddInterceptorRequest() {
     }
@@ -68,13 +69,13 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     @Override
     protected OperationFactory createOperationFactory() {
         final MapService mapService = getService();
-        String id = mapService.addInterceptor(name, mapInterceptor);
+        id = mapService.addInterceptor(name, mapInterceptor);
         return new AddInterceptorOperationFactory(id, name, mapInterceptor);
     }
 
     @Override
     protected Object reduce(Map<Address, Object> map) {
-        return true;
+        return id;
     }
 
     @Override
@@ -91,7 +92,7 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(out);
+        out.writeObject(mapInterceptor);
     }
 
     public void readPortable(PortableReader reader) throws IOException {

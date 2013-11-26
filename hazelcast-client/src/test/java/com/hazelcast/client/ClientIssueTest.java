@@ -18,13 +18,13 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.*;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -282,6 +282,83 @@ public class ClientIssueTest {
         }));
         HazelcastClient.newHazelcastClient(clientConfig);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testInterceptor() throws InterruptedException {
+
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final IMap<Object, Object> map = client.getMap("map");
+        final MapInterceptorImpl interceptor = new MapInterceptorImpl();
+
+        final String id = map.addInterceptor(interceptor);
+        assertNotNull(id);
+
+
+        map.put("key1", "value");
+        assertEquals("value", map.get("key1"));
+        map.put("key1", "value1");
+        assertEquals("getIntercepted", map.get("key1"));
+
+        assertFalse(map.replace("key1", "getIntercepted", "val"));
+        assertTrue(map.replace("key1", "value1", "val"));
+
+        assertEquals("val", map.get("key1"));
+
+
+
+        map.put("key2", "oldValue");
+        assertEquals("oldValue", map.get("key2"));
+        map.put("key2", "newValue");
+        assertEquals("putIntercepted", map.get("key2"));
+
+        map.put("key3", "value2");
+        assertEquals("value2", map.get("key3"));
+        assertEquals("removeIntercepted", map.remove("key3"));
+
+
+
+    }
+
+    static class MapInterceptorImpl implements MapInterceptor {
+
+
+        MapInterceptorImpl() {
+        }
+
+        public Object interceptGet(Object value) {
+            if ("value1".equals(value)){
+                return "getIntercepted";
+            }
+            return null;
+        }
+
+        public void afterGet(Object value) {
+
+        }
+
+        public Object interceptPut(Object oldValue, Object newValue) {
+            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)){
+                return "putIntercepted";
+            }
+            return null;
+        }
+
+        public void afterPut(Object value) {
+        }
+
+        public Object interceptRemove(Object removedValue) {
+            if ("value2".equals(removedValue)){
+                return "removeIntercepted";
+            }
+            return null;
+        }
+
+        public void afterRemove(Object value) {
+        }
+
     }
 
 }
