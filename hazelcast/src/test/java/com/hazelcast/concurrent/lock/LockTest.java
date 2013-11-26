@@ -434,6 +434,7 @@ public class LockTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
