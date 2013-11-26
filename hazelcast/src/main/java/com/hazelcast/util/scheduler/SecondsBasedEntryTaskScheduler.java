@@ -280,25 +280,28 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
-    private List<ScheduledEntry<K,V>> sortForEntryProcessing(Set<ScheduledEntry<K,V>> coll) {
+    private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
         if (coll == null || coll.isEmpty()) return Collections.EMPTY_LIST;
 
-        final List<ScheduledEntry<K,V>> sortedEntries = new ArrayList<ScheduledEntry<K,V>>(coll);
-        Collections.sort(sortedEntries, new Comparator<ScheduledEntry<K,V>>() {
-            @Override
-            public int compare(ScheduledEntry o1, ScheduledEntry o2) {
-                if (o1.getScheduleTime() > o2.getScheduleTime()) {
-                    return 1;
-                } else if (o1.getScheduleTime() < o2.getScheduleTime()) {
-                    return -1;
-                }
-                return 0;
-            }
-        });
+        final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);
+        Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
 
         return sortedEntries;
 
     }
+
+    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
+        @Override
+        public int compare(ScheduledEntry o1, ScheduledEntry o2) {
+            if (o1.getScheduleTime() > o2.getScheduleTime()) {
+                return 1;
+            } else if (o1.getScheduleTime() < o2.getScheduleTime()) {
+                return -1;
+            }
+            return 0;
+        }
+    };
+
 
     @Override
     public int size() {
