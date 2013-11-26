@@ -19,10 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.*;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -35,6 +32,10 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         final ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = createOperationFactory();
         Collection<Address> targets = getTargets();
+        if (targets.isEmpty()) {
+            clientEngine.sendResponse(getEndpoint(), reduce(new HashMap<Address, Object>()));
+            return;
+        }
         MultiTargetCallback callback = new MultiTargetCallback(targets);
         for (Address target : targets) {
             final Operation op = operationFactory.createOperation();

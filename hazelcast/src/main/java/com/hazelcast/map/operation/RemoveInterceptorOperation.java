@@ -42,8 +42,11 @@ public class RemoveInterceptorOperation extends AbstractOperation {
         mapService.getMapContainer(mapName).removeInterceptor(id);
     }
 
-    @Override
     public boolean returnsResponse() {
+        return true;
+    }
+
+    public Object getResponse() {
         return true;
     }
 
