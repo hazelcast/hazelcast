@@ -485,14 +485,13 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMapRecordEviction() throws InterruptedException {
-        int size = 100;
+        int size = 100000;
         Config cfg = new Config();
         MapConfig mc = cfg.getMapConfig("testMapRecordEviction");
         mc.setTimeToLiveSeconds(1);
         final CountDownLatch latch = new CountDownLatch(size);
         mc.addEntryListenerConfig(new EntryListenerConfig().setImplementation(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
-                System.out.println(event.getMember().getUuid());
                 latch.countDown();
             }
         }).setLocal(true));
@@ -502,7 +501,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         IMap map = instances[0].getMap("testMapRecordEviction");
         for (int i = 0; i < size; i++) {
-            map.put(i, i+"ssss");
+            map.put(i, i);
         }
         assertTrue(latch.await(5, TimeUnit.MINUTES));
         assertEquals(0, map.size());
