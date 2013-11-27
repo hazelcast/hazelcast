@@ -194,12 +194,18 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return "HazelcastInstance {NOT ACTIVE}";
     }
 
+    @Override
     public int hashCode() {
-        return getOriginal().hashCode();
+        return name != null ? name.hashCode() : 0;
     }
 
-    public boolean equals(Object obj) {
-        return getOriginal().equals(obj);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof HazelcastInstance)) return false;
+
+        HazelcastInstance that = (HazelcastInstance) o;
+        return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
     }
 }
 
