@@ -304,6 +304,20 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof HazelcastInstance)) return false;
+
+        HazelcastInstance that = (HazelcastInstance) o;
+        return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
+    }
+
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("HazelcastInstance");
