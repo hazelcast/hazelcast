@@ -83,9 +83,9 @@ public final class HazelcastInstanceFactory {
             HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, new DefaultNodeContext());
             future.set(hz);
             return hz;
-        } catch (RuntimeException t) {
-            future.setException(t);
-            throw t;
+        } catch (Throwable t) {
+            future.setFailure(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -121,9 +121,9 @@ public final class HazelcastInstanceFactory {
             HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, nodeContext);
             future.set(hz);
             return hz;
-        } catch (RuntimeException t) {
-            future.setException(t);
-            throw t;
+        } catch (Throwable t) {
+            future.setFailure(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -220,7 +220,7 @@ public final class HazelcastInstanceFactory {
 
     private static class InstanceFuture {
         private volatile HazelcastInstanceProxy hz;
-        private volatile RuntimeException exception;
+        private volatile Throwable throwable;
         private final String name;
 
         private InstanceFuture(String name) {
@@ -234,7 +234,7 @@ public final class HazelcastInstanceFactory {
 
             boolean restoreInterrupt = false;
             synchronized (this) {
-                while (hz == null && exception == null) {
+                while (hz == null && throwable == null) {
                     try {
                         wait();
                     } catch (InterruptedException ignore) {
@@ -252,10 +252,11 @@ public final class HazelcastInstanceFactory {
             }
 
             //we need to remove the future, so that future request for the same instance-name, can lead to a non failing instance
-            if(exception!=null){
-                instanceMap.remove(name,this);
+            if (throwable != null) {
+                instanceMap.remove(name, this);
             }
-            throw new IllegalStateException(exception);
+
+            throw new IllegalStateException(throwable);
         }
 
        void set(HazelcastInstanceProxy proxy) {
@@ -265,8 +266,8 @@ public final class HazelcastInstanceFactory {
             }
         }
 
-        public void setException(RuntimeException exception) {
-            this.exception = exception;
+        public void setFailure(Throwable throwable) {
+            this.throwable = throwable;
             synchronized (this) {
                 notifyAll();
             }
