@@ -53,6 +53,11 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapName = in.readUTF();
