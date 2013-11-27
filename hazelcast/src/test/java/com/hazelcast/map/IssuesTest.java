@@ -224,8 +224,6 @@ public class IssuesTest extends HazelcastTestSupport {
         for (int i=0; i<100; i++){
             assertEquals("notNull", map.get(i));
         }
-
-
     }
 
     static class InstanceAwareMapInterceptorImpl implements MapInterceptor, HazelcastInstanceAware {

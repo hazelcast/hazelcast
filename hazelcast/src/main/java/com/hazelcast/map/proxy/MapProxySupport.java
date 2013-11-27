@@ -502,14 +502,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             ((HazelcastInstanceAware) interceptor).setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
         String id = mapService.addInterceptor(name, interceptor);
-        AddInterceptorOperation operation = new AddInterceptorOperation(id, interceptor, name);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
                 if (member.localMember())
                     continue;
                 Invocation invocation = nodeEngine.getOperationService()
-                        .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
+                        .createInvocationBuilder(SERVICE_NAME, new AddInterceptorOperation(id, interceptor, name),
+                                member.getAddress()).build();
                 invocation.invoke().get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -522,14 +522,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         mapService.removeInterceptor(name, id);
-        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(name, id);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {
                 if (member.localMember())
                     continue;
                 MemberImpl memberImpl = (MemberImpl) member;
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                Invocation invocation = nodeEngine.getOperationService()
+                        .createInvocationBuilder(SERVICE_NAME, new RemoveInterceptorOperation(name, id), memberImpl.getAddress()).build();
                 invocation.invoke().get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
