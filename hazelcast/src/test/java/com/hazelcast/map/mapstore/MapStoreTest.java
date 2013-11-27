@@ -664,6 +664,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         for (int i = 0; i < 1000; i++) {
             map1.put(i, "value" + i);
         }
+        assertTrue("store operations could not be done wisely ",
+                testMapStore.latchStore.await(30,TimeUnit.SECONDS));
         assertEquals(1000, testMapStore.getStore().size());
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
