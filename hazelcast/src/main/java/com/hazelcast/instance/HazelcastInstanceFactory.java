@@ -57,7 +57,11 @@ public final class HazelcastInstanceFactory {
             return null;
         }
 
-        return instanceFuture.get();
+        try{
+            return instanceFuture.get();
+        }catch(IllegalStateException t){
+            return null;
+        }
     }
 
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
@@ -79,9 +83,15 @@ public final class HazelcastInstanceFactory {
             return found.get();
         }
 
-        HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, new DefaultNodeContext());
-        future.set(hz);
-        return hz;
+        try {
+            HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, new DefaultNodeContext());
+            future.set(hz);
+            return hz;
+        } catch (Throwable t) {
+            instanceMap.remove(name, future);
+            future.setFailure(t);
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     public static HazelcastInstance newHazelcastInstance(Config config) {
@@ -112,9 +122,15 @@ public final class HazelcastInstanceFactory {
             throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
         }
 
-        HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, nodeContext);
-        future.set(hz);
-        return hz;
+        try {
+            HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, nodeContext);
+            future.set(hz);
+            return hz;
+        } catch (Throwable t) {
+            instanceMap.remove(name, future);
+            future.setFailure(t);
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     private static HazelcastInstanceProxy constructHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
@@ -174,7 +190,11 @@ public final class HazelcastInstanceFactory {
     public static void shutdownAll() {
         final List<HazelcastInstanceProxy> instances = new LinkedList<HazelcastInstanceProxy>();
         for(InstanceFuture f: instanceMap.values()){
-            instances.add(f.get());
+            try{
+                HazelcastInstanceProxy instanceProxy = f.get();
+                instances.add(instanceProxy);
+            }catch(RuntimeException ignore){
+            }
         }
 
         instanceMap.clear();
@@ -206,6 +226,7 @@ public final class HazelcastInstanceFactory {
 
     private static class InstanceFuture {
         private volatile HazelcastInstanceProxy hz;
+        private volatile Throwable throwable;
 
         HazelcastInstanceProxy get() {
             if (hz != null) {
@@ -214,7 +235,7 @@ public final class HazelcastInstanceFactory {
 
             boolean restoreInterrupt = false;
             synchronized (this) {
-                while (hz == null) {
+                while (hz == null && throwable == null) {
                     try {
                         wait();
                     } catch (InterruptedException ignore) {
@@ -227,11 +248,22 @@ public final class HazelcastInstanceFactory {
                 Thread.currentThread().interrupt();
             }
 
-            return hz;
+            if(hz != null){
+                return hz;
+            }
+
+            throw new IllegalStateException(throwable);
         }
 
-        void set(HazelcastInstanceProxy proxy) {
+       void set(HazelcastInstanceProxy proxy) {
             this.hz = proxy;
+            synchronized (this) {
+                notifyAll();
+            }
+        }
+
+        public void setFailure(Throwable throwable) {
+            this.throwable = throwable;
             synchronized (this) {
                 notifyAll();
             }
