@@ -17,18 +17,15 @@
 package com.hazelcast.test;
 
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 
 /**
  * Run the tests randomly and log the running test.
  */
-public class HazelcastSerialClassRunner extends BlockJUnit4ClassRunner {
+public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
 
     static {
         final String logging = "hazelcast.logging.type";
@@ -56,12 +53,6 @@ public class HazelcastSerialClassRunner extends BlockJUnit4ClassRunner {
         super(klass);
     }
 
-    //protected List<FrameworkMethod> computeTestMethods() {
-    //    List<FrameworkMethod> methods = super.computeTestMethods();
-    //    Collections.shuffle(methods);
-    //    return methods;
-    //}
-
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
         long start = System.currentTimeMillis();
@@ -71,4 +62,5 @@ public class HazelcastSerialClassRunner extends BlockJUnit4ClassRunner {
         float took = (float) (System.currentTimeMillis() - start) / 1000;
         System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
     }
+
 }

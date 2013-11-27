@@ -1,7 +1,6 @@
 package com.hazelcast.test;
 
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
@@ -9,7 +8,7 @@ import org.junit.runners.model.Statement;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class HazelcastParallelClassRunner extends BlockJUnit4ClassRunner {
+public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     static {
         final String logging = "hazelcast.logging.type";
@@ -41,12 +40,6 @@ public class HazelcastParallelClassRunner extends BlockJUnit4ClassRunner {
         numThreads = new AtomicInteger(0);
 
     }
-
-    //protected List<FrameworkMethod> computeTestMethods() {
-    //    List<FrameworkMethod> methods = super.computeTestMethods();
-    //    Collections.shuffle(methods);
-    //    return methods;
-    //}
 
     @Override
     protected void runChild(final FrameworkMethod method, final RunNotifier notifier) {
@@ -91,12 +84,11 @@ public class HazelcastParallelClassRunner extends BlockJUnit4ClassRunner {
             long start = System.currentTimeMillis();
             String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
             System.out.println("Started Running Test: " + testName);
-
-            // System.err.println (method.getName());
             HazelcastParallelClassRunner.super.runChild(method, notifier);
             numThreads.decrementAndGet();
             float took = (float) (System.currentTimeMillis() - start) / 1000;
             System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
         }
     }
+
 }
