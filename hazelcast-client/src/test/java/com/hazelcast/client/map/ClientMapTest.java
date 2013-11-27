@@ -28,7 +28,6 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,12 +38,9 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * @author ali 5/22/13
@@ -197,13 +193,7 @@ public class ClientMapTest {
     public void testAsyncGet() throws Exception {
         fillMap();
         Future f = map.getAsync("key1");
-        Object o = null;
-        try {
-            o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-        }
-        assertNull(o);
-        o = f.get();
+        Object o = f.get();
         assertEquals("value1", o);
     }
 
@@ -211,18 +201,10 @@ public class ClientMapTest {
     public void testAsyncPut() throws Exception {
         fillMap();
         Future f = map.putAsync("key3", "value");
-
-        Object o = null;
-        try {
-            o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-        }
-        assertNull(o);
-        o = f.get();
+        Object o = f.get();
         assertEquals("value3", o);
         assertEquals("value", map.get("key3"));
     }
-
 
     @Test
     public void testAsyncPutWithTtl() throws Exception {
@@ -246,13 +228,7 @@ public class ClientMapTest {
     public void testAsyncRemove() throws Exception {
         fillMap();
         Future f = map.removeAsync("key4");
-        Object o = null;
-        try {
-            o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-        }
-        assertNull(o);
-        o = f.get();
+        Object o = f.get();
         assertEquals("value4", o);
         assertEquals(9, map.size());
     }
