@@ -154,7 +154,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getDistributedObject(serviceName, id);
     }
 
-    @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return getOriginal().getDistributedObject(serviceName, name);
     }
@@ -171,7 +170,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getUserContext();
     }
 
-    @Override
     public final void shutdown() {
         getLifecycleService().shutdown();
     }
@@ -188,7 +186,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return hazelcastInstance;
     }
 
-    @Override
     public String toString() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance != null) {
@@ -197,6 +194,13 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return "HazelcastInstance {NOT ACTIVE}";
     }
 
+    public int hashCode() {
+        return getOriginal().hashCode();
+    }
+
+    public boolean equals(Object obj) {
+        return getOriginal().equals(obj);
+    }
 }
 
 

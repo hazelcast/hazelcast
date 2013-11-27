@@ -516,6 +516,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public String addMapInterceptorInternal(MapInterceptor interceptor) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
+        if (interceptor instanceof HazelcastInstanceAware){
+            ((HazelcastInstanceAware) interceptor).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
         String id = mapService.addInterceptor(name, interceptor);
         AddInterceptorOperation operation = new AddInterceptorOperation(id, interceptor, name);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
