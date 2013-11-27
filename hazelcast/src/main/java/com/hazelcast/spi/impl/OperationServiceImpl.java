@@ -65,7 +65,7 @@ final class OperationServiceImpl implements OperationService {
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-    private final ConcurrentMap<Long, Invocation> backupCalls;
+    private final ConcurrentMap<Long, BackupCompletionCallback> backupCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
@@ -100,7 +100,7 @@ final class OperationServiceImpl implements OperationService {
                         node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        backupCalls = new ConcurrentHashMap<Long, Invocation>(1000, 0.75f, concurrencyLevel);
+        backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
@@ -620,15 +620,15 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     void notifyBackupCall(long callId) {
-        final Invocation invocation = backupCalls.get(callId);
-        if (invocation != null) {
-            invocation.signalOneBackupComplete();
+        final BackupCompletionCallback backupCompletionCallback = backupCalls.get(callId);
+        if (backupCompletionCallback != null) {
+            backupCompletionCallback.signalOneBackupComplete();
         }
     }
 
     @PrivateApi
-    void registerBackupCall(long callId, Invocation invocation) {
-        final Invocation current = backupCalls.put(callId, invocation);
+    void registerBackupCall(long callId, BackupCompletionCallback backupCompletionCallback) {
+        final BackupCompletionCallback current = backupCalls.put(callId, backupCompletionCallback);
         if (current != null) {
             logger.warning( "Already registered a backup record for call[" + callId + "]!");
         }

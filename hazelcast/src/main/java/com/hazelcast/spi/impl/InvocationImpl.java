@@ -37,7 +37,7 @@ import java.util.concurrent.*;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-abstract class InvocationImpl implements Invocation, Callback<Object> {
+abstract class InvocationImpl implements Invocation, Callback<Object>,BackupCompletionCallback {
 
     private static final Object NULL_RESPONSE = new Object() {
         @Override

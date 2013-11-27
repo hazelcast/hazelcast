@@ -26,6 +26,4 @@ public interface Invocation {
 
     Address getTarget();
 
-    void signalOneBackupComplete();
-
 }
