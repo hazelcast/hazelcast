@@ -338,11 +338,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @PrivateApi
-    public void shutdown() {
+    public void shutdown(final boolean terminate) {
         logger.finest( "Shutting down services...");
         waitNotifyService.shutdown();
         proxyService.shutdown();
-        serviceManager.shutdown();
+        serviceManager.shutdown(terminate);
         executionService.shutdown();
         eventService.shutdown();
         operationService.shutdown();

@@ -144,20 +144,22 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    public void shutdown() {
-        flushMapsBeforeShutdown();
-        destroyMapStores();
-        final PartitionContainer[] containers = partitionContainers;
-        for (PartitionContainer container : containers) {
-            if (container != null) {
-                container.clear();
+    public void shutdown(boolean terminate) {
+        if (!terminate) {
+            flushMapsBeforeShutdown();
+            destroyMapStores();
+            final PartitionContainer[] containers = partitionContainers;
+            for (PartitionContainer container : containers) {
+                if (container != null) {
+                    container.clear();
+                }
             }
+            for (NearCache nearCache : nearCacheMap.values()) {
+                nearCache.clear();
+            }
+            nearCacheMap.clear();
+            mapContainers.clear();
         }
-        for (NearCache nearCache : nearCacheMap.values()) {
-            nearCache.clear();
-        }
-        nearCacheMap.clear();
-        mapContainers.clear();
     }
 
     private void destroyMapStores() {
@@ -311,7 +313,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return getPartitionContainer(partitionId).getRecordStore(mapName);
     }
 
-    public RecordStore getExistingRecordStore(int partitionId, String mapName){
+    public RecordStore getExistingRecordStore(int partitionId, String mapName) {
         return getPartitionContainer(partitionId).getExistingRecordStore(mapName);
     }
 
@@ -468,7 +470,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
-    public boolean isNearCacheAndInvalidationEnabled(String mapName){
+    public boolean isNearCacheAndInvalidationEnabled(String mapName) {
         final MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();

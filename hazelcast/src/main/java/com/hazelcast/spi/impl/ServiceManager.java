@@ -160,21 +160,21 @@ final class ServiceManager {
         return null;
     }
 
-    synchronized void shutdown() {
+    synchronized void shutdown(boolean terminate) {
         logger.finest( "Stopping services...");
         final List<ManagedService> managedServices = getServices(ManagedService.class);
         // reverse order to stop CoreServices last.
         Collections.reverse(managedServices);
         services.clear();
         for (ManagedService service : managedServices) {
-            shutdownService(service);
+            shutdownService(service, terminate);
         }
     }
 
-    private void shutdownService(final ManagedService service) {
+    private void shutdownService(final ManagedService service, final boolean terminate) {
         try {
             logger.finest( "Shutting down service -> " + service);
-            service.shutdown();
+            service.shutdown(terminate);
         } catch (Throwable t) {
             logger.severe("Error while shutting down service[" + service + "]: " + t.getMessage(), t);
         }
@@ -191,7 +191,7 @@ final class ServiceManager {
                         + ", Service: " + currentServiceInfo.getService());
             }
             if (currentServiceInfo.isManagedService()) {
-                shutdownService((ManagedService) currentServiceInfo.getService());
+                shutdownService((ManagedService) currentServiceInfo.getService(), false);
             }
             services.put(serviceName, serviceInfo);
         }

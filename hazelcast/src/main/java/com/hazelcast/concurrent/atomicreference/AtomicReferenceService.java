@@ -64,7 +64,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         references.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 

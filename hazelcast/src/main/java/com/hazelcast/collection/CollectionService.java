@@ -43,7 +43,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         getContainerMap().clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 

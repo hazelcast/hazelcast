@@ -63,7 +63,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         statsMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 

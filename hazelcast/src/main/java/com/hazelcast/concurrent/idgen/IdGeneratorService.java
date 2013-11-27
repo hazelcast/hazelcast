@@ -46,7 +46,7 @@ public class IdGeneratorService implements ManagedService, RemoteService {
     public void reset() {
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
     }
 
     private IAtomicLong getAtomicLong(String name) {

@@ -103,7 +103,7 @@ public class MultiMapService implements ManagedService, RemoteService,
         }
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
         for (int i = 0; i < partitionContainers.length; i++) {
             partitionContainers[i] = null;

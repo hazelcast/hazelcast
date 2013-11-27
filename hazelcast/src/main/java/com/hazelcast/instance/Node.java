@@ -364,17 +364,17 @@ public class Node {
         }
     }
 
-    private void doShutdown(boolean force) {
+    private void doShutdown(boolean terminate) {
         long start = Clock.currentTimeMillis();
         logger.finest( "** we are being asked to shutdown when active = " + String.valueOf(active));
-        if (!force && isActive()) {
+        if (!terminate && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
         }
         if (isActive()) {
-            if (!force) {
+            if (!terminate) {
                 clusterService.sendShutdownMessage();
             }
             // set the joined=false first so that
@@ -390,10 +390,8 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-            logger.finest( "Shutting down client command service");
-            clientEngine.shutdown();
             logger.finest( "Shutting down node engine");
-            nodeEngine.shutdown();
+            nodeEngine.shutdown(terminate);
             if (multicastService != null) {
                 logger.finest( "Shutting down multicast service");
                 multicastService.stop();

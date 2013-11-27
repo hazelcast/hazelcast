@@ -58,7 +58,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         statsMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 

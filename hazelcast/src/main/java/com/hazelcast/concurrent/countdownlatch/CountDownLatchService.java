@@ -88,7 +88,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         latches.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         latches.clear();
     }
 

@@ -72,7 +72,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         permitMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         permitMap.clear();
     }
 

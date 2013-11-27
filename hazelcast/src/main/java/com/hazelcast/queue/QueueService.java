@@ -86,7 +86,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         containerMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 
