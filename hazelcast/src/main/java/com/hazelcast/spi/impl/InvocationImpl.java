@@ -30,6 +30,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import java.io.IOException;
@@ -120,6 +121,10 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
 
     public int getPartitionId() {
         return partitionId;
+    }
+
+    private ManagedExecutorService getAsyncExecutor() {
+        return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     private long getCallTimeout(long callTimeout) {
@@ -443,10 +448,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
-    //todo: which executor should we use.
-    private final static Executor executor = Executors.newFixedThreadPool(10);
-
-    private static class ExecutionCallbackNode<E>{
+     private static class ExecutionCallbackNode<E>{
         private final ExecutionCallback<E> callback;
         private final Executor executor;
         private final ExecutionCallbackNode<E> next;
@@ -483,7 +485,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
 
         private InvocationFuture(final Callback<E> callback) {
             if(callback != null){
-                callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),executor,null);
+
+                callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),getAsyncExecutor(),null);
             }
         }
 
@@ -502,7 +505,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
 
         public void andThen(ExecutionCallback<E> callback) {
-            andThen(callback, executor);
+            andThen(callback, getAsyncExecutor());
         }
 
         private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
@@ -704,4 +707,5 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             return executing;
         }
     }
+
 }
