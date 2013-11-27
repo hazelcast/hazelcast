@@ -205,7 +205,7 @@ public class MapPortableHook implements PortableHook {
 
                 constructors[REMOVE_INTERCEPTOR] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
-                        return new MapRemoveRequest();
+                        return new MapRemoveInterceptorRequest();
                     }
                 };
 
