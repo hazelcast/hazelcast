@@ -57,7 +57,11 @@ public final class HazelcastInstanceFactory {
             return null;
         }
 
-        return instanceFuture.get();
+        try{
+            return instanceFuture.get();
+        }catch(IllegalStateException t){
+            return null;
+        }
     }
 
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
@@ -73,7 +77,7 @@ public final class HazelcastInstanceFactory {
             return future.get();
         }
 
-        future = new InstanceFuture(name);
+        future = new InstanceFuture();
         InstanceFuture found = instanceMap.putIfAbsent(name, future);
         if (found != null) {
             return found.get();
@@ -84,6 +88,7 @@ public final class HazelcastInstanceFactory {
             future.set(hz);
             return hz;
         } catch (Throwable t) {
+            instanceMap.remove(name, future);
             future.setFailure(t);
             throw ExceptionUtil.rethrow(t);
         }
@@ -112,7 +117,7 @@ public final class HazelcastInstanceFactory {
             name = createInstanceName(config);
         }
 
-        InstanceFuture future = new InstanceFuture(instanceName);
+        InstanceFuture future = new InstanceFuture();
         if (instanceMap.putIfAbsent(name, future) != null) {
             throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
         }
@@ -122,6 +127,7 @@ public final class HazelcastInstanceFactory {
             future.set(hz);
             return hz;
         } catch (Throwable t) {
+            instanceMap.remove(name, future);
             future.setFailure(t);
             throw ExceptionUtil.rethrow(t);
         }
@@ -221,11 +227,6 @@ public final class HazelcastInstanceFactory {
     private static class InstanceFuture {
         private volatile HazelcastInstanceProxy hz;
         private volatile Throwable throwable;
-        private final String name;
-
-        private InstanceFuture(String name) {
-            this.name = name;
-        }
 
         HazelcastInstanceProxy get() {
             if (hz != null) {
@@ -249,11 +250,6 @@ public final class HazelcastInstanceFactory {
 
             if(hz != null){
                 return hz;
-            }
-
-            //we need to remove the future, so that future request for the same instance-name, can lead to a non failing instance
-            if (throwable != null) {
-                instanceMap.remove(name, this);
             }
 
             throw new IllegalStateException(throwable);
