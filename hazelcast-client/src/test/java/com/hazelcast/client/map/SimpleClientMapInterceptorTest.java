@@ -2,22 +2,19 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.helpers.*;
+import com.hazelcast.client.helpers.PortableHelpersFactory;
+import com.hazelcast.client.helpers.SimpleClientInterceptor;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -29,7 +26,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SimpleClientMapIntorceptorTest {
+public class SimpleClientMapInterceptorTest {
 
     static HazelcastInstance server1;
     static HazelcastInstance server2;
@@ -59,7 +56,7 @@ public class SimpleClientMapIntorceptorTest {
     }
 
     @Test
-    public void clientMapInterceptorTestIssue1238() {
+    public void clientMapInterceptorTestIssue1238() throws InterruptedException {
 
         final IMap<Object, Object> map = client.getMap("clientMapInterceptorTest");
 
