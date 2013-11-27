@@ -17,13 +17,9 @@
 package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,7 +28,6 @@ import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * @author mdogan 5/14/13
@@ -65,8 +60,7 @@ public abstract class ClientTestSupport {
 
         protected void before() throws Throwable {
             instance = new TestHazelcastInstanceFactory(1).newHazelcastInstance(config);
-            final Address address = TestUtil.getNode(instance).getThisAddress();
-            client = newClient(address);
+            client = newClient(TestUtil.getNode(instance));
             client.auth();
         }
 
@@ -80,27 +74,15 @@ public abstract class ClientTestSupport {
         }
     }
 
-    public static SimpleClient newClient(Address nodeAddress) throws IOException {
-        Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
-        for (HazelcastInstance hz : instances) {
-            Node node = TestUtil.getNode(hz);
-            if (node.isActive()) {
-                MemberImpl m;
-                try {
-                    m = (MemberImpl) hz.getCluster().getLocalMember();
-                } catch (HazelcastInstanceNotActiveException ignored) {
-                    continue;
-                }
-                if (m.getAddress().equals(nodeAddress)) {
-                    if (TestEnvironment.isMockNetwork()) {
-                        ClientEngineImpl engine = node.clientEngine;
-                        return new MockSimpleClient(engine);
-                    } else {
-                        return new SocketSimpleClient(node);
-                    }
-                }
+    public static SimpleClient newClient(Node node) throws IOException {
+        if (node.isActive()) {
+            if (TestEnvironment.isMockNetwork()) {
+                ClientEngineImpl engine = node.clientEngine;
+                return new MockSimpleClient(engine);
+            } else {
+                return new SocketSimpleClient(node);
             }
         }
-        throw new IllegalArgumentException("Cannot connect to node: " + nodeAddress);
+        throw new IllegalArgumentException("Node is not active: " + node.getThisAddress());
     }
 }
