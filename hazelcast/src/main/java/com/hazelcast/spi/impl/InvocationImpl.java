@@ -68,6 +68,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     };
 
+    private static final Object INTERRUPTED_RESPONSE = new Object() {
+        @Override
+        public String toString() {
+            return "Invocation::INTERRUPTED_RESPONSE";
+        }
+    };
+
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
             timeout -= diff;
@@ -214,10 +221,14 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
 
         if (response == RETRY_RESPONSE) {
-            final ExecutionService ex = nodeEngine.getExecutionService();
-            ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
-                    new ReinvocationTask()), tryPauseMillis, TimeUnit.MILLISECONDS);
-            return;
+            if(invocationFuture.interrupted){
+                invocationFuture.set(INTERRUPTED_RESPONSE);
+            }else{
+                final ExecutionService ex = nodeEngine.getExecutionService();
+                ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
+                        new ReinvocationTask()), tryPauseMillis, TimeUnit.MILLISECONDS);
+            }
+           return;
         }
 
         if (response == WAIT_RESPONSE) {
@@ -482,10 +493,10 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
 
         volatile ExecutionCallbackNode<E> callbackHead;
         volatile Object response;
+        volatile boolean interrupted=false;
 
         private InvocationFuture(final Callback<E> callback) {
             if(callback != null){
-
                 callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),getAsyncExecutor(),null);
             }
         }
@@ -583,15 +594,16 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             final long maxCallTimeout = callTimeout * 2 > 0 ? callTimeout * 2 : Long.MAX_VALUE;
             final boolean longPolling = timeoutMs > maxCallTimeout;
             int pollCount = 0;
-            InterruptedException interrupted = null;
 
             while (timeoutMs >= 0) {
                 final long pollTimeoutMs = Math.min(maxCallTimeout, timeoutMs);
                 final long startMs = Clock.currentTimeMillis();
-                final long lastPollTime;
+
+                 long lastPollTime = 0;
                 try {
                     //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
                     if (pollTimeoutMs > 0) {
+
                         synchronized (this) {
                             if (response == null) {
                                 this.wait(pollTimeoutMs);
@@ -606,11 +618,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                     lastPollTime = Clock.currentTimeMillis() - startMs;
                     timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
                 } catch (InterruptedException e) {
-                    return e;
+                    interrupted = true;
                 }
                 pollCount++;
 
-                if (/* response == null && */ longPolling) {
+                if (!interrupted && /* response == null && */ longPolling) {
                     // no response!
                     final Address target = getTarget();
                     if (nodeEngine.getThisAddress().equals(target)) {
@@ -661,6 +673,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             }
             if (response == TIMEOUT_RESPONSE) {
                 throw new TimeoutException();
+            }
+            if(response == INTERRUPTED_RESPONSE){
+                throw new InterruptedException("Call "+InvocationImpl.this+" was interrupted");
             }
             return response;
         }
