@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.CompletionFuture;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -476,7 +476,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
-    private class InvocationFuture<E> implements CompletionFuture<E> {
+    private class InvocationFuture<E> implements CompletableFuture<E> {
 
         volatile ExecutionCallbackNode<E> callbackHead;
         volatile Object response;
