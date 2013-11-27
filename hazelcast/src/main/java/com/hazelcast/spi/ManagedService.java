@@ -32,7 +32,8 @@ public interface ManagedService {
 
     /**
      * shutdown service
+     * @param terminate
      */
-    void shutdown();
+    void shutdown(boolean terminate);
 
 }

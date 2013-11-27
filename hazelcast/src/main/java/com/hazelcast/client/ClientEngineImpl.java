@@ -404,7 +404,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     public void reset() {
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         for (ClientEndpoint endpoint : endpoints.values()) {
             try {
                 endpoint.destroy();

@@ -91,7 +91,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         txBackupLogs.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 

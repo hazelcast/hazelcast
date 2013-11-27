@@ -1338,7 +1338,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         migrationActive.set(true);
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         logger.finest( "Shutting down the partition service");
         migrationThread.stopNow();
         reset();
