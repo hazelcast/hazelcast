@@ -73,15 +73,20 @@ public final class HazelcastInstanceFactory {
             return future.get();
         }
 
-        future = new InstanceFuture();
+        future = new InstanceFuture(name);
         InstanceFuture found = instanceMap.putIfAbsent(name, future);
         if (found != null) {
             return found.get();
         }
 
-        HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, new DefaultNodeContext());
-        future.set(hz);
-        return hz;
+        try {
+            HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, new DefaultNodeContext());
+            future.set(hz);
+            return hz;
+        } catch (RuntimeException t) {
+            future.setException(t);
+            throw t;
+        }
     }
 
     public static HazelcastInstance newHazelcastInstance(Config config) {
@@ -107,14 +112,19 @@ public final class HazelcastInstanceFactory {
             name = createInstanceName(config);
         }
 
-        InstanceFuture future = new InstanceFuture();
+        InstanceFuture future = new InstanceFuture(instanceName);
         if (instanceMap.putIfAbsent(name, future) != null) {
             throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
         }
 
-        HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, nodeContext);
-        future.set(hz);
-        return hz;
+        try {
+            HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, nodeContext);
+            future.set(hz);
+            return hz;
+        } catch (RuntimeException t) {
+            future.setException(t);
+            throw t;
+        }
     }
 
     private static HazelcastInstanceProxy constructHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
@@ -174,7 +184,11 @@ public final class HazelcastInstanceFactory {
     public static void shutdownAll() {
         final List<HazelcastInstanceProxy> instances = new LinkedList<HazelcastInstanceProxy>();
         for(InstanceFuture f: instanceMap.values()){
-            instances.add(f.get());
+            try{
+                HazelcastInstanceProxy instanceProxy = f.get();
+                instances.add(instanceProxy);
+            }catch(RuntimeException ignore){
+            }
         }
 
         instanceMap.clear();
@@ -206,6 +220,12 @@ public final class HazelcastInstanceFactory {
 
     private static class InstanceFuture {
         private volatile HazelcastInstanceProxy hz;
+        private volatile RuntimeException exception;
+        private final String name;
+
+        private InstanceFuture(String name) {
+            this.name = name;
+        }
 
         HazelcastInstanceProxy get() {
             if (hz != null) {
@@ -214,7 +234,7 @@ public final class HazelcastInstanceFactory {
 
             boolean restoreInterrupt = false;
             synchronized (this) {
-                while (hz == null) {
+                while (hz == null && exception == null) {
                     try {
                         wait();
                     } catch (InterruptedException ignore) {
@@ -227,11 +247,26 @@ public final class HazelcastInstanceFactory {
                 Thread.currentThread().interrupt();
             }
 
-            return hz;
+            if(hz != null){
+                return hz;
+            }
+
+            //we need to remove the future, so that future request for the same instance-name, can lead to a non failing instance
+            if(exception!=null){
+                instanceMap.remove(name,this);
+            }
+            throw new IllegalStateException(exception);
         }
 
-        void set(HazelcastInstanceProxy proxy) {
+       void set(HazelcastInstanceProxy proxy) {
             this.hz = proxy;
+            synchronized (this) {
+                notifyAll();
+            }
+        }
+
+        public void setException(RuntimeException exception) {
+            this.exception = exception;
             synchronized (this) {
                 notifyAll();
             }
