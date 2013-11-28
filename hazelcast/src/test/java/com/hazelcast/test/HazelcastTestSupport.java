@@ -33,6 +33,28 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
+    public static void sleepSeconds(int seconds) {
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (InterruptedException e) {
+        }
+    }
+
+    public static void assertTrueEventually(AssertTask task) {
+        AssertionError error = null;
+        for (int k = 0; k < 120; k++) {
+            try {
+                task.run();
+                return;
+            } catch (AssertionError e) {
+                error = e;
+            }
+            sleepSeconds(1);
+        }
+
+        throw error;
+    }
+
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
