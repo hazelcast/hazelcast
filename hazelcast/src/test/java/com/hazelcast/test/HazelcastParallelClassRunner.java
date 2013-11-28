@@ -9,8 +9,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
-    private AtomicInteger numThreads;
-    public static int maxThreads = 8;
+    private static final int MAX_THREADS;
+
+    static {
+        int cores = Runtime.getRuntime().availableProcessors();
+        if (cores < 8) {
+            MAX_THREADS = 8;
+        } else {
+            MAX_THREADS = cores;
+        }
+    }
+
+    private final AtomicInteger numThreads;
 
     public HazelcastParallelClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
@@ -19,7 +29,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     @Override
     protected void runChild(final FrameworkMethod method, final RunNotifier notifier) {
-        while (numThreads.get() > maxThreads) {
+        while (numThreads.get() > MAX_THREADS) {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
