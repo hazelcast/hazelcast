@@ -98,4 +98,15 @@ public class RecordInfo implements DataSerializable {
         mapStoreWriteDelayMillis = in.readLong();
         mapStoreDeleteDelayMillis = in.readLong();
     }
+
+    @Override
+    public String toString() {
+        return "RecordInfo{" +
+                "statistics=" + statistics +
+                ", idleDelayMillis=" + idleDelayMillis +
+                ", ttlDelayMillis=" + ttlDelayMillis +
+                ", mapStoreWriteDelayMillis=" + mapStoreWriteDelayMillis +
+                ", mapStoreDeleteDelayMillis=" + mapStoreDeleteDelayMillis +
+                '}';
+    }
 }
