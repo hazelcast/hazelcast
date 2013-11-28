@@ -144,7 +144,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             if (second != null) {
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
-                    result = entries.remove(key);
+                    result = entries.remove(timeKey);
                 }
             }
         }
