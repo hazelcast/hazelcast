@@ -34,7 +34,7 @@
         <title>Installation</title>
         <para>
             It is important to understand how it actually works. Basically you will deploy
-            <literal>mancenter.war</literal>
+            <literal>mancenter-_version_.war</literal>
             application into your Java web server and then tell
             Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the
             URL of
@@ -52,15 +52,15 @@
             <listitem>
                 <para>
                     Zip contains
-                    <literal>mancenter.war</literal>
+                    <literal>mancenter-_version_.war</literal>
                     file. Deploy it to your web server (Tomcat, Jetty etc.)
-                    Let's say it is running at <literal>http://localhost:8080/mancenter</literal>.
+                    Let's say it is running at <literal>http://localhost:8080/mancenter-_version_</literal>.
                 </para>
             </listitem>
 
             <listitem>
                 <para>Start your web server and make sure
-                    <literal>http://localhost:8080/mancenter</literal>
+                    <literal>http://localhost:8080/mancenter-_version_</literal>
                     is up.
                 </para>
             </listitem>
@@ -70,7 +70,7 @@
                     hazelcast.xml</literal>.
                     Hazelcast nodes will send their states to this URL.
                     <programlisting language="xml"><![CDATA[
-<management-center enabled="true">http://localhost:8080/mancenter</management-center>]]></programlisting>
+<management-center enabled="true">http://localhost:8080/mancenter-_version_</management-center>]]></programlisting>
                 </para>
             </listitem>
 
@@ -81,7 +81,7 @@
 
             <listitem>
                 <para>Browse to
-                    <literal>http://localhost:8080/mancenter</literal>
+                    <literal>http://localhost:8080/mancenter-_version_</literal>
                     and login.
                     <emphasis role="bold">
                         Initial login username/passwords is
