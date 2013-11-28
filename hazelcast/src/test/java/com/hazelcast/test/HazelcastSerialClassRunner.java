@@ -20,34 +20,10 @@ import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-import java.util.Random;
-
 /**
  * Run the tests randomly and log the running test.
  */
 public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
-
-    static {
-        final String logging = "hazelcast.logging.type";
-        if (System.getProperty(logging) == null) {
-            System.setProperty(logging, "log4j");
-        }
-        if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
-            System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
-        }
-        System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.mancenter.enabled", "false");
-        System.setProperty("hazelcast.wait.seconds.before.join", "1");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-
-        // randomize multicast group...
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
-    }
 
     public HazelcastSerialClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
