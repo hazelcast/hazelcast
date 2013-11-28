@@ -129,12 +129,9 @@ public class Node {
             }
             ss = new SerializationServiceBuilder()
                     .setClassLoader(configClassLoader)
-                    .setConfig(config.getSerializationConfig())
+                    .setConfig(config.getSerializationConfig() != null ? config.getSerializationConfig() : new SerializationConfig())
                     .setManagedContext(hazelcastInstance.managedContext)
                     .setPartitioningStrategy(partitioningStrategy)
-                    .setInitialOutputBufferSize(groupProperties.SERIALIZATION_BUFFER_SIZE.getInteger())
-                    .setEnableCompression(groupProperties.SERIALIZATION_GZIP_ENABLED.getBoolean())
-                    .setEnableSharedObject(groupProperties.SERIALIZATION_READ_SHARED_ENABLED.getBoolean())
                     .setHazelcastInstance(hazelcastInstance)
                     .build();
         } catch (Exception e) {
