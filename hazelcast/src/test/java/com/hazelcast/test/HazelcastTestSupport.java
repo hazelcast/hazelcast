@@ -55,6 +55,16 @@ public abstract class HazelcastTestSupport {
         throw error;
     }
 
+    public static void assertTrueDelayed5sec(AssertTask task) {
+        assertTrueDelayed(5, task);
+    }
+
+    public static void assertTrueDelayed(int delaySeconds, AssertTask task) {
+        sleepSeconds(delaySeconds);
+        task.run();
+    }
+
+
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");

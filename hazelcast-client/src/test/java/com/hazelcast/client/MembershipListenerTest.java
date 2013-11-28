@@ -4,17 +4,17 @@ package com.hazelcast.client;
  * User: danny Date: 11/28/13
  */
 
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.AssertTask;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,6 +27,17 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class MembershipListenerTest extends HazelcastTestSupport {
 
+    private HazelcastInstance server1 = null;
+    private HazelcastInstance client = null ;
+    private MemberShipEventLoger listener = null;
+
+    @Before
+    public void setup(){
+       server1 = Hazelcast.newHazelcastInstance();
+       client = HazelcastClient.newHazelcastClient();
+       listener = new MemberShipEventLoger();
+    }
+
     @After
     public void tearDown(){
         Hazelcast.shutdownAll();
@@ -35,10 +46,6 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     @Test
     public void whenMemberAdded_thenMemberAddedEvent() throws Exception {
 
-        final HazelcastInstance server1 =Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
-
-        final MemberShipEventLoger listener = new MemberShipEventLoger();
         client.getCluster().addMembershipListener(listener);
 
         //start a second server and verify that the listener receives it.
@@ -60,14 +67,9 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     @Test
     public void whenMemberRemoved_thenMemberRemovedEvent() throws Exception {
 
-        final HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
-
         //start a second server and verify that the listener receives it.
         final HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
 
-
-        final MemberShipEventLoger listener = new MemberShipEventLoger();
         client.getCluster().addMembershipListener(listener);
 
         final Member server2Member = server2.getCluster().getLocalMember();
@@ -89,36 +91,17 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     @Test
     public void whenListenerRemoved_thenNoEventsRecived() throws Exception {
 
-        final HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        String regID = client.getCluster().addMembershipListener(listener);
 
-        final MemberShipEventLoger listener = new MemberShipEventLoger();
-
-        final String regID = client.getCluster().addMembershipListener(listener);
-
-        //start a second server and verify that the listener receives it.
         final HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
-
-        //verify that the correct member removed event was received.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(1, listener.events.size());
-                MembershipEvent event = listener.events.get(0);
-                assertEquals(MembershipEvent.MEMBER_ADDED, event.getEventType());
-                assertEquals(server2.getCluster().getLocalMember(), event.getMember());
-                assertEquals(getMembers(server1,server2), event.getMembers());
-            }
-        });
 
         assertTrue(client.getCluster().removeMembershipListener(regID));
 
-        final Member server2Member = server2.getCluster().getLocalMember();
         server2.shutdown();
 
         //sleep for 5  and assert No new messages
         //This negative test cannot prove that no event was recived after delay
-        assertTrueLater(5, new AssertTask() {
+        assertTrueDelayed5sec(new AssertTask() {
             @Override
             public void run() {
                 assertEquals(1, listener.events.size());
@@ -130,26 +113,23 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @Test
     public void removedPhantomListener_thenFalse() throws Exception {
-
-        final HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
-
-        assertFalse(client.getCluster().removeMembershipListener("IamNotHearProabley"));
+        assertFalse(client.getCluster().removeMembershipListener("_IamNotHear_"));
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void removedNullListener_thenException() throws Exception {
 
-        final HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
-
-        try{
-            assertFalse(client.getCluster().removeMembershipListener(null));
-            fail();
-        }catch(Exception e){}
+        assertFalse(client.getCluster().removeMembershipListener(null));
     }
 
-        private Set<Member> getMembers(HazelcastInstance... instances) {
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addNullListener_thenException() throws Exception{
+
+        client.getCluster().addMembershipListener(null);
+    }
+
+    private Set<Member> getMembers(HazelcastInstance... instances) {
         Set<Member> result = new HashSet<Member>();
         for (HazelcastInstance hz : instances) {
             result.add(hz.getCluster().getLocalMember());
@@ -157,40 +137,8 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         return result;
     }
 
-    public abstract class AssertTask {
 
-        public abstract void run();
-    }
-
-    public static void assertTrueEventually(AssertTask task) {
-        AssertionError error = null;
-        for (int k = 0; k < 120; k++) {
-            try {
-                task.run();
-                return;
-            } catch (AssertionError e) {
-                error = e;
-            }
-            sleepSeconds(1);
-        }
-
-        throw error;
-    }
-
-    public static void assertTrueLater(int delaySeconds, AssertTask task) {
-        sleepSeconds(delaySeconds);
-        task.run();
-    }
-
-    private static void sleepSeconds(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
-        }
-    }
-
-
-    public class MemberShipEventLoger implements MembershipListener {
+    private class MemberShipEventLoger implements MembershipListener {
 
         private List<MembershipEvent> events = new Vector<MembershipEvent>();
 
