@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -111,7 +111,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
             }
         });
 
-        client.getCluster().removeMembershipListener(regID);
+        assertTrue(client.getCluster().removeMembershipListener(regID));
 
         final Member server2Member = server2.getCluster().getLocalMember();
         server2.shutdown();
@@ -128,8 +128,28 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void removedPhantomListener_thenFalse() throws Exception {
 
-    private Set<Member> getMembers(HazelcastInstance... instances) {
+        final HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        assertFalse(client.getCluster().removeMembershipListener("IamNotHearProabley"));
+    }
+
+    @Test
+    public void removedNullListener_thenException() throws Exception {
+
+        final HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        try{
+            assertFalse(client.getCluster().removeMembershipListener(null));
+            fail();
+        }catch(Exception e){}
+    }
+
+        private Set<Member> getMembers(HazelcastInstance... instances) {
         Set<Member> result = new HashSet<Member>();
         for (HazelcastInstance hz : instances) {
             result.add(hz.getCluster().getLocalMember());
