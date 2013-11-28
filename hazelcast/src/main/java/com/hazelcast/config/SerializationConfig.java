@@ -49,7 +49,7 @@ public class SerializationConfig {
 
     private boolean enableCompression = false;
 
-    private boolean enableSharedObject = false;
+    private boolean enableSharedObject = true;
 
     private boolean allowUnsafe = false;
 

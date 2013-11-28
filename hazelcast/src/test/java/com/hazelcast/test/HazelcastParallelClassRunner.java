@@ -1,56 +1,35 @@
 package com.hazelcast.test;
 
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class HazelcastParallelClassRunner extends BlockJUnit4ClassRunner {
+public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
+
+    private static final int MAX_THREADS;
 
     static {
-        final String logging = "hazelcast.logging.type";
-        if (System.getProperty(logging) == null) {
-            System.setProperty(logging, "log4j");
+        int cores = Runtime.getRuntime().availableProcessors();
+        if (cores < 8) {
+            MAX_THREADS = 8;
+        } else {
+            MAX_THREADS = cores;
         }
-        if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
-            System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
-        }
-        System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.mancenter.enabled", "false");
-        System.setProperty("hazelcast.wait.seconds.before.join", "1");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-
-        // randomize multicast group...
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
 
-    private AtomicInteger numThreads;
-    public static int maxThreads = 8;
+    private final AtomicInteger numThreads;
 
     public HazelcastParallelClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
         numThreads = new AtomicInteger(0);
-
     }
-
-    //protected List<FrameworkMethod> computeTestMethods() {
-    //    List<FrameworkMethod> methods = super.computeTestMethods();
-    //    Collections.shuffle(methods);
-    //    return methods;
-    //}
 
     @Override
     protected void runChild(final FrameworkMethod method, final RunNotifier notifier) {
-        while (numThreads.get() > maxThreads) {
+        while (numThreads.get() > MAX_THREADS) {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
@@ -60,7 +39,7 @@ public class HazelcastParallelClassRunner extends BlockJUnit4ClassRunner {
             }
         }
         numThreads.incrementAndGet();
-        new Thread (new Test(method, notifier)).start();
+        new Thread (new TestRunner(method, notifier)).start();
     }
 
     @Override
@@ -77,11 +56,11 @@ public class HazelcastParallelClassRunner extends BlockJUnit4ClassRunner {
         };
     }
 
-    class Test implements Runnable {
+    private class TestRunner implements Runnable {
         private final FrameworkMethod method;
         private final RunNotifier notifier;
 
-        public Test (final FrameworkMethod method, final RunNotifier notifier) {
+        public TestRunner(final FrameworkMethod method, final RunNotifier notifier) {
             this.method = method;
             this.notifier = notifier;
         }
@@ -91,12 +70,11 @@ public class HazelcastParallelClassRunner extends BlockJUnit4ClassRunner {
             long start = System.currentTimeMillis();
             String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
             System.out.println("Started Running Test: " + testName);
-
-            // System.err.println (method.getName());
             HazelcastParallelClassRunner.super.runChild(method, notifier);
             numThreads.decrementAndGet();
             float took = (float) (System.currentTimeMillis() - start) / 1000;
             System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
         }
     }
+
 }
