@@ -183,4 +183,28 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testIssue1276Lock() throws InterruptedException {
+        Long key = 1L;
+        Long value = 1L;
+        String mapName = "myMultimap";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+
+        for (int i=0; i<2; i++) {
+            TransactionContext ctx1 = instance1.newTransactionContext();
+            ctx1.beginTransaction();
+            BaseMultiMap<Long, Long> txProfileTasks1 = ctx1.getMultiMap(mapName);
+            txProfileTasks1.put(key, value);
+            ctx1.commitTransaction();
+
+            TransactionContext ctx2 = instance2.newTransactionContext();
+            ctx2.beginTransaction();
+            BaseMultiMap<Long, Long> txProfileTasks2 = ctx2.getMultiMap(mapName);
+            txProfileTasks2.remove(key, value);
+            ctx2.commitTransaction();
+        }
+    }
 }
