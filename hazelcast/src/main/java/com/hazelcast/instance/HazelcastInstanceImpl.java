@@ -128,42 +128,42 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public <K, V> IMap<K, V> getMap(String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a map instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a map instance with a null name is not allowed!");
         }
         return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a queue instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a queue instance with a null name is not allowed!");
         }
         return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a topic instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a topic instance with a null name is not allowed!");
         }
         return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
     public <E> ISet<E> getSet(String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a set instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a set instance with a null name is not allowed!");
         }
         return getDistributedObject(SetService.SERVICE_NAME, name);
     }
 
     public <E> IList<E> getList(String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a list instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a list instance with a null name is not allowed!");
         }
         return getDistributedObject(ListService.SERVICE_NAME, name);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a multi-map instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a multi-map instance with a null name is not allowed!");
         }
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
@@ -202,42 +202,42 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public IExecutorService getExecutorService(final String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving an executor instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving an executor instance with a null name is not allowed!");
         }
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
     public IdGenerator getIdGenerator(final String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving an id-generator instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving an id-generator instance with a null name is not allowed!");
         }
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
     }
 
     public IAtomicLong getAtomicLong(final String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving an atomic-long instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving an atomic-long instance with a null name is not allowed!");
         }
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     public <E> IAtomicReference<E> getAtomicReference(final String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving an atomic-reference instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving an atomic-reference instance with a null name is not allowed!");
         }
         return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a countdown-latch instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a countdown-latch instance with a null name is not allowed!");
         }
         return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
     public ISemaphore getSemaphore(final String name) {
         if (name == null) {
-            throw new NullPointerException("Retrieving a semaphore instance with a null key is not allowed!");
+            throw new NullPointerException("Retrieving a semaphore instance with a null name is not allowed!");
         }
         return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
