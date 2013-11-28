@@ -99,7 +99,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
         server2.shutdown();
 
-        //sleep for 5  and assert No new messages
+        //we still need to waite for the Member added event
         //This negative test cannot prove that no event was recived after delay
         assertTrueDelayed5sec(new AssertTask() {
             @Override
