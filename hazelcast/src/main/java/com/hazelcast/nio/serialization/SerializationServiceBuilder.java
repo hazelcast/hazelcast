@@ -55,7 +55,7 @@ public final class SerializationServiceBuilder {
 
     private boolean enableCompression = false;
 
-    private boolean enableSharedObject = false;
+    private boolean enableSharedObject = true;
 
     private boolean allowUnsafe = false;
 
