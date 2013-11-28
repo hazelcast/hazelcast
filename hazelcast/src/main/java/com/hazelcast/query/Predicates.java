@@ -194,7 +194,7 @@ public final class Predicates {
                 return false;
             } else {
                 if (pattern == null) {
-                    pattern = Pattern.compile(regex);
+                    pattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
                 }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
@@ -247,7 +247,7 @@ public final class Predicates {
                             .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")//escaped _
                             .replaceAll("\\\\%", "%")//non escaped %
                             .replaceAll("\\\\_", "_");//non escaped _
-                    pattern = Pattern.compile(regex);
+                    pattern = Pattern.compile(regex,Pattern.CASE_INSENSITIVE);
                 }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
