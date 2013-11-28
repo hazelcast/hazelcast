@@ -75,17 +75,9 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
                     long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
 
                     Random random = new Random();
-                    int k = 0;
                     for (; ; ) {
                         int key = random.nextInt(itemCount);
                         assertEquals(new Integer(key), map.put(key, key));
-
-                        if (k % 10000 == 0) {
-                            System.out.println(getName() + " at: " + k);
-                        }
-
-                        k++;
-
                         if (System.currentTimeMillis() > endTime) {
                             break;
                         }
@@ -122,17 +114,9 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
                     long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
 
                     Random random = new Random();
-                    int k = 0;
                     for (; ; ) {
                         int key = random.nextInt(itemCount);
                         assertEquals(new Integer(key), map.get(key));
-
-                        if (k % 10000 == 0) {
-                            System.out.println(getName() + " at: " + k);
-                        }
-
-                        k++;
-
                         if (System.currentTimeMillis() > endTime) {
                             break;
                         }
