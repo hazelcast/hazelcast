@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -34,11 +35,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mdogan 9/16/13
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class InvocationTest extends HazelcastTestSupport {
 
@@ -54,9 +56,10 @@ public class InvocationTest extends HazelcastTestSupport {
         Thread thread = new OpThread(interruptedFlag, latch) {
             protected void doOp() {
                 try {
-                    assertNotNull(q.poll(1, TimeUnit.MINUTES));
+                    Object item = q.poll(1, TimeUnit.MINUTES);
+                    assertNotNull(item);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    fail();
                 }
             }
         };
@@ -64,6 +67,7 @@ public class InvocationTest extends HazelcastTestSupport {
 
         Thread.sleep(5000);
         thread.interrupt();
+
         q.offer("new item!");
 
         assertTrue(latch.await(30, TimeUnit.SECONDS));
@@ -87,7 +91,7 @@ public class InvocationTest extends HazelcastTestSupport {
                     assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
                     assertTrue(lock.isLockedByCurrentThread());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    fail();
                 }
             }
         };

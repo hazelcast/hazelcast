@@ -612,6 +612,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                     }
 
                     if (response != null) {
+                        //if the thread is interrupted, but the response was not an interrupted-response,
+                        //we need to restore the interrupt flag.
+                        if (response!=INTERRUPTED_RESPONSE && interrupted) {
+                            Thread.currentThread().interrupt();
+                        }
                         return response;
                     }
 
