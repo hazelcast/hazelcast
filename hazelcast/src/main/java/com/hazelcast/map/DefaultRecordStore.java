@@ -476,9 +476,9 @@ public class DefaultRecordStore implements RecordStore {
             flush(dataKey);
             mapService.interceptRemove(name, record.getValue());
             oldValue = record.getValue();
-            deleteRecord(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
+            deleteRecord(dataKey);
             removeIndex(dataKey);
             cancelAssociatedSchedulers(dataKey);
         }
@@ -503,9 +503,9 @@ public class DefaultRecordStore implements RecordStore {
             mapService.interceptRemove(name, oldValue);
             removeIndex(dataKey);
             mapStoreDelete(record, dataKey);
-            deleteRecord(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
+            deleteRecord(dataKey);
             cancelAssociatedSchedulers(dataKey);
             removed = true;
         }
