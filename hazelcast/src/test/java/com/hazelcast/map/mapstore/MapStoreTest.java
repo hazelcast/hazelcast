@@ -29,6 +29,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
+import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -1084,7 +1086,8 @@ public class MapStoreTest extends HazelcastTestSupport {
     @Test
     public void testIssue1085WriteBehindBackup() throws InterruptedException {
         Config config = new Config();
-        MapConfig writeBehindBackup = config.getMapConfig("testIssue1085WriteBehindBackup");
+        String name = "testIssue1085WriteBehindBackup";
+        MapConfig writeBehindBackup = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
         int size = 1000;
@@ -1094,7 +1097,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        final IMap map = instance.getMap("testIssue1085WriteBehindBackup");
+        final IMap map = instance.getMap(name);
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -1103,13 +1106,40 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIssue1085WriteBehindBackupTransactional() throws InterruptedException {
+        Config config = new Config();
+        String name = "testIssue1085WriteBehindBackupTransactional";
+        MapConfig writeBehindBackup = config.getMapConfig(name);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setWriteDelaySeconds(5);
+        int size = 1000;
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 20);
+        mapStoreConfig.setImplementation(mapStore);
+        writeBehindBackup.setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final IMap map = instance.getMap(name);
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        TransactionalMap<Object, Object> tmap = context.getMap(name);
+        for (int i = 0; i < size; i++) {
+            tmap.put(i, i);
+        }
+        context.commitTransaction();
+        instance2.getLifecycleService().terminate();
+        mapStore.awaitStores();
+    }
+
+    @Test
+    @Repeat(10)
     public void testWriteBehindSameSecondSameKey() throws Exception {
         TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 2);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap<Object, Object> map = h1.getMap("map");
+        IMap<Object, Object> map = h1.getMap("testWriteBehindSameSecondSameKey");
 
         for (int i = 0; i < 100; i++) {
             map.put("key", "value" + i);
@@ -1137,6 +1167,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     public static class MapStoreWithStoreCount extends SimpleMapStore {
         final CountDownLatch latch;
         final int waitSecond;
+        final AtomicInteger count = new AtomicInteger(0);
 
         public MapStoreWithStoreCount(int expectedStore, int seconds) {
             latch = new CountDownLatch(expectedStore);
@@ -1154,12 +1185,14 @@ public class MapStoreTest extends HazelcastTestSupport {
         public void store(Object key, Object value) {
             latch.countDown();
             super.store(key, value);
+            count.incrementAndGet();
         }
 
         @Override
         public void storeAll(Map map) {
             for (Object o : map.keySet()) {
                 latch.countDown();
+                count.incrementAndGet();
             }
             super.storeAll(map);
         }
