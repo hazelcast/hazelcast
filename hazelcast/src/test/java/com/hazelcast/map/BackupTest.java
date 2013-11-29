@@ -19,6 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
@@ -242,10 +244,23 @@ public class BackupTest extends HazelcastTestSupport {
                 ix = rand.nextInt(nodeCount);
             } while (instances[ix] == null);
 
+            final CountDownLatch latch = new CountDownLatch(1);
+            // shutdown
+            instances[ix].getLifecycleService().addLifecycleListener(new LifecycleListener() {
+                @Override
+                public void stateChanged(LifecycleEvent event) {
+                    if (event.getState().equals(LifecycleEvent.LifecycleState.SHUTDOWN)) {
+                        latch.countDown();
+                    }
+                }
+            });
             TestUtil.terminateInstance(instances[ix]);
             instances[ix] = null;
+            Thread.sleep(3000);
             checkMapSizes(mapSize, backupCount, instances);
+
         }
+
     }
 
     private static void checkMapSizes(final int expectedSize, int backupCount, HazelcastInstance... instances) throws InterruptedException {
@@ -266,7 +281,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
         final int expectedBackupSize = Math.min(nodeCount - 1, backupCount) * expectedSize;
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1200; i++) {
             long ownedSize = getTotalOwnedEntryCount(maps);
             long backupSize = getTotalBackupEntryCount(maps);
             if (ownedSize == expectedSize && backupSize == expectedBackupSize) {
@@ -280,7 +295,7 @@ public class BackupTest extends HazelcastTestSupport {
                     break;
                 }
             }
-            Thread.sleep(250);
+            Thread.sleep(500);
         }
         long backupSize = getTotalBackupEntryCount(maps);
         assertEquals("Backup size invalid, node-count: " + nodeCount, expectedBackupSize, backupSize);
