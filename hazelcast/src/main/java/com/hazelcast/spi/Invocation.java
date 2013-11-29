@@ -25,4 +25,5 @@ public interface Invocation {
     Future invoke();
 
     Address getTarget();
+
 }
