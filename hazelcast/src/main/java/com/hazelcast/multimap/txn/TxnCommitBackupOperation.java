@@ -54,7 +54,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
             op.run();
             //op.afterRun();
         }
-        getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId);
+        getOrCreateContainer().unlock(dataKey, caller, threadId);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
