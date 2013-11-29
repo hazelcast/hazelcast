@@ -33,18 +33,15 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     private boolean unlockKey = false;
     private RecordInfo recordInfo;
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue) {
-        super(name, dataKey, dataValue);
-    }
-
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
         super(name, dataKey, dataValue);
         this.recordInfo = recordInfo;
     }
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, boolean unlockKey) {
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean unlockKey) {
         super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
+        this.recordInfo = recordInfo;
     }
 
     public PutBackupOperation() {
