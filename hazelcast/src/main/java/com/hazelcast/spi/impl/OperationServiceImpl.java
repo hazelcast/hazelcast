@@ -361,7 +361,7 @@ final class OperationServiceImpl implements OperationService {
         int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
                 ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
 
-        if (!returnsResponse || op.isAsync()) {
+        if (!returnsResponse) {
             asyncBackupCount += syncBackupCount;
             syncBackupCount = 0;
         }

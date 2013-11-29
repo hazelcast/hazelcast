@@ -65,10 +65,6 @@ public final class OperationAccessor {
         op.setCallTimeout(callTimeout);
     }
 
-    public static void setAsync(Operation op, boolean b) {
-        op.setAsync(b);
-    }
-
     private OperationAccessor() {
     }
 }

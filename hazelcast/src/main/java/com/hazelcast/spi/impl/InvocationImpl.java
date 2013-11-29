@@ -30,7 +30,6 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import java.io.IOException;
@@ -130,7 +129,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         return partitionId;
     }
 
-    private ManagedExecutorService getAsyncExecutor() {
+    private ExecutorService getAsyncExecutor() {
         return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
@@ -167,8 +166,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            //todo: callback stuff
-            OperationAccessor.setAsync(op, false/*callback != null*/);
             if (!nodeEngine.operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -221,12 +218,18 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
 
         if (response == RETRY_RESPONSE) {
-            if(invocationFuture.interrupted){
+            if (invocationFuture.interrupted) {
                 invocationFuture.set(INTERRUPTED_RESPONSE);
-            }else{
+            } else {
                 final ExecutionService ex = nodeEngine.getExecutionService();
-                ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
-                        new ReinvocationTask()), tryPauseMillis, TimeUnit.MILLISECONDS);
+                final ExecutorService asyncExecutor = ex.getExecutor(ExecutionService.ASYNC_EXECUTOR);
+                // fast retry for the first few invocations
+                if (invokeCount < 5) {
+                    asyncExecutor.execute(new ReInvocationTask());
+                } else {
+                    ex.schedule(new ScheduledTaskRunner(asyncExecutor, new ReInvocationTask()),
+                            tryPauseMillis, TimeUnit.MILLISECONDS);
+                }
             }
            return;
         }
@@ -253,12 +256,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
-            //if (callback == null) {
-            //    throw new HazelcastInstanceNotActiveException();
-            //} else {
             notify(new HazelcastInstanceNotActiveException());
             return;
-            //}
         }
 
         final Address invTarget = getTarget();
@@ -311,11 +310,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 notify(new RetryableIOException("Packet not sent to -> " + invTarget));
             }
         } else {
-            // OperationService.onMemberLeft handles removing call
-//                    final long prevCallId = op.getCallId();
-//                    if (prevCallId != 0) {
-//                        operationService.deregisterRemoteCall(prevCallId);
-//                    }
             if (op instanceof BackupAwareOperation) {
                 final long callId = operationService.newCallId();
                 registerBackups((BackupAwareOperation) op, callId);
@@ -392,7 +386,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             this.potentialResponse = response;
         }
 
-        nodeEngine.getExecutionService().schedule(new Runnable() {
+        nodeEngine.getExecutionService().schedule(new ScheduledTaskRunner(getAsyncExecutor(), new Runnable() {
             @Override
             public void run() {
                 synchronized (InvocationImpl.this) {
@@ -413,7 +407,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
 
                 resetAndReInvoke();
             }
-        }, timeout, unit);
+        }), timeout, unit);
     }
 
     public static class IsStillExecuting extends AbstractOperation {
@@ -453,7 +447,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
-    private class ReinvocationTask implements Runnable {
+    private class ReInvocationTask implements Runnable {
         public void run() {
             doInvoke();
         }
@@ -526,7 +520,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                     try {
                         if (response instanceof Response) {
                             final Response responseObj = (Response) response;
-                            // no need to deregister backup call, since backups are not registered for async invocations.
                             callback.onResponse((E) responseObj.response);
                         } else if (response == NULL_RESPONSE) {
                             callback.onResponse(null);
@@ -599,11 +592,10 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 final long pollTimeoutMs = Math.min(maxCallTimeout, timeoutMs);
                 final long startMs = Clock.currentTimeMillis();
 
-                 long lastPollTime = 0;
+                long lastPollTime = 0;
                 try {
                     //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
                     if (pollTimeoutMs > 0) {
-
                         synchronized (this) {
                             if (response == null) {
                                 this.wait(pollTimeoutMs);
@@ -614,7 +606,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                     if (response != null) {
                         //if the thread is interrupted, but the response was not an interrupted-response,
                         //we need to restore the interrupt flag.
-                        if (response!=INTERRUPTED_RESPONSE && interrupted) {
+                        if (response != INTERRUPTED_RESPONSE && interrupted) {
                             Thread.currentThread().interrupt();
                         }
                         return response;
@@ -680,7 +672,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 throw new TimeoutException();
             }
             if(response == INTERRUPTED_RESPONSE){
-                throw new InterruptedException("Call "+InvocationImpl.this+" was interrupted");
+                throw new InterruptedException("Call " + InvocationImpl.this + " was interrupted");
             }
             return response;
         }
@@ -727,5 +719,4 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             return executing;
         }
     }
-
 }
