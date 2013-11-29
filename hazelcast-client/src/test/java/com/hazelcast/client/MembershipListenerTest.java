@@ -123,7 +123,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = java.lang.NullPointerException.class)
     public void addNullListener_thenException() throws Exception{
 
         client.getCluster().addMembershipListener(null);
