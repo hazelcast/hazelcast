@@ -17,7 +17,6 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -55,9 +54,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void innerBeforeRun() {
-        if (entryProcessor instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-        }
         final ManagedContext managedContext = getNodeEngine().getSerializationService().getManagedContext();
         managedContext.initialize(entryProcessor);
     }
