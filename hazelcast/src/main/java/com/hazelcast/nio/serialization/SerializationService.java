@@ -66,6 +66,6 @@ public interface SerializationService {
 
     ClassLoader getClassLoader();
 
-    public ManagedContext getManagedContext();
+    ManagedContext getManagedContext();
 
 }
