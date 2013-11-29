@@ -19,6 +19,7 @@ package com.hazelcast.spring.context;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -139,5 +140,12 @@ public class TestManagedContext {
         latch.await(1, TimeUnit.MINUTES);
         Assert.assertTrue("transaction manager could not proxy the submitted task.",
                 transactionManager.isCommitted());
+    }
+
+    @Test
+    public void testEntryProcessor() {
+        final IMap<Object,Object> map = instance1.getMap("testEntryProcessor");
+        final Object result = map.executeOnKey("key", new SomeEntryProcessor());
+        Assert.assertEquals("notNull", result);
     }
 }
