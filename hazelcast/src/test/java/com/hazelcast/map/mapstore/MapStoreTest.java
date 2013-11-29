@@ -1086,21 +1086,19 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig writeBehindBackup = config.getMapConfig("testIssue1085WriteBehindBackup");
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setWriteDelaySeconds(3);
-        int size = 100;
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 100);
+        mapStoreConfig.setWriteDelaySeconds(5);
+        int size = 1000;
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 20);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackup.setMapStoreConfig(mapStoreConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         final IMap map = instance.getMap("testIssue1085WriteBehindBackup");
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
         instance2.getLifecycleService().terminate();
-        instance3.getLifecycleService().terminate();
         mapStore.awaitStores();
     }
 
@@ -1147,7 +1145,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         public void awaitStores() {
             try {
-                assertTrue("Store remaining: " + latch.getCount(), latch.await(waitSecond, TimeUnit.SECONDS));
+                assertTrue(latch.await(waitSecond, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
             }
         }
@@ -1155,6 +1153,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         @Override
         public void store(Object key, Object value) {
             latch.countDown();
+            super.store(key, value);
         }
 
         @Override

@@ -66,4 +66,12 @@ public class RecordReplicationInfo extends RecordInfo implements DataSerializabl
         value = new Data();
         value.readData(in);
     }
+
+    @Override
+    public String toString() {
+        return "RecordReplicationInfo{" +
+                "key=" + key +
+                ", value=" + value +
+                "} " + super.toString();
+    }
 }
