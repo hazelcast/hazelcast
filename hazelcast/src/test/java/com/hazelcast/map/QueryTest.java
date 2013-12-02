@@ -19,6 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
@@ -350,11 +352,30 @@ public class QueryTest extends HazelcastTestSupport {
         for (Employee employee : values) {
             assertTrue(employee.isActive());
         }
-        Thread.sleep((TTL + 2) * 1000);
+        final  CountDownLatch latch =  new CountDownLatch(1000);
+        imap.addEntryListener(new EntryListener() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent event) {
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                latch.countDown();
+            }
+        }, false);
+        latch.await(30, TimeUnit.SECONDS);
         assertEquals(0, imap.size());
         values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
         assertEquals(0, values.size());
-    }
+        }
 
     @Test
     public void testOneIndexedFieldsWithTwoCriteriaField() throws Exception {
