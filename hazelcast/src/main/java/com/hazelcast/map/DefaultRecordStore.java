@@ -330,7 +330,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey,true);
+            record = getRecordInternal(dataKey, true);
         } else {
             accessRecord(record);
         }
@@ -343,7 +343,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey,false);
+            record = getRecordInternal(dataKey, false);
         } else {
             accessRecord(record);
         }
@@ -411,7 +411,7 @@ public class DefaultRecordStore implements RecordStore {
         keysToDelete.removeAll(lockedRecords.keySet());
 
         final MapStoreWrapper store = mapContainer.getStore();
-        Set<Object> keysObject = new HashSet<Object>();
+        Set<Object> keysObject = new HashSet<Object>(keysToDelete.size());
         for (Data key : keysToDelete) {
             // todo ea have a clear(Keys) method for optimizations
             removeIndex(key);
@@ -730,11 +730,12 @@ public class DefaultRecordStore implements RecordStore {
                     record.getStatistics(), record.getVersion());
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
-                deleteRecord(dataKey);
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
                 // reduce size.
                 updateSizeEstimator(-calculateRecordSize(record));
+                //remove from map & invalidate.
+                deleteRecord(dataKey);
                 return true;
             }
             // same with the existing entry so no need to mapstore etc operations.
