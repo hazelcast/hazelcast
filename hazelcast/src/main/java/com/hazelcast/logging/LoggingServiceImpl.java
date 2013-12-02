@@ -18,6 +18,7 @@ package com.hazelcast.logging;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.SystemProps;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -187,7 +188,7 @@ public class LoggingServiceImpl implements LoggingService {
             }
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
-                message = thisAddressString + " [" + groupName + "] " + message;
+                message = thisAddressString + " [" + groupName + "] " + " [" + getSystemProps().getVersion() + "] " +  message;
                 LogRecord logRecord = new LogRecord(level, message);
                 logRecord.setThrown(thrown);
                 logRecord.setLoggerName(name);
@@ -200,6 +201,10 @@ public class LoggingServiceImpl implements LoggingService {
                     handleLogEvent(logEvent);
                 }
             }
+        }
+
+        private SystemProps getSystemProps(){
+            return SystemProps.INSTANCE;
         }
 
         public void log(LogEvent logEvent) {
