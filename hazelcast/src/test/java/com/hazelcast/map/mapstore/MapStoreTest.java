@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -322,7 +321,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
         final IMap map = node1.getMap(mapName);
         // check if load all called.
-        assertTrue("map store loadAllKeys must be called", testMapStore.loadAllLatch.await(10,TimeUnit.SECONDS));
+        assertTrue("map store loadAllKeys must be called", testMapStore.loadAllLatch.await(10, TimeUnit.SECONDS));
         // map population count.
         final int populationCount = 100;
         // latch for store & storeAll events.
@@ -667,7 +666,7 @@ public class MapStoreTest extends HazelcastTestSupport {
             map1.put(i, "value" + i);
         }
         assertTrue("store operations could not be done wisely ",
-                testMapStore.latchStore.await(30,TimeUnit.SECONDS));
+                testMapStore.latchStore.await(30, TimeUnit.SECONDS));
         assertEquals(1000, testMapStore.getStore().size());
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
@@ -1132,7 +1131,6 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Repeat(10)
     public void testWriteBehindSameSecondSameKey() throws Exception {
         TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
         testMapStore.setLoadAllKeys(false);
@@ -1140,13 +1138,20 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap<Object, Object> map = h1.getMap("testWriteBehindSameSecondSameKey");
+        final int mapSize = 100;
+        //store op count.
+        testMapStore.latchStoreOpCount = new CountDownLatch(mapSize);
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < mapSize; i++) {
             map.put("key", "value" + i);
+            Thread.sleep(1);
         }
+        Thread.sleep(1);
         map.put("key", "the_last_value");
 
-        testMapStore.latchStore.await(5, TimeUnit.SECONDS);
+        assertTrue("store operations must be finished.",
+                testMapStore.latchStoreOpCount.await(30, TimeUnit.SECONDS));
+
         assertEquals("the_last_value", testMapStore.getStore().get("key"));
     }
 
@@ -1308,7 +1313,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
 
         public Set<K> loadAllKeys() {
-            if(loadAllLatch != null){
+            if (loadAllLatch != null) {
                 loadAllLatch.countDown();
             }
             callCount.incrementAndGet();
@@ -1493,6 +1498,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final CountDownLatch latchLoad;
         final CountDownLatch latchLoadAllKeys;
         final CountDownLatch latchLoadAll;
+        CountDownLatch latchStoreOpCount;
         final AtomicInteger callCount = new AtomicInteger();
         final AtomicInteger initCount = new AtomicInteger();
         final AtomicInteger destroyCount = new AtomicInteger();
@@ -1587,6 +1593,9 @@ public class MapStoreTest extends HazelcastTestSupport {
             store.put(key, value);
             callCount.incrementAndGet();
             latchStore.countDown();
+            if (latchStoreOpCount != null) {
+                latchStoreOpCount.countDown();
+            }
         }
 
         public Set loadAllKeys() {
@@ -1606,6 +1615,12 @@ public class MapStoreTest extends HazelcastTestSupport {
             store.putAll(map);
             callCount.incrementAndGet();
             latchStoreAll.countDown();
+
+            if (latchStoreOpCount != null) {
+                for (int i = 0; i < map.size(); i++) {
+                    latchStoreOpCount.countDown();
+                }
+            }
         }
 
         public void delete(Object key) {
