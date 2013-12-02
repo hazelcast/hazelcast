@@ -110,7 +110,7 @@ public final class OutOfMemoryErrorDispatcher {
             final HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
             closeSockets(factory);
             try {
-                factory.node.shutdown(true, true);
+                factory.node.shutdown(true);
             } catch (Throwable ignored) {
             }
         }

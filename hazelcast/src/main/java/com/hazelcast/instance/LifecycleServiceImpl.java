@@ -25,7 +25,6 @@ import com.hazelcast.logging.ILogger;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
@@ -74,7 +73,7 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
             instance.managementService.destroy();
-            instance.node.shutdown(false, true);
+            instance.node.shutdown(false);
             HazelcastInstanceFactory.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }
@@ -84,7 +83,7 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
             instance.managementService.destroy();
-            instance.node.shutdown(true, true);
+            instance.node.shutdown(true);
             HazelcastInstanceFactory.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }

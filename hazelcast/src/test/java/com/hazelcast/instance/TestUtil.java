@@ -50,7 +50,7 @@ public final class TestUtil {
     public static void terminateInstance(HazelcastInstance hz) {
         final Node node = getNode(hz);
         node.getConnectionManager().shutdown();
-        node.shutdown(true, true);
+        node.shutdown(true);
     }
 
     public static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {
