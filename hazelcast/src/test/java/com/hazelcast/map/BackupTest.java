@@ -460,7 +460,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
 
         try {
-            assertTrue(latch.await(2, TimeUnit.MINUTES));
+            assertTrue(latch.await(5, TimeUnit.MINUTES));
             assertEquals("Data lost!", size, map.size());
         } finally {
             ex.shutdownNow();
@@ -534,7 +534,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
 
         try {
-            assertTrue(latch.await(2, TimeUnit.MINUTES));
+            assertTrue(latch.await(5, TimeUnit.MINUTES));
             assertEquals("Remove failed!", 0, map.size());
         } finally {
             ex.shutdown();
