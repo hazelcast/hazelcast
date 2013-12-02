@@ -16,11 +16,14 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -70,5 +73,46 @@ public class HazelcastJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         super.runChild(method, notifier);
         float took = (float) (System.currentTimeMillis() - start) / 1000;
         System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+    }
+
+    @Override
+    protected Statement methodBlock(FrameworkMethod method) {
+        final Statement statement = super.methodBlock(method);
+        final Repeat repeatable = method.getAnnotation(Repeat.class);
+        if (repeatable == null || repeatable.value() < 2) {
+            return statement;
+        }
+        return new TestRepeater(statement, method.getMethod(), repeatable.value());
+    }
+
+    private class TestRepeater extends Statement {
+
+        private final Statement statement;
+
+        private final Method testMethod;
+
+        private final int repeat;
+
+        public TestRepeater(Statement statement, Method testMethod, int repeat) {
+            this.statement = statement;
+            this.testMethod = testMethod;
+            this.repeat = Math.max(1, repeat);
+        }
+
+        /**
+         * Invokes the next {@link Statement statement} in the execution chain for
+         * the specified repeat count.
+         */
+        @Override
+        public void evaluate() throws Throwable {
+            for (int i = 0; i < repeat; i++) {
+                if (repeat > 1) {
+                    System.out.println(String.format("---> Repeating test [%s:%s], run count [%d]",
+                            testMethod.getDeclaringClass().getCanonicalName(),
+                            testMethod.getName(), i + 1));
+                }
+                statement.evaluate();
+            }
+        }
     }
 }
