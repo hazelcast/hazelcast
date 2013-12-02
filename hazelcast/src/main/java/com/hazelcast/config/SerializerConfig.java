@@ -16,10 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.ByteArraySerializer;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.StreamSerializer;
 
 public class SerializerConfig {
 
@@ -53,12 +50,16 @@ public class SerializerConfig {
         return implementation;
     }
 
-    public SerializerConfig setImplementation(final ByteArraySerializer implementation) {
-        this.implementation = implementation;
-        return this;
-    }
-
-    public SerializerConfig setImplementation(final StreamSerializer implementation) {
+    /**
+     * Sets the serializer implementation instance.
+     * <br/>
+     * Serializer must be instance of either {@link com.hazelcast.nio.serialization.StreamSerializer}
+     * or {@link com.hazelcast.nio.serialization.ByteArraySerializer}.
+     *
+     * @param implementation serializer instance
+     * @return SerializerConfig
+     */
+    public SerializerConfig setImplementation(final Serializer implementation) {
         this.implementation = implementation;
         return this;
     }
