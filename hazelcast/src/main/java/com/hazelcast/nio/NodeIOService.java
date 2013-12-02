@@ -69,7 +69,11 @@ public class NodeIOService implements IOService {
 
     public void onFatalError(Exception e) {
         getSystemLogService().logConnection(e.getClass().getName() + ": " + e.getMessage());
-        node.shutdown(false, false);
+        new Thread(node.threadGroup, node.getThreadNamePrefix("io.error.shutdown")) {
+            public void run() {
+                node.shutdown(false);
+            }
+        }.start();
     }
 
     public SocketInterceptorConfig getSocketInterceptorConfig() {
