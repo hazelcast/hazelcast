@@ -27,7 +27,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assert;
 import org.junit.Before;
@@ -212,7 +211,6 @@ public class BackupTest extends HazelcastTestSupport {
      * Fix for the issue 395.
      */
     @Test(timeout = 300 * 1000)
-    @Repeat(10)
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(6, 2, 50000);
     }
@@ -247,7 +245,7 @@ public class BackupTest extends HazelcastTestSupport {
             } while (instances[ix] == null);
 
             final CountDownLatch latch = new CountDownLatch(1);
-            // shutdown gracefully
+            // add listener
             instances[ix].getLifecycleService().addLifecycleListener(new LifecycleListener() {
                 @Override
                 public void stateChanged(LifecycleEvent event) {
@@ -256,9 +254,10 @@ public class BackupTest extends HazelcastTestSupport {
                     }
                 }
             });
+            latch.await(3, TimeUnit.SECONDS);
+            // shutdown.
             TestUtil.terminateInstance(instances[ix]);
             instances[ix] = null;
-            Thread.sleep(3000);
             checkMapSizes(mapSize, backupCount, instances);
 
         }
