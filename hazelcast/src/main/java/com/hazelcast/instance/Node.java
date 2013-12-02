@@ -349,19 +349,7 @@ public class Node {
         initializer.afterInitialize(this);
     }
 
-    public void shutdown(final boolean force, final boolean now) {
-        if (now) {
-            doShutdown(force);
-        } else {
-            new Thread(new Runnable() {
-                public void run() {
-                    doShutdown(force);
-                }
-            }).start();
-        }
-    }
-
-    private void doShutdown(boolean terminate) {
+    public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
         logger.finest( "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!terminate && isActive()) {
@@ -471,7 +459,7 @@ public class Node {
                 if (isActive() && !completelyShutdown) {
                     completelyShutdown = true;
                     if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
-                        shutdown(true, true);
+                        shutdown(true);
                     }
                 } else {
                     logger.finest( "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
@@ -540,7 +528,7 @@ public class Node {
                 rejoin();
             } else {
                 logger.severe( "Could not join cluster, shutting down!", e);
-                shutdown(true, true);
+                shutdown(true);
             }
         }
     }
