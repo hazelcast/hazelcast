@@ -135,7 +135,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
                         mapService.interceptAfterGet(name, val);
-                        return val;
+                        // this serialization step is needed not to expose the object, see issue 1292
+                        return mapService.toData(val);
                     }
                 }
             }
