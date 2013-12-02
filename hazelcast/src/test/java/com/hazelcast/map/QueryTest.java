@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.Assert;
@@ -1001,8 +1002,11 @@ public class QueryTest extends HazelcastTestSupport {
         }
         assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
         instance2.shutdown();
+        // todo: this test fails if you first check the query, see issue 1282
+        assertEquals(allsize + targetSize, map.size());
         assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
         instance3.shutdown();
+        assertEquals(allsize + targetSize, map.size());
         assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
     }
 
