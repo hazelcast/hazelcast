@@ -35,11 +35,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * User: ahmetmircik
@@ -189,5 +192,39 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testNearCacheInvalidationByUsingMapPutAll() {
+        int n = 3;
+        String mapName = "test";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+
+        HazelcastInstance[] instances = factory.newInstances(config);
+        IMap<Object, Object> map = instances[0].getMap(mapName);
+
+        int count = 5000;
+        for (int i = 0; i < count; i++) {
+            map.put(i, i);
+        }
+
+        //populate the near cache
+        for (int i = 0; i < count; i++) {
+            map.get(i);
+        }
+
+        NearCache nearCache = getNearCache(mapName, instances[0]);
+        assertTrue(nearCache.size() > (count / n - count*0.1)); //more-or-less (count / no_of_nodes) should be in the near cache now
+
+        Map<Object, Object> invalidationMap = new HashMap<Object, Object>(count);
+        for (int i = 0; i < count; i++) {
+            invalidationMap.put(i, i);
+        }
+        map.putAll(invalidationMap); //this should invalidate the near cache
+        assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
+
+
+    }
 
 }
