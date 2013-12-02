@@ -30,6 +30,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class SizeEstimatorTest extends HazelcastTestSupport {
@@ -60,29 +63,51 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutRemove() throws InterruptedException {
-        final String MAP_NAME = "default";
+    public void testPutRemoveWithTwoNodeOwnerAndBackup() throws InterruptedException {
+        final String mapName = "default";
         final Config config = new Config();
-        config.getMapConfig(MAP_NAME).setBackupCount(1).setInMemoryFormat(InMemoryFormat.BINARY);
+        config.getMapConfig(mapName).setBackupCount(1).setInMemoryFormat(InMemoryFormat.BINARY);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h[] = factory.newInstances(config);
-        final IMap<String, String> map1 = h[0].getMap(MAP_NAME);
-        final IMap<String, String> map2 = h[1].getMap(MAP_NAME);
         warmUpPartitions(h);
-        Assert.assertEquals(0, map1.size());
-        Assert.assertEquals(map1.size(), map2.size());
-        //put and check
+        //create map
+        final IMap<String, String> map1 = h[0].getMap(mapName);
+        final IMap<String, String> map2 = h[1].getMap(mapName);
+        //calculate initial heap costs.
+        long map1Cost = map1.getLocalMapStats().getHeapCost();
+        long map2Cost = map2.getLocalMapStats().getHeapCost();
+        //check initial costs if zero.
+        assertEquals("map1 initial heap cost must be zero..." + map1Cost, 0, map1Cost);
+        assertEquals("map2 initial heap cost must be zero..." + map2Cost, 0, map2Cost);
+        //populate map
         map1.put("key", "value");
-        final long costOfMapOnNode1AfterPut = map1.getLocalMapStats().getHeapCost();
-        final long costOfMapOnNode2AfterPut = map2.getLocalMapStats().getHeapCost();
-        Assert.assertTrue(costOfMapOnNode1AfterPut > 0);
-        Assert.assertEquals(costOfMapOnNode1AfterPut, costOfMapOnNode2AfterPut);
-        //remove and check
+        //get sizes
+        long map1Size = map1.size();
+        long map2Size = map2.size();
+        //check sizes
+        assertEquals("map1 size must be one..." + map1Size, 1, map1Size);
+        assertEquals("map2 size must be one..." + map2Size, 1, map2Size);
+        //calculate costs
+        map1Cost = map1.getLocalMapStats().getHeapCost();
+        map2Cost = map2.getLocalMapStats().getHeapCost();
+        //costs should not be zero.
+        assertTrue("map1 cost should be greater than zero....: " + map1Cost, map1Cost > 0);
+        assertTrue("map2 cost should be greater than zero.... : " + map2Cost, map2Cost > 0);
+        // one map is backup. so backup & owner cost must be same.
+        assertEquals(map1Cost, map2Cost);
+        //remove key.
         map1.remove("key");
-        final long costOfMapOnNode1AfterRemove = map1.getLocalMapStats().getHeapCost();
-        final long costOfMapOnNode2AfterRemove = map2.getLocalMapStats().getHeapCost();
-        Assert.assertEquals(0, costOfMapOnNode1AfterRemove);
-        Assert.assertEquals(costOfMapOnNode1AfterRemove, costOfMapOnNode2AfterRemove);
+        //get sizes
+        map1Size = map1.size();
+        map2Size = map2.size();
+        //check if sizes zero.
+        assertEquals("map1 size must be zero..." + map1Size, 0, map1Size);
+        assertEquals("map2 size must be zero..." + map2Size, 0, map2Size);
+        map1Cost = map1.getLocalMapStats().getHeapCost();
+        map2Cost = map2.getLocalMapStats().getHeapCost();
+        //costs should be zero.
+        assertTrue("map1 cost should zero....: " + map1Cost, map1Cost == 0);
+        assertTrue("map2 cost should zero....: " + map2Cost, map2Cost == 0);
     }
 
     @Test
