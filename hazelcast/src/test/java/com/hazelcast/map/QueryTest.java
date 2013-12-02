@@ -1374,7 +1374,6 @@ public class QueryTest extends HazelcastTestSupport {
      * test for issue #359
      */
     @Test
-    // TODO: @mm - Test fails randomly!
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
         final int runCount = 500;
@@ -1395,6 +1394,7 @@ public class QueryTest extends HazelcastTestSupport {
                     final String name = UUID.randomUUID().toString();
                     final IMap<Object, Value> map = hz.getMap(mapName);
                     map.put(name, new Value(name, 0));
+                    map.size();  // helper call on nodes to sync partitions.. see issue github.com/hazelcast/hazelcast/issues/1282
                     try {
                         for (int j = 1; j <= runCount; j++) {
                             Value v = map.get(name);
