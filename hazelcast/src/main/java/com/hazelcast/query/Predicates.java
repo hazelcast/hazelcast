@@ -221,13 +221,38 @@ public final class Predicates {
         private String attribute;
         private String second;
         private volatile Pattern pattern;
+        private int flags;
+
+        public static enum Option {
+            CASE_INSENSITIVE
+        }
 
         public LikePredicate() {
         }
 
         public LikePredicate(String attribute, String second) {
+            this(attribute, second, null);
+        }
+
+        public LikePredicate(String attribute, String second, Option...options) {
             this.attribute = attribute;
             this.second = second;
+            applyOptions(options);
+        }
+
+        private void applyOptions(Option[] options) {
+            if (options == null) {
+                return;
+            }
+            for (Option option : options) {
+                switch (option) {
+                    case CASE_INSENSITIVE:
+                        flags |= Pattern.CASE_INSENSITIVE;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Option '"+option+"' cannot be used inside LikePredicate.");
+                }
+            }
         }
 
         public boolean apply(Map.Entry entry) {
@@ -247,7 +272,7 @@ public final class Predicates {
                             .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")//escaped _
                             .replaceAll("\\\\%", "%")//non escaped %
                             .replaceAll("\\\\_", "_");//non escaped _
-                    pattern = Pattern.compile(regex);
+                    pattern = Pattern.compile(regex, flags);
                 }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
@@ -257,16 +282,24 @@ public final class Predicates {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(attribute);
             out.writeUTF(second);
+            out.writeInt(flags);
         }
 
         public void readData(ObjectDataInput in) throws IOException {
             attribute = in.readUTF();
             second = in.readUTF();
+            flags = in.readInt();
         }
 
         @Override
         public String toString() {
-            return attribute + " LIKE '" + second + "'";
+            StringBuilder builder = new StringBuilder(attribute)
+                    .append(" ")
+                    .append( (flags & Pattern.CASE_INSENSITIVE) == 0 ? "LIKE" : "ILIKE")
+                    .append(" '")
+                    .append(second)
+                    .append("'");
+            return builder.toString();
         }
     }
 
@@ -681,6 +714,10 @@ public final class Predicates {
 
     public static Predicate like(String attribute, String pattern) {
         return new LikePredicate(attribute, pattern);
+    }
+
+    public static Predicate ilike(String attribute, String pattern) {
+        return new LikePredicate(attribute, pattern, LikePredicate.Option.CASE_INSENSITIVE);
     }
 
     public static Predicate regex(String attribute, String pattern) {
