@@ -36,6 +36,7 @@ import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -1159,6 +1160,11 @@ public class MapService implements ManagedService, MigrationAwareService,
         // add near cache heap cost.
         heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
         localMapStats.setHeapCost(heapCost);
+        if(mapContainer.getMapConfig().isNearCacheEnabled())
+        {
+            NearCacheStatsImpl nearCacheStats =  getNearCache(mapName).getNearCacheStats();
+            localMapStats.setNearCacheStats(nearCacheStats);
+        }
 
         return localMapStats;
     }
