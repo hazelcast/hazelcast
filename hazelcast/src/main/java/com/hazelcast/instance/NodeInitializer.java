@@ -28,12 +28,6 @@ public interface NodeInitializer {
 
     void afterInitialize(Node node);
 
-    String getBuild();
-
-    int getBuildNumber();
-
-    String getVersion();
-
     SecurityContext getSecurityContext();
 
     Storage<DataRef> getOffHeapStorage();

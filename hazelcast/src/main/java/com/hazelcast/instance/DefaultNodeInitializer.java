@@ -21,9 +21,6 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
 
-import java.io.InputStream;
-import java.util.Properties;
-
 public class DefaultNodeInitializer implements NodeInitializer {
 
     protected ILogger logger;
@@ -31,7 +28,6 @@ public class DefaultNodeInitializer implements NodeInitializer {
     protected Node node;
     protected String version;
     protected String build;
-    private int buildNumber;
 
     public void beforeInitialize(Node node) {
         this.node = node;
@@ -50,40 +46,8 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     protected void parseSystemProps() {
-        version = System.getProperty("hazelcast.version", "unknown");
-        build = System.getProperty("hazelcast.build", "unknown");
-        if ("unknown".equals(version) || "unknown".equals(build)) {
-            try {
-                final InputStream inRuntimeProperties = NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-                if (inRuntimeProperties != null) {
-                    Properties runtimeProperties = new Properties();
-                    runtimeProperties.load(inRuntimeProperties);
-                    inRuntimeProperties.close();
-                    version = runtimeProperties.getProperty("hazelcast.version");
-                    build = runtimeProperties.getProperty("hazelcast.build");
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        try {
-            buildNumber = Integer.getInteger("hazelcast.build", -1);
-            if (buildNumber == -1) {
-                buildNumber = Integer.parseInt(build);
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    public int getBuildNumber() {
-        return buildNumber;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getBuild() {
-        return build;
+        version = node.getBuildInfo().getVersion();
+        build = node.getBuildInfo().getBuild();
     }
 
     public SecurityContext getSecurityContext() {

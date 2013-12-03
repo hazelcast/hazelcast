@@ -41,12 +41,14 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.*;
 
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -112,6 +114,8 @@ public class Node {
 
     private final ClassLoader configClassLoader;
 
+    private final BuildInfo buildInfo;
+
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.threadGroup = hazelcastInstance.threadGroup;
@@ -137,6 +141,7 @@ public class Node {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        buildInfo = BUILD_INFO_CONSTRUCTOR.createNew(null);
         serializationService = (SerializationServiceImpl) ss;
         systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
@@ -149,7 +154,8 @@ public class Node {
         address = addressPicker.getPublicAddress();
         localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address));
         String loggingType = groupProperties.LOGGING_TYPE.getString();
-        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
+        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
+                loggingType, localMember, buildInfo);
         logger = loggingService.getLogger(Node.class.getName());
         initializer = NodeInitializerFactory.create(configClassLoader);
         try {
@@ -169,8 +175,8 @@ public class Node {
         clusterService = new ClusterServiceImpl(this);
         textCommandService = new TextCommandServiceImpl(this);
         initializer.printNodeInfo(this);
-        buildNumber = initializer.getBuildNumber();
-        VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
+        buildNumber = getBuildInfo().getBuildNumber();
+        VersionCheck.check(this, getBuildInfo().getBuild(), getBuildInfo().getVersion());
         JoinConfig join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
@@ -260,7 +266,7 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        logger.finest( getThisAddress() + " failed connecting to " + address);
+        logger.finest(getThisAddress() + " failed connecting to " + address);
         failedConnections.add(address);
     }
 
@@ -310,13 +316,13 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.finest( "** setting master address to " + master);
+            logger.finest("** setting master address to " + master);
         }
         masterAddress = master;
     }
 
     public void start() {
-        logger.finest( "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         nodeEngine.start();
         connectionManager.start();
@@ -326,10 +332,10 @@ public class Node {
         }
         setActive(true);
         if (!completelyShutdown) {
-            logger.finest( "Adding ShutdownHook");
+            logger.finest("Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
-        logger.finest( "finished starting threads, calling join");
+        logger.finest("finished starting threads, calling join");
         join();
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
@@ -339,7 +345,7 @@ public class Node {
             sb.append(" and cluster size is ");
             sb.append(clusterSize);
             sb.append(". Some of the ports seem occupied!");
-            logger.warning( sb.toString());
+            logger.warning(sb.toString());
         }
         try {
             managementCenterService = new ManagementCenterService(hazelcastInstance);
@@ -351,7 +357,7 @@ public class Node {
 
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
-        logger.finest( "** we are being asked to shutdown when active = " + String.valueOf(active));
+        logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!terminate && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
@@ -375,13 +381,13 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-            logger.finest( "Shutting down node engine");
+            logger.finest("Shutting down node engine");
             nodeEngine.shutdown(terminate);
             if (multicastService != null) {
-                logger.finest( "Shutting down multicast service");
+                logger.finest("Shutting down multicast service");
                 multicastService.stop();
             }
-            logger.finest( "Shutting down connection manager");
+            logger.finest("Shutting down connection manager");
             connectionManager.shutdown();
             textCommandService.stop();
             masterAddress = null;
@@ -396,7 +402,7 @@ public class Node {
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
                 if (thread.isAlive()) {
-                    logger.finest( "Shutting down thread " + thread.getName());
+                    logger.finest("Shutting down thread " + thread.getName());
                     thread.interrupt();
                 }
             }
@@ -410,7 +416,7 @@ public class Node {
         joined.set(false);
         joiner.reset();
         final String uuid = UuidUtil.createMemberUuid(address);
-        logger.finest( "Generated new UUID for local member: " + uuid);
+        logger.finest("Generated new UUID for local member: " + uuid);
         localMember.setUuid(uuid);
     }
 
@@ -462,7 +468,7 @@ public class Node {
                         shutdown(true);
                     }
                 } else {
-                    logger.finest( "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
+                    logger.finest("shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -527,7 +533,7 @@ public class Node {
                 logger.warning("Trying to rejoin: " + e.getMessage());
                 rejoin();
             } else {
-                logger.severe( "Could not join cluster, shutting down!", e);
+                logger.severe("Could not join cluster, shutting down!", e);
                 shutdown(true);
             }
         }
@@ -563,7 +569,7 @@ public class Node {
     }
 
     public void setAsMaster() {
-        logger.finest( "This node is being set as the master");
+        logger.finest("This node is being set as the master");
         systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
         setJoined();
@@ -590,4 +596,41 @@ public class Node {
     public String toString() {
         return "Node[" + getName() + "]";
     }
+
+    public BuildInfo getBuildInfo() {
+        return buildInfo;
+    }
+
+    private static final ConstructorFunction<String, BuildInfo> BUILD_INFO_CONSTRUCTOR = new ConstructorFunction<String, BuildInfo>() {
+
+        public BuildInfo createNew(String key) {
+
+            String version = System.getProperty("hazelcast.version", "unknown");
+            String build = System.getProperty("hazelcast.build", "unknown");
+            int buildNumber = 0;
+            if ("unknown".equals(version) || "unknown".equals(build)) {
+                try {
+                    final InputStream inRuntimeProperties =
+                            Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+                    if (inRuntimeProperties != null) {
+                        Properties runtimeProperties = new Properties();
+                        runtimeProperties.load(inRuntimeProperties);
+                        inRuntimeProperties.close();
+                        version = runtimeProperties.getProperty("hazelcast.version");
+                        build = runtimeProperties.getProperty("hazelcast.build");
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            try {
+                buildNumber = Integer.getInteger("hazelcast.build", -1);
+                if (buildNumber == -1) {
+                    buildNumber = Integer.parseInt(build);
+                }
+            } catch (Exception ignored) {
+            }
+
+            return new BuildInfo(version, build, buildNumber);
+        }
+    };
 }
