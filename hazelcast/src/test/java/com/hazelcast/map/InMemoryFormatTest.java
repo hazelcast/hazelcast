@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import static junit.framework.Assert.assertNotSame;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -63,6 +64,38 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
 
         assertTrue(binaryMap.containsValue(v1));
         assertFalse(binaryMap.containsValue(v2));
+    }
+
+    @Test
+    public void equalsReadLocalBackup() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        Config config = new Config();
+        config.addMapConfig(new MapConfig("objectMap").setInMemoryFormat(InMemoryFormat.OBJECT).setReadBackupData(true));
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        Pair pair = new Pair("a", "1");
+
+        IMap<String, Pair> objectMap1 = hz1.getMap("objectMap");
+        IMap<String, Pair> objectMap2 = hz2.getMap("objectMap");
+
+        objectMap1.put("1", pair);
+        Pair v1 = objectMap1.get("1");
+        Pair v2 = objectMap1.get("1");
+
+        Pair rv1 = objectMap2.get("1");
+        Pair rv2 = objectMap2.get("1");
+        assertNotSame(pair, v1);
+        assertNotSame(pair, v2);
+        assertNotSame(v1, v2);
+
+        assertNotSame(pair, rv1);
+        assertNotSame(pair, rv2);
+        assertNotSame(rv1, rv2);
+
+        assertTrue(objectMap2.containsValue(v1));
     }
 
     public static final class Pair implements Serializable {
