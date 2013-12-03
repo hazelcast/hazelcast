@@ -65,8 +65,8 @@ public class ClusterPropsRequest implements ConsoleRequest {
 
         dos.writeInt(properties.size());
 
-        for (Object property : properties.keySet()) {
-            dos.writeUTF((String) property + ":#" + (String) properties.get(property));
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            dos.writeUTF(entry.getKey() + ":#" + entry.getValue());
         }
 
     }
