@@ -88,7 +88,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         stateSender = new StateSender();
         serializationService = instance.node.getSerializationService();
         final Address address = instance.node.address;
-        identifier = new ManagementCenterIdentifier(instance.node.initializer.getVersion(), instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
+        identifier = new ManagementCenterIdentifier(instance.node.getBuildInfo().getVersion(),
+                instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
     }
 
     public void start() {
