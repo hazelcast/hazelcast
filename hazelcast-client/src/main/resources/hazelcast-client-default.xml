@@ -19,29 +19,5 @@
            xmlns="http://www.hazelcast.com/schema/client-config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-    <group>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </group>
-
-    <network>
-        <cluster-members>
-            <address>127.0.0.1</address>
-        </cluster-members>
-        <smart-routing>true</smart-routing>
-        <redo-operation>true</redo-operation>
-        <connection-pool-size>30</connection-pool-size>
-    </network>
-
-    <executor-pool-size>40</executor-pool-size>
-
-    <near-cache name="asd">
-        <max-size>2000</max-size>
-        <time-to-live-seconds>100</time-to-live-seconds>
-        <max-idle-seconds>100</max-idle-seconds>
-        <eviction-policy>LFU</eviction-policy>
-        <invalidate-on-change>true</invalidate-on-change>
-        <in-memory-format>OBJECT</in-memory-format>
-    </near-cache>
 
 </hazelcast-client>
