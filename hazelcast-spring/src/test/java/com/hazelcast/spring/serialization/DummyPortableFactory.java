@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.spring.serialization;
 
-import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 
 /**
  * @author asimarslan
  */
-public class DummyGlobalSerializationFactory implements Serializer {
+public class DummyPortableFactory implements PortableFactory{
     @Override
-    public int getTypeId() {
-        throw new UnsupportedOperationException("not implemented yet");
-    }
-
-    @Override
-    public void destroy() {
+    public Portable create(int classId) {
         throw new UnsupportedOperationException("not implemented yet");
     }
 }

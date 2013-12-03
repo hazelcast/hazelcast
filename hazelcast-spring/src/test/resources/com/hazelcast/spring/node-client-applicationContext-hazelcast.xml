@@ -130,13 +130,12 @@
                           use-native-byte-order="false" >
 
             <hz:data-serializable-factories>
-                <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.DummyDataSerializableFactory"/>
+                <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
             </hz:data-serializable-factories>
             <hz:portable-factories>
-                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.DummyPortableFactory" />
+                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory" />
             </hz:portable-factories>
             <hz:serializers>
-                <!--<hz:global-serializer class-name="com.hazelcast.spring.DummyGlobalSerializationFactory"/>-->
                 <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo" class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
             </hz:serializers>
         </hz:serialization>
