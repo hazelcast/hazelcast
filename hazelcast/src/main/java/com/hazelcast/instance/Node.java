@@ -96,8 +96,6 @@ public class Node {
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
-    private final int buildNumber;
-
     public final LoggingServiceImpl loggingService;
 
     private final SystemLogService systemLogService;
@@ -175,7 +173,6 @@ public class Node {
         clusterService = new ClusterServiceImpl(this);
         textCommandService = new TextCommandServiceImpl(this);
         initializer.printNodeInfo(this);
-        buildNumber = getBuildInfo().getBuildNumber();
         VersionCheck.check(this, getBuildInfo().getBuild(), getBuildInfo().getVersion());
         JoinConfig join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
@@ -489,7 +486,7 @@ public class Node {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
-        return new JoinRequest(Packet.VERSION, buildNumber, address,
+        return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
                 localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0);
     }
 
