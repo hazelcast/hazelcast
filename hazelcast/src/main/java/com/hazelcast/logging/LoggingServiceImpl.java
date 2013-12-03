@@ -17,8 +17,8 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.SystemProps;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -37,14 +37,16 @@ public class LoggingServiceImpl implements LoggingService {
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
     private final LoggerFactory loggerFactory;
+    private final BuildInfo buildInfo;
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType, MemberImpl thisMember) {
+    public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType, MemberImpl thisMember, BuildInfo buildInfo) {
         this.systemLogService = systemLogService;
         this.groupName = groupName;
         this.thisMember = thisMember;
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
+        this.buildInfo = buildInfo;
     }
 
     final ConstructorFunction<String, ILogger> loggerConstructor
@@ -188,7 +190,7 @@ public class LoggingServiceImpl implements LoggingService {
             }
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
-                message = thisAddressString + " [" + groupName + "] " + " [" + getSystemProps().getVersion() + "] " +  message;
+                message = thisAddressString + " [" + groupName + "] " + "[" + buildInfo.getVersion() + "] " +  message;
                 LogRecord logRecord = new LogRecord(level, message);
                 logRecord.setThrown(thrown);
                 logRecord.setLoggerName(name);
@@ -201,10 +203,6 @@ public class LoggingServiceImpl implements LoggingService {
                     handleLogEvent(logEvent);
                 }
             }
-        }
-
-        private SystemProps getSystemProps(){
-            return SystemProps.INSTANCE;
         }
 
         public void log(LogEvent logEvent) {

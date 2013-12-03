@@ -23,11 +23,13 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.util.VersionCheck;
 
 import java.io.File;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
@@ -188,13 +190,13 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     @ManagedAnnotation("version")
     @ManagedDescription("The Hazelcast version")
     public String getVersion() {
-        return managedObject.node.initializer.getVersion();
+        return managedObject.node.getBuildInfo().getVersion();
     }
 
     @ManagedAnnotation("build")
     @ManagedDescription("The Hazelcast build")
     public String getBuild() {
-        return managedObject.node.initializer.getBuild();
+        return managedObject.node.getBuildInfo().getBuild();
     }
 
     @ManagedAnnotation("config")

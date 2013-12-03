@@ -28,7 +28,6 @@ public class DefaultNodeInitializer implements NodeInitializer {
     protected Node node;
     protected String version;
     protected String build;
-    private int buildNumber;
 
     public void beforeInitialize(Node node) {
         this.node = node;
@@ -47,21 +46,8 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     protected void parseSystemProps() {
-        version = getSystemProps().getVersion();
-        build = getSystemProps().getBuild();
-        buildNumber = getSystemProps().getBuildNumber();
-    }
-
-    public int getBuildNumber() {
-        return buildNumber;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getBuild() {
-        return build;
+        version = node.getBuildInfo().getVersion();
+        build = node.getBuildInfo().getBuild();
     }
 
     public SecurityContext getSecurityContext() {
@@ -76,9 +62,5 @@ public class DefaultNodeInitializer implements NodeInitializer {
 
     public void destroy() {
         logger.info("Destroying node initializer.");
-    }
-
-    private SystemProps getSystemProps(){
-        return SystemProps.INSTANCE;
     }
 }
