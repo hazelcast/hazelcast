@@ -71,7 +71,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
             entry = map.getEntryView(Integer.valueOf(key));
         }
 
-        TreeMap result = new TreeMap();
+        TreeMap<String, String> result = new TreeMap<String, String>();
 
         if (entry == null) {
             result.put("No Value Found!", " ");
@@ -90,8 +90,8 @@ public class GetMapEntryRequest implements ConsoleRequest {
 
         dos.writeInt(result.size());
 
-        for (Object property : result.keySet()) {
-            dos.writeUTF(property + ":#" + result.get(property));
+        for (Map.Entry<String,String> propertyEntry : result.entrySet()) {
+            dos.writeUTF(propertyEntry.getKey() + ":#" + propertyEntry.getValue());
         }
 
     }
