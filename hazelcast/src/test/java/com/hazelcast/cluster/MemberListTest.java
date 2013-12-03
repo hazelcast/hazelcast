@@ -18,7 +18,10 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -34,13 +37,10 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -291,29 +291,13 @@ public class MemberListTest {
         // Need to wait for at least as long as PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS
         Thread.sleep(15 * 1000);
 
-        final CountDownLatch latch = new CountDownLatch(4);
-
-        final MembershipListener membershipListener = new MembershipListener() {
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                latch.countDown();
-            }
-        };
-
         Member master = h1.getCluster().getLocalMember();
         assertEquals(master, h2.getCluster().getMembers().iterator().next());
         assertEquals(master, h3.getCluster().getMembers().iterator().next());
         assertEquals(master, h4.getCluster().getMembers().iterator().next());
         assertEquals(master, h5.getCluster().getMembers().iterator().next());
 
-        h2.getCluster().addMembershipListener(membershipListener);
-        h3.getCluster().addMembershipListener(membershipListener);
-        h4.getCluster().addMembershipListener(membershipListener);
-        h5.getCluster().addMembershipListener(membershipListener);
-
         h1.getLifecycleService().shutdown();
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
 
         assertEquals(4, h2.getCluster().getMembers().size());
         assertEquals(4, h3.getCluster().getMembers().size());
