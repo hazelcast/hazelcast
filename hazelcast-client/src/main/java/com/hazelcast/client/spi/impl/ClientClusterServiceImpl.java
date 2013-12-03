@@ -46,10 +46,10 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 
 /**
  * @author mdogan 5/15/13
@@ -332,27 +332,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public void start() {
-        final Future<Connection> f = client.getClientExecutionService().submit(new InitialConnectionCall());
-        try {
-            int connectionAttemptPeriodMs = client.getClientConfig().getConnectionAttemptPeriod();
-            int connectionAttempts = client.getClientConfig().getConnectionAttemptLimit();
-            long timeoutMs = ((long)connectionAttempts)*connectionAttemptPeriodMs+1000;
-            final Connection connection = f.get(timeoutMs, TimeUnit.MILLISECONDS);
-            clusterThread.setInitialConn(connection);
-        } catch (Throwable e) {
-            if (e instanceof ExecutionException && e.getCause() != null) {
-                e = e.getCause();
-                fixRemoteStackTrace(e, Thread.currentThread().getStackTrace());
-            }
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new HazelcastException(e);
-        }
         clusterThread.start();
 
         // TODO: replace with a better wait-notify
-        while (membersRef.get() == null) {
+        while (membersRef.get() == null && clusterThread.isAlive()) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -532,7 +515,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private Connection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
-        active = false;
         final int connectionAttemptLimit = getClientConfig().getConnectionAttemptLimit();
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
         int attempt = 0;
@@ -546,9 +528,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     active = true;
                     return connection;
                 } catch (IOException e) {
+                    active = false;
                     lastError = e;
                     logger.finest( "IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
+                    active = false;
                     lastError = e;
                     logger.warning("Authentication error on " + address, e);
                 }
