@@ -51,7 +51,7 @@ public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
         Properties properties = System.getProperties();
         dos.writeInt(properties.size());
 
-        for (Map.Entry entry : properties.entrySet()) {
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             dos.writeUTF(entry.getKey() + ":#" + entry.getValue());
         }
     }
