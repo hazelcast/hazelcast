@@ -217,7 +217,7 @@ public final class HazelcastInstanceFactory {
             try {
                 HazelcastInstanceProxy instanceProxy = f.get();
                 final HazelcastInstanceImpl impl = instanceProxy.original;
-                if (impl != null && impl.getLifecycleService().isRunning()) {
+                if (impl != null) {
                     map.put(impl.node.getLocalMember(), impl);
                 }
             } catch (RuntimeException ignore) {

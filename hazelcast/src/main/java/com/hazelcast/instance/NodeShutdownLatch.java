@@ -47,9 +47,12 @@ final class NodeShutdownLatch {
                 final MemberImpl member = entry.getKey();
                 if (members.contains(member)) {
                     HazelcastInstanceImpl instance = entry.getValue();
-                    if (instance.getLifecycleService().isRunning()) {
-                        final String id = instance.node.clusterService.addMembershipListener(new ShutdownMembershipListener());
-                        registrations.put(id, instance);
+                    if (instance.node.isActive()) {
+                        try {
+                            final String id = instance.node.clusterService.addMembershipListener(new ShutdownMembershipListener());
+                            registrations.put(id, instance);
+                        } catch (Throwable ignored) {
+                        }
                     }
                 }
             }
@@ -59,13 +62,22 @@ final class NodeShutdownLatch {
 
     void await(long time, TimeUnit unit) {
         if (!registrations.isEmpty()) {
+            int permits = registrations.size();
+            for (HazelcastInstanceImpl instance : registrations.values()) {
+                if (!instance.node.isActive()) {
+                    permits--;
+                }
+            }
             try {
-                latch.tryAcquire(registrations.size(), time, unit);
+                latch.tryAcquire(permits, time, unit);
             } catch (InterruptedException ignored) {
             }
             for (Map.Entry<String, HazelcastInstanceImpl> entry : registrations.entrySet()) {
                 final HazelcastInstanceImpl instance = entry.getValue();
-                instance.node.clusterService.removeMembershipListener(entry.getKey());
+                try {
+                    instance.node.clusterService.removeMembershipListener(entry.getKey());
+                } catch (Throwable ignored) {
+                }
             }
             registrations.clear();
         }
