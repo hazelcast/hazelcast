@@ -16,10 +16,10 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.HazelcastClientProxy;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.NearCacheConfig;
@@ -28,7 +28,6 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,7 +44,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
@@ -148,12 +146,12 @@ public class TestClientApplicationContext {
         final Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
         assertNotNull(map1);
         assertTrue(map1.containsKey(1));
-        assertEquals("com.hazelcast.spring.DummyDataSerializableFactory", map1.get(1));
+        assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", map1.get(1));
 
         final Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
         assertNotNull(portableFactoryClasses);
         assertTrue(portableFactoryClasses.containsKey(2));
-        assertEquals("com.hazelcast.spring.DummyPortableFactory", portableFactoryClasses.get(2));
+        assertEquals("com.hazelcast.spring.serialization.DummyPortableFactory", portableFactoryClasses.get(2));
 
         final Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
 

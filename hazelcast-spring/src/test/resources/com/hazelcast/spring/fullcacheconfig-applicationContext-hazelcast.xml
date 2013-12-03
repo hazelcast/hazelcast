@@ -211,8 +211,29 @@
                 <hz:listener implementation="dummyMembershipListener"/>
             </hz:listeners>
 
+            <hz:serialization allow-unsafe="false"
+                              byte-order="BIG_ENDIAN"
+                              check-class-def-errors="false"
+                              enable-compression="false"
+                              enable-shared-object="false"
+                              portable-version="13"
+                              use-native-byte-order="false" >
+
+                <hz:data-serializable-factories>
+                    <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+                </hz:data-serializable-factories>
+                <hz:portable-factories>
+                    <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory" />
+                </hz:portable-factories>
+                <hz:serializers>
+                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject1" class-name="com.hazelcast.spring.serialization.DummySerializer"/>
+                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2" implementation="dummySerializer"/>
+                </hz:serializers>
+            </hz:serialization>
         </hz:config>
     </hz:hazelcast>
+
+    <bean id="dummySerializer" class="com.hazelcast.spring.serialization.DummySerializer" />
 
     <hz:map id="map1" instance-ref="instance" name="map1"/>
     <hz:map id="map2" instance-ref="instance" name="map2"/>
