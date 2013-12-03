@@ -173,7 +173,6 @@ public class BackupTest extends HazelcastTestSupport {
         Assert.assertEquals(size, map5.size());
         Assert.assertEquals(size, map6.size());
 
-        addListener(hz6).await(3, TimeUnit.SECONDS);
         hz6.getLifecycleService().shutdown();
         Assert.assertEquals(size, map.size());
         Assert.assertEquals(size, map2.size());
@@ -181,44 +180,23 @@ public class BackupTest extends HazelcastTestSupport {
         Assert.assertEquals(size, map4.size());
         Assert.assertEquals(size, map5.size());
 
-
-        addListener(hz2).await(3, TimeUnit.SECONDS);
         hz2.getLifecycleService().shutdown();
         Assert.assertEquals(size, map.size());
         Assert.assertEquals(size, map3.size());
         Assert.assertEquals(size, map4.size());
         Assert.assertEquals(size, map5.size());
 
-
-        addListener(hz5).await(3, TimeUnit.SECONDS);
         hz5.getLifecycleService().shutdown();
         Assert.assertEquals(size, map.size());
         Assert.assertEquals(size, map3.size());
         Assert.assertEquals(size, map4.size());
 
-        addListener(hz3).await(3, TimeUnit.SECONDS);
         hz3.getLifecycleService().shutdown();
         Assert.assertEquals(size, map.size());
         Assert.assertEquals(size, map4.size());
 
-        addListener(hz4).await(3, TimeUnit.SECONDS);
         hz4.getLifecycleService().shutdown();
         Assert.assertEquals(size, map.size());
-    }
-
-    private CountDownLatch addListener(HazelcastInstance hz) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        // add listener
-        hz.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState().equals(LifecycleEvent.LifecycleState.SHUTDOWN)) {
-                    latch.countDown();
-                }
-            }
-        });
-
-        return latch;
     }
 
     /**
