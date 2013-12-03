@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class SystemLogRecord implements Comparable, DataSerializable {
+public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSerializable {
 
     private long date;
     private String node;
@@ -70,10 +70,9 @@ public class SystemLogRecord implements Comparable, DataSerializable {
         this.type = type;
     }
 
-    public int compareTo(Object o) {
+    public int compareTo(SystemLogRecord o) {
         long thisVal = this.date;
-        SystemLogRecord other = (SystemLogRecord) o;
-        long anotherVal = other.getDate();
+        long anotherVal = o.getDate();
         return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
     }
 
