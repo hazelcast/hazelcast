@@ -18,9 +18,7 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.util.Clock;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -84,7 +82,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 }
             }
         }
-        entryProcessor.process(this, res);
+        entryProcessor.process(this, sortForEntryProcessing(res));
         return processedKeys;
     }
 
@@ -111,7 +109,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             }
 
         }
-        entryProcessor.process(this, res);
+        entryProcessor.process(this, sortForEntryProcessing(res));
         return processedKeys;
     }
 
@@ -124,6 +122,20 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
             if (entries != null) {
                 return entries.remove(key);
+            }
+        }
+        return null;
+    }
+
+    public ScheduledEntry<K, V> get(K key) {
+        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
+            return getComparingTimeKey(key);
+        }
+        final Integer second = secondsOfKeys.get(key);
+        if (second != null) {
+            final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+            if (entries != null) {
+                return entries.get(key);
             }
         }
         return null;
@@ -144,11 +156,31 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             if (second != null) {
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
-                    result = entries.remove(key);
+                    result = entries.remove(timeKey);
                 }
             }
         }
+        return result;
+    }
 
+    public ScheduledEntry<K, V> getComparingTimeKey(K key) {
+        Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
+        for (Object tkey : secondsOfKeys.keySet()) {
+            TimeKey timeKey = (TimeKey) tkey;
+            if (timeKey.getKey().equals(key)) {
+                candidateKeys.add(timeKey);
+            }
+        }
+        ScheduledEntry<K, V> result = null;
+        for (TimeKey timeKey : candidateKeys) {
+            final Integer second = secondsOfKeys.get(timeKey);
+            if (second != null) {
+                final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+                if (entries != null) {
+                    result = entries.get(timeKey);
+                }
+            }
+        }
         return result;
     }
 
@@ -233,7 +265,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
 
         public void run() {
-            final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
+            final Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
             Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
             for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
@@ -242,9 +274,34 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                     values.add(entry.getValue());
                 }
             }
-            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, values);
+            //sort entries asc by schedule times and send to processor.
+            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, sortForEntryProcessing(values));
+
         }
     }
+
+    private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
+        if (coll == null || coll.isEmpty()) return Collections.EMPTY_LIST;
+
+        final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);
+        Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
+
+        return sortedEntries;
+
+    }
+
+    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
+        @Override
+        public int compare(ScheduledEntry o1, ScheduledEntry o2) {
+            if (o1.getScheduleTime() > o2.getScheduleTime()) {
+                return 1;
+            } else if (o1.getScheduleTime() < o2.getScheduleTime()) {
+                return -1;
+            }
+            return 0;
+        }
+    };
+
 
     @Override
     public int size() {

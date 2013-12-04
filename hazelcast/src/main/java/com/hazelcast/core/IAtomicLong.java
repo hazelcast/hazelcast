@@ -19,6 +19,8 @@ package com.hazelcast.core;
 /**
  * IAtomicLong is a redundant and highly available distributed alternative to the
  * {@link java.util.concurrent.atomic.AtomicLong java.util.concurrent.atomic.AtomicLong}.
+ *
+ * @see IAtomicReference
  */
 public interface IAtomicLong extends DistributedObject {
     /**
@@ -26,7 +28,7 @@ public interface IAtomicLong extends DistributedObject {
      *
      * @return name of this instance
      */
-    public String getName();
+    String getName();
 
     /**
      * Atomically adds the given value to the current value.
@@ -34,7 +36,7 @@ public interface IAtomicLong extends DistributedObject {
      * @param delta the value to add
      * @return the updated value
      */
-    public long addAndGet(long delta);
+    long addAndGet(long delta);
 
     /**
      * Atomically sets the value to the given updated value
@@ -45,21 +47,21 @@ public interface IAtomicLong extends DistributedObject {
      * @return true if successful; or false if the actual value
      *         was not equal to the expected value.
      */
-    public boolean compareAndSet(long expect, long update);
+    boolean compareAndSet(long expect, long update);
 
     /**
      * Atomically decrements the current value by one.
      *
      * @return the updated value
      */
-    public long decrementAndGet();
+    long decrementAndGet();
 
     /**
      * Gets the current value.
      *
      * @return the current value
      */
-    public long get();
+    long get();
 
     /**
      * Atomically adds the given value to the current value.
@@ -67,7 +69,7 @@ public interface IAtomicLong extends DistributedObject {
      * @param delta the value to add
      * @return the old value before the add
      */
-    public long getAndAdd(long delta);
+    long getAndAdd(long delta);
 
     /**
      * Atomically sets the given value and returns the old value.
@@ -75,27 +77,61 @@ public interface IAtomicLong extends DistributedObject {
      * @param newValue the new value
      * @return the old value
      */
-    public long getAndSet(long newValue);
+    long getAndSet(long newValue);
 
     /**
      * Atomically increments the current value by one.
      *
      * @return the updated value
      */
-    public long incrementAndGet();
+    long incrementAndGet();
 
     /**
      * Atomically increments the current value by one.
      *
      * @return the old value
      */
-    public long getAndIncrement();
+    long getAndIncrement();
 
     /**
      * Atomically sets the given value.
      *
      * @param newValue the new value
      */
-    public void set(long newValue);
+    void set(long newValue);
 
+    /**
+     * Alters the currently stored value by applying a function on it.
+     *
+     * @param function the function
+     * @throws IllegalArgumentException if function is null.
+     */
+    void alter(Function<Long, Long> function);
+
+    /**
+     * Alters the currently stored value by applying a function on it and gets the result.
+     *
+     * @param function the function
+     * @return the new value.
+     * @throws IllegalArgumentException if function is null.
+     */
+    long alterAndGet(Function<Long, Long> function);
+
+    /**
+     * Alters the currently stored value by applying a function on it on and gets the old value.
+     *
+     * @param function the function
+     * @return  the old value
+     * @throws IllegalArgumentException if function is null.
+     */
+    long getAndAlter(Function<Long, Long> function);
+
+    /**
+     * Applies a function on the value, the actual stored value will not change.
+     *
+     * @param function the function
+     * @return  the result of the function application
+     * @throws IllegalArgumentException if function is null.
+     */
+    <R> R apply(Function<Long, R> function);
 }

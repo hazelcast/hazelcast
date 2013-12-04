@@ -24,6 +24,8 @@ public class EntryListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
 
+    private EntryListenerConfigReadOnly readOnly;
+
     public EntryListenerConfig() {
         super();
     }
@@ -38,6 +40,20 @@ public class EntryListenerConfig extends ListenerConfig {
         super(implementation);
         this.local = local;
         this.includeValue = includeValue;
+    }
+
+    public EntryListenerConfig(EntryListenerConfig config) {
+        includeValue = config.isIncludeValue();
+        local = config.isLocal();
+        implementation = config.getImplementation();
+        className = config.getClassName();
+    }
+
+    public EntryListenerConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new EntryListenerConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public EntryListener getImplementation() {

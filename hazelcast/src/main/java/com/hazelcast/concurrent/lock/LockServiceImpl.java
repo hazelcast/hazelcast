@@ -84,7 +84,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         }
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         for (LockStoreContainer container : containers) {
             container.clear();
         }

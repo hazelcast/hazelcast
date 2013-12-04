@@ -64,7 +64,7 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new RemoveInterceptorOperationFactory(name, id);
+        return new RemoveInterceptorOperationFactory(id, name);
     }
 
     @Override

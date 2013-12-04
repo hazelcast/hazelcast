@@ -47,7 +47,8 @@ public abstract class Operation implements DataSerializable {
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private String callerUuid;
-    private boolean async;
+    // not used anymore, keeping just for serialization compatibility
+    private boolean async = false;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -224,15 +225,6 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public boolean isAsync() {
-        return async;
-    }
-
-    // Accessed using OperationAccessor
-    void setAsync(boolean async) {
-        this.async = async;
-    }
-
     protected final ILogger getLogger() {
         final NodeEngine ne = nodeEngine;
         return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass());
@@ -257,7 +249,7 @@ public abstract class Operation implements DataSerializable {
     private transient boolean writeDataFlag = false;
     public final void writeData(ObjectDataOutput out) throws IOException {
         if (writeDataFlag) {
-            throw new IOException("Cannot call writeData() from a sub-class!");
+            throw new IOException("Cannot call writeData() from a sub-class[" + getClass().getName() + "]!");
         }
         writeDataFlag = true;
         try {
@@ -269,7 +261,7 @@ public abstract class Operation implements DataSerializable {
             out.writeLong(invocationTime);
             out.writeLong(callTimeout);
             out.writeUTF(callerUuid);
-            out.writeBoolean(async);
+            out.writeBoolean(async);  // not used anymore
             writeInternal(out);
         } finally {
             writeDataFlag = false;
@@ -279,7 +271,7 @@ public abstract class Operation implements DataSerializable {
     private transient boolean readDataFlag = false;
     public final void readData(ObjectDataInput in) throws IOException {
         if (readDataFlag) {
-            throw new IOException("Cannot call readData() from a sub-class!");
+            throw new IOException("Cannot call readData() from a sub-class[" + getClass().getName() + "]!");
         }
         readDataFlag = true;
         try {
@@ -291,7 +283,7 @@ public abstract class Operation implements DataSerializable {
             invocationTime = in.readLong();
             callTimeout = in.readLong();
             callerUuid = in.readUTF();
-            async = in.readBoolean();
+            async = in.readBoolean();  // not used anymore
             readInternal(in);
         } finally {
             readDataFlag = false;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.concurrent.lock.UnlockOperation;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapKeySet;
@@ -26,7 +25,10 @@ import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -131,7 +133,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (versionedValue == null) {
             throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
         }
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version), versionedValue.version));
         return versionedValue.value;
     }
 
@@ -143,7 +145,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (versionedValue.value != null)
             return versionedValue.value;
 
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version), versionedValue.version));
         return versionedValue.value;
     }
 
@@ -154,7 +156,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
         if (versionedValue.value == null)
             return null;
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version), versionedValue.version));
         return versionedValue.value;
     }
 
@@ -165,7 +167,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
         if (!getService().compare(name, oldValue, versionedValue.value))
             return false;
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, newValue, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, newValue, versionedValue.version), versionedValue.version));
         return true;
     }
 

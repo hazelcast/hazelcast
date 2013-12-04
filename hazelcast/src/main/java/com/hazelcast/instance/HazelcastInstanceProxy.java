@@ -105,6 +105,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getAtomicLong(name);
     }
 
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        return getOriginal().getAtomicReference(name);
+    }
+
     public ICountDownLatch getCountDownLatch(String name) {
         return getOriginal().getCountDownLatch(name);
     }
@@ -150,7 +154,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getDistributedObject(serviceName, id);
     }
 
-    @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return getOriginal().getDistributedObject(serviceName, name);
     }
@@ -167,7 +170,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getUserContext();
     }
 
-    @Override
     public final void shutdown() {
         getLifecycleService().shutdown();
     }
@@ -184,7 +186,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return hazelcastInstance;
     }
 
-    @Override
     public String toString() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance != null) {
@@ -193,6 +194,19 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return "HazelcastInstance {NOT ACTIVE}";
     }
 
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof HazelcastInstance)) return false;
+
+        HazelcastInstance that = (HazelcastInstance) o;
+        return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
+    }
 }
 
 

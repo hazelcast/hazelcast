@@ -31,11 +31,10 @@ import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
+public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
     final NodeEngine nodeEngine;
     final MapService mapService;
@@ -53,15 +52,18 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
-            Operation operation = new EvictOperation(mapName, key, true);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            try {
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .build();
-                Future f = invocation.invoke();
-                futures.add(f);
-            } catch (Throwable t) {
-                logger.warning(t);
+                // execute eviction if the node is owner of the key (it can be backup)
+            if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                Operation operation = new EvictOperation(mapName, key, true);
+                try {
+                    Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                            .build();
+                    Future f = invocation.invoke();
+                    futures.add(f);
+                } catch (Throwable t) {
+                    logger.warning(t);
+                }
             }
         }
         for (Future future : futures) {

@@ -227,7 +227,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         partitions[partition.getPartitionId()].setPartitionInfo(partition);
                     }
                     initialized = true;
-                    sendPartitionRuntimeState();
+                    sendPartitionRuntimeState(true);
                 }
             } finally {
                 lock.unlock();
@@ -341,7 +341,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     if (!currentMasterUuid.equals(migrationInfo.getMasterUuid())) {
                         // Still there is possibility of the other endpoint commits the migration
                         // but this node roll-backs!
-                        logger.info("Rolling-back migration instantiated by the old master -> " + migrationInfo);
+                        logger.info("Rolling-back migration initiated by the old master -> " + migrationInfo);
                         finalizeActiveMigration(migrationInfo);
                     }
                 }
@@ -351,7 +351,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    private void sendPartitionRuntimeState() {
+    private void sendPartitionRuntimeState(boolean required) {
         if (!initialized) {
             // do not send partition state until initialized!
             return;
@@ -359,7 +359,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (!node.isMaster() || !node.isActive() || !node.joined()) {
             return;
         }
-        if (!migrationActive.get()) {
+        if (!required && !migrationActive.get()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
@@ -993,7 +993,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (!migrationQueue.isEmpty() && migrationActive.get()) {
                     logger.info("Remaining migration tasks in queue => " + migrationQueue.size());
                 }
-                sendPartitionRuntimeState();
+                sendPartitionRuntimeState(false);
             }
         }
     }
@@ -1056,7 +1056,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             currentPartition.setPartitionInfo(newPartition);
                         }
                     }
-                    sendPartitionRuntimeState();
+                    sendPartitionRuntimeState(false);
 
                     if (lostCount > 0) {
                         logger.warning("Assigning new owners for " + lostCount + " LOST partitions!");
@@ -1172,7 +1172,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             try {
                 addCompletedMigration(migrationInfo);
                 finalizeActiveMigration(migrationInfo);
-                sendPartitionRuntimeState();
+                sendPartitionRuntimeState(true);
             } finally {
                 lock.unlock();
             }
@@ -1191,7 +1191,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (backupTask != null) {
                     backupTask.run();
                 }
-                sendPartitionRuntimeState();
+                sendPartitionRuntimeState(true);
             } finally {
                 lock.unlock();
             }
@@ -1227,12 +1227,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         }
                     }
                     final boolean hasNoTasks = migrationQueue.isEmpty();
-                    if (hasNoTasks && migrating) {
-                        migrating = false;
-                        logger.info("All migration tasks have completed, queues are empty.");
-                    }
-                    if (!migrationActive.get() || hasNoTasks) {
+                    if (hasNoTasks) {
+                        if (migrating) {
+                            migrating = false;
+                            logger.info("All migration tasks has been completed, queues are empty.");
+                        }
                         evictCompletedMigrations();
+                        Thread.sleep(sleepTime);
+                    } else if (!migrationActive.get()) {
                         Thread.sleep(sleepTime);
                     }
                 }
@@ -1336,7 +1338,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         migrationActive.set(true);
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         logger.finest( "Shutting down the partition service");
         migrationThread.stopNow();
         reset();

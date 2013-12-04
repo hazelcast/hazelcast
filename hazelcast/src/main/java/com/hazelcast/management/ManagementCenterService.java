@@ -88,7 +88,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         stateSender = new StateSender();
         serializationService = instance.node.getSerializationService();
         final Address address = instance.node.address;
-        identifier = new ManagementCenterIdentifier(instance.node.initializer.getVersion(), instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
+        identifier = new ManagementCenterIdentifier(instance.node.getBuildInfo().getVersion(),
+                instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
     }
 
     public void start() {
@@ -320,31 +321,31 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
+                    if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         memberState.putLocalMapStats(map.getName(), (LocalMapStatsImpl) map.getLocalMapStats());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (config.getQueueConfig(queue.getName()).isStatisticsEnabled()) {
+                    if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
                         memberState.putLocalQueueStats(queue.getName(), (LocalQueueStatsImpl) queue.getLocalQueueStats());
                         count++;
                     }
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (config.getTopicConfig(topic.getName()).isStatisticsEnabled()) {
+                    if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
                         memberState.putLocalTopicStats(topic.getName(), (LocalTopicStatsImpl) topic.getLocalTopicStats());
                         count++;
                     }
                 } else if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (config.getMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
+                    if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
                         memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats());
                         count++;
                     }
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-                    if (config.getExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
+                    if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
                         memberState.putLocalExecutorStats(executorService.getName(), (LocalExecutorStatsImpl) executorService.getLocalExecutorStats());
                         count++;
                     }
@@ -369,31 +370,31 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (config.getMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
+                    if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("m:" + multiMap.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
+                    if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("c:" + map.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (config.getQueueConfig(queue.getName()).isStatisticsEnabled()) {
+                    if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("q:" + queue.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (config.getTopicConfig(topic.getName()).isStatisticsEnabled()) {
+                    if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("t:" + topic.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-                    if (config.getExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
+                    if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("e:" + executorService.getName());
                         count++;
                     }

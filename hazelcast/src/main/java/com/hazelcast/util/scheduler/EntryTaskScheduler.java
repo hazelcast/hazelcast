@@ -16,8 +16,6 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.Set;
 
 /**
@@ -38,6 +36,8 @@ public interface EntryTaskScheduler<K, V> {
     boolean schedule(long delayMillis, K key, V object);
 
     ScheduledEntry<K, V> cancel(K key);
+
+    ScheduledEntry<K, V> get(K key);
 
     Set<K> flush(Set<K> keys);
 

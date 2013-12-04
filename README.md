@@ -70,11 +70,11 @@ Pull latest from repo `git pull origin 3.0` and use Maven install (or package) t
 
 ### Testing
 
-Hazelcast has 3 testing profiles (default profile doesn't run any tests):
+Hazelcast has 3 testing profiles:
 
-* Type `mvn test -P parallel-test` to run tests those can be run in-parallel without using network.
-* Type `mvn test -P serial-test` to run tests those cannot be run in-parallel.
-* Type `mvn test -P all-tests` to run all test serially using network.
+* **Default**: Type `mvn test` to run quick/integration tests (those can be run in-parallel without using network).
+* **Slow Tests**: Type `mvn test -P slow-test` to run tests those are either slow or cannot be run in-parallel.
+* **All Tests**: Type `mvn test -P all-tests` to run all test serially using network.
 
 ### Mail Group
 

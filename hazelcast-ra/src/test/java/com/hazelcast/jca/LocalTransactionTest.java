@@ -19,7 +19,7 @@
 //
 //import com.hazelcast.core.IMap;
 //import com.hazelcast.core.TransactionalMap;
-//import com.hazelcast.test.annotation.SerialTest;
+//import com.hazelcast.test.annotation.SlowTest;
 //import org.jboss.arquillian.junit.Arquillian;
 //import org.junit.Test;
 //import org.junit.experimental.categories.Category;
@@ -35,7 +35,7 @@
 // *
 // * @author asimarslan
 // */
-//@Category(SerialTest.class)
+//@Category(SlowTest.class)
 //@RunWith(Arquillian.class)
 //public class LocalTransactionTest extends AbstractDeploymentTest {
 //

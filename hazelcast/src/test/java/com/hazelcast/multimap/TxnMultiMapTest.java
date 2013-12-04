@@ -19,10 +19,10 @@ package com.hazelcast.multimap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.*;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,8 +35,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 4/5/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class TxnMultiMapTest extends HazelcastTestSupport {
 
     @Test
@@ -183,4 +183,28 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testIssue1276Lock() throws InterruptedException {
+        Long key = 1L;
+        Long value = 1L;
+        String mapName = "myMultimap";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+
+        for (int i=0; i<2; i++) {
+            TransactionContext ctx1 = instance1.newTransactionContext();
+            ctx1.beginTransaction();
+            BaseMultiMap<Long, Long> txProfileTasks1 = ctx1.getMultiMap(mapName);
+            txProfileTasks1.put(key, value);
+            ctx1.commitTransaction();
+
+            TransactionContext ctx2 = instance2.newTransactionContext();
+            ctx2.beginTransaction();
+            BaseMultiMap<Long, Long> txProfileTasks2 = ctx2.getMultiMap(mapName);
+            txProfileTasks2.remove(key, value);
+            ctx2.commitTransaction();
+        }
+    }
 }

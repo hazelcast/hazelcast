@@ -19,6 +19,7 @@ package com.hazelcast.map.tx;
 import com.hazelcast.map.operation.BasePutOperation;
 import com.hazelcast.map.operation.PutBackupOperation;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,8 +40,8 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     public TxnSetOperation() {
     }
 
-    public TxnSetOperation(String name, Data dataKey, Data value, long ttl, long version) {
-        super(name, dataKey, value, ttl);
+    public TxnSetOperation(String name, Data dataKey, Data value, long version) {
+        super(name, dataKey, value);
         this.version = version;
     }
 
@@ -72,7 +73,8 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     public Operation getBackupOperation() {
-        return new PutBackupOperation(name, dataKey, dataValue, ttl, true);
+        RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer, recordStore.getRecord(dataKey), dataKey);
+        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true);
     }
 
     public void onWaitExpire() {

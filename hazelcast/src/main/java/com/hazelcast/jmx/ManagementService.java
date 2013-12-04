@@ -164,6 +164,9 @@ public class ManagementService implements DistributedObjectListener {
             if (distributedObject instanceof IAtomicLong){
                 return new AtomicLongMBean((IAtomicLong)distributedObject, this);
             }
+            if (distributedObject instanceof IAtomicReference){
+                return new AtomicReferenceMBean((IAtomicReference)distributedObject, this);
+            }
             if (distributedObject instanceof ICountDownLatch){
                 return new CountDownLatchMBean((ICountDownLatch)distributedObject, this);
             }
@@ -202,6 +205,9 @@ public class ManagementService implements DistributedObjectListener {
         }
         if (distributedObject instanceof IAtomicLong){
             return "IAtomicLong";
+        }
+        if (distributedObject instanceof IAtomicReference){
+            return "IAtomicReference";
         }
         if (distributedObject instanceof ICountDownLatch){
             return "ICountDownLatch";

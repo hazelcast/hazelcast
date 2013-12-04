@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class QueueConfig {
+public class QueueConfig {
 
     public final static int DEFAULT_MAX_SIZE = 0;
     public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
@@ -34,6 +34,7 @@ public final class QueueConfig {
     private int emptyQueueTtl = DEFAULT_EMPTY_QUEUE_TTL;
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
+    private QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
     }
@@ -45,8 +46,16 @@ public final class QueueConfig {
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
         this.emptyQueueTtl = config.emptyQueueTtl;
-        this.queueStoreConfig = config.queueStoreConfig;
+        this.statisticsEnabled = config.statisticsEnabled;
+        this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
+    }
+
+    public QueueConfigReadOnly getAsReadOnly(){
+        if (readOnly == null){
+            readOnly = new QueueConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public int getEmptyQueueTtl() {

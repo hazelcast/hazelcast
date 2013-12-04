@@ -16,7 +16,7 @@
 
 package com.hazelcast.management;
 
-public class MonitoredThread implements Comparable {
+public class MonitoredThread implements Comparable<MonitoredThread> {
 
     final String name;
     final long threadId;
@@ -37,8 +37,7 @@ public class MonitoredThread implements Comparable {
                 '}';
     }
 
-    public int compareTo(Object o) {
-        MonitoredThread m = (MonitoredThread) o;
-        return name.compareTo(m.name);
+    public int compareTo(MonitoredThread o) {
+        return name.compareTo(o.name);
     }
 }

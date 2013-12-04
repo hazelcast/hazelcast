@@ -75,7 +75,7 @@ public class MultiMapService implements ManagedService, RemoteService,
             lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
                 public LockStoreInfo createNew(final ObjectNamespace key) {
                     String name = key.getObjectName();
-                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().getMultiMapConfig(name);
+                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
 
                     return new LockStoreInfo() {
                         public ObjectNamespace getObjectNamespace() {
@@ -103,7 +103,7 @@ public class MultiMapService implements ManagedService, RemoteService,
         }
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
         for (int i = 0; i < partitionContainers.length; i++) {
             partitionContainers[i] = null;

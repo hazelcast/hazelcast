@@ -86,14 +86,14 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         containerMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(name, nodeEngine.getConfig().getQueueConfig(name), nodeEngine, this);
+            container = new QueueContainer(name, nodeEngine.getConfig().findQueueConfig(name), nodeEngine, this);
 
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {

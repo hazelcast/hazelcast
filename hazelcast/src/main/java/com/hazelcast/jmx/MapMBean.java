@@ -228,7 +228,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedAnnotation("config")
     @ManagedDescription("MapConfig")
     public String getConfig(){
-        return service.instance.getConfig().getMapConfig(managedObject.getName()).toString();
+        return service.instance.getConfig().findMapConfig(managedObject.getName()).toString();
     }
 
     @ManagedAnnotation("totalAddedEntryCount")

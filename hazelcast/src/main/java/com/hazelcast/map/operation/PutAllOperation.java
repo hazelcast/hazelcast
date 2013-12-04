@@ -30,6 +30,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,6 +61,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
 
         PartitionService partitionService = getNodeEngine().getPartitionService();
+        Set<Data> keysToInvalidate = new HashSet<Data>();
         for (Map.Entry<Data, Data> entry : entries) {
             Data dataKey = entry.getKey();
             Data dataValue = entry.getValue();
@@ -74,7 +76,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 mapService.interceptAfterPut(name, dataValue);
                 EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
                 mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
-                invalidateNearCaches(dataKey);
+                keysToInvalidate.add(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     Record record = recordStore.getRecord(dataKey);
                     SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getVersion());
@@ -83,12 +85,12 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 backupEntrySet.add(entry);
             }
         }
+        invalidateNearCaches(keysToInvalidate);
     }
 
-    // todo optimize below, invalidate method should get the set of keys
-    protected final void invalidateNearCaches(Data key) {
+    protected final void invalidateNearCaches(Set<Data> keys) {
         if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-            mapService.invalidateAllNearCaches(name, key);
+            mapService.invalidateAllNearCaches(name, keys);
         }
     }
 

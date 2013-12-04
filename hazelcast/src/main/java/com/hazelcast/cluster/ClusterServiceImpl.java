@@ -903,7 +903,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return map != null ? Collections.unmodifiableCollection(map.values()) : Collections.<MemberImpl>emptySet();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 

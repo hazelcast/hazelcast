@@ -224,6 +224,15 @@ public interface HazelcastInstance {
     IAtomicLong getAtomicLong(String name);
 
     /**
+     * Creates cluster-wide atomic reference. Hazelcast IAtomicReference is distributed
+     * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
+     *
+     * @param name name of the IAtomicReference proxy
+     * @return IAtomicReference proxy for the given name
+     */
+    <E> IAtomicReference<E> getAtomicReference(String name);
+
+    /**
      * Creates cluster-wide CountDownLatch. Hazelcast ICountDownLatch is distributed
      * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
      *

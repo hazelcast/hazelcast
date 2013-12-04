@@ -18,12 +18,15 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,8 +48,8 @@ import static org.junit.Assert.*;
  * Date: 2/18/13
  * Time: 5:12 PM
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class LockTest extends HazelcastTestSupport {
 
     @Test
@@ -232,8 +235,10 @@ public class LockTest extends HazelcastTestSupport {
             }
         }).start();
 
+        Thread.sleep(1000);
         keyOwner.getLifecycleService().shutdown();
         Assert.assertTrue(lock1.isLocked());
+        Assert.assertTrue(lock1.isLockedByCurrentThread());
         Assert.assertTrue(lock1.tryLock());
         lock1.unlock();
         lock1.unlock();
@@ -267,7 +272,7 @@ public class LockTest extends HazelcastTestSupport {
         }
 
         final ILock lock = instance1.getLock(key);
-        lock.lock(5, TimeUnit.SECONDS);
+        lock.lock(10, TimeUnit.SECONDS);
         assertTrue(lock.getRemainingLeaseTime() > 0);
         Assert.assertTrue(lock.isLocked());
 
@@ -281,7 +286,7 @@ public class LockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
     @Test
@@ -431,6 +436,7 @@ public class LockTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
@@ -648,62 +654,27 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-
-        final Lock lock = hz.getLock("testLockInterruption");
-        Random rand = new Random();
-        for (int i = 0; i < 30; i++) {
-            Thread t = new Thread() {
-                public void run() {
-                    try {
-                        lock.lock();
-                        sleep(1);
-                    } catch (InterruptedException e) {
-                    } finally {
-                        lock.unlock();
-                    }
-                }
-            };
-
-            t.start();
-            Thread.sleep(rand.nextInt(3));
-            t.interrupt();
-            t.join();
-
-            if (!lock.tryLock(3, TimeUnit.SECONDS)) {
-                fail("Could not acquire lock!");
-            } else {
-                lock.unlock();
-            }
-            Thread.sleep(100);
-        }
-    }
-
-    @Test
-    public void testLockInterruption2() throws InterruptedException {
-        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
 
         final Lock lock = hz.getLock("testLockInterruption2");
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
                     lock.tryLock(60, TimeUnit.SECONDS);
                 } catch (InterruptedException ignored) {
-                } finally {
-                    lock.unlock();
+                    latch.countDown();
                 }
             }
         });
         lock.lock();
         t.start();
-        Thread.sleep(250);
+        Thread.sleep(2000);
         t.interrupt();
-        Thread.sleep(1000);
+        assertTrue("tryLock() is not interrupted!", latch.await(30, TimeUnit.SECONDS));
         lock.unlock();
-        Thread.sleep(500);
         assertTrue("Could not acquire lock!", lock.tryLock());
     }
 

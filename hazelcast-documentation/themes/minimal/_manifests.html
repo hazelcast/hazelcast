@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= @title %></title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+</head>
+<body>
+    <header id="header">
+        <h1><%= @title %></h1>
+    </header>
+    <div id="main">
+        <% for categoryName, manifests of @categories: %>
+            <section class="category">
+                <h2><%= categoryName %></h2>
+                <ul>
+                    <% for manifest in manifests: %>
+                        <li><a href="<%= @baseUrl %><%- manifest.slug %>/"><%= manifest.title %></a></li>
+                    <% end %>
+                </ul>
+            </section>
+        <% end %>
+    </div>
+    <footer id="footer">
+        Created by <a href="http://maximebf.com">maximebf</a> -
+        <a href="http://github.com/maximebf/beautiful-docs">github.com/maximebf/beautiful-docs</a>
+    </footer>
+</body>
+</html>

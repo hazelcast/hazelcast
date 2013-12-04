@@ -24,7 +24,14 @@ public class PartitioningStrategyConfig {
 
     private PartitioningStrategy partitionStrategy;
 
+    private PartitioningStrategyConfigReadOnly readOnly;
+
     public PartitioningStrategyConfig() {
+    }
+
+    public PartitioningStrategyConfig(PartitioningStrategyConfig config) {
+        partitioningStrategyClass = config.getPartitioningStrategyClass();
+        partitionStrategy = config.getPartitioningStrategy();
     }
 
     public PartitioningStrategyConfig(String partitioningStrategyClass) {
@@ -33,6 +40,13 @@ public class PartitioningStrategyConfig {
 
     public PartitioningStrategyConfig(PartitioningStrategy partitionStrategy) {
         this.partitionStrategy = partitionStrategy;
+    }
+
+    public PartitioningStrategyConfigReadOnly getAsReadOnly() {
+        if (readOnly == null){
+            readOnly = new PartitioningStrategyConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public String getPartitioningStrategyClass() {

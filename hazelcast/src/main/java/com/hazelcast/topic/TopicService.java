@@ -63,7 +63,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         statsMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 
@@ -74,7 +74,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public TopicProxy createDistributedObject(String name) {
         TopicProxy proxy;
-        TopicConfig topicConfig = nodeEngine.getConfig().getTopicConfig(name);
+        TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
         if (topicConfig.isGlobalOrderingEnabled())
             proxy = new TotalOrderedTopicProxy(name, nodeEngine, this);
         else

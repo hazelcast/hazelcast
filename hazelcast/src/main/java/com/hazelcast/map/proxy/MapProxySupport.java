@@ -135,7 +135,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
                         mapService.interceptAfterGet(name, val);
-                        return val;
+                        // this serialization step is needed not to expose the object, see issue 1292
+                        return mapService.toData(val);
                     }
                 }
             }
@@ -508,11 +509,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             clearOperation.setServiceName(SERVICE_NAME);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(clearOperation, nodeEngine));
-            //clear all near caches.
-            if (getService().isNearCacheAndInvalidationEnabled(mapName)) {
-                getService().invalidateAllNearCaches(mapName);
-            }
-
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -521,15 +517,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public String addMapInterceptorInternal(MapInterceptor interceptor) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
+        if (interceptor instanceof HazelcastInstanceAware){
+            ((HazelcastInstanceAware) interceptor).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
         String id = mapService.addInterceptor(name, interceptor);
-        AddInterceptorOperation operation = new AddInterceptorOperation(id, interceptor, name);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
                 if (member.localMember())
                     continue;
                 Invocation invocation = nodeEngine.getOperationService()
-                        .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
+                        .createInvocationBuilder(SERVICE_NAME, new AddInterceptorOperation(id, interceptor, name),
+                                member.getAddress()).build();
                 invocation.invoke().get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -542,7 +541,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         mapService.removeInterceptor(name, id);
-        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(name, id);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {
@@ -550,7 +548,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     continue;
                 MemberImpl memberImpl = (MemberImpl) member;
                 Invocation invocation = nodeEngine.getOperationService()
-                        .createInvocationBuilder(SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                        .createInvocationBuilder(SERVICE_NAME, new RemoveInterceptorOperation(name, id), memberImpl.getAddress()).build();
                 invocation.invoke().get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

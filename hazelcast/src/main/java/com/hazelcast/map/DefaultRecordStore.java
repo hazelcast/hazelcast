@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.PutAllOperation;
 import com.hazelcast.map.record.Record;
@@ -56,6 +57,8 @@ public class DefaultRecordStore implements RecordStore {
     private final MapService mapService;
     private final LockStore lockStore;
     private final RecordFactory recordFactory;
+    private final ILogger logger;
+
     final SizeEstimator sizeEstimator;
     final AtomicBoolean loaded = new AtomicBoolean(false);
 
@@ -64,6 +67,7 @@ public class DefaultRecordStore implements RecordStore {
         this.partitionId = partitionId;
         this.mapService = mapService;
         this.mapContainer = mapService.getMapContainer(name);
+        this.logger = mapService.getNodeEngine().getLogger(this.getName());
         recordFactory = mapContainer.getRecordFactory();
         NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
@@ -208,10 +212,9 @@ public class DefaultRecordStore implements RecordStore {
                 indexService.removeEntryIndex(key);
             }
         }
+        cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAssociatedSchedulers(records.keySet());
-
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -247,6 +250,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public boolean isEmpty() {
+        checkIfLoaded();
         return records.isEmpty();
     }
 
@@ -322,33 +326,45 @@ public class DefaultRecordStore implements RecordStore {
         return temp.entrySet();
     }
 
-    public Map.Entry<Data, Data> getMapEntryData(Data dataKey) {
+    public Map.Entry<Data, Object> getMapEntry(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object value;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                value = mapContainer.getStore().load(mapService.toObject(dataKey));
-                if (value != null) {
-                    record = mapService.createRecord(name, dataKey, value, -1);
-                    records.put(dataKey, record);
-                    saveIndex(record);
-                    updateSizeEstimator(calculateRecordSize(record));
-                }
-            }
+            record = getRecordInternal(dataKey, true);
         } else {
             accessRecord(record);
         }
-
-        Data data = record != null ? mapService.toData(record.getValue()) : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, data);
+        final Object data = record != null ? record.getValue() : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
+
+    public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object value = record != null ? mapService.toObject(record.getValue()) : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value);
+        if (record == null) {
+            record = getRecordInternal(dataKey, false);
+        } else {
+            accessRecord(record);
+        }
+        final Object data = record != null ? record.getValue() : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
+    }
+
+    private Record getRecordInternal(Data dataKey, boolean enableIndex) {
+        Record record = null;
+        if (mapContainer.getStore() != null) {
+            final Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
+            if (value != null) {
+                record = mapService.createRecord(name, dataKey, value, -1);
+                records.put(dataKey, record);
+                if (enableIndex) {
+                    saveIndex(record);
+                }
+                updateSizeEstimator(calculateRecordSize(record));
+            }
+        }
+        return record;
     }
 
     public Set<Data> keySet() {
@@ -395,7 +411,7 @@ public class DefaultRecordStore implements RecordStore {
         keysToDelete.removeAll(lockedRecords.keySet());
 
         final MapStoreWrapper store = mapContainer.getStore();
-        Set<Object> keysObject = new HashSet<Object>();
+        Set<Object> keysObject = new HashSet<Object>(keysToDelete.size());
         for (Data key : keysToDelete) {
             // todo ea have a clear(Keys) method for optimizations
             removeIndex(key);
@@ -408,14 +424,14 @@ public class DefaultRecordStore implements RecordStore {
         }
 
         clearRecordsMap(lockedRecords);
-        cancelAllSchedulers();
+        cancelAssociatedSchedulers(keysToDelete);
     }
 
     public void reset() {
         checkIfLoaded();
+        cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAllSchedulers();
     }
 
     public Object remove(Data dataKey) {
@@ -460,9 +476,9 @@ public class DefaultRecordStore implements RecordStore {
             flush(dataKey);
             mapService.interceptRemove(name, record.getValue());
             oldValue = record.getValue();
-            deleteRecord(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
+            deleteRecord(dataKey);
             removeIndex(dataKey);
             cancelAssociatedSchedulers(dataKey);
         }
@@ -487,9 +503,9 @@ public class DefaultRecordStore implements RecordStore {
             mapService.interceptRemove(name, oldValue);
             removeIndex(dataKey);
             mapStoreDelete(record, dataKey);
-            deleteRecord(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
+            deleteRecord(dataKey);
             cancelAssociatedSchedulers(dataKey);
             removed = true;
         }
@@ -592,8 +608,8 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, -1);
-            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             // increase size.
             updateSizeEstimator(calculateRecordSize(record));
@@ -606,7 +622,7 @@ public class DefaultRecordStore implements RecordStore {
                 accessRecord(record);
             }//otherwise this is a full update operation.
             else {
-                mapStoreWrite(record, dataKey, value);
+                value = writeMapStore(dataKey, value, record);
                 // if key exists before, first reduce size
                 updateSizeEstimator(-calculateRecordSize(record));
                 setRecordValue(record, value);
@@ -627,8 +643,8 @@ public class DefaultRecordStore implements RecordStore {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
             value = mapService.interceptPut(name, null, value);
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
-            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
             saveIndex(record);
@@ -641,7 +657,7 @@ public class DefaultRecordStore implements RecordStore {
                 updateTtl(record, ttl);
             }//otherwise this is a full update operation.
             else {
-                mapStoreWrite(record, dataKey, value);
+                value = writeMapStore(dataKey, value, record);
                 // if key exists before, first reduce size
                 updateSizeEstimator(-calculateRecordSize(record));
                 setRecordValue(record, value);
@@ -660,14 +676,14 @@ public class DefaultRecordStore implements RecordStore {
         boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
-            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
             newRecord = true;
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            mapStoreWrite(record, dataKey, value);
+            value = writeMapStore(dataKey, value, record);
             // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
@@ -680,14 +696,32 @@ public class DefaultRecordStore implements RecordStore {
         return newRecord;
     }
 
+    private Object writeMapStore(Data dataKey, Object recordValue, Record record) {
+        final MapStoreWrapper store = mapContainer.getStore();
+        if (store != null) {
+            if (mapContainer.getWriteDelayMillis() <= 0) {
+                Object objectValue = mapService.toObject(recordValue);
+                store.store(mapService.toObject(dataKey), objectValue);
+                if (record != null) {
+                    record.onStore();
+                }
+                // if store is not a post-processing map-store, then avoid extra de-serialization phase.
+                return store.isPostProcessingMapStore() ? objectValue : recordValue;
+            } else {
+                mapService.scheduleMapStoreWrite(name, dataKey, recordValue, mapContainer.getWriteDelayMillis());
+            }
+        }
+        return recordValue;
+    }
+
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         Record record = records.get(dataKey);
         Object newValue = null;
         if (record == null) {
             newValue = mergingEntry.getValue();
+            newValue = writeMapStore(dataKey, newValue, record);
             record = mapService.createRecord(name, dataKey, newValue, -1);
-            mapStoreWrite(record, dataKey, newValue);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
@@ -696,18 +730,19 @@ public class DefaultRecordStore implements RecordStore {
                     record.getStatistics(), record.getVersion());
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
-                deleteRecord(dataKey);
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
                 // reduce size.
                 updateSizeEstimator(-calculateRecordSize(record));
+                //remove from map & invalidate.
+                deleteRecord(dataKey);
                 return true;
             }
             // same with the existing entry so no need to mapstore etc operations.
             if (mapService.compare(name, newValue, oldValue)) {
                 return true;
             }
-            mapStoreWrite(record, dataKey, newValue);
+            newValue = writeMapStore(dataKey, newValue, record);
             updateSizeEstimator(-calculateRecordSize(record));
             recordFactory.setValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
@@ -723,7 +758,7 @@ public class DefaultRecordStore implements RecordStore {
         if (record != null && record.getValue() != null) {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            mapStoreWrite(record, dataKey, value);
+            value = writeMapStore(dataKey, value, record);
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             updateSizeEstimator(calculateRecordSize(record));
@@ -742,7 +777,7 @@ public class DefaultRecordStore implements RecordStore {
             return false;
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
-            mapStoreWrite(record, dataKey, newValue);
+            newValue = writeMapStore(dataKey, newValue, record);
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
@@ -794,13 +829,13 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
-            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            mapStoreWrite(record, dataKey, value);
+            value = writeMapStore(dataKey, value, record);
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             updateSizeEstimator(calculateRecordSize(record));
@@ -830,8 +865,8 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (oldValue == null) {
             value = mapService.interceptPut(name, null, value);
+            value = writeMapStore(dataKey, value, record);
             record = mapService.createRecord(name, dataKey, value, ttl);
-            mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
@@ -859,20 +894,6 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private void mapStoreWrite(Record record, Data key, Object value) {
-        final MapStoreWrapper store = mapContainer.getStore();
-        if (store != null) {
-            long writeDelayMillis = mapContainer.getWriteDelayMillis();
-            if (writeDelayMillis <= 0) {
-                store.store(mapService.toObject(key), mapService.toObject(value));
-                if (record != null)
-                    record.onStore();
-            } else {
-                mapService.scheduleMapStoreWrite(name, key, value, writeDelayMillis);
-            }
-        }
-    }
-
     private void mapStoreDelete(Record record, Data key) {
         final MapStoreWrapper store = mapContainer.getStore();
         if (store != null) {
@@ -880,8 +901,9 @@ public class DefaultRecordStore implements RecordStore {
             if (writeDelayMillis == 0) {
                 store.delete(mapService.toObject(key));
                 // todo ea record will be deleted then why calling onStore
-                if (record != null)
+                if (record != null) {
                     record.onStore();
+                }
             } else {
                 mapService.scheduleMapStoreDelete(name, key, writeDelayMillis);
                 toBeRemovedKeys.add(key);
@@ -932,11 +954,6 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private void cancelAllSchedulers() {
-        mapContainer.getIdleEvictionScheduler().cancelAll();
-        mapContainer.getTtlEvictionScheduler().cancelAll();
-    }
-
     private class MapLoadAllTask implements Runnable {
         private Map<Data, Object> keys;
         private AtomicInteger checkIfMapLoaded;
@@ -949,35 +966,45 @@ public class DefaultRecordStore implements RecordStore {
         public void run() {
             final NodeEngine nodeEngine = mapService.getNodeEngine();
 
-            Map values = mapContainer.getStore().loadAll(keys.values());
-
-            MapEntrySet entrySet = new MapEntrySet();
-            for (Data dataKey : keys.keySet()) {
-                Object key = keys.get(dataKey);
-                Object value = values.get(key);
-                if (value != null) {
-                    Data dataValue = mapService.toData(value);
-                    entrySet.add(dataKey, dataValue);
-                }
-            }
-            PutAllOperation operation = new PutAllOperation(name, entrySet, true);
-            operation.setNodeEngine(nodeEngine);
-            operation.setResponseHandler(new ResponseHandler() {
-                @Override
-                public void sendResponse(Object obj) {
+            try {
+                Map values = mapContainer.getStore().loadAll(keys.values());
+                if (values == null || values.isEmpty()) {
                     if (checkIfMapLoaded.decrementAndGet() == 0) {
                         loaded.set(true);
                     }
+                    return;
                 }
 
-                public boolean isLocal() {
-                    return true;
+                MapEntrySet entrySet = new MapEntrySet();
+                for (Data dataKey : keys.keySet()) {
+                    Object key = keys.get(dataKey);
+                    Object value = values.get(key);
+                    if (value != null) {
+                        Data dataValue = mapService.toData(value);
+                        entrySet.add(dataKey, dataValue);
+                    }
                 }
-            });
-            operation.setPartitionId(partitionId);
-            OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-            operation.setServiceName(MapService.SERVICE_NAME);
-            nodeEngine.getOperationService().executeOperation(operation);
+                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
+                operation.setNodeEngine(nodeEngine);
+                operation.setResponseHandler(new ResponseHandler() {
+                    @Override
+                    public void sendResponse(Object obj) {
+                        if (checkIfMapLoaded.decrementAndGet() == 0) {
+                            loaded.set(true);
+                        }
+                    }
+
+                    public boolean isLocal() {
+                        return true;
+                    }
+                });
+                operation.setPartitionId(partitionId);
+                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
+                operation.setServiceName(MapService.SERVICE_NAME);
+                nodeEngine.getOperationService().executeOperation(operation);
+            } catch (Exception e) {
+                logger.warning("Exception while load all task:" + e.toString());
+            }
         }
     }
 }

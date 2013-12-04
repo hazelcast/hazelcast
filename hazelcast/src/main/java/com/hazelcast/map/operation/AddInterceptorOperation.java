@@ -51,6 +51,10 @@ public class AddInterceptorOperation extends AbstractOperation {
         return true;
     }
 
+    public Object getResponse() {
+        return true;
+    }
+
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);

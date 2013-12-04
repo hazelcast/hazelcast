@@ -24,8 +24,8 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
@@ -43,8 +43,8 @@ import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class MapClientRequestTest extends ClientTestSupport {
 
     static final String mapName = "test";

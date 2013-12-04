@@ -32,8 +32,18 @@ public class QueueStoreConfig {
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
+    private QueueStoreConfigReadOnly readOnly;
 
     public QueueStoreConfig() {
+    }
+
+    public QueueStoreConfig(QueueStoreConfig config) {
+        enabled = config.isEnabled();
+        className = config.getClassName();
+        storeImplementation = config.getStoreImplementation();
+        factoryClassName = config.getFactoryClassName();
+        factoryImplementation = config.getFactoryImplementation();
+        properties = config.getProperties() != null ? new Properties(config.getProperties()) : null;
     }
 
     public QueueStore getStoreImplementation() {
@@ -43,6 +53,13 @@ public class QueueStoreConfig {
     public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
         this.storeImplementation = storeImplementation;
         return this;
+    }
+
+    public QueueStoreConfigReadOnly getAsReadOnly() {
+        if (readOnly == null){
+            readOnly = new QueueStoreConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public boolean isEnabled() {

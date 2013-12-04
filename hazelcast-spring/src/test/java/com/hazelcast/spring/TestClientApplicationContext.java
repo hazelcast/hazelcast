@@ -16,19 +16,18 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.HazelcastClientProxy;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,11 +44,10 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
-@Category(SerialTest.class)
+@Category(QuickTest.class)
 public class TestClientApplicationContext {
 
     @Resource (name = "client")
@@ -93,6 +91,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
+
+    @Resource(name = "atomicReference")
+    private IAtomicReference atomicReference;
 
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
@@ -145,12 +146,12 @@ public class TestClientApplicationContext {
         final Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
         assertNotNull(map1);
         assertTrue(map1.containsKey(1));
-        assertEquals("com.hazelcast.spring.DummyDataSerializableFactory", map1.get(1));
+        assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", map1.get(1));
 
         final Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
         assertNotNull(portableFactoryClasses);
         assertTrue(portableFactoryClasses.containsKey(2));
-        assertEquals("com.hazelcast.spring.DummyPortableFactory", portableFactoryClasses.get(2));
+        assertEquals("com.hazelcast.spring.serialization.DummyPortableFactory", portableFactoryClasses.get(2));
 
         final Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
 
@@ -198,6 +199,7 @@ public class TestClientApplicationContext {
         assertNotNull(executorService);
         assertNotNull(idGenerator);
         assertNotNull(atomicLong);
+        assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
         assertEquals("map1", map1.getName());
@@ -209,6 +211,7 @@ public class TestClientApplicationContext {
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }

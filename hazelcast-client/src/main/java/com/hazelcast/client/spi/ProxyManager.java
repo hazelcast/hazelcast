@@ -24,6 +24,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.*;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -115,6 +116,11 @@ public final class ProxyManager {
         register(AtomicLongService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 return new ClientAtomicLongProxy(AtomicLongService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(AtomicReferenceService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(String id) {
+                return new ClientAtomicReferenceProxy(AtomicReferenceService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(DistributedExecutorService.SERVICE_NAME, new ClientProxyFactory() {

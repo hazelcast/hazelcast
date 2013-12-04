@@ -24,8 +24,8 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -42,8 +42,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 
 public class SplitBrainHandlerTest {
 
@@ -93,17 +93,6 @@ public class SplitBrainHandlerTest {
         LifecycleCountingListener l = new LifecycleCountingListener();
         h2.getLifecycleService().addLifecycleListener(l);
 
-        int size = 500;
-        for (int i = 0; i < size; i++) {
-            h2.getMap("default").put(i, "value" + i);
-        }
-        final int extra = 100;
-        for (int i = extra; i < size + extra; i++) {
-            h1.getMap("default").put(i, "value" + i);
-        }
-
-        assertEquals(size, h2.getMap("default").size());
-        assertEquals(size, h1.getMap("default").size());
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
 
@@ -114,12 +103,6 @@ public class SplitBrainHandlerTest {
         assertEquals(1, l.getCount(LifecycleState.MERGED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
-
-        Thread.sleep(5000);
-
-        int newMapSize = size + extra;
-        assertEquals(newMapSize, h1.getMap("default").size());
-        assertEquals(newMapSize, h2.getMap("default").size());
     }
 
     private class LifecycleCountingListener implements LifecycleListener {

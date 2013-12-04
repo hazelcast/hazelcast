@@ -21,7 +21,7 @@ import java.util.Properties;
 /**
  * MapStore configuration
  */
-public final class MapStoreConfig {
+public class MapStoreConfig {
     public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
 
     private boolean enabled = true;
@@ -31,8 +31,27 @@ public final class MapStoreConfig {
     private Object implementation;
     private Object factoryImplementation;
     private Properties properties = new Properties();
+    private MapStoreConfigReadOnly readOnly;
+
 
     public MapStoreConfig() {
+    }
+
+    public MapStoreConfig(MapStoreConfig config) {
+        enabled = config.isEnabled();
+        className = config.getClassName();
+        implementation = config.getImplementation();
+        factoryClassName = config.getFactoryClassName();
+        factoryImplementation = config.getFactoryImplementation();
+        writeDelaySeconds = config.getWriteDelaySeconds();
+        properties = config.getProperties() != null ? new Properties(config.getProperties()) : null;
+    }
+
+    public MapStoreConfigReadOnly getAsReadOnly() {
+        if (readOnly == null ) {
+            readOnly = new MapStoreConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

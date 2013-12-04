@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title><%= @manifest.title %></title>
+    <% if @manifest.options.css: %>
+        <link type="text/css" rel="stylesheet" href="<%- @manifest.options.css %>">
+    <% end %>
+</head>
+<body>
+    <%- @content %>
+</body>
+</html>

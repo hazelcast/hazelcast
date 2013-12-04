@@ -21,20 +21,21 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * @author mdogan 30/10/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class SerializationTest {
 
     @Test
@@ -138,5 +139,47 @@ public class SerializationTest {
         Data data = new Data();
         SerializationService ss = new SerializationServiceBuilder().build();
         Assert.assertNull(ss.toObject(data));
+    }
+
+    /**
+     * issue #1265
+     */
+    @Test
+    public void testSharedJavaSerialization() {
+        SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(true).build();
+        Data data = ss.toData(new Foo());
+        Foo foo = (Foo) ss.toObject(data);
+
+        Assert.assertTrue("Objects are not identical!", foo == foo.getBar().getFoo());
+    }
+
+    /**
+     * issue #1265
+     */
+    @Test
+    public void testUnsharedJavaSerialization() {
+        SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(false).build();
+        Data data = ss.toData(new Foo());
+        Foo foo = (Foo) ss.toObject(data);
+
+        Assert.assertFalse("Objects should not be identical!", foo == foo.getBar().getFoo());
+    }
+
+    private static class Foo implements Serializable {
+        public Bar bar;
+
+        public Foo() {
+            this.bar = new Bar();
+        }
+
+        public Bar getBar() {
+            return bar;
+        }
+
+        private class Bar implements Serializable {
+            public Foo getFoo() {
+                return Foo.this;
+            }
+        }
     }
 }

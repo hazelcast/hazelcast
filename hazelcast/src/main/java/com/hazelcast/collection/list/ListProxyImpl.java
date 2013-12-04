@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     }
 
     protected CollectionConfig getConfig(NodeEngine nodeEngine) {
-        return nodeEngine.getConfig().getListConfig(name);
+        return nodeEngine.getConfig().findListConfig(name);
     }
 
     public void add(int index, E e) {

@@ -18,6 +18,7 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,15 +29,19 @@ import java.io.IOException;
 
 public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
+    // todo unlockKey is a logic just used in transactional put operations. It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
     private boolean unlockKey = false;
+    private RecordInfo recordInfo;
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        super(name, dataKey, dataValue, ttl);
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
+        super(name, dataKey, dataValue);
+        this.recordInfo = recordInfo;
     }
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl, boolean unlockKey) {
-        super(name, dataKey, dataValue, ttl);
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean unlockKey) {
+        super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
+        this.recordInfo = recordInfo;
     }
 
     public PutBackupOperation() {
@@ -53,6 +58,11 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             mapContainer.getRecordFactory().setValue(record, dataValue);
             updateSizeEstimator(calculateRecordSize(record));
         }
+
+        if(recordInfo != null) {
+            mapService.applyRecordInfo(record, name, recordInfo);
+        }
+
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
         }
@@ -66,11 +76,14 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
+        recordInfo.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
+        recordInfo = new RecordInfo();
+        recordInfo.readData(in);
     }
 
     @Override

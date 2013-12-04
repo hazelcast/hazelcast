@@ -29,6 +29,8 @@ import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
@@ -52,6 +54,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.*;
@@ -141,20 +144,22 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    public void shutdown() {
-        flushMapsBeforeShutdown();
-        destroyMapStores();
-        final PartitionContainer[] containers = partitionContainers;
-        for (PartitionContainer container : containers) {
-            if (container != null) {
-                container.clear();
+    public void shutdown(boolean terminate) {
+        if (!terminate) {
+            flushMapsBeforeShutdown();
+            destroyMapStores();
+            final PartitionContainer[] containers = partitionContainers;
+            for (PartitionContainer container : containers) {
+                if (container != null) {
+                    container.clear();
+                }
             }
+            for (NearCache nearCache : nearCacheMap.values()) {
+                nearCache.clear();
+            }
+            nearCacheMap.clear();
+            mapContainers.clear();
         }
-        for (NearCache nearCache : nearCacheMap.values()) {
-            nearCache.clear();
-        }
-        nearCacheMap.clear();
-        mapContainers.clear();
     }
 
     private void destroyMapStores() {
@@ -178,7 +183,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().getMapConfig(mapName), MapService.this);
+            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName), MapService.this);
         }
     };
 
@@ -308,7 +313,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return getPartitionContainer(partitionId).getRecordStore(mapName);
     }
 
-    public RecordStore getExistingRecordStore(int partitionId, String mapName){
+    public RecordStore getExistingRecordStore(int partitionId, String mapName) {
         return getPartitionContainer(partitionId).getExistingRecordStore(mapName);
     }
 
@@ -332,7 +337,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        final MapReplicationOperation operation = new MapReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
+        final MapReplicationOperation operation = new MapReplicationOperation(this, container, event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
     }
 
@@ -394,12 +399,11 @@ public class MapService implements ManagedService, MigrationAwareService,
         Record record = mapContainer.getRecordFactory().newRecord(dataKey, value);
 
         if (shouldSchedule) {
+            // if ttl is 0 then no eviction. if ttl is -1 then default configured eviction is applied
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
                 scheduleTtlEviction(name, record, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
             } else if (ttl > 0) {
                 scheduleTtlEviction(name, record, ttl);
-            } else if (mapContainer.getStore() != null) { // following line cancels eviction due to evictable-null optimization. Optimization is only possible with mapstore usage
-                mapContainer.getTtlEvictionScheduler().cancel(record.getKey());
             }
             if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
                 scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
@@ -424,7 +428,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     };
 
-    private NearCache getNearCache(String mapName) {
+    NearCache getNearCache(String mapName) {
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
@@ -444,8 +448,10 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void clearNearCache(String mapName) {
-        NearCache nearCache = getNearCache(mapName);
-        nearCache.clear();
+        final NearCache nearCache = nearCacheMap.get(mapName);
+        if (nearCache != null) {
+            nearCache.clear();
+        }
     }
 
     public void invalidateAllNearCaches(String mapName, Data key) {
@@ -454,7 +460,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             try {
                 if (member.localMember())
                     continue;
-                InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
+                Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
@@ -464,29 +470,16 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
-    public boolean isNearCacheAndInvalidationEnabled(String mapName){
+    public boolean isNearCacheAndInvalidationEnabled(String mapName) {
         final MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
     }
 
-    public void invalidateAllNearCaches(String mapName) {
-        sendNearCacheOperation(new NearCacheClearOperation(mapName));
-        // clear local near cache.
-        clearNearCache(mapName);
-    }
-
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
         if (keys == null || keys.isEmpty()) return;
         //send operation.
-        sendNearCacheOperation(new NearCacheKeySetInvalidationOperation(mapName, keys));
-        // below local invalidation is for the case the data is cached before partition is owned/migrated
-        for (final Data key : keys) {
-            invalidateNearCache(mapName, key);
-        }
-    }
-
-    private void sendNearCacheOperation(Operation operation) {
+        Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
@@ -494,8 +487,12 @@ public class MapService implements ManagedService, MigrationAwareService,
                     continue;
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
-                throw new HazelcastException(throwable);
+                logger.warning(throwable);
             }
+        }
+        // below local invalidation is for the case the data is cached before partition is owned/migrated
+        for (final Data key : keys) {
+            invalidateNearCache(mapName, key);
         }
     }
 
@@ -687,6 +684,60 @@ public class MapService implements ManagedService, MigrationAwareService,
         return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
+    public void applyRecordInfo(Record record, String mapName, RecordInfo replicationInfo) {
+        record.setStatistics(replicationInfo.getStatistics());
+        if (replicationInfo.getIdleDelayMillis() >= 0) {
+            scheduleIdleEviction(mapName, record.getKey(), replicationInfo.getIdleDelayMillis());
+        }
+        if (replicationInfo.getTtlDelayMillis() >= 0) {
+            scheduleTtlEviction(mapName, record, replicationInfo.getTtlDelayMillis());
+        }
+        if (replicationInfo.getMapStoreWriteDelayMillis() >= 0) {
+            scheduleMapStoreWrite(mapName, record.getKey(), record.getValue(), replicationInfo.getMapStoreWriteDelayMillis());
+        }
+        if (replicationInfo.getMapStoreDeleteDelayMillis() >= 0) {
+            scheduleMapStoreDelete(mapName, record.getKey(), replicationInfo.getMapStoreDeleteDelayMillis());
+        }
+    }
+
+    public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
+        ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(key);
+        long idleDelay = idleScheduledEntry == null ? -1 : findDelayMillis(idleScheduledEntry);
+
+        ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
+        long ttlDelay = ttlScheduledEntry == null ? -1 : findDelayMillis(ttlScheduledEntry);
+
+        ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
+        long writeDelay = writeScheduledEntry == null ? -1 : findDelayMillis(writeScheduledEntry);
+
+        ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
+        long deleteDelay = deleteScheduledEntry == null ? -1 : findDelayMillis(deleteScheduledEntry);
+
+        return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), record.getStatistics(),
+                idleDelay, ttlDelay, writeDelay, deleteDelay);
+    }
+
+    public RecordInfo createRecordInfo(MapContainer mapContainer, Record record, Data key) {
+        ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(record.getKey());
+        long idleDelay = idleScheduledEntry == null ? -1 : findDelayMillis(idleScheduledEntry);
+
+        ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
+        long ttlDelay = ttlScheduledEntry == null ? -1 : findDelayMillis(ttlScheduledEntry);
+
+        ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
+        long writeDelay = writeScheduledEntry == null ? -1 : findDelayMillis(writeScheduledEntry);
+
+        ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
+        long deleteDelay = deleteScheduledEntry == null ? -1 : findDelayMillis(deleteScheduledEntry);
+
+        return new RecordInfo(record.getStatistics(),
+                idleDelay, ttlDelay, writeDelay, deleteDelay);
+    }
+
+    public long findDelayMillis(ScheduledEntry entry) {
+        return Math.max(0, entry.getScheduledDelayMillis() - (Clock.currentTimeMillis() - entry.getScheduleTime()));
+    }
+
     public Object toObject(Object data) {
         if (data == null)
             return null;
@@ -735,7 +786,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     @SuppressWarnings("unchecked")
     public void dispatchEvent(EventData eventData, EntryListener listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getSource(),
+        EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getMapName(),
                 eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
         switch (event.getEventType()) {
             case ADDED:

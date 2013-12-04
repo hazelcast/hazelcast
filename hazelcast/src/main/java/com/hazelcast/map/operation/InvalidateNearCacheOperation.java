@@ -26,10 +26,8 @@ import java.io.IOException;
 
 public class InvalidateNearCacheOperation extends AbstractOperation {
 
-    MapService mapService;
-    Data key;
-    String mapName;
-
+    private Data key;
+    private String mapName;
 
     public InvalidateNearCacheOperation(String mapName, Data key) {
         this.key = key;
@@ -40,11 +38,12 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     }
 
     public void run() {
-        mapService = getService();
+        MapService mapService = getService();
         if (mapService.getMapContainer(mapName).isNearCacheEnabled()) {
             mapService.invalidateNearCache(mapName, key);
         } else {
-            getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for " + mapName + " map. Possible configuration conflict among nodes.");
+            getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
+                    + mapName + " map. Possible configuration conflict among nodes.");
         }
     }
 
@@ -71,9 +70,4 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     public String toString() {
         return "InvalidateNearCacheOperation{}";
     }
-
-    public final String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
 }

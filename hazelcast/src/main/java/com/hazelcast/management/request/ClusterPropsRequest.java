@@ -54,7 +54,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         final PartitionServiceImpl partitionService = mcs.getHazelcastInstance().node.getPartitionService();
-        properties.put("hazelcast.cl_version", mcs.getHazelcastInstance().node.initializer.getVersion());
+        properties.put("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());
         properties.put("date.cl_startTime", Long.toString(runtimeMxBean.getStartTime()));
         properties.put("seconds.cl_upTime", Long.toString(runtimeMxBean.getUptime()));
         properties.put("memory.cl_freeMemory", Long.toString(runtime.freeMemory()));
@@ -65,8 +65,8 @@ public class ClusterPropsRequest implements ConsoleRequest {
 
         dos.writeInt(properties.size());
 
-        for (Object property : properties.keySet()) {
-            dos.writeUTF((String) property + ":#" + (String) properties.get(property));
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            dos.writeUTF(entry.getKey() + ":#" + entry.getValue());
         }
 
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySimple;
@@ -32,20 +32,17 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.Map;
 
 /**
- *
  * GOTCHA : This operation loads missing keys from mapstore, in contrast with PartitionWideEntryOperation.
- *
- * */
+ */
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
     private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
     private EntryProcessor entryProcessor;
     private transient EntryEventType eventType;
     private transient Object response;
-    protected transient Data dataOldValue;
+    protected transient Object oldValue;
 
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
@@ -57,28 +54,24 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void innerBeforeRun() {
-        if (entryProcessor instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-        }
+        final ManagedContext managedContext = getNodeEngine().getSerializationService().getManagedContext();
+        managedContext.initialize(entryProcessor);
     }
 
     public void run() {
-        //todo calls to map get interceptor is arguable.
-        Map.Entry<Data, Data> mapEntry = recordStore.getMapEntryData(dataKey);
-        dataOldValue = mapEntry.getValue();
-        final Object valueBeforeProcess = mapService.toObject(dataOldValue);
+        oldValue = recordStore.getMapEntry(dataKey).getValue();
+        final Object valueBeforeProcess = mapService.toObject(oldValue);
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
         final Object valueAfterProcess = entry.getValue();
         // no matching data by key.
-        if( dataOldValue == null && valueAfterProcess == null ){
+        if (oldValue == null && valueAfterProcess == null) {
             eventType = __NO_NEED_TO_FIRE_EVENT;
-        }
-        else if (valueAfterProcess == null) {
+        } else if (valueAfterProcess == null) {
             recordStore.remove(dataKey);
             eventType = EntryEventType.REMOVED;
         } else {
-            if (dataOldValue == null) {
+            if (oldValue == null) {
                 eventType = EntryEventType.ADDED;
             }
             // take this case as a read so no need to fire an event.
@@ -87,17 +80,20 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             } else {
                 eventType = EntryEventType.UPDATED;
             }
-            dataValue = mapService.toData(entry.getValue());
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, dataValue));
+            if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                dataValue = mapService.toData(entry.getValue());
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, dataValue));
+            }
         }
     }
+
 
     public void afterRun() throws Exception {
         super.afterRun();
         if (eventType == __NO_NEED_TO_FIRE_EVENT) {
             return;
         }
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
+        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(oldValue), dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {
