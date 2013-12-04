@@ -241,14 +241,7 @@ public class SplitBrainHandlerTest {
         assertEquals(mapB3.size(), mapB4.size());
 
         //assertEquals(mapA1.size(), mapB4.size());
-
-
-
-
-        //for(int i=1000; i<1010; i++){
-        //    mapA1.put(i, new String(i+" cluster A"));
-        //    mapB4.put(i, new String(i+" cluster B"));
-        //}
+        //assertEquals(1000, mapB4.size());
 
 
 
@@ -276,6 +269,11 @@ public class SplitBrainHandlerTest {
         printClusterInfo(h2);
         printClusterInfo(h3);
         printClusterInfo(h4);
+
+        assertEquals(4, h1.getCluster().getMembers().size());
+        assertEquals(4, h2.getCluster().getMembers().size());
+        assertEquals(4, h3.getCluster().getMembers().size());
+        assertEquals(4, h4.getCluster().getMembers().size());
 
         map = h4.getMap("map");
         System.out.println(map.size());
