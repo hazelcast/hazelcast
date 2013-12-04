@@ -16,15 +16,12 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
@@ -73,8 +70,13 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
             instance.managementService.destroy();
-            instance.node.shutdown(false);
-            HazelcastInstanceFactory.remove(instance);
+            final Node node = instance.node;
+            if (node != null) {
+                final NodeShutdownLatch shutdownLatch = new NodeShutdownLatch(node);
+                node.shutdown(false);
+                HazelcastInstanceFactory.remove(instance);
+                shutdownLatch.await(Math.min(30, node.groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger()), TimeUnit.SECONDS);
+            }
             fireLifecycleEvent(SHUTDOWN);
         }
     }
@@ -83,7 +85,10 @@ public class LifecycleServiceImpl implements LifecycleService {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
             instance.managementService.destroy();
-            instance.node.shutdown(true);
+            final Node node = instance.node;
+            if (node != null) {
+                node.shutdown(true);
+            }
             HazelcastInstanceFactory.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }

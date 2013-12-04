@@ -189,11 +189,11 @@ public final class HazelcastInstanceFactory {
 
     public static void shutdownAll() {
         final List<HazelcastInstanceProxy> instances = new LinkedList<HazelcastInstanceProxy>();
-        for(InstanceFuture f: instanceMap.values()){
-            try{
+        for (InstanceFuture f : instanceMap.values()) {
+            try {
                 HazelcastInstanceProxy instanceProxy = f.get();
                 instances.add(instanceProxy);
-            }catch(RuntimeException ignore){
+            } catch (RuntimeException ignore) {
             }
         }
 
@@ -211,14 +211,27 @@ public final class HazelcastInstanceFactory {
         }
     }
 
+    static Map<MemberImpl, HazelcastInstanceImpl> getInstanceImplMap() {
+        final Map<MemberImpl, HazelcastInstanceImpl> map = new HashMap<MemberImpl, HazelcastInstanceImpl>();
+        for (InstanceFuture f : instanceMap.values()) {
+            try {
+                HazelcastInstanceProxy instanceProxy = f.get();
+                final HazelcastInstanceImpl impl = instanceProxy.original;
+                if (impl != null) {
+                    map.put(impl.node.getLocalMember(), impl);
+                }
+            } catch (RuntimeException ignore) {
+            }
+        }
+        return map;
+    }
+
     static void remove(HazelcastInstanceImpl instance) {
         OutOfMemoryErrorDispatcher.deregister(instance);
-
         InstanceFuture future = instanceMap.remove(instance.getName());
-        if(future != null){
+        if (future != null) {
             future.get().original = null;
         }
-
         if (instanceMap.size() == 0) {
             ManagementService.shutdownAll();
         }
