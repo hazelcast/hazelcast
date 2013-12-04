@@ -142,7 +142,7 @@ public class SplitBrainHandlerTest {
     }
 
     @Test
-    public void testClusterSplit_MapData()throws InterruptedException {
+    public void splitClusterMapData()throws InterruptedException {
 
         Config c1 = buildConfig(false, 25701);
         Config c2 = buildConfig(false, 25702);
