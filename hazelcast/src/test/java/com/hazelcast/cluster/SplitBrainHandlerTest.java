@@ -246,6 +246,48 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                 assertEquals(mapSZ, mapB4.size());  //Important test (some times fails)
             }
         });
+
+
+        //////////////////////////////////
+        //reform the 4 node cluster
+
+        h1.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
+        h1.getConfig().getGroupConfig().setName("groupAll");
+        h2.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
+        h2.getConfig().getGroupConfig().setName("groupAll");
+
+        h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
+        h3.getConfig().getGroupConfig().setName("groupAll");
+        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
+        h4.getConfig().getGroupConfig().setName("groupAll");
+
+        gate = new CyclicBarrier(3);
+        j1 = new JoinAsThread(h1, gate);
+        j2 = new JoinAsThread(h2, gate);
+        //j3 = new JoinAsThread(h3, gate);  gate 5
+        //j4 = new JoinAsThread(h4, gate);
+        gate.await();
+
+        Thread.sleep(2000);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(4, h1.getCluster().getMembers().size());
+                assertEquals(4, h2.getCluster().getMembers().size());
+                assertEquals(4, h3.getCluster().getMembers().size());
+                assertEquals(4, h4.getCluster().getMembers().size());
+            }
+        });
+
+        final IMap<Object, Object> map1 = h1.getMap("map");
+        final IMap<Object, Object> map2 = h2.getMap("map");
+        final IMap<Object, Object> map3 = h3.getMap("map");
+        final IMap<Object, Object> map4 = h4.getMap("map");
+
+        assertEquals(mapSZ, map1.size());
+        assertEquals(mapSZ, map2.size());
+        assertEquals(mapSZ, map3.size());
+        assertEquals(mapSZ, map4.size());
     }
 
 
