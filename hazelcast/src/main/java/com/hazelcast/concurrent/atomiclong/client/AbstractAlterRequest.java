@@ -4,6 +4,7 @@ import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.core.Function;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -63,6 +64,10 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
         name = reader.readUTF("n");
         ObjectDataInput in = reader.getRawDataInput();
         function = IOUtil.readNullableData(in);
+    }
+
+    protected Function<Long,Long> getFunction() {
+        return (Function<Long,Long>)getClientEngine().getSerializationService().toObject(function);
     }
 
     @Override

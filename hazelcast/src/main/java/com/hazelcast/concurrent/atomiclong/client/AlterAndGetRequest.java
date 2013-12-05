@@ -5,7 +5,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
-public class AlterAndGetRequest  extends AbstractAlterRequest {
+public class AlterAndGetRequest extends AbstractAlterRequest {
 
     public AlterAndGetRequest() {
     }
@@ -16,7 +16,7 @@ public class AlterAndGetRequest  extends AbstractAlterRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new AlterAndGetOperation(name,function);
+        return new AlterAndGetOperation(name, getFunction());
     }
 
     @Override

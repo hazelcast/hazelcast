@@ -94,4 +94,6 @@ public final class ExceptionUtil {
         remoteCause.setStackTrace(newStackTrace);
     }
 
+    //we don't want instances
+    private ExceptionUtil(){}
 }

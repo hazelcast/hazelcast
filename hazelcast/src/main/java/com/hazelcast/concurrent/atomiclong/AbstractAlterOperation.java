@@ -1,5 +1,6 @@
 package com.hazelcast.concurrent.atomiclong;
 
+import com.hazelcast.core.Function;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -9,15 +10,14 @@ import java.io.IOException;
 
 public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperation {
 
-    protected Data function;
+    protected Function<Long,Long> function;
     protected long response;
     protected long backup;
 
     public AbstractAlterOperation() {
-        super();
     }
 
-    public AbstractAlterOperation(String name, Data function) {
+    public AbstractAlterOperation(String name, Function<Long,Long> function) {
         super(name);
         this.function = function;
     }

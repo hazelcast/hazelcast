@@ -17,24 +17,11 @@
 package com.hazelcast.concurrent.atomiclong.proxy;
 
 import com.hazelcast.concurrent.atomiclong.*;
-import com.hazelcast.concurrent.atomiclong.AlterAndGetOperation;
-import com.hazelcast.concurrent.atomiclong.AlterOperation;
-import com.hazelcast.concurrent.atomiclong.ApplyOperation;
-import com.hazelcast.concurrent.atomiclong.CompareAndSetOperation;
-import com.hazelcast.concurrent.atomiclong.GetAndAlterOperation;
-import com.hazelcast.concurrent.atomiclong.GetAndSetOperation;
-import com.hazelcast.concurrent.atomiclong.GetOperation;
-import com.hazelcast.concurrent.atomiclong.SetOperation;
+import com.hazelcast.core.AsyncAtomicLong;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.Function;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -43,7 +30,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * Date: 2/26/13
  * Time: 12:22 PM
  */
-public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements IAtomicLong {
+public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements AsyncAtomicLong {
 
     private final String name;
     private final int partitionId;
@@ -54,68 +41,16 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
-    private <E> E invoke(Operation operation, NodeEngine nodeEngine) {
+    private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
         try {
-            Invocation inv = nodeEngine
+            Invocation inv = getNodeEngine()
                     .getOperationService()
                     .createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId)
                     .build();
-            Future<Data> f = inv.invoke();
-            return nodeEngine.toObject(f.get());
+            return (InternalCompletableFuture<E>) inv.invoke();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
-    }
-
-    @Override
-    public long addAndGet(long delta) {
-        Operation operation = new AddAndGetOperation(name, delta);
-        return (Long)invoke(operation,getNodeEngine());
-    }
-
-    @Override
-    public boolean compareAndSet(long expect, long update) {
-        Operation operation = new CompareAndSetOperation(name, expect, update);
-        return (Boolean)invoke(operation,getNodeEngine());
-    }
-
-    @Override
-    public void set(long newValue) {
-        Operation operation = new SetOperation(name, newValue);
-        invoke(operation,getNodeEngine());
-    }
-
-    @Override
-    public long getAndSet(long newValue) {
-        Operation operation = new GetAndSetOperation(name, newValue);
-        return (Long) invoke(operation,getNodeEngine());
-    }
-
-    @Override
-    public long getAndAdd(long delta) {
-        Operation operation = new GetAndAddOperation(name, delta);
-        return (Long)invoke(operation,getNodeEngine());
-    }
-
-    @Override
-    public long decrementAndGet() {
-        return addAndGet(-1);
-    }
-
-    @Override
-    public long get() {
-        GetOperation operation = new GetOperation(name);
-        return (Long)invoke(operation,getNodeEngine());
-    }
-
-    @Override
-    public long incrementAndGet() {
-        return addAndGet(1);
-    }
-
-    @Override
-    public long getAndIncrement() {
-        return getAndAdd(1);
     }
 
     @Override
@@ -133,39 +68,151 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public void alter(Function<Long, Long> function) {
-        isNotNull(function,"function");
+    public long addAndGet(long delta) {
+        return asyncAddAndGet(delta).getSafely();
+    }
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new AlterOperation(name, nodeEngine.toData(function));
-        invoke(operation,nodeEngine);
+    @Override
+    public InternalCompletableFuture<Long> asyncAddAndGet(long delta) {
+        Operation operation = new AddAndGetOperation(name, delta);
+        return asyncInvoke(operation);
+    }
+
+    @Override
+    public boolean compareAndSet(long expect, long update) {
+        return asyncCompareAndSet(expect, update).getSafely();
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> asyncCompareAndSet(long expect, long update) {
+        Operation operation = new CompareAndSetOperation(name, expect, update);
+        return asyncInvoke(operation);
+    }
+
+    @Override
+    public void set(long newValue) {
+        asyncSet(newValue).getSafely();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> asyncSet(long newValue) {
+        Operation operation = new SetOperation(name, newValue);
+        return asyncInvoke(operation);
+    }
+
+    @Override
+    public long getAndSet(long newValue) {
+        return asyncGetAndSet(newValue).getSafely();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> asyncGetAndSet(long newValue) {
+        Operation operation = new GetAndSetOperation(name, newValue);
+        return asyncInvoke(operation);
+    }
+
+    @Override
+    public long getAndAdd(long delta) {
+        return asyncGetAndAdd(delta).getSafely();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> asyncGetAndAdd(long delta) {
+        Operation operation = new GetAndAddOperation(name, delta);
+        return asyncInvoke(operation);
+    }
+
+    @Override
+    public long decrementAndGet() {
+        return addAndGet(-1);
+    }
+
+    @Override
+    public CompletableFuture<Long> asyncDecrementAndGet() {
+        return asyncAddAndGet(-1);
+    }
+
+    @Override
+    public long get() {
+        return asyncGet().getSafely();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> asyncGet() {
+        GetOperation operation = new GetOperation(name);
+        return asyncInvoke(operation);
+    }
+
+    @Override
+    public long incrementAndGet() {
+        return addAndGet(1);
+    }
+
+    @Override
+    public CompletableFuture<Long> asyncIncrementAndGet() {
+        return asyncAddAndGet(1);
+    }
+
+    @Override
+    public long getAndIncrement() {
+        return getAndAdd(1);
+    }
+
+    @Override
+    public CompletableFuture<Long> asyncGetAndIncrement() {
+        return asyncGetAndAdd(1);
+    }
+
+    @Override
+    public void alter(Function<Long, Long> function) {
+        asyncAlter(function).getSafely();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> asyncAlter(Function<Long, Long> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new AlterOperation(name,function);
+        return asyncInvoke(operation);
     }
 
     @Override
     public long alterAndGet(Function<Long, Long> function) {
-        isNotNull(function,"function");
+        return asyncAlterAndGet(function).getSafely();
+    }
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new AlterAndGetOperation(name, nodeEngine.toData(function));
-        return (Long)invoke(operation,nodeEngine);
+    @Override
+    public InternalCompletableFuture<Long> asyncAlterAndGet(Function<Long, Long> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new AlterAndGetOperation(name, function);
+        return asyncInvoke(operation);
     }
 
     @Override
     public long getAndAlter(Function<Long, Long> function) {
-        isNotNull(function,"function");
+        return asyncGetAndAlter(function).getSafely();
+    }
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new GetAndAlterOperation(name, nodeEngine.toData(function));
-        return (Long)invoke(operation,nodeEngine);
+    @Override
+    public InternalCompletableFuture<Long> asyncGetAndAlter(Function<Long, Long> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new GetAndAlterOperation(name, function);
+        return asyncInvoke(operation);
     }
 
     @Override
     public <R> R apply(Function<Long, R> function) {
-        isNotNull(function,"function");
+        return asyncApply(function).getSafely();
+    }
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new ApplyOperation(name, nodeEngine.toData(function));
-        return invoke(operation,nodeEngine);
+    @Override
+    public <R> InternalCompletableFuture<R> asyncApply(Function<Long, R> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new ApplyOperation<R>(name,function);
+        return asyncInvoke(operation);
     }
 
     @Override
