@@ -333,7 +333,7 @@ public class BackupTest extends HazelcastTestSupport {
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
         final int count = 10000;
         final int totalCount = count * (instances.length() - 1);
-        final Thread[] threads = new Thread[instances.length()];
+        final CountDownLatch latch = new CountDownLatch(instances.length());
 
         for (int i = 0; i < instances.length(); i++) {
             final int finalI = i;
@@ -352,16 +352,15 @@ public class BackupTest extends HazelcastTestSupport {
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                    } finally {
+                        latch.countDown();
                     }
                 }
             };
-            threads[i] = thread;
             thread.start();
         }
 
-        for (Thread thread : threads) {
-            thread.join();
-        }
+        assertTrue(latch.await(5, TimeUnit.MINUTES));
 
         final int trials = 50;
         for (int i = 0; i < trials; i++) {
