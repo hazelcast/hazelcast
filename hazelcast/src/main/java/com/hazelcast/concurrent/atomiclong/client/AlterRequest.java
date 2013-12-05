@@ -2,6 +2,7 @@ package com.hazelcast.concurrent.atomiclong.client;
 
 import com.hazelcast.concurrent.atomiclong.AlterOperation;
 import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
+import com.hazelcast.core.Function;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
@@ -16,7 +17,7 @@ public class AlterRequest extends AbstractAlterRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new AlterOperation(name,function);
+        return new AlterOperation(name, getFunction());
     }
 
     @Override

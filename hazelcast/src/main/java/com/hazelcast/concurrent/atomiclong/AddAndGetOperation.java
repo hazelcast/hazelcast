@@ -29,7 +29,6 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
     private long returnValue;
 
     public AddAndGetOperation() {
-        super();
     }
 
     public AddAndGetOperation(String name, long delta) {

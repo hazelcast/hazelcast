@@ -34,7 +34,6 @@ public class AtomicLongReplicationOperation extends AbstractOperation {
     private Map<String, Long> migrationData;
 
     public AtomicLongReplicationOperation() {
-        super();
     }
 
     public AtomicLongReplicationOperation(Map<String, Long> migrationData) {
