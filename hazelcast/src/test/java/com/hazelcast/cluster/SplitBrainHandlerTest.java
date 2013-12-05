@@ -24,7 +24,9 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.After;
@@ -43,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 
-public class SplitBrainHandlerTest {
+public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @BeforeClass
     public static void init() throws Exception {
@@ -142,7 +144,7 @@ public class SplitBrainHandlerTest {
     }
 
     @Test
-    public void splitClusterMapData()throws InterruptedException {
+    public void splitClusterMapDataTest()throws InterruptedException, BrokenBarrierException {
 
         Config c1 = buildConfig(false, 25701);
         Config c2 = buildConfig(false, 25702);
@@ -153,16 +155,12 @@ public class SplitBrainHandlerTest {
 
         c1.getMapConfig("map").setBackupCount(backupCount);
         c1.getGroupConfig().setName("groupAll");
-
         c2.getMapConfig("map").setBackupCount(backupCount);
         c2.getGroupConfig().setName("groupAll");
-
         c3.getMapConfig("map").setBackupCount(backupCount);
         c3.getGroupConfig().setName("groupAll");
-
         c4.getMapConfig("map").setBackupCount(backupCount);
         c4.getGroupConfig().setName("groupAll");
-
 
 
         List<String> all = Arrays.asList("127.0.0.1:25701", "127.0.0.1:25702", "127.0.0.1:25703", "127.0.0.1:25704");
@@ -179,109 +177,79 @@ public class SplitBrainHandlerTest {
         final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
         final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(c4);
 
-        Thread.sleep(1000);
-
-        assertEquals(4, h1.getCluster().getMembers().size());
-        assertEquals(4, h2.getCluster().getMembers().size());
-        assertEquals(4, h3.getCluster().getMembers().size());
-        assertEquals(4, h4.getCluster().getMembers().size());
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(4, h1.getCluster().getMembers().size());
+                assertEquals(4, h2.getCluster().getMembers().size());
+                assertEquals(4, h3.getCluster().getMembers().size());
+                assertEquals(4, h4.getCluster().getMembers().size());
+            }
+        });
 
         IMap<Object, Object> map = h1.getMap("map");
-        for(int i=0; i<1000; i++){
+
+        final int mapSZ=1000;
+        for(int i=0; i<mapSZ; i++){
             map.put(i, i);
         }
 
 
         h1.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterA);
         h1.getConfig().getGroupConfig().setName("A");
-
         h2.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterA);
         h2.getConfig().getGroupConfig().setName("A");
 
         h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterB);
         h3.getConfig().getGroupConfig().setName("B");
-
         h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterB);
         h4.getConfig().getGroupConfig().setName("B");
 
 
-        final CyclicBarrier gate = new CyclicBarrier(5);
+        CyclicBarrier gate = new CyclicBarrier(5);
         CloseConnectionBetweenAsThread t1 = new CloseConnectionBetweenAsThread(h1, h3, gate);
         CloseConnectionBetweenAsThread t2 = new CloseConnectionBetweenAsThread(h2, h3, gate);
         CloseConnectionBetweenAsThread t3 = new CloseConnectionBetweenAsThread(h1, h4, gate);
         CloseConnectionBetweenAsThread t4 = new CloseConnectionBetweenAsThread(h2, h4, gate);
-
-        try {
-            gate.await();
-        } catch (BrokenBarrierException e) {
-            e.printStackTrace();
-        }
-
-        TestUtil.getNode(h1).rejoin();
-        TestUtil.getNode(h2).rejoin();
-        TestUtil.getNode(h3).rejoin();
-        TestUtil.getNode(h4).rejoin();
+        gate.await();
 
         Thread.sleep(1000);
 
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals(2, h3.getCluster().getMembers().size());
-        assertEquals(2, h4.getCluster().getMembers().size());
+        gate = new CyclicBarrier(5);
+        JoinAsThread j1 = new JoinAsThread(h1, gate);
+        JoinAsThread j2 = new JoinAsThread(h2, gate);
+        JoinAsThread j3 = new JoinAsThread(h3, gate);
+        JoinAsThread j4 = new JoinAsThread(h4, gate);
+        gate.await();
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(2, h1.getCluster().getMembers().size());
+                assertEquals(2, h2.getCluster().getMembers().size());
+                assertEquals(2, h3.getCluster().getMembers().size());
+                assertEquals(2, h4.getCluster().getMembers().size());
+            }
+        });
 
 
-        IMap<Object, Object> mapA1 = h1.getMap("map");
-        IMap<Object, Object> mapA2 = h2.getMap("map");
-
-        IMap<Object, Object> mapB3 = h3.getMap("map");
-        IMap<Object, Object> mapB4 = h4.getMap("map");
-
-
+        final IMap<Object, Object> mapA1 = h1.getMap("map");
+        final IMap<Object, Object> mapA2 = h2.getMap("map");
         assertEquals(mapA1.size(), mapA2.size());
+
+        final IMap<Object, Object> mapB3 = h3.getMap("map");
+        final IMap<Object, Object> mapB4 = h4.getMap("map");
         assertEquals(mapB3.size(), mapB4.size());
 
-        //assertEquals(mapA1.size(), mapB4.size());
-        //assertEquals(1000, mapB4.size());
 
-
-
-        h1.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
-        h1.getConfig().getGroupConfig().setName("groupAll");
-
-        h2.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
-        h2.getConfig().getGroupConfig().setName("groupAll");
-
-        h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
-        h3.getConfig().getGroupConfig().setName("groupAll");
-
-        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(all);
-        h4.getConfig().getGroupConfig().setName("groupAll");
-
-
-        TestUtil.getNode(h1).rejoin();
-        TestUtil.getNode(h2).rejoin();
-        TestUtil.getNode(h3).rejoin();
-        TestUtil.getNode(h4).rejoin();
-
-        Thread.sleep(1000);
-
-        printClusterInfo(h1);
-        printClusterInfo(h2);
-        printClusterInfo(h3);
-        printClusterInfo(h4);
-
-        assertEquals(4, h1.getCluster().getMembers().size());
-        assertEquals(4, h2.getCluster().getMembers().size());
-        assertEquals(4, h3.getCluster().getMembers().size());
-        assertEquals(4, h4.getCluster().getMembers().size());
-
-        map = h4.getMap("map");
-        System.out.println(map.size());
-
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(mapSZ, mapA1.size());
+                assertEquals(mapSZ, mapB4.size());  //Important test (some times fails)
+            }
+        });
     }
 
-    private void printClusterInfo(HazelcastInstance h){
 
+    private void printClusterInfo(HazelcastInstance h){
 
         System.out.println(h.getCluster().getLocalMember()+" size "+h.getCluster().getMembers().size());
         for( Member m : h.getCluster().getMembers()){
@@ -319,30 +287,58 @@ public class SplitBrainHandlerTest {
         assertEquals(3, h3.getCluster().getMembers().size());
     }
 
-    public class CloseConnectionBetweenAsThread extends Thread{
+    public interface Go{
+        public void go();
+    }
 
-        private HazelcastInstance h1;
-        private HazelcastInstance h2;
-        final CyclicBarrier gate;
+    abstract public class GatedThread extends Thread implements Go{
+        private final CyclicBarrier gate;
 
-        public CloseConnectionBetweenAsThread(HazelcastInstance h1, HazelcastInstance h2, CyclicBarrier gate){
-            this.h1=h1;
-            this.h2=h2;
-            this.gate=gate;
+        public GatedThread(CyclicBarrier gate){
+            this.gate = gate;
             this.start();
         }
 
         public void run(){
             try {
                 gate.await();
-                closeConnectionBetween(h1, h2);
+                go();
             } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();
             } catch (BrokenBarrierException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                e.printStackTrace();
             }
         }
     }
+
+    public class CloseConnectionBetweenAsThread extends GatedThread{
+        private HazelcastInstance h1;
+        private HazelcastInstance h2;
+
+        public CloseConnectionBetweenAsThread(HazelcastInstance h1, HazelcastInstance h2, CyclicBarrier gate){
+            super(gate);
+            this.h1=h1;
+            this.h2=h2;
+        }
+
+        public void go(){
+            closeConnectionBetween(h1, h2);
+        }
+    }
+
+    public class JoinAsThread extends GatedThread{
+        private HazelcastInstance h1;
+
+        public JoinAsThread(HazelcastInstance h1, CyclicBarrier gate){
+            super(gate);
+            this.h1=h1;
+        }
+
+        public void go(){
+            TestUtil.getNode(h1).rejoin();
+        }
+    }
+
 
 
     private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
