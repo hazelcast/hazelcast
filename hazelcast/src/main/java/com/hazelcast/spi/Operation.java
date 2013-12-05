@@ -48,6 +48,7 @@ public abstract class Operation implements DataSerializable {
     private long callTimeout = Long.MAX_VALUE;
     private String callerUuid;
     // not used anymore, keeping just for serialization compatibility
+    @Deprecated
     private boolean async = false;
 
     // injected
@@ -246,48 +247,30 @@ public abstract class Operation implements DataSerializable {
         }
     }
 
-    private transient boolean writeDataFlag = false;
     public final void writeData(ObjectDataOutput out) throws IOException {
-        if (writeDataFlag) {
-            throw new IOException("Cannot call writeData() from a sub-class[" + getClass().getName() + "]!");
-        }
-        writeDataFlag = true;
-        try {
-            out.writeUTF(serviceName);
-            out.writeInt(partitionId);
-            out.writeInt(replicaIndex);
-            out.writeLong(callId);
-            out.writeBoolean(validateTarget);
-            out.writeLong(invocationTime);
-            out.writeLong(callTimeout);
-            out.writeUTF(callerUuid);
-            out.writeBoolean(async);  // not used anymore
-            writeInternal(out);
-        } finally {
-            writeDataFlag = false;
-        }
+        out.writeUTF(serviceName);
+        out.writeInt(partitionId);
+        out.writeInt(replicaIndex);
+        out.writeLong(callId);
+        out.writeBoolean(validateTarget);
+        out.writeLong(invocationTime);
+        out.writeLong(callTimeout);
+        out.writeUTF(callerUuid);
+        out.writeBoolean(async);  // not used anymore
+        writeInternal(out);
     }
 
-    private transient boolean readDataFlag = false;
     public final void readData(ObjectDataInput in) throws IOException {
-        if (readDataFlag) {
-            throw new IOException("Cannot call readData() from a sub-class[" + getClass().getName() + "]!");
-        }
-        readDataFlag = true;
-        try {
-            serviceName = in.readUTF();
-            partitionId = in.readInt();
-            replicaIndex = in.readInt();
-            callId = in.readLong();
-            validateTarget = in.readBoolean();
-            invocationTime = in.readLong();
-            callTimeout = in.readLong();
-            callerUuid = in.readUTF();
-            async = in.readBoolean();  // not used anymore
-            readInternal(in);
-        } finally {
-            readDataFlag = false;
-        }
+        serviceName = in.readUTF();
+        partitionId = in.readInt();
+        replicaIndex = in.readInt();
+        callId = in.readLong();
+        validateTarget = in.readBoolean();
+        invocationTime = in.readLong();
+        callTimeout = in.readLong();
+        callerUuid = in.readUTF();
+        async = in.readBoolean();  // not used anymore
+        readInternal(in);
     }
 
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
