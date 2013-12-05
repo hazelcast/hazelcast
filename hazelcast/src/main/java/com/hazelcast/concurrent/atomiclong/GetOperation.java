@@ -21,7 +21,6 @@ public class GetOperation extends AtomicLongBaseOperation {
     private long returnValue;
 
     public GetOperation() {
-        super();
     }
 
     public GetOperation(String name) {

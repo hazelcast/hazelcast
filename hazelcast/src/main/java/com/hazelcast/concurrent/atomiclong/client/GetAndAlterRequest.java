@@ -16,7 +16,7 @@ public class GetAndAlterRequest extends AbstractAlterRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new GetAndAlterOperation(name,function);
+        return new GetAndAlterOperation(name,getFunction());
     }
 
     @Override

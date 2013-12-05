@@ -29,7 +29,6 @@ public abstract class AtomicLongBaseOperation extends Operation implements Parti
     protected String name;
 
     public AtomicLongBaseOperation() {
-        super();
     }
 
     public AtomicLongBaseOperation(String name) {

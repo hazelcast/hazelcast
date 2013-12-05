@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
@@ -483,7 +484,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
-    private class InvocationFuture<E> implements CompletableFuture<E> {
+    private class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         volatile ExecutionCallbackNode<E> callbackHead;
         volatile Object response;
@@ -568,6 +569,15 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             } catch (TimeoutException e) {
                 logger.severe("Unexpected timeout while processing " + this, e);
                 return null;
+            }
+        }
+
+        @Override
+        public E getSafely() {
+            try {
+                return get();
+            } catch (Throwable throwable) {
+                throw ExceptionUtil.rethrow(throwable);
             }
         }
 
