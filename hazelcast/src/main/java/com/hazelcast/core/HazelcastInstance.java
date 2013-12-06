@@ -84,6 +84,14 @@ public interface HazelcastInstance {
     <K, V> IMap<K, V> getMap(String name);
 
     /**
+     * Returns the replicated map instance with the specified name.
+     *
+     * @param name name of the distributed map
+     * @return replicated map instance with specified name
+     */
+    <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
+
+    /**
      * Returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap

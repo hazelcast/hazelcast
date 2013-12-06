@@ -38,6 +38,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -96,6 +97,7 @@ final class ServiceManager {
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
                 registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
+                registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
             }
 
             serviceProps = new HashMap<String, Properties>();
