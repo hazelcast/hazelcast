@@ -57,6 +57,12 @@ public abstract class HazelcastTestSupport {
         TestUtil.warmUpPartitions(instances);
     }
 
+    protected static void waitForShutdown(HazelcastInstance instance, int expectedMemberSize) throws InterruptedException {
+        while (instance.getCluster().getMembers().size() > expectedMemberSize) {
+            Thread.sleep(10);
+        }
+    }
+
     protected static String generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
