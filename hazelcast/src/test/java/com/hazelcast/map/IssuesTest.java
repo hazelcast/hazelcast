@@ -27,7 +27,6 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,7 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
@@ -208,7 +206,6 @@ public class IssuesTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Repeat(30)
     public void testMapInterceptorInstanceAware() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
