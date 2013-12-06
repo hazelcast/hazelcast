@@ -1006,7 +1006,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         IMap<Object, Object> map = h1.getMap("testWriteBehindSameSecondSameKey");
         final int mapSize = 100;
         //store op count.
-        testMapStore.latchStoreOpCount = new CountDownLatch(mapSize);
+        testMapStore.latchStoreOpCount = new CountDownLatch(mapSize+1);
 
         for (int i = 0; i < mapSize; i++) {
             map.put("key", "value" + i);
