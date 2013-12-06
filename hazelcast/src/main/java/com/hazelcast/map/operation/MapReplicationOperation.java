@@ -68,7 +68,7 @@ public class MapReplicationOperation extends AbstractOperation {
                 mapInitialLoadInfo.put(name, recordStore.isLoaded());
             }
             // now prepare data to migrate records
-            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
+            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>();
             for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
                 Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();

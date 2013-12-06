@@ -128,7 +128,7 @@ public class DefaultRecordStore implements RecordStore {
         loaded.set(isLoaded);
     }
 
-    public void checkIfLoaded() {
+    private void checkIfLoaded() {
         if (mapContainer.getStore() != null && !loaded.get()) {
             throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
         }
@@ -246,6 +246,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public int size() {
+        checkIfLoaded();
         return records.size();
     }
 

@@ -119,8 +119,6 @@ public interface RecordStore {
 
     boolean isLoaded();
 
-    void checkIfLoaded();
-
     void setLoaded(boolean loaded);
 
     void clear();
