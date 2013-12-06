@@ -257,7 +257,7 @@ public abstract class Operation implements DataSerializable {
     private transient boolean writeDataFlag = false;
     public final void writeData(ObjectDataOutput out) throws IOException {
         if (writeDataFlag) {
-            throw new IOException("Cannot call writeData() from a sub-class!");
+            throw new IOException("Cannot call writeData() from a sub-class[" + getClass().getName() + "]!");
         }
         writeDataFlag = true;
         try {
@@ -279,7 +279,7 @@ public abstract class Operation implements DataSerializable {
     private transient boolean readDataFlag = false;
     public final void readData(ObjectDataInput in) throws IOException {
         if (readDataFlag) {
-            throw new IOException("Cannot call readData() from a sub-class!");
+            throw new IOException("Cannot call readData() from a sub-class[" + getClass().getName() + "]!");
         }
         readDataFlag = true;
         try {

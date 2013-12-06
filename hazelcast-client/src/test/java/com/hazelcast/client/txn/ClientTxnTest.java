@@ -17,6 +17,7 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
@@ -49,7 +50,9 @@ public class ClientTxnTest {
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        final ClientConfig config = new ClientConfig();
+        config.setRedoOperation(true);
+        hz = HazelcastClient.newHazelcastClient(config);
         second = Hazelcast.newHazelcastInstance();
     }
 

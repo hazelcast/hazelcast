@@ -50,7 +50,7 @@ public class MapConfig {
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
-    private int maxIdleSeconds = DEFAULT_TTL_SECONDS;
+    private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
 
     private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
 

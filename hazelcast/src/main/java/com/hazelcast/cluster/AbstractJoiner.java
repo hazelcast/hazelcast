@@ -103,7 +103,7 @@ public abstract class AbstractJoiner implements Joiner {
                         node.rejoin();
                     } catch (InterruptedException e) {
                         logger.warning(e);
-                        node.shutdown(false, true);
+                        node.shutdown(false);
                     }
                 } else {
                     throw new HazelcastException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");

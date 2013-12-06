@@ -37,7 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
@@ -208,8 +207,9 @@ public class IssuesTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInterceptorInstanceAware() {
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
         IMap<Object,Object> map = hz1.getMap("test");
 
         InstanceAwareMapInterceptorImpl interceptor = new InstanceAwareMapInterceptorImpl();

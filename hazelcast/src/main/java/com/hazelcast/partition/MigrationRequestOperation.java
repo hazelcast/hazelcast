@@ -115,6 +115,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                                         migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                                 Future future = inv.invoke();
                                 Boolean result = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
+                                migrationInfo.doneProcessing();
                                 responseHandler.sendResponse(result);
                             } catch (Throwable e) {
                                 responseHandler.sendResponse(Boolean.FALSE);
@@ -136,7 +137,9 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 getLogger().warning( e);
                 success = false;
             } finally {
-                migrationInfo.doneProcessing();
+//                if (returnResponse) {
+                    migrationInfo.doneProcessing();
+//                }
             }
         } else {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);

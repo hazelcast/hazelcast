@@ -133,6 +133,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             assertTrue(q1.offer("item" + i, 100, TimeUnit.SECONDS));
         }
         h1.getLifecycleService().shutdown();
+        waitForShutdown(h2, 1);
+
         for (int i = 40; i < 100; i++) {
             assertTrue(q2.offer("item" + i, 100, TimeUnit.SECONDS));
         }
