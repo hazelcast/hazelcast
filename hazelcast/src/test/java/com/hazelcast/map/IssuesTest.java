@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -209,8 +207,9 @@ public class IssuesTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInterceptorInstanceAware() {
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
         IMap<Object,Object> map = hz1.getMap("test");
 
         InstanceAwareMapInterceptorImpl interceptor = new InstanceAwareMapInterceptorImpl();
