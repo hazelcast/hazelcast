@@ -37,10 +37,11 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 public class QueryOperation extends AbstractMapOperation {
     Predicate predicate;
@@ -84,13 +85,13 @@ public class QueryOperation extends AbstractMapOperation {
     private void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final SerializationService ss = getNodeEngine().getSerializationService();
         final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final List<Future<ConcurrentMap<Object, QueryableEntry>>> lsFutures = new ArrayList<Future<ConcurrentMap<Object, QueryableEntry>>>(initialPartitions.size());
+        final List<Future<Map<Object, QueryableEntry>>> lsFutures = new ArrayList<Future<Map<Object, QueryableEntry>>>(initialPartitions.size());
         for (final Integer partition : initialPartitions) {
-            Future<ConcurrentMap<Object, QueryableEntry>> f = executor.submit(new Callable<ConcurrentMap<Object, QueryableEntry>>() {
-                public ConcurrentMap<Object, QueryableEntry> call() {
+            Future<Map<Object, QueryableEntry>> f = executor.submit(new Callable<Map<Object, QueryableEntry>>() {
+                public Map<Object, QueryableEntry> call() {
                     final PartitionContainer container = mapService.getPartitionContainer(partition);
                     final RecordStore recordStore = container.getRecordStore(name);
-                    ConcurrentMap<Object, QueryableEntry> partitionResult = null;
+                    Map<Object, QueryableEntry> partitionResult = null;
                     for (Record record : recordStore.getReadonlyRecordMap().values()) {
                         Data key = record.getKey();
                         Object value;
@@ -113,7 +114,7 @@ public class QueryOperation extends AbstractMapOperation {
                         final QueryEntry queryEntry = new QueryEntry(ss, key, key, value);
                         if (predicate.apply(queryEntry)) {
                             if (partitionResult == null) {
-                                partitionResult = new ConcurrentHashMap<Object, QueryableEntry>();
+                                partitionResult = new HashMap<Object, QueryableEntry>();
                             }
                             partitionResult.put(queryEntry.getIndexKey(), queryEntry);
                         }
@@ -123,8 +124,8 @@ public class QueryOperation extends AbstractMapOperation {
             });
             lsFutures.add(f);
         }
-        for (Future<ConcurrentMap<Object, QueryableEntry>> future : lsFutures) {
-            final ConcurrentMap<Object, QueryableEntry> r = future.get();
+        for (Future<Map<Object, QueryableEntry>> future : lsFutures) {
+            final Map<Object, QueryableEntry> r = future.get();
             if (r != null) {
                 for (QueryableEntry entry : r.values()) {
                     result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
