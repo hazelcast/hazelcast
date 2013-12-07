@@ -1,0 +1,92 @@
+package com.hazelcast.replicatedmap.operation;
+
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
+import com.hazelcast.replicatedmap.messages.ReplicationMessage;
+import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStorage;
+import com.hazelcast.replicatedmap.record.ReplicatedRecord;
+
+import java.io.IOException;
+
+public class ReplicatedMapInitChunkOperation
+        extends AbstractReplicatedMapOperation
+        implements IdentifiedDataSerializable {
+
+    private String name;
+    private Member origin;
+    private ReplicatedRecord[] replicatedRecords;
+    private int recordCount;
+
+    public ReplicatedMapInitChunkOperation() {
+    }
+
+    public ReplicatedMapInitChunkOperation(String name, Member origin,
+                                           ReplicatedRecord[] replicatedRecords,
+                                           int recordCount) {
+        this.name = name;
+        this.origin = origin;
+        this.replicatedRecords = replicatedRecords;
+        this.recordCount = recordCount;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public ReplicatedRecord[] getReplicatedRecords() {
+        return replicatedRecords;
+    }
+
+    @Override
+    public void run() throws Exception {
+        ReplicatedMapService replicatedMapService = getService();
+        AbstractReplicatedRecordStorage recordStorage =
+                (AbstractReplicatedRecordStorage) replicatedMapService.getReplicatedRecordStore(name);
+
+        for (int i = 0; i < recordCount; i++) {
+            ReplicatedRecord record = replicatedRecords[i];
+            ReplicationMessage update = new ReplicationMessage(name, record.getKey(), record.getValue(),
+                    record.getVector(), origin, record.getLatestUpdateHash());
+            recordStorage.queueUpdateMessage(update);
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.OP_INIT_CHUNK;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        origin.writeData(out);
+        out.writeInt(recordCount);
+        for (int i = 0; i < recordCount; i++) {
+            replicatedRecords[i].writeData(out);
+        }
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        origin = new MemberImpl();
+        origin.readData(in);
+        recordCount = in.readInt();
+        replicatedRecords = new ReplicatedRecord[recordCount];
+        for (int i = 0; i < recordCount; i++) {
+            ReplicatedRecord replicatedRecord = new ReplicatedRecord();
+            replicatedRecord.readData(in);
+            replicatedRecords[i] = replicatedRecord;
+        }
+    }
+}

@@ -2,20 +2,18 @@ package com.hazelcast.replicatedmap.record;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.executor.NamedThreadFactory;
 import com.hazelcast.util.nonblocking.NonBlockingHashMap;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractReplicatedRecordStorage<K, V> implements ReplicatedRecordStore {
 
     protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new NonBlockingHashMap<K, ReplicatedRecord<K, V>>();
+    private final AtomicInteger initialFillupThreadNumber = new AtomicInteger(0);
 
     private final String name;
     private final Member localMember;
@@ -70,7 +69,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     @Override
     public Object remove(Object key) {
         V old;
-        synchronized (getMutex(key)) {
+        synchronized (getMutex(marshallKey(key))) {
             final ReplicatedRecord current = storage.get(key);
             final Vector vector;
             if (current == null) {
@@ -186,6 +185,13 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         return new HashSet<ReplicatedRecord>(storage.values());
     }
 
+    public void queueInitialFillup(Address callerAddress, int chunkSize) {
+        String threadName = "ReplicatedMap-" + name + "-Fillup-" + initialFillupThreadNumber.getAndIncrement();
+        Thread fillupThread = new Thread(new RemoteFillupTask(callerAddress, chunkSize), threadName);
+        fillupThread.setDaemon(true);
+        fillupThread.start();
+    }
+
     public void queueUpdateMessage(final ReplicationMessage update) {
         executorService.execute(new Runnable() {
             @Override
@@ -194,6 +200,14 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
             }
         });
     }
+
+    protected abstract Object unmarshallKey(Object key);
+
+    protected abstract Object unmarshallValue(Object value);
+
+    protected abstract Object marshallKey(Object key);
+
+    protected abstract Object marshallValue(Object value);
 
     protected void publishReplicatedMessage(IdentifiedDataSerializable message) {
         Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, replicationTopicName);
@@ -217,7 +231,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         if (localMember.equals(update.getOrigin())) {
             return;
         }
-        synchronized (getMutex(update.getKey())) {
+        synchronized (getMutex(marshallKey(update.getKey()))) {
             final ReplicatedRecord<K, V> localEntry = storage.get(update.getKey());
             if (localEntry == null) {
                 if (!update.isRemove()) {
@@ -248,6 +262,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
             }
         }
     }
+
     private void applyTheUpdate(ReplicationMessage<K, V> update, ReplicatedRecord<K, V> localEntry) {
         Vector localVector = localEntry.getVector();
         Vector remoteVector = update.getVector();
@@ -278,6 +293,64 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         }
         return Executors.newSingleThreadScheduledExecutor(
                 new NamedThreadFactory(ReplicatedMapService.SERVICE_NAME + "." + name + ".replicator"));
+    }
+
+    private class RemoteFillupTask implements Runnable {
+
+        private final PartitionService partitionService = nodeEngine.getPartitionService();
+        private final OperationService operationService = nodeEngine.getOperationService();
+        private final Address callerAddress;
+        private final int chunkSize;
+
+        private ReplicatedRecord[] recordCache;
+        private int recordCachePos = 0;
+
+        private RemoteFillupTask(Address callerAddress, int chunkSize) {
+            this.callerAddress = callerAddress;
+            this.chunkSize = chunkSize;
+        }
+
+        @Override
+        public void run() {
+            recordCache = new ReplicatedRecord[chunkSize];
+            for (ReplicatedRecord<K, V> replicatedRecord : storage.values()) {
+                processReplicatedRecord(replicatedRecord);
+            }
+            sendChunk();
+        }
+
+        private void processReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord) {
+            Object key = marshallKey(replicatedRecord.getKey());
+            int partitionId = partitionService.getPartitionId(key);
+            if (partitionService.getPartitionOwner(partitionId).equals(nodeEngine.getThisAddress())) {
+                synchronized (getMutex(key)) {
+                    pushReplicatedRecord(replicatedRecord);
+                }
+            }
+        }
+
+        private void pushReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord) {
+            if (recordCachePos == chunkSize) {
+                sendChunk();
+            }
+
+            int hash = replicatedRecord.getLatestUpdateHash();
+            Object key = unmarshallKey(replicatedRecord.getKey());
+            Object value = unmarshallValue(replicatedRecord.getValue());
+            Vector vector = Vector.copyVector(replicatedRecord.getVector());
+            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vector, hash);
+        }
+
+        private void sendChunk() {
+            if (recordCachePos > 0) {
+                Operation operation = new ReplicatedMapInitChunkOperation(name, localMember, recordCache, recordCachePos);
+                operationService.send(operation, callerAddress);
+
+                // Reset chunk cache and pos
+                recordCache = new ReplicatedRecord[chunkSize];
+                recordCachePos = 0;
+            }
+        }
     }
 
 }

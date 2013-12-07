@@ -142,6 +142,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
         return config.getReplicatedMapConfig(name).getAsReadOnly();
     }
 
+    public ReplicatedRecordStore getReplicatedRecordStore(String name) {
+        return replicatedStorages.get(name);
+    }
+
     ScheduledFuture<?> registerCleaner(AbstractReplicatedRecordStorage replicatedRecordStorage) {
         return cleanerExecutorService.scheduleWithFixedDelay(
                 new Cleaner(replicatedRecordStorage), 5, 5, TimeUnit.SECONDS);

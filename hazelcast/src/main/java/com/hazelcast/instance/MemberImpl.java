@@ -58,6 +58,14 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         this.uuid = uuid;
     }
 
+    public MemberImpl(MemberImpl member) {
+        this();
+        this.localMember = member.localMember;
+        this.address = member.address;
+        this.lastRead = member.lastRead;
+        this.uuid = member.uuid;
+    }
+
     public Address getAddress() {
         return address;
     }

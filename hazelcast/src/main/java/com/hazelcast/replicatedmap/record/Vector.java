@@ -76,6 +76,17 @@ public class Vector implements IdentifiedDataSerializable {
                 '}';
     }
 
+    static Vector copyVector(Vector vector) {
+        Vector copy = new Vector();
+        Map<Member, AtomicInteger> clocks = copy.clocks;
+        for (Entry<Member, AtomicInteger> entry : vector.clocks.entrySet()) {
+            MemberImpl member = new MemberImpl((MemberImpl) entry.getKey());
+            AtomicInteger value = new AtomicInteger(entry.getValue().intValue());
+            clocks.put(member, value);
+        }
+        return copy;
+    }
+
     static boolean happenedBefore(Vector x, Vector y) {
         Set<Member> members = new HashSet<Member>(x.clocks.keySet());
         members.addAll(y.clocks.keySet());
