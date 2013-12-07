@@ -78,7 +78,9 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
                         op.afterRun();
                     } catch (Throwable e) {
                         final Level level = nodeEngine.isActive() ? Level.WARNING : Level.FINEST;
-                        logger.log(level, "While executing " + op, e);
+                        if (logger.isLoggable(level)) {
+                            logger.log(level, "While executing " + op, e);
+                        }
                     }
                 }
             }

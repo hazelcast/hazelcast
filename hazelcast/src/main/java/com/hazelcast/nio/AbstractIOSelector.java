@@ -101,7 +101,9 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
             while (live) {
                 processSelectionQueue();
                 if (!live || isInterrupted()) {
-                    logger.finest( getName() + " is interrupted!");
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( getName() + " is interrupted!");
+                    }
                     live = false;
                     return;
                 }
@@ -133,7 +135,9 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
             logger.warning("Unhandled exception in " + getName(), e);
         } finally {
             try {
-                logger.finest( "Closing selector " + getName());
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Closing selector " + getName());
+                }
                 selector.close();
             } catch (final Exception ignored) {
             }

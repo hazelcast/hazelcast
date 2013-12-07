@@ -383,10 +383,12 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 }
             } catch (Throwable e) {
                 final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-                String message = request != null
-                        ? "While executing request: " + request + " -> " + e.getMessage()
-                        : e.getMessage();
-                logger.log(level, message, e);
+                if (logger.isLoggable(level)) {
+                    String message = request != null
+                            ? "While executing request: " + request + " -> " + e.getMessage()
+                            : e.getMessage();
+                    logger.log(level, message, e);
+                }
                 sendResponse(endpoint, e);
             }
         }

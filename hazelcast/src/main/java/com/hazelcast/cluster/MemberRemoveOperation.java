@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,7 +41,10 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         final Address caller = getCallerAddress();
         if (caller != null &&
                 (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
-            getLogger().finest( "Removing " + deadAddress + ", called from " + caller);
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Removing " + deadAddress + ", called from " + caller);
+            }
             clusterService.removeAddress(deadAddress);
         }
     }

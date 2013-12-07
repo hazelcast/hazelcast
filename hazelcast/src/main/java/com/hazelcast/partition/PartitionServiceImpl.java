@@ -542,7 +542,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (oldMaster) {
                     logger.info("Finalizing migration instantiated by the old master -> " + oldMigration);
                 } else {
-                    logger.finest( "Finalizing previous migration -> " + oldMigration);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Finalizing previous migration -> " + oldMigration);
+                    }
                 }
                 finalizeActiveMigration(oldMigration);
                 activeMigrations.put(partitionId, newMigration);
@@ -1131,7 +1133,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
                 Boolean result = Boolean.FALSE;
                 MemberImpl fromMember = getMember(migrationInfo.getSource());
-                logger.finest( "Started Migration : " + migrationInfo);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Started Migration : " + migrationInfo);
+                }
                 systemLogService.logPartition("Started Migration : " + migrationInfo);
                 if (fromMember != null) {
                     Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
@@ -1150,8 +1154,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     result = Boolean.TRUE;
                 }
                 if (Boolean.TRUE.equals(result)) {
-                    logger.finest( "Finished Migration: " + migrationInfo);
-                    systemLogService.logPartition("Finished Migration: " + migrationInfo);
+                    String message =  "Finished Migration: " + migrationInfo;
+                    logger.finest(message);
+                    systemLogService.logPartition(message);
                     processMigrationResult();
                 } else {
                     final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
