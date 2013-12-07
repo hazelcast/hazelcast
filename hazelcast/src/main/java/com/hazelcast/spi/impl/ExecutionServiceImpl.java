@@ -61,7 +61,9 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                logger.finest( "Node is shutting down; discarding the task: " + r);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Node is shutting down; discarding the task: " + r);
+                }
             }
         });
 

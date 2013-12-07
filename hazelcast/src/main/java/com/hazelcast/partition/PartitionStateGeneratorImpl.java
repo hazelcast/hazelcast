@@ -66,7 +66,9 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 stateInitializer.initialize(state);
             } else if (result == TestResult.RETRY) {
                 tryCount++;
-                logger.finest( "Re-trying partition arrangement.. Count: " + tryCount);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Re-trying partition arrangement.. Count: " + tryCount);
+                }
             }
         }
         if (result == TestResult.FAIL) {
@@ -335,8 +337,10 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
                 if ((partitionCountOfGroup < avgPartitionPerGroup / ratio)
                         || (partitionCountOfGroup > avgPartitionPerGroup * ratio)) {
-                    logger.finest( "Replica: " + i + ", PartitionCount: "
-                            + partitionCountOfGroup + ", AvgPartitionCount: " + avgPartitionPerGroup);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Replica: " + i + ", PartitionCount: "
+                                + partitionCountOfGroup + ", AvgPartitionCount: " + avgPartitionPerGroup);
+                    }
                     return TestResult.RETRY;
                 }
             }
@@ -452,9 +456,11 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 return false;
             }
             if (containsPartition(partitionId)) {
-                String error = "Partition[" + partitionId + "] is already owned by this group! " +
-                        "Duplicate!";
-                logger.finest( error);
+                if (logger.isFinestEnabled()) {
+                    String error = "Partition[" + partitionId + "] is already owned by this group! " +
+                            "Duplicate!";
+                    logger.finest( error);
+                }
                 return false;
             }
             groupPartitionTable.add(index, partitionId);
@@ -600,9 +606,11 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 return false;
             }
             if (containsPartition(partitionId)) {
-                String error = "Partition[" + partitionId + "] is already owned by this node " +
-                        address + "! Duplicate!";
-                logger.finest( error);
+                if (logger.isFinestEnabled()) {
+                    String error = "Partition[" + partitionId + "] is already owned by this node " +
+                            address + "! Duplicate!";
+                    logger.finest( error);
+                }
                 return false;
             }
             return nodeTable.add(index, partitionId);

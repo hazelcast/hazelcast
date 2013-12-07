@@ -138,12 +138,16 @@ public class MulticastJoiner extends AbstractJoiner {
             throw new IllegalArgumentException();
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
-        logger.finest( "Master connection " + conn);
+        if (logger.isFinestEnabled()) {
+            logger.finest( "Master connection " + conn);
+        }
         systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {
-            logger.finest( "Connecting to master node: " + masterAddress);
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Connecting to master node: " + masterAddress);
+            }
             return false;
         }
     }

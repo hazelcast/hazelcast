@@ -235,7 +235,9 @@ public abstract class Operation implements DataSerializable {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {
             final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
-            logger.log(level, e.getClass().getName() + ": " + e.getMessage());
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getClass().getName() + ": " + e.getMessage());
+            }
         } else if (e instanceof OutOfMemoryError) {
             try {
                 logger.log(Level.SEVERE, e.getMessage(), e);
@@ -243,7 +245,9 @@ public abstract class Operation implements DataSerializable {
             }
         } else {
             final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-            logger.log(level, e.getMessage(), e);
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getMessage(), e);
+            }
         }
     }
 

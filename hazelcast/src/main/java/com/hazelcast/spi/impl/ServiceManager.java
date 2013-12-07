@@ -125,7 +125,9 @@ final class ServiceManager {
             final Object service = serviceInfo.getService();
             if (serviceInfo.isConfigurableService()) {
                 try {
-                    logger.finest( "Configuring service -> " + service);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Configuring service -> " + service);
+                    }
                     final Object configObject = serviceConfigObjects.get(serviceInfo.getName());
                     ((ConfigurableService) service).configure(configObject);
                 } catch (Throwable t) {
@@ -134,7 +136,9 @@ final class ServiceManager {
             }
             if (serviceInfo.isManagedService()) {
                 try {
-                    logger.finest( "Initializing service -> " + service);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Initializing service -> " + service);
+                    }
                     final Properties props = serviceProps.get(serviceInfo.getName());
                     ((ManagedService) service).init(nodeEngine, props != null ? props : new Properties());
                 } catch (Throwable t) {
@@ -181,7 +185,9 @@ final class ServiceManager {
     }
 
     private synchronized void registerService(String serviceName, Object service) {
-        logger.finest( "Registering service: '" + serviceName + "'");
+        if (logger.isFinestEnabled()) {
+            logger.finest( "Registering service: '" + serviceName + "'");
+        }
         final ServiceInfo serviceInfo = new ServiceInfo(serviceName, service);
         final ServiceInfo currentServiceInfo = services.putIfAbsent(serviceName, serviceInfo);
         if (currentServiceInfo != null) {

@@ -154,8 +154,10 @@ public abstract class AbstractJoiner implements Joiner {
                     for (Member member : node.getClusterService().getMembers()) {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
-                            logger.finest( "Should not merge to " + joinRequest.getAddress()
-                                    + ", because it is already member of this cluster.");
+                            if (logger.isFinestEnabled()) {
+                                logger.finest( "Should not merge to " + joinRequest.getAddress()
+                                        + ", because it is already member of this cluster.");
+                            }
                             return false;
                         }
                     }
@@ -165,7 +167,9 @@ public abstract class AbstractJoiner implements Joiner {
                         logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                 + ", because : joinRequest.getMemberCount() > currentMemberCount ["
                                 + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
-                        logger.finest( joinRequest.toString());
+                        if (logger.isFinestEnabled()) {
+                            logger.finest( joinRequest.toString());
+                        }
                         shouldMerge = true;
                     } else if (joinRequest.getMemberCount() == currentMemberCount) {
                         // compare the hashes
@@ -173,12 +177,16 @@ public abstract class AbstractJoiner implements Joiner {
                             logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                     + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
-                            logger.finest( joinRequest.toString());
+                            if (logger.isFinestEnabled()) {
+                                logger.finest( joinRequest.toString());
+                            }
                             shouldMerge = true;
                         } else {
-                            logger.finest( joinRequest.getAddress() + " should merge to this node "
-                                    + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
-                                    + ", this node member count: " + currentMemberCount);
+                            if (logger.isFinestEnabled()) {
+                                logger.finest( joinRequest.getAddress() + " should merge to this node "
+                                        + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
+                                        + ", this node member count: " + currentMemberCount);
+                            }
                         }
                     }
                 }
@@ -194,7 +202,9 @@ public abstract class AbstractJoiner implements Joiner {
         for (Address possibleAddress : colPossibleAddresses) {
             final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
             if (conn != null) {
-                logger.finest( "sending join request for " + possibleAddress);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "sending join request for " + possibleAddress);
+                }
                 node.clusterService.sendJoinRequest(possibleAddress, true);
             }
         }
