@@ -558,6 +558,7 @@ public class DefaultRecordStore implements RecordStore {
                 }
             }
         }
+        //TODO: This will throw NPE when mapContainer.getStore() == null because keyMapForLoader will be null as well!
         if (mapContainer.getStore() == null || keyMapForLoader.size() == 0) {
             return mapEntrySet;
         }

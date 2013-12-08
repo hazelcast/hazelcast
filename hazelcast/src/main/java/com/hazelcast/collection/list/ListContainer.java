@@ -89,11 +89,9 @@ public class ListContainer extends CollectionContainer {
             }
         } else {
             int index = -1;
-            final Iterator<CollectionItem> iterator = list.iterator();
-            while (iterator.hasNext()){
-                final CollectionItem item = iterator.next();
+            for (CollectionItem item : list) {
                 index++;
-                if (value.equals(item.getValue())){
+                if (value.equals(item.getValue())) {
                     return index;
                 }
             }

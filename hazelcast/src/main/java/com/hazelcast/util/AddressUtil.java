@@ -431,9 +431,7 @@ public final class AddressUtil {
         }
 
         public void setAddress(String ip[]) {
-            for (int i = 0; i < ip.length; i++) {
-                this.address[i] = ip[i];
-            }
+            System.arraycopy(ip, 0, this.address, 0, ip.length);
         }
 
         public boolean match(final AddressMatcher matcher) {
@@ -470,9 +468,7 @@ public final class AddressUtil {
         }
 
         public void setAddress(String ip[]) {
-            for (int i = 0; i < ip.length; i++) {
-                this.address[i] = ip[i];
-            }
+            System.arraycopy(ip, 0, this.address, 0, ip.length);
         }
 
         public boolean match(final AddressMatcher matcher) {

@@ -58,8 +58,7 @@ public class ThreadMonitoringService {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ThreadCpuInfo that = (ThreadCpuInfo) o;
-            if (thread.getId() != that.thread.getId()) return false;
-            return true;
+            return thread.getId() == that.thread.getId();
         }
 
         @Override

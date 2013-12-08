@@ -112,8 +112,7 @@ public abstract class AbstractJoiner implements Joiner {
             }
         }
         if (node.getClusterService().getSize() == 1) {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("\n");
+            final StringBuilder sb = new StringBuilder("\n");
             sb.append(node.clusterService.membersString());
             logger.info(sb.toString());
         }

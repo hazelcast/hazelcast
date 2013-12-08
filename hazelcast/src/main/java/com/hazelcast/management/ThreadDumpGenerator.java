@@ -97,8 +97,7 @@ public class ThreadDumpGenerator {
 
     private void appendThreadInfos(ThreadInfo[] infos, StringBuilder s) {
         if (infos == null || infos.length == 0) return;
-        for (int i = 0; i < infos.length; i++) {
-            ThreadInfo info = infos[i];
+        for (ThreadInfo info : infos) {
             appendThreadInfo(info, s);
         }
     }

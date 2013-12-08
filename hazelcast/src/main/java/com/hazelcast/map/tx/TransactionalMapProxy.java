@@ -240,9 +240,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
         final Set<Object> keySet = new HashSet<Object>(queryResultSet.size());
-        final Iterator iterator = queryResultSet.iterator();
-        while (iterator.hasNext()) {
-            keySet.add(iterator.next());
+        for (Object aQueryResultSet : queryResultSet) {
+            keySet.add(aQueryResultSet);
         }
 
         for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
@@ -288,9 +287,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.VALUE, false);
         final Set<Object> valueSet = new HashSet<Object>(queryResultSet.size());
 
-        final Iterator iterator = queryResultSet.iterator();
-        while (iterator.hasNext()) {
-            valueSet.add(iterator.next());
+        for (Object aQueryResultSet : queryResultSet) {
+            valueSet.add(aQueryResultSet);
         }
         for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {

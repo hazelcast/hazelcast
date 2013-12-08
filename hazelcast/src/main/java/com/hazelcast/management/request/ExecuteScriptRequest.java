@@ -120,9 +120,8 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         int size = result != null ? result.size() : 0;
         dos.writeInt(size);
         if (size > 0) {
-            Iterator iter = result.iterator();
-            while (iter.hasNext()) {
-                dos.writeObject(iter.next());
+            for (Object aResult : result) {
+                dos.writeObject(aResult);
             }
         }
     }

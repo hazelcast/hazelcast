@@ -31,23 +31,23 @@ public class SemaphorePermission extends InstancePermission {
 
 	protected int initMask(String[] actions) {
 		int mask = NONE;
-		for (int i = 0; i < actions.length; i++) {
-			if(ActionConstants.ACTION_ALL.equals(actions[i])) {
-				return ALL;
-			}
-			
-			if(ActionConstants.ACTION_CREATE.equals(actions[i])) {
-				mask |= CREATE;
-			} else if(ActionConstants.ACTION_ACQUIRE.equals(actions[i])) {
-				mask |= ACQUIRE;
-			} else if(ActionConstants.ACTION_RELEASE.equals(actions[i])) {
-				mask |= RELEASE;
-			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
-				mask |= DESTROY;
-			} else if(ActionConstants.ACTION_READ.equals(actions[i])) {
-				mask |= READ;
+        for (String action : actions) {
+            if (ActionConstants.ACTION_ALL.equals(action)) {
+                return ALL;
             }
-		}
+
+            if (ActionConstants.ACTION_CREATE.equals(action)) {
+                mask |= CREATE;
+            } else if (ActionConstants.ACTION_ACQUIRE.equals(action)) {
+                mask |= ACQUIRE;
+            } else if (ActionConstants.ACTION_RELEASE.equals(action)) {
+                mask |= RELEASE;
+            } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
+                mask |= DESTROY;
+            } else if (ActionConstants.ACTION_READ.equals(action)) {
+                mask |= READ;
+            }
+        }
 		return mask;
 	}
 }

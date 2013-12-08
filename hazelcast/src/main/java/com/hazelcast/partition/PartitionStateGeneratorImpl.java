@@ -663,8 +663,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
 
         boolean contains(Integer partitionId) {
-            for (int i = 0; i < partitions.length; i++) {
-                Set<Integer> set = partitions[i];
+            for (Set<Integer> set : partitions) {
                 if (set != null && set.contains(partitionId)) {
                     return true;
                 }
@@ -681,8 +680,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
 
         void reset() {
-            for (int i = 0; i < partitions.length; i++) {
-                Set<Integer> set = partitions[i];
+            for (Set<Integer> set : partitions) {
                 if (set != null) {
                     set.clear();
                 }

@@ -29,21 +29,21 @@ public class LockPermission extends InstancePermission {
 
 	protected int initMask(String[] actions) {
 		int mask = NONE;
-		for (int i = 0; i < actions.length; i++) {
-			if(ActionConstants.ACTION_ALL.equals(actions[i])) {
-				return ALL;
-			}
-			
-			if(ActionConstants.ACTION_CREATE.equals(actions[i])) {
-				mask |= CREATE;
-			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
-				mask |= DESTROY;
-			} else if(ActionConstants.ACTION_LOCK.equals(actions[i])) {
-				mask |= LOCK;
-            } else if(ActionConstants.ACTION_READ.equals(actions[i])) {
+        for (String action : actions) {
+            if (ActionConstants.ACTION_ALL.equals(action)) {
+                return ALL;
+            }
+
+            if (ActionConstants.ACTION_CREATE.equals(action)) {
+                mask |= CREATE;
+            } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
+                mask |= DESTROY;
+            } else if (ActionConstants.ACTION_LOCK.equals(action)) {
+                mask |= LOCK;
+            } else if (ActionConstants.ACTION_READ.equals(action)) {
                 mask |= READ;
-			}
-		}
+            }
+        }
 		return mask;
 	}
 }
