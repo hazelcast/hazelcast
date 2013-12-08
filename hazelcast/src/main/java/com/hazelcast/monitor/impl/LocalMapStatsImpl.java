@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializable {
     private final AtomicLong lastAccessTime = new AtomicLong(0);
+    private final AtomicLong lastUpdateTime = new AtomicLong(0);
     private final AtomicLong hits = new AtomicLong(0);
     private final AtomicLong numberOfOtherOperations = new AtomicLong(0);
     private final AtomicLong numberOfEvents = new AtomicLong(0);
@@ -62,6 +63,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(numberOfOtherOperations.get());
         out.writeLong(numberOfEvents.get());
         out.writeLong(lastAccessTime.get());
+        out.writeLong(lastUpdateTime.get());
         out.writeLong(hits.get());
         out.writeLong(ownedEntryCount);
         out.writeLong(backupEntryCount);
@@ -87,6 +89,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         numberOfOtherOperations.set(in.readLong());
         numberOfEvents.set(in.readLong());
         lastAccessTime.set(in.readLong());
+        lastUpdateTime.set(in.readLong());
         hits.set(in.readLong());
         ownedEntryCount = in.readLong();
         backupEntryCount = in.readLong();
@@ -155,6 +158,14 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     public void setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime.set(Math.max(this.lastAccessTime.get(), lastAccessTime));
+    }
+
+    public long getLastUpdateTime() {
+        return lastUpdateTime.get();
+    }
+
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime.set(Math.max(this.lastUpdateTime.get(), lastUpdateTime));
     }
 
     public long getHits() {
@@ -266,6 +277,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     public String toString() {
         return "LocalMapStatsImpl{" +
                 "lastAccessTime=" + lastAccessTime +
+                ", lastUpdateTime=" + lastUpdateTime +
                 ", hits=" + hits +
                 ", numberOfOtherOperations=" + numberOfOtherOperations +
                 ", numberOfEvents=" + numberOfEvents +
