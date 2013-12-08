@@ -59,9 +59,26 @@ public class AtomicLongBenchmark {
 
     @Test
     public void get() throws Exception {
-        for(int k=0;k<500000;k++){
+        long startMs = System.currentTimeMillis();
+        int iterations = 1000000;
+        for(int k=0;k< iterations;k++){
             atomicLong.get();
+            if(k%100000==0){
+                System.out.println("at "+k);
+            }
         }
+        long durationMs = System.currentTimeMillis()-startMs;
+        double performance = (iterations*1000d)/durationMs;
+        System.out.println("Performance: "+performance);
+    }
+
+    public static void main(String[] args)throws Exception{
+        AtomicLongBenchmark.beforeClass();
+        AtomicLongBenchmark benchmark = new AtomicLongBenchmark();
+        benchmark.before();
+        benchmark.get();
+        benchmark.after();
+        AtomicLongBenchmark.afterClass();
     }
 
     @Test
