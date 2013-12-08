@@ -43,8 +43,8 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
     public static int byteArrayToLong(byte[] v) {
         if (v.length > 8) return -1;
         int r = 0;
-        for (byte aV : v) {
-            int t = (int) aV;
+        for (int i = 0; i < v.length; i++) {
+            int t = (int) v[i];
             t = t >= 0 ? t : t + 256;
             r = r * 256 + t;
         }
