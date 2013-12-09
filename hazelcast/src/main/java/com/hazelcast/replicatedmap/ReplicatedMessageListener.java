@@ -16,10 +16,10 @@
 
 package com.hazelcast.replicatedmap;
 
-import com.hazelcast.replicatedmap.messages.ReplicationMessage;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public interface ReplicatedMessageListener {
 
-    void onMessage(ReplicationMessage replicationMessage);
+    void onMessage(IdentifiedDataSerializable message);
 
 }

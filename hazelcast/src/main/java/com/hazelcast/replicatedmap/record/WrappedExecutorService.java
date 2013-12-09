@@ -21,11 +21,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
-class WrappedExecutorService implements ExecutorService {
+class WrappedExecutorService implements ScheduledExecutorService {
 
-    private final ExecutorService executorService;
+    private final ScheduledExecutorService executorService;
 
-    WrappedExecutorService(ExecutorService executorService) {
+    WrappedExecutorService(ScheduledExecutorService executorService) {
         this.executorService = executorService;
     }
 
@@ -93,5 +93,25 @@ class WrappedExecutorService implements ExecutorService {
     @Override
     public void execute(Runnable command) {
         executorService.execute(command);
+    }
+
+    @Override
+    public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+        return executorService.schedule(command, delay, unit);
+    }
+
+    @Override
+    public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
+        return executorService.schedule(callable, delay, unit);
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return executorService.scheduleAtFixedRate(command, initialDelay, period, unit);
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        return scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 }

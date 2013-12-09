@@ -16,15 +16,15 @@
 
 package com.hazelcast.config;
 
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class ReplicatedMapConfig {
 
     private String name;
     private int concurrencyLevel = 32;
-    private long replicationDelayMillis;
+    private long replicationDelayMillis = 100;
     private InMemoryFormat inMemoryFormat;
-    private ExecutorService replicatorExecutorService;
+    private ScheduledExecutorService replicatorExecutorService;
 
     public ReplicatedMapConfig() {
     }
@@ -69,11 +69,11 @@ public class ReplicatedMapConfig {
         this.inMemoryFormat = inMemoryFormat;
     }
 
-    public ExecutorService getReplicatorExecutorService() {
+    public ScheduledExecutorService getReplicatorExecutorService() {
         return replicatorExecutorService;
     }
 
-    public void setReplicatorExecutorService(ExecutorService replicatorExecutorService) {
+    public void setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
         this.replicatorExecutorService = replicatorExecutorService;
     }
 

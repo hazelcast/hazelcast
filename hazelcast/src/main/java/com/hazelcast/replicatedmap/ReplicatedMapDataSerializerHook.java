@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap;
 
 import com.hazelcast.nio.serialization.*;
+import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
@@ -32,8 +33,9 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int RECORD = 1;
     public static final int REPL_UPDATE_MESSAGE = 2;
     public static final int REPL_CLEAR_MESSAGE = 3;
-    public static final int OP_INIT_CHUNK = 4;
-    public static final int OP_POST_JOIN = 5;
+    public static final int REPL_MULTI_UPDATE_MESSAGE = 4;
+    public static final int OP_INIT_CHUNK = 5;
+    public static final int OP_POST_JOIN = 6;
 
     private static final int LEN = OP_POST_JOIN + 1;
 
@@ -63,6 +65,12 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
         constructors[REPL_CLEAR_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new Vector();
+            }
+        };
+        constructors[REPL_MULTI_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MultiReplicationMessage();
             }
         };
         constructors[OP_INIT_CHUNK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

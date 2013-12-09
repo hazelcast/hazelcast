@@ -18,6 +18,7 @@ package com.hazelcast.replicatedmap.record;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
+import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
 import java.util.Collection;
 import java.util.Set;
@@ -55,7 +56,7 @@ public interface ReplicatedRecordStore {
 
     ReplicatedMapService getReplicatedMapService();
 
-    void publishReplicatedMessage(IdentifiedDataSerializable message);
+    void publishReplicatedMessage(ReplicationMessage message);
 
     void destroy();
 

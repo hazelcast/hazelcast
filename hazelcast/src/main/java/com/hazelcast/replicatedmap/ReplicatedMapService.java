@@ -21,6 +21,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.record.*;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.spi.*;
@@ -157,10 +159,21 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
 
     private class ReplicationListener implements ReplicatedMessageListener {
 
-        public void onMessage(ReplicationMessage replicationMessage) {
-            ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(replicationMessage.getName());
-            if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
-                ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
+        public void onMessage(IdentifiedDataSerializable message) {
+            if (message instanceof ReplicationMessage) {
+                ReplicationMessage replicationMessage = (ReplicationMessage) message;
+                ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(replicationMessage.getName());
+                if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
+                    ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
+                }
+            } else if (message instanceof MultiReplicationMessage) {
+                MultiReplicationMessage multiReplicationMessage = (MultiReplicationMessage) message;
+                ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(multiReplicationMessage.getName());
+                for (ReplicationMessage replicationMessage : multiReplicationMessage.getReplicationMessages()) {
+                    if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
+                        ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
+                    }
+                }
             }
         }
     }

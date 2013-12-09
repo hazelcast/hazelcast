@@ -19,29 +19,32 @@ package com.hazelcast.replicatedmap.record;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
+import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.executor.NamedThreadFactory;
 import com.hazelcast.util.nonblocking.NonBlockingHashMap;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.util.scheduler.*;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
 
     protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new NonBlockingHashMap<K, ReplicatedRecord<K, V>>();
+
     private final AtomicInteger initialFillupThreadNumber = new AtomicInteger(0);
+
+    private final List<ReplicationMessage> replicationMessageCache = new ArrayList<ReplicationMessage>();
+    private final Lock replicationMessageCacheLock = new ReentrantLock();
 
     private final String name;
     private final Member localMember;
@@ -49,7 +52,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
     private final NodeEngine nodeEngine;
     private final EventService eventService;
 
-    private final ExecutorService executorService;
+    private final ScheduledExecutorService executorService;
     private final EntryTaskScheduler ttlEvictionScheduler;
 
     private final ReplicatedMapService replicatedMapService;
@@ -247,9 +250,23 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
     }
 
     @Override
-    public void publishReplicatedMessage(IdentifiedDataSerializable message) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
-        eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
+    public void publishReplicatedMessage(ReplicationMessage message) {
+        if (replicatedMapConfig.getReplicationDelayMillis() == 0) {
+            Collection<EventRegistration> registrations = eventService.getRegistrations(
+                    ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
+            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
+        } else {
+            replicationMessageCacheLock.lock();
+            try {
+                replicationMessageCache.add(message);
+                if (replicationMessageCache.size() == 1) {
+                    executorService.schedule(new ReplicationCachedSenderTask(),
+                            replicatedMapConfig.getReplicationDelayMillis(), TimeUnit.MILLISECONDS);
+                }
+            } finally {
+                replicationMessageCacheLock.unlock();
+            }
+        }
     }
 
     public Set<ReplicatedRecord> getRecords() {
@@ -379,8 +396,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         return i1 < i2;
     }
 
-    private ExecutorService getExecutorService(ReplicatedMapConfig replicatedMapConfig) {
-        ExecutorService es = replicatedMapConfig.getReplicatorExecutorService();
+    private ScheduledExecutorService getExecutorService(ReplicatedMapConfig replicatedMapConfig) {
+        ScheduledExecutorService es = replicatedMapConfig.getReplicatorExecutorService();
         if (es != null) {
             return new WrappedExecutorService(es);
         }
@@ -443,6 +460,29 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
                 // Reset chunk cache and pos
                 recordCache = new ReplicatedRecord[chunkSize];
                 recordCachePos = 0;
+            }
+        }
+    }
+
+    private class ReplicationCachedSenderTask implements Runnable {
+
+        @Override
+        public void run() {
+            List<ReplicationMessage> copy = null;
+            replicationMessageCacheLock.lock();
+            try {
+                copy = new ArrayList<ReplicationMessage>(replicationMessageCache);
+                replicationMessageCache.clear();
+            } finally {
+                replicationMessageCacheLock.unlock();
+            }
+            if (copy != null) {
+                ReplicationMessage[] replicationMessages = copy.toArray(new ReplicationMessage[copy.size()]);
+                MultiReplicationMessage message = new MultiReplicationMessage(name, replicationMessages);
+
+                Collection<EventRegistration> registrations = eventService.getRegistrations(
+                        ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
+                eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
             }
         }
     }
