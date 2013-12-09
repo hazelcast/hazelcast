@@ -168,8 +168,10 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     @Override
     public Set entrySet() {
         Set entrySet = new HashSet(storage.size());
-        for (Map.Entry entry : storage.entrySet()) {
-            entrySet.add(new AbstractMap.SimpleEntry(unmarshallKey(entry.getKey()), unmarshallValue(entry.getValue())));
+        for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
+            Object key = unmarshallKey(entry.getKey());
+            Object value = unmarshallValue(entry.getValue().getValue());
+            entrySet.add(new AbstractMap.SimpleEntry(key, value));
         }
         return entrySet;
     }
