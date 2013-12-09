@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap.record;
+package com.hazelcast.replicatedmap;
 
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.nio.serialization.Data;
-
-public interface ReplicatedRecordFactory<V> {
-
-    ReplicatedRecord<V> newRecord(Object value, int latestUpdateHash);
-
-    void setValue(ReplicatedRecord<V> record, Object value);
-
-    boolean equals(Object value1, Object value2);
-
-    InMemoryFormat getStorageFormat();
-
+public class ReplicatedMapTest {
 }

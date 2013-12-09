@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.replicatedmap.record;
 
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -69,8 +85,9 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     @Override
     public Object remove(Object key) {
         V old;
-        synchronized (getMutex(marshallKey(key))) {
-            final ReplicatedRecord current = storage.get(key);
+        Object marshalledKey = marshallKey(key);
+        synchronized (getMutex(marshalledKey)) {
+            final ReplicatedRecord current = storage.get(marshalledKey);
             final Vector vector;
             if (current == null) {
                 old = null;
@@ -82,48 +99,50 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
                 publishReplicatedMessage(new ReplicationMessage(name, key, null, vector, localMember, localMemberHash));
             }
         }
-        return old;
+        return unmarshallValue(old);
     }
 
     @Override
     public Object get(Object key) {
-        ReplicatedRecord replicatedRecord = storage.get(key);
-        return replicatedRecord == null ? null : replicatedRecord.getValue();
+        ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
+        return replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
     }
 
     @Override
     public Object put(Object key, Object value) {
         V oldValue = null;
-        synchronized (getMutex(key)) {
-            final ReplicatedRecord old = storage.get(key);
+        Object marshalledKey = marshallKey(key);
+        Object marshalledValue = marshallValue(value);
+        synchronized (getMutex(marshalledKey)) {
+            final ReplicatedRecord old = storage.get(marshalledKey);
             final Vector vector;
             if (old == null) {
                 vector = new Vector();
-                ReplicatedRecord<K, V> record = new ReplicatedRecord(key, value, vector, localMemberHash);
+                ReplicatedRecord<K, V> record = new ReplicatedRecord(marshalledKey, marshalledValue, vector, localMemberHash);
                 storage.put((K) key, record);
             } else {
                 oldValue = (V) old.getValue();
                 vector = old.getVector();
 
-                storage.get(key).setValue((V) value, localMemberHash);
+                storage.get(key).setValue((V) marshalledValue, localMemberHash);
             }
             incrementClock(vector);
             publishReplicatedMessage(new ReplicationMessage(name, key, value, vector, localMember, localMemberHash));
         }
-        return oldValue;
+        return unmarshallValue(oldValue);
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return storage.containsKey(key);
+        return storage.containsKey(marshallKey(key));
     }
 
     @Override
     public boolean containsValue(Object value) {
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
             V entryValue = entry.getValue().getValue();
-            if(value == entryValue
-                    || (entryValue != null && entryValue.equals(value))) {
+            if (value == entryValue
+                    || (entryValue != null && unmarshallValue(entryValue).equals(value))) {
                 return true;
             }
         }
@@ -131,13 +150,35 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     }
 
     @Override
-    public ReplicatedRecord getReplicatedRecord(Object key) {
-        return storage.get(key);
+    public Set keySet() {
+        Set keySet = new HashSet(storage.size());
+        for (K key : storage.keySet()) {
+            keySet.add(unmarshallKey(key));
+        }
+        return keySet;
     }
 
     @Override
-    public ReplicatedRecord putReplicatedRecord(Object key, ReplicatedRecord replicatedRecord) {
-        return storage.put((K) key, replicatedRecord);
+    public Collection values() {
+        List values = new ArrayList(storage.size());
+        for (ReplicatedRecord record : storage.values()) {
+            values.add(unmarshallValue(record.getValue()));
+        }
+        return values;
+    }
+
+    @Override
+    public Set entrySet() {
+        Set entrySet = new HashSet(storage.size());
+        for (Map.Entry entry : storage.entrySet()) {
+            entrySet.add(new AbstractMap.SimpleEntry(unmarshallKey(entry.getKey()), unmarshallValue(entry.getValue())));
+        }
+        return entrySet;
+    }
+
+    @Override
+    public ReplicatedRecord getReplicatedRecord(Object key) {
+        return storage.get(marshallKey(key));
     }
 
     @Override
@@ -155,8 +196,12 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         //TODO distribute clear
         storage.clear();
     }
+
     @Override
     public boolean equals(Object o) {
+        if (o instanceof AbstractReplicatedRecordStorage) {
+            return storage.equals(((AbstractReplicatedRecordStorage) o).storage);
+        }
         return storage.equals(o);
     }
 
@@ -196,7 +241,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                publishReplicatedMessage(update);
+                processUpdateMessage(update);
             }
         });
     }
@@ -231,15 +276,15 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         if (localMember.equals(update.getOrigin())) {
             return;
         }
-        synchronized (getMutex(marshallKey(update.getKey()))) {
-            final ReplicatedRecord<K, V> localEntry = storage.get(update.getKey());
+        K marshalledKey = (K) marshallKey(update.getKey());
+        synchronized (getMutex(marshalledKey)) {
+            final ReplicatedRecord<K, V> localEntry = storage.get(marshalledKey);
             if (localEntry == null) {
                 if (!update.isRemove()) {
-                    K key = (K) update.getKey();
-                    V value = (V) update.getValue();
+                    V marshalledValue = (V) marshallValue(update.getValue());
                     Vector vector = update.getVector();
                     int updateHash = update.getUpdateHash();
-                    storage.put(key, new ReplicatedRecord<K, V>(key, value, vector, updateHash));
+                    storage.put(marshalledKey, new ReplicatedRecord<K, V>(marshalledKey, marshalledValue, vector, updateHash));
                 }
             } else {
                 final Vector currentVector = localEntry.getVector();
@@ -266,7 +311,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     private void applyTheUpdate(ReplicationMessage<K, V> update, ReplicatedRecord<K, V> localEntry) {
         Vector localVector = localEntry.getVector();
         Vector remoteVector = update.getVector();
-        localEntry.setValue(update.getValue(), update.getUpdateHash());
+        localEntry.setValue((V) marshallValue(update.getValue()), update.getUpdateHash());
         applyVector(remoteVector, localVector);
     }
 

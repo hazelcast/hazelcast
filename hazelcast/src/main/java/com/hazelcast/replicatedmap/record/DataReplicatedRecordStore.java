@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.replicatedmap.record;
 
 import com.hazelcast.nio.serialization.Data;
@@ -19,45 +35,23 @@ public class DataReplicatedRecordStore extends AbstractReplicatedRecordStorage<D
     }
 
     @Override
-    public Object get(Object key) {
-        return nodeEngine.toObject(super.get(nodeEngine.toData(key)));
+    protected Object unmarshallKey(Object key) {
+        return nodeEngine.toObject(key);
     }
 
     @Override
-    public Object put(Object key, Object value) {
-        return nodeEngine.toObject(super.put(nodeEngine.toData(key), nodeEngine.toData(value)));
+    protected Object unmarshallValue(Object value) {
+        return nodeEngine.toObject(value);
     }
 
     @Override
-    public Set keySet() {
-        Set keySet = new HashSet();
-        for (Data keyData : storage.keySet()) {
-            keySet.add(nodeEngine.toObject(keyData));
-        }
-        return keySet;
-    }
-
-    public Collection values() {
-        List values = new ArrayList();
-        for (ReplicatedRecord record : storage.values()) {
-            values.add(nodeEngine.toObject(record.getValue()));
-        }
-        return values;
+    protected Object marshallKey(Object key) {
+        return nodeEngine.toData(key);
     }
 
     @Override
-    public Set entrySet() {
-        Set entrySet = new HashSet(storage.size());
-        for (Map.Entry entry : storage.entrySet()) {
-            entrySet.add(new AbstractMap.SimpleEntry(
-                    nodeEngine.toObject(entry.getKey()), nodeEngine.toObject(entry.getValue())));
-        }
-        return entrySet;
-    }
-
-    @Override
-    public Object remove(Object key) {
-        return nodeEngine.toObject(super.remove(nodeEngine.toData(key)));
+    protected Object marshallValue(Object value) {
+        return nodeEngine.toData(value);
     }
 
 }
