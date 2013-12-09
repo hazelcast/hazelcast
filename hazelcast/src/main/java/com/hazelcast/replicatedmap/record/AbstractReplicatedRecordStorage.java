@@ -46,7 +46,6 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     private final int localMemberHash;
     private final NodeEngine nodeEngine;
     private final EventService eventService;
-    private final String replicationTopicName;
 
     private final ExecutorService executorService;
 
@@ -66,7 +65,6 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         this.eventService = nodeEngine.getEventService();
         this.replicatedMapService = replicatedMapService;
         this.replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
-        this.replicationTopicName = ReplicatedMapService.SERVICE_NAME + "-replication";
         this.executorService = getExecutorService(replicatedMapConfig);
 
         this.mutexes = new Object[replicatedMapConfig.getConcurrencyLevel()];
@@ -111,20 +109,20 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     @Override
     public Object put(Object key, Object value) {
         V oldValue = null;
-        Object marshalledKey = marshallKey(key);
-        Object marshalledValue = marshallValue(value);
+        K marshalledKey = (K) marshallKey(key);
+        V marshalledValue = (V) marshallValue(value);
         synchronized (getMutex(marshalledKey)) {
             final ReplicatedRecord old = storage.get(marshalledKey);
             final Vector vector;
             if (old == null) {
                 vector = new Vector();
                 ReplicatedRecord<K, V> record = new ReplicatedRecord(marshalledKey, marshalledValue, vector, localMemberHash);
-                storage.put((K) key, record);
+                storage.put(marshalledKey, record);
             } else {
                 oldValue = (V) old.getValue();
                 vector = old.getVector();
 
-                storage.get(key).setValue((V) marshalledValue, localMemberHash);
+                storage.get(marshalledKey).setValue(marshalledValue, localMemberHash);
             }
             incrementClock(vector);
             publishReplicatedMessage(new ReplicationMessage(name, key, value, vector, localMember, localMemberHash));
@@ -255,7 +253,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     protected abstract Object marshallValue(Object value);
 
     protected void publishReplicatedMessage(IdentifiedDataSerializable message) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, replicationTopicName);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
         eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
     }
 

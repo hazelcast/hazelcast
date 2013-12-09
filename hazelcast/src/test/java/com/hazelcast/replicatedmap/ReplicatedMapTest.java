@@ -30,14 +30,14 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
-    public void testAdd() throws Exception {
+    public void testAddObject() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -48,10 +48,148 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
         map1.put("foo", "bar");
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
+
+        map2.put("bar", "foo");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map1.get("bar");
+        assertEquals("foo", value);
+    }
+
+    @Test
+    public void testUpdateObject() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        map1.put("foo", "bar2");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("foo");
+        assertEquals("bar2", value);
+
+        map2.put("foo", "bar3");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map1.get("foo");
+        assertEquals("bar3", value);
+    }
+
+    @Test
+    public void testRemoveObject() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        map1.remove("foo");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("foo");
+        assertNull(value);
+    }
+
+    @Test
+    public void testAddBinary() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        map2.put("bar", "foo");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map1.get("bar");
+        assertEquals("foo", value);
+    }
+
+    @Test
+    public void testUpdateBinary() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        map1.put("foo", "bar2");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("foo");
+        assertEquals("bar2", value);
+
+        map2.put("foo", "bar3");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map1.get("foo");
+        assertEquals("bar3", value);
+    }
+
+    @Test
+    public void testRemoveBinary() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        map1.remove("foo");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("foo");
+        assertNull(value);
     }
 
 }

@@ -20,9 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.EventData;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.record.*;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
@@ -37,7 +39,8 @@ import java.util.Properties;
 import java.util.concurrent.*;
 
 public class ReplicatedMapService implements ManagedService, RemoteService,
-        PostJoinAwareService, SplitBrainHandlerService {
+        PostJoinAwareService, SplitBrainHandlerService,
+        EventPublishingService<ReplicationMessage, ReplicatedMessageListener>{
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".replication";
@@ -108,7 +111,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
 
     @Override
     public void shutdown(boolean terminate) {
-        eventService.deregisterListener(SERVICE_NAME, EVENT_TOPIC_NAME, eventRegistration.getId());
         for (ReplicatedRecordStore replicatedRecordStore : replicatedStorages.values()) {
             replicatedRecordStore.destroy();
         }
@@ -140,6 +142,11 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
         return null;
     }
 
+    @Override
+    public void dispatchEvent(ReplicationMessage event, ReplicatedMessageListener listener) {
+        listener.onMessage(event);
+    }
+
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
         return config.getReplicatedMapConfig(name).getAsReadOnly();
     }
@@ -153,31 +160,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
                 new Cleaner(replicatedRecordStorage), 5, 5, TimeUnit.SECONDS);
     }
 
-    Object toObject(Object data) {
-        if (data == null)
-            return null;
-        if (data instanceof Data) {
-            return nodeEngine.toObject(data);
-        } else {
-            return data;
-        }
-    }
+    private class ReplicationListener implements ReplicatedMessageListener {
 
-    Data toData(Object object) {
-        if (object == null)
-            return null;
-        if (object instanceof Data) {
-            return (Data) object;
-        } else {
-            return nodeEngine.toData(object);
-        }
-    }
-
-    private class ReplicationListener implements MessageListener<ReplicationMessage> {
-
-        @Override
-        public void onMessage(Message<ReplicationMessage> message) {
-            ReplicationMessage replicationMessage = message.getMessageObject();
+        public void onMessage(ReplicationMessage replicationMessage) {
             ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(replicationMessage.getName());
             if (replicatedRecordStorage instanceof AbstractReplicatedRecordStorage) {
                 ((AbstractReplicatedRecordStorage) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
