@@ -18,7 +18,10 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -67,16 +70,57 @@ public class SortLimitTest extends HazelcastTestSupport {
         }
 
         assertEquals(size, set.size());
-
     }
 
-    static class DescComparator implements Comparator<Integer>, Serializable {
+    @Test
+    public void testFirstLimit() {
+        System.setProperty(GroupProperties.PROP_PARTITION_COUNT, "6");
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
-        DescComparator() {
+        final IMap<Integer, Integer> map = instance1.getMap("testSort");
+        final int size = 50;
+        final int pageSize = 5;
+        for (int i=0; i<size; i++) {
+            map.put(i, i);
+        }
+        final Predicate greaterEqual = Predicates.greaterEqual("this", 23);
+        final PagingPredicate predicate = new PagingPredicate(greaterEqual, new TestComparator(true), pageSize);
+
+        Collection<Integer> values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+
+        for (Integer value : values) {
+            System.err.println("value: " + value);
+        }
+
+        assertEquals(27, predicate.getAnchor());
+
+        predicate.nextPage();
+
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+
+        for (Integer value : values) {
+            System.err.println("value: " + value);
+        }
+        assertEquals(32, predicate.getAnchor());
+    }
+
+    static class TestComparator implements Comparator<Integer>, Serializable {
+
+        int ascending = 1;
+
+        TestComparator() {
+        }
+
+        TestComparator(boolean ascending) {
+            this.ascending = ascending ? 1 : -1;
         }
 
         public int compare(Integer o1, Integer o2) {
-            return o1 - o2;
+            return (o1 - o2) * ascending;
         }
     }
 

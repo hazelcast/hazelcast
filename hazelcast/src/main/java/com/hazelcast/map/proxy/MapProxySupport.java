@@ -29,15 +29,16 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionView;
+import com.hazelcast.query.ObjectAccessor;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.util.*;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -754,10 +755,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected Set query(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
+        final SerializationService ss = nodeEngine.getSerializationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
+        PagingPredicate pagingPredicate = null;
+        if (predicate instanceof PagingPredicate) {
+            pagingPredicate = (PagingPredicate) predicate;
+        }
+        Set result;
+        if (pagingPredicate == null) {
+            result = new QueryResultSet(ss, iterationType, dataResult);
+        } else {
+            result = new SortedQueryResultSet(pagingPredicate.getComparator(), iterationType, pagingPredicate.getPageSize());
+        }
         List<Integer> missingList = new ArrayList<Integer>();
         try {
             List<Future> flist = new ArrayList<Future>();
@@ -774,11 +785,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     final List<Integer> partitionIds = queryResult.getPartitionIds();
                     if (partitionIds != null) {
                         plist.addAll(partitionIds);
-                        result.addAll(queryResult.getResult());
+                        if (pagingPredicate == null) {
+                            result.addAll(queryResult.getResult());
+                        } else {
+                            for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
+                                Object key = ss.toObject(queryResultEntry.getKeyData());
+                                Object value = ss.toObject(queryResultEntry.getValueData());
+                                result.add(new AbstractMap.SimpleImmutableEntry(key, value));
+                            }
+                        }
                     }
                 }
             }
             if (plist.size() == partitionCount) {
+                if (pagingPredicate != null) {
+                    ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
+                }
                 return result;
             }
             for (int i = 0; i < partitionCount; i++) {
@@ -846,4 +868,5 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public final String getServiceName() {
         return SERVICE_NAME;
     }
+
 }
