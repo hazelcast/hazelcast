@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
 
@@ -25,7 +25,7 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public void setReplicatorExecutorService(ExecutorService replicatorExecutorService) {
+    public void setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
