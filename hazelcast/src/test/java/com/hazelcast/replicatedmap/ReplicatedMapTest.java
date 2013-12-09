@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -123,6 +124,81 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         value = map2.get("foo");
         assertNull(value);
+    }
+
+    @Test
+    public void testSizeObject() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        assertEquals(testValues.length, map1.size());
+        assertEquals(testValues.length, map2.size());
+    }
+
+    @Test
+    public void testContainsKeyObject() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        assertTrue(map1.containsKey(testValues[0].getKey()));
+        assertTrue(map2.containsKey(testValues[0].getKey()));
+    }
+
+    @Test
+    public void testContainsValueObject() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        assertTrue(map1.containsValue(testValues[0].getValue()));
+        assertTrue(map2.containsValue(testValues[0].getValue()));
     }
 
     @Test
@@ -304,6 +380,80 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         assertNull(value);
     }
 
+    @Test
+    public void testSizeBinary() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        assertEquals(testValues.length, map1.size());
+        assertEquals(testValues.length, map2.size());
+    }
+
+    @Test
+    public void testContainsKeyBinary() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        assertTrue(map1.containsKey(testValues[0].getKey()));
+        assertTrue(map2.containsKey(testValues[0].getKey()));
+    }
+
+    @Test
+    public void testContainsValueBinary() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            ReplicatedMap map = i < half ? map1 : map2;
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        assertTrue(map1.containsValue(testValues[0].getValue()));
+        assertTrue(map2.containsValue(testValues[0].getValue()));
+    }
 
     @Test
     public void testValuesBinary() throws Exception {
