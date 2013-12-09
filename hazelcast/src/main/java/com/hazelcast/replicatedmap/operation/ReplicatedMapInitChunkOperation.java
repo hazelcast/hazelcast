@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
-import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStorage;
+import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
 
 import java.io.IOException;
@@ -61,13 +61,13 @@ public class ReplicatedMapInitChunkOperation
     @Override
     public void run() throws Exception {
         ReplicatedMapService replicatedMapService = getService();
-        AbstractReplicatedRecordStorage recordStorage =
-                (AbstractReplicatedRecordStorage) replicatedMapService.getReplicatedRecordStore(name);
+        AbstractReplicatedRecordStore recordStorage =
+                (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(name);
 
         for (int i = 0; i < recordCount; i++) {
             ReplicatedRecord record = replicatedRecords[i];
             ReplicationMessage update = new ReplicationMessage(name, record.getKey(), record.getValue(),
-                    record.getVector(), origin, record.getLatestUpdateHash());
+                    record.getVector(), origin, record.getLatestUpdateHash(), record.getTtlMillis());
             recordStorage.queueUpdateMessage(update);
         }
     }

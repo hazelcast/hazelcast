@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>A ReplicatedMap is a map like data structure with non-strong consistency
@@ -34,4 +35,29 @@ import java.util.Map;
  * @param <V> the type of mapped values
  */
 public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
+
+    /**
+     * <p>Associates a given value to the specified key and replicates it to the
+     * cluster. If there is an old value it will be replaced by the specified
+     * one and is returned from the call.</p>
+     * <p>In addition you have to specify a ttl and it's {@link TimeUnit}
+     * to define when the value is outdated and should be removed from the
+     * replicated map.</p>
+     *
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
+     * @param ttl ttl to be associated with the specified key-value pair
+     * @param timeUnit TimeUnit to be used for the ttl value
+     */
+    V put(K key, V value, long ttl, TimeUnit timeUnit);
+
+    /**
+     * <p>The clear operation is not supported by Hazelcast since it can result
+     * in an inconsistent state of the ReplicatedMap.</p>
+     * <p>This operation can be achieved using a distributed call to
+     * {@link DistributedObject#destroy()} and wait for all distributed objects are
+     * destroyed before recreating those distributed objects on all nodes.</p>
+     */
+    void clear();
+
 }

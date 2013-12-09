@@ -22,21 +22,23 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.CleanerRegistrator;
+import com.hazelcast.replicatedmap.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.executor.NamedThreadFactory;
 import com.hazelcast.util.nonblocking.NonBlockingHashMap;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.util.scheduler.ScheduleType;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class AbstractReplicatedRecordStorage<K, V> implements ReplicatedRecordStore {
+public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
 
     protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new NonBlockingHashMap<K, ReplicatedRecord<K, V>>();
     private final AtomicInteger initialFillupThreadNumber = new AtomicInteger(0);
@@ -48,6 +50,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     private final EventService eventService;
 
     private final ExecutorService executorService;
+    private final EntryTaskScheduler ttlEvictionScheduler;
 
     private final ReplicatedMapService replicatedMapService;
     private final ReplicatedMapConfig replicatedMapConfig;
@@ -55,9 +58,9 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     private final ScheduledFuture<?> cleanerFuture;
     private final Object[] mutexes;
 
-    public AbstractReplicatedRecordStorage(String name, NodeEngine nodeEngine,
-                                           CleanerRegistrator cleanerRegistrator,
-                                           ReplicatedMapService replicatedMapService) {
+    public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine,
+                                         CleanerRegistrator cleanerRegistrator,
+                                         ReplicatedMapService replicatedMapService) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.localMember = nodeEngine.getLocalMember();
@@ -66,6 +69,9 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         this.replicatedMapService = replicatedMapService;
         this.replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
         this.executorService = getExecutorService(replicatedMapConfig);
+        this.ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
+                nodeEngine.getExecutionService().getScheduledExecutor(),
+                new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name), ScheduleType.POSTPONE);
 
         this.mutexes = new Object[replicatedMapConfig.getConcurrencyLevel()];
         for (int i = 0; i < mutexes.length; i++) {
@@ -83,7 +89,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     @Override
     public Object remove(Object key) {
         V old;
-        Object marshalledKey = marshallKey(key);
+        K marshalledKey = (K) marshallKey(key);
         synchronized (getMutex(marshalledKey)) {
             final ReplicatedRecord current = storage.get(marshalledKey);
             final Vector vector;
@@ -92,10 +98,12 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
             } else {
                 vector = current.getVector();
                 old = (V) current.getValue();
-                current.setValue(null, 0);
+                current.setValue(null, 0, -1);
                 incrementClock(vector);
-                publishReplicatedMessage(new ReplicationMessage(name, key, null, vector, localMember, localMemberHash));
+                publishReplicatedMessage(new ReplicationMessage(
+                        name, key, null, vector, localMember, localMemberHash, -1));
             }
+            cancelTtlEntry(marshalledKey);
         }
         return unmarshallValue(old);
     }
@@ -108,24 +116,37 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
 
     @Override
     public Object put(Object key, Object value) {
+        return put(key, value, 0, null);
+    }
+
+    @Override
+    public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
         V oldValue = null;
         K marshalledKey = (K) marshallKey(key);
         V marshalledValue = (V) marshallValue(value);
         synchronized (getMutex(marshalledKey)) {
+            final long ttlMillis = ttl == 0 ? 0 : timeUnit.toMillis(ttl);
             final ReplicatedRecord old = storage.get(marshalledKey);
             final Vector vector;
             if (old == null) {
                 vector = new Vector();
-                ReplicatedRecord<K, V> record = new ReplicatedRecord(marshalledKey, marshalledValue, vector, localMemberHash);
+                ReplicatedRecord<K, V> record = new ReplicatedRecord(
+                        marshalledKey, marshalledValue, vector, localMemberHash, ttlMillis);
                 storage.put(marshalledKey, record);
             } else {
                 oldValue = (V) old.getValue();
                 vector = old.getVector();
-
-                storage.get(marshalledKey).setValue(marshalledValue, localMemberHash);
+                storage.get(marshalledKey).setValue(marshalledValue, localMemberHash, ttlMillis);
             }
+            if (ttlMillis > 0) {
+                scheduleTtlEntry(ttlMillis, marshalledKey, null);
+            } else {
+                cancelTtlEntry(marshalledKey);
+            }
+
             incrementClock(vector);
-            publishReplicatedMessage(new ReplicationMessage(name, key, value, vector, localMember, localMemberHash));
+            publishReplicatedMessage(new ReplicationMessage(name, key, value, vector,
+                    localMember, localMemberHash, ttlMillis));
         }
         return unmarshallValue(oldValue);
     }
@@ -193,14 +214,13 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
 
     @Override
     public void clear() {
-        //TODO distribute clear
-        storage.clear();
+        throw new UnsupportedOperationException("clear is not supported on ReplicatedMap");
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof AbstractReplicatedRecordStorage) {
-            return storage.equals(((AbstractReplicatedRecordStorage) o).storage);
+        if (o instanceof AbstractReplicatedRecordStore) {
+            return storage.equals(((AbstractReplicatedRecordStore) o).storage);
         }
         return storage.equals(o);
     }
@@ -224,6 +244,12 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
         executorService.shutdownNow();
         storage.clear();
         replicatedMapService.destroyDistributedObject(getName());
+    }
+
+    @Override
+    public void publishReplicatedMessage(IdentifiedDataSerializable message) {
+        Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
+        eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
     }
 
     public Set<ReplicatedRecord> getRecords() {
@@ -254,11 +280,6 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
 
     protected abstract Object marshallValue(Object value);
 
-    protected void publishReplicatedMessage(IdentifiedDataSerializable message) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
-        eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
-    }
-
     protected void incrementClock(Vector vector) {
         final AtomicInteger clock = vector.clocks.get(localMember);
         if (clock != null) {
@@ -270,6 +291,18 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
 
     protected Object getMutex(final Object key) {
         return mutexes[key.hashCode() != Integer.MIN_VALUE ? Math.abs(key.hashCode()) % mutexes.length : 0];
+    }
+
+    private ScheduledEntry<K, V> cancelTtlEntry(K key) {
+        return ttlEvictionScheduler.cancel(key);
+    }
+
+    private ScheduledEntry<K, V> getTtlEntry(K key) {
+        return ttlEvictionScheduler.get(key);
+    }
+
+    private boolean scheduleTtlEntry(long delayMillis, K key, V object) {
+        return ttlEvictionScheduler.schedule(delayMillis, key, object);
     }
 
     private void processUpdateMessage(ReplicationMessage update) {
@@ -284,7 +317,14 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
                     V marshalledValue = (V) marshallValue(update.getValue());
                     Vector vector = update.getVector();
                     int updateHash = update.getUpdateHash();
-                    storage.put(marshalledKey, new ReplicatedRecord<K, V>(marshalledKey, marshalledValue, vector, updateHash));
+                    long ttlMillis = update.getTtlMillis();
+                    storage.put(marshalledKey, new ReplicatedRecord<K, V>(
+                            marshalledKey, marshalledValue, vector, updateHash, ttlMillis));
+                    if (ttlMillis > 0) {
+                        scheduleTtlEntry(ttlMillis, marshalledKey, null);
+                    } else {
+                        cancelTtlEntry(marshalledKey);
+                    }
                 }
             } else {
                 final Vector currentVector = localEntry.getVector();
@@ -301,7 +341,7 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
                     } else {
                         applyVector(updateVector, currentVector);
                         publishReplicatedMessage(new ReplicationMessage(name, update.getKey(), localEntry.getValue(),
-                                currentVector, localMember, localEntry.getLatestUpdateHash()));
+                                currentVector, localMember, localEntry.getLatestUpdateHash(), update.getTtlMillis()));
                     }
                 }
             }
@@ -311,8 +351,16 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
     private void applyTheUpdate(ReplicationMessage<K, V> update, ReplicatedRecord<K, V> localEntry) {
         Vector localVector = localEntry.getVector();
         Vector remoteVector = update.getVector();
-        localEntry.setValue((V) marshallValue(update.getValue()), update.getUpdateHash());
+        K marshalledKey = (K) marshallKey(update.getKey());
+        V marshalledValue = (V) marshallValue(update.getValue());
+        long ttlMillis = update.getTtlMillis();
+        localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
         applyVector(remoteVector, localVector);
+        if (ttlMillis > 0) {
+            scheduleTtlEntry(ttlMillis, marshalledKey, null);
+        } else {
+            cancelTtlEntry(marshalledKey);
+        }
     }
 
     private void applyVector(Vector update, Vector current) {
@@ -383,7 +431,8 @@ public abstract class AbstractReplicatedRecordStorage<K, V> implements Replicate
             Object key = unmarshallKey(replicatedRecord.getKey());
             Object value = unmarshallValue(replicatedRecord.getValue());
             Vector vector = Vector.copyVector(replicatedRecord.getVector());
-            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vector, hash);
+            long ttlMillis = replicatedRecord.getTtlMillis();
+            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vector, hash, ttlMillis);
         }
 
         private void sendChunk() {

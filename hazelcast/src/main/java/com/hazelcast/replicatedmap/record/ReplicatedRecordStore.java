@@ -16,10 +16,12 @@
 
 package com.hazelcast.replicatedmap.record;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public interface ReplicatedRecordStore {
 
@@ -30,6 +32,8 @@ public interface ReplicatedRecordStore {
     Object get(Object key);
 
     Object put(Object key, Object value);
+
+    Object put(Object key, Object value, long ttl, TimeUnit timeUnit);
 
     boolean containsKey(Object key);
 
@@ -50,6 +54,8 @@ public interface ReplicatedRecordStore {
     boolean isEmpty();
 
     ReplicatedMapService getReplicatedMapService();
+
+    void publishReplicatedMessage(IdentifiedDataSerializable message);
 
     void destroy();
 

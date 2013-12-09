@@ -24,6 +24,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject implements ReplicatedMap<K, V> {
 
@@ -77,6 +78,11 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject implemen
     @Override
     public V put(K key, V value) {
         return (V) replicatedRecordStore.put(key, value);
+    }
+
+    @Override
+    public V put(K key, V value, long ttl, TimeUnit timeUnit) {
+        return (V) replicatedRecordStore.put(key, value, ttl, timeUnit);
     }
 
     @Override

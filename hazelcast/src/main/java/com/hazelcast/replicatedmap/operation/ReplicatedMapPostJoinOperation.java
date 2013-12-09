@@ -5,8 +5,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
-import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStorage;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 
 import java.io.IOException;
 
@@ -45,8 +44,8 @@ public class ReplicatedMapPostJoinOperation
     public void run() throws Exception {
         ReplicatedMapService replicatedMapService = getService();
         for (String replicatedMap : replicatedMaps) {
-            AbstractReplicatedRecordStorage replicatedRecordStorage =
-                    (AbstractReplicatedRecordStorage) replicatedMapService.getReplicatedRecordStore(replicatedMap);
+            AbstractReplicatedRecordStore replicatedRecordStorage =
+                    (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(replicatedMap);
 
             replicatedRecordStorage.queueInitialFillup(getCallerAddress(), chunkSize);
         }

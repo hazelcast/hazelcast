@@ -20,12 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.EventData;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.record.*;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.spi.*;
@@ -49,7 +44,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
 
     private final CleanerRegistrator cleanerRegistrator = new CleanerRegistrator() {
         @Override
-        public <V> ScheduledFuture<V> registerCleaner(AbstractReplicatedRecordStorage replicatedRecordStorage) {
+        public <V> ScheduledFuture<V> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {
             return (ScheduledFuture) ReplicatedMapService.this.registerCleaner(replicatedRecordStorage);
         }
     };
@@ -59,7 +54,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
         public ReplicatedRecordStore createNew(String name) {
             ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(name);
             InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
-            AbstractReplicatedRecordStorage replicatedRecordStorage = null;
+            AbstractReplicatedRecordStore replicatedRecordStorage = null;
             switch (inMemoryFormat) {
                 case OBJECT:
                     replicatedRecordStorage = new ObjectReplicatedRecordStorage(
@@ -155,7 +150,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
         return replicatedStorages.get(name);
     }
 
-    ScheduledFuture<?> registerCleaner(AbstractReplicatedRecordStorage replicatedRecordStorage) {
+    ScheduledFuture<?> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {
         return cleanerExecutorService.scheduleWithFixedDelay(
                 new Cleaner(replicatedRecordStorage), 5, 5, TimeUnit.SECONDS);
     }
@@ -164,8 +159,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
 
         public void onMessage(ReplicationMessage replicationMessage) {
             ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(replicationMessage.getName());
-            if (replicatedRecordStorage instanceof AbstractReplicatedRecordStorage) {
-                ((AbstractReplicatedRecordStorage) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
+            if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
+                ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
             }
         }
     }
@@ -173,9 +168,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
     private static class Cleaner implements Runnable {
 
         private final long ttl = TimeUnit.SECONDS.toMillis(10);
-        private final AbstractReplicatedRecordStorage replicatedRecordStorage;
+        private final AbstractReplicatedRecordStore replicatedRecordStorage;
 
-        private Cleaner(AbstractReplicatedRecordStorage replicatedRecordStorage) {
+        private Cleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {
             this.replicatedRecordStorage = replicatedRecordStorage;
         }
 

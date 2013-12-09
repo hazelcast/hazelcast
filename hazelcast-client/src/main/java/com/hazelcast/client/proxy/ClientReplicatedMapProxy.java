@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap;
+package com.hazelcast.client.proxy;
 
-import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
-
-import java.util.concurrent.ScheduledFuture;
-
-public interface CleanerRegistrator {
-
-    <V> ScheduledFuture<V> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage);
-
+public class ClientReplicatedMapProxy {
 }

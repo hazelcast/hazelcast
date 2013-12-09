@@ -35,17 +35,19 @@ public class ReplicationMessage<K, V> implements IdentifiedDataSerializable {
     private Vector vector;
     private Member origin;
     private int updateHash;
+    private long ttlMillis;
 
     public ReplicationMessage() {
     }
 
-    public ReplicationMessage(String name, K key, V v, Vector vector, Member origin, int hash) {
+    public ReplicationMessage(String name, K key, V v, Vector vector, Member origin, int hash, long ttlMillis) {
         this.name = name;
         this.key = key;
         this.value = v;
         this.vector = vector;
         this.origin = origin;
         this.updateHash = hash;
+        this.ttlMillis = ttlMillis;
     }
 
     public String getName() {
@@ -68,6 +70,14 @@ public class ReplicationMessage<K, V> implements IdentifiedDataSerializable {
         return origin;
     }
 
+    public long getTtlMillis() {
+        return ttlMillis;
+    }
+
+    public int getUpdateHash() {
+        return updateHash;
+    }
+
     public boolean isRemove() {
         return value == null;
     }
@@ -79,6 +89,7 @@ public class ReplicationMessage<K, V> implements IdentifiedDataSerializable {
         vector.writeData(out);
         origin.writeData(out);
         out.writeInt(updateHash);
+        out.writeLong(ttlMillis);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -90,6 +101,7 @@ public class ReplicationMessage<K, V> implements IdentifiedDataSerializable {
         origin = new MemberImpl();
         origin.readData(in);
         updateHash = in.readInt();
+        ttlMillis = in.readLong();
     }
 
     @Override
@@ -108,12 +120,10 @@ public class ReplicationMessage<K, V> implements IdentifiedDataSerializable {
                "key=" + key +
                ", value=" + value +
                ", vector=" + vector +
-               ", origin=" + getUpdateHash() +
+               ", origin=" + origin +
+               ", updateHash=" + updateHash +
+               ", ttlMillis=" + ttlMillis +
                '}';
-    }
-
-    public int getUpdateHash() {
-        return updateHash;
     }
 
 }

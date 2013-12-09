@@ -20,7 +20,7 @@ import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.NodeEngine;
 
-public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecordStorage<K, V> {
+public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecordStore<K, V> {
 
     public ObjectReplicatedRecordStorage(String name, NodeEngine nodeEngine,
                                          CleanerRegistrator cleanerRegistrator,

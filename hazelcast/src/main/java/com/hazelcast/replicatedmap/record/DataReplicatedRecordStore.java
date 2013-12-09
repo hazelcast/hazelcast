@@ -21,9 +21,7 @@ import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.*;
-
-public class DataReplicatedRecordStore extends AbstractReplicatedRecordStorage<Data, Data> {
+public class DataReplicatedRecordStore extends AbstractReplicatedRecordStore<Data, Data> {
 
     private final NodeEngine nodeEngine;
 

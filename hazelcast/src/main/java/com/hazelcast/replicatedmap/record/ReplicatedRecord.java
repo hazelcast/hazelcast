@@ -29,16 +29,18 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     private V value;
     private Vector vector;
     private int latestUpdateHash = 0;
+    private long ttlMillis;
     private long updateTime = System.currentTimeMillis();
 
     public ReplicatedRecord() {
     }
 
-    public ReplicatedRecord(K key, V value, Vector vector, int hash) {
+    public ReplicatedRecord(K key, V value, Vector vector, int hash, long ttlMillis) {
         this.key = key;
         this.value = value;
         this.vector = vector;
         this.latestUpdateHash = hash;
+        this.ttlMillis = ttlMillis;
     }
 
     public K getKey() {
@@ -53,10 +55,15 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return vector;
     }
 
-    public void setValue(V value, int hash) {
+    public long getTtlMillis() {
+        return ttlMillis;
+    }
+
+    public void setValue(V value, int hash, long ttlMillis) {
         this.value = value;
         this.latestUpdateHash = hash;
         this.updateTime = System.currentTimeMillis();
+        this.ttlMillis = ttlMillis;
     }
 
     public long getUpdateTime() {
@@ -83,6 +90,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         out.writeObject(value);
         vector.writeData(out);
         out.writeInt(latestUpdateHash);
+        out.writeLong(ttlMillis);
     }
 
     @Override
@@ -92,6 +100,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         vector = new Vector();
         vector.readData(in);
         latestUpdateHash = in.readInt();
+        ttlMillis = in.readLong();
     }
 
     @Override
@@ -101,6 +110,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         sb.append(", value=").append(value);
         sb.append(", vector=").append(vector);
         sb.append(", latestUpdateHash=").append(latestUpdateHash);
+        sb.append(", ttlMillis=").append(ttlMillis);
         sb.append('}');
         return sb.toString();
     }
