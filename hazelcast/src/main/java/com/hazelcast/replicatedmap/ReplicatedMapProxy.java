@@ -16,7 +16,9 @@
 
 package com.hazelcast.replicatedmap;
 
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
@@ -100,6 +102,31 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject implemen
     @Override
     public void clear() {
         replicatedRecordStore.clear();
+    }
+
+    @Override
+    public boolean removeEntryListener(String id) {
+        return replicatedRecordStore.removeEntryListenerInternal(id);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener) {
+        return replicatedRecordStore.addEntryListener(listener, null);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener, K key) {
+        return replicatedRecordStore.addEntryListener(listener, key);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
+        return replicatedRecordStore.addEntryListener(listener, predicate, null);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
+        return replicatedRecordStore.addEntryListener(listener, predicate, key);
     }
 
     @Override

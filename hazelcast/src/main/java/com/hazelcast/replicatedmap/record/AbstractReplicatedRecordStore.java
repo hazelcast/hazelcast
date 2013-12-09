@@ -16,10 +16,14 @@
 
 package com.hazelcast.replicatedmap.record;
 
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
@@ -27,9 +31,14 @@ import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.impl.EventServiceImpl.Registration;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.NamedThreadFactory;
 import com.hazelcast.util.nonblocking.NonBlockingHashMap;
-import com.hazelcast.util.scheduler.*;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.util.scheduler.ScheduleType;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -82,6 +91,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         }
 
         this.cleanerFuture = cleanerRegistrator.registerCleaner(this);
+        initializeListeners();
     }
 
     @Override
@@ -91,16 +101,16 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public Object remove(Object key) {
-        V old;
+        V oldValue;
         K marshalledKey = (K) marshallKey(key);
         synchronized (getMutex(marshalledKey)) {
             final ReplicatedRecord current = storage.get(marshalledKey);
             final Vector vector;
             if (current == null) {
-                old = null;
+                oldValue = null;
             } else {
                 vector = current.getVector();
-                old = (V) current.getValue();
+                oldValue = (V) current.getValue();
                 current.setValue(null, 0, -1);
                 incrementClock(vector);
                 publishReplicatedMessage(new ReplicationMessage(
@@ -108,7 +118,9 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
             }
             cancelTtlEntry(marshalledKey);
         }
-        return unmarshallValue(old);
+        Object unmarshalledOldValue = unmarshallValue(oldValue);
+        fireEntryListenerEvent(key, unmarshalledOldValue, null);
+        return unmarshalledOldValue;
     }
 
     @Override
@@ -151,7 +163,9 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
             publishReplicatedMessage(new ReplicationMessage(name, key, value, vector,
                     localMember, localMemberHash, ttlMillis));
         }
-        return unmarshallValue(oldValue);
+        Object unmarshalledOldValue = unmarshallValue(oldValue);
+        fireEntryListenerEvent(key, unmarshalledOldValue, value);
+        return unmarshalledOldValue;
     }
 
     @Override
@@ -252,8 +266,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
     @Override
     public void publishReplicatedMessage(ReplicationMessage message) {
         if (replicatedMapConfig.getReplicationDelayMillis() == 0) {
-            Collection<EventRegistration> registrations = eventService.getRegistrations(
-                    ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
+            Collection<EventRegistration> registrations = filterEventRegistrations(eventService.getRegistrations(
+                    ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME));
             eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
         } else {
             replicationMessageCacheLock.lock();
@@ -267,6 +281,23 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
                 replicationMessageCacheLock.unlock();
             }
         }
+    }
+
+    @Override
+    public String addEntryListener(EntryListener listener, Object key) {
+        EventFilter eventFilter = new ReplicatedEntryEventFilter(marshallKey(key));
+        return replicatedMapService.addEventListener(listener, eventFilter, name);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
+        EventFilter eventFilter = new ReplicatedQueryEventFilter(marshallKey(key), predicate);
+        return replicatedMapService.addEventListener(listener, eventFilter, name);
+    }
+
+    @Override
+    public boolean removeEntryListenerInternal(String id) {
+        return replicatedMapService.removeEventListener(name, id);
     }
 
     public Set<ReplicatedRecord> getRecords() {
@@ -310,6 +341,29 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         return mutexes[key.hashCode() != Integer.MIN_VALUE ? Math.abs(key.hashCode()) % mutexes.length : 0];
     }
 
+    private void initializeListeners() {
+        List<ListenerConfig> listenerConfigs = replicatedMapConfig.getListenerConfigs();
+        for (ListenerConfig listenerConfig : listenerConfigs) {
+            EntryListener listener = null;
+            if (listenerConfig.getImplementation() != null) {
+                listener = (EntryListener) listenerConfig.getImplementation();
+            } else if (listenerConfig.getClassName() != null) {
+                try {
+                    listener = ClassLoaderUtil
+                            .newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+            if (listener != null) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
+                addEntryListener(listener, null);
+            }
+        }
+    }
+
     private ScheduledEntry<K, V> cancelTtlEntry(K key) {
         return ttlEvictionScheduler.cancel(key);
     }
@@ -342,6 +396,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
                     } else {
                         cancelTtlEntry(marshalledKey);
                     }
+                    fireEntryListenerEvent(update.getKey(), null, update.getValue());
                 }
             } else {
                 final Vector currentVector = localEntry.getVector();
@@ -371,13 +426,14 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         K marshalledKey = (K) marshallKey(update.getKey());
         V marshalledValue = (V) marshallValue(update.getValue());
         long ttlMillis = update.getTtlMillis();
-        localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
+        Object oldValue = localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
         applyVector(remoteVector, localVector);
         if (ttlMillis > 0) {
             scheduleTtlEntry(ttlMillis, marshalledKey, null);
         } else {
             cancelTtlEntry(marshalledKey);
         }
+        fireEntryListenerEvent(update.getKey(), unmarshallValue(oldValue), update.getValue());
     }
 
     private void applyVector(Vector update, Vector current) {
@@ -403,6 +459,29 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         }
         return Executors.newSingleThreadScheduledExecutor(
                 new NamedThreadFactory(ReplicatedMapService.SERVICE_NAME + "." + name + ".replicator"));
+    }
+
+    private void fireEntryListenerEvent(Object key, Object oldValue, Object value) {
+        EntryEventType eventType = value == null ?
+                EntryEventType.REMOVED : oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        EntryEvent event = new EntryEvent(name, localMember, eventType.getType(), key, oldValue, value);
+
+        Collection<EventRegistration> registrations = eventService.getRegistrations(
+                ReplicatedMapService.SERVICE_NAME, name);
+        eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, event, name.hashCode());
+    }
+
+    private Collection<EventRegistration> filterEventRegistrations(Collection<EventRegistration> eventRegistrations) {
+        Address address = ((MemberImpl) localMember).getAddress();
+        List<EventRegistration> registrations = new ArrayList<EventRegistration>(eventRegistrations);
+        Iterator<EventRegistration> iterator = registrations.iterator();
+        while (iterator.hasNext()) {
+            Registration registration = (Registration) iterator.next();
+            if (address.equals(registration.getSubscriber())) {
+                iterator.remove();
+            }
+        }
+        return registrations;
     }
 
     private class RemoteFillupTask implements Runnable {
@@ -480,8 +559,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
                 ReplicationMessage[] replicationMessages = copy.toArray(new ReplicationMessage[copy.size()]);
                 MultiReplicationMessage message = new MultiReplicationMessage(name, replicationMessages);
 
-                Collection<EventRegistration> registrations = eventService.getRegistrations(
-                        ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME);
+                Collection<EventRegistration> registrations = filterEventRegistrations(eventService.getRegistrations(
+                        ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME));
                 eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
             }
         }

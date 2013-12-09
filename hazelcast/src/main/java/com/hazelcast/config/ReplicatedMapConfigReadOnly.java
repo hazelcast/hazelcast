@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
@@ -25,27 +26,32 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     }
 
     @Override
-    public void setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
+    public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setName(String name) {
+    public ReplicatedMapConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setReplicationDelayMillis(long replicationDelayMillis) {
+    public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setConcurrencyLevel(int concurrencyLevel) {
+    public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+    public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

@@ -18,6 +18,9 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,6 +34,7 @@ import org.junit.runner.RunWith;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -175,6 +179,70 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         value = map2.get("foo");
         assertNull(value);
+    }
+
+    @Test
+    public void testEntryListenerObject() throws Exception {
+        final CountDownLatch added = new CountDownLatch(2);
+        final CountDownLatch updated = new CountDownLatch(2);
+        final CountDownLatch removed = new CountDownLatch(2);
+
+        EntryListener listener = new EntryListener() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                added.countDown();
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent event) {
+                removed.countDown();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+                updated.countDown();;
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent event) {
+            }
+        };
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        ListenerConfig listenerConfig = new ListenerConfig().setImplementation(listener);
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT)
+                .getListenerConfigs().add(listenerConfig);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        map1.put("foo", "bar2");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("foo");
+        assertEquals("bar2", value);
+
+        map2.put("foo", "bar3");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map1.get("foo");
+        assertEquals("bar3", value);
+
+        map1.remove("foo");
+        TimeUnit.SECONDS.sleep(2);
+
+        added.await();
+        updated.await();
+        removed.await();
     }
 
     @Test
@@ -514,6 +582,70 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         value = map2.get("foo");
         assertNull(value);
+    }
+
+    @Test
+    public void testEntryListenerBinary() throws Exception {
+        final CountDownLatch added = new CountDownLatch(2);
+        final CountDownLatch updated = new CountDownLatch(2);
+        final CountDownLatch removed = new CountDownLatch(2);
+
+        EntryListener listener = new EntryListener() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                added.countDown();
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent event) {
+                removed.countDown();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+                updated.countDown();;
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent event) {
+            }
+        };
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        ListenerConfig listenerConfig = new ListenerConfig().setImplementation(listener);
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY)
+                .getListenerConfigs().add(listenerConfig);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        map1.put("foo", "bar2");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("foo");
+        assertEquals("bar2", value);
+
+        map2.put("foo", "bar3");
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map1.get("foo");
+        assertEquals("bar3", value);
+
+        map1.remove("foo");
+        TimeUnit.SECONDS.sleep(2);
+
+        added.await();
+        updated.await();
+        removed.await();
     }
 
     @Test

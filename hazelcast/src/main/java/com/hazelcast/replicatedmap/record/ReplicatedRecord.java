@@ -59,11 +59,13 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return ttlMillis;
     }
 
-    public void setValue(V value, int hash, long ttlMillis) {
+    public V setValue(V value, int hash, long ttlMillis) {
+        V oldValue = value;
         this.value = value;
         this.latestUpdateHash = hash;
         this.updateTime = System.currentTimeMillis();
         this.ttlMillis = ttlMillis;
+        return value;
     }
 
     public long getUpdateTime() {

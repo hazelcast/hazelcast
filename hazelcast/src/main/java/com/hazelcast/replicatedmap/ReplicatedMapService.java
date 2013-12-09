@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
@@ -31,13 +33,14 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.NamedThreadFactory;
 import sun.plugin.dom.exception.InvalidStateException;
 
+import java.util.EventListener;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.concurrent.*;
 
 public class ReplicatedMapService implements ManagedService, RemoteService,
         PostJoinAwareService, SplitBrainHandlerService,
-        EventPublishingService<IdentifiedDataSerializable, ReplicatedMessageListener>{
+        EventPublishingService<Object, Object>{
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".replication";
@@ -140,8 +143,27 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
     }
 
     @Override
-    public void dispatchEvent(IdentifiedDataSerializable event, ReplicatedMessageListener listener) {
-        listener.onMessage(event);
+    public void dispatchEvent(Object event, Object listener) {
+        if (event instanceof EntryEvent) {
+            EntryEvent entryEvent = (EntryEvent) event;
+            EntryListener entryListener = (EntryListener) listener;
+            switch (entryEvent.getEventType()) {
+                case  ADDED:
+                    entryListener.entryAdded(entryEvent);
+                    break;
+                case EVICTED:
+                    entryListener.entryEvicted(entryEvent);
+                    break;
+                case UPDATED:
+                    entryListener.entryUpdated(entryEvent);
+                    break;
+                case REMOVED:
+                    entryListener.entryRemoved(entryEvent);
+                    break;
+            }
+        } else if (listener instanceof ReplicatedMessageListener) {
+            ((ReplicatedMessageListener) listener).onMessage((IdentifiedDataSerializable) event);
+        }
     }
 
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
@@ -150,6 +172,16 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
 
     public ReplicatedRecordStore getReplicatedRecordStore(String name) {
         return replicatedStorages.get(name);
+    }
+
+    public String addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
+        EventRegistration registration = eventService.registerLocalListener(
+                SERVICE_NAME, mapName, eventFilter, entryListener);
+        return registration.getId();
+    }
+
+    public boolean removeEventListener(String mapName, String registrationId) {
+        return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     ScheduledFuture<?> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {

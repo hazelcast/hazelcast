@@ -16,7 +16,9 @@
 
 package com.hazelcast.replicatedmap.record;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
@@ -57,6 +59,12 @@ public interface ReplicatedRecordStore {
     ReplicatedMapService getReplicatedMapService();
 
     void publishReplicatedMessage(ReplicationMessage message);
+
+    String addEntryListener(EntryListener listener, Object key);
+
+    String addEntryListener(EntryListener listener, Predicate predicate, Object key);
+
+    boolean removeEntryListenerInternal(String id);
 
     void destroy();
 

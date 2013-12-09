@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.query.Predicate;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -59,5 +61,59 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * destroyed before recreating those distributed objects on all nodes.</p>
      */
     void clear();
+
+    /**
+     * Removes the specified entry listener
+     * Returns silently if there is no such listener added before.
+     *
+     *
+     * @param id id of registered listener
+     *
+     * @return true if registration is removed, false otherwise
+     */
+    boolean removeEntryListener(String id);
+
+    /**
+     * Adds an entry listener for this map. Listener will get notified
+     * for all map add/remove/update/evict events.
+     *
+     * @param listener     entry listener
+     */
+    String addEntryListener(EntryListener<K, V> listener);
+
+    /**
+     * Adds the specified entry listener for the specified key.
+     * The listener will get notified for all
+     * add/remove/update/evict events of the specified key only.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param listener     entry listener
+     * @param key          key to listen
+     * @throws NullPointerException if the specified key is null
+     */
+    String addEntryListener(EntryListener<K, V> listener, K key);
+
+    /**
+     * Adds an continuous entry listener for this map. Listener will get notified
+     * for map add/remove/update/evict events filtered by given predicate.
+     *
+     * @param listener  entry listener
+     * @param predicate predicate for filtering entries
+     */
+    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate);
+
+    /**
+     * Adds an continuous entry listener for this map. Listener will get notified
+     * for map add/remove/update/evict events filtered by given predicate.
+     *
+     * @param listener  entry listener
+     * @param predicate predicate for filtering entries
+     * @param key          key to listen
+     */
+    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
 
 }

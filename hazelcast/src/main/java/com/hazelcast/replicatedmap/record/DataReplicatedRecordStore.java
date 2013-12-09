@@ -34,22 +34,22 @@ public class DataReplicatedRecordStore extends AbstractReplicatedRecordStore<Dat
 
     @Override
     protected Object unmarshallKey(Object key) {
-        return nodeEngine.toObject(key);
+        return key == null ? null : nodeEngine.toObject(key);
     }
 
     @Override
     protected Object unmarshallValue(Object value) {
-        return nodeEngine.toObject(value);
+        return value == null ? null : nodeEngine.toObject(value);
     }
 
     @Override
     protected Object marshallKey(Object key) {
-        return nodeEngine.toData(key);
+        return key == null ? null : nodeEngine.toData(key);
     }
 
     @Override
     protected Object marshallValue(Object value) {
-        return nodeEngine.toData(value);
+        return value == null ? null : nodeEngine.toData(value);
     }
 
 }
