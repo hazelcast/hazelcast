@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -144,7 +145,19 @@ public class TestManagedContext {
     @Test
     public void testEntryProcessor() {
         final IMap<Object,Object> map = instance1.getMap("testEntryProcessor");
-        final Object result = map.executeOnKey("key", new SomeEntryProcessor());
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        map.put("key4", "value4");
+        map.put("key5", "value5");
+
+        final Map<Object,Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
+        Assert.assertEquals(5, objectMap.size());
+        for (Object o : objectMap.values()) {
+            Assert.assertEquals("notNull", o);
+        }
+
+        final Object result = map.executeOnKey("key8", new SomeEntryProcessor());
         Assert.assertEquals("notNull", result);
     }
 }

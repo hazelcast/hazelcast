@@ -2,6 +2,7 @@ package com.hazelcast.spring.context;
 
 import com.hazelcast.map.AbstractEntryProcessor;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -15,8 +16,11 @@ public class SomeEntryProcessor extends AbstractEntryProcessor implements Applic
 
     private transient ApplicationContext context;
 
+    @Autowired
+    private transient SomeBean someBean;
+
     public Object process(Map.Entry entry) {
-        if (context == null ){
+        if (someBean == null ){
             return ">null";
         }
         return "notNull";
