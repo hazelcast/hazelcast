@@ -81,23 +81,41 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
         final Iterator<QueryableEntry> it = setSmallest.iterator();
 
         public boolean hasNext() {
-            if (!it.hasNext()) return false;
-            currentEntry = it.next();
-            if (otherIndexedResults != null) {
-                for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
-                    if (!otherIndexedResult.contains(currentEntry)) {
-                        return hasNext();
+            while(it.hasNext()){
+                currentEntry = it.next();
+
+                if (otherIndexedResults != null) {
+                    boolean contains = true;
+                    for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
+                        if (!otherIndexedResult.contains(currentEntry)) {
+                            contains = false;
+                            break;
+                        }
+                    }
+
+                    if(!contains){
+                        continue;
                     }
                 }
-            }
-            if (lsNoIndexPredicates != null) {
-                for (Predicate noIndexPredicate : lsNoIndexPredicates) {
-                    if (!noIndexPredicate.apply(currentEntry)) {
-                        return hasNext();
+
+                if (lsNoIndexPredicates != null) {
+                    boolean applied = true;
+                    for (Predicate noIndexPredicate : lsNoIndexPredicates) {
+                        if (!noIndexPredicate.apply(currentEntry)) {
+                            applied = false;
+                            break;
+                        }
+                    }
+
+                    if(!applied){
+                        continue;
                     }
                 }
+
+                return true;
             }
-            return true;
+
+            return false;
         }
 
         public QueryableEntry next() {
