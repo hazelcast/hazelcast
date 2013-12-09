@@ -303,6 +303,41 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testInitialFillupObject() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map1.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        TimeUnit.SECONDS.sleep(10);
+
+
+        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
+        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
+
+        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
+        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
+        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
+
+        assertEquals(entrySetTestValues, entrySet1);
+        assertEquals(entrySetTestValues, entrySet2);
+    }
+
+    @Test
     public void testAddBinary() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
@@ -544,6 +579,41 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             map.put(entry.getKey(), entry.getValue());
         }
         TimeUnit.SECONDS.sleep(2);
+
+        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
+        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
+
+        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
+        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
+        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
+
+        assertEquals(entrySetTestValues, entrySet1);
+        assertEquals(entrySetTestValues, entrySet2);
+    }
+
+    @Test
+    public void testInitialFillupBinary() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+
+        SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
+        List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
+
+        int half = testValues.length / 2;
+        for (int i = 0; i < testValues.length; i++) {
+            SimpleEntry<Integer, Integer> entry = testValues[i];
+            map1.put(entry.getKey(), entry.getValue());
+        }
+        TimeUnit.SECONDS.sleep(2);
+
+        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        TimeUnit.SECONDS.sleep(10);
+
 
         List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
