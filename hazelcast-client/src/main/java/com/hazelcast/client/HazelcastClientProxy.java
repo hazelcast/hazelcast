@@ -73,6 +73,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getMultiMap(name);
     }
 
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getClient().getReplicatedMap(name);
+    }
+
     public ILock getLock(Object key) {
         return getClient().getLock(key);
     }
