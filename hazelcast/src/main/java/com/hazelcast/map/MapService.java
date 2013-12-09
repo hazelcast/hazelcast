@@ -1078,6 +1078,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     ownedEntryCount++;
                     ownedEntryMemoryCost += record.getCost();
                     localMapStats.setLastAccessTime(stats.getLastAccessTime());
+                    localMapStats.setLastUpdateTime(stats.getLastUpdateTime());
                     hits += stats.getHits();
                     if (recordStore.isLocked(record.getKey())) {
                         lockedEntryCount++;

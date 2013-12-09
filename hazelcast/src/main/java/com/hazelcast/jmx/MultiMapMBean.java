@@ -71,6 +71,12 @@ public class MultiMapMBean extends HazelcastMBean<MultiMap> {
         return managedObject.getLocalMultiMapStats().getLastAccessTime();
     }
 
+    @ManagedAnnotation("localLastUpdateTime")
+    @ManagedDescription("the last update time of the locally owned entries.")
+    public long getLocalLastUpdateTime(){
+        return managedObject.getLocalMultiMapStats().getLastUpdateTime();
+    }
+
     @ManagedAnnotation("localHits")
     @ManagedDescription("the number of hits (reads) of the locally owned entries.")
     public long getLocalHits(){
