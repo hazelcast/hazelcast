@@ -61,9 +61,11 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
                 case OBJECT:
                     replicatedRecordStorage = new ObjectReplicatedRecordStorage(
                             name, nodeEngine, cleanerRegistrator, ReplicatedMapService.this);
+                    break;
                 case BINARY:
                     replicatedRecordStorage = new DataReplicatedRecordStore(
                             name, nodeEngine, cleanerRegistrator, ReplicatedMapService.this);
+                    break;
             }
             if (replicatedRecordStorage == null) {
                 //TODO

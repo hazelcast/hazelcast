@@ -16,5 +16,42 @@
 
 package com.hazelcast.replicatedmap;
 
-public class ReplicatedMapTest {
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
+public class ReplicatedMapTest extends HazelcastTestSupport {
+
+    @Test
+    public void testAdd() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        map1.put("foo", "bar");
+        TimeUnit.SECONDS.sleep(10);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+    }
+
 }
