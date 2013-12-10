@@ -46,12 +46,15 @@ import java.io.StringWriter;
 import java.lang.management.*;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
+
+    public final static AtomicBoolean DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO =  new AtomicBoolean(false);
 
     private final HazelcastInstanceImpl instance;
     private final TaskPoller taskPoller;
@@ -67,6 +70,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private volatile String webServerUrl;
     private volatile boolean urlChanged = false;
     private boolean versionMismatch = false;
+    private final String projectId;
+    private final String securityToken;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -75,6 +80,51 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         if (managementCenterConfig == null) {
             throw new IllegalStateException("ManagementCenterConfig should not be null!");
         }
+        this.securityToken = managementCenterConfig.getSecurityToken();
+
+        String projectId = managementCenterConfig.getProjectId();
+
+        if(managementCenterConfig.isEnabled() && managementCenterConfig.getUrl()==null){
+            //if the url is not set, but the management center is enabled, we are going to point him to the hosted management solution.
+            //if the url is set, he is running his own management center instance and we are not going to bother him with the
+            //hosted management solution.
+
+            if(managementCenterConfig.getSecurityToken() == null){
+                //so the user has not provided a security token, so need to tell him that he can create one at
+                //our registration page.
+
+                //we only want to display the page for hosted management registration once. We don't want to pollute
+                //the logfile.
+                if(DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO.compareAndSet(false,true)){
+                    logger.info("======================================================");
+                    logger.info("blabla text about the new hazelcast hosted management");
+                    logger.info("http://www.hazelcast-broken-url/registration-don't-exist.jsp");
+                    logger.info("======================================================");
+                }
+            }else{
+                //the user has provided a security token.
+
+                if (projectId == null) {
+                    //the user has not provided a projectid, so lets generate one for him.
+                    IAtomicReference<String> clusterIdAtomicLong = instance.getAtomicReference("___projectIdGenerator");
+                    String id = clusterIdAtomicLong.get();
+                    if (id == null) {
+                        id = "" + Math.abs(new Random().nextLong());
+                        if (!clusterIdAtomicLong.compareAndSet(null, id)) {
+                            id = clusterIdAtomicLong.get();
+                        }
+                    }
+                    projectId = "" + id;
+                }
+
+                logger.info("======================================================");
+                logger.info("You can access your Hazelcast instance at:");
+                logger.info(managementCenterConfig.getUrl() + "/start.do?projectId=" + projectId);
+                logger.info("======================================================");
+            }
+        }
+        this.projectId = projectId;
+
         this.instance.getLifecycleService().addLifecycleListener(this);
         this.instance.getCluster().addMembershipListener(this);
         maxVisibleInstanceCount = this.instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
@@ -481,7 +531,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         versionMismatch = false;
                     }
                     try {
-                        URL url = new URL(webServerUrl + "collector.do");
+                        URL url = createCollectorUrl();
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setDoOutput(true);
                         connection.setRequestMethod("POST");
@@ -494,7 +544,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         ts.writeData(out);
                         out.flush();
                         connection.getInputStream();
-
                     } catch (Exception e) {
                         logger.finest(e);
                     }
@@ -507,6 +556,21 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 logger.finest( "Web Management Center will be closed due to exception.", throwable);
                 shutdown();
             }
+        }
+
+        private URL createCollectorUrl() throws MalformedURLException {
+            String urlString = webServerUrl + "collector.do";
+            if (projectId != null) {
+                urlString += "?projectid="+projectId;
+            }
+            if (securityToken != null) {
+                if(projectId==null){
+                    urlString += "?securitytoken=" + securityToken;
+                } else{
+                    urlString += "&securitytoken=" + securityToken;
+                }
+            }
+            return new URL(urlString);
         }
     }
 
@@ -571,8 +635,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         versionMismatch = false;
                     }
                     try {
-                        URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
-                                + ":" + address.getPort() + "&cluster=" + groupConfig.getName());
+                        URL url = createTaskPollerUrl(address, groupConfig);
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
@@ -599,6 +662,18 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 }
                 logger.finest( "Problem on management center while polling task.", throwable);
             }
+        }
+
+        private URL createTaskPollerUrl(Address address, GroupConfig groupConfig) throws MalformedURLException {
+            String urlString = webServerUrl + "getTask.do?member=" + address.getHost()
+                    + ":" + address.getPort() + "&cluster=" + groupConfig.getName();
+            if (projectId != null) {
+                urlString += "&projectid="+ projectId;
+            }
+            if (securityToken != null) {
+                urlString += "&securitytoken=" + securityToken;
+            }
+            return new URL(urlString);
         }
     }
 }
