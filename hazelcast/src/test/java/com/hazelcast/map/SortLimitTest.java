@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -46,9 +45,10 @@ import static junit.framework.Assert.assertEquals;
 public class SortLimitTest extends HazelcastTestSupport {
 
     @Test
-    public void testPagingWithoutFiltering(){
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+    public void testPagingWithoutFilteringAndComparator(){
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         final IMap<Integer, Integer> map = instance1.getMap("testSort");
         final int size = 50;
@@ -73,8 +73,7 @@ public class SortLimitTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFirstLimit() {
-        System.setProperty(GroupProperties.PROP_PARTITION_COUNT, "6");
+    public void testPagingWithFilteringAndComparator() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
@@ -85,27 +84,38 @@ public class SortLimitTest extends HazelcastTestSupport {
         for (int i=0; i<size; i++) {
             map.put(i, i);
         }
-        final Predicate greaterEqual = Predicates.greaterEqual("this", 23);
-        final PagingPredicate predicate = new PagingPredicate(greaterEqual, new TestComparator(true), pageSize);
+        Integer value = 8;
+        final Predicate lessEqual = Predicates.lessEqual("this", value);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, new TestComparator(false), pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertEquals(pageSize, values.size());
 
-        for (Integer value : values) {
-            System.err.println("value: " + value);
+
+        for (Integer val : values) {
+            assertEquals(value--, val);
         }
 
-        assertEquals(27, predicate.getAnchor());
+        assertEquals(value+1, predicate.getAnchor());
 
         predicate.nextPage();
 
         values = map.values(predicate);
-        assertEquals(pageSize, values.size());
+        assertEquals(4, values.size());
 
-        for (Integer value : values) {
-            System.err.println("value: " + value);
+        for (Integer val : values) {
+            assertEquals(value--, val);
         }
-        assertEquals(32, predicate.getAnchor());
+        assertEquals(value + 1, predicate.getAnchor());
+        assertEquals(0, predicate.getAnchor());
+
+        predicate.nextPage();
+
+        values = map.values(predicate);
+        assertEquals(0, values.size());
+
+        assertEquals(value+1, predicate.getAnchor());
+        assertEquals(0, predicate.getAnchor());
     }
 
     static class TestComparator implements Comparator<Integer>, Serializable {

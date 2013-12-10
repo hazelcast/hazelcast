@@ -19,15 +19,17 @@ package com.hazelcast.query;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @ali 07/12/13
  */
-public class PagingPredicate implements Predicate, DataSerializable {
+public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
     private Predicate predicate;
 
@@ -62,6 +64,41 @@ public class PagingPredicate implements Predicate, DataSerializable {
         this.pageSize = pageSize;
     }
 
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        if (predicate instanceof IndexAwarePredicate) {
+            Set<QueryableEntry> set = ((IndexAwarePredicate) predicate).filter(queryContext);
+            if (set == null) {
+                return null;
+            }
+            List<QueryableEntry> list = new LinkedList<QueryableEntry>();
+            for (QueryableEntry entry : set) {
+                if (anchor != null && SortingUtil.compare(comparator, anchor, entry.getValue()) >= 0) {
+                    continue;
+                }
+                list.add(entry);
+            }
+            Collections.sort(list, new Comparator<QueryableEntry>() {
+                public int compare(QueryableEntry o1, QueryableEntry o2) {
+                    final Object value1 = o1.getValue();
+                    final Object value2 = o2.getValue();
+                    return SortingUtil.compare(comparator, value1, value2);
+                }
+            });
+            if (list.size() > pageSize) {
+                list = list.subList(0, pageSize);
+            }
+            return new LinkedHashSet<QueryableEntry>(list);
+        }
+        return null;
+    }
+
+    public boolean isIndexed(QueryContext queryContext) {
+        if (predicate instanceof IndexAwarePredicate) {
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+        }
+        return false;
+    }
+
     public boolean apply(Map.Entry mapEntry) {
         if (predicate != null) {
             return predicate.apply(mapEntry);
@@ -70,7 +107,9 @@ public class PagingPredicate implements Predicate, DataSerializable {
     }
 
     void setAnchor(Object anchor) {
-        this.anchor = anchor;
+        if (anchor != null) {
+            this.anchor = anchor;
+        }
     }
 
     public void nextPage() {

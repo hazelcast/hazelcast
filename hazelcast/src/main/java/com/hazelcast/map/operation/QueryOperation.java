@@ -36,6 +36,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
 import java.util.*;
@@ -114,7 +115,11 @@ public class QueryOperation extends AbstractMapOperation {
         final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         final List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
 
-        final WrapperComparator wrapperComparator = new WrapperComparator(pagingPredicate.getComparator());
+        final Comparator<QueryableEntry> wrapperComparator = new Comparator<QueryableEntry>() {
+            public int compare(QueryableEntry o1, QueryableEntry o2) {
+                return SortingUtil.compare(pagingPredicate.getComparator(), o1.getValue(), o2.getValue());
+            }
+        };
         for (final Integer partition : initialPartitions) {
             Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(ss, partition, wrapperComparator));
             lsFutures.add(f);
@@ -166,10 +171,10 @@ public class QueryOperation extends AbstractMapOperation {
 
         int partition;
         SerializationService ss;
-        WrapperComparator wrapperComparator;
+        Comparator<QueryableEntry> wrapperComparator;
 
 
-        private PartitionCallable(SerializationService ss, int partition, WrapperComparator wrapperComparator) {
+        private PartitionCallable(SerializationService ss, int partition, Comparator<QueryableEntry> wrapperComparator) {
             this.ss = ss;
             this.partition = partition;
             this.wrapperComparator = wrapperComparator;
@@ -178,12 +183,7 @@ public class QueryOperation extends AbstractMapOperation {
         public Collection<QueryableEntry> call() throws Exception {
             final PartitionContainer container = mapService.getPartitionContainer(partition);
             final RecordStore recordStore = container.getRecordStore(name);
-            Collection<QueryableEntry> partitionResult = null;
-            if (pagingPredicate != null) {
-                partitionResult = new LinkedList<QueryableEntry>();
-            } else {
-                partitionResult = new LinkedHashSet<QueryableEntry>();
-            }
+            LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
             for (Record record : recordStore.getReadonlyRecordMap().values()) {
                 Data key = record.getKey();
                 Object value;
@@ -207,7 +207,9 @@ public class QueryOperation extends AbstractMapOperation {
                 if (predicate.apply(queryEntry)) {
                     if (pagingPredicate != null) {
                         Object anchor = pagingPredicate.getAnchor();
-                        if (anchor != null && wrapperComparator.compareValue(anchor, value) >= 0) {
+                        final Comparator comparator = pagingPredicate.getComparator();
+                        if (anchor != null &&
+                                SortingUtil.compare(comparator, anchor, value)  >= 0) {
                             continue;
                         }
                     }
@@ -215,38 +217,12 @@ public class QueryOperation extends AbstractMapOperation {
                 }
             }
             if (pagingPredicate != null) {
-                LinkedList list = (LinkedList)partitionResult;
-                Collections.sort(list, wrapperComparator);
-                if (list.size() > pagingPredicate.getPageSize()) {
-                    return list.subList(0, pagingPredicate.getPageSize());
+                Collections.sort(partitionResult, wrapperComparator);
+                if (partitionResult.size() > pagingPredicate.getPageSize()) {
+                    return partitionResult.subList(0, pagingPredicate.getPageSize());
                 }
-                return list;
             }
             return partitionResult;
-        }
-    }
-
-    private class WrapperComparator implements Comparator<QueryableEntry> {
-
-        Comparator inner;
-
-        private WrapperComparator(Comparator inner) {
-            this.inner = inner;
-        }
-
-        public int compare(QueryableEntry o1, QueryableEntry o2) {
-            final Object value1 = o1.getValue();
-            final Object value2 = o2.getValue();
-            return compareValue(value1, value2);
-        }
-
-        public int compareValue(Object value1, Object value2) {
-            if (inner != null) {
-                return inner.compare(value1, value2);
-            } else if (value1 instanceof Comparable && value2 instanceof Comparable) {
-                return ((Comparable) value1).compareTo(value2);
-            }
-            return value1.hashCode() - value2.hashCode();
         }
     }
 

@@ -833,10 +833,21 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
             for (Future future : futures) {
                 QueryResult queryResult = (QueryResult) future.get();
-                result.addAll(queryResult.getResult());
+                if (pagingPredicate == null) {
+                    result.addAll(queryResult.getResult());
+                } else {
+                    for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
+                        Object key = ss.toObject(queryResultEntry.getKeyData());
+                        Object value = ss.toObject(queryResultEntry.getValueData());
+                        result.add(new AbstractMap.SimpleImmutableEntry(key, value));
+                    }
+                }
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
+        }
+        if (pagingPredicate != null) {
+            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
         }
         return result;
     }

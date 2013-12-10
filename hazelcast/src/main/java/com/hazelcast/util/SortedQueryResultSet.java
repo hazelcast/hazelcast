@@ -27,8 +27,12 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
     private final IterationType iterationType;
     private final int pageSize;
 
-    public SortedQueryResultSet(Comparator comparator, IterationType iterationType, int pageSize) {
-        this.entries = new TreeSet<Map.Entry>(new WrapperComparator(comparator));
+    public SortedQueryResultSet(final Comparator comparator, IterationType iterationType, int pageSize) {
+        this.entries = new TreeSet<Map.Entry>(new Comparator<Map.Entry>() {
+            public int compare(Map.Entry o1, Map.Entry o2) {
+                return SortingUtil.compare(comparator, o1.getValue(), o2.getValue());
+            }
+        });
         this.iterationType = iterationType;
         this.pageSize = pageSize;
     }
@@ -48,6 +52,9 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
     }
 
     public Object last() {
+        if (entries.isEmpty()) {
+            return null;
+        }
         return entries.last().getValue();
     }
 
@@ -79,23 +86,4 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         return entries.size();
     }
 
-    private class WrapperComparator implements Comparator<Map.Entry> {
-
-        private final Comparator inner;
-
-        private WrapperComparator(Comparator inner) {
-            this.inner = inner;
-        }
-
-        public int compare(Map.Entry o1, Map.Entry o2) {
-            Object value1 = o1.getValue();
-            Object value2 = o2.getValue();
-            if (inner != null) {
-                return inner.compare(value1, value2);
-            } else if (value1 instanceof Comparable && value2 instanceof Comparable) {
-                return ((Comparable) value1).compareTo(value2);
-            }
-            return value1.hashCode() - value2.hashCode();
-        }
-    }
 }

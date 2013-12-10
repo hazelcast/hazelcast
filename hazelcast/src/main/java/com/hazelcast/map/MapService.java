@@ -40,8 +40,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.*;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionView;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -1025,10 +1027,20 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public QueryResult queryOnPartition(String mapName, Predicate predicate, int partitionId) {
         final QueryResult result = new QueryResult();
+        List<QueryEntry> list = new LinkedList<QueryEntry>();
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
         Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         SerializationService serializationService = nodeEngine.getSerializationService();
+        final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate)predicate : null;
+        final Comparator inner = pagingPredicate == null ? null : pagingPredicate.getComparator();
+        Comparator<QueryEntry> wrapperComparator = new Comparator<QueryEntry>() {
+            public int compare(QueryEntry o1, QueryEntry o2) {
+                final Object value1 = o1.getValue();
+                final Object value2 = o2.getValue();
+                return compareValue(inner, value1, value2);
+            }
+        };
         for (Record record : records.values()) {
             Data key = record.getKey();
             Object value = record.getValue();
@@ -1037,10 +1049,34 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
             if (predicate.apply(queryEntry)) {
-                result.add(new QueryResultEntryImpl(key, key, queryEntry.getValueData()));
+                if (pagingPredicate != null) {
+                    Object anchor = pagingPredicate.getAnchor();
+                    if (anchor != null && compareValue(inner, anchor, queryEntry.getValue()) >= 0 ) {
+                        continue;
+                    }
+                }
+                list.add(queryEntry);
             }
         }
+        if (pagingPredicate != null) {
+            Collections.sort(list, wrapperComparator);
+            if (list.size() > pagingPredicate.getPageSize()) {
+                list = list.subList(0, pagingPredicate.getPageSize());
+            }
+        }
+        for (QueryEntry entry : list) {
+            result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
+        }
         return result;
+    }
+
+    private int compareValue(Comparator comparator, Object value1, Object value2) {
+        if (comparator != null) {
+            return comparator.compare(value1, value2);
+        } else if (value1 instanceof Comparable && value2 instanceof Comparable) {
+            return ((Comparable) value1).compareTo(value2);
+        }
+        return value1.hashCode() - value2.hashCode();
     }
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
