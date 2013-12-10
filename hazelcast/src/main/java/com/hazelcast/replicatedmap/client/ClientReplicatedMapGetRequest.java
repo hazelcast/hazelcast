@@ -42,7 +42,7 @@ public class ClientReplicatedMapGetRequest extends AbstractReplicatedMapClientRe
     public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
         ReplicatedRecord record = recordStore.getReplicatedRecord(key);
-        return new GetResponse(recordStore.unmarshallValue(record.getValue()),
+        return new ReplicatedMapGetResponse(recordStore.unmarshallValue(record.getValue()),
                 record.getTtlMillis(), record.getUpdateTime());
     }
 

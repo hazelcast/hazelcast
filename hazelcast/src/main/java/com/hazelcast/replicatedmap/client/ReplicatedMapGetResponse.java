@@ -8,16 +8,16 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class GetResponse implements Portable {
+public class ReplicatedMapGetResponse implements Portable {
 
     private Object value;
     private long ttlMillis;
     private long updateTime;
 
-    GetResponse() {
+    ReplicatedMapGetResponse() {
     }
 
-    GetResponse(Object value, long ttlMillis, long updateTime) {
+    ReplicatedMapGetResponse(Object value, long ttlMillis, long updateTime) {
         this.value = value;
         this.ttlMillis = ttlMillis;
         this.updateTime = updateTime;

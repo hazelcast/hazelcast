@@ -18,15 +18,12 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.ListenerSupport;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.client.*;
-import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -72,7 +69,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public V get(Object key) {
-        GetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
+        ReplicatedMapGetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
         // TODO add near caching
         return (V) response.getValue();
     }

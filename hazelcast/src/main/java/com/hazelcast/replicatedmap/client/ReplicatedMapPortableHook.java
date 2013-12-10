@@ -144,7 +144,7 @@ public class ReplicatedMapPortableHook implements PortableHook {
                 constructors[GET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
                     @Override
                     public Portable createNew(Integer arg) {
-                        return new GetResponse();
+                        return new ReplicatedMapGetResponse();
                     }
                 };
                 constructors[ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {
