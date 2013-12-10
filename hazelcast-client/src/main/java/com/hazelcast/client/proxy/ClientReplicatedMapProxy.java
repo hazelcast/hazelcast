@@ -16,12 +16,15 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.client.*;
 import com.hazelcast.util.ExceptionUtil;
@@ -30,8 +33,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V> {
+
+    private volatile ClientNearCache<Object> nearCache;
+    private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -39,7 +46,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     protected void onDestroy() {
-        // TODO destroy nearcache
+        if (nearCache != null){
+            nearCache.destroy();
+        }
     }
 
     @Override
@@ -69,6 +78,17 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public V get(Object key) {
+        initNearCache();
+        if (nearCache != null) {
+            Object cached = nearCache.get(key);
+            if (cached != null) {
+                if (cached.equals(ClientNearCache.NULL_OBJECT)){
+                    return null;
+                }
+                return (V) cached;
+            }
+        }
+
         ReplicatedMapGetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
         // TODO add near caching
         return (V) response.getValue();
@@ -179,6 +199,17 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                 }
             }
         };
+    }
+
+    private void initNearCache() {
+        if (nearCacheInitialized.compareAndSet(false, true)) {
+            final NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(getName());
+            if (nearCacheConfig == null) {
+                return;
+            }
+            ClientNearCache<Object> _nearCache = new ClientNearCache<Object>(getName(), getContext(), nearCacheConfig);
+            nearCache = _nearCache;
+        }
     }
 
 }

@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private final String name;
-    private volatile ClientNearCache nearCache;
+    private volatile ClientNearCache<Data> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     public ClientMapProxy(String serviceName, String name) {
@@ -589,7 +589,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientNearCache _nearCache = new ClientNearCache(name, getContext(), nearCacheConfig);
+            ClientNearCache<Data> _nearCache = new ClientNearCache<Data>(name, getContext(), nearCacheConfig);
             nearCache = _nearCache;
         }
     }
