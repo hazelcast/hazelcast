@@ -29,22 +29,22 @@ public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecor
     }
 
     @Override
-    protected Object unmarshallKey(Object key) {
+    public Object unmarshallKey(Object key) {
         return key;
     }
 
     @Override
-    protected Object unmarshallValue(Object value) {
+    public Object unmarshallValue(Object value) {
         return value;
     }
 
     @Override
-    protected Object marshallKey(Object key) {
+    public Object marshallKey(Object key) {
         return key;
     }
 
     @Override
-    protected Object marshallValue(Object value) {
+    public Object marshallValue(Object value) {
         return value;
     }
 

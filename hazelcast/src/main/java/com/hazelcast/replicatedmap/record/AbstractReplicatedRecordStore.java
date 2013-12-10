@@ -390,14 +390,6 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         return loaded.get();
     }
 
-    protected abstract Object unmarshallKey(Object key);
-
-    protected abstract Object unmarshallValue(Object value);
-
-    protected abstract Object marshallKey(Object key);
-
-    protected abstract Object marshallValue(Object value);
-
     protected void incrementClock(Vector vector) {
         final AtomicInteger clock = vector.clocks.get(localMember);
         if (clock != null) {

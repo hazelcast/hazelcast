@@ -54,6 +54,7 @@ public final class FactoryIdHelper {
     public static final String ATOMIC_LONG_PORTABLE_FACTORY = "hazelcast.serialization.portable.atomic_long";
     public static final String ATOMIC_REFERENCE_PORTABLE_FACTORY = "hazelcast.serialization.portable.atomic_reference";
     public static final String CDL_PORTABLE_FACTORY = "hazelcast.serialization.portable.cdl";
+    public static final String REPLICATED_PORTABLE_FACTORY = "hazelcast.serialization.portable.replicated_map";
 
 
     public static int getFactoryId(String prop, int defaultId) {

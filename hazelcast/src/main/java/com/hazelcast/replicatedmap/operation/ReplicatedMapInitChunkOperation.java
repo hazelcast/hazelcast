@@ -21,7 +21,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
@@ -40,7 +39,7 @@ public class ReplicatedMapInitChunkOperation
     private boolean finalChunk;
     private boolean notYetReadyChooseSomeoneElse = false;
 
-    public ReplicatedMapInitChunkOperation() {
+    ReplicatedMapInitChunkOperation() {
     }
 
     public ReplicatedMapInitChunkOperation(String name, Member origin,

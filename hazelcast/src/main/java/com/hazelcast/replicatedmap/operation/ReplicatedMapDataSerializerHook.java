@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap;
+package com.hazelcast.replicatedmap.operation;
 
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;

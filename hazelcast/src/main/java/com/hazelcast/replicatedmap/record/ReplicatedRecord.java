@@ -19,7 +19,7 @@ package com.hazelcast.replicatedmap.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
 
 import java.io.IOException;
 

@@ -6,7 +6,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.spi.Operation;
@@ -39,7 +38,7 @@ public class ReplicatedMapPostJoinOperation
     private MemberMapPair[] replicatedMaps;
     private int chunkSize;
 
-    public ReplicatedMapPostJoinOperation() {
+    ReplicatedMapPostJoinOperation() {
     }
 
     public ReplicatedMapPostJoinOperation(MemberMapPair[] replicatedMaps, int chunkSize) {

@@ -17,7 +17,17 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.ListenerSupport;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.replicatedmap.client.*;
+import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,72 +42,146 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     protected void onDestroy() {
-
+        // TODO destroy nearcache
     }
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeUnit) {
-        return null;
+        return invoke(new ClientReplicatedMapPutTtlRequest(getName(), key, value, timeUnit.toMillis(ttl)));
     }
 
     @Override
     public int size() {
-        return 0;
+        return invoke(new ClientReplicatedMapSizeRequest(getName()));
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return invoke(new ClientReplicatedMapIsEmptyRequest(getName()));
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return false;
+        return invoke(new ClientReplicatedMapContainsKeyRequest(getName(), key));
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return false;
+        return invoke(new ClientReplicatedMapContainsValueRequest(getName(), value));
     }
 
     @Override
     public V get(Object key) {
-        return null;
+        GetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
+        // TODO add near caching
+        return (V) response.getValue();
     }
 
     @Override
     public V put(K key, V value) {
-        return null;
+        return put(key, value, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public V remove(Object key) {
-        return null;
+        return invoke(new ClientReplicatedMapRemoveRequest(getName(), key));
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-
+        invoke(new ClientReplicatedMapPutAllRequest(getName(), new ReplicatedMapEntrySet(m.entrySet())));
     }
 
     @Override
     public void clear() {
+        throw new UnsupportedOperationException("clear is not supported on ReplicatedMap");
+    }
 
+    @Override
+    public boolean removeEntryListener(String id) {
+        return stopListening(id);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener) {
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
+        EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
+        return listen(request, null, handler);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener, K key) {
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), null, key);
+        EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
+        return listen(request, null, handler);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, null);
+        EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
+        return listen(request, null, handler);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, key);
+        EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
+        return listen(request, null, handler);
     }
 
     @Override
     public Set<K> keySet() {
-        return null;
+        return invoke(new ClientReplicatedMapKeySetRequest(getName()));
     }
 
     @Override
     public Collection<V> values() {
-        return null;
+        return invoke(new ClientReplicatedMapValuesRequest(getName()));
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return null;
+        return invoke(new ClientReplicatedMapEntrySetRequest(getName()));
+    }
+
+    private <T> T invoke(Object request) {
+        try {
+            return getContext().getInvocationService().invokeOnRandomTarget(request);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private EventHandler<ReplicatedMapPortableEntryEvent> createHandler(final EntryListener<K, V> listener) {
+        return new EventHandler<ReplicatedMapPortableEntryEvent>() {
+            public void handle(ReplicatedMapPortableEntryEvent event) {
+                V value = (V) event.getValue();
+                V oldValue = (V) event.getOldValue();
+                K key = (K) event.getKey();
+                Member member = getContext().getClusterService().getMember(event.getUuid());
+                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(getName(), member,
+                        event.getEventType().getType(), key, oldValue, value);
+                switch (event.getEventType()) {
+                    case ADDED:
+                        listener.entryAdded(entryEvent);
+                        break;
+                    case REMOVED:
+                        listener.entryRemoved(entryEvent);
+                        break;
+                    case UPDATED:
+                        listener.entryUpdated(entryEvent);
+                        break;
+                    case EVICTED:
+                        listener.entryEvicted(entryEvent);
+                        break;
+                }
+            }
+        };
     }
 
 }

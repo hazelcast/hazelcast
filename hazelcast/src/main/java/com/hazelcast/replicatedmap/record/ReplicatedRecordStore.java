@@ -56,6 +56,14 @@ public interface ReplicatedRecordStore {
 
     boolean isEmpty();
 
+    Object unmarshallKey(Object key);
+
+    Object unmarshallValue(Object value);
+
+    Object marshallKey(Object key);
+
+    Object marshallValue(Object value);
+
     ReplicatedMapService getReplicatedMapService();
 
     void publishReplicatedMessage(ReplicationMessage message);

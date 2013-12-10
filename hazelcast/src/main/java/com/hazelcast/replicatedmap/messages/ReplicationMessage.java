@@ -20,9 +20,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.record.Vector;
 
 import java.io.IOException;
