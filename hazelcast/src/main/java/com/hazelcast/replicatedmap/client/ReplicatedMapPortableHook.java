@@ -25,23 +25,26 @@ public class ReplicatedMapPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.REPLICATED_PORTABLE_FACTORY, -22);
 
-    public static final int SIZE = 0;
-    public static final int IS_EMPTY = 1;
-    public static final int CONTAINS_KEY = 2;
-    public static final int CONTAINS_VALUE = 3;
-    public static final int PUT_TTL = 4;
-    public static final int GET = 5;
-    public static final int REMOVE = 6;
-    public static final int PUT_ALL = 7;
-    public static final int KEY_SET = 8;
-    public static final int VALUES = 9;
-    public static final int ENTRY_SET = 10;
-    public static final int MAP_ENTRY_SET = 11;
-    public static final int GET_RESPONSE = 12;
-    public static final int ADD_LISTENER = 13;
-    public static final int REMOVE_LISTENER = 14;
+    public static final int SIZE = 1;
+    public static final int IS_EMPTY = 2;
+    public static final int CONTAINS_KEY = 3;
+    public static final int CONTAINS_VALUE = 4;
+    public static final int PUT_TTL = 5;
+    public static final int GET = 6;
+    public static final int REMOVE = 7;
+    public static final int PUT_ALL = 8;
+    public static final int KEY_SET = 9;
+    public static final int VALUES = 10;
+    public static final int ENTRY_SET = 11;
+    public static final int MAP_ENTRY_SET = 12;
+    public static final int MAP_KEY_SET = 13;
+    public static final int VALUES_COLLECTION = 14;
+    public static final int GET_RESPONSE = 15;
+    public static final int ADD_LISTENER = 16;
+    public static final int REMOVE_LISTENER = 17;
+    public static final int MAP_ENTRY_EVENT = 18;
 
-    private static final int LENGTH = REMOVE_LISTENER + 1;
+    private static final int LENGTH = MAP_ENTRY_EVENT + 1;
 
     @Override
     public int getFactoryId() {
@@ -120,10 +123,22 @@ public class ReplicatedMapPortableHook implements PortableHook {
                         return new ClientReplicatedMapEntrySetRequest();
                     }
                 };
+                constructors[VALUES_COLLECTION] = new ConstructorFunction<Integer, Portable>() {
+                    @Override
+                    public Portable createNew(Integer arg) {
+                        return new ReplicatedMapValueCollection();
+                    }
+                };
                 constructors[MAP_ENTRY_SET] = new ConstructorFunction<Integer, Portable>() {
                     @Override
                     public Portable createNew(Integer arg) {
                         return new ReplicatedMapEntrySet();
+                    }
+                };
+                constructors[MAP_KEY_SET] = new ConstructorFunction<Integer, Portable>() {
+                    @Override
+                    public Portable createNew(Integer arg) {
+                        return new ReplicatedMapKeySet();
                     }
                 };
                 constructors[GET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
@@ -136,6 +151,12 @@ public class ReplicatedMapPortableHook implements PortableHook {
                     @Override
                     public Portable createNew(Integer arg) {
                         return new ClientReplicatedMapAddEntryListenerRequest();
+                    }
+                };
+                constructors[MAP_ENTRY_EVENT] = new ConstructorFunction<Integer, Portable>() {
+                    @Override
+                    public Portable createNew(Integer arg) {
+                        return new ReplicatedMapPortableEntryEvent();
                     }
                 };
             }

@@ -62,7 +62,7 @@ public class ClientReplicatedMapGetRequest extends AbstractReplicatedMapClientRe
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.CONTAINS_KEY;
+        return ReplicatedMapPortableHook.GET;
     }
 
 }

@@ -70,7 +70,7 @@ public class ClientReplicatedMapPutTtlRequest extends AbstractReplicatedMapClien
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.ENTRY_SET;
+        return ReplicatedMapPortableHook.PUT_TTL;
     }
 
 }

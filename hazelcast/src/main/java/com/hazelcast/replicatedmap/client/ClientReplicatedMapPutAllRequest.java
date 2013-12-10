@@ -66,7 +66,7 @@ public class ClientReplicatedMapPutAllRequest extends AbstractReplicatedMapClien
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.ENTRY_SET;
+        return ReplicatedMapPortableHook.PUT_ALL;
     }
 
 }

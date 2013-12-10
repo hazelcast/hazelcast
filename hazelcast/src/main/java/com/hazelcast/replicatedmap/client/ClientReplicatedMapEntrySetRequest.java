@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.client;
 
-import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
 
 public class ClientReplicatedMapEntrySetRequest extends AbstractReplicatedMapClientRequest {
@@ -32,7 +31,7 @@ public class ClientReplicatedMapEntrySetRequest extends AbstractReplicatedMapCli
     @Override
     public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new MapEntrySet(recordStore.entrySet());
+        return new ReplicatedMapEntrySet(recordStore.entrySet());
     }
 
     @Override

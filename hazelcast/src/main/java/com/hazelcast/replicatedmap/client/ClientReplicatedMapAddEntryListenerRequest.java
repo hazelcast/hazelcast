@@ -40,9 +40,9 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
 
             private void handleEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.live()) {
-                    Data key = clientEngine.toData(event.getKey());
-                    Data value = clientEngine.toData(event.getValue());
-                    Data oldValue = clientEngine.toData(event.getOldValue());
+                    Object key = event.getKey();
+                    Object value = event.getValue();
+                    Object oldValue = event.getOldValue();
                     ReplicatedMapPortableEntryEvent portableEntryEvent =
                             new ReplicatedMapPortableEntryEvent(key, value, oldValue,
                                     event.getEventType(), event.getMember().getUuid());

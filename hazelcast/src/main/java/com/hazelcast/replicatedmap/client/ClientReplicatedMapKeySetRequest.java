@@ -34,12 +34,12 @@ public class ClientReplicatedMapKeySetRequest extends AbstractReplicatedMapClien
     @Override
     public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new MapKeySet(recordStore.keySet());
+        return new ReplicatedMapKeySet(recordStore.keySet());
     }
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.ENTRY_SET;
+        return ReplicatedMapPortableHook.KEY_SET;
     }
 
 }

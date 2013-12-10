@@ -136,17 +136,17 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public Set<K> keySet() {
-        return invoke(new ClientReplicatedMapKeySetRequest(getName()));
+        return ((ReplicatedMapKeySet) invoke(new ClientReplicatedMapKeySetRequest(getName()))).getKeySet()  ;
     }
 
     @Override
     public Collection<V> values() {
-        return invoke(new ClientReplicatedMapValuesRequest(getName()));
+        return ((ReplicatedMapValueCollection) invoke(new ClientReplicatedMapValuesRequest(getName()))).getValues();
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return invoke(new ClientReplicatedMapEntrySetRequest(getName()));
+        return ((ReplicatedMapEntrySet) invoke(new ClientReplicatedMapEntrySetRequest(getName()))).getEntrySet();
     }
 
     private <T> T invoke(Object request) {

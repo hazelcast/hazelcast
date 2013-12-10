@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.client;
 
-import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
 
 public class ClientReplicatedMapValuesRequest extends AbstractReplicatedMapClientRequest {
@@ -32,12 +31,12 @@ public class ClientReplicatedMapValuesRequest extends AbstractReplicatedMapClien
     @Override
     public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new MapValueCollection(recordStore.values());
+        return new ReplicatedMapValueCollection(recordStore.values());
     }
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.SIZE;
+        return ReplicatedMapPortableHook.VALUES;
     }
 
 }

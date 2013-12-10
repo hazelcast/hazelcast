@@ -71,14 +71,6 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
         return uuid;
     }
 
-    public int getFactoryId() {
-        return SpiPortableHook.ID;
-    }
-
-    public int getClassId() {
-        return SpiPortableHook.ENTRY_EVENT;
-    }
-
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
@@ -96,4 +88,13 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
         value = in.readObject();
         oldValue = in.readObject();
     }
+
+    public int getFactoryId() {
+        return ReplicatedMapPortableHook.F_ID;
+    }
+
+    public int getClassId() {
+        return ReplicatedMapPortableHook.MAP_ENTRY_EVENT;
+    }
+
 }
