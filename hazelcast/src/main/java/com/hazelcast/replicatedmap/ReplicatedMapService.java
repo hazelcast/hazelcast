@@ -22,9 +22,12 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation.MemberMapPair;
 import com.hazelcast.replicatedmap.record.*;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.spi.*;
@@ -33,13 +36,10 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.NamedThreadFactory;
 import sun.plugin.dom.exception.InvalidStateException;
 
-import java.util.EventListener;
-import java.util.Iterator;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class ReplicatedMapService implements ManagedService, RemoteService,
-        PostJoinAwareService, SplitBrainHandlerService,
         EventPublishingService<Object, Object>{
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
@@ -118,15 +118,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
     }
 
     @Override
-    public Operation getPostJoinOperation() {
-        return null;
-    }
-
-    @Override
     public DistributedObject createDistributedObject(String objectName) {
         ReplicatedRecordStore replicatedRecordStore = ConcurrencyUtil
                 .getOrPutSynchronized(replicatedStorages, objectName, replicatedStorages, constructor);
-        return new ReplicatedMapProxy(nodeEngine, replicatedRecordStore);
+        return new ReplicatedMapProxy(nodeEngine, (AbstractReplicatedRecordStore) replicatedRecordStore);
     }
 
     @Override
@@ -135,11 +130,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
         if (replicatedRecordStore != null) {
             replicatedRecordStore.destroy();
         }
-    }
-
-    @Override
-    public Runnable prepareMergeRunnable() {
-        return null;
     }
 
     @Override
@@ -170,7 +160,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
         return config.getReplicatedMapConfig(name).getAsReadOnly();
     }
 
-    public ReplicatedRecordStore getReplicatedRecordStore(String name) {
+    public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create) {
+        if (create) {
+            return ConcurrencyUtil.getOrPutSynchronized(replicatedStorages, name, replicatedStorages, constructor);
+        }
         return replicatedStorages.get(name);
     }
 

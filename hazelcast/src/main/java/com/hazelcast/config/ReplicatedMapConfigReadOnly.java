@@ -54,4 +54,10 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
     public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         throw new UnsupportedOperationException("This config is read-only");
     }
+
+    @Override
+    public void setAsyncFillup(boolean asyncFillup) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
 }

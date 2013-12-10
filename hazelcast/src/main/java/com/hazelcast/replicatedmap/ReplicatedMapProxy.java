@@ -19,8 +19,10 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
@@ -28,11 +30,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject implements ReplicatedMap<K, V> {
+public class ReplicatedMapProxy<K, V>
+        extends AbstractDistributedObject
+        implements ReplicatedMap<K, V>, InitializingObject {
 
-    private final ReplicatedRecordStore replicatedRecordStore;
+    private final AbstractReplicatedRecordStore replicatedRecordStore;
 
-    ReplicatedMapProxy(NodeEngine nodeEngine, ReplicatedRecordStore replicatedRecordStore) {
+    ReplicatedMapProxy(NodeEngine nodeEngine, AbstractReplicatedRecordStore replicatedRecordStore) {
         super(nodeEngine, replicatedRecordStore.getReplicatedMapService());
         this.replicatedRecordStore = replicatedRecordStore;
     }
@@ -149,4 +153,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject implemen
         return getClass().getSimpleName() + " -> " + replicatedRecordStore.getName();
     }
 
+    @Override
+    public void initialize() {
+        replicatedRecordStore.initialize();
+    }
 }

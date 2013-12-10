@@ -22,7 +22,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapEvictionProcessor;
@@ -30,6 +29,8 @@ import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation.MemberMapPair;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl.Registration;
 import com.hazelcast.util.ExceptionUtil;
@@ -42,15 +43,22 @@ import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
+public abstract class AbstractReplicatedRecordStore<K, V>
+        implements ReplicatedRecordStore, InitializingObject {
 
     protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new NonBlockingHashMap<K, ReplicatedRecord<K, V>>();
 
     private final AtomicInteger initialFillupThreadNumber = new AtomicInteger(0);
+    private final AtomicBoolean loaded = new AtomicBoolean(false);
+    private final Lock waitForLoadedLock = new ReentrantLock();
+    private final Condition waitForLoadedCondition = waitForLoadedLock.newCondition();
+    private final Random memberRandomizer = new Random(-System.currentTimeMillis());
 
     private final List<ReplicationMessage> replicationMessageCache = new ArrayList<ReplicationMessage>();
     private final Lock replicationMessageCacheLock = new ReentrantLock();
@@ -91,7 +99,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         }
 
         this.cleanerFuture = cleanerRegistrator.registerCleaner(this);
-        initializeListeners();
     }
 
     @Override
@@ -101,6 +108,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public Object remove(Object key) {
+        checkState();
         V oldValue;
         K marshalledKey = (K) marshallKey(key);
         synchronized (getMutex(marshalledKey)) {
@@ -125,17 +133,20 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public Object get(Object key) {
+        checkState();
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
         return replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
     }
 
     @Override
     public Object put(Object key, Object value) {
+        checkState();
         return put(key, value, 0, null);
     }
 
     @Override
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+        checkState();
         V oldValue = null;
         K marshalledKey = (K) marshallKey(key);
         V marshalledValue = (V) marshallValue(value);
@@ -170,11 +181,13 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public boolean containsKey(Object key) {
+        checkState();
         return storage.containsKey(marshallKey(key));
     }
 
     @Override
     public boolean containsValue(Object value) {
+        checkState();
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
             V entryValue = entry.getValue().getValue();
             if (value == entryValue
@@ -187,6 +200,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public Set keySet() {
+        checkState();
         Set keySet = new HashSet(storage.size());
         for (K key : storage.keySet()) {
             keySet.add(unmarshallKey(key));
@@ -196,6 +210,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public Collection values() {
+        checkState();
         List values = new ArrayList(storage.size());
         for (ReplicatedRecord record : storage.values()) {
             values.add(unmarshallValue(record.getValue()));
@@ -205,6 +220,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public Set entrySet() {
+        checkState();
         Set entrySet = new HashSet(storage.size());
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
             Object key = unmarshallKey(entry.getKey());
@@ -216,6 +232,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     @Override
     public ReplicatedRecord getReplicatedRecord(Object key) {
+        checkState();
         return storage.get(marshallKey(key));
     }
 
@@ -300,7 +317,21 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         return replicatedMapService.removeEventListener(name, id);
     }
 
+    @Override
+    public void initialize() {
+        initializeListeners();
+
+        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberList());
+        members.remove(localMember);
+        if (members.size() == 0) {
+            loaded.set(true);
+        } else {
+            sendInitialFillupRequest(members);
+        }
+    }
+
     public Set<ReplicatedRecord> getRecords() {
+        checkState();
         return new HashSet<ReplicatedRecord>(storage.values());
     }
 
@@ -318,6 +349,45 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
                 processUpdateMessage(update);
             }
         });
+    }
+
+    public void finalChunkReceived() {
+        loaded.set(true);
+        waitForLoadedLock.lock();
+        try {
+            waitForLoadedCondition.signalAll();
+        } finally {
+            waitForLoadedLock.unlock();
+        }
+    }
+
+    public void retryWithDifferentReplicationNode(Member member) {
+        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberList());
+        members.remove(member);
+
+        // If there are less than two members there is not other possible candidate to replicate from
+        if (members.size() < 2) {
+            return;
+        }
+        sendInitialFillupRequest(members);
+    }
+
+    private void sendInitialFillupRequest(List<MemberImpl> members) {
+        if (members.size() == 0) {
+            return;
+        }
+        int randomMember = memberRandomizer.nextInt(members.size());
+        MemberImpl newMember = members.get(randomMember);
+        MemberMapPair[] memberMapPairs = new MemberMapPair[1];
+        memberMapPairs[0] = new MemberMapPair(newMember, name);
+
+        OperationService operationService = nodeEngine.getOperationService();
+        operationService.send(new ReplicatedMapPostJoinOperation(
+                memberMapPairs, ReplicatedMapPostJoinOperation.DEFAULT_CHUNK_SIZE), newMember.getAddress());
+    }
+
+    public boolean isLoaded() {
+        return loaded.get();
     }
 
     protected abstract Object unmarshallKey(Object key);
@@ -360,6 +430,21 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
                     ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
                 }
                 addEntryListener(listener, null);
+            }
+        }
+    }
+
+    private void checkState() {
+        if (!loaded.get()) {
+            if (!replicatedMapConfig.isAsyncFillup()) {
+                waitForLoadedLock.lock();
+                try {
+                    waitForLoadedCondition.await();
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException("Synchronous loading of ReplicatedMap '" + name + "' failed.", e);
+                } finally {
+                    waitForLoadedLock.unlock();
+                }
             }
         }
     }
@@ -486,7 +571,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
 
     private class RemoteFillupTask implements Runnable {
 
-        private final PartitionService partitionService = nodeEngine.getPartitionService();
         private final OperationService operationService = nodeEngine.getOperationService();
         private final Address callerAddress;
         private final int chunkSize;
@@ -502,25 +586,23 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
         @Override
         public void run() {
             recordCache = new ReplicatedRecord[chunkSize];
-            for (ReplicatedRecord<K, V> replicatedRecord : storage.values()) {
-                processReplicatedRecord(replicatedRecord);
-            }
-            sendChunk();
-        }
-
-        private void processReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord) {
-            Object key = marshallKey(replicatedRecord.getKey());
-            int partitionId = partitionService.getPartitionId(key);
-            if (partitionService.getPartitionOwner(partitionId).equals(nodeEngine.getThisAddress())) {
-                synchronized (getMutex(key)) {
-                    pushReplicatedRecord(replicatedRecord);
-                }
+            List<ReplicatedRecord<K, V>> replicatedRecords = new ArrayList<ReplicatedRecord<K, V>>(storage.values());
+            for (int i = 0; i < replicatedRecords.size(); i++) {
+                ReplicatedRecord<K, V> replicatedRecord = replicatedRecords.get(i);
+                processReplicatedRecord(replicatedRecord, i == replicatedRecords.size() - 1);
             }
         }
 
-        private void pushReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord) {
+        private void processReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord, boolean finalRecord) {
+            Object marshalledKey = marshallKey(replicatedRecord.getKey());
+            synchronized (getMutex(marshalledKey)) {
+                pushReplicatedRecord(replicatedRecord, finalRecord);
+            }
+        }
+
+        private void pushReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord, boolean finalRecord) {
             if (recordCachePos == chunkSize) {
-                sendChunk();
+                sendChunk(finalRecord);
             }
 
             int hash = replicatedRecord.getLatestUpdateHash();
@@ -529,11 +611,16 @@ public abstract class AbstractReplicatedRecordStore<K, V> implements ReplicatedR
             Vector vector = Vector.copyVector(replicatedRecord.getVector());
             long ttlMillis = replicatedRecord.getTtlMillis();
             recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vector, hash, ttlMillis);
+
+            if (finalRecord) {
+                sendChunk(finalRecord);
+            }
         }
 
-        private void sendChunk() {
+        private void sendChunk(boolean finalChunk) {
             if (recordCachePos > 0) {
-                Operation operation = new ReplicatedMapInitChunkOperation(name, localMember, recordCache, recordCachePos);
+                Operation operation = new ReplicatedMapInitChunkOperation(
+                        name, localMember, recordCache, recordCachePos, finalChunk);
                 operationService.send(operation, callerAddress);
 
                 // Reset chunk cache and pos

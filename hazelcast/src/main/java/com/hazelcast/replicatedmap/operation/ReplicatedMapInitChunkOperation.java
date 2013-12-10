@@ -37,38 +37,49 @@ public class ReplicatedMapInitChunkOperation
     private Member origin;
     private ReplicatedRecord[] replicatedRecords;
     private int recordCount;
+    private boolean finalChunk;
+    private boolean notYetReadyChooseSomeoneElse = false;
 
     public ReplicatedMapInitChunkOperation() {
     }
 
     public ReplicatedMapInitChunkOperation(String name, Member origin,
+                                           boolean notYetReadyChooseSomeoneElse) {
+        this(name, origin, new ReplicatedRecord[0], 0, true);
+        this.notYetReadyChooseSomeoneElse = true;
+    }
+
+    public ReplicatedMapInitChunkOperation(String name, Member origin,
                                            ReplicatedRecord[] replicatedRecords,
-                                           int recordCount) {
+                                           int recordCount, boolean finalChunk) {
         this.name = name;
         this.origin = origin;
         this.replicatedRecords = replicatedRecords;
         this.recordCount = recordCount;
+        this.finalChunk = finalChunk;
     }
 
     public String getName() {
         return name;
     }
 
-    public ReplicatedRecord[] getReplicatedRecords() {
-        return replicatedRecords;
-    }
-
     @Override
     public void run() throws Exception {
         ReplicatedMapService replicatedMapService = getService();
         AbstractReplicatedRecordStore recordStorage =
-                (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(name);
-
-        for (int i = 0; i < recordCount; i++) {
-            ReplicatedRecord record = replicatedRecords[i];
-            ReplicationMessage update = new ReplicationMessage(name, record.getKey(), record.getValue(),
-                    record.getVector(), origin, record.getLatestUpdateHash(), record.getTtlMillis());
-            recordStorage.queueUpdateMessage(update);
+                (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(name, true);
+        if (notYetReadyChooseSomeoneElse) {
+            recordStorage.retryWithDifferentReplicationNode(origin);
+        } else {
+            for (int i = 0; i < recordCount; i++) {
+                ReplicatedRecord record = replicatedRecords[i];
+                ReplicationMessage update = new ReplicationMessage(name, record.getKey(), record.getValue(),
+                        record.getVector(), origin, record.getLatestUpdateHash(), record.getTtlMillis());
+                recordStorage.queueUpdateMessage(update);
+            }
+            if (finalChunk) {
+                recordStorage.finalChunkReceived();
+            }
         }
     }
 
@@ -90,6 +101,7 @@ public class ReplicatedMapInitChunkOperation
         for (int i = 0; i < recordCount; i++) {
             replicatedRecords[i].writeData(out);
         }
+        out.writeBoolean(finalChunk);
     }
 
     @Override
@@ -104,5 +116,6 @@ public class ReplicatedMapInitChunkOperation
             replicatedRecord.readData(in);
             replicatedRecords[i] = replicatedRecord;
         }
+        finalChunk = in.readBoolean();
     }
 }

@@ -1,11 +1,16 @@
 package com.hazelcast.replicatedmap.operation;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapDataSerializerHook;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
 
@@ -29,25 +34,37 @@ public class ReplicatedMapPostJoinOperation
         extends AbstractReplicatedMapOperation
         implements IdentifiedDataSerializable {
 
-    private String[] replicatedMaps;
+    public static final int DEFAULT_CHUNK_SIZE = 100;
+
+    private MemberMapPair[] replicatedMaps;
     private int chunkSize;
 
     public ReplicatedMapPostJoinOperation() {
     }
 
-    public ReplicatedMapPostJoinOperation(String[] replicatedMaps, int chunkSize) {
+    public ReplicatedMapPostJoinOperation(MemberMapPair[] replicatedMaps, int chunkSize) {
         this.replicatedMaps = replicatedMaps;
         this.chunkSize = chunkSize;
     }
 
     @Override
     public void run() throws Exception {
+        Member localMember = getNodeEngine().getLocalMember();
         ReplicatedMapService replicatedMapService = getService();
-        for (String replicatedMap : replicatedMaps) {
-            AbstractReplicatedRecordStore replicatedRecordStorage =
-                    (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(replicatedMap);
+        for (MemberMapPair replicatedMap : replicatedMaps) {
+            String mapName = replicatedMap.getName();
+            if (localMember.equals(replicatedMap.getMember())) {
+                AbstractReplicatedRecordStore recordStorage =
+                        (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(mapName, false);
 
-            replicatedRecordStorage.queueInitialFillup(getCallerAddress(), chunkSize);
+                if (recordStorage != null && recordStorage.isLoaded()) {
+                    recordStorage.queueInitialFillup(getCallerAddress(), chunkSize);
+                } else {
+                    OperationService operationService = getNodeEngine().getOperationService();
+                    Operation operation = new ReplicatedMapInitChunkOperation(mapName, localMember, true);
+                    operationService.send(operation, getCallerAddress());
+                }
+            }
         }
     }
 
@@ -56,7 +73,7 @@ public class ReplicatedMapPostJoinOperation
         out.writeInt(chunkSize);
         out.writeInt(replicatedMaps.length);
         for (int i = 0; i < replicatedMaps.length; i++) {
-            out.writeUTF(replicatedMaps[i]);
+            replicatedMaps[i].writeData(out);
         }
     }
 
@@ -64,9 +81,10 @@ public class ReplicatedMapPostJoinOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         chunkSize = in.readInt();
         int length = in.readInt();
-        replicatedMaps = new String[length];
+        replicatedMaps = new MemberMapPair[length];
         for (int i = 0; i < length; i++) {
-            replicatedMaps[i] = in.readUTF();
+            replicatedMaps[i] = new MemberMapPair();
+            replicatedMaps[i].readData(in);
         }
     }
 
@@ -78,6 +96,40 @@ public class ReplicatedMapPostJoinOperation
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.OP_POST_JOIN;
+    }
+
+    public static class MemberMapPair implements DataSerializable {
+        private Member member;
+        private String name;
+
+        MemberMapPair() {
+        }
+
+        public MemberMapPair(Member member, String name) {
+            this.member = member;
+            this.name = name;
+        }
+
+        public Member getMember() {
+            return member;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(name);
+            member.writeData(out);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            name = in.readUTF();
+            member = new MemberImpl();
+            member.readData(in);
+        }
     }
 
 }

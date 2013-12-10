@@ -25,12 +25,14 @@ public class ReplicatedMapConfig {
     public final static int DEFAULT_CONCURRENCY_LEVEL = 32;
     public final static int DEFAULT_REPLICATION_DELAY_MILLIS = 100;
     public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.OBJECT;
+    public final static boolean DEFAULT_ASNYC_FILLUP = true;
 
     private String name;
     private int concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
     private long replicationDelayMillis = DEFAULT_REPLICATION_DELAY_MILLIS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private ScheduledExecutorService replicatorExecutorService;
+    private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
 
     private List<ListenerConfig> listenerConfigs;
 
@@ -44,6 +46,7 @@ public class ReplicatedMapConfig {
         this.replicationDelayMillis = replicatedMapConfig.replicationDelayMillis;
         this.replicatorExecutorService = replicatedMapConfig.replicatorExecutorService;
         this.listenerConfigs = new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
+        this.asyncFillup = asyncFillup;
     }
 
     public String getName() {
@@ -101,6 +104,14 @@ public class ReplicatedMapConfig {
     public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
         return this;
+    }
+
+    public boolean isAsyncFillup() {
+        return asyncFillup;
+    }
+
+    public void setAsyncFillup(boolean asyncFillup) {
+        this.asyncFillup = asyncFillup;
     }
 
     public ReplicatedMapConfig getAsReadOnly() {

@@ -37,11 +37,13 @@ public class ReplicatedMapEvictionProcessor implements ScheduledEntryProcessor<O
     }
 
     public void process(EntryTaskScheduler<Object, Object> scheduler, Collection<ScheduledEntry<Object, Object>> entries) {
-        final ReplicatedRecordStore replicatedRecordStore = replicatedMapService.getReplicatedRecordStore(mapName);
+        final ReplicatedRecordStore replicatedRecordStore = replicatedMapService.getReplicatedRecordStore(mapName, false);
 
-        for (ScheduledEntry<Object, Object> entry : entries) {
-            Object key = entry.getKey();
-            replicatedRecordStore.remove(key);
+        if (replicatedRecordStore != null) {
+            for (ScheduledEntry<Object, Object> entry : entries) {
+                Object key = entry.getKey();
+                replicatedRecordStore.remove(key);
+            }
         }
     }
 
