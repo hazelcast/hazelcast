@@ -106,6 +106,11 @@ public class ReplicatedMapConfig {
         return this;
     }
 
+    public ReplicatedMapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
+        getListenerConfigs().add(listenerConfig);
+        return this;
+    }
+
     public boolean isAsyncFillup() {
         return asyncFillup;
     }
