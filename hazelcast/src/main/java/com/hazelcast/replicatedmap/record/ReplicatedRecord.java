@@ -22,15 +22,20 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
+
+    private final AtomicLong hits = new AtomicLong();
+    private final AtomicLong lastAccessTime = new AtomicLong();
 
     private K key;
     private V value;
     private Vector vector;
     private int latestUpdateHash = 0;
     private long ttlMillis;
-    private long updateTime = System.currentTimeMillis();
+    private volatile long updateTime = System.currentTimeMillis();
 
     public ReplicatedRecord() {
     }
@@ -74,6 +79,19 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     public int getLatestUpdateHash() {
         return latestUpdateHash;
+    }
+
+    public long getHits() {
+        return hits.get();
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime.get();
+    }
+
+    public void access() {
+        hits.incrementAndGet();
+        lastAccessTime.set(System.currentTimeMillis());
     }
 
     @Override

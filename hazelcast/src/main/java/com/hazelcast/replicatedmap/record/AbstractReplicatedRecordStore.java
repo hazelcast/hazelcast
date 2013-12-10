@@ -20,6 +20,8 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
+import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.Predicate;
@@ -53,6 +55,8 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         implements ReplicatedRecordStore, InitializingObject {
 
     protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new NonBlockingHashMap<K, ReplicatedRecord<K, V>>();
+
+    private final LocalReplicatedMapStatsImpl mapStats = new LocalReplicatedMapStatsImpl();
 
     private final AtomicInteger initialFillupThreadNumber = new AtomicInteger(0);
     private final AtomicBoolean loaded = new AtomicBoolean(false);
@@ -108,6 +112,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object remove(Object key) {
+        long time = System.currentTimeMillis();
         checkState();
         V oldValue;
         K marshalledKey = (K) marshallKey(key);
@@ -128,14 +133,22 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         }
         Object unmarshalledOldValue = unmarshallValue(oldValue);
         fireEntryListenerEvent(key, unmarshalledOldValue, null);
+        if (replicatedMapConfig.isStatisticsEnabled()) {
+            mapStats.incrementRemoves(System.currentTimeMillis() - time);
+        }
         return unmarshalledOldValue;
     }
 
     @Override
     public Object get(Object key) {
+        long time = System.currentTimeMillis();
         checkState();
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
-        return replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
+        Object value = replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
+        if (replicatedMapConfig.isStatisticsEnabled()) {
+            mapStats.incrementGets(System.currentTimeMillis() - time);
+        }
+        return value;
     }
 
     @Override
@@ -146,6 +159,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+        long time = System.currentTimeMillis();
         checkState();
         V oldValue = null;
         K marshalledKey = (K) marshallKey(key);
@@ -176,18 +190,23 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         }
         Object unmarshalledOldValue = unmarshallValue(oldValue);
         fireEntryListenerEvent(key, unmarshalledOldValue, value);
+        if (replicatedMapConfig.isStatisticsEnabled()) {
+            mapStats.incrementPuts(System.currentTimeMillis() - time);
+        }
         return unmarshalledOldValue;
     }
 
     @Override
     public boolean containsKey(Object key) {
         checkState();
+        mapStats.incrementOtherOperations();
         return storage.containsKey(marshallKey(key));
     }
 
     @Override
     public boolean containsValue(Object value) {
         checkState();
+        mapStats.incrementOtherOperations();
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
             V entryValue = entry.getValue().getValue();
             if (value == entryValue
@@ -205,6 +224,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         for (K key : storage.keySet()) {
             keySet.add(unmarshallKey(key));
         }
+        mapStats.incrementOtherOperations();
         return keySet;
     }
 
@@ -215,6 +235,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         for (ReplicatedRecord record : storage.values()) {
             values.add(unmarshallValue(record.getValue()));
         }
+        mapStats.incrementOtherOperations();
         return values;
     }
 
@@ -227,6 +248,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             Object value = unmarshallValue(entry.getValue().getValue());
             entrySet.add(new AbstractMap.SimpleEntry(key, value));
         }
+        mapStats.incrementOtherOperations();
         return entrySet;
     }
 
@@ -238,11 +260,13 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public boolean isEmpty() {
+        mapStats.incrementOtherOperations();
         return storage.isEmpty();
     }
 
     @Override
     public int size() {
+        mapStats.incrementOtherOperations();
         return storage.size();
     }
 
@@ -303,17 +327,20 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public String addEntryListener(EntryListener listener, Object key) {
         EventFilter eventFilter = new ReplicatedEntryEventFilter(marshallKey(key));
+        mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, name);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
         EventFilter eventFilter = new ReplicatedQueryEventFilter(marshallKey(key), predicate);
+        mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, name);
     }
 
     @Override
     public boolean removeEntryListenerInternal(String id) {
+        mapStats.incrementOtherOperations();
         return replicatedMapService.removeEventListener(name, id);
     }
 
@@ -328,6 +355,26 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         } else {
             sendInitialFillupRequest(members);
         }
+    }
+
+    public LocalReplicatedMapStats createReplicatedMapStats() {
+        LocalReplicatedMapStatsImpl stats = mapStats;
+        stats.setOwnedEntryCount(storage.size());
+
+        List<ReplicatedRecord<K, V>> records = new ArrayList<ReplicatedRecord<K, V>>(storage.values());
+
+        long hits = 0;
+        for (ReplicatedRecord<K, V> record : records) {
+            stats.setLastAccessTime(record.getLastAccessTime());
+            stats.setLastUpdateTime(record.getUpdateTime());
+            hits += record.getHits();
+        }
+        stats.setHits(hits);
+        return stats;
+    }
+
+    public LocalReplicatedMapStatsImpl getReplicatedMapStats() {
+        return mapStats;
     }
 
     public Set<ReplicatedRecord> getRecords() {
@@ -457,6 +504,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         if (localMember.equals(update.getOrigin())) {
             return;
         }
+        mapStats.incrementReceivedReplicationEvents();
         K marshalledKey = (K) marshallKey(update.getKey());
         synchronized (getMutex(marshalledKey)) {
             final ReplicatedRecord<K, V> localEntry = storage.get(marshalledKey);

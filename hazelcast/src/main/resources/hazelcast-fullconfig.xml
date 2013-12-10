@@ -264,6 +264,7 @@
         <concurrency-level>32</concurrency-level>
         <replication-delay-millis>100</replication-delay-millis>
         <async-fillup>true</async-fillup>
+        <statistics-enabled>true</statistics-enabled>
     </replicatedmap>
 
     <list name="default">

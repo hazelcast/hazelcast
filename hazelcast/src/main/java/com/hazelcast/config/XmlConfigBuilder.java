@@ -808,6 +808,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis", value, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
             } else if ("async-fillup".equals(nodeName)) {
                 replicatedMapConfig.setAsyncFillup(checkTrue(value));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                replicatedMapConfig.setStatisticsEnabled(checkTrue(value));
             } else if ("entry-listeners".equals(nodeName)) {
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("entry-listener".equals(cleanNodeName(listenerNode))) {

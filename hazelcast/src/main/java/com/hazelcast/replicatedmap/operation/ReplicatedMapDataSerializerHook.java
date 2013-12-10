@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.operation;
 
+import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
@@ -36,8 +37,9 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     public static final int REPL_MULTI_UPDATE_MESSAGE = 4;
     public static final int OP_INIT_CHUNK = 5;
     public static final int OP_POST_JOIN = 6;
+    public static final int MAP_STATS = 7;
 
-    private static final int LEN = OP_POST_JOIN + 1;
+    private static final int LEN = MAP_STATS + 1;
 
     @Override
     public int getFactoryId() {
@@ -83,6 +85,12 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicatedMapPostJoinOperation();
+            }
+        };
+        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LocalReplicatedMapStatsImpl();
             }
         };
 

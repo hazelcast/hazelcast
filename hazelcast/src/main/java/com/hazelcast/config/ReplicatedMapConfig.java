@@ -33,6 +33,7 @@ public class ReplicatedMapConfig {
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private ScheduledExecutorService replicatorExecutorService;
     private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
+    private boolean statisticsEnabled = true;
 
     private List<ListenerConfig> listenerConfigs;
 
@@ -46,7 +47,8 @@ public class ReplicatedMapConfig {
         this.replicationDelayMillis = replicatedMapConfig.replicationDelayMillis;
         this.replicatorExecutorService = replicatedMapConfig.replicatorExecutorService;
         this.listenerConfigs = new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
-        this.asyncFillup = asyncFillup;
+        this.asyncFillup = replicatedMapConfig.asyncFillup;
+        this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
     }
 
     public String getName() {
@@ -121,6 +123,15 @@ public class ReplicatedMapConfig {
 
     public ReplicatedMapConfig getAsReadOnly() {
         return new ReplicatedMapConfigReadOnly(this);
+    }
+
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+        return this;
     }
 
 }

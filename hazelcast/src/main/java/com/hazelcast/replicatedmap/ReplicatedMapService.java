@@ -24,6 +24,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
@@ -150,6 +152,14 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
                 case REMOVED:
                     entryListener.entryRemoved(entryEvent);
                     break;
+            }
+            String mapName = ((EntryEvent) event).getName();
+            if (config.findReplicatedMapConfig(mapName).isStatisticsEnabled()) {
+                ReplicatedRecordStore recordStore = replicatedStorages.get(mapName);
+                if (recordStore instanceof AbstractReplicatedRecordStore) {
+                    LocalReplicatedMapStatsImpl stats = ((AbstractReplicatedRecordStore) recordStore).getReplicatedMapStats();
+                    stats.incrementReceivedEvents();
+                }
             }
         } else if (listener instanceof ReplicatedMessageListener) {
             ((ReplicatedMessageListener) listener).onMessage((IdentifiedDataSerializable) event);

@@ -18,6 +18,7 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
@@ -157,4 +158,9 @@ public class ReplicatedMapProxy<K, V>
     public void initialize() {
         replicatedRecordStore.initialize();
     }
+
+    public LocalReplicatedMapStats getReplicatedMapStats() {
+        return replicatedRecordStore.createReplicatedMapStats();
+    }
+
 }
