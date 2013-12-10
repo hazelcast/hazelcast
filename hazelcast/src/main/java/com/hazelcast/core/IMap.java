@@ -688,6 +688,37 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     String addLocalEntryListener(EntryListener<K, V> listener);
 
     /**
+     *
+     * Adds a local entry listener for this map. Added listener will be only
+     * listening for the events (add/remove/update/evict) of the locally owned entries.
+     * Listener will get notified for map add/remove/update/evict events filtered by given predicate.
+     *
+     *
+     * @param listener entry listener
+     * @param predicate predicate for filtering entries
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return
+     */
+    String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
+
+    /**
+     *
+     * Adds a local entry listener for this map. Added listener will be only
+     * listening for the events (add/remove/update/evict) of the locally owned entries.
+     * Listener will get notified for map add/remove/update/evict events filtered by given predicate.
+     *
+     *
+     * @param listener entry listener
+     * @param predicate predicate for filtering entries
+     * @param key key to listen
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return
+     */
+    String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
+
+    /**
      * Adds an interceptor for this map. Added interceptor will intercept operations
      * and execute user defined methods and will cancel operations if user defined method throw exception.
      * <p/>

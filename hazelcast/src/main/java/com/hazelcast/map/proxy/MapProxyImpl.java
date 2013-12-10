@@ -380,6 +380,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
+    }
+
+    @Override
+    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        return addLocalEntryListenerInternal(listener, predicate, getService().toData(key, partitionStrategy), includeValue);
+    }
+
+    @Override
     public String addEntryListener(final EntryListener listener, final boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
