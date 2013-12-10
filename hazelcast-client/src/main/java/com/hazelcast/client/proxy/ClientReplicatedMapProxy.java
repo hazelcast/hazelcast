@@ -17,6 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
@@ -207,7 +208,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientNearCache<Object> _nearCache = new ClientNearCache<Object>(getName(), getContext(), nearCacheConfig);
+            ClientNearCache<Object> _nearCache = new ClientNearCache<Object>(
+                    getName(), ClientNearCacheType.ReplicatedMap, getContext(), nearCacheConfig);
             nearCache = _nearCache;
         }
     }

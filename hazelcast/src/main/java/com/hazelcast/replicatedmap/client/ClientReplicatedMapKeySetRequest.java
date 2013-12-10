@@ -16,9 +16,6 @@
 
 package com.hazelcast.replicatedmap.client;
 
-import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.client.MapKeySetRequest;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
 
 public class ClientReplicatedMapKeySetRequest extends AbstractReplicatedMapClientRequest {

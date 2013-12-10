@@ -1,18 +1,3 @@
-package com.hazelcast.replicatedmap.operation;
-
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
-import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-
-import java.io.IOException;
-
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
@@ -28,6 +13,21 @@ import java.io.IOException;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.hazelcast.replicatedmap.operation;
+
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
+import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+
+import java.io.IOException;
 
 public class ReplicatedMapPostJoinOperation
         extends AbstractReplicatedMapOperation

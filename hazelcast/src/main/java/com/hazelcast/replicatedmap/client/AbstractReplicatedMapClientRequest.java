@@ -18,7 +18,6 @@ package com.hazelcast.replicatedmap.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

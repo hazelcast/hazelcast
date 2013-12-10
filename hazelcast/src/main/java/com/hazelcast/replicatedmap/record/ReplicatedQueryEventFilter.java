@@ -16,14 +16,10 @@
 
 package com.hazelcast.replicatedmap.record;
 
-import com.hazelcast.map.EntryEventFilter;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 
-import java.io.IOException;
 import java.util.Map;
 
 public class ReplicatedQueryEventFilter extends ReplicatedEntryEventFilter  {
