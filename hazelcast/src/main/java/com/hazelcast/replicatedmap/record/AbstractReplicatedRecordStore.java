@@ -34,7 +34,6 @@ import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation.MemberMapPair;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.impl.EventServiceImpl.Registration;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -53,14 +52,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public abstract class AbstractReplicatedRecordStore<K, V>
         implements ReplicatedRecordStore, InitializingObject {
 
-    protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
-    protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    private static final int MAX_MESSAGE_CACHE_SIZE = 1000; // TODO: this constant may be configurable...
 
     protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new ConcurrentHashMap<K, ReplicatedRecord<K, V>>();
 
     private final LocalReplicatedMapStatsImpl mapStats = new LocalReplicatedMapStatsImpl();
 
-    private final AtomicInteger initialFillupThreadNumber = new AtomicInteger(0);
     private final AtomicBoolean loaded = new AtomicBoolean(false);
     private final Lock waitForLoadedLock = new ReentrantLock();
     private final Condition waitForLoadedCondition = waitForLoadedLock.newCondition();
@@ -334,6 +331,10 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 if (replicationMessageCache.size() == 1) {
                     executorService.schedule(new ReplicationCachedSenderTask(),
                             replicatedMapConfig.getReplicationDelayMillis(), TimeUnit.MILLISECONDS);
+                } else {
+                    if (replicationMessageCache.size() > MAX_MESSAGE_CACHE_SIZE) {
+                        processMessageCache();
+                    }
                 }
             } finally {
                 replicationMessageCacheLock.unlock();
@@ -411,6 +412,17 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             @Override
             public void run() {
                 processUpdateMessage(update);
+            }
+        });
+    }
+
+    public void queueUpdateMessages(final MultiReplicationMessage updates) {
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                for (ReplicationMessage update : updates.getReplicationMessages()) {
+                    processUpdateMessage(update);
+                }
             }
         });
     }
@@ -618,7 +630,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         List<EventRegistration> registrations = new ArrayList<EventRegistration>(eventRegistrations);
         Iterator<EventRegistration> iterator = registrations.iterator();
         while (iterator.hasNext()) {
-            Registration registration = (Registration) iterator.next();
+            EventRegistration registration = iterator.next();
             if (address.equals(registration.getSubscriber())) {
                 iterator.remove();
             }
@@ -691,22 +703,27 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
         @Override
         public void run() {
-            List<ReplicationMessage> copy = null;
-            replicationMessageCacheLock.lock();
-            try {
-                copy = new ArrayList<ReplicationMessage>(replicationMessageCache);
-                replicationMessageCache.clear();
-            } finally {
-                replicationMessageCacheLock.unlock();
-            }
-            if (copy != null) {
-                ReplicationMessage[] replicationMessages = copy.toArray(new ReplicationMessage[copy.size()]);
-                MultiReplicationMessage message = new MultiReplicationMessage(name, replicationMessages);
+            processMessageCache();
+        }
+    }
 
-                Collection<EventRegistration> registrations = filterEventRegistrations(eventService.getRegistrations(
-                        ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME));
-                eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
+    private void processMessageCache() {
+        ReplicationMessage[] replicationMessages = null;
+        replicationMessageCacheLock.lock();
+        try {
+            final int size = replicationMessageCache.size();
+            if (size > 0) {
+                replicationMessages = replicationMessageCache.toArray(new ReplicationMessage[size]);
+                replicationMessageCache.clear();
             }
+        } finally {
+            replicationMessageCacheLock.unlock();
+        }
+        if (replicationMessages != null) {
+            MultiReplicationMessage message = new MultiReplicationMessage(name, replicationMessages);
+            Collection<EventRegistration> registrations = filterEventRegistrations(eventService.getRegistrations(
+                    ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME));
+            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
         }
     }
 
