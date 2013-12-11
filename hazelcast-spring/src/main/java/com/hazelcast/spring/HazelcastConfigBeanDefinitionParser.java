@@ -48,6 +48,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap setManagedMap;
         private ManagedMap topicManagedMap;
         private ManagedMap multiMapManagedMap;
+        private ManagedMap replicatedMapManagedMap;
         private ManagedMap executorManagedMap;
         private ManagedMap wanReplicationManagedMap;
 
@@ -60,6 +61,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.setManagedMap = new ManagedMap();
             this.topicManagedMap = new ManagedMap();
             this.multiMapManagedMap = new ManagedMap();
+            this.replicatedMapManagedMap = new ManagedMap();
             this.executorManagedMap = new ManagedMap();
             this.wanReplicationManagedMap = new ManagedMap();
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
@@ -68,6 +70,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.configBuilder.addPropertyValue("setConfigs", setManagedMap);
             this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
             this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
+            this.configBuilder.addPropertyValue("replicatedMapConfigs", replicatedMapManagedMap);
             this.configBuilder.addPropertyValue("executorConfigs", executorManagedMap);
             this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
 
@@ -98,6 +101,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMap(node);
                 } else if ("multimap".equals(nodeName)) {
                     handleMultiMap(node);
+                } else if ("replicatedmap".equals(nodeName)) {
+                    handleReplicatedMap(node);
                 } else if ("list".equals(nodeName)) {
                     handleList(node);
                 } else if ("set".equals(nodeName)) {
@@ -507,6 +512,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             multiMapManagedMap.put(name, multiMapConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleReplicatedMap(Node node) {
+            BeanDefinitionBuilder replicatedMapConfigBuilder = createBeanBuilder(ReplicatedMapConfig.class);
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getTextContent(attName);
+            fillAttributeValues(node, replicatedMapConfigBuilder);
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                if ("entry-listeners".equals(cleanNodeName(childNode))) {
+                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    replicatedMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
+                }
+            }
+            multiMapManagedMap.put(name, replicatedMapConfigBuilder.getBeanDefinition());
         }
 
         public void handleTopic(Node node) {
