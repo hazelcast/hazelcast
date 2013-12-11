@@ -65,7 +65,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         this.node = node;
         this.serializationService = node.getSerializationService();
         nodeEngine = node.nodeEngine;
-        executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.CLIENT_EXECUTOR);
+        final int coreSize = Runtime.getRuntime().availableProcessors();
+        executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
+                coreSize * 10, coreSize * 100000);
         logger = node.getLogger(ClientEngine.class);
     }
 

@@ -33,6 +33,8 @@ public interface ExecutionService {
     static final String QUERY_EXECUTOR = "hz:query";
     static final String IO_EXECUTOR = "hz:io";
 
+    ExecutorService register(String name, int poolSize, int queueCapacity);
+
     void execute(String name, Runnable command);
 
     Future<?> submit(String name, Runnable task);

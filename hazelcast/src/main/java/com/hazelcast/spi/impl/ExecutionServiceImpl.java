@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 /**
  * @author mdogan 12/14/12
@@ -75,10 +76,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         final int coreSize = Runtime.getRuntime().availableProcessors();
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE);
-        register(OPERATION_EXECUTOR, coreSize * 2, Integer.MAX_VALUE);
-        register(ASYNC_EXECUTOR, coreSize * 10, coreSize * 10000);
-        register(CLIENT_EXECUTOR, coreSize * 10, coreSize * 10000);
-        scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 10000);
+        scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000);
     }
 
     public Set<String> getExecutorNames(){
@@ -95,16 +93,19 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-    private ExecutorService register(String name, int poolSize, int queueCapacity) {
+    public ExecutorService register(String name, int poolSize, int queueCapacity) {
         ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfigs().get(name);
         if (cfg != null) {
             poolSize = cfg.getPoolSize();
             queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Overriding ExecutorService['" + name + "'] pool-size and queue-capacity using " + cfg);
+            }
         }
         final ManagedExecutorService executor = new ManagedExecutorService(name, cachedExecutorService,
                 poolSize, queueCapacity);
         if (executors.putIfAbsent(name, executor) != null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
         }
         return executor;
     }
