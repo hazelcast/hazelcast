@@ -711,7 +711,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Invocation invocation = operationService
                     .createInvocationBuilder(SERVICE_NAME,
-                                             new QueryOperation(name, predicate),
+                                             new QueryOperation(name, predicate, iterationType),
                                              nodeEngine.getThisAddress()).build();
             Future future = invocation.invoke();
             QueryResult queryResult = (QueryResult) future.get();
@@ -753,6 +753,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
 
     protected Set query(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
+
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         final SerializationService ss = nodeEngine.getSerializationService();
@@ -762,6 +763,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
+            pagingPredicate.setIterationType(iterationType);
+            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
+                pagingPredicate.previousPage();
+                query(pagingPredicate, iterationType, dataResult);
+                pagingPredicate.nextPage();
+            }
         }
         Set result;
         if (pagingPredicate == null) {
@@ -774,7 +781,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
                 Invocation invocation = operationService
-                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress())
+                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate, iterationType), member.getAddress())
                         .build();
                 Future future = invocation.invoke();
                 flist.add(future);

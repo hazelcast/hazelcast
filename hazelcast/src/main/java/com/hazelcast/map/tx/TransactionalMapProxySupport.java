@@ -250,7 +250,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
                 Invocation invocation = operationService
-                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
+                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate, iterationType), member.getAddress()).build();
                 Future future = invocation.invoke();
                 flist.add(future);
             }

@@ -16,12 +16,14 @@
 
 package com.hazelcast.query;
 
+import java.util.Map;
+
 /**
  * @ali 08/12/13
  */
 public class ObjectAccessor {
 
-    public static void setPagingPredicateAnchor(PagingPredicate predicate, Object anchor){
+    public static void setPagingPredicateAnchor(PagingPredicate predicate, Map.Entry anchor){
         predicate.setAnchor(anchor);
     }
 }

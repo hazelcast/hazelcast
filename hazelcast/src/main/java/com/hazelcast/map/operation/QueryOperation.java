@@ -36,6 +36,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
@@ -50,10 +51,12 @@ public class QueryOperation extends AbstractMapOperation {
     Predicate predicate;
     QueryResult result;
     transient PagingPredicate pagingPredicate;
+    IterationType iterationType;
 
-    public QueryOperation(String mapName, Predicate predicate) {
+    public QueryOperation(String mapName, Predicate predicate, IterationType iterationType) {
         super(mapName);
         this.predicate = predicate;
+        this.iterationType = iterationType;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate)predicate;
         }
@@ -115,11 +118,7 @@ public class QueryOperation extends AbstractMapOperation {
         final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         final List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
 
-        final Comparator<QueryableEntry> wrapperComparator = new Comparator<QueryableEntry>() {
-            public int compare(QueryableEntry o1, QueryableEntry o2) {
-                return SortingUtil.compare(pagingPredicate.getComparator(), o1.getValue(), o2.getValue());
-            }
-        };
+        final Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
         for (final Integer partition : initialPartitions) {
             Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(ss, partition, wrapperComparator));
             lsFutures.add(f);
@@ -171,10 +170,10 @@ public class QueryOperation extends AbstractMapOperation {
 
         int partition;
         SerializationService ss;
-        Comparator<QueryableEntry> wrapperComparator;
+        Comparator<Map.Entry> wrapperComparator;
 
 
-        private PartitionCallable(SerializationService ss, int partition, Comparator<QueryableEntry> wrapperComparator) {
+        private PartitionCallable(SerializationService ss, int partition, Comparator<Map.Entry> wrapperComparator) {
             this.ss = ss;
             this.partition = partition;
             this.wrapperComparator = wrapperComparator;
@@ -206,10 +205,10 @@ public class QueryOperation extends AbstractMapOperation {
                 final QueryEntry queryEntry = new QueryEntry(ss, key, key, value);
                 if (predicate.apply(queryEntry)) {
                     if (pagingPredicate != null) {
-                        Object anchor = pagingPredicate.getAnchor();
+                        Map.Entry anchor = pagingPredicate.getAnchor();
                         final Comparator comparator = pagingPredicate.getComparator();
                         if (anchor != null &&
-                                SortingUtil.compare(comparator, anchor, value)  >= 0) {
+                                SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry)  >= 0) {
                             continue;
                         }
                     }

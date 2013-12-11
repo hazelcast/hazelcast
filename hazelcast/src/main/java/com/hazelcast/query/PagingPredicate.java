@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
@@ -39,7 +40,9 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
     private int page;
 
-    private Object anchor;
+    private final Map<Integer, Map.Entry> anchorMap = new LinkedHashMap<Integer, Map.Entry>();
+
+    private IterationType iterationType;
 
     public PagingPredicate() {
     }
@@ -71,19 +74,15 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
                 return null;
             }
             List<QueryableEntry> list = new LinkedList<QueryableEntry>();
+            Map.Entry anchor = getAnchor();
             for (QueryableEntry entry : set) {
-                if (anchor != null && SortingUtil.compare(comparator, anchor, entry.getValue()) >= 0) {
+                if (anchor != null && SortingUtil.compare(comparator, iterationType, anchor, entry) >= 0) {
                     continue;
                 }
                 list.add(entry);
             }
-            Collections.sort(list, new Comparator<QueryableEntry>() {
-                public int compare(QueryableEntry o1, QueryableEntry o2) {
-                    final Object value1 = o1.getValue();
-                    final Object value2 = o2.getValue();
-                    return SortingUtil.compare(comparator, value1, value2);
-                }
-            });
+
+            Collections.sort(list, SortingUtil.newComparator(this));
             if (list.size() > pageSize) {
                 list = list.subList(0, pageSize);
             }
@@ -106,14 +105,28 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return true;
     }
 
-    void setAnchor(Object anchor) {
+    void setAnchor(Map.Entry anchor) {
         if (anchor != null) {
-            this.anchor = anchor;
+            anchorMap.put(page + 1, anchor);
         }
     }
 
     public void nextPage() {
         page++;
+    }
+
+    public void previousPage() {
+        if (page != 0) {
+            page--;
+        }
+    }
+
+    public IterationType getIterationType() {
+        return iterationType;
+    }
+
+    public void setIterationType(IterationType iterationType) {
+        this.iterationType = iterationType;
     }
 
     public int getPage() {
@@ -132,8 +145,8 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return comparator;
     }
 
-    public Object getAnchor() {
-        return anchor;
+    public Map.Entry getAnchor() {
+        return anchorMap.get(page);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -141,7 +154,14 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         out.writeObject(comparator);
         out.writeInt(page);
         out.writeInt(pageSize);
-        out.writeObject(anchor);
+        out.writeUTF(iterationType.name());
+        out.writeInt(anchorMap.size());
+        for (Map.Entry<Integer, Map.Entry> entry : anchorMap.entrySet()) {
+            out.writeInt(entry.getKey());
+            final Map.Entry anchorEntry = entry.getValue();
+            out.writeObject(anchorEntry.getKey());
+            out.writeObject(anchorEntry.getValue());
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -149,7 +169,14 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         comparator = in.readObject();
         page = in.readInt();
         pageSize = in.readInt();
-        anchor = in.readObject();
+        iterationType = IterationType.valueOf(in.readUTF());
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            final int key = in.readInt();
+            final Object anchorKey = in.readObject();
+            final Object anchorValue = in.readObject();
+            anchorMap.put(key, new AbstractMap.SimpleImmutableEntry(anchorKey, anchorValue));
+        }
     }
 
 }

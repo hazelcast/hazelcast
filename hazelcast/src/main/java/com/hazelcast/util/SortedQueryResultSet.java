@@ -28,11 +28,7 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
     private final int pageSize;
 
     public SortedQueryResultSet(final Comparator comparator, IterationType iterationType, int pageSize) {
-        this.entries = new TreeSet<Map.Entry>(new Comparator<Map.Entry>() {
-            public int compare(Map.Entry o1, Map.Entry o2) {
-                return SortingUtil.compare(comparator, o1.getValue(), o2.getValue());
-            }
-        });
+        this.entries = new TreeSet<Map.Entry>(SortingUtil.newComparator(comparator, iterationType));
         this.iterationType = iterationType;
         this.pageSize = pageSize;
     }
@@ -51,11 +47,11 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         return new SortedIterator();
     }
 
-    public Object last() {
+    public Map.Entry last() {
         if (entries.isEmpty()) {
             return null;
         }
-        return entries.last().getValue();
+        return entries.last();
     }
 
     private class SortedIterator implements Iterator {

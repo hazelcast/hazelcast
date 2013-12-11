@@ -65,7 +65,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
             List<Future> flist = new ArrayList<Future>();
             final Predicate predicate = getPredicate();
             for (MemberImpl member : members) {
-                Invocation invocation = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
+                Invocation invocation = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate, iterationType), member.getAddress()).build();
                 Future future = invocation.invoke();
                 flist.add(future);
             }

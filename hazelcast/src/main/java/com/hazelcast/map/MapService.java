@@ -52,10 +52,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.*;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
@@ -1033,14 +1030,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate)predicate : null;
-        final Comparator inner = pagingPredicate == null ? null : pagingPredicate.getComparator();
-        Comparator<QueryEntry> wrapperComparator = new Comparator<QueryEntry>() {
-            public int compare(QueryEntry o1, QueryEntry o2) {
-                final Object value1 = o1.getValue();
-                final Object value2 = o2.getValue();
-                return compareValue(inner, value1, value2);
-            }
-        };
+        Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
         for (Record record : records.values()) {
             Data key = record.getKey();
             Object value = record.getValue();
@@ -1050,8 +1040,9 @@ public class MapService implements ManagedService, MigrationAwareService,
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
             if (predicate.apply(queryEntry)) {
                 if (pagingPredicate != null) {
-                    Object anchor = pagingPredicate.getAnchor();
-                    if (anchor != null && compareValue(inner, anchor, queryEntry.getValue()) >= 0 ) {
+                    Map.Entry anchor = pagingPredicate.getAnchor();
+                    if (anchor != null &&
+                            SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), anchor, queryEntry) >= 0 ) {
                         continue;
                     }
                 }
@@ -1068,15 +1059,6 @@ public class MapService implements ManagedService, MigrationAwareService,
             result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
         }
         return result;
-    }
-
-    private int compareValue(Comparator comparator, Object value1, Object value2) {
-        if (comparator != null) {
-            return comparator.compare(value1, value2);
-        } else if (value1 instanceof Comparable && value2 instanceof Comparable) {
-            return ((Comparable) value1).compareTo(value2);
-        }
-        return value1.hashCode() - value2.hashCode();
     }
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
