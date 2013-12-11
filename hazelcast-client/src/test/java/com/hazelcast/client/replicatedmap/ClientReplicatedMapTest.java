@@ -23,7 +23,6 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -58,7 +57,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testAddObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -92,7 +91,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testAddTtlObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -119,7 +118,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testUpdateObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -162,7 +161,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testUpdateTtlObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -211,7 +210,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -269,7 +268,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             }
         };
 
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         ListenerConfig listenerConfig = new ListenerConfig().setImplementation(listener);
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT)
@@ -326,7 +325,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testSizeObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -356,7 +355,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsKeyObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -386,7 +385,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsValueObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -416,7 +415,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testValuesObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -455,7 +454,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testKeySetObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -494,7 +493,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testEntrySetObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -531,7 +530,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testAddBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -565,7 +564,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testAddTtlBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -592,7 +591,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testUpdateBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -635,7 +634,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testUpdateTtlBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -684,7 +683,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -742,7 +741,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
             }
         };
 
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         ListenerConfig listenerConfig = new ListenerConfig().setImplementation(listener);
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY)
@@ -799,7 +798,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testSizeBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -829,7 +828,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsKeyBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -859,7 +858,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsValueBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -889,7 +888,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testValuesBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -928,7 +927,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testKeySetBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -967,7 +966,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testEntrySetBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
