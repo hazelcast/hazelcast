@@ -31,12 +31,13 @@ import com.hazelcast.replicatedmap.record.*;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.NamedThreadFactory;
 
 import java.util.EventListener;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ReplicatedMapService implements ManagedService, RemoteService,
         EventPublishingService<Object, Object>{

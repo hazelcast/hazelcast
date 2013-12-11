@@ -69,7 +69,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         this.latestUpdateHash = hash;
         this.updateTime = System.currentTimeMillis();
         this.ttlMillis = ttlMillis;
-        return value;
+        return oldValue;
     }
 
     public long getUpdateTime() {
