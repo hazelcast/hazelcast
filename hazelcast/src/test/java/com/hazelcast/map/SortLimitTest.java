@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * @ali 05/12/13
@@ -44,9 +45,55 @@ import static junit.framework.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SortLimitTest extends HazelcastTestSupport {
 
-    //TODO txn query
     //TODO local query
     //TODO client
+
+    @Test
+    public void testLocalPaging() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
+
+        final IMap<Integer, Integer> map1 = instance1.getMap("testSort");
+        final IMap<Integer, Integer> map2 = instance2.getMap("testSort");
+        final int size = 50;
+        final int pageSize = 5;
+        for (int i = 0; i < size; i++) {
+            map1.put(i+10, i);
+        }
+
+        final PagingPredicate predicate1 = new PagingPredicate(pageSize);
+        Set<Integer> keySet = map1.localKeySet(predicate1);
+
+        int value = 9;
+        Set<Integer> whole = new HashSet<Integer>(size);
+        while (keySet.size() > 0 ) {
+            for (Integer integer : keySet) {
+                assertTrue(integer > value);
+                value = integer;
+                whole.add(integer);
+            }
+            predicate1.nextPage();
+            keySet = map1.localKeySet(predicate1);
+        }
+
+        final PagingPredicate predicate2 = new PagingPredicate(pageSize);
+        value = 9;
+        keySet = map2.localKeySet(predicate2);
+        while (keySet.size() > 0 ) {
+            for (Integer integer : keySet) {
+                assertTrue(integer > value);
+                value = integer;
+                whole.add(integer);
+            }
+            predicate2.nextPage();
+            keySet = map2.localKeySet(predicate2);
+        }
+
+        assertEquals(size, whole.size());
+
+
+    }
 
     @Test
     public void testWithoutAnchor() {
