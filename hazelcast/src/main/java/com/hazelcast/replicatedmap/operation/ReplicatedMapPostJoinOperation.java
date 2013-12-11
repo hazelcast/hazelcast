@@ -60,7 +60,7 @@ public class ReplicatedMapPostJoinOperation
                     recordStorage.queueInitialFillup(getCallerAddress(), chunkSize);
                 } else {
                     OperationService operationService = getNodeEngine().getOperationService();
-                    Operation operation = new ReplicatedMapInitChunkOperation(mapName, localMember, true);
+                    Operation operation = new ReplicatedMapInitChunkOperation(mapName, localMember);
                     operationService.send(operation, getCallerAddress());
                 }
             }

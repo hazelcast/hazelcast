@@ -37,17 +37,13 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl.Registration;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ValidationUtil;
-import com.hazelcast.util.nonblocking.NonBlockingHashMap;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -60,7 +56,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
-    protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new NonBlockingHashMap<K, ReplicatedRecord<K, V>>();
+    protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new ConcurrentHashMap<K, ReplicatedRecord<K, V>>();
 
     private final LocalReplicatedMapStatsImpl mapStats = new LocalReplicatedMapStatsImpl();
 
