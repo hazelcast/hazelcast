@@ -22,6 +22,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * @author mdogan 4/26/12
@@ -37,7 +38,7 @@ final class DateHelper {
         try {
             return getUtilDateFormat().parse(value);
         } catch (ParseException e) {
-            return throwRuntimeParseException(value, e);
+            return throwRuntimeParseException(value, e, dateFormat);
         }
     }
 
@@ -45,7 +46,7 @@ final class DateHelper {
         try {
             return new Timestamp(getTimestampFormat().parse(value).getTime());
         } catch (ParseException e) {
-            return throwRuntimeParseException(value, e);
+            return throwRuntimeParseException(value, e, timestampFormat);
         }
     }
 
@@ -53,7 +54,7 @@ final class DateHelper {
         try {
             return new java.sql.Date(getSqlDateFormat().parse(value).getTime());
         } catch (ParseException e) {
-            return throwRuntimeParseException(value, e);
+            return throwRuntimeParseException(value, e, sqlDateFormat);
         }
     }
 
@@ -61,7 +62,7 @@ final class DateHelper {
         try {
             return new Time(getSqlTimeFormat().parse(value).getTime());
         } catch (ParseException e) {
-            return throwRuntimeParseException(value, e);
+            return throwRuntimeParseException(value, e, sqlTimeFormat);
         }
     }
 
@@ -81,29 +82,33 @@ final class DateHelper {
         } catch (Exception ignored) {
         }
 
-        return throwRuntimeParseException(value, null);
+        return throwRuntimeParseException(value, null, sqlDateFormat);
     }
 
-    private static <T> T throwRuntimeParseException(String value, Exception e) {
+    private static <T> T throwRuntimeParseException(String value, Exception e, String... legalFormats) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < legalFormats.length; i++) {
+            sb.append("'").append(legalFormats[i]).append("'");
+            if (i < legalFormats.length - 2) sb.append(", ");
+        }
         throw new RuntimeException("Unable to parse date from value: '" + value
-                + "' ! Valid formats are: '" + dateFormat + "', '" + timestampFormat
-                + "' and '" + sqlDateFormat + "'.", e);
+                + "' ! Valid format are: " + sb.toString() + ".", e);
     }
 
     private static DateFormat getTimestampFormat() {
-        return new SimpleDateFormat(timestampFormat);
+        return new SimpleDateFormat(timestampFormat, Locale.US);
     }
 
     private static DateFormat getSqlDateFormat() {
-        return new SimpleDateFormat(sqlDateFormat);
+        return new SimpleDateFormat(sqlDateFormat, Locale.US);
     }
 
     private static DateFormat getUtilDateFormat() {
-        return new SimpleDateFormat(dateFormat);
+        return new SimpleDateFormat(dateFormat, Locale.US);
     }
 
     private static DateFormat getSqlTimeFormat() {
-        return new SimpleDateFormat(sqlTimeFormat);
+        return new SimpleDateFormat(sqlTimeFormat, Locale.US);
     }
 
     private DateHelper() {}
