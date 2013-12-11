@@ -218,41 +218,16 @@ public final class Predicates {
     }
 
     public static class LikePredicate implements Predicate, DataSerializable {
-        private String attribute;
-        private String second;
+        protected String attribute;
+        protected String second;
         private volatile Pattern pattern;
-        private int flags;
-
-        public static enum Option {
-            CASE_INSENSITIVE
-        }
 
         public LikePredicate() {
         }
 
         public LikePredicate(String attribute, String second) {
-            this(attribute, second, null);
-        }
-
-        public LikePredicate(String attribute, String second, Option...options) {
             this.attribute = attribute;
             this.second = second;
-            applyOptions(options);
-        }
-
-        private void applyOptions(Option[] options) {
-            if (options == null) {
-                return;
-            }
-            for (Option option : options) {
-                switch (option) {
-                    case CASE_INSENSITIVE:
-                        flags |= Pattern.CASE_INSENSITIVE;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Option '"+option+"' cannot be used inside LikePredicate.");
-                }
-            }
         }
 
         public boolean apply(Map.Entry entry) {
@@ -272,6 +247,7 @@ public final class Predicates {
                             .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")//escaped _
                             .replaceAll("\\\\%", "%")//non escaped %
                             .replaceAll("\\\\_", "_");//non escaped _
+                    int flags = getFlags();
                     pattern = Pattern.compile(regex, flags);
                 }
                 Matcher m = pattern.matcher(firstVal);
@@ -282,25 +258,51 @@ public final class Predicates {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(attribute);
             out.writeUTF(second);
-            out.writeInt(flags);
         }
 
         public void readData(ObjectDataInput in) throws IOException {
             attribute = in.readUTF();
             second = in.readUTF();
-            flags = in.readInt();
         }
 
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder(attribute)
-                    .append(" ")
-                    .append( (flags & Pattern.CASE_INSENSITIVE) == 0 ? "LIKE" : "ILIKE")
-                    .append(" '")
+                    .append(" LIKE '")
                     .append(second)
                     .append("'");
             return builder.toString();
         }
+
+        protected int getFlags() {
+            return 0; //no flags
+        }
+    }
+
+    public static class ILikePredicate extends LikePredicate {
+
+        public ILikePredicate() {
+        }
+
+        public ILikePredicate(String attribute, String second) {
+            super(attribute, second);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder(attribute)
+                    .append(" ILIKE '")
+                    .append(second)
+                    .append("'");
+            return builder.toString();
+        }
+
+
+        @Override
+        protected int getFlags() {
+            return Pattern.CASE_INSENSITIVE;
+        }
+
     }
 
     public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
@@ -717,7 +719,7 @@ public final class Predicates {
     }
 
     public static Predicate ilike(String attribute, String pattern) {
-        return new LikePredicate(attribute, pattern, LikePredicate.Option.CASE_INSENSITIVE);
+        return new ILikePredicate(attribute, pattern);
     }
 
     public static Predicate regex(String attribute, String pattern) {
