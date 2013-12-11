@@ -112,6 +112,6 @@ class WrappedExecutorService implements ScheduledExecutorService {
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return scheduleWithFixedDelay(command, initialDelay, delay, unit);
+        return executorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 }

@@ -59,22 +59,22 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public int size() {
-        return invoke(new ClientReplicatedMapSizeRequest(getName()));
+        return (Integer) invoke(new ClientReplicatedMapSizeRequest(getName()));
     }
 
     @Override
     public boolean isEmpty() {
-        return invoke(new ClientReplicatedMapIsEmptyRequest(getName()));
+        return (Boolean) invoke(new ClientReplicatedMapIsEmptyRequest(getName()));
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return invoke(new ClientReplicatedMapContainsKeyRequest(getName(), key));
+        return (Boolean) invoke(new ClientReplicatedMapContainsKeyRequest(getName(), key));
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return invoke(new ClientReplicatedMapContainsValueRequest(getName(), value));
+        return (Boolean) invoke(new ClientReplicatedMapContainsValueRequest(getName(), value));
     }
 
     @Override
