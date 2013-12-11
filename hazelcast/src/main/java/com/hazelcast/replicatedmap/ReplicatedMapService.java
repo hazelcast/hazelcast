@@ -22,23 +22,20 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
-import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
-import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation.MemberMapPair;
-import com.hazelcast.replicatedmap.record.*;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
+import com.hazelcast.replicatedmap.record.*;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.NamedThreadFactory;
-import sun.plugin.dom.exception.InvalidStateException;
 
-import java.util.*;
+import java.util.EventListener;
+import java.util.Iterator;
+import java.util.Properties;
 import java.util.concurrent.*;
 
 public class ReplicatedMapService implements ManagedService, RemoteService,
@@ -74,18 +71,17 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
             }
             if (replicatedRecordStorage == null) {
                 //TODO
-                throw new InvalidStateException("offheap not yet supported for replicated map");
+                throw new IllegalStateException("offheap not yet supported for replicated map");
             }
             return replicatedRecordStorage;
         }
     };
 
-    private final ScheduledExecutorService cleanerExecutorService;
-
     private final ILogger logger;
     private final Config config;
     private final NodeEngine nodeEngine;
     private final EventService eventService;
+    private final ExecutionService executionService;
 
     private final EventRegistration eventRegistration;
 
@@ -94,8 +90,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig();
         this.eventService = nodeEngine.getEventService();
-        this.cleanerExecutorService = Executors.newSingleThreadScheduledExecutor(
-                new NamedThreadFactory(SERVICE_NAME + ".cleaner"));
+        this.executionService = nodeEngine.getExecutionService();
         this.eventRegistration = eventService.registerListener(
                 SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
     }
@@ -188,7 +183,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
     }
 
     ScheduledFuture<?> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {
-        return cleanerExecutorService.scheduleWithFixedDelay(
+        return executionService.scheduleWithFixedDelay(
                 new Cleaner(replicatedRecordStorage), 5, 5, TimeUnit.SECONDS);
     }
 

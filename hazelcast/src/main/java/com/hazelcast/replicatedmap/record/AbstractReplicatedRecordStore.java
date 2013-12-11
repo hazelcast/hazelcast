@@ -162,7 +162,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         ValidationUtil.isNotNull(key, "key");
         ValidationUtil.isNotNull(value, "value");
         checkState();
-        return put(key, value, 0, null);
+        return put(key, value, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -344,7 +344,6 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public String addEntryListener(EntryListener listener, Object key) {
         ValidationUtil.isNotNull(listener, "listener");
-        ValidationUtil.isNotNull(key, "key");
         EventFilter eventFilter = new ReplicatedEntryEventFilter(marshallKey(key));
         mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, name);
@@ -353,8 +352,6 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
         ValidationUtil.isNotNull(listener, "listener");
-        ValidationUtil.isNotNull(predicate, "predicate");
-        ValidationUtil.isNotNull(key, "key");
         EventFilter eventFilter = new ReplicatedQueryEventFilter(marshallKey(key), predicate);
         mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, name);

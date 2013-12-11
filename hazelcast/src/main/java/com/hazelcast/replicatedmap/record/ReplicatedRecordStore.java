@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.record;
 
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;

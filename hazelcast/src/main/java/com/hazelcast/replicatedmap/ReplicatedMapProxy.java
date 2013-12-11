@@ -21,7 +21,6 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
-import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;

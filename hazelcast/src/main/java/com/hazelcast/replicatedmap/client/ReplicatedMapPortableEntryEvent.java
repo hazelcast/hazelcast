@@ -17,14 +17,11 @@
 package com.hazelcast.replicatedmap.client;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.impl.SpiPortableHook;
 
 import java.io.IOException;
 

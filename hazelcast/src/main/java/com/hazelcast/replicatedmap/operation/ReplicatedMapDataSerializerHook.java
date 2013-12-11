@@ -20,8 +20,6 @@ import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
-import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
-import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.record.Vector;
 import com.hazelcast.util.ConstructorFunction;
