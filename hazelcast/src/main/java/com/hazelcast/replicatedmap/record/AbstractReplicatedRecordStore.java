@@ -36,6 +36,7 @@ import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation.Memb
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl.Registration;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.NamedThreadFactory;
 import com.hazelcast.util.nonblocking.NonBlockingHashMap;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -53,6 +54,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class AbstractReplicatedRecordStore<K, V>
         implements ReplicatedRecordStore, InitializingObject {
+
+    protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
     protected final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new NonBlockingHashMap<K, ReplicatedRecord<K, V>>();
 
@@ -112,6 +116,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object remove(Object key) {
+        ValidationUtil.isNotNull(key, "key");
         long time = System.currentTimeMillis();
         checkState();
         V oldValue;
@@ -141,6 +146,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object get(Object key) {
+        ValidationUtil.isNotNull(key, "key");
         long time = System.currentTimeMillis();
         checkState();
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
@@ -153,12 +159,20 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object put(Object key, Object value) {
+        ValidationUtil.isNotNull(key, "key");
+        ValidationUtil.isNotNull(value, "value");
         checkState();
         return put(key, value, 0, null);
     }
 
     @Override
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+        ValidationUtil.isNotNull(key, "key");
+        ValidationUtil.isNotNull(value, "value");
+        ValidationUtil.isNotNull(timeUnit, "timeUnit");
+        if (ttl < 0) {
+            throw new IllegalArgumentException("ttl must be a positive integer");
+        }
         long time = System.currentTimeMillis();
         checkState();
         V oldValue = null;
@@ -198,6 +212,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public boolean containsKey(Object key) {
+        ValidationUtil.isNotNull(key, "key");
         checkState();
         mapStats.incrementOtherOperations();
         return storage.containsKey(marshallKey(key));
@@ -205,6 +220,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public boolean containsValue(Object value) {
+        ValidationUtil.isNotNull(value, "value");
         checkState();
         mapStats.incrementOtherOperations();
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
@@ -254,6 +270,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public ReplicatedRecord getReplicatedRecord(Object key) {
+        ValidationUtil.isNotNull(key, "key");
         checkState();
         return storage.get(marshallKey(key));
     }
@@ -326,6 +343,8 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public String addEntryListener(EntryListener listener, Object key) {
+        ValidationUtil.isNotNull(listener, "listener");
+        ValidationUtil.isNotNull(key, "key");
         EventFilter eventFilter = new ReplicatedEntryEventFilter(marshallKey(key));
         mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, name);
@@ -333,6 +352,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
+        ValidationUtil.isNotNull(listener, "listener");
+        ValidationUtil.isNotNull(predicate, "predicate");
+        ValidationUtil.isNotNull(key, "key");
         EventFilter eventFilter = new ReplicatedQueryEventFilter(marshallKey(key), predicate);
         mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, name);
@@ -340,6 +362,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public boolean removeEntryListenerInternal(String id) {
+        ValidationUtil.isNotNull(id, "id");
         mapStats.incrementOtherOperations();
         return replicatedMapService.removeEventListener(name, id);
     }

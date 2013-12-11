@@ -99,6 +99,9 @@ public class ReplicatedMapProxy<K, V>
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
+        if (m == null) {
+            throw new NullPointerException("m cannot be null");
+        }
         for (Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
