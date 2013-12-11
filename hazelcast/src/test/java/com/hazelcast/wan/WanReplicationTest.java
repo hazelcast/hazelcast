@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 
 import static org.junit.Assert.*;
 
@@ -285,8 +287,6 @@ public class WanReplicationTest {
         assertDataInFrom(clusterA, "map", 1000, 2000, clusterB);
         assertDataInFrom(clusterB, "map", 0,    1000, clusterA);
 
-
-
     }
 
 
@@ -453,8 +453,8 @@ public class WanReplicationTest {
         assertDataSize(clusterB, "map", 1000);
     }
 
-
-    public void linkTopo_ActiveActiveReplication_Threading_Test(){
+    @Test
+    public void linkTopo_ActiveActiveReplication_Threading_Test() throws InterruptedException, BrokenBarrierException {
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configA, clusterA.length, "btoa", PassThroughMergePolicy.class.getName());
@@ -462,23 +462,43 @@ public class WanReplicationTest {
         initClusterB();
 
 
-        createDataIn(clusterA, "map", 0, 1000);
-        assertKeysIn(clusterB, "map", 0, 1000);
+        CyclicBarrier gate = new CyclicBarrier(3);
+        startGatedThread(new GatedThread(gate) {
+            public void go() {
+                createDataIn(clusterA, "map", 0, 1000);
+            }
+        });
+        startGatedThread(new GatedThread(gate) {
+            public void go() {
+                createDataIn(clusterB, "map", 500, 1500);
+            }
+        });
+        gate.await();
 
-        createDataIn(clusterB, "map", 1000, 2000);
-        assertKeysIn(clusterA, "map", 0, 2000);
+        assertDataInFrom(clusterB, "map", 0,     500, clusterA);
+        assertDataInFrom(clusterA, "map", 1000, 1500, clusterB);
+        assertKeysIn(clusterA, "map", 500, 1000);
 
-        removeDataIn(clusterA, "map", 1500, 2000);
-        assertKeysNotIn(clusterB, "map", 1500, 2000);
 
-        removeDataIn(clusterB, "map", 0, 500);
-        assertKeysNotIn(clusterA, "map", 0, 500);
+        gate = new CyclicBarrier(3);
+        startGatedThread(new GatedThread(gate) {
+            public void go() {
+                removeDataIn(clusterA, "map", 0, 1000);
+            }
+        });
+        startGatedThread(new GatedThread(gate) {
+            public void go() {
+                removeDataIn(clusterB, "map", 500, 1500);
+            }
+        });
+        gate.await();
 
-        assertKeysIn(clusterA, "map", 500, 1500);
-        assertKeysIn(clusterB, "map", 500, 1500);
 
-        assertDataSize(clusterA, "map", 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertKeysNotIn(clusterA, "map", 0, 1500);
+        assertKeysNotIn(clusterB, "map", 0, 1500);
+
+        assertDataSize(clusterA, "map", 0);
+        assertDataSize(clusterB, "map", 0);
     }
 
 
@@ -558,6 +578,32 @@ public class WanReplicationTest {
         System.out.println("==configC==");
         printReplicaConfig(configC);
         System.out.println();
+    }
+
+
+    abstract public class GatedThread extends Thread{
+        private final CyclicBarrier gate;
+
+        public GatedThread(CyclicBarrier gate){
+            this.gate = gate;
+        }
+
+        public void run(){
+            try {
+                gate.await();
+                go();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (BrokenBarrierException e) {
+                e.printStackTrace();
+            }
+        }
+
+        abstract public void go();
+    }
+
+    void startGatedThread(GatedThread t){
+        t.start();
     }
 
 
