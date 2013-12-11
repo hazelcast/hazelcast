@@ -705,8 +705,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected Set queryLocal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
+        final SerializationService ss = nodeEngine.getSerializationService();
         List<Integer> partitionIds = nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
-        QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
+        PagingPredicate pagingPredicate = null;
+        if (predicate instanceof PagingPredicate) {
+            pagingPredicate = (PagingPredicate) predicate;
+            pagingPredicate.setIterationType(iterationType);
+            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
+                pagingPredicate.previousPage();
+                query(pagingPredicate, iterationType, dataResult);
+                pagingPredicate.nextPage();
+            }
+        }
+        Set result;
+        if (pagingPredicate == null) {
+            result = new QueryResultSet(ss, iterationType, dataResult);
+        } else {
+            result = new SortedQueryResultSet(pagingPredicate.getComparator(), iterationType, pagingPredicate.getPageSize());
+        }
+
         List<Integer> returnedPartitionIds = new ArrayList<Integer>();
         try {
             Invocation invocation = operationService
@@ -717,10 +734,21 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult != null) {
                 returnedPartitionIds = queryResult.getPartitionIds();
-                result.addAll(queryResult.getResult());
+                if (pagingPredicate == null) {
+                    result.addAll(queryResult.getResult());
+                } else {
+                    for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
+                        Object key = ss.toObject(queryResultEntry.getKeyData());
+                        Object value = ss.toObject(queryResultEntry.getValueData());
+                        result.add(new AbstractMap.SimpleImmutableEntry(key, value));
+                    }
+                }
             }
 
             if (returnedPartitionIds.size() == partitionIds.size()) {
+                if (pagingPredicate != null) {
+                    ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
+                }
                 return result;
             }
             List<Integer> missingList = new ArrayList<Integer>();
@@ -743,7 +771,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
             for (Future f : futures) {
                 QueryResult qResult = (QueryResult) f.get();
-                result.addAll(qResult.getResult());
+                if (pagingPredicate == null) {
+                    result.addAll(qResult.getResult());
+                } else {
+                    for (QueryResultEntry queryResultEntry : qResult.getResult()) {
+                        Object key = ss.toObject(queryResultEntry.getKeyData());
+                        Object value = ss.toObject(queryResultEntry.getValueData());
+                        result.add(new AbstractMap.SimpleImmutableEntry(key, value));
+                    }
+                }
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
