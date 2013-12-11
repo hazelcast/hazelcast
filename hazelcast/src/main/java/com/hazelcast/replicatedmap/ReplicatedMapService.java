@@ -200,10 +200,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
             } else if (message instanceof MultiReplicationMessage) {
                 MultiReplicationMessage multiReplicationMessage = (MultiReplicationMessage) message;
                 ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(multiReplicationMessage.getName());
-                for (ReplicationMessage replicationMessage : multiReplicationMessage.getReplicationMessages()) {
-                    if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
-                        ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
-                    }
+                if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
+                    ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessages(multiReplicationMessage);
                 }
             }
         }
