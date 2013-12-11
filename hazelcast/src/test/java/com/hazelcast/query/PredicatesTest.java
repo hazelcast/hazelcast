@@ -45,7 +45,6 @@ import static org.junit.Assert.*;
 public class PredicatesTest {
 
     private static final String dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
-    private static final DateFormat formatter = new SimpleDateFormat(dateFormat);
 
     @Test
     public void testEqual() {
@@ -56,7 +55,7 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("state == " + State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", nullNameValue)));
-        assertTrue(new SqlPredicate("createDate >= '" + formatter.format(new Date(0)) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("createDate >= '" + new SimpleDateFormat(dateFormat).format(new Date(0)) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("bigDecimal > '" + new BigDecimal("1.23E2") + "'").apply(createEntry("1", value)));
