@@ -215,10 +215,10 @@ public class OutRunnable extends IORunnable {
     }
 
     public void enQueue(Call call) {
+        if (!running) {
+            throw new NoMemberAvailableException("Client is shutdown.");
+        }
         try {
-            if (!running) {
-                throw new NoMemberAvailableException("Client is shutdown.");
-            }
             logger.log(Level.FINEST, "From " + Thread.currentThread() + ": Enqueue: " + call);
             queue.offer(call);
         } catch (Exception e) {
