@@ -17,6 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
@@ -44,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private final String name;
-    private volatile ClientNearCache nearCache;
+    private volatile ClientNearCache<Data> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     public ClientMapProxy(String serviceName, String name) {
@@ -589,7 +590,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientNearCache _nearCache = new ClientNearCache(name, getContext(), nearCacheConfig);
+            ClientNearCache<Data> _nearCache = new ClientNearCache<Data>(
+                    name, ClientNearCacheType.Map, getContext(), nearCacheConfig);
             nearCache = _nearCache;
         }
     }
