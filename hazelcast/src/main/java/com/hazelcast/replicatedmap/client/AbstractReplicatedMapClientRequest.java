@@ -66,7 +66,7 @@ public abstract class AbstractReplicatedMapClientRequest
 
     protected ReplicatedRecordStore getReplicatedRecordStore() {
         ReplicatedMapService replicatedMapService = getService();
-        return replicatedMapService.getReplicatedRecordStore(mapName, false);
+        return replicatedMapService.getReplicatedRecordStore(mapName, true);
     }
 
 }
