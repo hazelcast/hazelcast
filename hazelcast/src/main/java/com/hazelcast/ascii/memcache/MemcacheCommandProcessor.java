@@ -30,23 +30,27 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
     public static final String DefaultMapName = "hz_memcache_default";
 
     public static byte[] longToByteArray(long v) {
-        int len = (int) (v / 256) + 1;
+        // how many digit
+        int len = (int) Math.log10(v) + 1;
         final byte[] bytes = new byte[len];
         for (int i = len - 1; i >= 0; i--) {
-            final long t = v % 256;
-            bytes[i] = t < 128 ? (byte) t : (byte) (t - 256);
-            v = (v - t) / 256;
+            final long t = v % 10;
+            // 0 represent as 48 in ascii table
+            bytes[i] = (byte) (t + 48);
+            v = (v - t) / 10;
         }
         return bytes;
     }
 
-    public static int byteArrayToLong(byte[] v) {
-        if (v.length > 8) return -1;
-        int r = 0;
+    public static long byteArrayToLong(byte[] v) {
+        // max long data has 20 digits in decimal form
+        if (v.length > 20) return -1;
+        long r = 0;
         for (int i = 0; i < v.length; i++) {
+            r = r * 10; // 0 x 10 = 0 (for first run)
             int t = (int) v[i];
-            t = t >= 0 ? t : t + 256;
-            r = r * 256 + t;
+            t = t - 48; // 0 represent as 48 in ascii table
+            r = r + t;
         }
         return r;
     }
