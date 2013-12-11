@@ -25,12 +25,11 @@ import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.ObjectAccessor;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
-import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.util.*;
 
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -73,7 +72,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (nearCache != null) {
             Object cached = nearCache.get(keyData);
             if (cached != null) {
-                if (cached.equals(ClientNearCache.NULL_OBJECT)){
+                if (cached.equals(ClientNearCache.NULL_OBJECT)) {
                     return null;
                 }
                 return (V) cached;
@@ -375,36 +374,100 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public Set<K> keySet(Predicate predicate) {
+        PagingPredicate pagingPredicate = null;
+        if (predicate instanceof PagingPredicate) {
+            pagingPredicate = (PagingPredicate) predicate;
+            pagingPredicate.setIterationType(IterationType.KEY);
+
+            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
+                pagingPredicate.previousPage();
+                keySet(pagingPredicate);
+                pagingPredicate.nextPage();
+            }
+        }
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
         QueryResultSet result = invoke(request);
-        Set<K> keySet = new HashSet<K>(result.size());
+        List<K> keyList = new ArrayList<K>(result.size());
         for (Object data : result) {
             K key = toObject((Data) data);
-            keySet.add(key);
+            keyList.add(key);
         }
-        return keySet;
+        if (pagingPredicate != null) {
+            Collections.sort(keyList, SortingUtil.newComparator(pagingPredicate.getComparator()));
+            if (keyList.size() > pagingPredicate.getPageSize()) {
+                keyList = keyList.subList(0, pagingPredicate.getPageSize());
+            }
+            Object anchor = null;
+            if (keyList.size() != 0) {
+                anchor = keyList.get(keyList.size()-1);
+            }
+            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(anchor, null));
+        }
+        return new HashSet<K>(keyList);
     }
 
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
+        PagingPredicate pagingPredicate = null;
+        if (predicate instanceof PagingPredicate) {
+            pagingPredicate = (PagingPredicate) predicate;
+            pagingPredicate.setIterationType(IterationType.ENTRY);
+
+            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
+                pagingPredicate.previousPage();
+                entrySet(pagingPredicate);
+                pagingPredicate.nextPage();
+            }
+        }
+
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
         QueryResultSet result = invoke(request);
-        Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
+        Set entrySet;
+        if (pagingPredicate == null) {
+            entrySet = new HashSet<Entry<K, V>>(result.size());
+        } else {
+            entrySet = new SortedQueryResultSet(pagingPredicate.getComparator(), IterationType.ENTRY, pagingPredicate.getPageSize());
+        }
         for (Object data : result) {
             AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
+        if (pagingPredicate != null) {
+            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) entrySet).last());
+        }
         return entrySet;
     }
 
     public Collection<V> values(Predicate predicate) {
+        PagingPredicate pagingPredicate = null;
+        if (predicate instanceof PagingPredicate) {
+            pagingPredicate = (PagingPredicate) predicate;
+            pagingPredicate.setIterationType(IterationType.VALUE);
+
+            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
+                pagingPredicate.previousPage();
+                values(pagingPredicate);
+                pagingPredicate.nextPage();
+            }
+        }
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
         QueryResultSet result = invoke(request);
-        Collection<V> values = new ArrayList<V>(result.size());
+        List<V> values = new ArrayList<V>(result.size());
         for (Object data : result) {
             V value = toObject((Data) data);
             values.add(value);
+        }
+        if (pagingPredicate != null) {
+            Collections.sort(values, SortingUtil.newComparator(pagingPredicate.getComparator()));
+            if (values.size() > pagingPredicate.getPageSize()) {
+                values = values.subList(0, pagingPredicate.getPageSize());
+            }
+            Object anchor = null;
+            if (values.size() != 0) {
+                anchor = values.get(values.size()-1);
+            }
+            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(null, anchor));
         }
         return values;
     }
@@ -433,18 +496,17 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
-    public void submitToKey(K key, EntryProcessor entryProcessor,final ExecutionCallback callback) {
+    public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
 
         getContext().getExecutionService().submit(new Callable<V>() {
             public V call() throws Exception {
                 try {
-                    V result =  invoke(request, keyData);
+                    V result = invoke(request, keyData);
                     callback.onResponse(result);
-                    return  result;
-                }catch (Exception e)
-                {
+                    return result;
+                } catch (Exception e) {
                     callback.onFailure(e);
                     throw (e);
                 }
@@ -459,7 +521,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
         return getContext().getExecutionService().submit(new Callable<V>() {
             public V call() throws Exception {
-                    return invoke(request, keyData); 
+                return invoke(request, keyData);
             }
         });
     }
@@ -519,7 +581,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     protected void onDestroy() {
-        if (nearCache != null){
+        if (nearCache != null) {
             nearCache.destroy();
         }
     }

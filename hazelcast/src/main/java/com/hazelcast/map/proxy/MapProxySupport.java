@@ -728,7 +728,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Invocation invocation = operationService
                     .createInvocationBuilder(SERVICE_NAME,
-                                             new QueryOperation(name, predicate, iterationType),
+                                             new QueryOperation(name, predicate),
                                              nodeEngine.getThisAddress()).build();
             Future future = invocation.invoke();
             QueryResult queryResult = (QueryResult) future.get();
@@ -817,7 +817,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
                 Invocation invocation = operationService
-                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate, iterationType), member.getAddress())
+                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress())
                         .build();
                 Future future = invocation.invoke();
                 flist.add(future);

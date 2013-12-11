@@ -35,18 +35,32 @@ public final class SortingUtil {
         return comparable1.hashCode() - comparable2.hashCode();
     }
 
+    public static Comparator newComparator(final Comparator comparator){
+        return new Comparator(){
+            public int compare(Object comparable1, Object comparable2) {
+                if (comparator != null) {
+                    return comparator.compare(comparable1, comparable2);
+                }
+                if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
+                    return ((Comparable) comparable1).compareTo(comparable2);
+                }
+                return comparable1.hashCode() - comparable2.hashCode();
+            }
+        };
+    }
+
     public static Comparator<Map.Entry> newComparator(final Comparator comparator, final IterationType iterationType){
         return new Comparator<Map.Entry>(){
-            public int compare(Map.Entry o1, Map.Entry o2) {
-                return SortingUtil.compare(comparator, iterationType, o1, o2);
+            public int compare(Map.Entry entry1, Map.Entry entry2) {
+                return SortingUtil.compare(comparator, iterationType, entry1, entry2);
             }
         };
     }
 
     public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate){
         return new Comparator<Map.Entry>(){
-            public int compare(Map.Entry o1, Map.Entry o2) {
-                return SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), o1, o2);
+            public int compare(Map.Entry entry1, Map.Entry entry2) {
+                return SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
             }
         };
     }

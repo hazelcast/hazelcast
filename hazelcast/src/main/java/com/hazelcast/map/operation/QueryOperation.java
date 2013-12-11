@@ -36,7 +36,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
@@ -51,12 +50,10 @@ public class QueryOperation extends AbstractMapOperation {
     Predicate predicate;
     QueryResult result;
     transient PagingPredicate pagingPredicate;
-    IterationType iterationType;
 
-    public QueryOperation(String mapName, Predicate predicate, IterationType iterationType) {
+    public QueryOperation(String mapName, Predicate predicate) {
         super(mapName);
         this.predicate = predicate;
-        this.iterationType = iterationType;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate)predicate;
         }
