@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -178,6 +179,9 @@ public class ManagementService implements DistributedObjectListener {
             }
             if (distributedObject instanceof MultiMap){
                 return new MultiMapMBean((MultiMap)distributedObject, this);
+            }
+            if (distributedObject instanceof ReplicatedMapProxy){
+                return new ReplicatedMapMBean((ReplicatedMapProxy)distributedObject, this);
             }
             if (distributedObject instanceof IQueue){
                 return new QueueMBean((IQueue)distributedObject, this);

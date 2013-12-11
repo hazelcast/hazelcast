@@ -35,6 +35,7 @@ public class MemberStateImpl implements MemberState {
     Map<String, Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
+    Map<String, LocalReplicatedMapStatsImpl> replicatedMapStats = new HashMap<String, LocalReplicatedMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
@@ -49,6 +50,11 @@ public class MemberStateImpl implements MemberState {
         }
         out.writeInt(multiMapStats.size());
         for (Map.Entry<String, LocalMultiMapStatsImpl> entry : multiMapStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(replicatedMapStats.size());
+        for (Map.Entry<String, LocalReplicatedMapStatsImpl> entry : replicatedMapStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
@@ -92,6 +98,11 @@ public class MemberStateImpl implements MemberState {
             name = in.readUTF();
             (impl = new LocalMultiMapStatsImpl()).readData(in);
             multiMapStats.put(name, (LocalMultiMapStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalReplicatedMapStatsImpl()).readData(in);
+            replicatedMapStats.put(name, (LocalReplicatedMapStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
@@ -157,6 +168,10 @@ public class MemberStateImpl implements MemberState {
         return multiMapStats.get(mapName);
     }
 
+    public LocalReplicatedMapStats getLocalReplicatedMapStats(String mapName) {
+        return replicatedMapStats.get(mapName);
+    }
+
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
     }
@@ -185,6 +200,10 @@ public class MemberStateImpl implements MemberState {
         multiMapStats.put(name, localMultiMapStats);
     }
 
+    public void putLocalReplicatedMapStats(String name, LocalReplicatedMapStatsImpl localReplicatedMapStats) {
+        replicatedMapStats.put(name, localReplicatedMapStats);
+    }
+
     public void putLocalQueueStats(String name, LocalQueueStatsImpl localQueueStats) {
         queueStats.put(name, localQueueStats);
     }
@@ -203,6 +222,7 @@ public class MemberStateImpl implements MemberState {
                 ", runtimeProps=" + runtimeProps +
                 ", mapStats=" + mapStats +
                 ", multiMapStats=" + multiMapStats +
+                ", replicatedMapStats=" + replicatedMapStats +
                 ", queueStats=" + queueStats +
                 ", topicStats=" + topicStats +
                 ", executorStats=" + executorStats +

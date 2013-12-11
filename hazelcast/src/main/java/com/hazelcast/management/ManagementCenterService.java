@@ -36,6 +36,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 
@@ -349,6 +350,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         memberState.putLocalExecutorStats(executorService.getName(), (LocalExecutorStatsImpl) executorService.getLocalExecutorStats());
                         count++;
                     }
+                } else if (distributedObject instanceof ReplicatedMapProxy) {
+                    ReplicatedMapProxy replicatedMap = (ReplicatedMapProxy) distributedObject;
+                    if (config.findReplicatedMapConfig(replicatedMap.getName()).isStatisticsEnabled()) {
+                        memberState.putLocalReplicatedMapStats(replicatedMap.getName(), (LocalReplicatedMapStatsImpl) replicatedMap.getReplicatedMapStats());
+                    }
                 }
             }
         }
@@ -378,6 +384,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     IMap map = (IMap) distributedObject;
                     if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("c:" + map.getName());
+                        count++;
+                    }
+                } else if (distributedObject instanceof ReplicatedMap) {
+                    ReplicatedMap replicatedMap = (ReplicatedMap) distributedObject;
+                    if (config.findReplicatedMapConfig(replicatedMap.getName()).isStatisticsEnabled()) {
+                        setLongInstanceNames.add("r:" + replicatedMap.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {
