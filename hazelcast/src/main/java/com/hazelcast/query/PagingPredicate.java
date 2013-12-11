@@ -52,6 +52,9 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     public PagingPredicate(Predicate predicate, int pageSize) {
+        if (predicate instanceof PagingPredicate) {
+            throw new IllegalArgumentException("Nested PagingPredicate is not supported!!!");
+        }
         this.predicate = predicate;
         this.pageSize = pageSize;
     }
@@ -62,6 +65,9 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     public PagingPredicate(Predicate predicate, Comparator comparator, int pageSize) {
+        if (predicate instanceof PagingPredicate) {
+            throw new IllegalArgumentException("Nested PagingPredicate is not supported!!!");
+        }
         this.predicate = predicate;
         this.comparator = comparator;
         this.pageSize = pageSize;
