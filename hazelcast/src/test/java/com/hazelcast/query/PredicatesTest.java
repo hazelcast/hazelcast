@@ -16,10 +16,7 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryException;
-import com.hazelcast.query.impl.ReflectionHelper;
+import com.hazelcast.query.impl.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -31,6 +28,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.hazelcast.instance.TestUtil.toData;
@@ -44,8 +42,6 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class PredicatesTest {
 
-    private static final String dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
-
     @Test
     public void testEqual() {
         Employee value = new Employee("abc-123-xvz", 34, true, 10D);
@@ -55,7 +51,7 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("state == " + State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", nullNameValue)));
-        assertTrue(new SqlPredicate("createDate >= '" + new SimpleDateFormat(dateFormat).format(new Date(0)) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("createDate >= '" + new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US).format(new Date(0)) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("bigDecimal > '" + new BigDecimal("1.23E2") + "'").apply(createEntry("1", value)));
