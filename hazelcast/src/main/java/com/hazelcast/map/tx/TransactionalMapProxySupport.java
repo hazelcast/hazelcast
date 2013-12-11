@@ -24,11 +24,7 @@ import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.query.ObjectAccessor;
-import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -39,7 +35,10 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.*;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
+import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -242,26 +241,10 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     protected Set queryInternal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        final SerializationService ss = nodeEngine.getSerializationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        PagingPredicate pagingPredicate = null;
-        if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate) predicate;
-            pagingPredicate.setIterationType(iterationType);
-            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
-                pagingPredicate.previousPage();
-                queryInternal(pagingPredicate, iterationType, dataResult);
-                pagingPredicate.nextPage();
-            }
-        }
-        Set result;
-        if (pagingPredicate == null) {
-            result = new QueryResultSet(ss, iterationType, dataResult);
-        } else {
-            result = new SortedQueryResultSet(pagingPredicate.getComparator(), iterationType, pagingPredicate.getPageSize());
-        }
+        QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
         List<Integer> missingList = new ArrayList<Integer>();
         try {
             List<Future> flist = new ArrayList<Future>();
@@ -277,22 +260,11 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     final List<Integer> partitionIds = queryResult.getPartitionIds();
                     if (partitionIds != null) {
                         plist.addAll(partitionIds);
-                        if (pagingPredicate == null) {
-                            result.addAll(queryResult.getResult());
-                        } else {
-                            for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
-                                Object key = ss.toObject(queryResultEntry.getKeyData());
-                                Object value = ss.toObject(queryResultEntry.getValueData());
-                                result.add(new AbstractMap.SimpleImmutableEntry(key, value));
-                            }
-                        }
+                        result.addAll(queryResult.getResult());
                     }
                 }
             }
             if (plist.size() == partitionCount) {
-                if (pagingPredicate != null) {
-                    ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
-                }
                 return result;
             }
             for (int i = 0; i < partitionCount; i++) {
@@ -323,15 +295,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             }
             for (Future future : futures) {
                 QueryResult queryResult = (QueryResult) future.get();
-                if (pagingPredicate == null) {
-                    result.addAll(queryResult.getResult());
-                } else {
-                    for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
-                        Object key = ss.toObject(queryResultEntry.getKeyData());
-                        Object value = ss.toObject(queryResultEntry.getValueData());
-                        result.add(new AbstractMap.SimpleImmutableEntry(key, value));
-                    }
-                }
+                result.addAll(queryResult.getResult());
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

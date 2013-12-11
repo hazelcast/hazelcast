@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -45,8 +44,12 @@ import static junit.framework.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SortLimitTest extends HazelcastTestSupport {
 
+    //TODO txn query
+    //TODO local query
+    //TODO client
+
     @Test
-    public void testWithoutAnchor(){
+    public void testWithoutAnchor() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
@@ -54,7 +57,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = instance1.getMap("testSort");
         final int size = 50;
         final int pageSize = 5;
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
 
@@ -84,12 +87,10 @@ public class SortLimitTest extends HazelcastTestSupport {
             assertEquals(value++, val);
         }
 
-
-
     }
 
     @Test
-    public void testPagingWithoutFilteringAndComparator(){
+    public void testPagingWithoutFilteringAndComparator() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
@@ -97,7 +98,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = instance1.getMap("testSort");
         final int size = 50;
         final int pageSize = 5;
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
 
@@ -125,7 +126,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = instance1.getMap("testSort");
         final int size = 50;
         final int pageSize = 5;
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
         Integer value = 8;
@@ -156,16 +157,15 @@ public class SortLimitTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testKeyPaging(){
-        System.setProperty(GroupProperties.PROP_PARTITION_COUNT, "4");
+    public void testKeyPaging() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
-//        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         final IMap<Integer, Integer> map = instance1.getMap("testSort");
         final int size = 50;
         final int pageSize = 5;
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             map.put(size - i, i);
         }
         Integer value = 8;

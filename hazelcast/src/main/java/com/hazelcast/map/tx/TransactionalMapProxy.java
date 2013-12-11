@@ -19,10 +19,10 @@ package com.hazelcast.map.tx;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
@@ -236,6 +236,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
+        }
+        if (predicate instanceof PagingPredicate) {
+            throw new NullPointerException("Paging is not supported for Transactional queries!");
         }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
