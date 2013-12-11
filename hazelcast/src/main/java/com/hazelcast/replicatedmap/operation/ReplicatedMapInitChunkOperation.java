@@ -42,8 +42,7 @@ public class ReplicatedMapInitChunkOperation
     ReplicatedMapInitChunkOperation() {
     }
 
-    public ReplicatedMapInitChunkOperation(String name, Member origin,
-                                           boolean notYetReadyChooseSomeoneElse) {
+    public ReplicatedMapInitChunkOperation(String name, Member origin) {
         this(name, origin, new ReplicatedRecord[0], 0, true);
         this.notYetReadyChooseSomeoneElse = true;
     }

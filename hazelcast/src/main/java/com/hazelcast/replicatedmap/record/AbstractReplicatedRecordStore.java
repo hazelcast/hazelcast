@@ -37,7 +37,6 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl.Registration;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ValidationUtil;
-import com.hazelcast.util.executor.NamedThreadFactory;
 import com.hazelcast.util.nonblocking.NonBlockingHashMap;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -45,7 +44,10 @@ import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -76,6 +78,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     private final int localMemberHash;
     private final NodeEngine nodeEngine;
     private final EventService eventService;
+    private final ExecutionService executionService;
 
     private final ScheduledExecutorService executorService;
     private final EntryTaskScheduler ttlEvictionScheduler;
@@ -94,9 +97,10 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         this.localMember = nodeEngine.getLocalMember();
         this.localMemberHash = localMember.getUuid().hashCode();
         this.eventService = nodeEngine.getEventService();
+        this.executionService = nodeEngine.getExecutionService();
         this.replicatedMapService = replicatedMapService;
         this.replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
-        this.executorService = getExecutorService(replicatedMapConfig);
+        this.executorService = getExecutorService(nodeEngine, replicatedMapConfig);
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
                 nodeEngine.getExecutionService().getScheduledExecutor(),
                 new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name), ScheduleType.POSTPONE);
@@ -403,10 +407,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     public void queueInitialFillup(Address callerAddress, int chunkSize) {
-        String threadName = "ReplicatedMap-" + name + "-Fillup-" + initialFillupThreadNumber.getAndIncrement();
-        Thread fillupThread = new Thread(new RemoteFillupTask(callerAddress, chunkSize), threadName);
-        fillupThread.setDaemon(true);
-        fillupThread.start();
+        executionService.execute("hz:replicated-map", new RemoteFillupTask(callerAddress, chunkSize));
     }
 
     public void queueUpdateMessage(final ReplicationMessage update) {
@@ -597,13 +598,13 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         return i1 < i2;
     }
 
-    private ScheduledExecutorService getExecutorService(ReplicatedMapConfig replicatedMapConfig) {
+    private ScheduledExecutorService getExecutorService(NodeEngine nodeEngine,
+                                                        ReplicatedMapConfig replicatedMapConfig) {
         ScheduledExecutorService es = replicatedMapConfig.getReplicatorExecutorService();
-        if (es != null) {
-            return new WrappedExecutorService(es);
+        if (es == null) {
+            es = nodeEngine.getExecutionService().getScheduledExecutor();
         }
-        return Executors.newSingleThreadScheduledExecutor(
-                new NamedThreadFactory(ReplicatedMapService.SERVICE_NAME + "." + name + ".replicator"));
+        return new WrappedExecutorService(es);
     }
 
     private void fireEntryListenerEvent(Object key, Object oldValue, Object value) {
