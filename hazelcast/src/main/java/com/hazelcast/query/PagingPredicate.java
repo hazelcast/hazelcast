@@ -48,29 +48,33 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     public PagingPredicate(int pageSize) {
+        if (pageSize <= 0){
+            throw new IllegalArgumentException("pageSize should be greater than 0 !!!");
+        }
         this.pageSize = pageSize;
     }
 
     public PagingPredicate(Predicate predicate, int pageSize) {
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("Nested PagingPredicate is not supported!!!");
-        }
-        this.predicate = predicate;
-        this.pageSize = pageSize;
+        this(pageSize);
+        setInnerPredicate(predicate);
     }
 
     public PagingPredicate(Comparator comparator, int pageSize) {
+        this(pageSize);
         this.comparator = comparator;
-        this.pageSize = pageSize;
     }
 
     public PagingPredicate(Predicate predicate, Comparator comparator, int pageSize) {
+        this(pageSize);
+        setInnerPredicate(predicate);
+        this.comparator = comparator;
+    }
+
+    private void setInnerPredicate(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Nested PagingPredicate is not supported!!!");
         }
         this.predicate = predicate;
-        this.comparator = comparator;
-        this.pageSize = pageSize;
     }
 
     public Set<QueryableEntry> filter(QueryContext queryContext) {
