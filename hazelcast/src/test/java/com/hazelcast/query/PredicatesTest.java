@@ -139,6 +139,11 @@ public class PredicatesTest {
         assertTrue(Predicates.like(null, "%World").apply(new DummyEntry("Java World")));
         assertTrue(Predicates.like(null, "Java_World").apply(new DummyEntry("Java World")));
         assertFalse(Predicates.like(null, "JavaWorld").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.ilike(null, "Java_World").apply(new DummyEntry("java World")));
+        assertTrue(Predicates.ilike(null, "java%ld").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.ilike(null, "%world").apply(new DummyEntry("Java World")));
+        assertFalse(Predicates.ilike(null, "Java_World").apply(new DummyEntry("gava World")));
+        assertTrue(new SqlPredicate(" (name ILIKE 'ABC-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
     }
 
     void assertThis(boolean expected, String function, Comparable value, Object... args) {
@@ -212,6 +217,7 @@ public class PredicatesTest {
         assertEquals("(active=true OR age BETWEEN 10 AND 15)", sql("active or (age between 10 and 15)"));
         assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
         assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
+        assertEquals("name ILIKE 'J%'", sql("name ilike 'J%'"));
         //issue #594
         assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
     }
