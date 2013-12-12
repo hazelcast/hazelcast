@@ -58,7 +58,6 @@ public class WanReplicationTest {
     private Config configC;
 
 
-
     @BeforeClass
     public static void init() throws Exception {
         Hazelcast.shutdownAll();
@@ -292,39 +291,6 @@ public class WanReplicationTest {
 
 
     @Test
-    public void VTopo_1passiveReplicar_2producers_Test_PassThroughMergePolicy_ReplicarDown(){
-
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
-
-        initClusterA();
-        initClusterB();
-        initClusterC();
-
-
-        createDataIn(clusterA, "map", 0,    1000);
-        createDataIn(clusterB, "map", 1000, 2000);
-
-
-
-        createDataIn(clusterA, "map", 1900, 2000);
-        createDataIn(clusterB, "map", 0,     100);
-
-
-
-        //assertDataInFrom(clusterC, "map", 0, 100, clusterB);
-        //assertDataInFrom(clusterC, "map", 100, 1000, clusterA);
-
-        //assertDataInFrom(clusterC, "map", 1000, 1900, clusterB);
-        //assertDataInFrom(clusterC, "map", 1900, 2000, clusterA);
-
-        assertDataSize(clusterC, "map", 0);
-    }
-
-
-
-
-    @Test
     public void VTopo_1passiveReplicar_2producers_Test_PutIfAbsentMapMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PutIfAbsentMapMergePolicy.class.getName());
@@ -386,12 +352,15 @@ public class WanReplicationTest {
         assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
 
         createDataIn(clusterB, "map", 0, 1000);
-        for(int i=0; i<100; i++){
-            checkDataInFrom(clusterB, "map", 0, 1000, clusterB);  //am i making hits ??
-        }
+
+        assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
+
+        createDataIn(clusterB, "map", 0, 1000);
+        createDataIn(clusterB, "map", 0, 1000);
+        createDataIn(clusterB, "map", 0, 1000);
+
 
         assertDataInFrom(clusterC, "map", 0, 1000, clusterB);
-
     }
 
 
@@ -438,7 +407,7 @@ public class WanReplicationTest {
         assertDataInFrom(clusterB, "map", 0, 1000, clusterA);
 
         createDataIn(clusterB, "map", 1000, 2000);
-        assertDataInFrom(clusterA, "map", 0, 2000, clusterB);
+        assertDataInFrom(clusterA, "map", 1000, 2000, clusterB);
 
         removeDataIn(clusterA, "map", 1500, 2000);
         assertKeysNotIn(clusterB, "map", 1500, 2000);
