@@ -1081,14 +1081,30 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void handleManagementCenterConfig(final Node node) {
         NamedNodeMap attrs = node.getAttributes();
+
         final Node enabledNode = attrs.getNamedItem("enabled");
         final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
+
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
                 getTextContent(intervalNode), 5) : 5;
-        config.getManagementCenterConfig().setEnabled(enabled);
-        config.getManagementCenterConfig().setUpdateInterval(interval);
-        config.getManagementCenterConfig().setUrl(getTextContent(node));
+
+        final Node securityTokenNode = attrs.getNamedItem("security-token");
+        final String securityToken =getTextContent(securityTokenNode);
+
+        final Node projectIdNode = attrs.getNamedItem("project-id");
+        final String projectId =getTextContent(projectIdNode);
+
+        final Node urlNode = attrs.getNamedItem("url");
+        final String url =getTextContent(urlNode);
+
+        ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
+        managementCenterConfig.setEnabled(enabled);
+        managementCenterConfig.setUpdateInterval(interval);
+        managementCenterConfig.setUrl(getTextContent(node));
+        managementCenterConfig.setSecurityToken(securityToken);
+        managementCenterConfig.setProjectId(projectId);
+        managementCenterConfig.setUrl(url);
     }
 
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {

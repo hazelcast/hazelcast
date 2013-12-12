@@ -87,13 +87,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         String projectId = managementCenterConfig.getProjectId();
 
         if(managementCenterConfig.isEnabled() && managementCenterConfig.getUrl()==null){
-            managementCenterConfig.setUrl(HOSTED_MANCENTER_URL);
 
             //if the url is not set, but the management center is enabled, we are going to point him to the hosted management solution.
             //if the url is set, he is running his own management center instance and we are not going to bother him with the
             //hosted management solution.
 
             if(managementCenterConfig.getSecurityToken() == null){
+
                 //so the user has not provided a security token, so need to tell him that he can create one at
                 //our registration page.
 
@@ -106,6 +106,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     logger.info("======================================================");
                 }
             }else{
+                managementCenterConfig.setUrl(HOSTED_MANCENTER_URL);
+
                 //the user has provided a security token.
 
                 if (projectId == null) {
