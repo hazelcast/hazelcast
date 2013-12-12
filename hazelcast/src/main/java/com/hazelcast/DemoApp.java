@@ -40,6 +40,7 @@ public class DemoApp {
         System.out.println("Group: "+group);
 
         Config config = new Config();
+        System.out.println(config.getManagementCenterConfig());
         config.getManagementCenterConfig().setEnabled(true);
         config.getManagementCenterConfig().setSecurityToken(securityToken);
         config.getManagementCenterConfig().setProjectId(projectId);

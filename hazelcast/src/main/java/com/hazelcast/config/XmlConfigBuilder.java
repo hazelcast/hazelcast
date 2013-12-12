@@ -1065,16 +1065,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         final Node projectIdNode = attrs.getNamedItem("project-id");
         final String projectId =getTextContent(projectIdNode);
 
-        final Node urlNode = attrs.getNamedItem("url");
-        final String url =getTextContent(urlNode);
+        final String url =getTextContent(node);
 
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         managementCenterConfig.setEnabled(enabled);
         managementCenterConfig.setUpdateInterval(interval);
-        managementCenterConfig.setUrl(getTextContent(node));
-        managementCenterConfig.setSecurityToken(securityToken);
-        managementCenterConfig.setProjectId(projectId);
-        managementCenterConfig.setUrl(url);
+        managementCenterConfig.setSecurityToken("".equals(securityToken) ? null : securityToken);
+        managementCenterConfig.setProjectId("".equals(projectId) ? null : projectId);
+        managementCenterConfig.setUrl("".equals(url) ? null : url);
     }
 
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {
