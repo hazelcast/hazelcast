@@ -489,7 +489,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         invocation.invoke();
     }
 
-    private TimedMemberState getTimedMemberState() {
+    TimedMemberState getTimedMemberState() {
         if (running.get()) {
             final MemberStateImpl memberState = new MemberStateImpl();
             createMemberState(memberState);
