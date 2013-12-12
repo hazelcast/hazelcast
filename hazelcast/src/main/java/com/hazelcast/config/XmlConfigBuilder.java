@@ -1049,7 +1049,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         NamedNodeMap attrs = node.getAttributes();
 
         final Node enabledNode = attrs.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
+        boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
 
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
@@ -1057,6 +1057,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
         final Node securityTokenNode = attrs.getNamedItem("security-token");
         final String securityToken =getTextContent(securityTokenNode);
+
+        if (securityToken != null && enabledNode == null) {
+            enabled = true;
+        }
 
         final Node projectIdNode = attrs.getNamedItem("project-id");
         final String projectId =getTextContent(projectIdNode);

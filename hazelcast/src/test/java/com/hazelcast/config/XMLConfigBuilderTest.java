@@ -239,6 +239,21 @@ public class XMLConfigBuilderTest {
         assertEquals("someUrl",manCenterCfg.getUrl());
     }
 
+    @Test
+    public void testManagementCenterConfig_onlySecurityTokenSet() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<management-center security-token=\"someToken\">"+
+                        "</management-center>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertTrue(manCenterCfg.isEnabled());
+        assertEquals("",manCenterCfg.getProjectId());
+        assertEquals("someToken",manCenterCfg.getSecurityToken());
+        assertEquals("",manCenterCfg.getUrl());
+    }
+
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.2.xsd");
