@@ -218,8 +218,8 @@ public final class Predicates {
     }
 
     public static class LikePredicate implements Predicate, DataSerializable {
-        private String attribute;
-        private String second;
+        protected String attribute;
+        protected String second;
         private volatile Pattern pattern;
 
         public LikePredicate() {
@@ -247,7 +247,8 @@ public final class Predicates {
                             .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")//escaped _
                             .replaceAll("\\\\%", "%")//non escaped %
                             .replaceAll("\\\\_", "_");//non escaped _
-                    pattern = Pattern.compile(regex);
+                    int flags = getFlags();
+                    pattern = Pattern.compile(regex, flags);
                 }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
@@ -266,8 +267,42 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            return attribute + " LIKE '" + second + "'";
+            StringBuilder builder = new StringBuilder(attribute)
+                    .append(" LIKE '")
+                    .append(second)
+                    .append("'");
+            return builder.toString();
         }
+
+        protected int getFlags() {
+            return 0; //no flags
+        }
+    }
+
+    public static class ILikePredicate extends LikePredicate {
+
+        public ILikePredicate() {
+        }
+
+        public ILikePredicate(String attribute, String second) {
+            super(attribute, second);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder(attribute)
+                    .append(" ILIKE '")
+                    .append(second)
+                    .append("'");
+            return builder.toString();
+        }
+
+
+        @Override
+        protected int getFlags() {
+            return Pattern.CASE_INSENSITIVE;
+        }
+
     }
 
     public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
@@ -681,6 +716,10 @@ public final class Predicates {
 
     public static Predicate like(String attribute, String pattern) {
         return new LikePredicate(attribute, pattern);
+    }
+
+    public static Predicate ilike(String attribute, String pattern) {
+        return new ILikePredicate(attribute, pattern);
     }
 
     public static Predicate regex(String attribute, String pattern) {
