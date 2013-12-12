@@ -239,6 +239,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
                 while ((line = reader.readLine()) != null) {
                     factoryCandidates.add(line.trim());
                 }
+                reader.close();
             }
         }
         //add java built in JavaScript ScriptEngineFactory's
