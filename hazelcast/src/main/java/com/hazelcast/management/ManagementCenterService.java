@@ -498,7 +498,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
     }
 
-    private TimedMemberState getTimedMemberState() {
+    TimedMemberState getTimedMemberState() {
         if (running.get()) {
             final MemberStateImpl memberState = new MemberStateImpl();
             createMemberState(memberState);
