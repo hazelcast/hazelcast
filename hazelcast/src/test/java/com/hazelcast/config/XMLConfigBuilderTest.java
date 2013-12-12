@@ -223,6 +223,22 @@ public class XMLConfigBuilderTest {
         assertTrue(mapConfig.getMaxSizeConfig().getMaxSizePolicy().equals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION));
     }
 
+
+    @Test
+    public void testManagementCenterConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<management-center enabled=\"true\" security-token=\"someToken\" project-id=\"someProjectId\" url=\"someUrl\">"+
+                       "</management-center>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertTrue(manCenterCfg.isEnabled());
+        assertEquals("someProjectId",manCenterCfg.getProjectId());
+        assertEquals("someToken",manCenterCfg.getSecurityToken());
+        assertEquals("someUrl",manCenterCfg.getUrl());
+    }
+
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.2.xsd");

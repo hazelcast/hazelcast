@@ -2,6 +2,7 @@ package com.hazelcast;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import javafx.concurrent.Task;
 
 import java.io.Serializable;
 import java.util.Random;
@@ -33,8 +34,6 @@ public class DemoApp {
             }
         }
 
-
-
         System.out.println("Starting demo application with the following settings");
         System.out.println("SecurityToken: "+securityToken);
         System.out.println("ProjectId: "+projectId);
@@ -45,8 +44,9 @@ public class DemoApp {
         config.getManagementCenterConfig().setSecurityToken(securityToken);
         config.getManagementCenterConfig().setProjectId(projectId);
         //we need to set a group to prevent forming a cluster with app1
-        if(group!=null)
-        config.getGroupConfig().setName(group);
+        if(group!=null) {
+            config.getGroupConfig().setName(group);
+        }
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
 
@@ -54,12 +54,12 @@ public class DemoApp {
         new MapThread("Map2Tread", hz1.getMap("map2")).start();
         new QueueThread("Queue1Thread", hz1.getQueue("queue1")).start();
         new QueueThread("Queue2Thread", hz1.getQueue("queue2")).start();
-        new ExecutorThread("Executor1Thread", hz1.getExecutorService("executor1")).start();
-        new ExecutorThread("Executor2Thread", hz1.getExecutorService("executor2")).start();
-        new TopicThread("Topic1Thread", hz1.getTopic("topic1")).start();
-        new TopicThread("Topic2Thread", hz1.getTopic("topic2")).start();
-        new MultiMapThread("MultiMap1Thread", hz1.getMultiMap("multimap1")).start();
-        new MultiMapThread("MultiMap2Thread", hz1.getMultiMap("multimap2")).start();
+        //new ExecutorThread("Executor1Thread", hz1.getExecutorService("executor1")).start();
+        //new ExecutorThread("Executor2Thread", hz1.getExecutorService("executor2")).start();
+        //new TopicThread("Topic1Thread", hz1.getTopic("topic1")).start();
+        //new TopicThread("Topic2Thread", hz1.getTopic("topic2")).start();
+        //new MultiMapThread("MultiMap1Thread", hz1.getMultiMap("multimap1")).start();
+        //new MultiMapThread("MultiMap2Thread", hz1.getMultiMap("multimap2")).start();
 
         Thread.sleep(1000000000);
     }
@@ -74,7 +74,7 @@ public class DemoApp {
         }
 
         public void run(){
-            int count = 100000;
+            int count = 10000;
             for(int k=0;k< count;k++){
                 map.put(k,k);
             }
@@ -104,7 +104,7 @@ public class DemoApp {
         }
 
         public void run(){
-            int count = 100000;
+            int count = 10000;
             for(int k=0;k< count;k++){
                 map.put(k,k);
             }
@@ -133,7 +133,7 @@ public class DemoApp {
         }
 
         public void run(){
-            int count = 100000;
+            int count = 10000;
             for(int k=0;k< count;k++){
                 queue.offer(k);
             }
