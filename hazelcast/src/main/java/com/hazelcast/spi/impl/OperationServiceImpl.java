@@ -91,7 +91,12 @@ final class OperationServiceImpl implements OperationService {
                     q,
                     new OperationThreadFactory(i));
         }
-        defaultOperationExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.OPERATION_EXECUTOR);
+
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        defaultOperationExecutor = executionService.register(ExecutionService.OPERATION_EXECUTOR,
+                coreSize * 2, coreSize * 100000);
+
+        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 10, coreSize * 100000);
 
         responseExecutor = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
@@ -101,7 +106,7 @@ final class OperationServiceImpl implements OperationService {
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);
-        backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
+        backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
 
