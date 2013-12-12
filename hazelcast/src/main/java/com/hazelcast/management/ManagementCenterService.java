@@ -56,6 +56,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     public final static AtomicBoolean DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO =  new AtomicBoolean(false);
 
+    public static final String HOSTED_MANCENTER_URL = "http://mancenter-lb-321763326.us-east-1.elb.amazonaws.com:8080/mancenter-3.2-SNAPSHOT";
+
     private final HazelcastInstanceImpl instance;
     private final TaskPoller taskPoller;
     private final StateSender stateSender;
@@ -85,6 +87,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         String projectId = managementCenterConfig.getProjectId();
 
         if(managementCenterConfig.isEnabled() && managementCenterConfig.getUrl()==null){
+            managementCenterConfig.setUrl(HOSTED_MANCENTER_URL);
+
             //if the url is not set, but the management center is enabled, we are going to point him to the hosted management solution.
             //if the url is set, he is running his own management center instance and we are not going to bother him with the
             //hosted management solution.
@@ -97,8 +101,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 //the logfile.
                 if(DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO.compareAndSet(false,true)){
                     logger.info("======================================================");
-                    logger.info("blabla text about the new hazelcast hosted management");
-                    logger.info("http://www.hazelcast-broken-url/registration-don't-exist.jsp");
+                    logger.info("Manage your Hazelcast cluster with the Management Center SaaS Application");
+                    logger.info(HOSTED_MANCENTER_URL+"/register.jsp");
                     logger.info("======================================================");
                 }
             }else{
@@ -119,7 +123,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
                 logger.info("======================================================");
                 logger.info("You can access your Hazelcast instance at:");
-                logger.info(managementCenterConfig.getUrl() + "/start.do?projectId=" + projectId);
+                logger.info(managementCenterConfig.getUrl() + "/start.do?projectid=" + projectId+"&securitytoken="+securityToken);
                 logger.info("======================================================");
             }
         }
