@@ -600,7 +600,6 @@
                 <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional"/>
                 <xs:attribute name="project-id" type="xs:string"  use="optional"/>
                 <xs:attribute name="security-token" type="xs:string"  use="optional"/>
-                <xs:attribute name="url" type="xs:string"  use="optional"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>

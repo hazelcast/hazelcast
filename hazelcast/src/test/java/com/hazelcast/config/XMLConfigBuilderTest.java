@@ -228,8 +228,9 @@ public class XMLConfigBuilderTest {
     public void testManagementCenterConfig() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center enabled=\"true\" security-token=\"someToken\" project-id=\"someProjectId\" url=\"someUrl\">"+
-                       "</management-center>"+
+                        "<management-center enabled=\"true\" security-token=\"someToken\" project-id=\"someProjectId\">"+
+                        "someUrl"+
+                        "</management-center>"+
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
@@ -249,9 +250,9 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertTrue(manCenterCfg.isEnabled());
-        assertEquals("",manCenterCfg.getProjectId());
         assertEquals("someToken",manCenterCfg.getSecurityToken());
-        assertEquals("",manCenterCfg.getUrl());
+        assertNull(manCenterCfg.getProjectId());
+        assertNull(manCenterCfg.getUrl());
     }
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {

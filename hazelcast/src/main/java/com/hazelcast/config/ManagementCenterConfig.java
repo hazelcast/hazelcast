@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 public class ManagementCenterConfig {
 
-    private boolean enabled = false;
+    private boolean enabled = true;
     
     private String url;
     
@@ -86,6 +86,7 @@ public class ManagementCenterConfig {
         sb.append("{enabled=").append(enabled);
         sb.append(", url='").append(url).append('\'');
         sb.append(", projectId='").append(projectId).append('\'');
+        sb.append(", securityToken='").append(securityToken).append('\'');
         sb.append(", url='").append(url).append('\'');
         sb.append(", updateInterval=").append(updateInterval);
         sb.append('}');
