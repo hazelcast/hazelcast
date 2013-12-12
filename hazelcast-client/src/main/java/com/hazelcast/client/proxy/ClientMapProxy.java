@@ -25,7 +25,7 @@ import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.ObjectAccessor;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
@@ -401,7 +401,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             if (keyList.size() != 0) {
                 anchor = keyList.get(keyList.size()-1);
             }
-            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(anchor, null));
+            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(anchor, null));
         }
         return new HashSet<K>(keyList);
     }
@@ -434,7 +434,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
         if (pagingPredicate != null) {
-            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) entrySet).last());
+            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) entrySet).last());
         }
         return entrySet;
     }
@@ -467,7 +467,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             if (values.size() != 0) {
                 anchor = values.get(values.size()-1);
             }
-            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(null, anchor));
+            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(null, anchor));
         }
         return values;
     }

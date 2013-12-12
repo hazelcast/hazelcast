@@ -32,7 +32,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionView;
-import com.hazelcast.query.ObjectAccessor;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
@@ -747,7 +747,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             if (returnedPartitionIds.size() == partitionIds.size()) {
                 if (pagingPredicate != null) {
-                    ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
+                    PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
                 }
                 return result;
             }
@@ -842,7 +842,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
             if (plist.size() == partitionCount) {
                 if (pagingPredicate != null) {
-                    ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
+                    PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
                 }
                 return result;
             }
@@ -890,7 +890,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             throw ExceptionUtil.rethrow(t);
         }
         if (pagingPredicate != null) {
-            ObjectAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
+            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
         }
         return result;
     }
