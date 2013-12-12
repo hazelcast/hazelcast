@@ -157,12 +157,13 @@ fi
 }
 
 function init {
+	version=$1
 	OUTPUT_DIR="target"
 	MULTI_HTML_OUTPUT_DIR="multi_html"
 	SINGLE_HTML_OUTPUT_DIR="single_html"
 	NOHEADER_HTML_OUTPUT_DIR="no_header"
 	PDF_OUTPUT_DIR="pdf"
-	PDF_FILE_NAME="hazelcast-documentation.pdf"
+	PDF_FILE_NAME="hazelcast-documentation-$version.pdf"
 	MANIFEST_FILE_NAME="manifest.json"
 	MERGED_FILE_NAME="hazelcast-documentation.md"
 	COPYRIGHT_FILE_NAME="copyright.txt"
@@ -189,8 +190,7 @@ function cleanIfExists {
 		
 		
 }
-version=$1
-init
+init $1
 cleanIfExists
 createMultiHTML
 
