@@ -86,7 +86,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
         String projectId = managementCenterConfig.getProjectId();
 
-        if(managementCenterConfig.isEnabled() && managementCenterConfig.getUrl()==null){
+        String url = managementCenterConfig.getUrl();
+
+        if(managementCenterConfig.isEnabled() && url==null){
 
             //if the url is not set, but the management center is enabled, we are going to point him to the hosted management solution.
             //if the url is set, he is running his own management center instance and we are not going to bother him with the
@@ -106,8 +108,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     logger.info("======================================================");
                 }
             }else{
-                managementCenterConfig.setUrl(HOSTED_MANCENTER_URL);
-
+                url = HOSTED_MANCENTER_URL;
                 //the user has provided a security token.
 
                 if (projectId == null) {
@@ -125,7 +126,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
                 logger.info("======================================================");
                 logger.info("You can access your Hazelcast instance at:");
-                logger.info(managementCenterConfig.getUrl() + "/start.do?projectid=" + projectId+"&securitytoken="+securityToken);
+                logger.info(url + "/start.do?projectid=" + projectId+"&securitytoken="+securityToken);
                 logger.info("======================================================");
             }
         }
@@ -135,9 +136,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         this.instance.getCluster().addMembershipListener(this);
         maxVisibleInstanceCount = this.instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         commandHandler = new ConsoleCommandHandler(this.instance);
-        String tmpWebServerUrl = managementCenterConfig.getUrl();
-        webServerUrl = tmpWebServerUrl != null ?
-                (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : null;
+
+        webServerUrl = url != null ?
+                (!url.endsWith("/") ? url + '/' : url) : null;
         updateIntervalMs = (managementCenterConfig.getUpdateInterval() > 0)
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
         taskPoller = new TaskPoller();
@@ -547,6 +548,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                     try {
                         URL url = createCollectorUrl();
+                        System.out.println(url);
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setDoOutput(true);
                         connection.setRequestMethod("POST");
@@ -560,7 +562,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         out.flush();
                         connection.getInputStream();
                     } catch (Exception e) {
-                        logger.finest(e);
+                        logger.warning(e);
                     }
                     Thread.sleep(updateIntervalMs);
                 }
@@ -568,7 +570,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 if (throwable instanceof OutOfMemoryError) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
                 }
-                logger.finest( "Web Management Center will be closed due to exception.", throwable);
+                logger.warning("Web Management Center will be closed due to exception.", throwable);
                 shutdown();
             }
         }
@@ -631,7 +633,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 request.writeResponse(ManagementCenterService.this, out);
                 connection.getInputStream();
             } catch (Exception e) {
-                logger.finest( e);
+                logger.warning(e);
             }
         }
 
@@ -651,6 +653,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                     try {
                         URL url = createTaskPollerUrl(address, groupConfig);
+                        System.out.println(url);
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
@@ -675,7 +678,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 if (throwable instanceof OutOfMemoryError) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
                 }
-                logger.finest( "Problem on management center while polling task.", throwable);
+                logger.warning("Problem on management center while polling task.", throwable);
             }
         }
 
