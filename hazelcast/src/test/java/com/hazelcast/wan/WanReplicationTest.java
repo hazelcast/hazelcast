@@ -13,10 +13,7 @@ import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.jruby.util.Random;
 import org.junit.After;
@@ -41,13 +38,11 @@ import static org.junit.Assert.*;
  */
 
 
-//@RunWith(HazelcastParallelClassRunner.class)
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class WanReplicationTest {
 
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
-
 
     private HazelcastInstance[] clusterA = new HazelcastInstance[2];
     private HazelcastInstance[] clusterB = new HazelcastInstance[2];
@@ -80,12 +75,9 @@ public class WanReplicationTest {
         configB.getGroupConfig().setName("B");
         configB.getNetworkConfig().setPort(5801);
 
-
         configC = new Config();
         configC.getGroupConfig().setName("C");
         configC.getNetworkConfig().setPort(5901);
-
-
     }
 
 
@@ -285,9 +277,7 @@ public class WanReplicationTest {
 
         assertDataInFrom(clusterA, "map", 1000, 2000, clusterB);
         assertDataInFrom(clusterB, "map", 0,    1000, clusterA);
-
     }
-
 
 
     @Test
@@ -372,11 +362,6 @@ public class WanReplicationTest {
         initAllClusters();
 
 
-        HazelcastInstance h = getNode(clusterA);
-        System.out.println(h.getConfig().getWanReplicationConfig("atob"));
-        System.out.println(h.getConfig().getWanReplicationConfig("atoc"));
-
-
         createDataIn(clusterA, "map", 0, 1000);
 
         assertKeysIn(clusterB, "map", 0, 1000);
@@ -389,12 +374,11 @@ public class WanReplicationTest {
 
         assertDataSize(clusterB, "map", 0);
         assertDataSize(clusterC, "map", 0);
-
     }
 
 
 
-        @Test
+    @Test
     public void linkTopo_ActiveActiveReplication_Test(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -480,17 +464,11 @@ public class WanReplicationTest {
         initClusterA();
         initClusterB();
 
-
         createDataIn(clusterA, "map", 0, 1000);
         assertDataInFrom(clusterB, "map", 0, 1000, clusterA);
 
-        //createDataIn(clusterB, "map", 1000, 2000);
-        //assertDataInFrom(clusterA, "map", 1000, 2000, clusterB);
-
-
         createDataIn(clusterB, "map", 0, 500);
         assertDataInFrom(clusterA, "map", 0, 500, clusterB);
-
     }
 
 
@@ -592,7 +570,6 @@ public class WanReplicationTest {
                 e.printStackTrace();
             }
         }
-
         throw error;
     }
 }
