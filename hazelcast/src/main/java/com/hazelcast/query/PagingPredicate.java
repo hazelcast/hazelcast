@@ -48,7 +48,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     public PagingPredicate(int pageSize) {
-        if (pageSize <= 0){
+        if (pageSize <= 0) {
             throw new IllegalArgumentException("pageSize should be greater than 0 !!!");
         }
         this.pageSize = pageSize;
@@ -119,6 +119,12 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         if (anchor != null) {
             anchorMap.put(page + 1, anchor);
         }
+    }
+
+    public void reset() {
+        iterationType = null;
+        anchorMap.clear();
+        page = 0;
     }
 
     public void nextPage() {
