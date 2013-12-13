@@ -32,9 +32,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static org.junit.Assert.*;
 
 /**
@@ -200,7 +202,7 @@ public class ClientIssueTest {
      * Client hangs at map.get after shutdown
      */
     @Test
-    public void testIssue821(){
+    public void testIssue821() {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
@@ -213,12 +215,46 @@ public class ClientIssueTest {
         try {
             map.get("key1");
             fail();
-        } catch (HazelcastInstanceNotActiveException ignored){
+        } catch (HazelcastInstanceNotActiveException ignored) {
         }
         assertFalse(instance.getLifecycleService().isRunning());
+    }
+
+    @Test
+    public void testClientConnectionEvents() throws InterruptedException {
+        final LinkedList<LifecycleState> list = new LinkedList<LifecycleState>();
+        list.offer(LifecycleState.STARTING);
+        list.offer(LifecycleState.STARTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
+        list.offer(LifecycleState.CLIENT_DISCONNECTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
 
 
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(list.size());
+        LifecycleListener listener = new LifecycleListener() {
+            public void stateChanged(LifecycleEvent event) {
+                final LifecycleState state = list.poll();
+                if (state != null && state.equals(event.getState())) {
+                    latch.countDown();
+                }
+            }
+        };
+        final ListenerConfig listenerConfig = new ListenerConfig(listener);
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(listenerConfig);
+        clientConfig.setConnectionAttemptLimit(100);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
+        Thread.sleep(100);
+
+        instance.shutdown();
+
+        Thread.sleep(800);
+
+        Hazelcast.newHazelcastInstance();
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     /**
@@ -231,7 +267,7 @@ public class ClientIssueTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
             public void init(InitialMembershipEvent event) {
-                for (int i=0; i<event.getMembers().size(); i++){
+                for (int i = 0; i < event.getMembers().size(); i++) {
                     latch.countDown();
                 }
             }
@@ -272,7 +308,6 @@ public class ClientIssueTest {
         assertEquals("val", map.get("key1"));
 
 
-
         map.put("key2", "oldValue");
         assertEquals("oldValue", map.get("key2"));
         map.put("key2", "newValue");
@@ -281,7 +316,6 @@ public class ClientIssueTest {
         map.put("key3", "value2");
         assertEquals("value2", map.get("key3"));
         assertEquals("removeIntercepted", map.remove("key3"));
-
 
 
     }
@@ -293,7 +327,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptGet(Object value) {
-            if ("value1".equals(value)){
+            if ("value1".equals(value)) {
                 return "getIntercepted";
             }
             return null;
@@ -304,7 +338,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptPut(Object oldValue, Object newValue) {
-            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)){
+            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)) {
                 return "putIntercepted";
             }
             return null;
@@ -314,7 +348,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptRemove(Object removedValue) {
-            if ("value2".equals(removedValue)){
+            if ("value2".equals(removedValue)) {
                 return "removeIntercepted";
             }
             return null;

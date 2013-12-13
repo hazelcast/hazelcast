@@ -51,6 +51,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState;
+
 /**
  * @author mdogan 5/15/13
  */
@@ -77,7 +79,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         redoOperation = clientConfig.isRedoOperation();
         credentials = clientConfig.getCredentials();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 EventListener listener = listenerConfig.getImplementation();
                 if (listener == null) {
@@ -172,7 +174,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             } catch (Exception e) {
                 if (e instanceof IOException) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
+                        logger.finest("Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
                     release = false;
@@ -180,7 +182,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                            logger.finest("Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -263,7 +265,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private void _sendAndHandle(ConnectionFactory connectionFactory, Object obj, ResponseHandler handler) throws IOException {
         ResponseStream stream = null;
         while (stream == null) {
-            if (!active){
+            if (!active) {
                 throw new HazelcastInstanceNotActiveException();
             }
             Connection conn = null;
@@ -276,7 +278,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             } catch (Exception e) {
                 if (e instanceof IOException) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
+                        logger.finest("Error on connection... conn: " + conn + ", error: " + e);
                     }
                 }
                 if (conn != null) {
@@ -285,7 +287,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                            logger.finest("Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -317,7 +319,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return id;
     }
 
-    private void initMembershipListener(){
+    private void initMembershipListener() {
         for (MembershipListener membershipListener : listeners.values()) {
             if (membershipListener instanceof InitialMembershipListener) {
                 // TODO: needs sync with membership events...
@@ -393,6 +395,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
+                    fireConnectionEvent(true);
                 }
                 try {
                     Thread.sleep(1000);
@@ -526,11 +529,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     final Connection connection = getConnectionManager().firstConnection(address, authenticator);
                     active = true;
+                    fireConnectionEvent(false);
                     return connection;
                 } catch (IOException e) {
                     active = false;
                     lastError = e;
-                    logger.finest( "IO error during initial connection...", e);
+                    logger.finest("IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
                     active = false;
                     lastError = e;
@@ -555,6 +559,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         }
         throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
+    }
+
+    private void fireConnectionEvent(boolean disconnected) {
+        final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
+        final LifecycleState state = disconnected ? LifecycleState.CLIENT_DISCONNECTED : LifecycleState.CLIENT_CONNECTED;
+        lifecycleService.fireLifecycleEvent(state);
     }
 
     private Collection<InetSocketAddress> getConfigAddresses() {
