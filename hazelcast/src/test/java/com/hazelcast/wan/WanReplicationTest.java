@@ -256,7 +256,7 @@ public class WanReplicationTest {
         assertDataSize(clusterC, "map", 0);
     }
 
-    @Test
+    @Test//Fail
     public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -354,7 +354,7 @@ public class WanReplicationTest {
     }
 
 
-    @Test
+    @Test//Fail
     public void VTopo_2passiveReplicar_1producer_Test(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -472,7 +472,7 @@ public class WanReplicationTest {
     }
 
 
-    @Test
+    @Test//FAIL
     public void chainTopo_2passiveReplicars_1producer(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -489,7 +489,7 @@ public class WanReplicationTest {
     }
 
 
-    @Test
+    @Test//Fail
     public void replicationRing(){
 
         setupReplicateFrom(configA, configB, clusterB.length,"atob", PassThroughMergePolicy.class.getName());
