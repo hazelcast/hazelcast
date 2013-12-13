@@ -254,7 +254,7 @@ public class WanReplicationTest {
     }
 
 
-    @Ignore("Issue #1368 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
+    @Ignore("Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
     @Test
     public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy(){
 
@@ -331,7 +331,7 @@ public class WanReplicationTest {
 
 
 
-    @Ignore("Issue #1368  this test passes when run in isolation")
+    @Ignore("Issue #1373  this test passes when run in isolation")
     @Test
     public void VTopo_1passiveReplicar_2producers_Test_HigherHitsMapMergePolicy(){
 
@@ -356,7 +356,7 @@ public class WanReplicationTest {
 
 
 
-    @Ignore("Issue #1368 multi replicar topology")
+    @Ignore("Issue #1368 multi replicar topology cluster A replicates to B and C")
     @Test
     public void VTopo_2passiveReplicar_1producer_Test(){
 
@@ -474,7 +474,7 @@ public class WanReplicationTest {
         assertDataInFrom(clusterA, "map", 0, 500, clusterB);
     }
 
-    @Ignore("Issue #1368  is a chain of replicars a valid topology")
+    @Ignore("Issue #1372  is a chain of replicars a valid topology")
     @Test
     public void chainTopo_2passiveReplicars_1producer(){
 
@@ -493,7 +493,7 @@ public class WanReplicationTest {
 
 
 
-    @Ignore("Issue #1368 is a ring topology valid")
+    @Ignore("Issue #1372 is a ring topology valid")
     @Test
     public void replicationRing(){
 
