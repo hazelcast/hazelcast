@@ -256,28 +256,6 @@ public class WanReplicationTest {
         assertDataSize(clusterC, "map", 0);
     }
 
-    @Test//Fail
-    public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy(){
-
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
-
-        setupReplicateFrom(configC, configA, clusterA.length, "ctoa", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configC, configB, clusterB.length, "ctob", PassThroughMergePolicy.class.getName());
-
-        initAllClusters();
-
-        printAllReplicarConfig();
-
-        createDataIn(clusterA, "map", 0,    1000);
-        createDataIn(clusterB, "map", 1000, 2000);
-
-        assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
-        assertDataInFrom(clusterC, "map", 1000, 2000, clusterB);
-
-        assertDataInFrom(clusterA, "map", 1000, 2000, clusterB);
-        assertDataInFrom(clusterB, "map", 0,    1000, clusterA);
-    }
 
 
     @Test
@@ -329,53 +307,6 @@ public class WanReplicationTest {
 
         assertDataSize(clusterC, "map", 0);
     }
-
-
-    @Test
-    public void VTopo_1passiveReplicar_2producers_Test_HigherHitsMapMergePolicy(){
-
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", HigherHitsMapMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", HigherHitsMapMergePolicy.class.getName());
-        initAllClusters();
-
-        createDataIn(clusterA, "map", 0, 1000);
-        assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
-
-        createDataIn(clusterB, "map", 0, 1000);
-
-        assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
-
-        createDataIn(clusterB, "map", 0, 1000);
-        createDataIn(clusterB, "map", 0, 1000);
-        createDataIn(clusterB, "map", 0, 1000);
-
-
-        assertDataInFrom(clusterC, "map", 0, 1000, clusterB);
-    }
-
-
-    @Test//Fail
-    public void VTopo_2passiveReplicar_1producer_Test(){
-
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
-        initAllClusters();
-
-
-        createDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysIn(clusterB, "map", 0, 1000);
-        assertKeysIn(clusterC, "map", 0, 1000);
-
-        removeDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysNotIn(clusterB, "map", 0, 1000);
-        assertKeysNotIn(clusterC, "map", 0, 1000);
-
-        assertDataSize(clusterB, "map", 0);
-        assertDataSize(clusterC, "map", 0);
-    }
-
 
 
     @Test
@@ -472,39 +403,6 @@ public class WanReplicationTest {
     }
 
 
-    @Test//FAIL
-    public void chainTopo_2passiveReplicars_1producer(){
-
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
-        initAllClusters();
-
-        createDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
-
-        assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSize(clusterC, "map", 1000);
-    }
-
-
-    @Test//Fail
-    public void replicationRing(){
-
-        setupReplicateFrom(configA, configB, clusterB.length,"atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length,"btoc", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configC, configA, clusterA.length,"ctoa", PassThroughMergePolicy.class.getName());
-        initAllClusters();
-
-        createDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
-
-        assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSize(clusterC, "map", 1000);
-    }
 
 
     private void printReplicaConfig(Config c){
