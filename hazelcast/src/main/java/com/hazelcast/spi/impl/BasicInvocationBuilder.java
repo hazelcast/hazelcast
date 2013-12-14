@@ -22,11 +22,11 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PartitionInvocationImpl;
-import com.hazelcast.spi.impl.TargetInvocationImpl;
 
-public class InvocationBuilderImpl implements InvocationBuilder {
+/**
+ * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link com.hazelcast.spi.impl.BasicOperationService}.
+ */
+public class BasicInvocationBuilder implements InvocationBuilder {
 
     private final NodeEngineImpl nodeEngine;
     private final String serviceName;
@@ -39,16 +39,16 @@ public class InvocationBuilderImpl implements InvocationBuilder {
     private int tryCount = 250;
     private long tryPauseMillis = 500;
 
-    public InvocationBuilderImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
+    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
         this(nodeEngine, serviceName, op, partitionId, null);
     }
 
-    public InvocationBuilderImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
+    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
         this(nodeEngine, serviceName, op, -1, target);
     }
 
-    private InvocationBuilderImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                                  int partitionId, Address target) {
+    private BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+                                   int partitionId, Address target) {
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -138,10 +138,10 @@ public class InvocationBuilderImpl implements InvocationBuilder {
     @Override
     public InternalCompletableFuture invoke() {
         if (target == null) {
-            return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex,
+            return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
                     tryCount, tryPauseMillis, callTimeout, callback).invoke();
         } else {
-            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
+            return new BasicTargetInvocation(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
                     callTimeout, callback).invoke();
         }
     }
