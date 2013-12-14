@@ -197,7 +197,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             try {
                 if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
                     Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
-                            node.getMasterAddress()).setTryCount(1).build().invoke();
+                            node.getMasterAddress()).setTryCount(1).invoke();
                     f.get(1, TimeUnit.SECONDS);
                 }
             } catch (Exception e) {
@@ -733,9 +733,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     private boolean hasOnGoingMigrationMaster(Level level) {
         Operation op = new HasOngoingMigration();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, node.getMasterAddress())
-                .setTryCount(100).setTryPauseMillis(100).build();
-        Future f = inv.invoke();
+        Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, node.getMasterAddress())
+                .setTryCount(100).setTryPauseMillis(100).invoke();
         try {
             return (Boolean) f.get(1, TimeUnit.MINUTES);
         } catch (InterruptedException ignored) {
@@ -744,7 +743,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
         return false;
     }
-
     boolean hasOnGoingMigrationLocal() {
         return !activeMigrations.isEmpty() || !migrationQueue.isEmpty() || shouldWaitMigrationOrBackups(Level.OFF);
     }
@@ -1138,10 +1136,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 }
                 systemLogService.logPartition("Started Migration : " + migrationInfo);
                 if (fromMember != null) {
-                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                            migrationRequestOp, migrationInfo.getSource()).setTryPauseMillis(1000).build();
+                    Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
+                            migrationRequestOp, migrationInfo.getSource()).setTryPauseMillis(1000).invoke();
 
-                    Future future = inv.invoke();
                     try {
                         result = (Boolean) nodeEngine.toObject(future.get(partitionMigrationTimeout, TimeUnit.SECONDS));
                     } catch (Throwable e) {

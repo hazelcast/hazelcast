@@ -20,10 +20,7 @@ import com.hazelcast.concurrent.atomicreference.*;
 import com.hazelcast.core.Function;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -43,11 +40,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     private <E> E invoke(Operation operation, NodeEngine nodeEngine) {
         try {
-            Invocation inv = nodeEngine
-                    .getOperationService()
-                    .createInvocationBuilder(AtomicReferenceService.SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future<Data> f = inv.invoke();
+            InternalCompletableFuture<Object> f = getNodeEngine().getOperationService().invokeOnPartition(AtomicReferenceService.SERVICE_NAME, operation, partitionId);
             return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

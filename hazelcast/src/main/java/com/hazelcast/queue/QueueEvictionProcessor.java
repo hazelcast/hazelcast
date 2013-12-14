@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -45,8 +44,8 @@ public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, V
         for (ScheduledEntry<String, Void> entry : entries) {
             String name = entry.getKey();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
-            final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, new CheckAndEvictOperation(entry.getKey()), partitionId).build();
-            inv.invoke();
+            CheckAndEvictOperation op = new CheckAndEvictOperation(entry.getKey());
+            nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,op,partitionId).getSafely();
         }
 
     }

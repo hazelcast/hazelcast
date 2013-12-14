@@ -60,6 +60,7 @@ import com.hazelcast.wan.WanReplicationEvent;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -227,8 +228,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             MergeOperation operation = new MergeOperation(mapName, toData(entryView.getKey(), mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
-                invocation.invoke().get();
+                Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
             }
@@ -237,8 +238,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             DeleteOperation operation = new DeleteOperation(replicationRemove.getMapName(), replicationRemove.getKey());
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
-                invocation.invoke().get();
+                Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
             }
@@ -288,8 +289,8 @@ public class MapService implements ManagedService, MigrationAwareService,
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
-                                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
-                                invocation.invoke().get();
+                                Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                                f.get();
                             } catch (Throwable t) {
                                 ExceptionUtil.rethrow(t);
                             }

@@ -17,7 +17,6 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
@@ -77,8 +76,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         }
         builder.setTryCount(50).setTryPauseMillis(250);
 
-        final Invocation inv = builder.build();
-        final Future f = inv.invoke();
+        final Future f =  builder.invoke();
         try {
             final Boolean b = (Boolean) f.get();
             if (b != null && b) {

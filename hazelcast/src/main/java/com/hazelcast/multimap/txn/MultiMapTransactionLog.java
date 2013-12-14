@@ -20,7 +20,6 @@ import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
@@ -60,9 +59,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         TxnPrepareOperation operation = new TxnPrepareOperation(name, key, ttl, threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -72,9 +69,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, txVersion, opList);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -84,9 +79,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         TxnRollbackOperation operation = new TxnRollbackOperation(name, key, threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

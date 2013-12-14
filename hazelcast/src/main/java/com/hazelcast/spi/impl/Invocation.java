@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 public interface Invocation {
 

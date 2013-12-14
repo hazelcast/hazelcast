@@ -146,12 +146,12 @@ final class OperationServiceImpl implements OperationService {
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
         if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
-        return new InvocationBuilder(nodeEngine, serviceName, op, partitionId);
+        return new InvocationBuilderImpl(nodeEngine, serviceName, op, partitionId);
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         if (target == null) throw new IllegalArgumentException("Target cannot be null!");
-        return new InvocationBuilder(nodeEngine, serviceName, op, target);
+        return new InvocationBuilderImpl(nodeEngine, serviceName, op, target);
     }
 
     @PrivateApi
@@ -230,6 +230,21 @@ final class OperationServiceImpl implements OperationService {
     public void executeOperation(final Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
         getExecutor(partitionId).execute(new LocalOperationProcessor(op));
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
+        return createInvocationBuilder(serviceName, op, partitionId).invoke();
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
+        return createInvocationBuilder(serviceName, op, target).invoke();
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId, Callback callback) {
+        return createInvocationBuilder(serviceName, op, partitionId).setCallback(callback).invoke();
     }
 
     /**
@@ -517,8 +532,7 @@ final class OperationServiceImpl implements OperationService {
             final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
             final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
-            Invocation inv = createInvocationBuilder(serviceName, pi, address).setTryCount(10).setTryPauseMillis(300).build();
-            Future future = inv.invoke();
+            Future future = createInvocationBuilder(serviceName, pi, address).setTryCount(10).setTryPauseMillis(300).invoke();
             responses.put(address, future);
         }
         final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionService().getPartitionCount());
@@ -547,9 +561,8 @@ final class OperationServiceImpl implements OperationService {
             }
         }
         for (Integer failedPartition : failedPartitions) {
-            Invocation inv = createInvocationBuilder(serviceName,
-                    operationFactory.createOperation(), failedPartition).build();
-            Future f = inv.invoke();
+            Future f = createInvocationBuilder(serviceName,
+                    operationFactory.createOperation(), failedPartition).invoke();
             partitionResults.put(failedPartition, f);
         }
         for (Integer failedPartition : failedPartitions) {
