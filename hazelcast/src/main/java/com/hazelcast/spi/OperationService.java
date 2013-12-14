@@ -16,10 +16,8 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
 
 import java.util.Collection;
 import java.util.Map;
