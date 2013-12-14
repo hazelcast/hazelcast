@@ -36,7 +36,7 @@ public abstract class AtomicLongBaseOperation extends Operation implements Parti
     }
 
     public AtomicLongWrapper getNumber() {
-        return ((AtomicLongService) getService()).getNumber(name);
+        return ((AtomicLongService) getService()).getNumber(getPartitionId(),name);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

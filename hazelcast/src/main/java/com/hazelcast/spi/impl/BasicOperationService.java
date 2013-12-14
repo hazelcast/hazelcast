@@ -153,11 +153,13 @@ final class BasicOperationService implements InternalOperationService {
         return size;
     }
 
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
         if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         if (target == null) throw new IllegalArgumentException("Target cannot be null!");
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
@@ -193,6 +195,7 @@ final class BasicOperationService implements InternalOperationService {
      * Runs operation in calling thread.
      * @param op
      */
+    @Override
     public void runOperation(Operation op) {
         if (isAllowedToRunInCurrentThread(op)) {
             doRunOperation(op);
@@ -236,6 +239,7 @@ final class BasicOperationService implements InternalOperationService {
      *
      * @param op
      */
+    @Override
     public void executeOperation(final Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
         getExecutor(partitionId).execute(new LocalOperationProcessor(op));
@@ -249,11 +253,6 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
         return createInvocationBuilder(serviceName, op, target).invoke();
-    }
-
-    @Override
-    public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId, Callback callback) {
-        return createInvocationBuilder(serviceName, op, partitionId).setCallback(callback).invoke();
     }
 
     /**
@@ -439,6 +438,7 @@ final class BasicOperationService implements InternalOperationService {
 
     private class ScheduledBackupProcessor implements ScheduledEntryProcessor<Object, ScheduledBackup> {
 
+        @Override
         public void process(EntryTaskScheduler<Object, ScheduledBackup> scheduler, Collection<ScheduledEntry<Object, ScheduledBackup>> scheduledEntries) {
             for (ScheduledEntry<Object, ScheduledBackup> entry : scheduledEntries) {
                 final ScheduledBackup backup = entry.getValue();
@@ -506,11 +506,13 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
+    @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
@@ -524,6 +526,7 @@ final class BasicOperationService implements InternalOperationService {
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
+    @Override
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
                                                          Address target) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = Collections.singletonMap(target,
@@ -583,6 +586,7 @@ final class BasicOperationService implements InternalOperationService {
         return partitionResults;
     }
 
+    @Override
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
         Address target = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
@@ -592,6 +596,7 @@ final class BasicOperationService implements InternalOperationService {
         return send(op, target);
     }
 
+    @Override
     public boolean send(final Operation op, final Address target) {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
@@ -603,6 +608,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
     public boolean send(final Operation op, final Connection connection) {
         Data data = nodeEngine.toData(op);
         final int partitionId = getPartitionIdForExecution(op);
@@ -632,6 +638,7 @@ final class BasicOperationService implements InternalOperationService {
 
     // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
     @PrivateApi
+    @Override
     public void notifyRemoteCall(long callId, Object response) {
         RemoteCall call = deregisterRemoteCall(callId);
         if (call != null) {
@@ -647,6 +654,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
+    @Override
     public void notifyBackupCall(long callId) {
         final BackupCompletionCallback backupCompletionCallback = backupCalls.get(callId);
         if (backupCompletionCallback != null) {
@@ -723,6 +731,7 @@ final class BasicOperationService implements InternalOperationService {
             this.op = op;
         }
 
+        @Override
         public void run() {
             doRunOperation(op);
         }
@@ -735,6 +744,7 @@ final class BasicOperationService implements InternalOperationService {
             this.packet = packet;
         }
 
+        @Override
         public void run() {
             final Connection conn = packet.getConn();
             try {
@@ -784,6 +794,7 @@ final class BasicOperationService implements InternalOperationService {
             this.threadId = threadId;
         }
 
+        @Override
         protected Thread createThread(Runnable r) {
             return new OperationThread(threadGroup, r, threadName, threadId);
         }
@@ -798,6 +809,7 @@ final class BasicOperationService implements InternalOperationService {
             this.id = id;
         }
 
+        @Override
         public void run() {
             try {
                 super.run();

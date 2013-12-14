@@ -42,10 +42,7 @@ public class AtomicLongReplicationOperation extends AbstractOperation {
 
     public void run() throws Exception {
         AtomicLongService atomicLongService = getService();
-        for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
-            atomicLongService.getNumber(longEntry.getKey()).set(longEntry.getValue());
-        }
-
+        atomicLongService.restorePartition(getPartitionId(),migrationData);
     }
 
     public String getServiceName() {

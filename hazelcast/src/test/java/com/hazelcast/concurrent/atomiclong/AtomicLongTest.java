@@ -44,6 +44,14 @@ public class AtomicLongTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
+    public void get() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicLong an = hazelcastInstance.getAtomicLong("get");
+        assertEquals(0, an.get());
+    }
+
+        @Test
+    @ClientCompatibleTest
     public void testSimpleAtomicLong() {
         HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         IAtomicLong an = hazelcastInstance.getAtomicLong("testAtomicLong");

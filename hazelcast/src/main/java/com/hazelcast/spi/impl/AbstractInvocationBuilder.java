@@ -1,45 +1,39 @@
-/*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.Callback;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-/**
- * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link com.hazelcast.spi.impl.BasicOperationService}.
- */
-public class BasicInvocationBuilder extends AbstractInvocationBuilder {
+abstract class AbstractInvocationBuilder implements InvocationBuilder {
 
+    protected final NodeEngineImpl nodeEngine;
+    protected final String serviceName;
+    protected final Operation op;
+    protected final int partitionId;
+    protected final Address target;
+    protected Callback<Object> callback;
+    protected long callTimeout = -1L;
+    protected int replicaIndex = 0;
+    protected int tryCount = 250;
+    protected long tryPauseMillis = 500;
 
-    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
+    public AbstractInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
         this(nodeEngine, serviceName, op, partitionId, null);
     }
 
-    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
+    public AbstractInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
         this(nodeEngine, serviceName, op, -1, target);
     }
 
-    private BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+    public AbstractInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
                                    int partitionId, Address target) {
-        super(nodeEngine,serviceName,op,partitionId,target);
+        this.nodeEngine = nodeEngine;
+        this.serviceName = serviceName;
+        this.op = op;
+        this.partitionId = partitionId;
+        this.target = target;
     }
 
     @Override
@@ -119,16 +113,5 @@ public class BasicInvocationBuilder extends AbstractInvocationBuilder {
     public InvocationBuilder setCallback(Callback<Object> callback) {
         this.callback = callback;
         return this;
-    }
-
-    @Override
-    public InternalCompletableFuture invoke() {
-        if (target == null) {
-            return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, callback).invoke();
-        } else {
-            return new BasicTargetInvocation(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, callback).invoke();
-        }
     }
 }

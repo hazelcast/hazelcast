@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
+import com.hazelcast.core.Partition;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
@@ -36,32 +37,86 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, AtomicLongWrapper> numbers = new ConcurrentHashMap<String, AtomicLongWrapper>();
-
-    private final ConstructorFunction<String, AtomicLongWrapper> atomicLongConstructorFunction = new ConstructorFunction<String, AtomicLongWrapper>() {
-        public AtomicLongWrapper createNew(String key) {
-            return new AtomicLongWrapper();
-        }
-    };
+    private Partition[] partitions;
 
     public AtomicLongService() {
     }
 
-    public AtomicLongWrapper getNumber(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(numbers, name, atomicLongConstructorFunction);
+    public void restorePartition(int partitionId, Map<String, Long> migrationData) {
+        Partition partition = partitions[partitionId];
+        partition.restorePartition(migrationData);
     }
 
-    // need for testing..
-    public boolean containsAtomicLong(String name) {
-        return numbers.containsKey(name);
+    private class Partition{
+        private final Map<String,AtomicLongWrapper> numbers = new HashMap<String,AtomicLongWrapper>();
+
+        AtomicLongWrapper get(String name){
+            AtomicLongWrapper number = numbers.get(name);
+            if(number == null){
+                number = new AtomicLongWrapper();
+                numbers.put(name,number);
+            }
+
+            return number;
+        }
+
+        public Map<String,Long> toBackupData(){
+            if(numbers.isEmpty()){
+                return null;
+            }
+
+            Map<String,Long> data = new HashMap<String,Long>(numbers.size());
+            for(Map.Entry<String,AtomicLongWrapper> entry: numbers.entrySet()){
+                data.put(entry.getKey(),entry.getValue().get());
+            }
+
+            return data;
+        }
+
+        public void clear() {
+            numbers.clear();
+        }
+
+        public void restorePartition(Map<String, Long> migrationData) {
+            for(Map.Entry<String,Long> entry: migrationData.entrySet()){
+                get(entry.getKey()).set(entry.getValue());
+            }
+        }
+
+        public void remove(String name) {
+            numbers.remove(name);
+        }
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
+        int partitionCount = nodeEngine.getGroupProperties().PARTITION_COUNT.getInteger();
+        partitions = new Partition[partitionCount];
+        for (int k = 0; k < partitionCount; k++) {
+            partitions[k] = new Partition();
+        }
+    }
+
+    public AtomicLongWrapper getNumber(int partitionId, String name) {
+        Partition partition =  partitions[partitionId];
+        return partition.get(name);
+    }
+
+    // need for testing..
+    public boolean containsAtomicLong(String name) {
+        for(Partition partition: partitions){
+            if(partition.numbers.containsKey(name)){
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void reset() {
-        numbers.clear();
+        for(Partition partition: partitions){
+            partition.clear();
+        }
     }
 
     public void shutdown(boolean terminate) {
@@ -73,7 +128,9 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     }
 
     public void destroyDistributedObject(String name) {
-        numbers.remove(name);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+        Partition partition = partitions[partitionId];
+        partition.remove(name);
     }
 
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
@@ -83,14 +140,12 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         if (event.getReplicaIndex() > 1) {
             return null;
         }
-        Map<String, Long> data = new HashMap<String, Long>();
-        final int partitionId = event.getPartitionId();
-        for (String name : numbers.keySet()) {
-            if (partitionId == nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name))) {
-                data.put(name, numbers.get(name).get());
-            }
+        Map<String, Long> data = partitions[event.getPartitionId()].toBackupData();
+        if(data == null){
+            return null;
         }
-        return data.isEmpty() ? null : new AtomicLongReplicationOperation(data);
+
+        return new AtomicLongReplicationOperation(data);
     }
 
     public void commitMigration(PartitionMigrationEvent partitionMigrationEvent) {
@@ -110,12 +165,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     }
 
     public void removeNumber(int partitionId) {
-        final Iterator<String> iterator = numbers.keySet().iterator();
-        while (iterator.hasNext()) {
-            String name = iterator.next();
-            if (nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name)) == partitionId) {
-                iterator.remove();
-            }
-        }
+        Partition partition = partitions[partitionId];
+        partition.clear();
     }
 }
