@@ -90,7 +90,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         ReplicatedMapGetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
-        // TODO add near caching
+        if (nearCache != null) {
+            nearCache.put(key, response.getValue());
+        }
         return (V) response.getValue();
     }
 
