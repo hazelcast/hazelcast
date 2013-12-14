@@ -353,10 +353,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected Map<Data, Data> getAllDataInternal(final Set<Data> keys) {
-        return null;
-    }
-
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
         final NodeEngine nodeEngine = getNodeEngine();
         Map<Object, Object> result = new HashMap<Object, Object>();
