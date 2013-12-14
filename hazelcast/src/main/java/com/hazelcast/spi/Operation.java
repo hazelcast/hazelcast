@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -28,15 +29,23 @@ import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
+
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
  * will be placed in the {@link #run()} method.
  */
-public abstract class Operation implements DataSerializable {
+public abstract class Operation implements DataSerializable, InternalCompletableFuture {
 
     // serialized
     private String serviceName;
@@ -280,4 +289,153 @@ public abstract class Operation implements DataSerializable {
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
 
     protected abstract void readInternal(ObjectDataInput in) throws IOException;
+
+    @Override
+    public String toString() {
+        return getClass().getName()+"{" +
+                "serviceName='" + serviceName + '\'' +
+                ", partitionId=" + partitionId +
+                '}';
+    }
+
+    private final static Object NO_RESULT = new Object(){
+        @Override
+        public String toString() {
+            return "NO_RESULT";
+        }
+    };
+
+    private volatile Object result = NO_RESULT;
+
+    // ================================= future code mixin ==============================
+
+    public void set(Object result, boolean runOnCallingThread){
+        if(runOnCallingThread){
+            this.result = result;
+        }else{
+            synchronized (this){
+                this.result = result;
+                notifyAll();
+            }
+        }
+    }
+
+    private final static AtomicReferenceFieldUpdater<Operation,Object> callbackFieldUpdater =
+            AtomicReferenceFieldUpdater.newUpdater(Operation.class,Object.class,"callback");
+
+    private volatile Object callback;
+
+    //todo:
+    //this method is broken, but it will give us basic support to do a callback and remove
+    //the
+    @Override
+    public void andThen(ExecutionCallback callback) {
+        isNotNull(callback,"callback");
+
+        //if there already is a result, we can execute the callback.
+        if (result != NO_RESULT) {
+            if (result instanceof Throwable) {
+                callback.onFailure((Throwable) result);
+            } else {
+                callback.onResponse(result);
+            }
+            return;
+        }
+
+        //there is not a result, then we are going to set the callback. For the time being only a single
+        //callback can be set. Needs to be changed to a list.
+        if(!callbackFieldUpdater.compareAndSet(this,null,callback)){
+            throw new UnsupportedOperationException("we can't registered multiple callbacks yet");
+        }
+
+        //we managed to set the callback and we need to check if no result has been set.
+        if(result == NO_RESULT){
+            //no result was set, so we are done.
+            return;
+        }
+
+        //a result was set, so execute the callback.
+        if (result instanceof Throwable) {
+            callback.onFailure((Throwable) result);
+        } else {
+            callback.onResponse(result);
+        }
+        //and we should remove the callback to prevent memory leaks
+        callbackFieldUpdater.set(this,null);
+    }
+
+    @Override
+    public void andThen(ExecutionCallback callback, Executor executor) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCancelled() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isDone() {
+        return result!=NO_RESULT;
+    }
+
+    @Override
+    public Object get() throws InterruptedException, ExecutionException {
+        Object response = internalGet();
+        if(response instanceof Throwable){
+            //if (remote) {
+            //    ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+            //}
+            // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
+            if (response instanceof ExecutionException) {
+                throw (ExecutionException) response;
+            }
+            //if (response instanceof TimeoutException) {
+            //    throw (TimeoutException) response;
+            //}
+            if (response instanceof Error) {
+                throw (Error) response;
+            }
+            if (response instanceof InterruptedException) {
+                throw (InterruptedException) response;
+            }
+            throw new ExecutionException((Throwable) response);
+        }
+
+        return response;
+    }
+
+    private Object internalGet() throws InterruptedException {
+        if (result != NO_RESULT) {
+            return result;
+        }
+
+        synchronized (this) {
+            while (result == NO_RESULT) {
+                wait();
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public Object getSafely() {
+        try {
+            return get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    @Override
+    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        //todo:
+        return get();
+    }
 }

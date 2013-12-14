@@ -42,6 +42,10 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
+        //todo:
+        //we are setting the service here explicitly, but this should be done in the invokeOnPartition method
+        //where the service should be passed as argument, instead of the service-name.
+        operation.setService(getService());
         try {
             return (InternalCompletableFuture<E>)getNodeEngine().getOperationService().invokeOnPartition(AtomicLongService.SERVICE_NAME,operation,partitionId);
         } catch (Throwable throwable) {

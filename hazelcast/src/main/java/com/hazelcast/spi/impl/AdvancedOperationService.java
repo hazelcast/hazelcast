@@ -19,7 +19,20 @@ class AdvancedOperationService implements OperationServiceImpl {
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        throw new UnsupportedOperationException();
+        try{
+            op.setNodeEngine(nodeEngine);
+            op.setServiceName(serviceName);
+            op.setPartitionId(partitionId);
+            op.beforeRun();
+            op.run();
+
+            final Object response = op.returnsResponse()?op.getResponse():null;
+            op.afterRun();
+            op.set(response, true);
+            return op;
+        }catch(Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
