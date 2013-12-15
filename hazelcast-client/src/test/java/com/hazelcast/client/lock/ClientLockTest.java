@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,9 +30,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author ali 5/28/13
@@ -78,6 +75,15 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         l.forceUnlock();
+    }
+
+    @Test
+    public void testGetLockOwner() {
+        assertNull(l.getLockOwner());
+        l.lock();
+        assertNotNull(l.getLockOwner());
+        l.unlock();
+        assertNull(l.getLockOwner());
     }
 
     @Test

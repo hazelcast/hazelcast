@@ -65,6 +65,11 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         return (Long) invoke(request);
     }
 
+    public String getLockOwner() {
+        GetLockOwnerRequest request = new GetLockOwnerRequest(getKeyData());
+        return invoke(request);
+    }
+
     public void lock(long leaseTime, TimeUnit timeUnit) {
         LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), -1);
         invoke(request);

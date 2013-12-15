@@ -148,6 +148,17 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return keySet;
     }
 
+    public String getLockOwner(Data key) {
+        final LockResourceImpl lock = locks.get(key);
+        String owner;
+        if (lock != null && lock.isLocked()) {
+            owner = "Owner: "+lock.getOwner()+", ThreadId: "+lock.getThreadId();
+        } else {
+            owner = null;
+        }
+        return owner;
+    }
+
     void scheduleEviction(Data key, long leaseTime) {
         lockService.scheduleEviction(namespace, key, leaseTime);
     }

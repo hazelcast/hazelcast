@@ -17,7 +17,10 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ICondition;
+import com.hazelcast.core.ILock;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -26,7 +29,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -105,6 +107,31 @@ public class LockTest extends HazelcastTestSupport {
         Assert.assertEquals(true, lock.isLocked());
         lock.forceUnlock();
         thread4.join();
+    }
+
+    @Test
+    public void testGetLockOwner() {
+        int noOfInstances = 2;
+        String lockName = "myLock";
+
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(noOfInstances);
+        HazelcastInstance[] instances = nodeFactory.newInstances(new Config());
+
+        ILock myLock0 = instances[0].getLock(lockName);
+        ILock myLock1 = instances[1].getLock(lockName);
+        assertNull(myLock0.getLockOwner());
+        assertNull(myLock1.getLockOwner());
+
+        myLock0.lock();
+
+        assertNotNull(myLock0.getLockOwner());
+        assertNotNull(myLock1.getLockOwner());
+        assertEquals(myLock0.getLockOwner(), myLock1.getLockOwner());
+
+        myLock0.unlock();
+
+        assertNull(myLock0.getLockOwner());
+        assertNull(myLock1.getLockOwner());
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)

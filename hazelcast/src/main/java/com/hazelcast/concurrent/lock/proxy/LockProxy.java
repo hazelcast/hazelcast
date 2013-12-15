@@ -116,6 +116,10 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
         return getNodeEngine().getPartitionService().getPartitionId(key);
     }
 
+    public String getLockOwner() {
+        return lockSupport.getLockOwner(getNodeEngine(), key);
+    }
+
     ObjectNamespace getNamespace() {
         return lockSupport.getNamespace();
     }
