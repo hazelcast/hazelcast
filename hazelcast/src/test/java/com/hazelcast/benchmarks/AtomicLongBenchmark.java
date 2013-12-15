@@ -60,16 +60,16 @@ public class AtomicLongBenchmark {
     @Test
     public void get() throws Exception {
         long startMs = System.currentTimeMillis();
-        int iterations = 1000000;
+        int iterations = 50*1000*1000;
         for (int k = 0; k < iterations; k++) {
             atomicLong.get();
-            if (k % 100000 == 0) {
+            if (k % 200000 == 0) {
                 System.out.println("at " + k);
             }
         }
         long durationMs = System.currentTimeMillis() - startMs;
         double performance = (iterations * 1000d) / durationMs;
-        System.out.println("Performance: " + performance);
+        System.out.println("Performance: " + String.format("%1$,.2f", performance));
     }
 
     @Test

@@ -20,39 +20,77 @@ public class DisruptorOperationService implements OperationServiceImpl {
 
     private final NodeEngineImpl nodeEngine;
     private final Node node;
-    private final PartitionOperationScheduler[] schedulers;
+    private final PartitionOperationQueue[] schedulers;
 
     public DisruptorOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         int partitionCount = node.getGroupProperties().PARTITION_COUNT.getInteger();
-        this.schedulers = new PartitionOperationScheduler[partitionCount];
+        this.schedulers = new PartitionOperationQueue[partitionCount];
         int ringbufferSize = 1024;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            schedulers[partitionId] = new PartitionOperationScheduler(partitionId,ringbufferSize);
+            schedulers[partitionId] = new PartitionOperationQueue(partitionId, ringbufferSize);
         }
     }
 
-    public class PartitionThreadScheduler{
+    public class PartitionThreadScheduler {
 
+        private final PartitionThread[] threads;
+        private final Slot[] ringbuffer;
+
+        public PartitionThreadScheduler(int threadCount, int partitionCount) {
+            this.threads = new PartitionThread[threadCount];
+            for (int k = 0; k < threads.length; k++) {
+                threads[k] = new PartitionThread();
+            }
+
+            this.ringbuffer = new Slot[partitionCount];
+            for (int k = 0; k < ringbuffer.length; k++) {
+                ringbuffer[k] = new Slot();
+            }
+        }
+
+        public void schedule(PartitionOperationQueue scheduler) {
+
+        }
+
+        private class PartitionThread extends Thread {
+            public void run() {
+
+            }
+        }
+
+        private class Slot {
+            private final AtomicLong sequence = new AtomicLong(0);
+            private PartitionOperationQueue scheduler;
+        }
     }
 
     /**
      * A Scheduler responsible for scheduling operations for a specific partitions.
-     * The PartitionOperationScheduler will guarantee that at any given moment, at
+     * The PartitionOperationQueue will guarantee that at any given moment, at
      * most 1 thread will be active in that partition.
-     *
+     * <p/>
      * todo:
      * - caller runs optimization
      * - improved thread assignment
      * - batching for the consumer
      * - system messages
-     *
+     * <p/>
      * bad things:
      * - contention on the producersequenceref with concurrent producers
+     * - when a consumer is finished, it needs to unset the scheduled bit on the producersequence,
+     * this will cause contention of the producers with the consumers. This is actually also
+     * the case with actors in akka. The nice thing however is that contention between producer
+     * and condumer will not happen when there is a lot of work being processed since the scheduler
+     * needs to remain 'scheduled'.
+     *
+     * workstealing: when a partitionthread is finished with running a partitionoperationscheduler,
+     * instead of waiting for more work, it could try to 'steal' another partitionoperationscheduler
+     * that has pending work.
      *
      */
-    public class PartitionOperationScheduler implements Runnable {
+    public class PartitionOperationQueue implements Runnable {
         private final int partitionId;
 
         private final Slot[] ringbuffer;
@@ -62,9 +100,9 @@ public class DisruptorOperationService implements OperationServiceImpl {
         //we only have a single consumer
         private final AtomicLong consumerSequenceRef = new AtomicLong(0);
 
-        private Executor executor = Executors.newFixedThreadPool(1);
+        private final Executor executor = Executors.newFixedThreadPool(1);
 
-        public PartitionOperationScheduler(final int partitionId, int ringBufferSize) {
+        public PartitionOperationQueue(final int partitionId, int ringBufferSize) {
             this.partitionId = partitionId;
             this.ringbuffer = new Slot[ringBufferSize];
 
@@ -79,21 +117,75 @@ public class DisruptorOperationService implements OperationServiceImpl {
 
         public int toIndex(long sequence) {
             //todo: can be done more efficient by not using mod
-            return (int) (sequence % ringbuffer.length);
+            return ((int) (sequence % ringbuffer.length)) / 2;
         }
 
         public void schedule(Operation op) {
-            //claim the slot
-            long produceSequence = producerSequenceRef.incrementAndGet();
+            long oldProduceSequence = producerSequenceRef.get();
 
-            //there is no happens before relation, but this will be introduced by the counter.write
-            //and the counter.read by the consumer
-            Slot slot = ringbuffer[toIndex(produceSequence)];
+            if (false && oldProduceSequence == consumerSequenceRef.get()) {
+                //there currently is no pending work and the scheduler is not scheduled, so we can try to do a local runs optimization
+
+                long newProduceSequence = oldProduceSequence + 1;
+
+                //if we can set the 'uneven' flag, it means that scheduler is not yet running
+                if (producerSequenceRef.compareAndSet(oldProduceSequence, newProduceSequence)) {
+                    //we managed to signal other consumers that scheduling should not be done, because we do a local runs optimization
+
+                    runOperation(op, true);
+
+                    if (producerSequenceRef.get() > newProduceSequence) {
+                        //work has been produced by another producer, and since we still own the scheduled bit, we can safely
+                        //schedule this
+                        executor.execute(this);
+                    } else {
+                        //work has not yet been produced, so we are going to unset the scheduled bit.
+                        if (producerSequenceRef.compareAndSet(newProduceSequence, oldProduceSequence)) {
+                            //we successfully managed to set the scheduled bit to false and no new work has been
+                            //scheduled by other producers, so we are done.
+                            return;
+                        }
+
+                        //new work has been scheduled by other producers, but since we still own the scheduled bit,
+                        //we can schedule the work.
+                        //work has been produced, so we need to offload it.
+                        executor.execute(this);
+                    }
+
+                    return;
+                }
+
+                oldProduceSequence = producerSequenceRef.get();
+            }
+
+            boolean schedule = false;
+            long produceSequence;
+            for (; ; ) {
+                if (oldProduceSequence % 2 == 1) {
+                    //it is already scheduled, so we only need to increment the counter by 2.
+                    produceSequence = oldProduceSequence + 2;
+
+                    if (producerSequenceRef.compareAndSet(oldProduceSequence, produceSequence)) {
+                        break;
+                    }
+                } else {
+                    //it is not scheduled, so we are going to increment the counter by 3 (2 for the position shift.. 1 for the scheduled bit).
+
+                    produceSequence = oldProduceSequence + 3;
+                    if (producerSequenceRef.compareAndSet(oldProduceSequence, produceSequence)) {
+                        schedule = true;
+                        break;
+                    }
+                }
+                oldProduceSequence = producerSequenceRef.get();
+            }
+
+            int slotIndex = toIndex(produceSequence);
+            Slot slot = ringbuffer[slotIndex];
             slot.op = op;
             slot.commit(produceSequence);
 
-            //now we need to make sure that it is scheduled
-            if (produceSequence == consumerSequenceRef.get() + 1) {
+            if (schedule) {
                 executor.execute(this);
             }
         }
@@ -101,11 +193,11 @@ public class DisruptorOperationService implements OperationServiceImpl {
         public Slot consume() {
             long consumerSequence = consumerSequenceRef.get();
 
-            if (consumerSequence == producerSequenceRef.get()) {
+            if ((consumerSequence == producerSequenceRef.get())||(consumerSequence == producerSequenceRef.get()-1)) {
                 return null;
             }
 
-            consumerSequence++;
+            consumerSequence += 2;
 
             int slotIndex = toIndex(consumerSequence);
 
@@ -120,52 +212,71 @@ public class DisruptorOperationService implements OperationServiceImpl {
                 for (; ; ) {
                     Slot slot = consume();
                     if (slot == null) {
-                        return;
-                    }
+                        long producerSequence = producerSequenceRef.get();
+                        if (producerSequence % 2 == 0) {
+                            throw new RuntimeException("scheduled bit expected");
+                        }
 
-                    Operation op = slot.op;
-                    try {
-                        op.setNodeEngine(nodeEngine);
-                        op.setPartitionId(partitionId);
-                        op.beforeRun();
-                        op.run();
-
-                        Object response = op.returnsResponse() ? op.getResponse() : null;
-                        op.afterRun();
-                        op.set(response, false);
-                    } finally {
-                        consumerSequenceRef.set(consumerSequenceRef.get() + 1);
+                        if (producerSequenceRef.compareAndSet(producerSequence, producerSequence - 1)) {
+                            //we unset the scheduled flag by subtracting one from the producerSequence
+                            //If this could not be done, it means that work has been produced. And we
+                            //are not going to end the loop.
+                            return;
+                        }
+                    } else {
+                        Operation op = slot.op;
+                        try {
+                            runOperation(op, false);
+                        } finally {
+                            consumerSequenceRef.set(consumerSequenceRef.get() + 2);
+                        }
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-    }
 
-    public static class Slot {
-        //no need to have a atomiclong, could also be done with volatile field
-        private final AtomicLong sequence = new AtomicLong(0);
-        private Operation op;
+        private void runOperation(Operation op, boolean callerRuns) {
+            try {
+                op.setNodeEngine(nodeEngine);
+                op.setPartitionId(partitionId);
+                op.beforeRun();
+                op.run();
 
-        public void commit(long version) {
-            sequence.set(version);
+                Object response = op.returnsResponse() ? op.getResponse() : null;
+                op.afterRun();
+                op.set(response, callerRuns);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
-        public void awaitCommitted(long consumerSequence) {
-            for (; ; ) {
-                if (sequence.get() >= consumerSequence) {
-                    return;
+        private class Slot {
+            //no need to have a atomiclong, could also be done with volatile field
+            private final AtomicLong sequence = new AtomicLong(0);
+            private Operation op;
+
+            public void commit(long version) {
+                sequence.set(version);
+            }
+
+            public void awaitCommitted(long consumerSequence) {
+                for (; ; ) {
+                    if (sequence.get() >= consumerSequence) {
+                        return;
+                    }
                 }
             }
         }
     }
 
+
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         op.setServiceName(serviceName);
         op.setPartitionId(partitionId);
-        PartitionOperationScheduler scheduler = schedulers[partitionId];
+        PartitionOperationQueue scheduler = schedulers[partitionId];
         scheduler.schedule(op);
         return op;
     }
