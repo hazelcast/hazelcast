@@ -1,6 +1,23 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
@@ -8,31 +25,103 @@ import com.hazelcast.spi.*;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class AdvancedOperationService implements OperationServiceImpl {
 
     private final NodeEngineImpl nodeEngine;
+    private final PartitionScheduler[] partitionSchedulers;
+    private final ForkJoinPool partitionForkJoinPool;
+    private final Node node;
 
     AdvancedOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.node = nodeEngine.getNode();
+        int partitionCount = nodeEngine.getGroupProperties().PARTITION_COUNT.getInteger();
+        partitionSchedulers = new PartitionScheduler[partitionCount];
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            partitionSchedulers[partitionId] = new PartitionScheduler(partitionId);
+        }
+
+        final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
+        final int coreSize = Runtime.getRuntime().availableProcessors();
+        int operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
+
+        partitionForkJoinPool = new ForkJoinPool(
+                operationThreadCount,
+                new AdvancedPartitionThreadFactory(),
+                new AdvancedUncaughtExceptionHandler(),
+                true);
+    }
+
+    private final class PartitionScheduler implements Runnable{
+        private final int partitionId;
+        private final ConcurrentLinkedQueue workQueue = new ConcurrentLinkedQueue();
+        private final AtomicBoolean scheduled = new AtomicBoolean();
+
+        PartitionScheduler(int partitionId) {
+            this.partitionId = partitionId;
+        }
+
+        public void schedule(Operation op){
+            workQueue.offer(op);
+
+            if(!scheduled.compareAndSet(false,true)){
+                return;
+            }
+
+            partitionForkJoinPool.execute(this);
+        }
+
+        @Override
+        public void run() {
+            Operation op = (Operation) workQueue.poll();
+            try{
+                if(op!=null){
+                    doRun(op);
+                }
+            }finally {
+                scheduled.set(false);
+
+                if(workQueue.isEmpty()){
+                    return;
+                }
+
+                if(scheduled.get()){
+                    return;
+                }
+
+                if(scheduled.compareAndSet(false,true)){
+                    partitionForkJoinPool.execute(this);
+                }
+            }
+        }
+
+        private void doRun(Operation op) {
+            try{
+                op.setNodeEngine(nodeEngine);
+                op.setPartitionId(partitionId);
+                op.beforeRun();
+                op.run();
+
+                final Object response = op.returnsResponse()?op.getResponse():null;
+                op.afterRun();
+                op.set(response, false);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        try{
-            op.setNodeEngine(nodeEngine);
-            op.setServiceName(serviceName);
-            op.setPartitionId(partitionId);
-            op.beforeRun();
-            op.run();
-
-            final Object response = op.returnsResponse()?op.getResponse():null;
-            op.afterRun();
-            op.set(response, true);
-            return op;
-        }catch(Exception e){
-            throw new RuntimeException(e);
-        }
+        PartitionScheduler scheduler = partitionSchedulers[partitionId];
+        op.setServiceName(serviceName);
+        scheduler.schedule(op);
+        return op;
     }
 
     @Override
@@ -154,6 +243,26 @@ class AdvancedOperationService implements OperationServiceImpl {
     @Override
     public void executeOperation(Operation op) {
         throw new UnsupportedOperationException();
+    }
+}
+
+class AdvancedPartitionThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory{
+    @Override
+    public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
+        return new AdvancedPartitionThread(pool);
+    }
+}
+
+class AdvancedPartitionThread extends ForkJoinWorkerThread{
+    AdvancedPartitionThread(ForkJoinPool pool) {
+        super(pool);
+    }
+}
+
+class AdvancedUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler{
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        e.printStackTrace();
     }
 }
 

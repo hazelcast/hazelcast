@@ -58,7 +58,7 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java6-check</id>
+                        <id>source-java7-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>
@@ -164,6 +164,11 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+            <version>3.2.0</version>
+        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>

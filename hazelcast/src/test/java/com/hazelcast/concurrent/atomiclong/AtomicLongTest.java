@@ -48,6 +48,22 @@ public class AtomicLongTest extends HazelcastTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         IAtomicLong an = hazelcastInstance.getAtomicLong("get");
         assertEquals(0, an.get());
+        System.out.println("done1");
+        assertEquals(0, an.get());
+        System.out.println("done2");
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void getMultiple() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicLong an = hazelcastInstance.getAtomicLong("get");
+        for(int k=0;k<100000;k++){
+            assertEquals(0, an.get());
+            if(k%1000==0){
+                System.out.println("At: "+k);
+            }
+        }
     }
 
         @Test

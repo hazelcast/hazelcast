@@ -248,7 +248,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 final Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
                 for (MemberImpl member : memberList) {
                     final ClientDisconnectionOperation op = new ClientDisconnectionOperation(endpoint.getUuid());
-                    op.setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME).setService(this)
+                    op.setNodeEngine(nodeEngine)
+                            .setServiceName(SERVICE_NAME)
+                            .setService(this)
                             .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
 
                     if (member.localMember()) {

@@ -43,12 +43,12 @@ public class AtomicLongBenchmark {
     }
 
     @Before
-    public void before(){
+    public void before() {
         atomicLong = hazelcastInstance.getAtomicLong("atomicLong");
     }
 
     @After
-    public void after(){
+    public void after() {
         atomicLong.destroy();
     }
 
@@ -61,18 +61,40 @@ public class AtomicLongBenchmark {
     public void get() throws Exception {
         long startMs = System.currentTimeMillis();
         int iterations = 1000000;
-        for(int k=0;k< iterations;k++){
+        for (int k = 0; k < iterations; k++) {
             atomicLong.get();
-            if(k%100000==0){
-                System.out.println("at "+k);
+            if (k % 100000 == 0) {
+                System.out.println("at " + k);
             }
         }
-        long durationMs = System.currentTimeMillis()-startMs;
-        double performance = (iterations*1000d)/durationMs;
-        System.out.println("Performance: "+performance);
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
+        System.out.println("Performance: " + performance);
     }
 
-    public static void main(String[] args)throws Exception{
+    @Test
+    public void getMultipleThreads() throws Exception {
+        long startMs = System.currentTimeMillis();
+        int threadCount = 2;
+
+        GetThread[] threads = new GetThread[threadCount];
+        int iterations = 20000;
+        for (int k = 0; k < threads.length; k++) {
+            threads[k] = new GetThread(iterations);
+            threads[k].start();
+        }
+
+        for (GetThread t : threads) {
+            t.join();
+        }
+
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performancePerThread = (iterations * 1000d) / durationMs;
+        System.out.println("Performance per thread: " + performancePerThread + " ops/second");
+        System.out.println("Performance: " + performancePerThread * threadCount + " ops/second");
+    }
+
+    public static void main(String[] args) throws Exception {
         AtomicLongBenchmark.beforeClass();
         AtomicLongBenchmark benchmark = new AtomicLongBenchmark();
         benchmark.before();
@@ -83,8 +105,26 @@ public class AtomicLongBenchmark {
 
     @Test
     public void set() throws Exception {
-        for(int k=0;k<500000;k++){
+        for (int k = 0; k < 500000; k++) {
             atomicLong.set(k);
+        }
+    }
+
+    private class GetThread extends Thread {
+        final int iterations;
+
+        private GetThread(int iterations) {
+            this.iterations = iterations;
+        }
+
+
+        public void run() {
+            for (int k = 0; k < iterations; k++) {
+                atomicLong.get();
+                if (k % 1000 == 0) {
+                    System.out.println(getName() + "at " + k);
+                }
+            }
         }
     }
 }
