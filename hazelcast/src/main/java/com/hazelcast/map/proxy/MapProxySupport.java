@@ -289,7 +289,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected boolean containsKeyInternal(Data key) {
-        // TODO: containsKey should check near-cache first!
+        if (isKeyInNearCache(key)) {
+            return true;
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
@@ -829,6 +831,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public LocalMapStats getLocalMapStats() {
         return getService().createLocalMapStats(name);
+    }
+
+    private boolean isKeyInNearCache(Data key) {
+        final MapService mapService = getService();
+        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        if (nearCacheEnabled) {
+            Object cached = mapService.getFromNearCache(name, key);
+            if (cached != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
