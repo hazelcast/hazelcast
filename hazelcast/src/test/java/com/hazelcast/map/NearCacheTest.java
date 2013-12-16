@@ -40,9 +40,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * User: ahmetmircik
@@ -225,6 +223,31 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
 
 
+    }
+
+    @Test
+    public void testMapContainsKey_withNearCache() {
+        int n = 3;
+        String mapName = "test";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        HazelcastInstance instance = createHazelcastInstanceFactory(n).newInstances(config)[0];
+
+        IMap<String, String> map = instance.getMap("mapName");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+
+        map.get("key1");
+        map.get("key2");
+        map.get("key3");
+        assertEquals(map.containsKey("key1"), true);
+        assertEquals(map.containsKey("key5"), false);
+        map.remove("key1");
+        assertEquals(map.containsKey("key1"), false);
+        assertEquals(map.containsKey("key2"), true);
+        assertEquals(map.containsKey("key5"), false);
     }
 
 }
