@@ -31,6 +31,12 @@ import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
+import com.hazelcast.concurrent.lock.proxy.LockProxy;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -227,6 +233,11 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public JobTracker getJobTracker(String name) {
+        return getDistributedObject(MapReduceService.SERVICE_NAME, name);
     }
 
     @Override

@@ -16,9 +16,10 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.mapreduce.process.ProcessJob;
 
-public interface JobTracker {
+public interface JobTracker extends DistributedObject {
 
     <K, V> Job<K, V> newJob(KeyValueSource<K, V> source);
 
