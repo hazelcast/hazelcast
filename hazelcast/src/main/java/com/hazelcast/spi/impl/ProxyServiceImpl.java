@@ -114,10 +114,10 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         for (MemberImpl member : members) {
             if (member.localMember()) continue;
 
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
+            Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                     new DistributedObjectDestroyOperation(serviceName, name), member.getAddress())
-                    .setTryCount(10).build();
-            calls.add(inv.invoke());
+                    .setTryCount(10).invoke();
+            calls.add(f);
         }
 
         destroyLocalDistributedObject(serviceName, name, true);

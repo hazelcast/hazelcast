@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -73,8 +72,7 @@ final class ClientInvocation {
             builder = nodeEngine.getOperationService().createInvocationBuilder(serviceName, op, target);
         }
         builder.setTryCount(100).setCallTimeout(20 * 1000);
-        Invocation inv = builder.build();
-        Future f = inv.invoke();
+        Future f = builder.invoke();
         return f.get(30, TimeUnit.SECONDS);
     }
 

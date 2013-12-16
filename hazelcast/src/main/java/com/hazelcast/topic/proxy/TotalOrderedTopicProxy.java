@@ -16,7 +16,6 @@
 
 package com.hazelcast.topic.proxy;
 
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.PublishOperation;
 import com.hazelcast.topic.TopicService;
@@ -43,8 +42,7 @@ public class TotalOrderedTopicProxy extends TopicProxy {
         try {
             final NodeEngine nodeEngine = getNodeEngine();
             PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(TopicService.SERVICE_NAME, operation, partitionId).build();
-            Future f = inv.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(TopicService.SERVICE_NAME,operation,partitionId);
             f.get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

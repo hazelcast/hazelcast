@@ -64,7 +64,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     if (!member.localMember()) {
                         Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                                 new PostJoinOperation(postJoinOperations), member.getAddress())
-                                .setTryCount(10).setTryPauseMillis(100).build().invoke();
+                                .setTryCount(10).setTryPauseMillis(100).invoke();
                         calls.add(f);
                     }
                 }

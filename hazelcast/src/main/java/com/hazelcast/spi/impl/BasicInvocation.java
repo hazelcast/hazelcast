@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -25,7 +24,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
@@ -38,7 +36,10 @@ import java.util.concurrent.*;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-abstract class InvocationImpl implements Invocation, Callback<Object>,BackupCompletionCallback {
+/**
+ * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
+ */
+abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallback {
 
     private static final Object NULL_RESPONSE = new Object() {
         @Override
@@ -91,16 +92,16 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
     protected final int tryCount;
     protected final long tryPauseMillis;
     protected final ILogger logger;
-    //todo: in the future we could get rid of this object, just let the InvocationImpl implement the Future interface.
+    //todo: in the future we could get rid of this object, just let the BasicInvocation implement the Future interface.
     private final InvocationFuture invocationFuture;
 
     private volatile int invokeCount = 0;
     private volatile Address target;
     private boolean remote = false;
 
-    InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback) {
-        this.logger = nodeEngine.getLogger(Invocation.class.getName());
+    BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback) {
+        this.logger = nodeEngine.getLogger(BasicInvocation.class);
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -139,7 +140,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             return callTimeout;
         }
 
-        final long defaultCallTimeout = nodeEngine.operationService.getDefaultCallTimeout();
+        BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
+        final long defaultCallTimeout = operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
             if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 10000) {
@@ -149,7 +151,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         return defaultCallTimeout;
     }
 
-    @Override
     public final InvocationFuture invoke() {
         if (invokeCount > 0) {   // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
@@ -167,7 +168,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            if (!nodeEngine.operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
+            BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
+            if (!operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
@@ -293,7 +295,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             return;
         }
 
-        final OperationServiceImpl operationService = nodeEngine.operationService;
+        final BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
         OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
 
         remote = !thisAddress.equals(invTarget);
@@ -317,7 +319,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 OperationAccessor.setCallId(op, callId);
             }
             ResponseHandlerFactory.setLocalResponseHandler(op, this);
-            if (!nodeEngine.operationService.isAllowedToRunInCurrentThread(op)) {
+            if (!operationService.isAllowedToRunInCurrentThread(op)) {
                 operationService.executeOperation(op);
             } else {
                 operationService.runOperation(op);
@@ -325,9 +327,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
+    protected abstract Address getTarget();
+
+
     private void registerBackups(BackupAwareOperation op, long callId) {
         final long oldCallId = ((Operation) op).getCallId();
-        final OperationServiceImpl operationService = nodeEngine.operationService;
+        final BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
         if (oldCallId != 0) {
             operationService.deregisterBackupCall(oldCallId);
         }
@@ -338,7 +343,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("InvocationImpl");
+        sb.append("BasicInvocation");
         sb.append("{ serviceName='").append(serviceName).append('\'');
         sb.append(", op=").append(op);
         sb.append(", partitionId=").append(partitionId);
@@ -390,17 +395,17 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         nodeEngine.getExecutionService().schedule(new ScheduledTaskRunner(getAsyncExecutor(), new Runnable() {
             @Override
             public void run() {
-                synchronized (InvocationImpl.this) {
+                synchronized (BasicInvocation.this) {
                     if (expectedBackupCount == availableBackups) {
                         return;
                     }
                 }
 
                 if (nodeEngine.getClusterService().getMember(target) != null) {
-                    synchronized (InvocationImpl.this) {
-                        if (InvocationImpl.this.potentialResponse != null) {
-                            invocationFuture.set(InvocationImpl.this.potentialResponse);
-                            InvocationImpl.this.potentialResponse = null;
+                    synchronized (BasicInvocation.this) {
+                        if (BasicInvocation.this.potentialResponse != null) {
+                            invocationFuture.set(BasicInvocation.this.potentialResponse);
+                            BasicInvocation.this.potentialResponse = null;
                         }
                     }
                     return;
@@ -425,7 +430,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         @Override
         public void run() throws Exception {
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            OperationServiceImpl operationService = nodeEngine.operationService;
+            BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
             boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(), operationCallId);
             getResponseHandler().sendResponse(executing);
         }
@@ -531,7 +536,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                         }
                     } catch (Throwable t) {
                         //todo: improved error message
-                        logger.severe("Failed to async for "+InvocationImpl.this,t);
+                        logger.severe("Failed to async for "+BasicInvocation.this,t);
                     }
                 }
             });
@@ -554,7 +559,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             }
 
             //we need to deregister the backup call to make sure that there is no memory leak.
-            nodeEngine.operationService.deregisterBackupCall(op.getCallId());
+            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
+            operationService.deregisterBackupCall(op.getCallId());
 
             while(callbackChain!=null){
                 runAsynchronous(callbackChain.callback,callbackChain.executor);
@@ -682,7 +688,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 throw new TimeoutException();
             }
             if(response == INTERRUPTED_RESPONSE){
-                throw new InterruptedException("Call " + InvocationImpl.this + " was interrupted");
+                throw new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
             }
             return response;
         }
@@ -705,7 +711,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder("InvocationFuture{");
-            sb.append("invocation=").append(InvocationImpl.this.toString());
+            sb.append("invocation=").append(BasicInvocation.this.toString());
             sb.append(", done=").append(isDone());
             sb.append('}');
             return sb.toString();
@@ -715,7 +721,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             // ask if op is still being executed?
             Boolean executing = Boolean.FALSE;
             try {
-                final Invocation inv = new TargetInvocationImpl(nodeEngine, serviceName,
+                final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName,
                         new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null);
                 Future f = inv.invoke();
                 // TODO: @mm - improve logging (see SystemLogService)

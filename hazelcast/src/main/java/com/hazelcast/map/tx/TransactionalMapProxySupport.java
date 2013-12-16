@@ -26,7 +26,6 @@ import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
@@ -72,9 +71,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            Future f = invocation.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return (Boolean) f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -93,9 +90,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            Future f = invocation.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -198,9 +193,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            Future<VersionedValue> f = invocation.invoke();
+            Future<VersionedValue> f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -249,9 +242,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         try {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
-                Invocation invocation = operationService
-                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
-                Future future = invocation.invoke();
+                Future future = operationService
+                        .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
                 flist.add(future);
             }
             for (Future future : flist) {
@@ -287,7 +279,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
                 queryPartitionOperation.setPartitionId(pid);
                 try {
-                    Future f = operationService.createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
+                    Future f = operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
                     futures.add(f);
                 } catch (Throwable t) {
                     throw ExceptionUtil.rethrow(t);

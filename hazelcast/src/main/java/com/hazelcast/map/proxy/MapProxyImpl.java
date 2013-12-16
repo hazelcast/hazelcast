@@ -27,7 +27,6 @@ import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
@@ -560,9 +559,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
         NodeEngine nodeEngine = getNodeEngine();
-        Invocation invocation =
-                nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
-        Future f = invocation.invoke();
+        Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
         Object response = f.get();
         Object returnObj = getService().toObject(response);
         if (returnObj instanceof Throwable) {

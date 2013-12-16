@@ -197,8 +197,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     protected  <T> T invoke(CollectionOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future f = inv.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(),operation,partitionId);
             return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

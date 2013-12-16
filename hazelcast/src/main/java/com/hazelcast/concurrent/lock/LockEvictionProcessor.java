@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
@@ -31,7 +30,6 @@ import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
@@ -54,9 +52,7 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
             Operation operation = new UnlockOperation(namespace, key, -1, true);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             try {
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .build();
-                Future f = invocation.invoke();
+                Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME,operation,partitionId);
                 futures.add(f);
             } catch (Throwable t) {
                 logger.warning(t);

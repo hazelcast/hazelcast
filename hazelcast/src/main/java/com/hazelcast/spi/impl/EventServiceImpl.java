@@ -156,9 +156,9 @@ public class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                        new RegistrationOperation(reg), member.getAddress()).build();
-                calls.add(inv.invoke());
+                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                        new RegistrationOperation(reg), member.getAddress());
+                calls.add(f);
             }
         }
         for (Future f : calls) {
@@ -179,9 +179,9 @@ public class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                        new DeregistrationOperation(topic, id), member.getAddress()).build();
-                calls.add(inv.invoke());
+                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                        new DeregistrationOperation(topic, id), member.getAddress());
+                calls.add(f);
             }
         }
         for (Future f : calls) {
@@ -274,10 +274,10 @@ public class EventServiceImpl implements EventService {
         final EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % 100000 == 0;
         if (sync) {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).build();
+            Future f = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).invoke();
             try {
-                inv.invoke().get(3, TimeUnit.SECONDS);
+                f.get(3, TimeUnit.SECONDS);
             } catch (Exception ignored) {
             }
         } else {

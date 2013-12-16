@@ -17,113 +17,42 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionView;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PartitionInvocationImpl;
-import com.hazelcast.spi.impl.TargetInvocationImpl;
 
-public class InvocationBuilder {
+/**
+ * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
+ *
+ * The original design exposed the actual Invocation class, but this will limit flexibility since
+ * the whole invocation can't be changed or fully removed easily.
+ */
+public interface InvocationBuilder {
 
-    private final NodeEngineImpl nodeEngine;
-    private final String serviceName;
-    private final Operation op;
-    private final int partitionId;
-    private final Address target;
-    private Callback<Object> callback;
-    private long callTimeout = -1L;
-    private int replicaIndex = 0;
-    private int tryCount = 250;
-    private long tryPauseMillis = 500;
+    InvocationBuilder setReplicaIndex(int replicaIndex);
 
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
-        this(nodeEngine, serviceName, op, partitionId, null);
-    }
+    InvocationBuilder setTryCount(int tryCount);
 
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-        this(nodeEngine, serviceName, op, -1, target);
-    }
+    InvocationBuilder setTryPauseMillis(long tryPauseMillis);
 
-    private InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                              int partitionId, Address target) {
-        this.nodeEngine = nodeEngine;
-        this.serviceName = serviceName;
-        this.op = op;
-        this.partitionId = partitionId;
-        this.target = target;
-    }
+    InvocationBuilder setCallTimeout(long callTimeout);
 
-    public InvocationBuilder setReplicaIndex(int replicaIndex) {
-        if (replicaIndex < 0 || replicaIndex >= PartitionView.MAX_REPLICA_COUNT) {
-            throw new IllegalArgumentException("Replica index is out of range [0-"
-                    + (PartitionView.MAX_REPLICA_COUNT - 1) + "]");
-        }
-        this.replicaIndex = replicaIndex;
-        return this;
-    }
+    String getServiceName();
 
-    public InvocationBuilder setTryCount(int tryCount) {
-        this.tryCount = tryCount;
-        return this;
-    }
+    Operation getOp();
 
-    public InvocationBuilder setTryPauseMillis(long tryPauseMillis) {
-        this.tryPauseMillis = tryPauseMillis;
-        return this;
-    }
+    int getReplicaIndex();
 
-    public InvocationBuilder setCallTimeout(long callTimeout) {
-        this.callTimeout = callTimeout;
-        return this;
-    }
+    int getTryCount();
 
-    public String getServiceName() {
-        return serviceName;
-    }
+    long getTryPauseMillis();
 
-    public Operation getOp() {
-        return op;
-    }
+    Address getTarget();
 
-    public int getReplicaIndex() {
-        return replicaIndex;
-    }
+    int getPartitionId();
 
-    public int getTryCount() {
-        return tryCount;
-    }
+    long getCallTimeout();
 
-    public long getTryPauseMillis() {
-        return tryPauseMillis;
-    }
+    Callback getCallback();
 
-    public Address getTarget() {
-        return target;
-    }
+    InvocationBuilder setCallback(Callback<Object> callback);
 
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    public long getCallTimeout() {
-        return callTimeout;
-    }
-
-    public Callback getCallback() {
-        return callback;
-    }
-
-    public InvocationBuilder setCallback(Callback<Object> callback) {
-        this.callback = callback;
-        return this;
-    }
-
-    public Invocation build() {
-        if (target == null) {
-            return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, callback);
-        } else {
-            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, callback);
-        }
-    }
+    InternalCompletableFuture invoke();
 }

@@ -37,7 +37,6 @@ import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.replicatedmap.ReplicatedMapProxy;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 
 import java.io.InputStream;
@@ -416,8 +415,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     public Object callOnAddress(Address address, Operation operation) {
-        Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).build();
-        final Future future = invocation.invoke();
+        Future future = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
         try {
             return future.get();
         } catch (Throwable t) {
@@ -428,8 +426,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     public Object callOnMember(Member member, Operation operation) {
-        Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, ((MemberImpl) member).getAddress()).build();
-        final Future future = invocation.invoke();
+        Future future = instance.node.nodeEngine.getOperationService()
+                .createInvocationBuilder(MapService.SERVICE_NAME, operation, ((MemberImpl) member).getAddress()).invoke();
         try {
             return future.get();
         } catch (Throwable t) {
@@ -440,8 +438,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     public void send(Address address, Operation operation) {
-        Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).build();
-        invocation.invoke();
+        instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
     }
 
     private TimedMemberState getTimedMemberState() {

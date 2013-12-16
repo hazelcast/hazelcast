@@ -223,7 +223,7 @@ public abstract class AbstractJoiner implements Joiner {
             if (!member.localMember()) {
                 Future f = operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                         new PrepareMergeOperation(targetAddress), member.getAddress())
-                        .setTryCount(3).build().invoke();
+                        .setTryCount(3).invoke();
                 calls.add(f);
             }
         }
@@ -244,7 +244,7 @@ public abstract class AbstractJoiner implements Joiner {
             if (!member.localMember()) {
                 operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                         new MergeClustersOperation(targetAddress), member.getAddress())
-                        .setTryCount(1).build().invoke();
+                        .setTryCount(1).invoke();
             }
         }
 

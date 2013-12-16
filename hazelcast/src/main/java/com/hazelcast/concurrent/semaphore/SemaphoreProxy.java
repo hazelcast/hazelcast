@@ -134,8 +134,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     private <T> T invoke(SemaphoreOperation operation) throws ExecutionException, InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SemaphoreService.SERVICE_NAME, operation, partitionId).build();
-        Future f = inv.invoke();
+        Future f = nodeEngine.getOperationService().invokeOnPartition(SemaphoreService.SERVICE_NAME, operation, partitionId);
         return (T) nodeEngine.toObject(f.get());
     }
 

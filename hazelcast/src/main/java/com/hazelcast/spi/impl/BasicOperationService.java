@@ -47,9 +47,18 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * This is the Basic InternalOperationService and depends on Java 6.
+ *
+ * All the classes that begin with 'Basic' are implementation detail that depend on the
+ * {@link com.hazelcast.spi.impl.BasicOperationService}.
+ *
  * @author mdogan 12/14/12
+ * @see com.hazelcast.spi.impl.BasicInvocation
+ * @see com.hazelcast.spi.impl.BasicInvocationBuilder
+ * @see com.hazelcast.spi.impl.BasicPartitionInvocation
+ * @see com.hazelcast.spi.impl.BasicTargetInvocation
  */
-final class OperationServiceImpl implements OperationService {
+final class BasicOperationService implements InternalOperationService {
 
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
@@ -70,7 +79,7 @@ final class OperationServiceImpl implements OperationService {
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
 
-    OperationServiceImpl(NodeEngineImpl nodeEngine) {
+    BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class.getName());
@@ -146,16 +155,16 @@ final class OperationServiceImpl implements OperationService {
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
         if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
-        return new InvocationBuilder(nodeEngine, serviceName, op, partitionId);
+        return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         if (target == null) throw new IllegalArgumentException("Target cannot be null!");
-        return new InvocationBuilder(nodeEngine, serviceName, op, target);
+        return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
     @PrivateApi
-    void handleOperation(final Packet packet) {
+    public void handleOperation(final Packet packet) {
         try {
             final Executor executor;
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
@@ -230,6 +239,21 @@ final class OperationServiceImpl implements OperationService {
     public void executeOperation(final Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
         getExecutor(partitionId).execute(new LocalOperationProcessor(op));
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
+        return createInvocationBuilder(serviceName, op, partitionId).invoke();
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
+        return createInvocationBuilder(serviceName, op, target).invoke();
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId, Callback callback) {
+        return createInvocationBuilder(serviceName, op, partitionId).setCallback(callback).invoke();
     }
 
     /**
@@ -319,7 +343,8 @@ final class OperationServiceImpl implements OperationService {
         return !(op instanceof ReadonlyOperation || OperationAccessor.isMigrationOperation(op));
     }
 
-    boolean isCallTimedOut(Operation op) {
+    @PrivateApi
+    public boolean isCallTimedOut(Operation op) {
         if (op.returnsResponse() && op.getCallId() != 0) {
             final long callTimeout = op.getCallTimeout();
             final long invocationTime = op.getInvocationTime();
@@ -517,8 +542,7 @@ final class OperationServiceImpl implements OperationService {
             final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
             final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
-            Invocation inv = createInvocationBuilder(serviceName, pi, address).setTryCount(10).setTryPauseMillis(300).build();
-            Future future = inv.invoke();
+            Future future = createInvocationBuilder(serviceName, pi, address).setTryCount(10).setTryPauseMillis(300).invoke();
             responses.put(address, future);
         }
         final Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionService().getPartitionCount());
@@ -547,9 +571,8 @@ final class OperationServiceImpl implements OperationService {
             }
         }
         for (Integer failedPartition : failedPartitions) {
-            Invocation inv = createInvocationBuilder(serviceName,
-                    operationFactory.createOperation(), failedPartition).build();
-            Future f = inv.invoke();
+            Future f = createInvocationBuilder(serviceName,
+                    operationFactory.createOperation(), failedPartition).invoke();
             partitionResults.put(failedPartition, f);
         }
         for (Integer failedPartition : failedPartitions) {
@@ -609,7 +632,7 @@ final class OperationServiceImpl implements OperationService {
 
     // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
     @PrivateApi
-    void notifyRemoteCall(long callId, Object response) {
+    public void notifyRemoteCall(long callId, Object response) {
         RemoteCall call = deregisterRemoteCall(callId);
         if (call != null) {
             call.offerResponse(response);
@@ -624,7 +647,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     @PrivateApi
-    void notifyBackupCall(long callId) {
+    public void notifyBackupCall(long callId) {
         final BackupCompletionCallback backupCompletionCallback = backupCalls.get(callId);
         if (backupCompletionCallback != null) {
             backupCompletionCallback.signalOneBackupComplete();
@@ -654,7 +677,8 @@ final class OperationServiceImpl implements OperationService {
         return executingCalls.containsKey(new RemoteCallKey(callerAddress, callerUuid, operationCallId));
     }
 
-    void onMemberLeft(final MemberImpl member) {
+    @Override
+    public void onMemberLeft(final MemberImpl member) {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
@@ -670,7 +694,8 @@ final class OperationServiceImpl implements OperationService {
         }, 1111, TimeUnit.MILLISECONDS);
     }
 
-    void shutdown() {
+    @Override
+    public void shutdown() {
         logger.finest( "Stopping operation threads...");
         for (ExecutorService executor : operationExecutors) {
             executor.shutdown();

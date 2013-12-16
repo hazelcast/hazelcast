@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
@@ -65,8 +64,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
             List<Future> flist = new ArrayList<Future>();
             final Predicate predicate = getPredicate();
             for (MemberImpl member : members) {
-                Invocation invocation = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
-                Future future = invocation.invoke();
+                Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).invoke();
                 flist.add(future);
             }
             for (Future future : flist) {
@@ -91,7 +89,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
                     QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
                     queryPartitionOperation.setPartitionId(pid);
                     try {
-                        Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
+                        Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).invoke();
                         futures.add(f);
                     } catch (Throwable t) {
                         throw ExceptionUtil.rethrow(t);
