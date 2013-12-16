@@ -16,7 +16,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AdvancedOperationService implements OperationServiceImpl {
+public class AdvancedOperationService implements InternalOperationService {
 
     private final NodeEngineImpl nodeEngine;
     private final Node node;

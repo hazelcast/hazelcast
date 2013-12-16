@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class LMaxDisruptorOperationService implements OperationServiceImpl {
+public class LMaxDisruptorOperationService implements InternalOperationService {
 
     private final NodeEngineImpl nodeEngine;
     private final RingBuffer<Slot> ringBuffer;
