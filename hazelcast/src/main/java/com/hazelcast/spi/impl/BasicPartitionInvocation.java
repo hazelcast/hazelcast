@@ -16,29 +16,29 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
-public final class TargetInvocationImpl extends InvocationImpl {
+/**
+ * A {@link BasicInvocation} evaluates a Operation Invocation for a particular partition running on top of the
+ * {@link com.hazelcast.spi.impl.BasicOperationService}.
+ */
+public final class BasicPartitionInvocation extends BasicInvocation {
 
-    private final Address target;
-
-    public TargetInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                                Address target, int tryCount, long tryPauseMillis, long callTimeout,
-                                Callback<Object> callback) {
-        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
-                tryCount, tryPauseMillis, callTimeout, callback);
-        this.target = target;
+    public BasicPartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+                                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
+                                    Callback<Object> callback) {
+        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout, callback);
     }
 
     public final Address getTarget() {
-        return target;
+        return getPartition().getReplicaAddress(getReplicaIndex());
     }
 
     final ExceptionAction onException(Throwable t) {
-        return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onException(t);
+        final ExceptionAction action = op.onException(t);
+        return action != null ? action : ExceptionAction.THROW_EXCEPTION;
     }
 }

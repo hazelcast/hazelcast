@@ -267,12 +267,11 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
             Future f;
             Object o;
             if (config.isStatisticsEnabled()) {
                 long time = System.currentTimeMillis();
-                f = invocation.invoke();
+                f = nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 o = f.get();
                 if (operation instanceof PutOperation) {
                     getService().getLocalMultiMapStatsImpl(name).incrementPuts(System.currentTimeMillis() - time);    //TODO @ali should we remove statics from operations ?
@@ -282,7 +281,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                     getService().getLocalMultiMapStatsImpl(name).incrementGets(System.currentTimeMillis() - time);
                 }
             } else {
-                f = invocation.invoke();
+                f = nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 o = f.get();
             }
             return nodeEngine.toObject(o);

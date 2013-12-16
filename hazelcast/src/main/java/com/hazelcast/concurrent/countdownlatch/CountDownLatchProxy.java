@@ -21,6 +21,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,10 +44,10 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new AwaitOperation(name, getTimeInMillis(timeout, unit)), partitionId).build();
+        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
+                new AwaitOperation(name, getTimeInMillis(timeout, unit)), partitionId);
         try {
-            return (Boolean) nodeEngine.toObject(inv.invoke().get());
+            return (Boolean) nodeEngine.toObject(f.get());
         } catch (ExecutionException e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);
         }
@@ -58,10 +59,10 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     public void countDown() {
         final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new CountDownOperation(name), partitionId).build();
+        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
+                new CountDownOperation(name), partitionId);
         try {
-            inv.invoke().get();
+            f.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -69,10 +70,10 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     public int getCount() {
         final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new GetCountOperation(name), partitionId).build();
+        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
+                new GetCountOperation(name), partitionId);
         try {
-            return (Integer) nodeEngine.toObject(inv.invoke().get());
+            return (Integer) nodeEngine.toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -80,10 +81,10 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     public boolean trySetCount(int count) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new SetCountOperation(name, count), partitionId).build();
+        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
+                new SetCountOperation(name, count), partitionId);
         try {
-            return (Boolean) nodeEngine.toObject(inv.invoke().get());
+            return (Boolean) nodeEngine.toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
@@ -40,7 +39,6 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
@@ -200,10 +198,10 @@ public class TcpIpJoiner extends AbstractJoiner {
                             for (Address address : colPossibleAddresses) {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.finest( "Claiming myself as master node!");
-                                    Invocation inv = node.nodeEngine.getOperationService().createInvocationBuilder(
+                                    Future future = node.nodeEngine.getOperationService().createInvocationBuilder(
                                             ClusterServiceImpl.SERVICE_NAME, new MasterClaim(), address)
-                                            .setTryCount(1).build();
-                                    responses.add(inv.invoke());
+                                            .setTryCount(1).invoke();
+                                    responses.add(future);
                                 }
                             }
                             final long maxWait = TimeUnit.SECONDS.toMillis(10);

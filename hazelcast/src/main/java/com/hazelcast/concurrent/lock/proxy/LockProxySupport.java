@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.lock.proxy;
 
 import com.hazelcast.concurrent.lock.*;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
@@ -45,9 +44,7 @@ public final class LockProxySupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         IsLockedOperation operation = new IsLockedOperation(namespace, key);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return (Boolean) future.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -58,9 +55,7 @@ public final class LockProxySupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         IsLockedOperation operation = new IsLockedOperation(namespace, key, ThreadUtil.getThreadId());
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return (Boolean) future.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -71,9 +66,7 @@ public final class LockProxySupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         Operation operation = new GetLockCountOperation(namespace, key);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return ((Number) future.get()).intValue();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -84,9 +77,7 @@ public final class LockProxySupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         Operation operation = new GetRemainingLeaseTimeOperation(namespace, key);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return ((Number) future.get()).longValue();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -102,9 +93,7 @@ public final class LockProxySupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         LockOperation operation = new LockOperation(namespace, key, ThreadUtil.getThreadId(), ttl, -1);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             Boolean result = (Boolean) future.get();
             if (!result) {
                 throw new IllegalStateException();
@@ -127,9 +116,7 @@ public final class LockProxySupport {
         LockOperation operation = new LockOperation(namespace, key, ThreadUtil.getThreadId(),
                 getTimeInMillis(timeout, timeunit));
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return (Boolean) future.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrowAllowInterrupted(t);
@@ -144,9 +131,7 @@ public final class LockProxySupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         UnlockOperation operation = new UnlockOperation(namespace, key, ThreadUtil.getThreadId());
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             future.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -157,9 +142,7 @@ public final class LockProxySupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         UnlockOperation operation = new UnlockOperation(namespace, key, -1, true);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            Future future = invocation.invoke();
+            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             future.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

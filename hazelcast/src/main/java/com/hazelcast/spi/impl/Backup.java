@@ -29,7 +29,6 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 4/5/13
@@ -93,7 +92,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         if (sync && getCallId() != 0 && originalCaller != null) {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             final long callId = getCallId();
-            final OperationServiceImpl operationService = nodeEngine.operationService;
+            final InternalOperationService operationService = nodeEngine.operationService;
 
             if (!nodeEngine.getThisAddress().equals(originalCaller)) {
                 BackupResponse backupResponse = new BackupResponse();

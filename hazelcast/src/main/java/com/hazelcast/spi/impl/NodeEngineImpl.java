@@ -55,7 +55,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
 
-    final OperationServiceImpl operationService;
+    final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final WaitNotifyServiceImpl waitNotifyService;
@@ -66,7 +66,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService = new ProxyServiceImpl(this);
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
-        operationService = new OperationServiceImpl(this);
+        operationService = new BasicOperationService(this);
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);

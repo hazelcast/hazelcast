@@ -17,7 +17,8 @@
 package com.hazelcast.spi;
 
 /**
- *
+ * An interface that can be implemented by an operation to indicate that is should
+ * be invoked on a particular partition.
  *
  * @author mdogan 12/3/12
  */
