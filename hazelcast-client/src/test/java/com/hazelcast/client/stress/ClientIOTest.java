@@ -11,6 +11,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.concurrent.CyclicBarrier;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -83,6 +85,19 @@ public class ClientIOTest {
 
         map.removeAsync();
 
+
+        CyclicBarrier gate = new CyclicBarrier(3);
+        startGatedThread(new GatedThread(gate) {
+            public void go() {
+                createDataIn(clusterA, "map", 0, 1000);
+            }
+        });
+        startGatedThread(new GatedThread(gate) {
+            public void go() {
+                createDataIn(clusterB, "map", 500, 1500);
+            }
+        });
+        gate.await();
     }
 
 
