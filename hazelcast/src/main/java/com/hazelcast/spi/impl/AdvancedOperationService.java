@@ -29,7 +29,7 @@ public class AdvancedOperationService implements InternalOperationService {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             schedulers[partitionId] = new PartitionOperationQueue(partitionId, ringbufferSize);
         }
-        this.localCallOptimizationEnabled = false;
+        this.localCallOptimizationEnabled = true;
     }
 
     public class PartitionThreadScheduler {
@@ -213,51 +213,36 @@ public class AdvancedOperationService implements InternalOperationService {
             }
         }
 
-        public Slot consume() {
-            long consumerSeq = this.consumerSeq.get();
-            long producerSeq = this.producerSeq.get();
-
-            //todo: this can only run with the scheduled bit set..
-            if ((consumerSeq == producerSeq) || (consumerSeq == producerSeq - 1)) {
-                return null;
-            }
-
-            consumerSeq += 2;
-
-            int slotIndex = toIndex(consumerSeq);
-            Slot slot = ringbuffer[slotIndex];
-            slot.awaitCommitted(consumerSeq);
-            return slot;
-        }
-
         @Override
         public void run() {
             try {
+                long oldConsumerSeq = consumerSeq.get();
                 for (; ; ) {
-                    Slot slot = consume();
-                    if (slot == null) {
-                        long oldProducerSeq = producerSeq.get();
-                        if (oldProducerSeq % 2 == 0) {
-                            throw new RuntimeException("scheduled bit expected");
-                        }
+                    final long oldProducerSeq = producerSeq.get();
+
+                    if (oldConsumerSeq == oldProducerSeq - 1) {
+                        //there is no more work, so we are going to try to unschedule
 
                         //we unset the scheduled flag by subtracting one from the producerSeq
-                        long newProducerSeq = consumerSeq.get();
-                        if (producerSeq.compareAndSet(consumerSeq.get()+1, newProducerSeq)) {
-                            //todo: it could have happened that work was produced after we last compared the consumerseq
-                            //with the consumer sequence. So we need to check if the producersequence still is the same.
-                            //also the oldProduce sequence can be determined on the consumesequence, prevening not noticing pending work
-                            return;
+                        final long newProducerSeq = oldProducerSeq - 1;
+
+                        if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
+                             return;
                         }
+                        //we did not manage to unset the schedule flag because work has been offered.
+                        //so lets continue running.
                     } else {
-                        Operation op = slot.op;
+                        final long newConsumerSeq = oldConsumerSeq + 2;
+                        final int slotIndex = toIndex(newConsumerSeq);
+                        final Slot slot = ringbuffer[slotIndex];
+                        slot.awaitCommitted(newConsumerSeq);
+                        final Operation op = slot.op;
+                        //null the operation to prevent memory leaks.
                         slot.op = null;
+                        consumerSeq.set(newConsumerSeq);
                         //todo: we don't need to update the slot-sequence?
-                        try {
-                            runOperation(op, false);
-                        } finally {
-                            consumerSeq.set(consumerSeq.get() + 2);
-                        }
+                        runOperation(op, false);
+                        oldConsumerSeq = newConsumerSeq;
                     }
                 }
             } catch (Exception e) {
@@ -281,30 +266,22 @@ public class AdvancedOperationService implements InternalOperationService {
         }
 
         private class Slot {
-            //no need to have a atomiclong, could also be done with volatile field
-            private final AtomicLong sequence = new AtomicLong(0);
+            private volatile long sequence = 0;
             private Operation op;
 
-            public void commit(long version) {
-                sequence.set(version);
+            public void commit(long sequence) {
+                this.sequence = sequence;
             }
 
             public void awaitCommitted(long consumerSequence) {
                 for (; ; ) {
-                    if (sequence.get() >= consumerSequence) {
+                    if (sequence >= consumerSequence) {
                         return;
                     }
                 }
             }
         }
     }
-
-    protected Callback<Object> callback;
-    protected long callTimeout = DEFAULT_CALL_TIMEOUT;
-    protected int replicaIndex = DEFAULT_REPLICA_INDEX;
-    protected int tryCount = DEFAULT_TRY_COUNT;
-    protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
-
 
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId,
                                                               long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
@@ -327,9 +304,9 @@ public class AdvancedOperationService implements InternalOperationService {
     }
 
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target,
-                                                              long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
-                                                              Callback<Object> callback) {
-       throw new UnsupportedOperationException();
+                                                           long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
+                                                           Callback<Object> callback) {
+        throw new UnsupportedOperationException();
     }
 
 
@@ -380,12 +357,12 @@ public class AdvancedOperationService implements InternalOperationService {
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        return new AdvancedInvocationBuilder(nodeEngine,serviceName,op,partitionId);
+        return new AdvancedInvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        return new AdvancedInvocationBuilder(nodeEngine,serviceName,op,target);
+        return new AdvancedInvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
     @Override
@@ -448,7 +425,7 @@ public class AdvancedOperationService implements InternalOperationService {
         return 0;
     }
 
-    private class AdvancedInvocationBuilder extends AbstractInvocationBuilder{
+    private class AdvancedInvocationBuilder extends AbstractInvocationBuilder {
 
         private AdvancedInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
             super(nodeEngine, serviceName, op, partitionId);
@@ -460,7 +437,7 @@ public class AdvancedOperationService implements InternalOperationService {
 
         @Override
         public InternalCompletableFuture invoke() {
-           throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
     }
 }

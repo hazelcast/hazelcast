@@ -63,7 +63,7 @@ public class AtomicLongBenchmark {
         int iterations = 50*1000*1000;
         for (int k = 0; k < iterations; k++) {
             atomicLong.get();
-            if (k % 200000 == 0) {
+            if (k % 2000000 == 0) {
                 System.out.println("at " + k);
             }
         }
