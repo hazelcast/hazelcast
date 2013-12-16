@@ -66,7 +66,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService = new ProxyServiceImpl(this);
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
-        operationService = new DisruptorOperationService(this);
+        operationService = new AdvancedOperationService(this);
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);

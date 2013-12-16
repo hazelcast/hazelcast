@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
@@ -21,105 +5,309 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinWorkerThread;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
-class AdvancedOperationService implements OperationServiceImpl {
+public class AdvancedOperationService implements OperationServiceImpl {
 
     private final NodeEngineImpl nodeEngine;
-    private final PartitionScheduler[] partitionSchedulers;
-    private final ForkJoinPool partitionForkJoinPool;
     private final Node node;
+    private final PartitionOperationQueue[] schedulers;
+    private final boolean localCallOptimizationEnabled;
 
-    AdvancedOperationService(NodeEngineImpl nodeEngine) {
+    public AdvancedOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
-        int partitionCount = nodeEngine.getGroupProperties().PARTITION_COUNT.getInteger();
-        partitionSchedulers = new PartitionScheduler[partitionCount];
+        int partitionCount = node.getGroupProperties().PARTITION_COUNT.getInteger();
+        this.schedulers = new PartitionOperationQueue[partitionCount];
+        int ringbufferSize = 1024;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            partitionSchedulers[partitionId] = new PartitionScheduler(partitionId);
+            schedulers[partitionId] = new PartitionOperationQueue(partitionId, ringbufferSize);
         }
-
-        final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
-        final int coreSize = Runtime.getRuntime().availableProcessors();
-        int operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
-
-        partitionForkJoinPool = new ForkJoinPool(
-                operationThreadCount,
-                new AdvancedPartitionThreadFactory(),
-                new AdvancedUncaughtExceptionHandler(),
-                true);
+        this.localCallOptimizationEnabled = false;
     }
 
-    private final class PartitionScheduler implements Runnable{
-        private final int partitionId;
-        private final ConcurrentLinkedQueue workQueue = new ConcurrentLinkedQueue();
-        private final AtomicBoolean scheduled = new AtomicBoolean();
+    public class PartitionThreadScheduler {
 
-        PartitionScheduler(int partitionId) {
-            this.partitionId = partitionId;
-        }
+        private final PartitionThread[] threads;
+        private final Slot[] ringbuffer;
 
-        public void schedule(Operation op){
-            workQueue.offer(op);
-
-            if(!scheduled.compareAndSet(false,true)){
-                return;
+        public PartitionThreadScheduler(int threadCount, int partitionCount) {
+            this.threads = new PartitionThread[threadCount];
+            for (int k = 0; k < threads.length; k++) {
+                threads[k] = new PartitionThread();
             }
 
-            partitionForkJoinPool.execute(this);
+            this.ringbuffer = new Slot[partitionCount];
+            for (int k = 0; k < ringbuffer.length; k++) {
+                ringbuffer[k] = new Slot();
+            }
+        }
+
+        public void schedule(PartitionOperationQueue scheduler) {
+
+        }
+
+        private class PartitionThread extends Thread {
+            public void run() {
+
+            }
+        }
+
+        private class Slot {
+            private final AtomicLong sequence = new AtomicLong(0);
+            private PartitionOperationQueue scheduler;
+        }
+    }
+
+    /**
+     * A Scheduler responsible for scheduling operations for a specific partitions.
+     * The PartitionOperationQueue will guarantee that at any given moment, at
+     * most 1 thread will be active in that partition.
+     * <p/>
+     * todo:
+     * - deal with 'overflow' so overproducing..
+     * the producer can run to where the consumer is. So all slots with have a value, lower than the current
+     * consumersequence, can be used.
+     * - improved thread assignment
+     * - add batching for the consumer
+     * - add system messages. System messages can be stored on a different regular queue (e.g. concurrentlinkedqueue)
+     * <p/>
+     * bad things:
+     * - contention on the producersequenceref with concurrent producers
+     * - when a consumer is finished, it needs to unset the scheduled bit on the producersequence,
+     * this will cause contention of the producers with the consumers. This is actually also
+     * the case with actors in akka. The nice thing however is that contention between producer
+     * and condumer will not happen when there is a lot of work being processed since the scheduler
+     * needs to remain 'scheduled'.
+     * <p/>
+     * workstealing: when a partitionthread is finished with running a partitionoperationscheduler,
+     * instead of waiting for more work, it could try to 'steal' another partitionoperationscheduler
+     * that has pending work.
+     */
+    public class PartitionOperationQueue implements Runnable {
+        private final int partitionId;
+
+        private final Slot[] ringbuffer;
+
+        private final AtomicLong producerSeq = new AtomicLong(0);
+
+        //we only have a single consumer
+        private final AtomicLong consumerSeq = new AtomicLong(0);
+
+        private final Executor executor = Executors.newFixedThreadPool(1);
+
+        public PartitionOperationQueue(final int partitionId, int ringBufferSize) {
+            this.partitionId = partitionId;
+            this.ringbuffer = new Slot[ringBufferSize];
+
+            for (int k = 0; k < ringbuffer.length; k++) {
+                ringbuffer[k] = new Slot();
+            }
+        }
+
+        public int toIndex(long sequence) {
+            if (sequence % 2 == 1) {
+                sequence--;
+            }
+
+            //todo: can be done more efficient by not using mod
+            return (int) ((sequence / 2) % ringbuffer.length);
+        }
+
+        private int size(long producerSeq, long consumerSeq) {
+            if (producerSeq % 2 == 1) {
+                producerSeq--;
+            }
+
+            if (producerSeq == consumerSeq) {
+                return 0;
+            }
+
+            return (int) ((producerSeq - consumerSeq) / 2);
+        }
+
+        public void schedule(Operation op) {
+            try {
+                long oldProducerSeq = producerSeq.get();
+                long consumerSeq = this.consumerSeq.get();
+
+                if (localCallOptimizationEnabled && oldProducerSeq == consumerSeq) {
+                    //there currently is no pending work and the scheduler is not scheduled, so we can try to do a local runs optimization
+
+                    long newProduceSequence = oldProducerSeq + 1;
+
+                    //if we can set the 'uneven' flag, it means that scheduler is not yet running
+                    if (producerSeq.compareAndSet(oldProducerSeq, newProduceSequence)) {
+                        //we managed to signal other consumers that scheduling should not be done, because we do a local runs optimization
+
+                        runOperation(op, true);
+
+                        if (producerSeq.get() > newProduceSequence) {
+                            //work has been produced by another producer, and since we still own the scheduled bit, we can safely
+                            //schedule this
+                            executor.execute(this);
+                        } else {
+                            //work has not yet been produced, so we are going to unset the scheduled bit.
+                            if (producerSeq.compareAndSet(newProduceSequence, oldProducerSeq)) {
+                                //we successfully managed to set the scheduled bit to false and no new work has been
+                                //scheduled by other producers, so we are done.
+                                return;
+                            }
+
+                            //new work has been scheduled by other producers, but since we still own the scheduled bit,
+                            //we can schedule the work.
+                            //work has been produced, so we need to offload it.
+                            executor.execute(this);
+                        }
+
+                        return;
+                    }
+
+                    oldProducerSeq = producerSeq.get();
+                } else if (size(oldProducerSeq, consumerSeq) == ringbuffer.length) {
+                    //todo: overload
+                    System.out.println("Overload");
+                    throw new RuntimeException();
+                }
+
+                //this flag indicates if we need to schedule, or if scheduling already is taken care of.
+                boolean schedule;
+                long newProducerSeq;
+                for (; ; ) {
+                    newProducerSeq = oldProducerSeq + 2;
+                    if (oldProducerSeq % 2 == 0) {
+                        //if the scheduled flag is not set, we are going to be responsible for scheduling.
+                        schedule = true;
+                        newProducerSeq++;
+                    } else {
+                        //apparently this scheduler already is scheduled, so we don't need to schedule it.
+                        schedule = false;
+                    }
+
+                    if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
+                        break;
+                    }
+
+                    //we did not manage to claim the slot and potentially set the scheduled but, so we need to try again.
+                    oldProducerSeq = producerSeq.get();
+                }
+
+                //we claimed a slot.
+                int slotIndex = toIndex(newProducerSeq);
+                Slot slot = ringbuffer[slotIndex];
+                slot.op = op;
+                slot.commit(newProducerSeq);
+
+                if (schedule) {
+                    executor.execute(this);
+                }
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                throw e;
+            }
+        }
+
+        public Slot consume() {
+            long consumerSeq = this.consumerSeq.get();
+            long producerSeq = this.producerSeq.get();
+
+            //todo: this can only run with the scheduled bit set..
+            if ((consumerSeq == producerSeq) || (consumerSeq == producerSeq - 1)) {
+                return null;
+            }
+
+            consumerSeq += 2;
+
+            int slotIndex = toIndex(consumerSeq);
+            Slot slot = ringbuffer[slotIndex];
+            slot.awaitCommitted(consumerSeq);
+            return slot;
         }
 
         @Override
         public void run() {
-            Operation op = (Operation) workQueue.poll();
-            try{
-                if(op!=null){
-                    doRun(op);
-                }
-            }finally {
-                scheduled.set(false);
+            try {
+                for (; ; ) {
+                    Slot slot = consume();
+                    if (slot == null) {
+                        long oldProducerSeq = producerSeq.get();
+                        if (oldProducerSeq % 2 == 0) {
+                            throw new RuntimeException("scheduled bit expected");
+                        }
 
-                if(workQueue.isEmpty()){
-                    return;
+                        //we unset the scheduled flag by subtracting one from the producerSeq
+                        long newProducerSeq = consumerSeq.get();
+                        if (producerSeq.compareAndSet(consumerSeq.get()+1, newProducerSeq)) {
+                            //todo: it could have happened that work was produced after we last compared the consumerseq
+                            //with the consumer sequence. So we need to check if the producersequence still is the same.
+                            //also the oldProduce sequence can be determined on the consumesequence, prevening not noticing pending work
+                            return;
+                        }
+                    } else {
+                        Operation op = slot.op;
+                        slot.op = null;
+                        //todo: we don't need to update the slot-sequence?
+                        try {
+                            runOperation(op, false);
+                        } finally {
+                            consumerSeq.set(consumerSeq.get() + 2);
+                        }
+                    }
                 }
-
-                if(scheduled.get()){
-                    return;
-                }
-
-                if(scheduled.compareAndSet(false,true)){
-                    partitionForkJoinPool.execute(this);
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
-        private void doRun(Operation op) {
-            try{
+        private void runOperation(Operation op, boolean callerRuns) {
+            try {
                 op.setNodeEngine(nodeEngine);
                 op.setPartitionId(partitionId);
                 op.beforeRun();
                 op.run();
 
-                final Object response = op.returnsResponse()?op.getResponse():null;
+                Object response = op.returnsResponse() ? op.getResponse() : null;
                 op.afterRun();
-                op.set(response, false);
-            }catch(Exception e){
+                op.set(response, callerRuns);
+            } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+
+        private class Slot {
+            //no need to have a atomiclong, could also be done with volatile field
+            private final AtomicLong sequence = new AtomicLong(0);
+            private Operation op;
+
+            public void commit(long version) {
+                sequence.set(version);
+            }
+
+            public void awaitCommitted(long consumerSequence) {
+                for (; ; ) {
+                    if (sequence.get() >= consumerSequence) {
+                        return;
+                    }
+                }
             }
         }
     }
 
+
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        PartitionScheduler scheduler = partitionSchedulers[partitionId];
         op.setServiceName(serviceName);
+        op.setPartitionId(partitionId);
+        PartitionOperationQueue scheduler = schedulers[partitionId];
         scheduler.schedule(op);
         return op;
     }
@@ -130,13 +318,53 @@ class AdvancedOperationService implements OperationServiceImpl {
     }
 
     @Override
+    public void handleOperation(Packet packet) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void onMemberLeft(MemberImpl member) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void shutdown() {
+
+    }
+
+    @Override
+    public void notifyBackupCall(long callId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void notifyRemoteCall(long callId, Object response) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCallTimedOut(Operation op) {
+        return false;
+    }
+
+    @Override
+    public void runOperation(Operation op) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void executeOperation(Operation op) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        return new AdvancedInvocationBuilder(nodeEngine,serviceName,op,partitionId);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        return new AdvancedInvocationBuilder(nodeEngine,serviceName,op,target);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -170,114 +398,32 @@ class AdvancedOperationService implements OperationServiceImpl {
     }
 
     @Override
-    public void handleOperation(Packet packet) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void onMemberLeft(MemberImpl member) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void shutdown() {
-        //no-op for the time being.
-    }
-
-    @Override
-    public void notifyBackupCall(long callId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void notifyRemoteCall(long callId, Object response) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isCallTimedOut(Operation op) {
-        return false;
-    }
-
-    @Override
     public int getResponseQueueSize() {
-        //todo:
         return 0;
     }
 
     @Override
     public int getOperationExecutorQueueSize() {
-        //todo:
         return 0;
     }
 
     @Override
     public int getRunningOperationsCount() {
-        //todo:
         return 0;
     }
 
     @Override
     public int getRemoteOperationsCount() {
-        //todo:
         return 0;
     }
 
     @Override
     public int getOperationThreadCount() {
-        //todo:
         return 0;
     }
 
     @Override
     public long getExecutedOperationCount() {
-        //todo:
         return 0;
     }
-
-    @Override
-    public void runOperation(Operation op) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void executeOperation(Operation op) {
-        throw new UnsupportedOperationException();
-    }
 }
-
-class AdvancedPartitionThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory{
-    @Override
-    public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
-        return new AdvancedPartitionThread(pool);
-    }
-}
-
-class AdvancedPartitionThread extends ForkJoinWorkerThread{
-    AdvancedPartitionThread(ForkJoinPool pool) {
-        super(pool);
-    }
-}
-
-class AdvancedUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler{
-    @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        e.printStackTrace();
-    }
-}
-
- class AdvancedInvocationBuilder extends AbstractInvocationBuilder{
-
-     AdvancedInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
-         super(nodeEngine, serviceName, op, partitionId);
-     }
-
-     AdvancedInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-         super(nodeEngine, serviceName, op, target);
-     }
-
-     @Override
-     public InternalCompletableFuture invoke() {
-        throw new UnsupportedOperationException();
-     }
- }
