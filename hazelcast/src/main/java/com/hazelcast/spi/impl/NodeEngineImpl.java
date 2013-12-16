@@ -55,7 +55,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
 
-    final OperationServiceImpl operationService;
+    final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final WaitNotifyServiceImpl waitNotifyService;

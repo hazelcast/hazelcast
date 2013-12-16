@@ -47,7 +47,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * This is the Basic OperationServiceImpl and depends on Java 6.
+ * This is the Basic InternalOperationService and depends on Java 6.
  *
  * All the classes that begin with 'Basic' are implementation detail that depend on the
  * {@link com.hazelcast.spi.impl.BasicOperationService}.
@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see com.hazelcast.spi.impl.BasicPartitionInvocation
  * @see com.hazelcast.spi.impl.BasicTargetInvocation
  */
-final class BasicOperationService implements OperationServiceImpl {
+final class BasicOperationService implements InternalOperationService {
 
     private final AtomicLong executedOperationsCount = new AtomicLong();
 

@@ -6,13 +6,13 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
 /**
- * This is the interface that needs to be implemented by actual OperationServiceImpl. Currently there is a single
- * OperationServiceImpl: {@link com.hazelcast.spi.impl.BasicOperationService}, but in the future others can be added.
+ * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
+ * InternalOperationService: {@link com.hazelcast.spi.impl.BasicOperationService}, but in the future others can be added.
  *
  * It exposes methods that will not be called by regular code, like shutdown, but will only be called by
  * the the SPI management.
  */
-public interface OperationServiceImpl extends OperationService{
+public interface InternalOperationService extends OperationService{
 
     void handleOperation(Packet packet);
 
