@@ -16,19 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.CompletableFuture;
+public interface CombinerFactory<KeyIn, ValueIn, ValueOut> {
 
-import java.util.List;
-import java.util.Map;
-
-public interface MappingJob<KeyIn, ValueIn> {
-
-    <ValueOut> ReducingJob<KeyIn, ValueOut> combiner(CombinerFactory<KeyIn, ValueIn, ValueOut> combinerFactory);
-
-    <ValueOut> SubmittableJob<KeyIn, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
-
-    CompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
-
-    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map<KeyIn, List<ValueIn>>, ValueOut> collator);
+    Combiner<KeyIn, ValueIn, ValueIn> newCombiner(KeyIn key);
 
 }

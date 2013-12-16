@@ -21,6 +21,6 @@ import java.util.Map;
 
 public interface ReducingJob<KeyIn, ValueIn> extends SubmittableJob<KeyIn, Map<KeyIn, List<ValueIn>>> {
 
-    <ValueOut> SubmittableJob<KeyIn, Map<KeyIn, ValueOut>> reducer(Reducer<KeyIn, ValueIn, ValueOut> reducer);
+    <ValueOut> SubmittableJob<KeyIn, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
 
 }

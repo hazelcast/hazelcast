@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce;
+package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.mapreduce.*;
 
-import java.util.List;
-import java.util.Map;
+public class KeyValueJobImpl<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
-public interface MappingJob<KeyIn, ValueIn> {
+    public KeyValueJobImpl(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource, HazelcastInstance hazelcastInstance) {
+        super(name, keyValueSource, hazelcastInstance);
+    }
 
-    <ValueOut> ReducingJob<KeyIn, ValueOut> combiner(CombinerFactory<KeyIn, ValueIn, ValueOut> combinerFactory);
+    @Override
+    protected <T> T submit() {
+        return null;
+    }
 
-    <ValueOut> SubmittableJob<KeyIn, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
-
-    CompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
-
-    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map<KeyIn, List<ValueIn>>, ValueOut> collator);
+    @Override
+    protected <T> T submit(Collator collator) {
+        return null;
+    }
 
 }

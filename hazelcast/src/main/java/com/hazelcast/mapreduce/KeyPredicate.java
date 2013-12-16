@@ -16,19 +16,21 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.CompletableFuture;
+/**
+ * This interface is used to pre evaluate keys before spreading the MapReduce task to the cluster. Preselecting keys can
+ * speed up the job since not all partitions may be used.
+ *
+ * @param <Key> The key type
+ * @author noctarius
+ */
+public interface KeyPredicate<Key> {
 
-import java.util.List;
-import java.util.Map;
-
-public interface MappingJob<KeyIn, ValueIn> {
-
-    <ValueOut> ReducingJob<KeyIn, ValueOut> combiner(CombinerFactory<KeyIn, ValueIn, ValueOut> combinerFactory);
-
-    <ValueOut> SubmittableJob<KeyIn, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
-
-    CompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
-
-    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map<KeyIn, List<ValueIn>>, ValueOut> collator);
+    /**
+     * This methods implementation contains the evaluation code whether to select a key or not.
+     *
+     * @param key The key to evaluate
+     * @return true if the MapReduce task should be executed on this key otherwise false
+     */
+    boolean evaluate(Key key);
 
 }
