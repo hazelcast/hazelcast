@@ -53,7 +53,7 @@ or
 
 [Read more about NativeClient & LiteMember](#native-client)
 
--   To define Hibernate RegionFacyory, add following property.
+-   To define Hibernate RegionFactory, add following property.
 
 ```xml    
 <property name="hibernate.cache.region.factory_class">
