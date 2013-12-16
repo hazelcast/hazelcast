@@ -24,4 +24,6 @@ public abstract class Combiner<KeyIn, ValueIn, ValueOut> {
 
     public abstract ValueOut finalizeChunk();
 
+    public void finalizeCombine() {}
+
 }

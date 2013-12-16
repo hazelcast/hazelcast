@@ -16,8 +16,10 @@
 
 package com.hazelcast.mapreduce;
 
-public interface CombinerFactory<KeyIn, ValueIn, ValueOut> {
+import java.io.Serializable;
 
-    Combiner<KeyIn, ValueIn, ValueIn> newCombiner(KeyIn key);
+public interface CombinerFactory<KeyIn, ValueIn, ValueOut> extends Serializable {
+
+    Combiner<KeyIn, ValueIn, ValueOut> newCombiner(KeyIn key);
 
 }

@@ -50,6 +50,7 @@ public class MultiMapKeyValueSource<K, V>
     private transient K key;
     private transient Iterator<Data> keyIterator;
     private transient Iterator<MultiMapRecord> valueIterator;
+    private transient MultiMapRecord multiMapRecord;
 
     MultiMapKeyValueSource() {
         // This prevents excessive creation of map entries for a serialized operation
@@ -72,9 +73,17 @@ public class MultiMapKeyValueSource<K, V>
     }
 
     @Override
+    public void close() throws IOException {
+    }
+
+    @Override
     public boolean hasNext() {
-        if (valueIterator != null && valueIterator.hasNext()) {
-            return true;
+        if (valueIterator != null) {
+            boolean hasNext = valueIterator.hasNext();
+            multiMapRecord = hasNext ? valueIterator.next() : null;
+            if (hasNext) {
+                return true;
+            }
         }
 
         if (keyIterator != null && keyIterator.hasNext()) {
@@ -82,17 +91,27 @@ public class MultiMapKeyValueSource<K, V>
             key = (K) ss.toObject(dataKey);
             MultiMapWrapper wrapper = multiMapContainer.getMultiMapWrapper(dataKey);
             valueIterator = wrapper.getCollection().iterator();
-            return true;
+            return hasNext();
         }
 
         return false;
     }
 
     @Override
-    public Map.Entry<K, V> next() {
-        MultiMapRecord record = valueIterator.next();
+    public K key() {
+        if (multiMapRecord == null) {
+            throw new IllegalStateException("no more elements");
+        }
+        return key;
+    }
+
+    @Override
+    public Map.Entry<K, V> element() {
+        if (multiMapRecord == null) {
+            throw new IllegalStateException("no more elements");
+        }
         simpleEntry.setKey(key);
-        Object value = record.getObject();
+        Object value = multiMapRecord.getObject();
         simpleEntry.setValue((V) (isBinary ? ss.toObject((Data) value) : value));
         return simpleEntry;
     }

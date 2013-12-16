@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.mapreduce.impl.operation.KeyValueMapReduceOperation;
+import com.hazelcast.mapreduce.impl.operation.KeyValueMapReduceOperationFactory;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -25,8 +27,10 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
 
     public static final int KEY_VALUE_SOURCE_MAP = 0;
     public static final int KEY_VALUE_SOURCE_MULTIMAP = 1;
+    public static final int KEY_VALUE_SOURCE_OPERATION = 2;
+    public static final int KEY_VALUE_SOURCE_OPERATION_FACTORY = 3;
 
-    public static final int LEN = KEY_VALUE_SOURCE_MULTIMAP + 1;
+    public static final int LEN = KEY_VALUE_SOURCE_OPERATION_FACTORY + 1;
 
     @Override
     public int getFactoryId() {
@@ -46,6 +50,18 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MultiMapKeyValueSource();
+            }
+        };
+        constructors[KEY_VALUE_SOURCE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new KeyValueMapReduceOperation();
+            }
+        };
+        constructors[KEY_VALUE_SOURCE_OPERATION_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new KeyValueMapReduceOperationFactory();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

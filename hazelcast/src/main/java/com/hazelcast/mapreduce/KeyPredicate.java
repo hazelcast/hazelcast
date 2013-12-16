@@ -16,14 +16,15 @@
 
 package com.hazelcast.mapreduce;
 
+import java.io.Serializable;
+
 /**
  * This interface is used to pre evaluate keys before spreading the MapReduce task to the cluster. Preselecting keys can
  * speed up the job since not all partitions may be used.
  *
  * @param <Key> The key type
- * @author noctarius
  */
-public interface KeyPredicate<Key> {
+public interface KeyPredicate<Key> extends Serializable {
 
     /**
      * This methods implementation contains the evaluation code whether to select a key or not.

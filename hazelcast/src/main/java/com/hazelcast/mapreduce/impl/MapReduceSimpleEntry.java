@@ -16,10 +16,13 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.Map;
 
 public class MapReduceSimpleEntry<K, V> implements Map.Entry<K, V> {
 
+    private Data keyData;
     private K key;
     private V value;
 
@@ -30,6 +33,10 @@ public class MapReduceSimpleEntry<K, V> implements Map.Entry<K, V> {
     public MapReduceSimpleEntry(K key, V value) {
         this.key = key;
         this.value = value;
+    }
+
+    public Data getKeyData() {
+        return keyData;
     }
 
     @Override
@@ -47,6 +54,10 @@ public class MapReduceSimpleEntry<K, V> implements Map.Entry<K, V> {
         V oldValue = this.value;
         this.value = value;
         return oldValue;
+    }
+
+    public void setKeyData(Data keyData) {
+        this.keyData = keyData;
     }
 
     public K setKey(K key) {

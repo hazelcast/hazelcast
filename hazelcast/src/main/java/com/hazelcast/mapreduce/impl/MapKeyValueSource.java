@@ -43,6 +43,7 @@ public class MapKeyValueSource<K, V>
     private transient int partitionId;
     private transient SerializationService ss;
     private transient Iterator<Map.Entry<Data, Data>> iterator;
+    private transient Map.Entry<Data, Data> nextElement;
 
     MapKeyValueSource() {
         // This prevents excessive creation of map entries for a serialized operation
@@ -64,15 +65,37 @@ public class MapKeyValueSource<K, V>
     }
 
     @Override
-    public boolean hasNext() {
-        return iterator.hasNext();
+    public void close() throws IOException {
     }
 
     @Override
-    public Map.Entry<K, V> next() {
-        Map.Entry<Data, Data> entry = iterator.next();
-        simpleEntry.setKey((K) ss.toObject(entry.getKey()));
-        simpleEntry.setValue((V) ss.toObject(entry.getValue()));
+    public boolean hasNext() {
+        boolean hasNext = iterator.hasNext();
+        nextElement = hasNext ? iterator.next() : null;
+        return hasNext;
+    }
+
+    @Override
+    public K key() {
+        if (nextElement == null) {
+            throw new IllegalStateException("no more elements");
+        }
+        Data keyData = nextElement.getKey();
+        K key = (K) ss.toObject(keyData);
+        simpleEntry.setKeyData(keyData);
+        simpleEntry.setKey(key);
+        return key;
+    }
+
+    @Override
+    public Map.Entry<K, V> element() {
+        if (nextElement == null) {
+            throw new IllegalStateException("no more elements");
+        }
+        if (!nextElement.getKey().equals(simpleEntry.getKeyData())) {
+            simpleEntry.setKey((K) ss.toObject(nextElement.getKey()));
+        }
+        simpleEntry.setValue((V) ss.toObject(nextElement.getValue()));
         return simpleEntry;
     }
 

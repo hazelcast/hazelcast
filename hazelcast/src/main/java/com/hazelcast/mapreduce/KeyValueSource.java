@@ -22,17 +22,21 @@ import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.spi.NodeEngine;
 
+import java.io.Closeable;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public abstract class KeyValueSource<K, V> implements Cloneable {
+public abstract class KeyValueSource<K, V> implements Closeable, Serializable {
 
     public abstract void open(NodeEngine nodeEngine);
 
     public abstract boolean hasNext();
 
-    public abstract Map.Entry<K, V> next();
+    public abstract K key();
+
+    public abstract Map.Entry<K, V> element();
 
     public abstract boolean reset();
 
@@ -58,4 +62,5 @@ public abstract class KeyValueSource<K, V> implements Cloneable {
     public static <K, V> KeyValueSource<K, V> fromMultiMap(MultiMap<K, V> multiMap) {
         return new MultiMapKeyValueSource<K, V>(multiMap.getName());
     }
+
 }
