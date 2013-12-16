@@ -48,10 +48,12 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     }
 
     public K getKey() {
+        access();
         return key;
     }
 
     public V getValue() {
+        access();
         return value;
     }
 
@@ -64,6 +66,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     }
 
     public V setValue(V value, int hash, long ttlMillis) {
+        access();
         V oldValue = value;
         this.value = value;
         this.latestUpdateHash = hash;
