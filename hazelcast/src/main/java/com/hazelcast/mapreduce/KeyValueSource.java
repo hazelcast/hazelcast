@@ -16,25 +16,46 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.mapreduce.impl.MapKeyValueSource;
+import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 public abstract class KeyValueSource<K, V> implements Cloneable {
 
-    public abstract void open(HazelcastInstance hazelcastInstance);
+    public abstract void open(NodeEngine nodeEngine);
 
     public abstract boolean hasNext();
 
-    public abstract KeyValuePair<K, V> next();
+    public abstract Map.Entry<K, V> next();
 
     public abstract boolean reset();
 
+    public final Collection<K> getAllKeys() {
+        if (!isAllKeysSupported()) {
+            throw new UnsupportedOperationException("getAllKeys is unsupported for this KeyValueSource");
+        }
+        return getAllKeys0();
+    }
+
+    public boolean isAllKeysSupported() {
+        return false;
+    }
+
+    protected Collection<K> getAllKeys0() {
+        return Collections.emptyList();
+    }
+
     public static <K, V> KeyValueSource<K, V> fromMap(IMap<K, V> map) {
-        return null;
+        return new MapKeyValueSource<K, V>(map.getName());
     }
 
     public static <K, V> KeyValueSource<K, V> fromMultiMap(MultiMap<K, V> multiMap) {
-        return null;
+        return new MultiMapKeyValueSource<K, V>(multiMap.getName());
     }
 }

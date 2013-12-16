@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.mapreduce.impl;
+
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.PartitionIdAware;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.MultiMapWrapper;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+
+public class MultiMapKeyValueSource<K, V>
+        extends KeyValueSource<K, V>
+        implements IdentifiedDataSerializable, PartitionIdAware {
+
+    private final MapReduceSimpleEntry<K, V> simpleEntry;
+
+    private String multiMapName;
+
+    private transient int partitionId;
+    private transient SerializationService ss;
+    private transient MultiMapContainer multiMapContainer;
+    private transient boolean isBinary;
+
+    private transient K key;
+    private transient Iterator<Data> keyIterator;
+    private transient Iterator<MultiMapRecord> valueIterator;
+
+    MultiMapKeyValueSource() {
+        // This prevents excessive creation of map entries for a serialized operation
+        this.simpleEntry = new MapReduceSimpleEntry<K, V>();
+    }
+
+    public MultiMapKeyValueSource(String multiMapName) {
+        this.simpleEntry = null;
+        this.multiMapName = multiMapName;
+    }
+
+    @Override
+    public void open(NodeEngine nodeEngine) {
+        NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
+        MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);
+        ss = nei.getSerializationService();
+        multiMapContainer = multiMapService.getOrCreateCollectionContainer(partitionId, multiMapName);
+        isBinary = multiMapContainer.getConfig().isBinary();
+        keyIterator = multiMapContainer.keySet().iterator();
+    }
+
+    @Override
+    public boolean hasNext() {
+        if (valueIterator != null && valueIterator.hasNext()) {
+            return true;
+        }
+
+        if (keyIterator != null && keyIterator.hasNext()) {
+            Data dataKey = keyIterator.next();
+            key = (K) ss.toObject(dataKey);
+            MultiMapWrapper wrapper = multiMapContainer.getMultiMapWrapper(dataKey);
+            valueIterator = wrapper.getCollection().iterator();
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public Map.Entry<K, V> next() {
+        MultiMapRecord record = valueIterator.next();
+        simpleEntry.setKey(key);
+        Object value = record.getObject();
+        simpleEntry.setValue((V) (isBinary ? ss.toObject((Data) value) : value));
+        return simpleEntry;
+    }
+
+    @Override
+    public boolean reset() {
+        return false;
+    }
+
+    @Override
+    public void setPartitionId(int partitionId) {
+        this.partitionId = partitionId;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(multiMapName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        multiMapName = in.readUTF();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapReduceDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapReduceDataSerializerHook.KEY_VALUE_SOURCE_MULTIMAP;
+    }
+
+}

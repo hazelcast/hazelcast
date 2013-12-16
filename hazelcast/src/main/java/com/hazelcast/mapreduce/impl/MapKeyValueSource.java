@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.mapreduce.impl;
+
+import com.hazelcast.mapreduce.PartitionIdAware;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.RecordStore;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+
+public class MapKeyValueSource<K, V>
+        extends KeyValueSource<K, V>
+        implements IdentifiedDataSerializable, PartitionIdAware {
+
+    private final MapReduceSimpleEntry<K, V> simpleEntry;
+
+    private String mapName;
+
+    private transient int partitionId;
+    private transient SerializationService ss;
+    private transient Iterator<Map.Entry<Data, Data>> iterator;
+
+    MapKeyValueSource() {
+        // This prevents excessive creation of map entries for a serialized operation
+        this.simpleEntry = new MapReduceSimpleEntry<K, V>();
+    }
+
+    public MapKeyValueSource(String mapName) {
+        this.simpleEntry = null;
+        this.mapName = mapName;
+    }
+
+    @Override
+    public void open(NodeEngine nodeEngine) {
+        NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
+        MapService mapService = nei.getService(MapService.SERVICE_NAME);
+        ss = nei.getSerializationService();
+        RecordStore recordStore = mapService.getRecordStore(partitionId, mapName);
+        iterator = recordStore.entrySetData().iterator();
+    }
+
+    @Override
+    public boolean hasNext() {
+        return iterator.hasNext();
+    }
+
+    @Override
+    public Map.Entry<K, V> next() {
+        Map.Entry<Data, Data> entry = iterator.next();
+        simpleEntry.setKey((K) ss.toObject(entry.getKey()));
+        simpleEntry.setValue((V) ss.toObject(entry.getValue()));
+        return simpleEntry;
+    }
+
+    @Override
+    public boolean reset() {
+        return false;
+    }
+
+    @Override
+    public void setPartitionId(int partitionId) {
+        this.partitionId = partitionId;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(mapName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        mapName = in.readUTF();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapReduceDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapReduceDataSerializerHook.KEY_VALUE_SOURCE_MAP;
+    }
+
+}
