@@ -5,10 +5,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.*;
 
 import java.util.Collection;
 import java.util.Map;
@@ -302,6 +299,23 @@ public class AdvancedOperationService implements InternalOperationService {
         }
     }
 
+    protected Callback<Object> callback;
+    protected long callTimeout = DEFAULT_CALL_TIMEOUT;
+    protected int replicaIndex = DEFAULT_REPLICA_INDEX;
+    protected int tryCount = DEFAULT_TRY_COUNT;
+    protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
+
+
+    public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId,
+                                                              long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
+                                                              Callback<Object> callback) {
+        op.setServiceName(serviceName);
+        op.setPartitionId(partitionId);
+        PartitionOperationQueue scheduler = schedulers[partitionId];
+        scheduler.schedule(op);
+        return op;
+    }
+
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
@@ -311,6 +325,13 @@ public class AdvancedOperationService implements InternalOperationService {
         scheduler.schedule(op);
         return op;
     }
+
+    public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target,
+                                                              long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
+                                                              Callback<Object> callback) {
+       throw new UnsupportedOperationException();
+    }
+
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
@@ -359,12 +380,12 @@ public class AdvancedOperationService implements InternalOperationService {
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        throw new UnsupportedOperationException();
+        return new AdvancedInvocationBuilder(nodeEngine,serviceName,op,partitionId);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        throw new UnsupportedOperationException();
+        return new AdvancedInvocationBuilder(nodeEngine,serviceName,op,target);
     }
 
     @Override
@@ -426,4 +447,22 @@ public class AdvancedOperationService implements InternalOperationService {
     public long getExecutedOperationCount() {
         return 0;
     }
+
+    private class AdvancedInvocationBuilder extends AbstractInvocationBuilder{
+
+        private AdvancedInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
+            super(nodeEngine, serviceName, op, partitionId);
+        }
+
+        private AdvancedInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
+            super(nodeEngine, serviceName, op, target);
+        }
+
+        @Override
+        public InternalCompletableFuture invoke() {
+           throw new UnsupportedOperationException();
+        }
+    }
 }
+
+
