@@ -126,7 +126,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
                 logger.info("======================================================");
                 logger.info("You can access your Hazelcast instance at:");
-                logger.info(url + "/start.do?projectid=" + projectId+"&securitytoken="+securityToken);
+                logger.info(url + "/start.do?projectid=" + projectId);
                 logger.info("======================================================");
             }
         }
