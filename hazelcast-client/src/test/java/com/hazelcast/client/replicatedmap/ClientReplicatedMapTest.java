@@ -17,9 +17,11 @@
 package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -87,6 +89,102 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
         value = map1.get("bar");
         assertEquals("foo", value);
+    }
+
+    @Test
+    public void testNearCacheObjectObject() throws Exception {
+
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+
+        ClientConfig ccfg = new ClientConfig();
+        ccfg.addNearCacheConfig("default", new NearCacheConfig()
+                .setInMemoryFormat(InMemoryFormat.OBJECT).setInvalidateOnChange(true));
+        HazelcastInstance instance2 = HazelcastClient.newHazelcastClient(ccfg);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map1.put("foo", "bar");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        String value2 = map2.get("foo");
+        assertEquals("bar", value);
+
+        assertSame(value, value2);
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map2.put("bar", "foo");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("bar");
+        assertEquals("foo", value);
+
+        value2 = map2.get("bar");
+        assertEquals("foo", value);
+
+        assertSame(value, value2);
+    }
+
+    @Test
+    public void testNearCacheObjectBinary() throws Exception {
+
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+
+        ClientConfig ccfg = new ClientConfig();
+        ccfg.addNearCacheConfig("default", new NearCacheConfig()
+                .setInMemoryFormat(InMemoryFormat.BINARY).setInvalidateOnChange(true));
+        HazelcastInstance instance2 = HazelcastClient.newHazelcastClient(ccfg);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map1.put("foo", "bar");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        String value2 = map2.get("foo");
+        assertEquals("bar", value);
+
+        assertNotSame(value, value2);
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map2.put("bar", "foo");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("bar");
+        assertEquals("foo", value);
+
+        value2 = map2.get("bar");
+        assertEquals("foo", value);
+
+        assertNotSame(value, value2);
     }
 
     @Test
@@ -560,6 +658,102 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
         value = map1.get("bar");
         assertEquals("foo", value);
+    }
+
+    @Test
+    public void testNearCacheBinaryObject() throws Exception {
+
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+
+        ClientConfig ccfg = new ClientConfig();
+        ccfg.addNearCacheConfig("default", new NearCacheConfig()
+                .setInMemoryFormat(InMemoryFormat.OBJECT).setInvalidateOnChange(true));
+        HazelcastInstance instance2 = HazelcastClient.newHazelcastClient(ccfg);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map1.put("foo", "bar");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        String value2 = map2.get("foo");
+        assertEquals("bar", value);
+
+        assertSame(value, value2);
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map2.put("bar", "foo");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("bar");
+        assertEquals("foo", value);
+
+        value2 = map2.get("bar");
+        assertEquals("foo", value);
+
+        assertSame(value, value2);
+    }
+
+    @Test
+    public void testNearCacheBinaryBinary() throws Exception {
+
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+
+        ClientConfig ccfg = new ClientConfig();
+        ccfg.addNearCacheConfig("default", new NearCacheConfig()
+                .setInMemoryFormat(InMemoryFormat.BINARY).setInvalidateOnChange(true));
+        HazelcastInstance instance2 = HazelcastClient.newHazelcastClient(ccfg);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map1.put("foo", "bar");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+
+        String value = map2.get("foo");
+        assertEquals("bar", value);
+
+        String value2 = map2.get("foo");
+        assertEquals("bar", value);
+
+        assertNotSame(value, value2);
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map2.put("bar", "foo");
+            }
+        }, 2, EntryEventType.ADDED, map1, map2);
+        TimeUnit.SECONDS.sleep(2);
+
+        value = map2.get("bar");
+        assertEquals("foo", value);
+
+        value2 = map2.get("bar");
+        assertEquals("foo", value);
+
+        assertNotSame(value, value2);
     }
 
     @Test
