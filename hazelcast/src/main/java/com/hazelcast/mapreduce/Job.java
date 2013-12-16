@@ -18,6 +18,12 @@ package com.hazelcast.mapreduce;
 
 public interface Job<KeyIn, ValueIn> {
 
-    <KeyOut, ValueOut> MappingJob<KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper);
+    Job<KeyIn, ValueIn> onKeys(Iterable<KeyIn> keys);
+
+    Job<KeyIn, ValueIn> onKeys(KeyIn... keys);
+
+    Job<KeyIn, ValueIn> keyPredicate(KeyPredicate<KeyIn> predicate);
+
+    <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper);
 
 }

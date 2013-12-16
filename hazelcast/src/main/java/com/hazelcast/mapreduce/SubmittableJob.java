@@ -18,7 +18,13 @@ package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.CompletableFuture;
 
-public interface SubmittableJob<KeyIn, ValueIn> {
+public interface SubmittableJob<EntryKey, ValueIn> {
+
+    SubmittableJob<EntryKey, ValueIn> onKeys(Iterable<EntryKey> keys);
+
+    SubmittableJob<EntryKey, ValueIn> onKeys(EntryKey... keys);
+
+    SubmittableJob<EntryKey, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
 
     CompletableFuture<ValueIn> submit();
 

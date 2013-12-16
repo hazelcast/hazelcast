@@ -20,8 +20,7 @@ import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn> {
 
@@ -37,7 +36,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected ReducerFactory<?, ?, ?> reducerFactory;
 
-    protected Iterable<KeyIn> keys;
+    protected Collection<KeyIn> keys;
 
     protected transient KeyPredicate<KeyIn> predicate;
 
@@ -50,41 +49,85 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
     }
 
     @Override
-    public <KeyOut, ValueOut> MappingJob<KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper) {
+    public <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper) {
         if (mapper == null)
             throw new IllegalStateException("mapper must not be null");
         if (this.mapper != null)
             throw new IllegalStateException("mapper already set");
         this.mapper = mapper;
-        return new MappingJobImpl<KeyOut, ValueOut>();
+        return new MappingJobImpl<KeyIn, KeyOut, ValueOut>();
     }
 
     protected abstract <T> T submit();
 
     protected abstract <T> T submit(Collator collator);
 
-    protected class MappingJobImpl<Key, Value> implements MappingJob<Key, Value> {
+    private void addKeys(Iterable<KeyIn> keys) {
+        if (this.keys == null) {
+            this.keys = new HashSet<KeyIn>();
+        }
+        for (KeyIn key : keys) {
+            this.keys.add(key);
+        }
+    }
+
+    private void addKeys(KeyIn... keys) {
+        if (this.keys == null) {
+            this.keys = new ArrayList<KeyIn>();
+        }
+        for (KeyIn key : keys) {
+            this.keys.add(key);
+        }
+    }
+
+    private void setKeyPredicate(KeyPredicate<KeyIn> predicate) {
+        if (predicate != null) {
+            throw new IllegalStateException("predicate already defined");
+        }
+        this.predicate = predicate;
+    }
+
+    protected class MappingJobImpl<EntryKey, Key, Value>
+            implements MappingJob<EntryKey, Key, Value> {
 
         @Override
-        public <ValueOut> ReducingJob<Key, ValueOut> combiner(
+        public MappingJob<EntryKey, Key, Value> onKeys(Iterable<EntryKey> keys) {
+            addKeys((Iterable<KeyIn>) keys);
+            return this;
+        }
+
+        @Override
+        public MappingJob<EntryKey, Key, Value> onKeys(EntryKey... keys) {
+            addKeys((KeyIn[]) keys);
+            return this;
+        }
+
+        @Override
+        public MappingJob<EntryKey, Key, Value> keyPredicate(KeyPredicate<EntryKey> predicate) {
+            setKeyPredicate((KeyPredicate<KeyIn>) predicate);
+            return this;
+        }
+
+        @Override
+        public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(
                 CombinerFactory<Key, Value, ValueOut> combinerFactory) {
             if (combinerFactory == null)
                 throw new IllegalStateException("combinerFactory must not be null");
             if (AbstractJob.this.combinerFactory != null)
                 throw new IllegalStateException("combinerFactory already set");
             AbstractJob.this.combinerFactory = AbstractJob.this.combinerFactory;
-            return new ReducingJobImpl<Key, ValueOut>();
+            return new ReducingJobImpl<EntryKey, Key, ValueOut>();
         }
 
         @Override
-        public <ValueOut> SubmittableJob<Key, Map<Key, ValueOut>> reducer(
+        public <ValueOut> SubmittableJob<EntryKey, Map<Key, ValueOut>> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
             if (reducerFactory == null)
                 throw new IllegalStateException("reducerFactory must not be null");
             if (AbstractJob.this.reducerFactory != null)
                 throw new IllegalStateException("reducerFactory already set");
             AbstractJob.this.reducerFactory = reducerFactory;
-            return new SubmittableJobImpl<Key, Map<Key, ValueOut>>();
+            return new SubmittableJobImpl<EntryKey, Map<Key, ValueOut>>();
         }
 
         @Override
@@ -99,17 +142,36 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         }
     }
 
-    protected class ReducingJobImpl<Key, Value> implements ReducingJob<Key, Value> {
+    protected class ReducingJobImpl<EntryKey, Key, Value>
+            implements ReducingJob<EntryKey, Key, Value> {
 
         @Override
-        public <ValueOut> SubmittableJob<Key, Map<Key, ValueOut>> reducer(
+        public <ValueOut> SubmittableJob<EntryKey, Map<Key, ValueOut>> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
             if (reducerFactory == null)
                 throw new IllegalStateException("reducerFactory must not be null");
             if (AbstractJob.this.reducerFactory != null)
                 throw new IllegalStateException("reducerFactory already set");
             AbstractJob.this.reducerFactory = reducerFactory;
-            return new SubmittableJobImpl<Key, Map<Key, ValueOut>>();
+            return new SubmittableJobImpl<EntryKey, Map<Key, ValueOut>>();
+        }
+
+        @Override
+        public ReducingJob<EntryKey, Key, Value> onKeys(Iterable<EntryKey> keys) {
+            addKeys((Iterable<KeyIn>) keys);
+            return this;
+        }
+
+        @Override
+        public ReducingJob<EntryKey, Key, Value> onKeys(EntryKey... keys) {
+            addKeys((KeyIn[]) keys);
+            return this;
+        }
+
+        @Override
+        public ReducingJob<EntryKey, Key, Value> keyPredicate(KeyPredicate<EntryKey> predicate) {
+            setKeyPredicate((KeyPredicate<KeyIn>) predicate);
+            return this;
         }
 
         @Override
@@ -124,7 +186,26 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         }
     }
 
-    protected class SubmittableJobImpl<Key, Value> implements SubmittableJob<Key, Value> {
+    protected class SubmittableJobImpl<EntryKey, Value>
+            implements SubmittableJob<EntryKey, Value> {
+
+        @Override
+        public SubmittableJob<EntryKey, Value> onKeys(Iterable<EntryKey> keys) {
+            addKeys((Iterable<KeyIn>) keys);
+            return this;
+        }
+
+        @Override
+        public SubmittableJob<EntryKey, Value> onKeys(EntryKey... keys) {
+            addKeys((KeyIn[]) keys);
+            return this;
+        }
+
+        @Override
+        public SubmittableJob<EntryKey, Value> keyPredicate(KeyPredicate<EntryKey> predicate) {
+            setKeyPredicate((KeyPredicate<KeyIn>) predicate);
+            return this;
+        }
 
         @Override
         public CompletableFuture<Value> submit() {

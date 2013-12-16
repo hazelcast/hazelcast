@@ -21,11 +21,17 @@ import com.hazelcast.core.CompletableFuture;
 import java.util.List;
 import java.util.Map;
 
-public interface MappingJob<KeyIn, ValueIn> {
+public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
-    <ValueOut> ReducingJob<KeyIn, ValueOut> combiner(CombinerFactory<KeyIn, ValueIn, ValueOut> combinerFactory);
+    MappingJob<EntryKey, KeyIn, ValueIn> onKeys(Iterable<EntryKey> keys);
 
-    <ValueOut> SubmittableJob<KeyIn, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
+    MappingJob<EntryKey, KeyIn, ValueIn> onKeys(EntryKey... keys);
+
+    MappingJob<EntryKey, KeyIn, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
+
+    <ValueOut> ReducingJob<EntryKey, KeyIn, ValueOut> combiner(CombinerFactory<KeyIn, ValueIn, ValueOut> combinerFactory);
+
+    <ValueOut> SubmittableJob<EntryKey, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
 
     CompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
 

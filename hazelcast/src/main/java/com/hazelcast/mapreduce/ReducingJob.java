@@ -16,11 +16,23 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.core.CompletableFuture;
+
 import java.util.List;
 import java.util.Map;
 
-public interface ReducingJob<KeyIn, ValueIn> extends SubmittableJob<KeyIn, Map<KeyIn, List<ValueIn>>> {
+public interface ReducingJob<EntryKey, KeyIn, ValueIn> {
 
-    <ValueOut> SubmittableJob<KeyIn, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
+    ReducingJob<EntryKey, KeyIn, ValueIn> onKeys(Iterable<EntryKey> keys);
+
+    ReducingJob<EntryKey, KeyIn, ValueIn> onKeys(EntryKey... keys);
+
+    ReducingJob<EntryKey, KeyIn, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
+
+    CompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
+
+    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map<KeyIn, List<ValueIn>>, ValueOut> collator);
+
+    <ValueOut> SubmittableJob<EntryKey, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
 
 }
