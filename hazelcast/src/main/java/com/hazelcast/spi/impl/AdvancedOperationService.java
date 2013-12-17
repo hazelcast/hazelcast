@@ -9,8 +9,7 @@ import com.hazelcast.spi.*;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class AdvancedOperationService implements InternalOperationService {
@@ -19,6 +18,7 @@ public class AdvancedOperationService implements InternalOperationService {
     private final Node node;
     private final PartitionOperationQueue[] schedulers;
     private final boolean localCallOptimizationEnabled;
+    private final OperationThread[] operationThreads;
 
     public AdvancedOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -30,39 +30,98 @@ public class AdvancedOperationService implements InternalOperationService {
             schedulers[partitionId] = new PartitionOperationQueue(partitionId, ringbufferSize);
         }
         this.localCallOptimizationEnabled = true;
+
+        this.operationThreads = new OperationThread[16];
+        for (int k = 0; k < operationThreads.length; k++) {
+            operationThreads[k] = new OperationThread(partitionCount);
+            operationThreads[k].start();
+        }
     }
 
-    public class PartitionThreadScheduler {
+    public class OperationThread extends Thread {
 
-        private final PartitionThread[] threads;
-        private final Slot[] ringbuffer;
+        private final Slot[] ringBuffer;
+        private final AtomicLong consumerSeq = new AtomicLong();
+        private final AtomicLong producerSeq = new AtomicLong();
+        private final Object monitor = new Object();
 
-        public PartitionThreadScheduler(int threadCount, int partitionCount) {
-            this.threads = new PartitionThread[threadCount];
-            for (int k = 0; k < threads.length; k++) {
-                threads[k] = new PartitionThread();
-            }
-
-            this.ringbuffer = new Slot[partitionCount];
-            for (int k = 0; k < ringbuffer.length; k++) {
-                ringbuffer[k] = new Slot();
+        public OperationThread(int capacity) {
+            ringBuffer = new Slot[capacity];
+            for (int k = 0; k < ringBuffer.length; k++) {
+                Slot slot = new Slot();
+                ringBuffer[k] = slot;
             }
         }
 
-        public void schedule(PartitionOperationQueue scheduler) {
+        public void offer(Runnable task) {
+            long newProducerSeq = producerSeq.incrementAndGet();
+            int slotIndex = (int) (newProducerSeq % ringBuffer.length);
+            Slot slot = ringBuffer[slotIndex];
+            slot.runnable = task;
+            slot.commit(slotIndex);
 
+            if()
+
+            //todo: we need to deal with the notify.
         }
 
-        private class PartitionThread extends Thread {
-            public void run() {
+        public void run() {
+            for (; ; ) {
+                try {
+                    //we don't care about spurious wake-ups, will be detected when we go for work.
+                    synchronized (monitor) {
+                        monitor.wait();
+                    }
+                } catch (InterruptedException ignore) {
+                }
 
+                long oldConsumerSeq = consumerSeq.get();
+                for (; ; ) {
+                    long producerSeq = this.producerSeq.get();
+                    if (producerSeq == oldConsumerSeq) {
+                        break;
+                    }
+
+                    long newConsumerSeq = oldConsumerSeq + 1;
+                    int slotIndex = (int) (producerSeq % ringBuffer.length);
+                    Slot slot = ringBuffer[slotIndex];
+                    slot.awaitCommitted(newConsumerSeq);
+                    Runnable task = slot.runnable;
+                    slot.runnable = null;
+                    consumerSeq.set(newConsumerSeq);
+                    doRun(task);
+                }
+            }
+        }
+
+        private void doRun(Runnable task) {
+            try {
+                task.run();
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
         }
 
         private class Slot {
-            private final AtomicLong sequence = new AtomicLong(0);
-            private PartitionOperationQueue scheduler;
+            private volatile long seq = 0;
+            private Runnable runnable;
+
+            public void commit(long seq) {
+                this.seq = seq;
+            }
+
+            public void awaitCommitted(long consumerSequence) {
+                for (; ; ) {
+                    if (seq >= consumerSequence) {
+                        return;
+                    }
+                }
+            }
         }
+    }
+
+    private void executeOnOperationThread(Runnable runnable) {
+        operationThreads[0].offer(runnable);
     }
 
     /**
@@ -100,7 +159,7 @@ public class AdvancedOperationService implements InternalOperationService {
         //we only have a single consumer
         private final AtomicLong consumerSeq = new AtomicLong(0);
 
-        private final Executor executor = Executors.newFixedThreadPool(1);
+        private final ConcurrentLinkedQueue priorityQueue = new ConcurrentLinkedQueue();
 
         public PartitionOperationQueue(final int partitionId, int ringBufferSize) {
             this.partitionId = partitionId;
@@ -151,7 +210,7 @@ public class AdvancedOperationService implements InternalOperationService {
                         if (producerSeq.get() > newProduceSequence) {
                             //work has been produced by another producer, and since we still own the scheduled bit, we can safely
                             //schedule this
-                            executor.execute(this);
+                            executeOnOperationThread(this);
                         } else {
                             //work has not yet been produced, so we are going to unset the scheduled bit.
                             if (producerSeq.compareAndSet(newProduceSequence, oldProducerSeq)) {
@@ -163,7 +222,7 @@ public class AdvancedOperationService implements InternalOperationService {
                             //new work has been scheduled by other producers, but since we still own the scheduled bit,
                             //we can schedule the work.
                             //work has been produced, so we need to offload it.
-                            executor.execute(this);
+                            executeOnOperationThread(this);
                         }
 
                         return;
@@ -205,7 +264,7 @@ public class AdvancedOperationService implements InternalOperationService {
                 slot.commit(newProducerSeq);
 
                 if (schedule) {
-                    executor.execute(this);
+                    executeOnOperationThread(this);
                 }
             } catch (RuntimeException e) {
                 e.printStackTrace();
@@ -220,6 +279,8 @@ public class AdvancedOperationService implements InternalOperationService {
                 for (; ; ) {
                     final long oldProducerSeq = producerSeq.get();
 
+                    priorityQueue.poll();
+
                     if (oldConsumerSeq == oldProducerSeq - 1) {
                         //there is no more work, so we are going to try to unschedule
 
@@ -227,7 +288,7 @@ public class AdvancedOperationService implements InternalOperationService {
                         final long newProducerSeq = oldProducerSeq - 1;
 
                         if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
-                             return;
+                            return;
                         }
                         //we did not manage to unset the schedule flag because work has been offered.
                         //so lets continue running.

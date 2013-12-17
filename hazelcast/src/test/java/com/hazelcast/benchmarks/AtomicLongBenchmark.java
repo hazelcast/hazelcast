@@ -21,21 +21,27 @@ import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 import com.carrotsearch.junitbenchmarks.annotation.LabelType;
+import com.hazelcast.concurrent.atomiclong.AtomicLongBaseOperation;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.instance.Node;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.*;
 import org.junit.rules.TestRule;
 
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-atomiclong")
 @BenchmarkHistoryChart(filePrefix = "benchmark-atomiclong-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
-public class AtomicLongBenchmark {
+public class AtomicLongBenchmark extends HazelcastTestSupport{
     @Rule
     public TestRule benchmarkRun = new BenchmarkRule();
 
     private static HazelcastInstance hazelcastInstance;
-    private IAtomicLong atomicLong;
+    private AtomicLongProxy atomicLong;
 
     @BeforeClass
     public static void beforeClass() {
@@ -44,7 +50,7 @@ public class AtomicLongBenchmark {
 
     @Before
     public void before() {
-        atomicLong = hazelcastInstance.getAtomicLong("atomicLong");
+        atomicLong = (AtomicLongProxy)hazelcastInstance.getAtomicLong("atomicLong");
     }
 
     @After
@@ -57,13 +63,55 @@ public class AtomicLongBenchmark {
         Hazelcast.shutdownAll();
     }
 
+
+    public class NoResponseOperation extends AtomicLongBaseOperation {
+
+        public NoResponseOperation() {
+        }
+
+        public NoResponseOperation(String name) {
+            super(name);
+        }
+
+        @Override
+        public void run() throws Exception {
+            getNumber().get();
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+    }
+
+    @Test
+    public void noResponse() throws Exception {
+        long startMs = System.currentTimeMillis();
+        int iterations = 50*1000*1000;
+
+        OperationService opService = getNode(hazelcastInstance).nodeEngine.getOperationService();
+        for (int k = 0; k < iterations; k++) {
+            NoResponseOperation no = new NoResponseOperation(atomicLong.getName());
+            no.setPartitionId(atomicLong.getPartitionId());
+            no.setService(atomicLong.getService());
+            opService.invokeOnPartition(AtomicLongService.SERVICE_NAME,no,atomicLong.getPartitionId());
+
+            if (k % 200000 == 0) {
+                System.out.println("at " + k);
+            }
+        }
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
+        System.out.println("Performance: " + String.format("%1$,.2f", performance));
+    }
+
     @Test
     public void get() throws Exception {
         long startMs = System.currentTimeMillis();
         int iterations = 50*1000*1000;
         for (int k = 0; k < iterations; k++) {
             atomicLong.get();
-            if (k % 2000000 == 0) {
+            if (k % 200000 == 0) {
                 System.out.println("at " + k);
             }
         }
@@ -116,7 +164,6 @@ public class AtomicLongBenchmark {
         private GetThread(int iterations) {
             this.iterations = iterations;
         }
-
 
         public void run() {
             for (int k = 0; k < iterations; k++) {
