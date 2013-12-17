@@ -1,4 +1,4 @@
-package com.hazelcast.client.stress;
+package com.hazelcast.client.io;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
@@ -8,13 +8,15 @@ import org.junit.*;
 
 import java.io.Serializable;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by danny on 12/16/13.
  */
-public class ClientIOTest {
+public class ClientIOExecutorPoolSizeLowTest {
 
     static HazelcastInstance server1;
     static HazelcastInstance server2;
@@ -37,7 +39,7 @@ public class ClientIOTest {
 
         final IMap<Object, Object> map = client.getMap("map");
 
-        map.addEntryListener(new MyListner(), true);
+        map.addEntryListener(new EntryCounter(), true);
     }
 
     @After
@@ -49,43 +51,22 @@ public class ClientIOTest {
     @Test
     public void moreEntryListenersThanExecutorThreads() throws InterruptedException {
 
-        final IMap<Object, Object> map = client.getMap("map");
-
-        map.addEntryListener(new MyListner(), true);
-
-        //if no exception is thrown then proabley want to assert a count on the entery listener so that both entery listeners get the event.
-
-        for(int i=0; i<1; i++){
-            map.put(i, i);
-        }
-
-
-
-        assertTrueEventually(new Runnable(){
-            public void run(){
-                assertEquals(1, map.size());
-            }
-        });
-    }
-
-    @Test
-    public void entryListenerWithMapRemoveAsync() throws InterruptedException {
+        EntryCounter counter = new EntryCounter();
 
         final IMap<Object, Object> map = client.getMap("map");
+        map.addEntryListener(counter, true);//adding 2nd EntryListener
 
         for(int i=0; i<1000; i++){
-            map.put(i, i);
-        }
-
-        for(int i=0; i<1000; i++){
-            map.removeAsync(i);
+            map.putAsync(i, i);
         }
 
         assertTrueEventually(new Runnable(){
             public void run(){
-                assertEquals(0, map.size());
+                assertEquals(1000, map.size());
             }
         });
+
+        assertEquals(1000, counter.count.get());
     }
 
 
@@ -124,17 +105,10 @@ public class ClientIOTest {
     @Test
     public void entryListenerWithAsyncQueueOps() throws InterruptedException {
 
+        ItemCounter counter = new ItemCounter();
+
         final IQueue<Object> q = client.getQueue("Q");
-
-        q.addItemListener(new ItemListener() {
-
-            public void itemAdded(ItemEvent itemEvent) {
-                //latch.countDown();
-            }
-
-            public void itemRemoved(ItemEvent item) {
-            }
-        }, true);
+        q.addItemListener(counter, true);
 
 
         for(int i=0; i<1000; i++){
@@ -146,6 +120,8 @@ public class ClientIOTest {
                 assertEquals(1000, q.size());
             }
         });
+
+        assertEquals(1000, counter.count.get());
 
         for(int i=0; i<1000; i++){
             Object o = q.poll();
@@ -159,6 +135,8 @@ public class ClientIOTest {
                 assertEquals(0, q.size());
             }
         });
+
+        assertEquals(0, counter.count.get());
     }
 
 
@@ -168,14 +146,17 @@ public class ClientIOTest {
 
         final ITopic<Object> t = client.getTopic("stuff");
 
-        t.addMessageListener( new MessageListener() {
-            public void onMessage(Message message) {
-                System.out.println("hi");
-            }
-        });
+        final MsgCounter counter = new MsgCounter();
+        t.addMessageListener(counter);
 
         for(int i=0; i<1000; i++)
             t.publish(i);
+
+        assertTrueEventually(new Runnable(){
+            public void run(){
+                assertEquals(1000, counter.count.get());
+            }
+        });
 
     }
 
@@ -215,13 +196,40 @@ public class ClientIOTest {
         }
     }
 
+    public class MsgCounter implements MessageListener{
 
-    public class MyListner implements ItemListener, EntryListener {
+        public AtomicInteger count = new AtomicInteger(0);
+
+        public void onMessage(Message message) {
+            count.getAndIncrement();
+        }
+    }
+
+
+    public class ItemCounter  implements ItemListener {
+
+        public AtomicInteger count = new AtomicInteger(0);
+
+        public void itemAdded(ItemEvent itemEvent) {
+            count.getAndIncrement();
+        }
+
+        public void itemRemoved(ItemEvent item) {
+            count.getAndDecrement();
+        }
+    };
+
+
+    public class EntryCounter implements EntryListener {
+
+        public AtomicInteger count = new AtomicInteger(0);
 
         public void entryAdded(EntryEvent event) {
+            count.getAndIncrement();
         }
 
         public void entryRemoved(EntryEvent event) {
+            count.getAndDecrement();
         }
 
         public void entryUpdated(EntryEvent event) {
@@ -230,39 +238,7 @@ public class ClientIOTest {
         public void entryEvicted(EntryEvent event) {
         }
 
-        public void itemAdded(ItemEvent item) {
-        }
-
-        public void itemRemoved(ItemEvent item) {
-        }
     }
-
-/*
-    abstract public class GatedThread extends Thread{
-        private final CyclicBarrier gate;
-
-        public GatedThread(CyclicBarrier gate){
-            this.gate = gate;
-        }
-
-        public void run(){
-            try {
-                gate.await();
-                go();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (BrokenBarrierException e) {
-                e.printStackTrace();
-            }
-        }
-
-        abstract public void go();
-    }
-
-    private void startGatedThread(GatedThread t){
-        t.start();
-    }
-*/
 
     public static void assertTrueEventually(Runnable task) {
         AssertionError error = null;
