@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.SystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.util.Set;
 /**
  * @author mdogan 2/11/13
  */
-public class ClientDisconnectionOperation extends AbstractOperation {
+public class ClientDisconnectionOperation extends AbstractOperation implements SystemOperation {
 
     private String clientUuid;
 

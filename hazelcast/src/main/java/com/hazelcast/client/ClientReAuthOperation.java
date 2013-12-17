@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.SystemOperation;
 
 import java.io.IOException;
 import java.util.Set;
@@ -26,7 +27,7 @@ import java.util.Set;
 /**
  * @author mdogan 5/7/13
  */
-public class ClientReAuthOperation extends AbstractOperation {
+public class ClientReAuthOperation extends AbstractOperation implements SystemOperation {
 
     private String clientUuid;
 

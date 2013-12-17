@@ -52,6 +52,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * All the classes that begin with 'Basic' are implementation detail that depend on the
  * {@link com.hazelcast.spi.impl.BasicOperationService}.
  *
+ * <h1>System Operation</h1>
+ * When a {@link com.hazelcast.spi.SystemOperation} is invoked on this OperationService, it will be executed with a
+ * high priority by making use of a priority queue. So when the system is under load, and the operation queues are
+ * filled, then system operations are executed before normal operation. The advantage is that when a system is under
+ * pressure, it still is able to do things like recognizing new members in the cluster and moving partitions around.
+ *
+ * When a SystemOperation is send to a remote machine, it is wrapped in a {@link Packet} and the packet is marked as a
+ * priority packet. When this packet is received on the remove OperationService, the packet flag is checked and if
+ * needed, the operation is set on the priority queue. So local and remote execution of System operations will obey
+ * the priority.
+ *
  * @author mdogan 12/14/12
  * @see com.hazelcast.spi.impl.BasicInvocation
  * @see com.hazelcast.spi.impl.BasicInvocationBuilder
@@ -71,6 +82,7 @@ final class BasicOperationService implements InternalOperationService {
     private final BlockingQueue[] operationExecutorQueues;
 
     private final ExecutorService defaultOperationExecutor;
+    private final ConcurrentLinkedQueue defaultOperationPriorityQueue;
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
@@ -78,6 +90,7 @@ final class BasicOperationService implements InternalOperationService {
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
+    private final ConcurrentLinkedQueue[] operationExecutorPriorityQueues;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -92,16 +105,22 @@ final class BasicOperationService implements InternalOperationService {
         operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
         operationExecutors = new ExecutorService[operationThreadCount];
         operationExecutorQueues = new BlockingQueue[operationThreadCount];
+        operationExecutorPriorityQueues = new ConcurrentLinkedQueue[operationThreadCount];
         for (int i = 0; i < operationExecutors.length; i++) {
-            BlockingQueue<Runnable> q = new LinkedBlockingQueue<Runnable>();
-            operationExecutorQueues[i]=q;
-            operationExecutors[i] =  new ThreadPoolExecutor(1, 1,
+            BlockingQueue<Runnable> operationExecutorQueue = new LinkedBlockingQueue<Runnable>();
+            operationExecutorQueues[i] = operationExecutorQueue;
+
+            ConcurrentLinkedQueue<Runnable> operationExecutorPriorityQueue = new ConcurrentLinkedQueue<Runnable>();
+            operationExecutorPriorityQueues[i]=operationExecutorPriorityQueue;
+
+            operationExecutors[i] = new ThreadPoolExecutor(1, 1,
                     0L, TimeUnit.MILLISECONDS,
-                    q,
+                    operationExecutorQueue,
                     new OperationThreadFactory(i));
         }
 
         final ExecutionService executionService = nodeEngine.getExecutionService();
+        defaultOperationPriorityQueue = new ConcurrentLinkedQueue<Runnable>();
         defaultOperationExecutor = executionService.register(ExecutionService.OPERATION_EXECUTOR,
                 coreSize * 2, coreSize * 100000);
 
@@ -166,14 +185,19 @@ final class BasicOperationService implements InternalOperationService {
     @PrivateApi
     public void handleOperation(final Packet packet) {
         try {
-            final Executor executor;
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                executor = responseExecutor;
+                responseExecutor.execute(new RemoteOperationProcessor(packet));
             } else {
                 final int partitionId = packet.getPartitionId();
-                executor = getExecutor(partitionId);
+                final Executor executor = getExecutor(partitionId);
+                if(packet.isPriorityPacket()){
+                    ConcurrentLinkedQueue<Runnable> priorityQueue = getPriorityQueue(partitionId);
+                    priorityQueue.add(new RemoteOperationProcessor(packet));
+                    executor.execute(new SystemOperationsProcessor());
+                } else{
+                    executor.execute(new RemoteOperationProcessor(packet));
+                }
             }
-            executor.execute(new RemoteOperationProcessor(packet));
         } catch (RejectedExecutionException e) {
             if (nodeEngine.isActive()) {
                 throw e;
@@ -183,6 +207,10 @@ final class BasicOperationService implements InternalOperationService {
 
     private Executor getExecutor(int partitionId) {
         return partitionId > -1 ? operationExecutors[partitionId % operationThreadCount] : defaultOperationExecutor;
+    }
+
+    private ConcurrentLinkedQueue<Runnable> getPriorityQueue(int partitionId) {
+        return partitionId > -1 ? operationExecutorPriorityQueues[partitionId % operationThreadCount] : defaultOperationPriorityQueue;
     }
 
     private int getPartitionIdForExecution(Operation op) {
@@ -238,10 +266,15 @@ final class BasicOperationService implements InternalOperationService {
      */
     public void executeOperation(final Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
-        getExecutor(partitionId).execute(new LocalOperationProcessor(op));
+        if(op instanceof SystemOperation){
+            getPriorityQueue(partitionId).offer(new LocalOperationProcessor(op));
+            getExecutor(partitionId).execute(new SystemOperationsProcessor());
+        }else{
+            getExecutor(partitionId).execute(new LocalOperationProcessor(op));
+        }
     }
 
-    @Override
+     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         return createInvocationBuilder(serviceName, op, partitionId).invoke();
     }
@@ -261,6 +294,8 @@ final class BasicOperationService implements InternalOperationService {
      */
     private void doRunOperation(final Operation op) {
         executedOperationsCount.incrementAndGet();
+
+        runSystemOperations();
 
         RemoteCallKey callKey = null;
         try {
@@ -336,6 +371,30 @@ final class BasicOperationService implements InternalOperationService {
             handleOperationError(op, e);
         } finally {
             afterCallExecution(op, callKey);
+        }
+    }
+
+    private void runSystemOperations() {
+        Thread thread = Thread.currentThread();
+        ConcurrentLinkedQueue<Runnable> priorityQueue;
+        if(thread instanceof  OperationThread){
+             int id = ((OperationThread)thread).id;
+             priorityQueue = operationExecutorPriorityQueues[id];
+        } else{
+             priorityQueue = defaultOperationPriorityQueue;
+        }
+
+        if(priorityQueue.isEmpty()){
+            return;
+        }
+
+        for (; ; ) {
+            Runnable task = priorityQueue.poll();
+            if (task == null) {
+                return;
+            }
+
+            task.run();
         }
     }
 
@@ -608,6 +667,9 @@ final class BasicOperationService implements InternalOperationService {
         final int partitionId = getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
         packet.setHeader(Packet.HEADER_OP);
+        if(op instanceof SystemOperation){
+            packet.setHeader(Packet.HEADER_PRIORITY);
+        }
         if (op instanceof ResponseOperation) {
             packet.setHeader(Packet.HEADER_RESPONSE);
         }
@@ -716,6 +778,29 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    /**
+     * Processes the System Operations. Normally they are going to be processed before normal execution of operations,
+     * but if there is no work triggering a worker thread, then the system operation put in a priority queue
+     * are not going to be picked up by a worker thread.
+     *
+     * So when a system operation is send, also a SystemOperationsProcessor is send to the executor to make sure
+     * that the operations are picked up. If the system operations already have been processed, then processor
+     * doesn't do anything. So it can safely be send multiple times, without causing problems.
+     */
+    private class SystemOperationsProcessor implements Runnable{
+        @Override
+        public void run(){
+            try {
+                runSystemOperations();
+            } catch (Throwable e) {
+                logger.severe("While processing system operations...", e);
+            }
+        }
+    }
+
+    /**
+     * Process the operation that has been send locally to this OperationService.
+     */
     private class LocalOperationProcessor implements Runnable {
         private final Operation op;
 
@@ -723,11 +808,15 @@ final class BasicOperationService implements InternalOperationService {
             this.op = op;
         }
 
+        @Override
         public void run() {
             doRunOperation(op);
         }
     }
 
+    /**
+     * Process an operation that has been send to this OperationService by a remote OperationService.
+     */
     private class RemoteOperationProcessor implements Runnable {
         final Packet packet;
 
@@ -735,6 +824,7 @@ final class BasicOperationService implements InternalOperationService {
             this.packet = packet;
         }
 
+        @Override
         public void run() {
             final Connection conn = packet.getConn();
             try {

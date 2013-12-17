@@ -20,9 +20,11 @@ package com.hazelcast.cluster;
  * @author mdogan 7/25/12
  */
 
+import com.hazelcast.spi.SystemOperation;
+
 /**
  * Marker interface for join and post-join operations.
  */
-public interface JoinOperation {
+public interface JoinOperation extends SystemOperation {
 
 }
