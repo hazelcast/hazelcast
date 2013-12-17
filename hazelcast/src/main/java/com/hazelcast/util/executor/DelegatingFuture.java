@@ -109,7 +109,7 @@ public class DelegatingFuture<V> implements Future<V> {
     }
 
     public final boolean isDone() {
-        return done;
+        return done ? done : future.isDone();
     }
 
     protected void setError(Throwable error) {
