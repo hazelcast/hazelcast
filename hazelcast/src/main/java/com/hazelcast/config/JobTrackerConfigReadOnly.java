@@ -22,7 +22,28 @@ public class JobTrackerConfigReadOnly extends JobTrackerConfig {
         super(jobTrackerConfig);
     }
 
+    @Override
     public JobTrackerConfigReadOnly setName(String name) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public void setMinThreadSize(int minThreadSize) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public void setMaxThreadSize(int maxThreadSize) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public void setRetryCount(int retryCount) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public void setChunkSize(int chunkSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

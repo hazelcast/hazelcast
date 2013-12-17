@@ -19,10 +19,8 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.process.ProcessJob;
-import com.hazelcast.spi.InitializingObject;
 
 class NodeJobTracker extends AbstractJobTracker {
 
@@ -32,7 +30,7 @@ class NodeJobTracker extends AbstractJobTracker {
 
     @Override
     public <K, V> Job<K, V> newJob(KeyValueSource<K, V> source) {
-        return new KeyValueJobImpl<K, V>(name, source, hazelcastInstance);
+        return new KeyValueJob<K, V>(name, source, hazelcastInstance);
     }
 
     @Override

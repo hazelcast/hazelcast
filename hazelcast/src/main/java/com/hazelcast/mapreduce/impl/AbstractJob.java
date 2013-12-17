@@ -38,7 +38,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected Collection<KeyIn> keys;
 
-    protected transient KeyPredicate<KeyIn> predicate;
+    protected KeyPredicate<KeyIn> predicate;
 
     public AbstractJob(String name,
                        KeyValueSource<KeyIn, ValueIn> keyValueSource,
@@ -58,9 +58,49 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         return new MappingJobImpl<KeyIn, KeyOut, ValueOut>();
     }
 
-    protected abstract <T> T submit();
+    @Override
+    public Job<KeyIn, ValueIn> onKeys(Iterable<KeyIn> keys) {
+        addKeys(keys);
+        return this;
+    }
 
-    protected abstract <T> T submit(Collator collator);
+    @Override
+    public Job<KeyIn, ValueIn> onKeys(KeyIn... keys) {
+        addKeys(keys);
+        return this;
+    }
+
+    @Override
+    public Job<KeyIn, ValueIn> keyPredicate(KeyPredicate<KeyIn> predicate) {
+        setKeyPredicate(predicate);
+        return this;
+    }
+
+    protected <T> CompletableFuture<T> submit(Collator collator) {
+        prepareKeyPredicate();
+
+
+        return null;
+    }
+
+    protected void prepareKeyPredicate() {
+        if (predicate == null) {
+            return;
+        }
+        if (keyValueSource.isAllKeysSupported()) {
+            Collection<KeyIn> allKeys = keyValueSource.getAllKeys();
+            for (KeyIn key : allKeys) {
+                if (predicate.evaluate(key)) {
+                    if (this.keys == null) {
+                        this.keys = new HashSet<KeyIn>();
+                    }
+                    this.keys.add(key);
+                }
+            }
+        }
+    }
+
+    protected abstract void invokeTask() throws Exception;
 
     private void addKeys(Iterable<KeyIn> keys) {
         if (this.keys == null) {
@@ -85,6 +125,10 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
             throw new IllegalStateException("predicate already defined");
         }
         this.predicate = predicate;
+    }
+
+    private <T> CompletableFuture<T> submit() {
+        return submit(null);
     }
 
     protected class MappingJobImpl<EntryKey, Key, Value>

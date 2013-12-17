@@ -18,6 +18,10 @@ package com.hazelcast.config;
 
 public class JobTrackerConfig {
     private String name;
+    private int minThreadSize;
+    private int maxThreadSize;
+    private int retryCount;
+    private int chunkSize;
 
     public JobTrackerConfig() {
     }
@@ -33,6 +37,38 @@ public class JobTrackerConfig {
 
     public String getName() {
         return name;
+    }
+
+    public int getMinThreadSize() {
+        return minThreadSize;
+    }
+
+    public void setMinThreadSize(int minThreadSize) {
+        this.minThreadSize = minThreadSize;
+    }
+
+    public int getMaxThreadSize() {
+        return maxThreadSize;
+    }
+
+    public void setMaxThreadSize(int maxThreadSize) {
+        this.maxThreadSize = maxThreadSize;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
+    }
+
+    public int getChunkSize() {
+        return chunkSize;
+    }
+
+    public void setChunkSize(int chunkSize) {
+        this.chunkSize = chunkSize;
     }
 
     public JobTrackerConfig getAsReadOnly() {
