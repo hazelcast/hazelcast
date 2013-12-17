@@ -4,7 +4,11 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.concurrent.*;
@@ -16,6 +20,9 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by danny on 12/16/13.
  */
+
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientIOExecutorPoolSizeLowTest {
 
     static HazelcastInstance server1;
@@ -24,6 +31,8 @@ public class ClientIOExecutorPoolSizeLowTest {
     static HazelcastInstance client;
 
     static final int executorPoolSize=1;
+
+    static String entryCounterID;
 
     @Before
     public void init() {
@@ -39,7 +48,8 @@ public class ClientIOExecutorPoolSizeLowTest {
 
         final IMap<Object, Object> map = client.getMap("map");
 
-        map.addEntryListener(new EntryCounter(), true);
+        //default to add 1 listener to use the 1 executor thread
+        entryCounterID = map.addEntryListener(new EntryCounter(), true);
     }
 
     @After
@@ -48,7 +58,31 @@ public class ClientIOExecutorPoolSizeLowTest {
         Hazelcast.shutdownAll();
     }
 
+
     @Test
+    public void removeListenerAfterAsyncOpp() throws InterruptedException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for(int i=0; i<1000; i++){
+            map.putAsync(i, i);
+            if(i==500){
+                map.removeEntryListener(entryCounterID);
+            }
+        }
+
+        assertTrueEventually(new Runnable(){
+            public void run(){
+                assertEquals(1000, map.size());
+            }
+        });
+
+    }
+
+
+
+    @Test
+    @Ignore("Issue #1391")
     public void moreEntryListenersThanExecutorThreads() throws InterruptedException {
 
         EntryCounter counter = new EntryCounter();
@@ -71,6 +105,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
 
     @Test
+    @Ignore("Issue #1391")
     public void entryListenerWithAsyncMapOps() throws InterruptedException, ExecutionException {
 
         final IMap<Object, Object> map = client.getMap("map");
@@ -103,6 +138,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
 
     @Test
+    @Ignore("Issue #1391")
     public void entryListenerWithAsyncQueueOps() throws InterruptedException {
 
         ItemCounter counter = new ItemCounter();
@@ -142,6 +178,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
 
     @Test
+    @Ignore("Issue #1391")
     public void entryListenerWithAsyncTopicOps() throws InterruptedException {
 
         final ITopic<Object> t = client.getTopic("stuff");
@@ -165,6 +202,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
 
     @Test
+    @Ignore("Issue #1391")
     public void entryListenerWithExecutorService() throws ExecutionException, InterruptedException {
 
         final IMap<Object, Object> map = client.getMap("map");
