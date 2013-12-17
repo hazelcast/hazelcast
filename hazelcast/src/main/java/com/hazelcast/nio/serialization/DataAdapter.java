@@ -64,11 +64,17 @@ public class DataAdapter implements SocketWritable, SocketReadable {
         this.context = context;
     }
 
+    @Override
+    public boolean isUrgent() {
+        return false;
+    }
+
     /**
      * WARNING:
      *
      * Should be in sync with {@link Data#writeData(com.hazelcast.nio.ObjectDataOutput)}
      */
+    @Override
     public boolean writeTo(ByteBuffer destination) {
         if (!isStatusSet(stType)) {
             if (destination.remaining() < 4) {
@@ -164,6 +170,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
      *
      * Should be in sync with {@link Data#readData(com.hazelcast.nio.ObjectDataInput)}
      */
+    @Override
     public boolean readFrom(ByteBuffer source) {
         if (data == null) {
             data = new Data();
@@ -278,6 +285,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
         return isStatusSet(stAll);
     }
 
+    @Override
     public void onEnqueue() {
     }
 
