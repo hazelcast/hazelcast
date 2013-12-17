@@ -32,6 +32,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
 
+    private final Queue<SocketWritable> urgencyWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
+
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
     private final ByteBuffer buffer;
@@ -88,7 +90,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     public void enqueueSocketWritable(SocketWritable socketWritable) {
         socketWritable.onEnqueue();
-        writeQueue.offer(socketWritable);
+        if(socketWritable.isUrgent()){
+            urgencyWriteQueue.offer(socketWritable);
+        }else{
+            writeQueue.offer(socketWritable);
+        }
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
@@ -100,7 +106,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private SocketWritable poll() {
-        return writeQueue.poll();
+        SocketWritable writable = urgencyWriteQueue.poll();
+        if(writable == null){
+            writable = writeQueue.poll();
+        }
+
+        return writable;
     }
 
     @SuppressWarnings("unchecked")

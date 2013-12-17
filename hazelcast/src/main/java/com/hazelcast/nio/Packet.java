@@ -34,7 +34,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_RESPONSE = 1;
     public static final int HEADER_EVENT = 2;
     public static final int HEADER_WAN_REPLICATION = 3;
-    public static final int HEADER_PRIORITY = 4;
+    public static final int HEADER_URGENT = 4;
 
     private short header;
     private int partitionId;
@@ -78,8 +78,9 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
         return partitionId;
     }
 
-    public boolean isPriorityPacket(){
-        return isHeaderSet(HEADER_PRIORITY);
+    @Override
+    public boolean isUrgent(){
+        return isHeaderSet(HEADER_URGENT);
     }
 
     @Override
