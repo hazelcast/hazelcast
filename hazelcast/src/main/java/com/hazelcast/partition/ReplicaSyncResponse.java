@@ -22,10 +22,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -35,7 +32,7 @@ import java.util.logging.Level;
 /**
  * @author mdogan 4/11/13
  */
-public class ReplicaSyncResponse extends Operation implements PartitionAwareOperation, BackupOperation {
+public class ReplicaSyncResponse extends Operation implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
 
     private byte[] data;
     private long[] replicaVersions;
