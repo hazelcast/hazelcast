@@ -118,7 +118,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         return MapPortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeUTF("t", iterationType.toString());
         writePortableInner(writer);
@@ -126,7 +126,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     protected abstract void writePortableInner(PortableWriter writer) throws IOException;
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         iterationType = IterationType.valueOf(reader.readUTF("t"));
         readPortableInner(reader);

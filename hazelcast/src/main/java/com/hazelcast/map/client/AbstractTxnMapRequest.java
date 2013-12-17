@@ -146,7 +146,7 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         return MapPortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("t", requestType.type);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -156,7 +156,7 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         writeDataInner(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         requestType = TxnMapRequestType.getByType(reader.readInt("t"));
         final ObjectDataInput in = reader.getRawDataInput();

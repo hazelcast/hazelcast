@@ -87,14 +87,14 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest i
         return MapPortableHook.EXECUTE_WITH_PREDICATE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(processor);
         out.writeObject(predicate);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         processor = in.readObject();

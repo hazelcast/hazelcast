@@ -81,7 +81,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
         return MapService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("size", keys.size());
         if( !keys.isEmpty()) {
@@ -92,7 +92,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
         }
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         int size = reader.readInt("size");
         if(size > 0) {

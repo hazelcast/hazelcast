@@ -156,7 +156,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writePortable("credentials", (Portable) credentials);
         if (principal != null) {
             writer.writePortable("principal", principal);
@@ -168,7 +168,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         credentials = (Credentials) reader.readPortable("credentials");
         principal = reader.readPortable("principal");
         reAuth = reader.readBoolean("reAuth");

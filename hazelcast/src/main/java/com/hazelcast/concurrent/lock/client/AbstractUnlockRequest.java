@@ -70,7 +70,7 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implem
         return LockService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
 
         writer.writeInt("tid", threadId);
         writer.writeBoolean("force", force);
@@ -79,7 +79,7 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implem
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
 
         threadId = reader.readInt("tid");
         force = reader.readBoolean("force");

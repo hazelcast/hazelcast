@@ -17,45 +17,28 @@
 package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.cluster.ClusterDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
+import com.hazelcast.client.ClientPortableHook;
+import com.hazelcast.nio.serialization.Portable;
 
 /**
  * @author mdogan 5/17/13
  */
-public final class ClientPingRequest extends CallableClientRequest implements IdentifiedDataSerializable {
+public final class ClientPingRequest extends CallableClientRequest implements Portable {
 
-    @Override
     public Object call() throws Exception {
         return null;
     }
 
-    @Override
     public String getServiceName() {
         return null;
     }
 
-    @Override
     public int getFactoryId() {
-        return ClusterDataSerializerHook.F_ID;
+        return ClientPortableHook.ID;
     }
 
-    @Override
-    public int getId() {
-        return ClusterDataSerializerHook.PING;
+    public int getClassId() {
+        return ClientPortableHook.CLIENT_PING;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-
-    }
 }

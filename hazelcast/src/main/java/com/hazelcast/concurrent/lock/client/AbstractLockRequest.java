@@ -73,7 +73,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         return LockService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeInt("tid", threadId);
         writer.writeLong("ttl", ttl);
         writer.writeLong("timeout", timeout);
@@ -82,7 +82,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         threadId = reader.readInt("tid");
         ttl = reader.readLong("ttl");
         timeout = reader.readLong("timeout");

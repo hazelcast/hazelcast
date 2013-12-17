@@ -36,6 +36,9 @@ public class ClientPortableHook implements PortableHook {
     public static final int CREATE_PROXY = 7;
     public static final int DESTROY_PROXY = 8;
     public static final int LISTENER = 9;
+    public static final int MEMBERSHIP_LISTENER = 10;
+    public static final int CLIENT_PING = 11;
+    public static final int GET_PARTITIONS = 12;
 
     public int getFactoryId() {
         return ID;

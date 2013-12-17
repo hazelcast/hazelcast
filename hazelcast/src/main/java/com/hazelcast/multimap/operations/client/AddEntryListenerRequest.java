@@ -102,14 +102,14 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
         return MultiMapPortableHook.ADD_ENTRY_LISTENER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeBoolean("i", includeValue);
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         IOUtil.writeNullableData(out, key);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         includeValue = reader.readBoolean("i");
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

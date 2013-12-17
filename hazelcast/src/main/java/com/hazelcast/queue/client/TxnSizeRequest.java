@@ -65,11 +65,11 @@ public class TxnSizeRequest extends CallableClientRequest implements Portable, S
         return QueuePortableHook.TXN_SIZE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
 

@@ -48,13 +48,13 @@ public class ListGetRequest extends CollectionRequest{
         return CollectionPortableHook.LIST_GET ;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeInt("i", index);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         index = reader.readInt("i");
     }
 

@@ -103,13 +103,13 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
         return CollectionPortableHook.COLLECTION_ADD_LISTENER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeBoolean("i", includeValue);
         writer.writeUTF("s", serviceName);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         includeValue = reader.readBoolean("i");
         serviceName = reader.readUTF("s");

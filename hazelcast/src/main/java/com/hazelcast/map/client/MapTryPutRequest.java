@@ -49,14 +49,14 @@ public class MapTryPutRequest extends MapPutRequest {
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeLong("timeout", timeout);
-        super.writePortable(writer);
+        super.write(writer);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         timeout = reader.readLong("timeout");
-        super.readPortable(reader);
+        super.read(reader);
     }
 }

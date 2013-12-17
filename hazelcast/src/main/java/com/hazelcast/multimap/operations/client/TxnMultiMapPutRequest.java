@@ -55,15 +55,15 @@ public class TxnMultiMapPutRequest extends TxnMultiMapRequest {
         return MultiMapPortableHook.TXN_MM_PUT;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

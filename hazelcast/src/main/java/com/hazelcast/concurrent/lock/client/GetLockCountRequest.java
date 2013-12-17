@@ -72,12 +72,12 @@ public final class GetLockCountRequest extends KeyBasedClientRequest implements 
         return LockPortableHook.GET_LOCK_COUNT;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

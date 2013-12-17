@@ -53,13 +53,13 @@ public class RemoveRequest extends QueueRequest {
         return QueuePortableHook.REMOVE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.writePortable(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         data.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.readPortable(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         data = new Data();

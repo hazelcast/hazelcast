@@ -50,12 +50,12 @@ public abstract class AbstractReplicatedMapClientRequest
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("mapName", mapName);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         mapName = reader.readUTF("mapName");
     }
 

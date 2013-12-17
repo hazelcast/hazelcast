@@ -67,13 +67,13 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest impl
         return LockService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeInt("tid", threadId);
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         threadId = reader.readInt("tid");
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

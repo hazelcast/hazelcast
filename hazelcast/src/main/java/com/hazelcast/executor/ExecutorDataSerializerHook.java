@@ -16,9 +16,6 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.executor.client.IsShutdownRequest;
-import com.hazelcast.executor.client.LocalTargetCallableRequest;
-import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
@@ -34,11 +31,6 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
     static final int CALLABLE_TASK = 0;
     static final int MEMBER_CALLABLE_TASK = 1;
     static final int RUNNABLE_ADAPTER = 2;
-
-    public static final int TARGET_CALLABLE_REQUEST = 6;
-    public static final int LOCAL_TARGET_CALLABLE_REQUEST = 7;
-    public static final int IS_SHUTDOWN_REQUEST = 9;
-
 
     public int getFactoryId() {
         return F_ID;
@@ -57,14 +49,6 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
                     case RUNNABLE_ADAPTER:
                         return new RunnableAdapter();
 
-                    case TARGET_CALLABLE_REQUEST:
-                        return new TargetCallableRequest();
-
-                    case LOCAL_TARGET_CALLABLE_REQUEST:
-                        return new LocalTargetCallableRequest();
-
-                    case IS_SHUTDOWN_REQUEST:
-                        return new IsShutdownRequest();
                 }
                 return null;
             }

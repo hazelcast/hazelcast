@@ -56,7 +56,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
         return predicate;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
 
@@ -79,7 +79,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
 
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
 

@@ -56,8 +56,8 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
         return CollectionPortableHook.COLLECTION_COMPARE_AND_REMOVE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeBoolean("r", retain);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeInt(valueSet.size());
@@ -66,8 +66,8 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
         }
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         retain = reader.readBoolean("r");
         final ObjectDataInput in = reader.getRawDataInput();
         final int size = in.readInt();

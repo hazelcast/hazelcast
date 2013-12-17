@@ -56,14 +56,14 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
         return MultiMapPortableHook.REMOVE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeInt("t",threadId);
         super.writePortable(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         threadId = reader.readInt("t");
         super.readPortable(reader);
         final ObjectDataInput in = reader.getRawDataInput();

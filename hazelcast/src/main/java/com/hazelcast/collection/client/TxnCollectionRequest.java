@@ -52,12 +52,12 @@ public abstract class TxnCollectionRequest extends CallableClientRequest impleme
         return CollectionPortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         IOUtil.writeNullableData(writer.getRawDataOutput(), value);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         value = IOUtil.readNullableData(reader.getRawDataInput());
     }

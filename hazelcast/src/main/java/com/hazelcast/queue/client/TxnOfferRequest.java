@@ -71,13 +71,13 @@ public class TxnOfferRequest extends CallableClientRequest implements Portable, 
         return QueuePortableHook.TXN_OFFER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         writer.writeLong("t",timeout);
         data.writeData(writer.getRawDataOutput());
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         timeout = reader.readLong("t");
         data = new Data();

@@ -16,11 +16,19 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+
+import java.io.IOException;
+
 /**
  *
  * @author mdogan 4/29/13
  */
-abstract class ClientRequest {
+abstract class ClientRequest implements Portable {
+
+    long requestId;
 
     transient ClientEngineImpl clientEngine;
 
@@ -55,4 +63,30 @@ abstract class ClientRequest {
     }
 
     public abstract String getServiceName();
+
+    public long getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(long requestId) {
+        this.requestId = requestId;
+    }
+
+    public final void writePortable(PortableWriter writer) throws IOException {
+        writer.writeLong("rId", requestId);
+        write(writer);
+    }
+
+    public  void write(PortableWriter writer) throws IOException {
+
+    }
+
+    public final void readPortable(PortableReader reader) throws IOException {
+        requestId = reader.readLong("rId");
+        read(reader);
+    }
+
+    public void read(PortableReader reader) throws IOException {
+
+    }
 }

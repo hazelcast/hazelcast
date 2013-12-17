@@ -59,7 +59,7 @@ public class PutRequest extends MultiMapKeyBasedRequest {
         return MultiMapPortableHook.PUT;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeInt("i",index);
         writer.writeInt("t", threadId);
         super.writePortable(writer);
@@ -67,7 +67,7 @@ public class PutRequest extends MultiMapKeyBasedRequest {
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         index = reader.readInt("i");
         threadId = reader.readInt("t");
         super.readPortable(reader);
