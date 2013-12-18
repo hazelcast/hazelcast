@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -39,6 +40,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.scheduler.*;
 
@@ -91,6 +93,7 @@ final class BasicOperationService implements InternalOperationService {
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
     private final ConcurrentLinkedQueue[] operationExecutorUrgentQueues;
+    private final ExecutionService executionService;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -119,7 +122,7 @@ final class BasicOperationService implements InternalOperationService {
                     new OperationThreadFactory(i));
         }
 
-        final ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService = nodeEngine.getExecutionService();
         defaultOperationUrgentQueue = new ConcurrentLinkedQueue<Runnable>();
         defaultOperationExecutor = executionService.register(ExecutionService.OPERATION_EXECUTOR,
                 coreSize * 2, coreSize * 100000);
@@ -265,12 +268,27 @@ final class BasicOperationService implements InternalOperationService {
      * @param op
      */
     public void executeOperation(final Operation op) {
-        final int partitionId = getPartitionIdForExecution(op);
-        if(op instanceof UrgentSystemOperation){
-            getUrgentQueue(partitionId).offer(new LocalOperationProcessor(op));
-            getExecutor(partitionId).execute(new UrgentSystemOperationsProcessor());
-        }else{
-            getExecutor(partitionId).execute(new LocalOperationProcessor(op));
+        String executorName = op.getExecutorName();
+        if (executorName == null) {
+            final int partitionId = getPartitionIdForExecution(op);
+            if (op instanceof UrgentSystemOperation) {
+                getUrgentQueue(partitionId).offer(new LocalOperationProcessor(op));
+                getExecutor(partitionId).execute(new UrgentSystemOperationsProcessor());
+            } else {
+                getExecutor(partitionId).execute(new LocalOperationProcessor(op));
+            }
+        } else {
+            ManagedExecutorService executor = executionService.getExecutor(executorName);
+            if(executor == null){
+                throw new IllegalStateException("Could not found executor with name: "+executorName);
+            }
+            if(op instanceof PartitionAware){
+                throw new IllegalStateException("PartitionAwareOperation "+op+" can't be executed on a custom executor with name: "+executorName);
+            }
+            if(op instanceof UrgentSystemOperation){
+                throw new IllegalStateException("UrgentSystemOperation "+op+" can't be executed on a custom executor with name: "+executorName);
+            }
+            executor.execute(new LocalOperationProcessor(op));
         }
     }
 
@@ -843,7 +861,16 @@ final class BasicOperationService implements InternalOperationService {
                                 op.getClass().getName(), op.getServiceName());
                         handleOperationError(op, error);
                     } else {
-                        doRunOperation(op);
+                        String executorName = op.getExecutorName();
+                        if(executorName == null){
+                            doRunOperation(op);
+                        }else{
+                            ManagedExecutorService executor = executionService.getExecutor(executorName);
+                            if(executor == null){
+                                throw new IllegalStateException("Could not found executor with name: "+executorName);
+                            }
+                            executor.execute(new LocalOperationProcessor(op));
+                        }
                     }
                 }
             } catch (Throwable e) {

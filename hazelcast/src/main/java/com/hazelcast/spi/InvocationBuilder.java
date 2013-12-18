@@ -34,6 +34,23 @@ public interface InvocationBuilder {
 
     InvocationBuilder setCallTimeout(long callTimeout);
 
+    /**
+     * Gets the name of the Executor to use. This functionality is useful if you want to customize which
+     * executor is going to run an operation. By default you don't need to configure anything, but in some
+     * case, for example map reduce logic, where you don't want to hog the partition threads, you could
+     * offload to another executor.
+     *
+     * @return the name of the executor. Returns null if no explicit executor has been configured.
+     */
+    String getExecutorName();
+
+    /**
+     * Sets the executor name. Value can be null, meaning that no custom executor will be used.
+     *
+     * @param executorName  the name of the executor.
+     */
+    InvocationBuilder setExecutorName(String executorName);
+
     String getServiceName();
 
     Operation getOp();
