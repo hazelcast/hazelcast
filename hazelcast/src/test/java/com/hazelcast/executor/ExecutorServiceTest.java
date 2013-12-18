@@ -607,6 +607,58 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
         }
     }
+    @Test
+    public void testInvokeAllTimeoutCancelled() throws Exception {
+        ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
+        assertFalse(executor.isShutdown());
+        // Only one task
+        ArrayList<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
+        tasks.add(new CancellationAwareTask(0));
+        List<Future<Boolean>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), Boolean.TRUE);
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new CancellationAwareTask(i < 2 ? 0 : 20000));
+        }
+        futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+            if (i < 2) {
+                assertEquals(futures.get(i).get(), Boolean.TRUE);
+            } else {
+                boolean excepted = false;
+                try {
+                    futures.get(i).get();
+                } catch (CancellationException e) {
+                    excepted = true;
+                }
+                assertTrue(excepted);
+            }
+        }
+    }
+    @Test
+    public void testInvokeAllTimeoutSuccess() throws Exception {
+        ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
+        assertFalse(executor.isShutdown());
+        // Only one task
+        ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
+        tasks.add(new BasicTestTask());
+        List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new BasicTestTask());
+        }
+        futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+            assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+        }
+    }
 
     /**
      * Shutdown-related method behaviour when the cluster is running

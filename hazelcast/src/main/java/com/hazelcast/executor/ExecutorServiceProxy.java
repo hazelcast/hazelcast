@@ -108,10 +108,10 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     public <T> Future<T> submit(Callable<T> task) {
         final int partitionId = getTaskPartitionId(task);
-        return submitToPartitionOwner(task, partitionId);
+        return submitToPartitionOwner(task, partitionId, false);
     }
 
-    private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId) {
+    private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId, boolean preventSync) {
         if (task == null) throw new NullPointerException();
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
@@ -119,9 +119,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final NodeEngine nodeEngine = getNodeEngine();
         final String uuid = UUID.randomUUID().toString();
 
-        final boolean sync = checkSync();
-        final Future future =nodeEngine.getOperationService().invokeOnPartition(DistributedExecutorService.SERVICE_NAME,
-                new CallableTaskOperation(name, uuid, task), partitionId);
+        final boolean sync = !preventSync && checkSync();
+        final Future future = nodeEngine.getOperationService().invokeOnPartition(
+                DistributedExecutorService.SERVICE_NAME, new CallableTaskOperation(name, uuid, task), partitionId);
         if (sync) {
             Object response;
             try {
@@ -160,7 +160,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     public <T> Future<T> submitToKeyOwner(Callable<T> task, Object key) {
         final NodeEngine nodeEngine = getNodeEngine();
-        return submitToPartitionOwner(task, nodeEngine.getPartitionService().getPartitionId(key));
+        return submitToPartitionOwner(task, nodeEngine.getPartitionService().getPartitionId(key), false);
     }
 
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
@@ -292,7 +292,67 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
+        if (unit == null) {
+            throw new NullPointerException("unit must not be null");
+        }
+        if (tasks == null) {
+            throw new NullPointerException("tasks must not be null");
+        }
+        long timeoutNanos = unit.toNanos(timeout);
+        final List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
+        final List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
+        boolean done = false;
+        try {
+            for (Callable<T> task : tasks) {
+                long start = System.nanoTime();
+                int partitionId = getTaskPartitionId(task);
+                futures.add(submitToPartitionOwner(task, partitionId, true));
+                timeoutNanos -= System.nanoTime() - start;
+                if (timeoutNanos <= 0L) {
+                    for (int i = 0, size = futures.size(); i < size; i++) {
+                        result.add(futures.get(i));
+                    }
+                    return result;
+                }
+            }
+            for (int i = 0, size = futures.size(); i < size; i++) {
+                long start = System.nanoTime();
+                Object value;
+                try {
+                    Future<T> future = futures.get(i);
+                    value = future.get(timeoutNanos, TimeUnit.NANOSECONDS);
+                } catch (ExecutionException e) {
+                    value = e;
+                } catch (TimeoutException e) {
+                    for (int o = i; o < size; o++) {
+                        Future<T> f = futures.get(i);
+                        if (!f.isDone()) {
+                            result.add(f);
+                        } else {
+                            Object v;
+                            try {
+                                v = f.get();
+                            } catch (ExecutionException ex) {
+                                v = ex;
+                            }
+                            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v));
+                        }
+                    }
+                    break;
+                }
+                result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value));
+                timeoutNanos -= System.nanoTime() - start;
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        } finally {
+            if (!done) {
+                for (int i = 0, size = result.size(); i < size; i++) {
+                    result.get(i).cancel(true);
+                }
+            }
+            return result;
+        }
     }
 
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {

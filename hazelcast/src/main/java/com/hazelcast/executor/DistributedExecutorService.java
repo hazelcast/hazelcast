@@ -145,7 +145,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             Object result = null;
             try {
                 super.run();
-                result = get();
+                if (!isCancelled()) {
+                    result = get();
+                }
             } catch (Exception e) {
                 final ILogger logger = getLogger();
                 logger.finest( "While executing callable: " + callableToString, e);
