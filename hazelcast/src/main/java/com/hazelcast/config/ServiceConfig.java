@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import java.lang.reflect.Field;
 import java.util.Properties;
 
 /**
@@ -91,6 +92,24 @@ public class ServiceConfig {
 
     public Object getConfigObject() {
         return configObject;
+    }
+
+    private static final String SERVICE_NAME_FIELD_NAME = "SERVICE_NAME";
+
+    public static ServiceConfig fromClass(Class<?> clazz) {
+        String serviceName;
+        try {
+            Field serviceNameField = clazz.getField(SERVICE_NAME_FIELD_NAME);
+            serviceName = (String) serviceNameField.get(clazz.getClass());
+        } catch (NoSuchFieldException e) {
+            throw new IllegalArgumentException("Service class '"+clazz.getName()+"' does not have a field '"+SERVICE_NAME_FIELD_NAME+"'.");
+        } catch (IllegalAccessException e) {
+            throw new IllegalArgumentException("Service class '"+clazz.getName()+"' does not have a public field '"+SERVICE_NAME_FIELD_NAME+"'.");
+        }
+        if (serviceName == null || serviceName.isEmpty()) {
+            throw new IllegalArgumentException("Service class '"+clazz.getName()+"' does not have a non-empty field '"+SERVICE_NAME_FIELD_NAME+"'.");
+        }
+        return new ServiceConfig().setClassName(clazz.getName()).setName(serviceName).setEnabled(true);
     }
 
     @Override
