@@ -341,11 +341,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
         final NodeEngine nodeEngine = getNodeEngine();
         Map<Object, Object> result = new HashMap<Object, Object>();
-
+        Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses = null;
         try {
             responses = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys));
+                    .invokeOnPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys), partitions);
             for (Object response : responses.values()) {
                 Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) getService().toObject(response)).getEntrySet();
                 for (Entry<Data, Data> entry : entries) {
@@ -357,6 +357,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
 
         return result;
+    }
+
+    private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
+        PartitionService partitionService = getNodeEngine().getPartitionService();
+        int partitions = partitionService.getPartitionCount();
+        int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
+        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+
+        Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext() && partitionIds.size() < partitions){
+            Data key = iterator.next();
+            partitionIds.add(partitionService.getPartitionId(key));
+        }
+        return partitionIds;
     }
 
     protected void putAllInternal(final Map<? extends Object, ? extends Object> entries) {
