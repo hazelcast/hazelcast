@@ -33,6 +33,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -41,7 +42,6 @@ import com.hazelcast.wan.WanReplicationPublisher;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -228,7 +228,7 @@ public class MapContainer {
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
-        String id = UUID.randomUUID().toString();
+        String id = UuidUtil.buildRandomUuidString();
         interceptorMap.put(id, interceptor);
         interceptors.add(interceptor);
         return id;

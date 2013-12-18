@@ -26,8 +26,14 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +64,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                            TransactionOptions options, String txOwnerUuid) {
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
-        this.txnId = UUID.randomUUID().toString();
+        this.txnId = UuidUtil.buildRandomUuidString();
         this.timeoutMillis = options.getTimeoutMillis();
         this.durability = options.getDurability();
         this.transactionType = options.getTransactionType();
