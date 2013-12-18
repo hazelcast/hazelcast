@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -228,14 +227,14 @@ public class XMLConfigBuilderTest {
     public void testManagementCenterConfig() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center enabled=\"true\" security-token=\"someToken\" project-id=\"someProjectId\">"+
+                        "<management-center enabled=\"true\" security-token=\"someToken\" cluster-id=\"someClusterId\">"+
                         "someUrl"+
                         "</management-center>"+
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertTrue(manCenterCfg.isEnabled());
-        assertEquals("someProjectId",manCenterCfg.getProjectId());
+        assertEquals("someClusterId",manCenterCfg.getClusterId());
         assertEquals("someToken",manCenterCfg.getSecurityToken());
         assertEquals("someUrl",manCenterCfg.getUrl());
     }
@@ -251,7 +250,7 @@ public class XMLConfigBuilderTest {
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertTrue(manCenterCfg.isEnabled());
         assertEquals("someToken",manCenterCfg.getSecurityToken());
-        assertNull(manCenterCfg.getProjectId());
+        assertNull(manCenterCfg.getClusterId());
         assertNull(manCenterCfg.getUrl());
     }
 

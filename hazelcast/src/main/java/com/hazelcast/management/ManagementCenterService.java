@@ -72,7 +72,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private volatile String webServerUrl;
     private volatile boolean urlChanged = false;
     private boolean versionMismatch = false;
-    private final String projectId;
+    private final String clusterId;
     private final String securityToken;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
@@ -84,7 +84,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
         this.securityToken = managementCenterConfig.getSecurityToken();
 
-        String projectId = managementCenterConfig.getProjectId();
+        String clusterId = managementCenterConfig.getClusterId();
 
         String url = managementCenterConfig.getUrl();
 
@@ -111,9 +111,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 url = HOSTED_MANCENTER_URL;
                 //the user has provided a security token.
 
-                if (projectId == null) {
-                    //the user has not provided a projectid, so lets generate one for him.
-                    IAtomicReference<String> clusterIdAtomicLong = instance.getAtomicReference("___projectIdGenerator");
+                if (clusterId == null) {
+                    //the user has not provided a clusterid, so lets generate one for him.
+                    IAtomicReference<String> clusterIdAtomicLong = instance.getAtomicReference("___clusterIdGenerator");
                     String id = clusterIdAtomicLong.get();
                     if (id == null) {
                         id = "" + Math.abs(new Random().nextLong());
@@ -121,16 +121,16 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                             id = clusterIdAtomicLong.get();
                         }
                     }
-                    projectId = "" + id;
+                    clusterId = "" + id;
                 }
 
                 logger.info("======================================================");
                 logger.info("You can access your Hazelcast instance at:");
-                logger.info(url + "/start.do?projectid=" + projectId);
+                logger.info(url + "/start.do?clusterid=" + clusterId);
                 logger.info("======================================================");
             }
         }
-        this.projectId = projectId;
+        this.clusterId = clusterId;
 
         this.instance.getLifecycleService().addLifecycleListener(this);
         this.instance.getCluster().addMembershipListener(this);
@@ -568,11 +568,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
         private URL createCollectorUrl() throws MalformedURLException {
             String urlString = webServerUrl + "collector.do";
-            if (projectId != null) {
-                urlString += "?projectid="+projectId;
+            if (clusterId != null) {
+                urlString += "?clusterid="+ clusterId;
             }
             if (securityToken != null) {
-                if(projectId==null){
+                if(clusterId ==null){
                     urlString += "?securitytoken=" + securityToken;
                 } else{
                     urlString += "&securitytoken=" + securityToken;
@@ -676,8 +676,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         private URL createTaskPollerUrl(Address address, GroupConfig groupConfig) throws MalformedURLException {
             String urlString = webServerUrl + "getTask.do?member=" + address.getHost()
                     + ":" + address.getPort() + "&cluster=" + groupConfig.getName();
-            if (projectId != null) {
-                urlString += "&projectid="+ projectId;
+            if (clusterId != null) {
+                urlString += "&clusterid="+ clusterId;
             }
             if (securityToken != null) {
                 urlString += "&securitytoken=" + securityToken;
