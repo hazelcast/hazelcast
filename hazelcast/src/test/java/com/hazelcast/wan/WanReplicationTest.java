@@ -254,7 +254,6 @@ public class WanReplicationTest {
     }
 
 
-    //@Ignore("Issue #254")
     @Test
     public void Vtopo_TTL_Replication_Issue254(){
 
