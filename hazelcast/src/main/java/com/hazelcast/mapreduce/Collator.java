@@ -16,8 +16,22 @@
 
 package com.hazelcast.mapreduce;
 
+/**
+ * This interface can be implemented to define a Collator which is executed after calculation
+ * of the MapReduce algorithm on remote cluster nodes but before returning the final result.<br>
+ * Collator can for example be used to sum up a final value.
+ *
+ * @param <ValueIn>  value type of the resulting values
+ * @param <ValueOut> type for the collated result
+ */
 public interface Collator<ValueIn, ValueOut> {
 
-    ValueOut collate(ValueIn values);
+    /**
+     * This method is called with the mapped and possibly reduced values from the MapReduce algorithm.
+     *
+     * @param values The mapped and possibly reduced results
+     * @return The collated result
+     */
+    ValueOut collate(Iterable<ValueIn> values);
 
 }

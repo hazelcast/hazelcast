@@ -18,8 +18,26 @@ package com.hazelcast.mapreduce;
 
 import java.io.Serializable;
 
-public interface CombinerFactory<KeyIn, ValueIn, ValueOut> extends Serializable {
+/**
+ * <p>
+ * A CombinerFactory implementation is used to build {@link Combiner} instances per key.<br/>
+ * An implementation needs to be serializable by Hazelcast since it is distributed together with
+ * the {@link Mapper} implementation to run alongside.
+ * </p>
+ *
+ * @param <KeyIn>    key type of the resulting keys
+ * @param <ValueIn>  value type of the incoming values
+ * @param <ValueOut> value type of the reduced values
+ */
+public interface CombinerFactory<KeyIn, ValueIn, ValueOut>
+        extends Serializable {
 
+    /**
+     * Build a new {@link Combiner} instance specific to the supplied key.
+     *
+     * @param key key the Combiner is build for
+     * @return a Combiner instance specific for the given key
+     */
     Combiner<KeyIn, ValueIn, ValueOut> newCombiner(KeyIn key);
 
 }

@@ -16,8 +16,22 @@
 
 package com.hazelcast.mapreduce;
 
+/**
+ * The Context interface is used for emitting keys and values to the sample space of
+ * the MapReduce algorithm.
+ *
+ * @param <K> key type of the resulting keys
+ * @param <V> value type of the resulting values
+ */
 public interface Context<K, V> {
 
+    /**
+     * Emits a key-value pair to the sample space. The same key can be used multiple
+     * times to collect values under the same key.
+     *
+     * @param key   emitted key.
+     * @param value emitted value.
+     */
     void emit(K key, V value);
 
 }

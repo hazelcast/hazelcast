@@ -19,10 +19,54 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.mapreduce.process.ProcessJob;
 
-public interface JobTracker extends DistributedObject {
+/**
+ * <p>
+ * The JobTracker interface is used to create instances of {@link Job}s or {@link ProcessJob}s depending
+ * on the given data structure / data source.
+ * </p>
+ * <p>
+ * The underlying created instance of the {@link Job} / {@link ProcessJob} depends on whether it is used for a
+ * {@link com.hazelcast.client.HazelcastClient} or a {@link com.hazelcast.core.Hazelcast} member node.
+ * </p>
+ * <p>
+ * The default usage is same for both cases and looks similar to the following example:<br>
+ * <p/>
+ * <pre>
+ * HazelcastInstance hz = getHazelcastInstance();
+ * IMap map = hz.getMap( getMapName() );
+ * JobTracker tracker = hz.getJobTracker( "default" );
+ * Job job = tracker.newJob( KeyValueSource.fromMap( map ) );
+ * </pre>
+ * </p>
+ * <p>
+ * The created instance of JobTracker is fully threadsafe and can be used concurrently and multiple times.<br>
+ * <b>Caution: Do not use the JobTracker with data structures of other {@link com.hazelcast.core.HazelcastInstance}
+ * instances than the one used for creation of the JobTracker. Unexpected results may happen!</b>
+ * </p>
+ */
+public interface JobTracker
+        extends DistributedObject {
 
+    /**
+     * Builds a {@link Job} instance for the given {@link KeyValueSource} instance. The returning
+     * implementation is depending on the {@link com.hazelcast.core.HazelcastInstance} that was creating the JobTracker.<br>
+     * <b>Caution: Do not use the JobTracker with data structures of other {@link com.hazelcast.core.HazelcastInstance} instances
+     * than the one used for creation of the JobTracker. Unexpected results may happen!</b>
+     *
+     * @param source data source the created Job should work on
+     * @return instance of the Job bound to the given KeyValueSource
+     */
     <K, V> Job<K, V> newJob(KeyValueSource<K, V> source);
 
+    /**
+     * Builds a complex {@link ProcessJob} instance for the given {@link KeyValueSource} instance. The returning
+     * implementation is depending on the {@link com.hazelcast.core.HazelcastInstance} that was creating the JobTracker.<br>
+     * <b>Caution: Do not use the JobTracker with data structures of other {@link com.hazelcast.core.HazelcastInstance} instances
+     * than the one used for creation of the JobTracker. Unexpected results may happen!</b>
+     *
+     * @param source data source the created Job should work on
+     * @return instance of the ProcessJob bound to the given KeyValueSource
+     */
     <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source);
 
 }

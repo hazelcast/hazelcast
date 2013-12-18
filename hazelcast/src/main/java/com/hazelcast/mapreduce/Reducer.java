@@ -16,12 +16,71 @@
 
 package com.hazelcast.mapreduce;
 
-public abstract class Reducer<KeyIn, ValueIn, ValueOut> {
+import java.io.Serializable;
 
-    public void beginReduce() {}
+/**
+ * <p>
+ * The abstract Reducer class is used to build reducers for the {@link Job}.<br>
+ * Reducers may be distributed inside of the cluster but there is always only one Reducer
+ * per key.<br/>
+ * <b>Reducers are called in a threadsafe way so internal locking is not required.</b>
+ * </p>
+ * <p>
+ * Due to the fact that there is only one Reducer per key mapped values needs to be
+ * transmitted to one of the cluster nodes. To reduce the traffic costs between the
+ * nodes a {@link Combiner} implementation can be added to the call which runs alongside
+ * the mapper to pre-reduce mapped values into intermediate results.
+ * </p>
+ * <p>
+ * A simple Reducer implementation could look like that sum-function implementation:
+ * <pre>
+ * public class SumReducer implements Reducer<String, Integer, Integer>
+ * {
+ *   private int sum = 0;
+ *   public void reduce( String key, Integer value )
+ *   {
+ *     sum += value;
+ *   }
+ *
+ *   public Integer finalizeReduce()
+ *   {
+ *     return sum;
+ *   }
+ * }
+ * </pre>
+ * </p>
+ *
+ * @param <KeyIn>    key type of the resulting keys
+ * @param <ValueIn>  value type of the incoming values
+ * @param <ValueOut> value type of the reduced values
+ */
+public abstract class Reducer<KeyIn, ValueIn, ValueOut>
+        implements Serializable {
 
+    /**
+     * This method is called before the first value is submitted to this Reducer instance.
+     * It can be used to setup any internal needed state before starting to reduce the
+     * actual values.
+     */
+    public void beginReduce() {
+    }
+
+    /**
+     * This method is called to supply values to be reduced into a final reduced result.<br/>
+     * The reduce method might be called multiple times so the eventually reduces value
+     * needs to be hold internally in a member state of the Reducer.
+     *
+     * @param key   key of the mapped values
+     * @param value value to be reduced
+     */
     public abstract void reduce(KeyIn key, ValueIn value);
 
+    /**
+     * finalizeReduce is called as last step for a reducing phase per key and retrieved the
+     * final reduced result.
+     *
+     * @return the final reduced result
+     */
     public abstract ValueOut finalizeReduce();
 
 }

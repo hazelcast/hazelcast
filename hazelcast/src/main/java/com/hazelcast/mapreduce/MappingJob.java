@@ -21,20 +21,79 @@ import com.hazelcast.core.CompletableFuture;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * <p>
+ * This interface describes a mapping mapreduce Job.<br>
+ * For further information {@see Job}.
+ * </p>
+ *
+ * @param <EntryKey> type of the original input key
+ * @param <KeyIn>    type of key used as input key type
+ * @param <ValueIn>  type of value used as input value type
+ */
 public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
+    /**
+     * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
+     * the task setting them can improve execution speed.
+     *
+     * @param keys keys to be executed against
+     * @return instance of this Job with generics changed on usage
+     */
     MappingJob<EntryKey, KeyIn, ValueIn> onKeys(Iterable<EntryKey> keys);
 
+    /**
+     * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
+     * the task setting them can improve execution speed.
+     *
+     * @param keys keys to be executed against
+     * @return instance of this Job with generics changed on usage
+     */
     MappingJob<EntryKey, KeyIn, ValueIn> onKeys(EntryKey... keys);
 
+    /**
+     * Defines the {@link KeyPredicate} implementation to preselect keys the MapReduce task will be executed on.
+     * Preselecting keys can speed up the job massively.<br>
+     * This method can be used in conjunction with {@link #onKeys(Iterable)} or {@link #onKeys(Object...)} to define a
+     * range of known and evaluated keys.
+     *
+     * @param predicate predicate implementation to be used to evaluate keys
+     * @return instance of this Job with generics changed on usage
+     */
     MappingJob<EntryKey, KeyIn, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
 
+    /**
+     * Defines the {@link CombinerFactory} for this task. This method is not idempotent and is callable only one time. Further
+     * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
+     *
+     * @param combinerFactory CombinerFactory to build Combiner
+     * @return instance of this Job with generics changed on usage
+     */
     <ValueOut> ReducingJob<EntryKey, KeyIn, ValueOut> combiner(CombinerFactory<KeyIn, ValueIn, ValueOut> combinerFactory);
 
+    /**
+     * Defines the {@link ReducerFactory} for this task. This method is not idempotent and is callable only one time. Further
+     * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
+     *
+     * @param reducerFactory ReducerFactory to build Reducers
+     * @return instance of this Job with generics changed on usage
+     */
     <ValueOut> SubmittableJob<EntryKey, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
 
+    /**
+     * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes
+     *
+     * @return CompletableFuture to wait for mapped and possibly reduced result
+     */
     CompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
 
+    /**
+     * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes and executes the
+     * collator before returning the final result.
+     *
+     * @param collator collator to use after map and reduce
+     * @return CompletableFuture to wait for mapped and possibly reduced result
+     */
     <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map<KeyIn, List<ValueIn>>, ValueOut> collator);
 
 }

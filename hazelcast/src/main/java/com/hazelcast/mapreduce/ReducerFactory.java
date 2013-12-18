@@ -16,8 +16,26 @@
 
 package com.hazelcast.mapreduce;
 
-public interface ReducerFactory<KeyIn, ValueIn, ValueOut> {
+import java.io.Serializable;
 
+/**
+ * A ReducerFactory implementation is used to build {@link Reducer} instances per key.<br/>
+ * An implementation needs to be serializable by Hazelcast since it might be distributed
+ * inside the cluster to do parallel calculations of reducing step.
+ *
+ * @param <KeyIn>    key type of the resulting keys
+ * @param <ValueIn>  value type of the incoming values
+ * @param <ValueOut> value type of the reduced values
+ */
+public interface ReducerFactory<KeyIn, ValueIn, ValueOut>
+        extends Serializable {
+
+    /**
+     * Build a new {@link Reducer} instance specific to the supplied key.
+     *
+     * @param key key the Reducer is build for
+     * @return a Reducer instance specific for the given key
+     */
     Reducer<KeyIn, ValueIn, ValueOut> newReducer(KeyIn key);
 
 }

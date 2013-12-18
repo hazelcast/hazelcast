@@ -16,14 +16,74 @@
 
 package com.hazelcast.mapreduce;
 
+/**
+ * <p>
+ * This interface describes a mapreduce Job that is build by {@link JobTracker#newJob(KeyValueSource)}.<br>
+ * It is used to execute mappings and calculations on the different cluster nodes and reduce or collate these mapped
+ * values to results.
+ * </p>
+ * <p>
+ * Implementations returned by the JobTracker are fully threadsafe and can be used concurrently and multiple
+ * times <b>once the configuration is finished</b>.
+ * </p>
+ * <p>
+ * <b>Caution: The generic types of Jobs change depending on the used methods which can make it needed to use
+ * different assignment variables when used over multiple source lines.</b>
+ * </p>
+ * <p>
+ * An example on how to use it:
+ * <pre>
+ * HazelcastInstance hz = getHazelcastInstance();
+ * IMap<Integer, Integer> map = (...) hz.getMap( "default" );
+ * JobTracker tracker = hz.getJobTracker( "default" );
+ * Job<Integer, Integer> job = tracker.newJob( KeyValueSource.fromMap( map ) );
+ * CompletableFuture<Map<String, Integer>> future = job
+ *      .mapper( buildMapper() ).reducer( buildReducer() ).submit();
+ * Map<String, Integer> results = future.get();
+ * </pre>
+ * </p>
+ *
+ * @param <KeyIn>    type of key used as input key type
+ * @param <ValueIn>  type of value used as input value type
+ */
 public interface Job<KeyIn, ValueIn> {
 
+    /**
+     * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
+     * the task setting them can improve execution speed.
+     *
+     * @param keys keys to be executed against
+     * @return instance of this Job with generics changed on usage
+     */
     Job<KeyIn, ValueIn> onKeys(Iterable<KeyIn> keys);
 
+    /**
+     * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
+     * the task setting them can improve execution speed.
+     *
+     * @param keys keys to be executed against
+     * @return instance of this Job with generics changed on usage
+     */
     Job<KeyIn, ValueIn> onKeys(KeyIn... keys);
 
+    /**
+     * Defines the {@link KeyPredicate} implementation to preselect keys the MapReduce task will be executed on.
+     * Preselecting keys can speed up the job massively.<br>
+     * This method can be used in conjunction with {@link #onKeys(Iterable)} or {@link #onKeys(Object...)} to define a
+     * range of known and evaluated keys.
+     *
+     * @param predicate predicate implementation to be used to evaluate keys
+     * @return instance of this Job with generics changed on usage
+     */
     Job<KeyIn, ValueIn> keyPredicate(KeyPredicate<KeyIn> predicate);
 
+    /**
+     * Defines the mapper for this task. This method is not idempotent and can be callable only one time. Further
+     * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
+     *
+     * @param mapper tasks mapper
+     * @return instance of this Job with generics changed on usage
+     */
     <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper);
 
 }

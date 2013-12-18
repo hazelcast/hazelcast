@@ -25,7 +25,7 @@ public interface PartitionIdAware {
     /**
      * Sets the partition id the implementing instance is executed against
      *
-     * @param partitionId The current partitionId
+     * @param partitionId current partitionId
      */
     void setPartitionId(int partitionId);
 
