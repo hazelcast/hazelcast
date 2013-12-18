@@ -23,6 +23,7 @@ import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 import com.carrotsearch.junitbenchmarks.annotation.LabelType;
 import com.hazelcast.concurrent.atomiclong.AtomicLongBaseOperation;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomiclong.GetOperation;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -32,6 +33,8 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.*;
 import org.junit.rules.TestRule;
+
+import java.util.concurrent.Future;
 
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-atomiclong")
@@ -84,19 +87,67 @@ public class AtomicLongBenchmark extends HazelcastTestSupport{
         }
     }
 
+    //this test
     @Test
     public void noResponse() throws Exception {
         long startMs = System.currentTimeMillis();
         int iterations = 50*1000*1000;
 
         OperationService opService = getNode(hazelcastInstance).nodeEngine.getOperationService();
+        Future[] futures = new Future[1000];
+        int futureIndex = 0;
         for (int k = 0; k < iterations; k++) {
+
             NoResponseOperation no = new NoResponseOperation(atomicLong.getName());
             no.setPartitionId(atomicLong.getPartitionId());
             no.setService(atomicLong.getService());
-            opService.invokeOnPartition(AtomicLongService.SERVICE_NAME,no,atomicLong.getPartitionId());
+            Future f = opService.invokeOnPartition(AtomicLongService.SERVICE_NAME,no,atomicLong.getPartitionId());
+            futures[futureIndex]=f;
+            futureIndex++;
+            if(futureIndex>=futures.length){
+                for(Future fu:futures){
+                    fu.get();
+                }
+                futureIndex=0;
+            }
 
-            if (k % 200000 == 0) {
+            if (k % 2000000 == 0) {
+                System.out.println("at " + k);
+            }
+        }
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
+        System.out.println("Performance: " + String.format("%1$,.2f", performance));
+    }
+
+    @Test
+    public void getAsync() throws Exception {
+        long startMs = System.currentTimeMillis();
+        int iterations = 50*1000*1000;
+
+        OperationService opService = getNode(hazelcastInstance).nodeEngine.getOperationService();
+
+        //we need to store the futures and once the array is full, we get them
+        Future[] futures = new Future[10000];
+        int futureIndex = 0;
+        AtomicLongService service = atomicLong.getService();
+        int partitionId = atomicLong.getPartitionId();
+        String name = atomicLong.getName();
+        for (int k = 0; k < iterations; k++) {
+            GetOperation no = new GetOperation(name);
+            no.setPartitionId(partitionId);
+            no.setService(service);
+            Future f = opService.invokeOnPartition(AtomicLongService.SERVICE_NAME,no,partitionId);
+            futures[futureIndex]=f;
+            futureIndex++;
+            if(futureIndex>=futures.length){
+                for(Future fu:futures){
+                    fu.get();
+                }
+                futureIndex=0;
+            }
+
+            if (k % 2000000 == 0) {
                 System.out.println("at " + k);
             }
         }

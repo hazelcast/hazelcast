@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Function;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -34,6 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -51,6 +53,32 @@ public class AtomicLongTest extends HazelcastTestSupport {
         System.out.println("done1");
         assertEquals(0, an.get());
         System.out.println("done2");
+    }
+
+    @Test
+    public void parkTest() throws InterruptedException {
+        ParkThread parkThread = new ParkThread();
+        parkThread.start();
+
+        Thread.sleep(1000);
+
+        System.out.println("Sending unpark signal");
+        LockSupport.unpark(parkThread);
+
+        Thread.sleep(1000000);
+    }
+
+    public class ParkThread extends Thread {
+        public void run() {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            LockSupport.park();
+            System.out.println("Unparked 1");
+        }
     }
 
     @Test
