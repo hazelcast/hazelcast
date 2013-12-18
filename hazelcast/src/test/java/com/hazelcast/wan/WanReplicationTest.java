@@ -254,6 +254,39 @@ public class WanReplicationTest {
     }
 
 
+    @Test
+    public void Vtopo_TTL_Replication_Issue254(){
+
+        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
+        setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
+
+        configA.getMapConfig("default").setTimeToLiveSeconds(2);
+        configB.getMapConfig("default").setTimeToLiveSeconds(2);
+        configC.getMapConfig("default").setTimeToLiveSeconds(2);
+
+
+        initAllClusters();
+
+        createDataIn(clusterA, "map", 0,  10);
+        assertDataInFrom(clusterC, "map", 0,  10, clusterA);
+
+        createDataIn(clusterB, "map", 10, 20);
+        assertDataInFrom(clusterC, "map", 10, 20, clusterB);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+        assertKeysNotIn(clusterA, "map",  0, 10);
+        assertKeysNotIn(clusterB, "map", 10, 20);
+        assertKeysNotIn(clusterC, "map",  0, 20);
+    }
+
+
+
     @Ignore("Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
     @Test
     public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy(){
