@@ -34,12 +34,12 @@ package com.hazelcast.mapreduce;
  * An example on how to use it:
  * <pre>
  * HazelcastInstance hz = getHazelcastInstance();
- * IMap<Integer, Integer> map = (...) hz.getMap( "default" );
+ * IMap&lt;Integer, Integer> map = (...) hz.getMap( "default" );
  * JobTracker tracker = hz.getJobTracker( "default" );
- * Job<Integer, Integer> job = tracker.newJob( KeyValueSource.fromMap( map ) );
- * CompletableFuture<Map<String, Integer>> future = job
+ * Job&lt;Integer, Integer> job = tracker.newJob( KeyValueSource.fromMap( map ) );
+ * CompletableFuture&lt;Map&lt;String, Integer>> future = job
  *      .mapper( buildMapper() ).reducer( buildReducer() ).submit();
- * Map<String, Integer> results = future.get();
+ * Map&lt;String, Integer> results = future.get();
  * </pre>
  * </p>
  *

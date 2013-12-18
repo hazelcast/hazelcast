@@ -24,12 +24,13 @@ import java.util.Map;
 /**
  * <p>
  * This interface describes a reducing mapreduce Job.<br>
- * For further information {@see Job}.
+ * For further information {@link Job}.
  * </p>
  *
  * @param <EntryKey> type of the original input key
  * @param <KeyIn>    type of key used as input key type
  * @param <ValueIn>  type of value used as input value type
+ * @see com.hazelcast.mapreduce.Job
  */
 public interface ReducingJob<EntryKey, KeyIn, ValueIn> {
 

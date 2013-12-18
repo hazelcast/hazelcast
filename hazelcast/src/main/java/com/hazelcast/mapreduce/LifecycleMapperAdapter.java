@@ -28,9 +28,9 @@ package com.hazelcast.mapreduce;
  * A simple mapper could look like the following example:
  * <p/>
  * <pre>
- * public static class MyMapper extends LifecycleMapperAdapter<Integer, Integer, String, Integer>
+ * public static class MyMapper extends LifecycleMapperAdapter&lt;Integer, Integer, String, Integer>
  * {
- *   public void map( Integer key, Integer value, Context<String, Integer> collector )
+ *   public void map( Integer key, Integer value, Context&lt;String, Integer> collector )
  *   {
  *     collector.emit( String.valueOf( key ), value );
  *   }

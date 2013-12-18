@@ -35,7 +35,7 @@ import java.io.Serializable;
  * A simple Combiner implementation in combination with a {@link Reducer} could look
  * like that avg-function implementation:
  * <pre>
- * public class AvgCombiner implements Combiner<String, Integer, Tuple<Long, Long>>
+ * public class AvgCombiner implements Combiner&lt;String, Integer, Tuple&lt;Long, Long>>
  * {
  *   private long count;
  *   private long amount;
@@ -45,20 +45,20 @@ import java.io.Serializable;
  *     amount += value;
  *   }
  *
- *   public Tuple<Long, Long> finalizeChunk()
+ *   public Tuple&lt;Long, Long> finalizeChunk()
  *   {
- *     Tuple<Long, Long> tuple = new Tuple<>(count, amount);
+ *     Tuple&lt;Long, Long> tuple = new Tuple&lt;>(count, amount);
  *     count = 0;
  *     amount = 0;
  *     return tuple;
  *   }
  * }
  *
- * public class SumReducer implements Reducer<String, Tuple<Long, Long>, Integer>
+ * public class SumReducer implements Reducer&lt;String, Tuple&lt;Long, Long>, Integer>
  * {
  *   private long count;
  *   private long amount;
- *   public void reduce( String key, Tuple<Long, Long> value )
+ *   public void reduce( String key, Tuple&lt;Long, Long> value )
  *   {
  *     count += value.getFirst();
  *     amount += value.getSecond();

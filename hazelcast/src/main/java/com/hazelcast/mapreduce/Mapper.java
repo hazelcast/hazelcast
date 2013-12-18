@@ -29,9 +29,9 @@ import java.io.Serializable;
  * <p>
  * A simple mapper could look like the following example:
  * <pre>
- * public class MyMapper extends Mapper<Integer, Integer, String, Integer>
+ * public class MyMapper extends Mapper&lt;Integer, Integer, String, Integer>
  * {
- *   public void map( Integer key, Integer value, Context<String, Integer> context )
+ *   public void map( Integer key, Integer value, Context&lt;String, Integer> context )
  *   {
  *     context.emit( String.valueOf( key ), value );
  *   }

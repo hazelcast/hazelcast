@@ -21,11 +21,12 @@ import com.hazelcast.core.CompletableFuture;
 /**
  * <p>
  * This interface describes a submittable mapreduce Job.<br>
- * For further information {@see Job}.
+ * For further information {@link Job}.
  * </p>
  *
  * @param <EntryKey> type of the original input key
  * @param <ValueIn>  type of value used as input value type
+ * @see com.hazelcast.mapreduce.Job
  */
 public interface SubmittableJob<EntryKey, ValueIn> {
 

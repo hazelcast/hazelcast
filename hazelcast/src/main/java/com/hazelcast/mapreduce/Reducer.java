@@ -34,7 +34,7 @@ import java.io.Serializable;
  * <p>
  * A simple Reducer implementation could look like that sum-function implementation:
  * <pre>
- * public class SumReducer implements Reducer<String, Integer, Integer>
+ * public class SumReducer implements Reducer&lt;String, Integer, Integer>
  * {
  *   private int sum = 0;
  *   public void reduce( String key, Integer value )
