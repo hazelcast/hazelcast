@@ -39,16 +39,19 @@ public class MapReduceService implements ManagedService, RemoteService {
         @Override
         public JobTracker createNew(String arg) {
             JobTrackerConfig jobTrackerConfig = config.findJobTrackerConfig(arg);
-            return new NodeJobTracker(arg, jobTrackerConfig.getAsReadOnly(), hazelcastInstance);
+            return new NodeJobTracker(arg, jobTrackerConfig.getAsReadOnly(), nodeEngine, hazelcastInstance);
         }
     };
 
     private final ConcurrentMap<String, JobTracker> jobTrackers = new ConcurrentHashMap<String, JobTracker>();
     private final HazelcastInstance hazelcastInstance;
+    private final NodeEngine nodeEngine;
     private final Config config;
 
-    public MapReduceService(Config config, HazelcastInstance hazelcastInstance) {
+    public MapReduceService(Config config, NodeEngine nodeEngine,
+                            HazelcastInstance hazelcastInstance) {
         this.config = config;
+        this.nodeEngine = nodeEngine;
         this.hazelcastInstance = hazelcastInstance;
     }
 
