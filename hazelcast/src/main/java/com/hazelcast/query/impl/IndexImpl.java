@@ -133,5 +133,9 @@ public class IndexImpl implements Index {
             if (o == this || o instanceof NullObject) return 0;
             return -1;
         }
+
+        public boolean equals(Object o){
+            return this.compareTo(o)==0;
+        }
     }
 }
