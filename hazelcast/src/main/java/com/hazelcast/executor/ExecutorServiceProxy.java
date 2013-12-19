@@ -343,6 +343,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                 result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value));
                 timeoutNanos -= System.nanoTime() - start;
             }
+            done = true;
         } catch (Throwable t) {
             t.printStackTrace();
         } finally {
