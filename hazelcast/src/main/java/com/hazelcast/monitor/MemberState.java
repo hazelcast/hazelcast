@@ -16,15 +16,16 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.management.JsonWritable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.util.List;
 import java.util.Map;
 
-public interface MemberState extends DataSerializable {
+public interface MemberState extends DataSerializable, JsonWritable {
 
-    Address getAddress();
+    String getAddress();
 
     Map<String, Long> getRuntimeProps();
 

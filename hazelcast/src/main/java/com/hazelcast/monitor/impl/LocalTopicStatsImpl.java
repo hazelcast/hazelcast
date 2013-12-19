@@ -16,6 +16,7 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.management.JsonWriter;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,6 +33,13 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
 
     public LocalTopicStatsImpl() {
         creationTime = Clock.currentTimeMillis();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer) {
+        writer.write("creationTime", creationTime);
+        writer.write("totalPublishes", totalPublishes);
+        writer.write("totalReceivedMessages", totalReceivedMessages);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -66,4 +74,16 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         totalReceivedMessages.incrementAndGet();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LocalTopicStatsImpl that = (LocalTopicStatsImpl) o;
+
+        if (creationTime != that.creationTime) return false;
+        if (totalPublishes.get() != that.totalPublishes.get()) return false;
+        if (totalReceivedMessages.get() != that.totalReceivedMessages.get()) return false;
+        return true;
+    }
 }
