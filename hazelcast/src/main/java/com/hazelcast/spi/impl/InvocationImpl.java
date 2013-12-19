@@ -35,6 +35,8 @@ import java.util.concurrent.*;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
+    private static final long PLUS_TIMEOUT = 10000;
+
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
@@ -74,8 +76,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         final long defaultCallTimeout = nodeEngine.operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
-            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 10000) {
-                return waitTimeoutMillis + 10000;
+            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
+                return waitTimeoutMillis + (defaultCallTimeout > PLUS_TIMEOUT ? PLUS_TIMEOUT : defaultCallTimeout);
             }
         }
         return defaultCallTimeout;
