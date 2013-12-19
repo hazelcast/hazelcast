@@ -301,7 +301,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         long timeoutNanos = unit.toNanos(timeout);
         final List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
         final List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
-        boolean done = false;
+        boolean done = true;
         try {
             for (Callable<T> task : tasks) {
                 long start = System.nanoTime();
@@ -324,6 +324,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                 } catch (ExecutionException e) {
                     value = e;
                 } catch (TimeoutException e) {
+                    done = false;
                     for (int o = i; o < size; o++) {
                         Future<T> f = futures.get(i);
                         if (!f.isDone()) {
@@ -343,7 +344,6 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                 result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value));
                 timeoutNanos -= System.nanoTime() - start;
             }
-            done = true;
         } catch (Throwable t) {
             t.printStackTrace();
         } finally {
