@@ -114,7 +114,7 @@ public class SocketAcceptor implements Runnable {
             log(Level.INFO, "Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
             final MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor == null) {
-                configureAndAssignSocket(socketChannel, memberSocketInterceptor);
+                configureAndAssignSocket(socketChannel, null);
             } else {
                 connectionManager.ioService.executeAsync(new Runnable() {
                     public void run() {
