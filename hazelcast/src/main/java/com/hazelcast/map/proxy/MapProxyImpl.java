@@ -538,6 +538,20 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        if (keys == null || keys.size() == 0) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        MapService service = getService();
+        Set<Data> dataKeys = new HashSet<Data>(keys.size());
+        for(K key : keys)
+        {
+            dataKeys.add(service.toData(key, partitionStrategy));
+        }
+        return executeOnKeysInternal(dataKeys, entryProcessor);
+    }
+
+    @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);

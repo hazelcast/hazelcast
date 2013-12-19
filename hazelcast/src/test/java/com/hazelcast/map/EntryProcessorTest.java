@@ -37,6 +37,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -606,6 +607,40 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.submitToKey(1,new IncrementorEntryProcessor(),executionCallback);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(2, (int) map.get(1));
+    }
+
+    @Test
+    public void testExecuteOnKeys() throws InterruptedException, ExecutionException
+    {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
+
+        IMap<Integer, Integer> map = instance1.getMap("testMapMultipleEntryProcessor");
+
+        for (int i = 0; i < 10; i++) {
+            map.put(i,0);
+        }
+        Set keys = new HashSet();
+        keys.add(1);
+        keys.add(4);
+        keys.add(7);
+        keys.add(9);
+        final Map<Integer, Object> resultMap = map.executeOnKeys(keys, new IncrementorEntryProcessor());
+        assertEquals(1,resultMap.get(1));
+        assertEquals(1,resultMap.get(4));
+        assertEquals(1,resultMap.get(7));
+        assertEquals(1,resultMap.get(9));
+        assertEquals(1, (int) map.get(1));
+        assertEquals(0, (int) map.get(2));
+        assertEquals(0, (int) map.get(3));
+        assertEquals(1, (int) map.get(4));
+        assertEquals(0, (int) map.get(5));
+        assertEquals(0, (int) map.get(6));
+        assertEquals(1, (int) map.get(7));
+        assertEquals(0, (int) map.get(8));
+        assertEquals(1, (int) map.get(9));
+
     }
 
 }
