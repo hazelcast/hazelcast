@@ -16,12 +16,17 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.AbstractJob;
+import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.process.ProcessJob;
+
+import java.util.ArrayList;
 
 public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
 
@@ -41,6 +46,7 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
 
     @Override
     public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
+        // TODO
         return null;
     }
 
@@ -52,7 +58,11 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
 
         @Override
         protected void invokeTask() throws Exception {
-            // TODO
+            ClientContext context = getContext();
+            ClientInvocationService cis = context.getInvocationService();
+            ClientMapReduceRequest request = new ClientMapReduceRequest(name, new ArrayList(keys), predicate,
+                    mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
+            cis.invokeOnRandomTarget(request);
         }
 
     }

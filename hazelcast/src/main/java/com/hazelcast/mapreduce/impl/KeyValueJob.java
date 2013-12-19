@@ -39,22 +39,8 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
         PartitionService ps = nodeEngine.getPartitionService();
         SerializationService ss = nodeEngine.getSerializationService();
 
-        Map<Integer, List<KeyIn>> mappedKeys = mapKeys(ps, keys);
+        Map<Integer, List<KeyIn>> mappedKeys = MapReduceUtil.mapKeys(ps, keys);
 
-    }
-
-    private Map<Integer, List<KeyIn>> mapKeys(PartitionService ps, Collection<KeyIn> keys) {
-        Map<Integer, List<KeyIn>> mappedKeys = new HashMap<Integer, List<KeyIn>>();
-        for (KeyIn key : keys) {
-            int partitionId = ps.getPartitionId(key);
-            List<KeyIn> selectedKeys = mappedKeys.get(partitionId);
-            if (selectedKeys == null) {
-                selectedKeys = new ArrayList<KeyIn>();
-                mappedKeys.put(partitionId, selectedKeys);
-            }
-            selectedKeys.add(key);
-        }
-        return mappedKeys;
     }
 
 }

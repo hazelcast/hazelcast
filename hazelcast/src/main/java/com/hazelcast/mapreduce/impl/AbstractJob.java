@@ -37,6 +37,8 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected KeyPredicate<KeyIn> predicate;
 
+    protected int chunkSize = -1;
+
     public AbstractJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         this.name = name;
         this.keyValueSource = keyValueSource;
