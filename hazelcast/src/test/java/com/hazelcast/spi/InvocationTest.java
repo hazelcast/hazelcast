@@ -105,6 +105,30 @@ public class InvocationTest extends HazelcastTestSupport {
         instances[0].getLock("testWaitingIndefinitely").unlock();
 
         assertTrue(latch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    @Category(SlowTest.class)
+    public void testWaitingInfinitelyForTryLock() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        hz.getLock("testWaitingInfinitelyForTryLock").lock();
+
+        new Thread(){
+            public void run() {
+                try {
+                    hz.getLock("testWaitingInfinitelyForTryLock").tryLock(5, TimeUnit.SECONDS);
+                    latch.countDown();
+                } catch (Exception ignored) {
+                }
+            }
+        }.start();
+
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
 
     }
 
