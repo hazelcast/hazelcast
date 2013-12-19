@@ -14,34 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce.impl;
+package com.hazelcast.client.proxy;
 
-import com.hazelcast.config.JobTrackerConfig;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.impl.AbstractJob;
 import com.hazelcast.mapreduce.process.ProcessJob;
-import com.hazelcast.spi.NodeEngine;
 
-class NodeJobTracker extends AbstractJobTracker {
+public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
 
-    private final NodeEngine nodeEngine;
+    public ClientMapReduceProxy(String serviceName, String objectName) {
+        super(serviceName, objectName);
+    }
 
-    NodeJobTracker(String name, JobTrackerConfig jobTrackerConfig,
-                   NodeEngine nodeEngine, HazelcastInstance hazelcastInstance) {
-        super(name, jobTrackerConfig, hazelcastInstance);
-        this.nodeEngine = nodeEngine;
+    @Override
+    protected void onDestroy() {
+
     }
 
     @Override
     public <K, V> Job<K, V> newJob(KeyValueSource<K, V> source) {
-        return new KeyValueJob<K, V>(name, nodeEngine, source);
+        return new ClientJob<K, V>(getName(), source);
     }
 
     @Override
     public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
-        // TODO Implementation of process missing
-        throw new UnsupportedOperationException("mapreduce process system not yet implemented");
+        return null;
+    }
+
+    private class ClientJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
+
+        public ClientJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+            super(name, keyValueSource);
+        }
+
+        @Override
+        protected void invokeTask() throws Exception {
+            // TODO
+        }
+
     }
 
 }

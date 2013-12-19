@@ -16,7 +16,6 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
@@ -29,10 +28,8 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
     private final NodeEngine nodeEngine;
 
-    public KeyValueJob(String name, NodeEngine nodeEngine,
-                       KeyValueSource<KeyIn, ValueIn> keyValueSource,
-                       HazelcastInstance hazelcastInstance) {
-        super(name, keyValueSource, hazelcastInstance);
+    public KeyValueJob(String name, NodeEngine nodeEngine, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+        super(name, keyValueSource);
         this.nodeEngine = nodeEngine;
     }
 

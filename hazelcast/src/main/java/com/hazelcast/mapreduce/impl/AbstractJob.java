@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.core.CompletableFuture;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.*;
 
 import java.util.*;
@@ -27,8 +26,6 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
     protected final String name;
 
     protected final KeyValueSource<KeyIn, ValueIn> keyValueSource;
-
-    protected final HazelcastInstance hazelcastInstance;
 
     protected Mapper<KeyIn, ValueIn, ?, ?> mapper;
 
@@ -40,12 +37,9 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected KeyPredicate<KeyIn> predicate;
 
-    public AbstractJob(String name,
-                       KeyValueSource<KeyIn, ValueIn> keyValueSource,
-                       HazelcastInstance hazelcastInstance) {
+    public AbstractJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         this.name = name;
         this.keyValueSource = keyValueSource;
-        this.hazelcastInstance = hazelcastInstance;
     }
 
     @Override
