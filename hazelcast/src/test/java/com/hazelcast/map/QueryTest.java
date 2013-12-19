@@ -19,10 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,6 +30,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -1530,6 +1529,44 @@ public class QueryTest extends HazelcastTestSupport {
         }
         Arrays.sort(indexes);
         assertArrayEquals(indexes, expectedValues);
+    }
+
+    // issue 1404
+    @Test
+    @Ignore("to be fixed by issue 1404")
+    public void testQueryAfterInitialLoad() {
+        String name = "testQueryAfterInitialLoad";
+        Config cfg = new Config();
+        final int size = 100;
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapStoreAdapter() {
+            @Override
+            public Map loadAll(Collection keys) {
+                Map map = new HashMap();
+                for (Object key : keys) {
+                    Employee emp = new Employee();
+                    emp.setActive(true);
+                    map.put(key, emp);
+                }
+                return map;
+            }
+
+            @Override
+            public Set loadAllKeys() {
+                Set set = new HashSet();
+                for (int i = 0; i < size; i++) {
+                    set.add(i);
+                }
+                return set;
+            }
+        });
+        cfg.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance.getMap(name);
+        Collection values = map.values(new SqlPredicate("active = true"));
+        assertEquals(size, values.size());
     }
 
     @Test
