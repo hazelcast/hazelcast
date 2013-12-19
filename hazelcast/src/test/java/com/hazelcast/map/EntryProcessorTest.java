@@ -617,6 +617,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         IMap<Integer, Integer> map = instance1.getMap("testMapMultipleEntryProcessor");
+        IMap<Integer, Integer> map2 = instance2.getMap("testMapMultipleEntryProcessor");
 
         for (int i = 0; i < 10; i++) {
             map.put(i,0);
@@ -626,7 +627,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         keys.add(4);
         keys.add(7);
         keys.add(9);
-        final Map<Integer, Object> resultMap = map.executeOnKeys(keys, new IncrementorEntryProcessor());
+        final Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
         assertEquals(1,resultMap.get(1));
         assertEquals(1,resultMap.get(4));
         assertEquals(1,resultMap.get(7));

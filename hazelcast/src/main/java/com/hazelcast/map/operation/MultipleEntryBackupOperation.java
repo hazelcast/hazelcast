@@ -3,7 +3,6 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -22,7 +21,7 @@ import java.util.Set;
  * author: eminn
  */
 public class MultipleEntryBackupOperation extends AbstractMapOperation implements BackupOperation, PartitionAwareOperation {
-    private Set<Data> keys = new HashSet<Data>();
+    private Set<Data> keys;
     private EntryBackupProcessor backupProcessor;
 
     public MultipleEntryBackupOperation(){
@@ -46,8 +45,7 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
                 continue;
             Object objectKey = mapService.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
-            final Record record = (Record)mapEntry.getValue();
-            final Object valueBeforeProcess = mapService.toObject(record.getValue());
+            final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
             entry = new MapEntrySimple(objectKey,valueBeforeProcess);
             backupProcessor.processBackup(entry);
             recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(key,entry.getValue()));
@@ -69,6 +67,7 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
         super.readInternal(in);
         backupProcessor = in.readObject();
         int size = in.readInt();
+        keys = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
             Data key = new Data();
             key.readData(in);

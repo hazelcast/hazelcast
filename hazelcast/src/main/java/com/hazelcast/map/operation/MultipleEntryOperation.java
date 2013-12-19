@@ -15,6 +15,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -153,6 +154,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
         super.readInternal(in);
         entryProcessor = in.readObject();
         int size = in.readInt();
+        keys = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
             Data key = new Data();
             key.readData(in);

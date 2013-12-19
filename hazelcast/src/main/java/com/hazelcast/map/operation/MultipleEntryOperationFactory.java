@@ -18,7 +18,7 @@ import java.util.Set;
 public class MultipleEntryOperationFactory implements OperationFactory {
 
     private String name;
-    private Set<Data> keys = new HashSet<Data>();
+    private Set<Data> keys;
     private EntryProcessor entryProcessor;
 
     public MultipleEntryOperationFactory() {
@@ -49,6 +49,7 @@ public class MultipleEntryOperationFactory implements OperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         this.name = in.readUTF();
         int size = in.readInt();
+        this.keys = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
             Data key = new Data();
             key.readData(in);
