@@ -49,8 +49,8 @@ public class BasicSSLContextFactory implements SSLContextFactory {
         String trustStore = getProperty(properties, "trustStore", keyStore);
         String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
 
-        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", "SunX509");
-        String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", "SunX509");
+        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+        String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
         String protocol = properties.getProperty("protocol", "TLS");
 
         final char[] keyStorePassPhrase = keyStorePassword.toCharArray();
