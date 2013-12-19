@@ -16,6 +16,8 @@
 
 package com.hazelcast.management;
 
+import java.util.concurrent.Delayed;
+
 public class MonitoredThread implements Comparable<MonitoredThread> {
 
     final String name;
@@ -39,5 +41,12 @@ public class MonitoredThread implements Comparable<MonitoredThread> {
 
     public int compareTo(MonitoredThread o) {
         return name.compareTo(o.name);
+    }
+
+    public boolean equals(Object o){
+        if(o instanceof MonitoredThread){
+            return this.compareTo((MonitoredThread)o)==0;
+        }
+        return false;
     }
 }
