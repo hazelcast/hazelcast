@@ -98,9 +98,10 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
     private volatile int invokeCount = 0;
     private volatile Address target;
     private boolean remote = false;
+    private final String executorName;
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback) {
+                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback, String executorName) {
         this.logger = nodeEngine.getLogger(BasicInvocation.class);
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
@@ -111,6 +112,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
         this.invocationFuture = new InvocationFuture(callback);
+        this.executorName = executorName;
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -163,8 +165,11 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
         try {
             OperationAccessor.setCallTimeout(op, callTimeout);
             OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
-            op.setNodeEngine(nodeEngine).setServiceName(serviceName)
-                    .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+            op.setNodeEngine(nodeEngine)
+                    .setServiceName(serviceName)
+                    .setPartitionId(partitionId)
+                    .setReplicaIndex(replicaIndex)
+                    .setExecutorName(executorName);
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
@@ -722,7 +727,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             Boolean executing = Boolean.FALSE;
             try {
                 final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName,
-                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null);
+                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null, null);
                 Future f = inv.invoke();
                 // TODO: @mm - improve logging (see SystemLogService)
                 logger.warning("Asking if operation execution has been started: " + toString());

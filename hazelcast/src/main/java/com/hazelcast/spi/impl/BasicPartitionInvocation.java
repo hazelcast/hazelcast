@@ -29,8 +29,8 @@ public final class BasicPartitionInvocation extends BasicInvocation {
 
     public BasicPartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                                    Callback<Object> callback) {
-        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout, callback);
+                                    Callback<Object> callback, String executorName) {
+        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout, callback, executorName);
     }
 
     public final Address getTarget() {

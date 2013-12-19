@@ -38,6 +38,7 @@ public class BasicInvocationBuilder implements InvocationBuilder {
     private int replicaIndex = 0;
     private int tryCount = 250;
     private long tryPauseMillis = 500;
+    private String executorName;
 
     public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
         this(nodeEngine, serviceName, op, partitionId, null);
@@ -54,6 +55,17 @@ public class BasicInvocationBuilder implements InvocationBuilder {
         this.op = op;
         this.partitionId = partitionId;
         this.target = target;
+    }
+
+    @Override
+    public String getExecutorName() {
+        return executorName;
+    }
+
+    @Override
+    public InvocationBuilder setExecutorName(String executorName) {
+        this.executorName = executorName;
+        return this;
     }
 
     @Override
@@ -139,10 +151,10 @@ public class BasicInvocationBuilder implements InvocationBuilder {
     public InternalCompletableFuture invoke() {
         if (target == null) {
             return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, callback).invoke();
+                    tryCount, tryPauseMillis, callTimeout, callback, executorName).invoke();
         } else {
             return new BasicTargetInvocation(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, callback).invoke();
+                    callTimeout, callback, executorName).invoke();
         }
     }
 }

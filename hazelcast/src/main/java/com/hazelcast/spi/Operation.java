@@ -50,6 +50,7 @@ public abstract class Operation implements DataSerializable {
     // not used anymore, keeping just for serialization compatibility
     @Deprecated
     private boolean async = false;
+    private String executorName;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -101,6 +102,14 @@ public abstract class Operation implements DataSerializable {
         }
         this.replicaIndex = replicaIndex;
         return this;
+    }
+
+    public String getExecutorName() {
+        return executorName;
+    }
+
+    public void setExecutorName(String executorName) {
+        this.executorName = executorName;
     }
 
     public final long getCallId() {
@@ -261,6 +270,7 @@ public abstract class Operation implements DataSerializable {
         out.writeLong(callTimeout);
         out.writeUTF(callerUuid);
         out.writeBoolean(async);  // not used anymore
+        out.writeUTF(executorName);
         writeInternal(out);
     }
 
@@ -274,6 +284,7 @@ public abstract class Operation implements DataSerializable {
         callTimeout = in.readLong();
         callerUuid = in.readUTF();
         async = in.readBoolean();  // not used anymore
+        executorName = in.readUTF();
         readInternal(in);
     }
 
