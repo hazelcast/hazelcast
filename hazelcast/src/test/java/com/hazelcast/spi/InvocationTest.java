@@ -20,10 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,6 +73,39 @@ public class InvocationTest extends HazelcastTestSupport {
             assertTrue("Thread interrupted flag should be set!", interruptedFlag.get());
             assertTrue("Queue should be empty!", q.isEmpty());
         }
+    }
+
+    @Test
+    @Category(SlowTest.class)
+    public void testWaitingIndefinitely() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
+        final HazelcastInstance[] instances = factory.newInstances(config);
+
+        instances[0].getLock("testWaitingIndefinitely").lock();
+
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(){
+            public void run() {
+                try {
+                    // because max timeout=2000 we get timeout exception which we should not
+                    instances[1].getLock("testWaitingIndefinitely").lock();
+                    latch.countDown();
+                } catch (Exception ignored) {
+                }
+            }
+        }.start();
+
+
+        // wait for enough time which is greater than max-timeout (2000)
+        Thread.sleep(10000);
+
+        instances[0].getLock("testWaitingIndefinitely").unlock();
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+
     }
 
     @Test
