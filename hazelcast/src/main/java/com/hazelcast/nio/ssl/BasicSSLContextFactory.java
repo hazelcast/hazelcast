@@ -49,7 +49,7 @@ public class BasicSSLContextFactory implements SSLContextFactory {
         String trustStore = getProperty(properties, "trustStore", keyStore);
         String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
 
-        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
         String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
         String protocol = properties.getProperty("protocol", "TLS");
 
