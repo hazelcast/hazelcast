@@ -619,6 +619,27 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             throw ExceptionUtil.rethrow(t);
         }
     }
+    public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
+        Map result = new HashMap();
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Collection<Integer> partitionsForKeys = getPartitionsForKeys(keys);
+        try {
+            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnPartitions(SERVICE_NAME, new MultipleEntryOperationFactory(name, keys, entryProcessor), partitionsForKeys);
+            for (Object o : results.values()) {
+                if (o != null) {
+                    final MapService service = getService();
+                    final MapEntrySet mapEntrySet = (MapEntrySet) o;
+                    for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
+                        result.put(service.toObject(entry.getKey()), service.toObject(entry.getValue()));
+                    }
+                }
+            }
+
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+        return result;
+    }
     public Future executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback callback) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);

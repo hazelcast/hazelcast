@@ -975,6 +975,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
+    /**
+     * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.
+     * the results mapped by each key in the collection.
+     * <p/>
+     *
+     * @return result of entry process.
+     * @throws NullPointerException if the specified key is null
+     */
+    Map<K,Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
+
 
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key with
