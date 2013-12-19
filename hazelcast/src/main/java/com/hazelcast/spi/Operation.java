@@ -325,6 +325,8 @@ public abstract class Operation implements DataSerializable, InternalCompletable
 
     private volatile Object callback;
 
+    private volatile boolean hasWaiters = false;
+
     //todo:
     //this method is broken, but it will give us basic support to do a callback and remove
     //the
@@ -414,6 +416,9 @@ public abstract class Operation implements DataSerializable, InternalCompletable
         if (result != NO_RESULT) {
             return result;
         }
+
+        hasWaiters = true;
+
 
         synchronized (this) {
             while (result == NO_RESULT) {

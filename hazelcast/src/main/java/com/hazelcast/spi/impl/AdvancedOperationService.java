@@ -5,7 +5,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.spi.*;
 
 import java.util.Collection;
@@ -16,27 +15,39 @@ import java.util.concurrent.locks.LockSupport;
 
 
 /**
- *
- * The scheduler has a big overlap with the disruptor pattern. There is a wringbuffer and producers and consumers.
- * A big difference however is that the commit sequence is stored in the ringbuffer entry, not in the producer or
- * consumer (sequences).
- * - Why? Because the documentation of the LMAX disruptor is quite bad and it wasn't clear where the commit sequence
- * were stored and this approach also works fine.
- *
- * Documentation of unsafe:
- * http://www.docjar.com/docs/api/sun/misc/Unsafe.html
- *
+ * <h1>Disruptor</h1>
+ * The PartitionOperationQueue uses a disruptor to exchange work (operations) with operation threads.
+ * <p/>
+ * There are 2 differences:
+ * <ol>
+ * <li>
+ * One difference is that the sequenceNumber of each slot, in my implementation is added to the Slot field
+ * and in the disruptor implementation, there is a separate array with the same size as the ringbuffer called
+ * </li>
+ * <li>
+ * Another difference is that in the sequence field we also encode if a PartitionOperationQueue is scheduled to
+ * a thread. This is needed for the caller runs optimization. With this optimization you need to be able to
+ * atomically either publish the work and potentially set the scheduled flag, or to set the scheduled flag and
+ * run the operation in the calling thread.
+ * </li>
+ * </ol>
+ * <p/>
  * <h1>So why does the ForkJoinExecutor not help Hazelcast?</h1>
- *
+ * <p/>
  * Because instead of storing the work produced by an actor on the shared queue like a threadpool executor, each
  * worker thread has its private cheap work deque and when an actor sends a message to another actor, that actor is
  * assigned to the workerthread its workqueue. Other worker threads can steal work from private deque so that
  * there is still balancing of the load.
- *
- * So actors talking to actors, is a difference compared to Hazelcast. Where non hazelcast threads will be interfacting
+ * <p/>
+ * So actors talking to actors, is a difference compared to Hazelcast. Where non hazelcast threads will be interacting
  * with a partition thread, but in most cases a partition thread will not interact with other partition threads. So
  * all the biggest part of the work send to the forkjoinpool, still needs to go through the expensive shared queue.
- *
+ * <p/>
+ * <p/>
+ * <p/>
+ * <p/>
+ * Documentation of unsafe:
+ * http://www.docjar.com/docs/api/sun/misc/Unsafe.html
  */
 public class AdvancedOperationService implements InternalOperationService {
 
@@ -79,12 +90,12 @@ public class AdvancedOperationService implements InternalOperationService {
         }
 
         public void offer(Runnable task) {
-            if(task == null){
+            if (task == null) {
                 throw new IllegalArgumentException("task can't be null");
             }
 
             long oldProducerSeq = producerSeq.getAndIncrement();
-            long newProducerSeq = oldProducerSeq+1;
+            long newProducerSeq = oldProducerSeq + 1;
             int slotIndex = (int) (oldProducerSeq % ringBuffer.length);
             Slot slot = ringBuffer[slotIndex];
             slot.runnable = task;
@@ -92,10 +103,10 @@ public class AdvancedOperationService implements InternalOperationService {
 
             //todo: now always an unpark is done, but you only want to do it when
             //the buffer is empty.
-            if(consumerSeq.get() == oldProducerSeq){
+            if (consumerSeq.get() == oldProducerSeq) {
                 LockSupport.unpark(this);
             }
-      }
+        }
 
         public void run() {
             for (; ; ) {

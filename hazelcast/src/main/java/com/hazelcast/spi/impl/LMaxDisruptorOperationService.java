@@ -35,14 +35,15 @@ public class LMaxDisruptorOperationService implements InternalOperationService {
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
+        op.setServiceName(serviceName);
+        op.setPartitionId(partitionId);
+
         // 1. Claim a slot in the buffer...
         long sequence = ringBuffer.next();
 
         // 2.  Fill the slot with data...
         Slot slot = ringBuffer.get(sequence);
         slot.op = op;
-        op.setServiceName(serviceName);
-        op.setPartitionId(partitionId);
         // 3.  Publish make the data available for consumption
         ringBuffer.publish(sequence);
         return op;
