@@ -41,6 +41,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginException;
+import java.security.Permission;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -64,7 +65,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         this.node = node;
         this.serializationService = node.getSerializationService();
         nodeEngine = node.nodeEngine;
-        executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.CLIENT_EXECUTOR);
+        final int coreSize = Runtime.getRuntime().availableProcessors();
+        executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
+                coreSize * 10, coreSize * 100000);
         logger = node.getLogger(ClientEngine.class);
     }
 
@@ -258,7 +261,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     }
 
-    SecurityContext getSecurityContext() {
+    public SecurityContext getSecurityContext() {
         return node.securityContext;
     }
 
@@ -273,9 +276,11 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     }
 
     private void sendClientEvent(ClientEndpoint endpoint) {
-        final EventService eventService = nodeEngine.getEventService();
-        final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
+        if (endpoint.isFirstConnection()) {
+            final EventService eventService = nodeEngine.getEventService();
+            final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+            eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
+        }
     }
 
     public void dispatchEvent(ClientEndpoint event, ClientListener listener) {
@@ -355,12 +360,15 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                             throw new HazelcastInstanceNotActiveException();
                         }
                         request.setService(service);
-                        if (request instanceof InitializingObjectRequest) {
-                            String objectName = ((InitializingObjectRequest) request).getObjectName();
-                            nodeEngine.getProxyService().initializeDistributedObject(serviceName, objectName);
-                        }
                     }
                     request.setClientEngine(ClientEngineImpl.this);
+                    final SecurityContext securityContext = getSecurityContext();
+                    if (securityContext != null && request instanceof SecureRequest) {
+                        final Permission permission = ((SecureRequest) request).getRequiredPermission();
+                        if (permission != null){
+                            securityContext.checkPermission(endpoint.getSubject(), permission);
+                        }
+                    }
                     request.process();
                 } else {
                     Exception exception;
@@ -377,10 +385,12 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 }
             } catch (Throwable e) {
                 final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-                String message = request != null
-                        ? "While executing request: " + request + " -> " + e.getMessage()
-                        : e.getMessage();
-                logger.log(level, message, e);
+                if (logger.isLoggable(level)) {
+                    String message = request != null
+                            ? "While executing request: " + request + " -> " + e.getMessage()
+                            : e.getMessage();
+                    logger.log(level, message, e);
+                }
                 sendResponse(endpoint, e);
             }
         }
@@ -398,7 +408,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     public void reset() {
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         for (ClientEndpoint endpoint : endpoints.values()) {
             try {
                 endpoint.destroy();

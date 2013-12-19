@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.InitializingObjectRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
@@ -31,9 +31,12 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,7 +46,7 @@ import java.util.Set;
  * Date: 9/18/13
  * Time: 2:28 PM
  */
-public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
     TxnMapRequestType requestType;
@@ -82,6 +85,8 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
                 return map.containsKey(key);
             case GET:
                 return map.get(key);
+            case GET_FOR_UPDATE:
+                return map.getForUpdate(key);
             case SIZE:
                 return map.size();
             case PUT:
@@ -137,11 +142,6 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         return MapService.SERVICE_NAME;
     }
 
-    @Override
-    public String getObjectName() {
-        return name;
-    }
-
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
@@ -187,7 +187,8 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         KEYSET(12),
         KEYSET_BY_PREDICATE(13),
         VALUES(14),
-        VALUES_BY_PREDICATE(15);
+        VALUES_BY_PREDICATE(15),
+        GET_FOR_UPDATE(16);
         int type;
 
         TxnMapRequestType(int i) {
@@ -202,5 +203,24 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
             }
             return null;
         }
+    }
+
+    public Permission getRequiredPermission() {
+        String action = ActionConstants.ACTION_READ;
+        switch (requestType) {
+            case PUT:
+            case PUT_IF_ABSENT:
+            case REPLACE:
+            case REPLACE_IF_SAME:
+            case SET:
+                action =  ActionConstants.ACTION_PUT;
+                break;
+            case REMOVE:
+            case DELETE:
+            case REMOVE_IF_SAME:
+                action =  ActionConstants.ACTION_REMOVE;
+                break;
+        }
+        return new MapPermission(name, action);
     }
 }

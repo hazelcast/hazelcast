@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -130,6 +131,13 @@ public class ManagementService implements DistributedObjectListener {
                 } catch (Exception e) {
                     logger.warning("Error while registering " + bean.objectName, e);
                 }
+            } else {
+                try {
+                    bean.preDeregister();
+                    bean.postDeregister();
+                } catch (Exception e) {
+                    logger.finest(e);
+                }
             }
         }
     }
@@ -157,6 +165,9 @@ public class ManagementService implements DistributedObjectListener {
             if (distributedObject instanceof IAtomicLong){
                 return new AtomicLongMBean((IAtomicLong)distributedObject, this);
             }
+            if (distributedObject instanceof IAtomicReference){
+                return new AtomicReferenceMBean((IAtomicReference)distributedObject, this);
+            }
             if (distributedObject instanceof ICountDownLatch){
                 return new CountDownLatchMBean((ICountDownLatch)distributedObject, this);
             }
@@ -168,6 +179,9 @@ public class ManagementService implements DistributedObjectListener {
             }
             if (distributedObject instanceof MultiMap){
                 return new MultiMapMBean((MultiMap)distributedObject, this);
+            }
+            if (distributedObject instanceof ReplicatedMapProxy){
+                return new ReplicatedMapMBean((ReplicatedMapProxy)distributedObject, this);
             }
             if (distributedObject instanceof IQueue){
                 return new QueueMBean((IQueue)distributedObject, this);
@@ -191,28 +205,31 @@ public class ManagementService implements DistributedObjectListener {
 
     private String getObjectType(DistributedObject distributedObject){
         if (distributedObject instanceof IList){
-            return "List";
+            return "IList";
         }
         if (distributedObject instanceof IAtomicLong){
-            return "AtomicLong";
+            return "IAtomicLong";
+        }
+        if (distributedObject instanceof IAtomicReference){
+            return "IAtomicReference";
         }
         if (distributedObject instanceof ICountDownLatch){
-            return "CountDownLatch";
+            return "ICountDownLatch";
         }
         if (distributedObject instanceof ILock){
-            return "Lock";
+            return "ILock";
         }
         if (distributedObject instanceof IMap){
-            return "Map";
+            return "IMap";
         }
         if (distributedObject instanceof MultiMap){
             return "MultiMap";
         }
         if (distributedObject instanceof IQueue){
-            return "Queue";
+            return "IQueue";
         }
         if (distributedObject instanceof ISemaphore){
-            return "Semaphore";
+            return "ISemaphore";
         }
         if (distributedObject instanceof ISet){
             return "ISet";

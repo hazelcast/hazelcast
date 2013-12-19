@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@ package com.hazelcast.collection.client;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ListPermission;
+
+import java.security.Permission;
 
 /**
  * @ali 9/4/13
@@ -42,5 +46,9 @@ public class TxnListAddRequest extends TxnCollectionRequest {
 
     public int getClassId() {
         return CollectionPortableHook.TXN_LIST_ADD;
+    }
+
+    public Permission getRequiredPermission() {
+        return new ListPermission(name, ActionConstants.ACTION_ADD);
     }
 }

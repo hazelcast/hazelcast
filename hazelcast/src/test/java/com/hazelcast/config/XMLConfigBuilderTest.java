@@ -16,13 +16,15 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -31,12 +33,13 @@ import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class XMLConfigBuilderTest {
 
     @Test
@@ -197,11 +200,34 @@ public class XMLConfigBuilderTest {
         testXSDConfigXML("hazelcast-fullconfig.xml");
     }
 
+    @Test
+    public void testCaseInsensitivityOfSettings() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"testCaseInsensitivity\">"+
+                        "<in-memory-format>binary</in-memory-format>     "+
+                        "<backup-count>1</backup-count>                 "  +
+                        "<async-backup-count>0</async-backup-count>    "    +
+                        "<time-to-live-seconds>0</time-to-live-seconds>"     +
+                        "<max-idle-seconds>0</max-idle-seconds>    "          +
+                        "<eviction-policy>none</eviction-policy>  "            +
+                        "<max-size policy=\"per_partition\">0</max-size>"              +
+                        "<eviction-percentage>25</eviction-percentage>"          +
+                        "<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>"+
+                        "</map>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
+        assertTrue(mapConfig.getInMemoryFormat().equals(InMemoryFormat.BINARY));
+        assertTrue(mapConfig.getEvictionPolicy().equals(MapConfig.EvictionPolicy.NONE));
+        assertTrue(mapConfig.getMaxSizeConfig().getMaxSizePolicy().equals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION));
+    }
+
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
-        SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        final InputStream schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-config-3.1.xsd");
-        final InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
-        Schema schema = factory.newSchema(new StreamSource(schemaResource));
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.2.xsd");
+        InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
         Validator validator = schema.newValidator();
         try {

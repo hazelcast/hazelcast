@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.1.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.2.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -79,7 +79,8 @@
     <partition-group enabled="false"/>
     <executor-service name="default">
         <pool-size>16</pool-size>
-        <queue-capacity>100</queue-capacity>
+        <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
+        <queue-capacity>0</queue-capacity>
     </executor-service>
     <queue name="default">
         <!--
@@ -110,7 +111,7 @@
            Possible values:
            BINARY (default): keys and values will be stored as binary data
            OBJECT : values will be stored in their object forms
-           CACHED: object form of values will be cached
+           OFFHEAP : values will be stored in non-heap region of JVM
         -->
         <in-memory-format>BINARY</in-memory-format>
 
@@ -183,6 +184,18 @@
         <backup-count>1</backup-count>
         <value-collection-type>SET</value-collection-type>
     </multimap>
+
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <value-collection-type>SET</value-collection-type>
+    </multimap>
+
+    <replicatedmap name="default">
+        <in-memory-format>OBJECT</in-memory-format>
+        <concurrency-level>32</concurrency-level>
+        <replication-delay-millis>100</replication-delay-millis>
+        <async-fillup>true</async-fillup>
+    </replicatedmap>
 
     <list name="default">
         <backup-count>1</backup-count>

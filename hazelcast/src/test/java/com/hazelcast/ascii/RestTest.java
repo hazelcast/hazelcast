@@ -20,9 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,15 +29,14 @@ import org.junit.runner.RunWith;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Map;
 
 /**
  * User: sancar
  * Date: 3/11/13
  * Time: 3:33 PM
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 
 public class RestTest {
 

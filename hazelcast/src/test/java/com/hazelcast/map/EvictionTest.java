@@ -18,10 +18,10 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class EvictionTest extends HazelcastTestSupport {
 
 
@@ -503,7 +503,7 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        assertTrue(latch.await(5, TimeUnit.MINUTES));
+        assertTrue("map size is : " + map.size(), latch.await(5, TimeUnit.MINUTES));
         assertEquals(0, map.size());
     }
 
@@ -620,7 +620,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
-        latch.await(30, TimeUnit.SECONDS);
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
         Assert.assertEquals(nsize, map.size());
 
         thread.interrupt();
@@ -669,6 +669,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     /**
      * Test for issue 614
+     *
      * @throws InterruptedException
      */
     @Test
@@ -686,6 +687,31 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testIssue1085EvictionBackup() throws InterruptedException {
+        Config config = new Config();
+        config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);
+        int size = 1000;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        final CountDownLatch latch = new CountDownLatch(size);
+        final IMap map = instance.getMap("testIssue1085EvictionBackup");
+        map.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                super.entryEvicted(event);
+                latch.countDown();
+            }
+        }, false);
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        instance2.shutdown();
+        instance3.shutdown();
+        assertTrue("map size:" + map.size(), latch.await(30, TimeUnit.SECONDS));
+    }
 
     /**
      * Test for the issue 537.

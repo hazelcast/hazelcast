@@ -22,9 +22,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 6/10/13
@@ -66,5 +69,9 @@ public class TxnMultiMapPutRequest extends TxnMultiMapRequest {
         key.readData(in);
         value = new Data();
         value.readData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_PUT);
     }
 }

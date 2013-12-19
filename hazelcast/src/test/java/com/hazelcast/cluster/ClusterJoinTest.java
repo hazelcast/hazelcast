@@ -22,8 +22,8 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,8 +37,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class ClusterJoinTest {
 
     @BeforeClass

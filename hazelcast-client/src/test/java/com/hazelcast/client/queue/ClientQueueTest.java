@@ -20,8 +20,9 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +40,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 5/19/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientQueueTest {
 
     static final String queueName = "test1";

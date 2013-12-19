@@ -22,6 +22,8 @@ import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -45,11 +47,19 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     public void run() {
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        Map<Data,Record> records = recordStore.getRecords();
+        Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();
-            entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
+            Object objectKey = mapService.toObject(record.getKey());
+            Object valueBeforeProcess = mapService.toObject(record.getValue());
+            if (getPredicate() != null) {
+                QueryEntry queryEntry = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, objectKey, valueBeforeProcess);
+                if (!getPredicate().apply(queryEntry)) {
+                    continue;
+                }
+            }
+            entry = new AbstractMap.SimpleEntry(objectKey, valueBeforeProcess);
             entryProcessor.processBackup(entry);
             recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
         }
@@ -62,6 +72,10 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     @Override
     public boolean returnsResponse() {
         return true;
+    }
+
+    protected Predicate getPredicate() {
+        return null;
     }
 
     @Override

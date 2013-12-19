@@ -45,6 +45,11 @@ public final class ClientPacket extends DataAdapter implements SocketWritable, S
     }
 
     @Override
+    public boolean isUrgent() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientPacket{");
         sb.append("conn=").append(conn);

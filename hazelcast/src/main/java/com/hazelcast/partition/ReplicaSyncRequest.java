@@ -74,9 +74,8 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
                     IOUtil.closeResource(out);
                 }
             } else {
-                final Level level = Level.FINEST;
-                if (logger.isLoggable(level)) {
-                    logger.log(level, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex + "\n" + partitionService.getPartition(partitionId));
+                if (logger.isFinestEnabled()) {
+                    logger.finest("No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex + "\n" + partitionService.getPartition(partitionId));
                 }
             }
 

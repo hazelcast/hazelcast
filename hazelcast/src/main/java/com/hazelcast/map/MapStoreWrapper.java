@@ -19,8 +19,10 @@ package com.hazelcast.map;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.core.PostProcessingMapStore;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,6 +50,11 @@ public class MapStoreWrapper implements MapStore {
         this.mapLoader = loader;
         this.mapStore = store;
         this.enabled.set(enabled);
+    }
+
+
+    public MapStore getMapStore() {
+        return mapStore;
     }
 
     public void enable() {
@@ -95,6 +102,9 @@ public class MapStoreWrapper implements MapStore {
     }
 
     public void deleteAll(Collection keys) {
+        if( keys == null || keys.isEmpty() ){
+            return;
+        }
         if (isMapStore() && enabled.get()) {
             mapStore.deleteAll(keys);
         }
@@ -115,10 +125,17 @@ public class MapStoreWrapper implements MapStore {
     }
 
     public Map loadAll(Collection keys) {
+        if( keys == null || keys.isEmpty() ){
+            return Collections.EMPTY_MAP;
+        }
         if (isMapLoader() && enabled.get()) {
             return mapLoader.loadAll(keys);
         }
         return null;
+    }
+
+    public boolean isPostProcessingMapStore() {
+        return isMapStore() && mapStore instanceof PostProcessingMapStore;
     }
 
     @Override

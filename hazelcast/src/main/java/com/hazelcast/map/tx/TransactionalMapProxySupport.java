@@ -26,7 +26,6 @@ import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
@@ -58,7 +57,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
-        this.partitionStrategy = mapService.getMapContainer(name).getPartitionStrategy();
+        this.partitionStrategy = mapService.getMapContainer(name).getPartitioningStrategy();
     }
 
     protected void checkTransactionState() {
@@ -72,9 +71,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            Future f = invocation.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return (Boolean) f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -93,15 +90,22 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            Future f = invocation.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    public Object getForUpdateInternal(Data key) {
+        VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
+        if (versionedValue == null) {
+            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
+        }
+        TxnUnlockOperation operation = new TxnUnlockOperation(name, key, versionedValue.version);
+        tx.addTransactionLog(new MapTransactionLog(name, key, operation, versionedValue.version));
+        return versionedValue.value;
+    }
 
     public int sizeInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
@@ -122,50 +126,50 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock!");
+            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
         }
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version), versionedValue.version));
         return versionedValue.value;
     }
 
     public Data putIfAbsentInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock!");
+            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
         }
         if (versionedValue.value != null)
             return versionedValue.value;
 
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version), versionedValue.version));
         return versionedValue.value;
     }
 
     public Data replaceInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock!");
+            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
         }
         if (versionedValue.value == null)
             return null;
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version), versionedValue.version));
         return versionedValue.value;
     }
 
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock!");
+            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
         }
         if (!getService().compare(name, oldValue, versionedValue.value))
             return false;
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, newValue, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, newValue, versionedValue.version), versionedValue.version));
         return true;
     }
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock!");
+            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version));
         return versionedValue.value;
@@ -174,7 +178,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public boolean removeIfSameInternal(Data key, Object value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock!");
+            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
         }
         if (!getService().compare(name, versionedValue.value, value)) {
             return false;
@@ -189,9 +193,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            Future<VersionedValue> f = invocation.invoke();
+            Future<VersionedValue> f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -240,9 +242,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         try {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
-                Invocation invocation = operationService
-                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
-                Future future = invocation.invoke();
+                Future future = operationService
+                        .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
                 flist.add(future);
             }
             for (Future future : flist) {
@@ -278,7 +279,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
                 queryPartitionOperation.setPartitionId(pid);
                 try {
-                    Future f = operationService.createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
+                    Future f = operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
                     futures.add(f);
                 } catch (Throwable t) {
                     throw ExceptionUtil.rethrow(t);

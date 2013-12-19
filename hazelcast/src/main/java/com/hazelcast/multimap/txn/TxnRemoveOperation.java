@@ -22,6 +22,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -31,7 +33,7 @@ import java.util.Iterator;
 /**
  * @author ali 4/5/13
  */
-public class TxnRemoveOperation extends MultiMapKeyBasedOperation {
+public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
 
     long recordId;
     Data value;
@@ -76,6 +78,14 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation {
             getOrCreateContainer().update();
             publishEvent(EntryEventType.REMOVED, dataKey, value);
         }
+    }
+
+    public boolean shouldBackup() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public Operation getBackupOperation() {
+        return new TxnRemoveBackupOperation(name, dataKey, recordId, value);
     }
 
     public long getRecordId() {

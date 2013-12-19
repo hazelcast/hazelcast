@@ -73,6 +73,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getMultiMap(name);
     }
 
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getClient().getReplicatedMap(name);
+    }
+
     public ILock getLock(Object key) {
         return getClient().getLock(key);
     }
@@ -83,6 +87,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public Cluster getCluster() {
         return getClient().getCluster();
+    }
+
+    public Client getLocalEndpoint() {
+        return getClient().getLocalEndpoint();
     }
 
     public IExecutorService getExecutorService(String name) {
@@ -111,6 +119,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public IAtomicLong getAtomicLong(String name) {
         return getClient().getAtomicLong(name);
+    }
+
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        return getClient().getAtomicReference(name);
     }
 
     public ICountDownLatch getCountDownLatch(String name) {

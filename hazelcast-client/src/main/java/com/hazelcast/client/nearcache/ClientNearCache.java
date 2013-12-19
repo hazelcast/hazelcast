@@ -17,9 +17,16 @@
 package com.hazelcast.client.nearcache;
 
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.ListenerSupport;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.client.ClientReplicatedMapAddEntryListenerRequest;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -34,25 +41,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @ali 7/18/13
  */
-public class ClientNearCache {
+public class ClientNearCache<K> {
 
-    final int evictionPercentage = 20;
-    final int cleanupInterval = 5000;
+    static final int evictionPercentage = 20;
+    static final int cleanupInterval = 5000;
+    final ClientNearCacheType cacheType;
     final int maxSize;
     volatile long lastCleanup;
     final long maxIdleMillis;
     final long timeToLiveMillis;
     final boolean invalidateOnChange;
     final EvictionPolicy evictionPolicy;
-    final MapConfig.InMemoryFormat inMemoryFormat;
+    final InMemoryFormat inMemoryFormat;
     final String mapName;
     final ClientContext context;
     final AtomicBoolean canCleanUp;
     final AtomicBoolean canEvict;
-    final ConcurrentMap<Data, CacheRecord> cache;
+    final ConcurrentMap<K, CacheRecord<K>> cache;
+    ListenerSupport listenerSupport = null;
+    public static final Object NULL_OBJECT = new Object();
 
-    public ClientNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
+    public ClientNearCache(String mapName, ClientNearCacheType cacheType, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
+        this.cacheType = cacheType;
         this.context = context;
         maxSize = nearCacheConfig.getMaxSize();
         maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
@@ -60,17 +71,54 @@ public class ClientNearCache {
         timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * 1000;
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
-        cache = new ConcurrentHashMap<Data, CacheRecord>();
+        cache = new ConcurrentHashMap<K, CacheRecord<K>>();
         canCleanUp = new AtomicBoolean(true);
         canEvict = new AtomicBoolean(true);
         lastCleanup = Clock.currentTimeMillis();
+        if (invalidateOnChange) {
+            addInvalidateListener();
+        }
+    }
+
+    private void addInvalidateListener(){
+        try {
+            Object request;
+            EventHandler handler;
+            if (cacheType == ClientNearCacheType.Map) {
+                request = new MapAddEntryListenerRequest(mapName, false);
+                handler = new EventHandler<PortableEntryEvent>() {
+                    public void handle(PortableEntryEvent event) {
+                        cache.remove(event.getKey());
+                    }
+                };
+            } else if (cacheType == ClientNearCacheType.ReplicatedMap) {
+                request = new ClientReplicatedMapAddEntryListenerRequest(mapName, null, null);
+                handler = new EventHandler<PortableEntryEvent>() {
+                    public void handle(PortableEntryEvent event) {
+                        cache.remove(event.getKey());
+                    }
+                };
+            } else {
+                throw new IllegalStateException("Near cache is not available for this type of data structure");
+            }
+            listenerSupport = new ListenerSupport(context, request, handler, null);
+            listenerSupport.listen(new Callback<Exception>() {
+                public void notify(Exception ignored) {
+                    cache.clear();
+                }
+            });
+
+        } catch (Exception e) {
+            Logger.getLogger(ClientNearCache.class).severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+        }
+
     }
 
     static enum EvictionPolicy {
         NONE, LRU, LFU
     }
 
-    public void put(Data key, Object object) {
+    public void put(K key, Object object) {
         fireTtlCleanup();
         if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
             return;
@@ -78,8 +126,13 @@ public class ClientNearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? context.getSerializationService().toData(object) : object;
-        cache.put(key, new CacheRecord(key, value));
+        Object value;
+        if (object == null){
+            value = NULL_OBJECT;
+        } else {
+            value = inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toData(object) : object;
+        }
+        cache.put(key, new CacheRecord<K>(key, value));
     }
 
     private void fireEvictCache() {
@@ -88,10 +141,10 @@ public class ClientNearCache {
                 context.getExecutionService().execute(new Runnable() {
                     public void run() {
                         try {
-                            TreeSet<CacheRecord> records = new TreeSet<CacheRecord>(cache.values());
+                            TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(cache.values());
                             int evictSize = cache.size() * evictionPercentage / 100;
                             int i=0;
-                            for (CacheRecord record : records) {
+                            for (CacheRecord<K> record : records) {
                                 cache.remove(record.key);
                                 if (++i > evictSize)
                                     break;
@@ -119,7 +172,7 @@ public class ClientNearCache {
                     public void run() {
                         try {
                             lastCleanup = Clock.currentTimeMillis();
-                            for (Map.Entry<Data, CacheRecord> entry : cache.entrySet()) {
+                            for (Map.Entry<K, CacheRecord<K>> entry : cache.entrySet()) {
                                 if (entry.getValue().expired()) {
                                     cache.remove(entry.getKey());
                                 }
@@ -137,37 +190,40 @@ public class ClientNearCache {
         }
     }
 
-    public Object get(Data key) {
+    public Object get(K key) {
         fireTtlCleanup();
-        CacheRecord record = cache.get(key);
+        CacheRecord<K> record = cache.get(key);
         if (record != null) {
             record.access();
             if (record.expired()) {
                 cache.remove(key);
                 return null;
             }
-            return inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
+            if (record.value.equals(NULL_OBJECT)){
+                return NULL_OBJECT;
+            }
+            return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
         } else {
             return null;
         }
     }
 
-    public void invalidate(Data key) {
-        cache.remove(key);
-    }
-
-    public void clear() {
+    public void destroy() {
+        if (listenerSupport != null){
+            listenerSupport.stop();
+        }
         cache.clear();
     }
 
-    class CacheRecord implements Comparable<CacheRecord> {
-        final Data key;
+
+    class CacheRecord<K> implements Comparable<CacheRecord> {
+        final K key;
         final Object value;
         volatile long lastAccessTime;
         final long creationTime;
         final AtomicInteger hit;
 
-        CacheRecord(Data key, Object value) {
+        CacheRecord(K key, Object value) {
             this.key = key;
             this.value = value;
             long time = Clock.currentTimeMillis();

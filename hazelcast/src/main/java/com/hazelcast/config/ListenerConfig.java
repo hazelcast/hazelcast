@@ -31,6 +31,8 @@ public class ListenerConfig {
 
     protected EventListener implementation = null;
 
+    private ListenerConfigReadOnly readOnly;
+
     /**
      * Creates a ListenerConfig without className/implementation.
      */
@@ -47,6 +49,11 @@ public class ListenerConfig {
        setClassName(className);
     }
 
+    public ListenerConfig(ListenerConfig config) {
+        implementation = config.getImplementation();
+        className = config.getClassName();
+    }
+
     /**
      * Creates a ListenerConfig with the given implementation.
      *
@@ -55,6 +62,13 @@ public class ListenerConfig {
      */
     public ListenerConfig(EventListener implementation) {
         this.implementation = isNotNull(implementation,"implementation");
+    }
+
+    public ListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ListenerConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

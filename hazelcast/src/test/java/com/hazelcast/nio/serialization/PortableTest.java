@@ -19,8 +19,8 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,11 +30,14 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 /**
  * @author mdogan 1/4/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class PortableTest {
 
     static final int FACTORY_ID = 1;
@@ -234,7 +237,7 @@ public class PortableTest {
 
         try {
             new SerializationServiceBuilder().setConfig(serializationConfig).build();
-            Assert.fail("Should throw HazelcastSerializationException!");
+            fail("Should throw HazelcastSerializationException!");
         } catch (HazelcastSerializationException e) {
         }
 
@@ -280,6 +283,29 @@ public class PortableTest {
         SerializationService serializationService2 = createSerializationService(2);
         Object o2 = serializationService2.toObject(data);
         Assert.assertEquals(o1, o2);
+    }
+
+    //https://github.com/hazelcast/hazelcast/issues/1096
+    @Test
+    public void test_1096_ByteArrayContentSame(){
+        SerializationService ss = new SerializationServiceBuilder()
+                .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+
+        assertRepeatedSerialisationGivesSameByteArrays(ss, new NamedPortable("issue-1096", 1096));
+
+        assertRepeatedSerialisationGivesSameByteArrays(ss, new InnerPortable(new byte[3], new char[5], new short[2],
+                new int[10], new long[7], new float[9], new double[1], new NamedPortable[]{new NamedPortable("issue-1096", 1096)}));
+
+        assertRepeatedSerialisationGivesSameByteArrays(ss, new RawDataPortable(1096L, "issue-1096".toCharArray(),
+                new NamedPortable("issue-1096", 1096), 1096, "issue-1096", new SimpleDataSerializable(new byte[1])));
+    }
+
+    private static void assertRepeatedSerialisationGivesSameByteArrays(SerializationService ss, Portable p) {
+        Data data1 = ss.toData(p);
+        for (int k = 0; k < 100; k++) {
+            Data data2 = ss.toData(p);
+            assertEquals(data1, data2);
+        }
     }
 
     public static class TestPortableFactory implements PortableFactory {

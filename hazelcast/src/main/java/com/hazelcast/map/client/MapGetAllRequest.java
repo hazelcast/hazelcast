@@ -18,6 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.*;
 import com.hazelcast.map.operation.MapGetAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,14 +27,17 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MapGetAllRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest {
+public class MapGetAllRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     protected String name;
     private Set<Data> keys = new HashSet<Data>();
@@ -100,5 +104,9 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
             }
         }
 
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_READ);
     }
 }

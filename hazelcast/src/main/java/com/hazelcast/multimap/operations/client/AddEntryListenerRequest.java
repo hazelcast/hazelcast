@@ -16,14 +16,11 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.InitializingObjectRequest;
-import com.hazelcast.multimap.MultiMapPortableHook;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.client.*;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.multimap.MultiMapPortableHook;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,14 +28,17 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/10/13
  */
-public class AddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public class AddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
     Data key;
@@ -94,10 +94,6 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
         return MultiMapService.SERVICE_NAME;
     }
 
-    public String getObjectName() {
-        return name;
-    }
-
     public int getFactoryId() {
         return MultiMapPortableHook.F_ID;
     }
@@ -118,5 +114,9 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         key = IOUtil.readNullableData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_LISTEN);
     }
 }

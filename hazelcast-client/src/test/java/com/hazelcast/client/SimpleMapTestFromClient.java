@@ -37,7 +37,6 @@ public class SimpleMapTestFromClient {
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
-//        clientConfig.addNearCacheConfig("*", new NearCacheConfig().setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT).setInvalidateOnChange(false));
         final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {

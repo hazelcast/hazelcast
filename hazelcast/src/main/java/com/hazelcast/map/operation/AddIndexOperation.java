@@ -52,17 +52,13 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapContainer(name);
         RecordStore rs = mapService.getPartitionContainer(getPartitionId()).getRecordStore(name);
-        Map<Data, Record> records = rs.getRecords();
+        Map<Data, Record> records = rs.getReadonlyRecordMap();
         IndexService indexService = mapContainer.getIndexService();
         SerializationService ss = getNodeEngine().getSerializationService();
         Index index = indexService.addOrGetIndex(attributeName, ordered);
         for (Record record : records.values()) {
             Data key = record.getKey();
             Object value = record.getValue();
-            if (value == null) {
-                // see optimization at PartitionRecordStore.get(Data dataKey)
-                continue;
-            }
             index.saveEntryIndex(new QueryEntry(ss, key, key, value));
         }
     }

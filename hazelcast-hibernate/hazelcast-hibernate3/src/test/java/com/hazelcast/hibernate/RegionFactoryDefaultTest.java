@@ -17,8 +17,8 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.hibernate.entity.DummyEntity;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
@@ -30,8 +30,8 @@ import org.junit.runner.RunWith;
 import java.util.Date;
 import java.util.Properties;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 
     protected Properties getCacheProperties() {

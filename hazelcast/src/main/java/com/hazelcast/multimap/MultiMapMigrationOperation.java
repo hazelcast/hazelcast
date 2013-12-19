@@ -16,16 +16,14 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author ali 1/18/13
@@ -60,6 +58,11 @@ public class MultiMapMigrationOperation extends AbstractOperation {
                 MultiMapWrapper wrapper = collectionEntry.getValue();
                 Collection<MultiMapRecord> coll = wrapper.getCollection();
                 out.writeInt(coll.size());
+                String collectionType = MultiMapConfig.ValueCollectionType.SET.name();
+                if (coll instanceof List){
+                    collectionType = MultiMapConfig.ValueCollectionType.LIST.name();
+                }
+                out.writeUTF(collectionType);
                 for (MultiMapRecord record : coll) {
                     record.writeData(out);
                 }
@@ -78,7 +81,13 @@ public class MultiMapMigrationOperation extends AbstractOperation {
                 Data key = new Data();
                 key.readData(in);
                 int collSize = in.readInt();
-                Collection<MultiMapRecord> coll = new ArrayList<MultiMapRecord>(collSize);
+                String collectionType = in.readUTF();
+                Collection<MultiMapRecord> coll;
+                if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())){
+                    coll = new HashSet<MultiMapRecord>();
+                } else {
+                    coll = new LinkedList<MultiMapRecord>();
+                }
                 for (int k = 0; k < collSize; k++) {
                     MultiMapRecord record = new MultiMapRecord();
                     record.readData(in);

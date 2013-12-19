@@ -40,6 +40,8 @@ public class Permit implements DataSerializable {
 
     private int asyncBackupCount;
 
+    private boolean initialized = false;
+
     public Permit() {
     }
 
@@ -81,10 +83,11 @@ public class Permit implements DataSerializable {
     }
 
     public boolean init(int permitCount) {
-        if (available != 0) {
+        if (initialized || available != 0) {
             return false;
         }
         available = permitCount;
+        initialized = true;
         return true;
     }
 
@@ -100,6 +103,7 @@ public class Permit implements DataSerializable {
         if (isAvailable(permitCount)) {
             available -= permitCount;
             attach(caller, permitCount);
+            initialized = true;
             return true;
         }
         return false;
@@ -109,6 +113,7 @@ public class Permit implements DataSerializable {
         int drain = available;
         available = 0;
         if (drain > 0) {
+            initialized = true;
             attach(caller, drain);
         }
         return drain;
@@ -127,6 +132,7 @@ public class Permit implements DataSerializable {
 
     public void release(int permitCount, String caller) {
         available += permitCount;
+        initialized = true;
         detach(caller, permitCount);
     }
 
@@ -140,6 +146,10 @@ public class Permit implements DataSerializable {
 
     public int getAsyncBackupCount() {
         return asyncBackupCount;
+    }
+
+    protected void setInitialized(boolean initialized) {
+        this.initialized = initialized;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

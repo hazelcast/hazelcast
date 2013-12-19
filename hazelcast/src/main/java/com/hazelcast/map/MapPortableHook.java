@@ -28,7 +28,6 @@ import java.util.Collection;
 public class MapPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_PORTABLE_FACTORY, -10);
-
     public static final int GET = 1;
     public static final int PUT = 2;
     public static final int PUT_IF_ABSENT = 3;
@@ -52,6 +51,7 @@ public class MapPortableHook implements PortableHook {
     public static final int ADD_INTERCEPTOR = 23;
     public static final int REMOVE_INTERCEPTOR = 24;
     public static final int ADD_ENTRY_LISTENER = 25;
+    public static final int ADD_ENTRY_LISTENER_SQL = 26;
     public static final int GET_ENTRY_VIEW = 27;
     public static final int ADD_INDEX = 28;
     public static final int KEY_SET = 29;
@@ -65,10 +65,9 @@ public class MapPortableHook implements PortableHook {
     public static final int EXECUTE_ON_KEY = 38;
     public static final int EXECUTE_ON_ALL_KEYS = 39;
     public static final int PUT_ALL = 40;
-    public static final int DESTROY = 41;
-    public static final int TXN_REQUEST = 42;
-    public static final int TXN_REQUEST_WITH_SQL_QUERY = 43;
-
+    public static final int TXN_REQUEST = 41;
+    public static final int TXN_REQUEST_WITH_SQL_QUERY = 42;
+    public static final int EXECUTE_WITH_PREDICATE = 43;
 
     public int getFactoryId() {
         return F_ID;
@@ -76,7 +75,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_REQUEST_WITH_SQL_QUERY+1];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[EXECUTE_WITH_PREDICATE + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -207,7 +206,7 @@ public class MapPortableHook implements PortableHook {
 
                 constructors[REMOVE_INTERCEPTOR] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
-                        return new MapRemoveRequest();
+                        return new MapRemoveInterceptorRequest();
                     }
                 };
 
@@ -216,6 +215,13 @@ public class MapPortableHook implements PortableHook {
                         return new MapAddEntryListenerRequest();
                     }
                 };
+
+                constructors[ADD_ENTRY_LISTENER_SQL] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddEntryListenerSqlRequest();
+                    }
+                };
+
 
                 constructors[GET_ENTRY_VIEW] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
@@ -289,12 +295,6 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
-                constructors[DESTROY] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new MapDestroyRequest();
-                    }
-                };
-
                 constructors[TXN_REQUEST] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new TxnMapRequest();
@@ -307,6 +307,11 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
+                constructors[EXECUTE_WITH_PREDICATE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapExecuteWithPredicateRequest();
+                    }
+                };
 
 
             }

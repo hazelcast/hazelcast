@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.1-SNAPSHOT</version>
+        <version>3.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -54,6 +54,7 @@
                         </goals>
                         <configuration>
                             <instructions>
+                                <Bundle-Activator>com.hazelcast.osgi.Activator</Bundle-Activator>
                                 <Export-Package>
                                     com.hazelcast.*
                                 </Export-Package>
@@ -71,6 +72,8 @@
                                     org.springframework.*;resolution:=optional,
                                     org.bson;resolution:=optional,
                                     org.bson.*;resolution:=optional,
+                                    org.codehaus.groovy.jsr223;resolution:=optional,
+                                    org.jruby.embed.jsr223;resolution:=optional,
                                     *
                                 </Import-Package>
                             </instructions>

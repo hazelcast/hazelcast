@@ -16,54 +16,74 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.map.record.DataRecord;
 import com.hazelcast.map.MapDataSerializerHook;
-import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 
+import java.io.IOException;
+
 public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
+    // todo unlockKey is a logic just used in transactional put operations. It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
     private boolean unlockKey = false;
+    private RecordInfo recordInfo;
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        super(name, dataKey, dataValue, ttl);
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
+        super(name, dataKey, dataValue);
+        this.recordInfo = recordInfo;
     }
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl, boolean unlockKey) {
-        super(name, dataKey, dataValue, ttl);
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean unlockKey) {
+        super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
+        this.recordInfo = recordInfo;
     }
 
     public PutBackupOperation() {
     }
 
     public void run() {
-        Record record = recordStore.getRecords().get(dataKey);
+        Record record = recordStore.getRecord(dataKey);
         if (record == null) {
             record = mapService.createRecord(name, dataKey, dataValue, ttl, false);
-            updateSizeEstimator( calculateRecordSize(record) );
-            recordStore.getRecords().put(dataKey, record);
+            updateSizeEstimator(calculateRecordSize(record));
+            recordStore.putRecord(dataKey, record);
+        } else {
+            updateSizeEstimator(-calculateRecordSize(record));
+            mapContainer.getRecordFactory().setValue(record, dataValue);
+            updateSizeEstimator(calculateRecordSize(record));
         }
-        else {
-            updateSizeEstimator( -calculateRecordSize(record) );
-            if (record instanceof DataRecord){
-                ((DataRecord) record).setValue(dataValue);
-            }
-            else if (record instanceof ObjectRecord) {
-                ((ObjectRecord) record).setValue(mapService.toObject(dataValue));
-            }
-            updateSizeEstimator( calculateRecordSize(record) );
+
+        if(recordInfo != null) {
+            mapService.applyRecordInfo(record, name, recordInfo);
         }
-        if(unlockKey)
+
+        if (unlockKey) {
             recordStore.forceUnlock(dataKey);
+        }
     }
 
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(unlockKey);
+        recordInfo.writeData(out);
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        unlockKey = in.readBoolean();
+        recordInfo = new RecordInfo();
+        recordInfo.readData(in);
     }
 
     @Override

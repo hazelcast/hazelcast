@@ -17,18 +17,22 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/10/13
  */
-public abstract class MultiMapAllPartitionRequest extends AllPartitionsClientRequest implements Portable {
+public abstract class MultiMapAllPartitionRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -53,5 +57,9 @@ public abstract class MultiMapAllPartitionRequest extends AllPartitionsClientReq
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }
 }

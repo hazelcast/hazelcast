@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.TransactionException;
@@ -65,8 +64,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         final Data value = nodeEngine.toData(e);
         CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId());
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future<Long> f = invocation.invoke();
+            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
             Long itemId = f.get();
             if (itemId != null) {
                 if (!itemIdSet.add(itemId)) {
@@ -98,8 +96,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         }
         final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(name, reservedItemId, value, tx.getTxnId());
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future<CollectionItem> f = invocation.invoke();
+            Future<CollectionItem> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
             CollectionItem item = f.get();
             if (item != null) {
                 if (reservedItemId == item.getItemId()){
@@ -124,8 +121,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         checkTransactionState();
         CollectionSizeOperation operation = new CollectionSizeOperation(name);
         try {
-            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future<Integer> f = invocation.invoke();
+            Future<Integer> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
             Integer size = f.get();
             return size + getCollection().size();
         } catch (Throwable t) {

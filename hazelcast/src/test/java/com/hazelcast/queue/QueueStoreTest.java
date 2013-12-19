@@ -22,20 +22,24 @@ import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.QueueStore;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionContext;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,8 +47,8 @@ import static org.junit.Assert.assertTrue;
  * Date: 2/22/13
  * Time: 2:20 PM
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class QueueStoreTest extends HazelcastTestSupport {
 
     @Test
@@ -70,12 +74,92 @@ public class QueueStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIssue1401QueueStoreWithTxnPoll() {
+        final MyQueueStore store = new MyQueueStore();
+        final Config config = new Config();
+        final QueueConfig qConfig = config.getQueueConfig("test");
+        qConfig.setMaxSize(10);
+        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        queueStoreConfig.setStoreImplementation(store);
+        queueStoreConfig.setEnabled(true);
+        queueStoreConfig.setProperty("binary", "false");
+        queueStoreConfig.setProperty("memory-limit", "0");
+        queueStoreConfig.setProperty("bulk-load", "100");
+        qConfig.setQueueStoreConfig(queueStoreConfig);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        for (int i = 0; i < 10; i++) {
+            TransactionContext context = instance.newTransactionContext();
+            context.beginTransaction();
+
+            TransactionalQueue<String> queue = context.getQueue("test");
+            String queue_data = queue.poll();
+            assertNotNull(queue_data);
+            context.commitTransaction();
+        }
+    }
+
+    static class MyQueueStore implements QueueStore, Serializable {
+
+        static final Map<Long, Object> map = new HashMap<Long, Object>();
+
+        static {
+            map.put(1L, "hola");
+            map.put(3L, "dias");
+            map.put(4L, "pescado");
+            map.put(6L, "oso");
+            map.put(2L, "manzana");
+            map.put(10L, "manana");
+            map.put(12L, "perro");
+            map.put(17L, "gato");
+            map.put(19L, "toro");
+            map.put(15L, "tortuga");
+        }
+
+        public void store(Long key, Object value) {
+            map.put(key, value);
+        }
+
+        public void storeAll(Map map) {
+            map.putAll(map);
+        }
+
+        public void delete(Long key) {
+            map.remove(key);
+        }
+
+        public void deleteAll(Collection keys) {
+            for (Object key : keys) {
+                map.remove(key);
+            }
+        }
+
+        public Object load(Long key) {
+            return map.get(key);
+        }
+
+        public Map loadAll(Collection keys) {
+            Map m = new HashMap();
+            for (Object key : keys) {
+                m.put(key, map.get(key));
+            }
+            return m;
+        }
+
+        public Set<Long> loadAllKeys() {
+            return map.keySet();
+        }
+    }
+
+    @Test
     public void testQueueStore() {
         Config config = new Config();
         int maxSize = 2000;
         QueueConfig queueConfig = config.getQueueConfig("testQueueStore");
         queueConfig.setMaxSize(maxSize);
-        TestQueueStore queueStore = new TestQueueStore(1000,0,2000,0,0,0,1);
+        TestQueueStore queueStore = new TestQueueStore(1000, 0, 2000, 0, 0, 0, 1);
 
         QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         queueStoreConfig.setStoreImplementation(queueStore);
@@ -98,12 +182,12 @@ public class QueueStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         IQueue<Object> queue2 = instance2.getQueue("testQueueStore");
-        Assert.assertEquals(maxSize,queue2.size());
+        Assert.assertEquals(maxSize, queue2.size());
 
 
-        Assert.assertEquals(maxSize,queueStore.store.size());
+        Assert.assertEquals(maxSize, queueStore.store.size());
         for (int i = 0; i < maxSize; i++) {
-            Assert.assertEquals(i,queue2.poll());
+            Assert.assertEquals(i, queue2.poll());
         }
 
         try {

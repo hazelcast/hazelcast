@@ -17,12 +17,12 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.*;
-import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
-@Category(SerialTest.class)
+@Category(QuickTest.class)
 public class TestFullApplicationContext {
 
     private Config config;
@@ -79,6 +79,9 @@ public class TestFullApplicationContext {
 
     @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
+
+    @Resource(name = "atomicReference")
+    private IAtomicReference atomicReference;
 
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
@@ -124,7 +127,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(8, config.getMapConfigs().size());
+        assertEquals(6, config.getMapConfigs().size());
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
@@ -135,7 +138,6 @@ public class TestFullApplicationContext {
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
-        assertEquals(StorageType.HEAP, testMapConfig.getStorageType());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
         for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
             if ("name".equals(index.getAttribute())) {
@@ -352,6 +354,7 @@ public class TestFullApplicationContext {
         assertNotNull(executorService);
         assertNotNull(idGenerator);
         assertNotNull(atomicLong);
+        assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
         assertNotNull(lock);
@@ -364,6 +367,7 @@ public class TestFullApplicationContext {
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
         assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }

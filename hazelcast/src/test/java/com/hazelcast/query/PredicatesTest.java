@@ -16,19 +16,19 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryException;
-import com.hazelcast.query.impl.ReflectionHelper;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.query.impl.*;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.hazelcast.instance.TestUtil.toData;
@@ -38,8 +38,8 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class PredicatesTest {
 
     @Test
@@ -51,7 +51,7 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("state == " + State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", nullNameValue)));
-        assertTrue(new SqlPredicate("createDate >= '" + new Date(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("createDate >= '" + new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US).format(new Date(0)) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("bigDecimal > '" + new BigDecimal("1.23E2") + "'").apply(createEntry("1", value)));
@@ -139,6 +139,11 @@ public class PredicatesTest {
         assertTrue(Predicates.like(null, "%World").apply(new DummyEntry("Java World")));
         assertTrue(Predicates.like(null, "Java_World").apply(new DummyEntry("Java World")));
         assertFalse(Predicates.like(null, "JavaWorld").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.ilike(null, "Java_World").apply(new DummyEntry("java World")));
+        assertTrue(Predicates.ilike(null, "java%ld").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.ilike(null, "%world").apply(new DummyEntry("Java World")));
+        assertFalse(Predicates.ilike(null, "Java_World").apply(new DummyEntry("gava World")));
+        assertTrue(new SqlPredicate(" (name ILIKE 'ABC-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
     }
 
     void assertThis(boolean expected, String function, Comparable value, Object... args) {
@@ -212,6 +217,7 @@ public class PredicatesTest {
         assertEquals("(active=true OR age BETWEEN 10 AND 15)", sql("active or (age between 10 and 15)"));
         assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
         assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
+        assertEquals("name ILIKE 'J%'", sql("name ilike 'J%'"));
         //issue #594
         assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
     }

@@ -20,17 +20,18 @@ import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.queue.client.QueueDestroyRequest;
 import com.hazelcast.queue.client.TxnOfferRequest;
+import com.hazelcast.queue.client.TxnPeekRequest;
 import com.hazelcast.queue.client.TxnPollRequest;
 import com.hazelcast.queue.client.TxnSizeRequest;
+
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author ali 6/7/13
  */
-public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements TransactionalQueue<E>{
+public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements TransactionalQueue<E> {
 
     public ClientTxnQueueProxy(String name, TransactionContextProxy proxy) {
         super(name, proxy);
@@ -64,6 +65,21 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return invoke(request);
     }
 
+    @Override
+    public E peek() {
+        try {
+            return peek(0, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public E peek(long timeout, TimeUnit unit) throws InterruptedException {
+        TxnPeekRequest request = new TxnPeekRequest(getName(), unit.toMillis(timeout));
+        return invoke(request);
+    }
+
     public int size() {
         TxnSizeRequest request = new TxnSizeRequest(getName());
         Integer result = invoke(request);
@@ -71,7 +87,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     public String getName() {
-        return (String)getId();
+        return (String) getId();
     }
 
     @Override
@@ -80,8 +96,5 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     void onDestroy() {
-        //TODO what if a non-committed map calls destroy ?
-        final QueueDestroyRequest request = new QueueDestroyRequest(getName());
-        invoke(request);
     }
 }

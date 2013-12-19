@@ -23,9 +23,12 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.OfferOperation;
 import com.hazelcast.queue.QueuePortableHook;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/8/13
@@ -66,5 +69,9 @@ public class OfferRequest extends QueueRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         data = new Data();
         data.readData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_ADD);
     }
 }

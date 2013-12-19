@@ -18,8 +18,9 @@ package com.hazelcast.client.semaphore;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,8 +36,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author ali 5/24/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientSemaphoreTest {
 
     static final String name = "test1";
@@ -47,7 +48,6 @@ public class ClientSemaphoreTest {
 
     @BeforeClass
     public static void init(){
-
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         s = hz.getSemaphore(name);
@@ -63,7 +63,7 @@ public class ClientSemaphoreTest {
     @After
     public void clear() throws IOException {
         s.reducePermits(100);
-        s.init(10);
+        s.release(10);
     }
 
     @Test

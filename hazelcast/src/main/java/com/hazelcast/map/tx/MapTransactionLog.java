@@ -21,7 +21,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
@@ -34,8 +33,6 @@ import java.util.concurrent.Future;
 
 public class MapTransactionLog implements KeyAwareTransactionLog {
 
-    // todo remove version as it is already defined in operation
-    long version;
     String name;
     Data key;
     int threadId = ThreadUtil.getThreadId();
@@ -47,7 +44,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     public MapTransactionLog(String name, Data key, Operation op, long version) {
         this.name = name;
         this.key = key;
-        this.version = version;
         if (!(op instanceof MapTxnOperation)) {
             throw new IllegalArgumentException();
         }
@@ -60,9 +56,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         operation.setThreadId(threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -72,12 +66,9 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     public Future commit(NodeEngine nodeEngine) {
         MapTxnOperation txnOp = (MapTxnOperation) op;
         txnOp.setThreadId(threadId);
-        txnOp.setVersion(version);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, op, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -88,9 +79,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         TxnRollbackOperation operation = new TxnRollbackOperation(name, key);
         operation.setThreadId(threadId);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -99,7 +88,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeLong(version);
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
         if (!isNullKey) {
@@ -112,7 +100,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        version = in.readLong();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {
             key = new Data();

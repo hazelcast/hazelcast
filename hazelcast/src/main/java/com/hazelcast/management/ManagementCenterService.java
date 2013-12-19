@@ -36,7 +36,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.Invocation;
+import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 import com.hazelcast.spi.Operation;
 
 import java.io.InputStream;
@@ -44,14 +44,12 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
@@ -90,7 +88,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         stateSender = new StateSender();
         serializationService = instance.node.getSerializationService();
         final Address address = instance.node.address;
-        identifier = new ManagementCenterIdentifier(instance.node.initializer.getVersion(), instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
+        identifier = new ManagementCenterIdentifier(instance.node.getBuildInfo().getVersion(),
+                instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
     }
 
     public void start() {
@@ -131,8 +130,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             GroupConfig groupConfig = instance.getConfig().getGroupConfig();
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass)))
                 return HttpCommand.RES_403;
-            ManagementCenterConfigOperation operation = new ManagementCenterConfigOperation(newUrl);
-            sendToAllMembers(operation);
+
+            final Collection<MemberImpl> memberList = instance.node.clusterService.getMemberList();
+            for (MemberImpl member : memberList) {
+                send(member.getAddress(), new ManagementCenterConfigOperation(newUrl));
+            }
         } catch (Throwable throwable) {
             logger.warning("New web server url cannot be assigned.", throwable);
             return HttpCommand.RES_500;
@@ -145,7 +147,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             Member member = membershipEvent.getMember();
             if (member != null && instance.node.isMaster() && urlChanged) {
                 ManagementCenterConfigOperation operation = new ManagementCenterConfigOperation(webServerUrl);
-                call(((MemberImpl) member).getAddress(), operation);
+                callOnMember(member, operation);
             }
         } catch (Exception e) {
             logger.warning("Web server url cannot be send to the newly joined member", e);
@@ -319,33 +321,38 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
+                    if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         memberState.putLocalMapStats(map.getName(), (LocalMapStatsImpl) map.getLocalMapStats());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (config.getQueueConfig(queue.getName()).isStatisticsEnabled()) {
+                    if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
                         memberState.putLocalQueueStats(queue.getName(), (LocalQueueStatsImpl) queue.getLocalQueueStats());
                         count++;
                     }
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (config.getTopicConfig(topic.getName()).isStatisticsEnabled()) {
+                    if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
                         memberState.putLocalTopicStats(topic.getName(), (LocalTopicStatsImpl) topic.getLocalTopicStats());
                         count++;
                     }
                 } else if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (config.getMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
+                    if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
                         memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats());
                         count++;
                     }
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-                    if (config.getExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
+                    if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
                         memberState.putLocalExecutorStats(executorService.getName(), (LocalExecutorStatsImpl) executorService.getLocalExecutorStats());
                         count++;
+                    }
+                } else if (distributedObject instanceof ReplicatedMapProxy) {
+                    ReplicatedMapProxy replicatedMap = (ReplicatedMapProxy) distributedObject;
+                    if (config.findReplicatedMapConfig(replicatedMap.getName()).isStatisticsEnabled()) {
+                        memberState.putLocalReplicatedMapStats(replicatedMap.getName(), (LocalReplicatedMapStatsImpl) replicatedMap.getReplicatedMapStats());
                     }
                 }
             }
@@ -368,31 +375,37 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (config.getMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
+                    if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("m:" + multiMap.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
+                    if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("c:" + map.getName());
+                        count++;
+                    }
+                } else if (distributedObject instanceof ReplicatedMap) {
+                    ReplicatedMap replicatedMap = (ReplicatedMap) distributedObject;
+                    if (config.findReplicatedMapConfig(replicatedMap.getName()).isStatisticsEnabled()) {
+                        setLongInstanceNames.add("r:" + replicatedMap.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (config.getQueueConfig(queue.getName()).isStatisticsEnabled()) {
+                    if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("q:" + queue.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (config.getTopicConfig(topic.getName()).isStatisticsEnabled()) {
+                    if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("t:" + topic.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-                    if (config.getExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
+                    if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("e:" + executorService.getName());
                         count++;
                     }
@@ -401,9 +414,20 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
     }
 
-    public Object call(Address address, Operation operation) {
-        Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).build();
-        final Future future = invocation.invoke();
+    public Object callOnAddress(Address address, Operation operation) {
+        Future future = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
+        try {
+            return future.get();
+        } catch (Throwable t) {
+            StringWriter s = new StringWriter();
+            t.printStackTrace(new PrintWriter(s));
+            return s.toString();
+        }
+    }
+
+    public Object callOnMember(Member member, Operation operation) {
+        Future future = instance.node.nodeEngine.getOperationService()
+                .createInvocationBuilder(MapService.SERVICE_NAME, operation, ((MemberImpl) member).getAddress()).invoke();
         try {
             return future.get();
         } catch (Throwable t) {
@@ -414,33 +438,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     public void send(Address address, Operation operation) {
-        Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).build();
-        invocation.invoke();
-    }
-
-    public Collection callOnAddresses(Set<Address> addresses, Operation operation) {
-        final ArrayList list = new ArrayList(addresses.size());
-        for (Address address : addresses) {
-            list.add(call(address, operation));
-        }
-        return list;
-    }
-
-    public Collection callOnAllMembers(Operation operation) {
-        Collection<MemberImpl> members = instance.node.clusterService.getMemberList();
-        final ArrayList list = new ArrayList(members.size());
-        for (MemberImpl member : members) {
-            list.add(call(member.getAddress(), operation));
-
-        }
-        return list;
-    }
-
-    public void sendToAllMembers(Operation operation) {
-        Collection<MemberImpl> members = instance.node.clusterService.getMemberList();
-        for (MemberImpl member : members) {
-            send(member.getAddress(), operation);
-        }
+        instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
     }
 
     private TimedMemberState getTimedMemberState() {

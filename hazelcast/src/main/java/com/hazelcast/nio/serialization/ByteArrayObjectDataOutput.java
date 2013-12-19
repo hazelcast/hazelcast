@@ -28,7 +28,7 @@ import java.nio.ByteOrder;
  */
 class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
 
-    static final int DEFAULT_SIZE = 1024 * 4;
+    final int initialSize;
 
     byte buffer[];
 
@@ -37,11 +37,8 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     final SerializationService service;
 
     ByteArrayObjectDataOutput(int size, SerializationService service) {
-        this(new byte[size], service);
-    }
-
-    ByteArrayObjectDataOutput(byte[] buffer, SerializationService service) {
-        this.buffer = buffer;
+        this.initialSize = size;
+        this.buffer = new byte[size];
         this.service = service;
     }
 
@@ -55,7 +52,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void write(byte b[], int off, int len) {
-        if ((off < 0) || (off > b.length) || (len < 0) ||
+       if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
@@ -76,6 +73,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeByte(final int v) throws IOException {
         write(v);
+    }
+
+    public void writeZeroBytes(int count){
+        for(int k=0;k<count;k++){
+            write(0);
+        }
     }
 
     public void writeByte(int position, final int v) throws IOException {
@@ -248,7 +251,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
                 System.arraycopy(buffer, 0, newBuffer, 0, pos);
                 buffer = newBuffer;
             } else {
-                buffer = new byte[len > DEFAULT_SIZE / 2 ? len * 2 : DEFAULT_SIZE];
+                buffer = new byte[len > initialSize / 2 ? len * 2 : initialSize];
             }
         }
     }
@@ -267,6 +270,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     public void position(int newPos) {
         if ((newPos > buffer.length) || (newPos < 0))
             throw new IllegalArgumentException();
+
         pos = newPos;
     }
 
@@ -289,6 +293,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void clear() {
         pos = 0;
+        if (buffer != null && buffer.length > initialSize * 8) {
+            buffer = new byte[initialSize * 8];
+        }
     }
 
     public void close() {

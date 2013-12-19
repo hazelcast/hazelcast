@@ -28,7 +28,6 @@ public class SetBackupOperation extends AtomicLongBaseOperation implements Backu
     private long newValue;
 
     public SetBackupOperation() {
-        super();
     }
 
     public SetBackupOperation(String name, long newValue) {

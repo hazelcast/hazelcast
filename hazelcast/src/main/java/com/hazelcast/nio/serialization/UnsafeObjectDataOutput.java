@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.UnsafeHelper;
+
 import java.io.IOException;
 import java.nio.ByteOrder;
 
@@ -26,10 +28,6 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     UnsafeObjectDataOutput(int size, SerializationService service) {
         super(size, service);
-    }
-
-    UnsafeObjectDataOutput(byte[] buffer, SerializationService service) {
-        super(buffer, service);
     }
 
     public void writeChar(final int v) throws IOException {

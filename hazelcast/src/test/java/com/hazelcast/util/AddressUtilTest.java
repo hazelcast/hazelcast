@@ -16,8 +16,8 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.AddressUtil.Ip4AddressMatcher;
@@ -35,8 +35,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for AddressUtil class.
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class AddressUtilTest {
 
     @Test

@@ -22,7 +22,6 @@ import com.hazelcast.queue.QueueItem;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.queue.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -53,7 +52,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         this.name = name;
         this.tx = tx;
         partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-        config = nodeEngine.getConfig().getQueueConfig(name);
+        config = nodeEngine.getConfig().findQueueConfig(name);
     }
 
     protected void checkTransactionState(){
@@ -66,8 +65,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         throwExceptionIfNull(data);
         TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
         try {
-            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
-            Future<Long> f = invocation.invoke();
+            Future<Long> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
             Long itemId = f.get();
             if (itemId != null) {
                 if (!itemIdSet.add(itemId)) {
@@ -87,8 +85,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         QueueItem reservedOffer = offeredQueue.peek();
         TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, reservedOffer == null ? -1 : reservedOffer.getItemId(), tx.getTxnId());
         try {
-            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
-            Future<QueueItem> f = invocation.invoke();
+            Future<QueueItem> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
             QueueItem item = f.get();
             if (item != null) {
                 if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()) {
@@ -110,12 +107,29 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         return null;
     }
 
+    public Data peekInternal(long timeout) {
+        final QueueItem offer = offeredQueue.peek();
+        final TxnPeekOperation operation = new TxnPeekOperation(name, timeout, offer == null ? -1 : offer.getItemId(), tx.getTxnId());
+        try {
+            final Future<QueueItem> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            final QueueItem item = f.get();
+            if (item != null) {
+                if (offer != null && item.getItemId() == offer.getItemId()) {
+                    return offer.getData();
+                }
+                return item.getData();
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+        return null;
+    }
+
     public int size() {
         checkTransactionState();
         SizeOperation operation = new SizeOperation(name);
         try {
-            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
-            Future<Integer> f = invocation.invoke();
+            Future<Integer> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
             Integer size = f.get();
             return size + offeredQueue.size();
         } catch (Throwable t) {

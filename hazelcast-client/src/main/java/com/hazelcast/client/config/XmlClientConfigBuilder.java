@@ -190,7 +190,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             } else if ("eviction-policy".equals(nodeName)){
                 nearCacheConfig.setEvictionPolicy(getTextContent(child));
             } else if ("in-memory-format".equals(nodeName)){
-                nearCacheConfig.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(getTextContent(child)));
+                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(getTextContent(child)));
             } else if ("invalidate-on-change".equals(nodeName)){
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
             }

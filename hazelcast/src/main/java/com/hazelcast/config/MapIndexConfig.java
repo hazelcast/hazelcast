@@ -27,6 +27,7 @@ public class MapIndexConfig {
 
     private String attribute;
     private boolean ordered = false;
+    private MapIndexConfigReadOnly readOnly;
 
     /**
      * Creates a MapIndexConfig without an attribute and with ordered is false.
@@ -45,6 +46,18 @@ public class MapIndexConfig {
     public MapIndexConfig(String attribute, boolean ordered) {
         setAttribute(attribute);
         setOrdered(ordered);
+    }
+
+    public MapIndexConfig(MapIndexConfig config) {
+        attribute = config.getAttribute();
+        ordered = config.isOrdered();
+    }
+
+    public MapIndexConfigReadOnly getAsReadOnly() {
+        if (readOnly == null ){
+            readOnly = new MapIndexConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

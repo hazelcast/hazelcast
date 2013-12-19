@@ -39,8 +39,8 @@ import static org.junit.Assert.assertTrue;
  */
 
 @Ignore()
-//@RunWith(HazelcastJUnit4ClassRunner.class)
-//@Category(SerialTest.class)
+//@RunWith(HazelcastSerialClassRunner.class)
+//@Category(SlowTest.class)
 public class JoinStressTest {
 
     @Test

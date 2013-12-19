@@ -16,24 +16,34 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySimple;
+import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.Map;
 
+/**
+ * GOTCHA : This operation loads missing keys from mapstore, in contrast with PartitionWideEntryOperation.
+ */
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
+    private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
     private EntryProcessor entryProcessor;
-
+    private transient EntryEventType eventType;
     private transient Object response;
+    protected transient Object oldValue;
+
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
@@ -44,25 +54,56 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void innerBeforeRun() {
-        if (entryProcessor instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-        }
+        final ManagedContext managedContext = getNodeEngine().getSerializationService().getManagedContext();
+        managedContext.initialize(entryProcessor);
     }
 
     public void run() {
-        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
-        Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
+        oldValue = recordStore.getMapEntry(dataKey).getValue();
+        final Object valueBeforeProcess = mapService.toObject(oldValue);
+        final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
-        if (entry.getValue() == null) {
+        final Object valueAfterProcess = entry.getValue();
+        // no matching data by key.
+        if (oldValue == null && valueAfterProcess == null) {
+            eventType = __NO_NEED_TO_FIRE_EVENT;
+        } else if (valueAfterProcess == null) {
             recordStore.remove(dataKey);
+            eventType = EntryEventType.REMOVED;
         } else {
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            if (oldValue == null) {
+                eventType = EntryEventType.ADDED;
+            }
+            // take this case as a read so no need to fire an event.
+            else if (!entry.isModified()) {
+                eventType = __NO_NEED_TO_FIRE_EVENT;
+            } else {
+                eventType = EntryEventType.UPDATED;
+            }
+            if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                dataValue = mapService.toData(entry.getValue());
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, dataValue));
+            }
         }
     }
 
+
     public void afterRun() throws Exception {
         super.afterRun();
+        if (eventType == __NO_NEED_TO_FIRE_EVENT) {
+            return;
+        }
+        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(oldValue), dataValue);
         invalidateNearCaches();
+        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+            if (EntryEventType.REMOVED.equals(eventType)) {
+                mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
+            } else {
+                Record record = recordStore.getRecord(dataKey);
+                SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getVersion());
+                mapService.publishWanReplicationUpdate(name, entryView);
+            }
+        }
     }
 
     @Override

@@ -22,11 +22,11 @@ import com.hazelcast.spi.Callback;
 /**
  * @author mdogan 4/10/13
  */
-final class ExecutionCallbackAdapter implements Callback<Object> {
+public final class ExecutionCallbackAdapter implements Callback<Object> {
 
     private final ExecutionCallback executionCallback;
 
-    ExecutionCallbackAdapter(ExecutionCallback executionCallback) {
+    public ExecutionCallbackAdapter(ExecutionCallback executionCallback) {
         this.executionCallback = executionCallback;
     }
 

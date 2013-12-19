@@ -47,7 +47,10 @@ public abstract class Operation implements DataSerializable {
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private String callerUuid;
-    private boolean async;
+    // not used anymore, keeping just for serialization compatibility
+    @Deprecated
+    private boolean async = false;
+    private String executorName;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -99,6 +102,14 @@ public abstract class Operation implements DataSerializable {
         }
         this.replicaIndex = replicaIndex;
         return this;
+    }
+
+    public String getExecutorName() {
+        return executorName;
+    }
+
+    public void setExecutorName(String executorName) {
+        this.executorName = executorName;
     }
 
     public final long getCallId() {
@@ -224,15 +235,6 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public boolean isAsync() {
-        return async;
-    }
-
-    // Accessed using OperationAccessor
-    void setAsync(boolean async) {
-        this.async = async;
-    }
-
     protected final ILogger getLogger() {
         final NodeEngine ne = nodeEngine;
         return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass());
@@ -242,55 +244,48 @@ public abstract class Operation implements DataSerializable {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {
             final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
-            logger.log(level, e.getClass() + ": " + e.getMessage());
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getClass().getName() + ": " + e.getMessage());
+            }
+        } else if (e instanceof OutOfMemoryError) {
+            try {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            } catch (Throwable ignored) {
+            }
         } else {
             final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-            logger.log(level, e.getMessage(), e);
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getMessage(), e);
+            }
         }
     }
 
-    private transient boolean writeDataFlag = false;
     public final void writeData(ObjectDataOutput out) throws IOException {
-        if (writeDataFlag) {
-            throw new IOException("Cannot call writeData() from a sub-class!");
-        }
-        writeDataFlag = true;
-        try {
-            out.writeUTF(serviceName);
-            out.writeInt(partitionId);
-            out.writeInt(replicaIndex);
-            out.writeLong(callId);
-            out.writeBoolean(validateTarget);
-            out.writeLong(invocationTime);
-            out.writeLong(callTimeout);
-            out.writeUTF(callerUuid);
-            out.writeBoolean(async);
-            writeInternal(out);
-        } finally {
-            writeDataFlag = false;
-        }
+        out.writeUTF(serviceName);
+        out.writeInt(partitionId);
+        out.writeInt(replicaIndex);
+        out.writeLong(callId);
+        out.writeBoolean(validateTarget);
+        out.writeLong(invocationTime);
+        out.writeLong(callTimeout);
+        out.writeUTF(callerUuid);
+        out.writeBoolean(async);  // not used anymore
+        out.writeUTF(executorName);
+        writeInternal(out);
     }
 
-    private transient boolean readDataFlag = false;
     public final void readData(ObjectDataInput in) throws IOException {
-        if (readDataFlag) {
-            throw new IOException("Cannot call readData() from a sub-class!");
-        }
-        readDataFlag = true;
-        try {
-            serviceName = in.readUTF();
-            partitionId = in.readInt();
-            replicaIndex = in.readInt();
-            callId = in.readLong();
-            validateTarget = in.readBoolean();
-            invocationTime = in.readLong();
-            callTimeout = in.readLong();
-            callerUuid = in.readUTF();
-            async = in.readBoolean();
-            readInternal(in);
-        } finally {
-            readDataFlag = false;
-        }
+        serviceName = in.readUTF();
+        partitionId = in.readInt();
+        replicaIndex = in.readInt();
+        callId = in.readLong();
+        validateTarget = in.readBoolean();
+        invocationTime = in.readLong();
+        callTimeout = in.readLong();
+        callerUuid = in.readUTF();
+        async = in.readBoolean();  // not used anymore
+        executorName = in.readUTF();
+        readInternal(in);
     }
 
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;

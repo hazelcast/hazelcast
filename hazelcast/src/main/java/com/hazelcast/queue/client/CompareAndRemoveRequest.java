@@ -23,9 +23,12 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.CompareAndRemoveOperation;
 import com.hazelcast.queue.QueuePortableHook;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -76,5 +79,9 @@ public class CompareAndRemoveRequest extends QueueRequest {
             data.readData(in);
             dataList.add(data);
         }
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

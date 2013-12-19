@@ -25,6 +25,7 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -33,6 +34,7 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.logging.Level;
 
 class WaitNotifyServiceImpl implements WaitNotifyService {
 
@@ -221,7 +223,11 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     final Operation op = waitingOp.getOperation();
                     // only for local invocations, remote ones will be expired via #onMemberLeft()
                     if (thisAddress.equals(op.getCallerAddress())) {
-                        op.getResponseHandler().sendResponse(response);
+                        try {
+                            op.getResponseHandler().sendResponse(response);
+                        } catch (Exception e) {
+                            logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
+                        }
                     }
                 }
             }
@@ -304,6 +310,20 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 } else if (isExpired() && queue.remove(this)) {
                     waitSupport.onWaitExpire();
                 }
+            }
+        }
+
+        public void logError(Throwable e) {
+            final ILogger logger = getLogger();
+            if (e instanceof RetryableException) {
+                logger.warning("Op: " + op + ", " + e.getClass().getName() + ": " + e.getMessage());
+            } else if (e instanceof OutOfMemoryError) {
+                try {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                } catch (Throwable ignored) {
+                }
+            } else {
+                logger.severe("Op: " + op + ", Error: " + e.getMessage(), e);
             }
         }
 

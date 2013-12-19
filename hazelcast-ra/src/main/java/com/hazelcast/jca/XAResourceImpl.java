@@ -217,7 +217,7 @@ public class XAResourceImpl implements XAResource {
 
     private void validateTx(Xid xid,Transaction.State state) throws XAException {
         final Transaction tx = getTransaction(xid);
-        if(tx == null) {
+        if(tx != null) {
             switch (state){
                 case ACTIVE:
                     if(tx.getState() != Transaction.State.ACTIVE){

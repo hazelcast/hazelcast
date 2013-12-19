@@ -18,10 +18,8 @@ package com.hazelcast.map;
 
 
 /**
- * Created with IntelliJ IDEA.
  * User: ahmet
  * Date: 08.09.2013
- * Time: 14:04
  */
 public final class SizeEstimators {
 
@@ -29,15 +27,12 @@ public final class SizeEstimators {
     }
 
     public static SizeEstimator createMapSizeEstimator() {
-        final SizeEstimator mapSizeEstimator = new MapSizeEstimator();
-
-        return mapSizeEstimator;
+        return new MapSizeEstimator();
     }
 
     public static SizeEstimator createNearCacheSizeEstimator() {
-        final SizeEstimator mapSizeEstimator = new NearCacheSizeEstimator();
-
-        return mapSizeEstimator;
+        return new NearCacheSizeEstimator();
     }
 
 }
+

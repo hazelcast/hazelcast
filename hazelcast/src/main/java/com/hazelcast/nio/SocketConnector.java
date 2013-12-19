@@ -41,12 +41,16 @@ public class SocketConnector implements Runnable {
 
     public void run() {
         if (!connectionManager.isLive()) {
-            String message = "ConnectionManager is not live, connection attempt to " + address + " is cancelled!";
-            log(Level.FINEST, message);
+            if (logger.isFinestEnabled()) {
+                String message = "ConnectionManager is not live, connection attempt to " + address + " is cancelled!";
+                log(Level.FINEST, message);
+            }
             return;
         }
         try {
-            log(Level.FINEST, "Starting to connect to " + address);
+            if (logger.isFinestEnabled()) {
+                log(Level.FINEST, "Starting to connect to " + address);
+            }
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
@@ -64,7 +68,9 @@ public class SocketConnector implements Runnable {
                 final Collection<Inet6Address> possibleInetAddresses = AddressUtil.getPossibleInetAddressesFor(
                         (Inet6Address) address.getInetAddress());
                 final Level level = silent ? Level.FINEST : Level.INFO;
-                log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
+                if (logger.isLoggable(level)) { //TODO: collection.toString() will likely not produce any useful output!
+                    log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
+                }
                 boolean connected = false;
                 Exception error = null;
                 for (Inet6Address inetAddress : possibleInetAddresses) {
@@ -91,11 +97,15 @@ public class SocketConnector implements Runnable {
             throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
-        bindSocket(socketChannel);
-        final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
-                + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
+        if (connectionManager.ioService.isSocketBind()) {
+            bindSocket(socketChannel);
+        }
         final Level level = silent ? Level.FINEST : Level.INFO;
-        log(level, message);
+        if (logger.isLoggable(level)) {
+            final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
+                    + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
+            log(level, message);
+        }
         try {
             socketChannel.configureBlocking(true);
             try {
@@ -110,12 +120,15 @@ public class SocketConnector implements Runnable {
                 newEx.setStackTrace(ex.getStackTrace());
                 throw newEx;
             }
-
-            log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
+            if (logger.isFinestEnabled()) {
+                log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
+            }
             final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
-                log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
+                if (logger.isFinestEnabled()) {
+                    log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
+                }
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }
 

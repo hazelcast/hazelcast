@@ -20,8 +20,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.logging.Level;
-
 /**
  * @author mdogan 9/14/12
  */
@@ -33,6 +31,6 @@ public class AuthenticationFailureOperation extends AbstractClusterOperation
         final Node node = nodeEngine.getNode();
         final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.severe("Authentication failed on master node! Node is going to shutdown now!");
-        node.shutdown(true, true);
+        node.shutdown(true);
     }
 }

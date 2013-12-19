@@ -30,7 +30,6 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
     private boolean returnValue = false;
 
     public CompareAndSetOperation() {
-        super();
     }
 
     public CompareAndSetOperation(String name, long expect, long update) {

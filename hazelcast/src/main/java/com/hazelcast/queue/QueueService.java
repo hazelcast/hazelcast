@@ -67,7 +67,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(QueueService.class);
-        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new QueueEvictionProcessor(nodeEngine, this), ScheduleType.POSTPONE);
+        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
+                new QueueEvictionProcessor(nodeEngine, this), ScheduleType.POSTPONE);
     }
 
     public void scheduleEviction(String name, long delay){
@@ -85,14 +86,14 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         containerMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(name, nodeEngine.getConfig().getQueueConfig(name), nodeEngine, this);
+            container = new QueueContainer(name, nodeEngine.getConfig().findQueueConfig(name), nodeEngine, this);
 
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
@@ -101,7 +102,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 container.init(fromBackup);
             }
         }
-        container.cancelEvictionIfExists();
         return container;
     }
 

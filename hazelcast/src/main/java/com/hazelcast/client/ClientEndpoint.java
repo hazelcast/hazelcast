@@ -29,7 +29,11 @@ import com.hazelcast.transaction.TransactionException;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public final class ClientEndpoint implements Client {
 
@@ -43,7 +47,7 @@ public final class ClientEndpoint implements Client {
 
     private volatile boolean authenticated = false;
     private volatile TransactionContext transactionContext;
-    private volatile ListenerRegistration registration;
+    private List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
 
 
     ClientEndpoint(ClientEngine clientEngine, Connection conn, String uuid) {
@@ -70,7 +74,7 @@ public final class ClientEndpoint implements Client {
         this.loginContext = loginContext;
     }
 
-    Subject getSubject() {
+    public Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
@@ -93,8 +97,8 @@ public final class ClientEndpoint implements Client {
         return principal;
     }
 
-    public SocketAddress getSocketAddress() {
-        return socketAddress;
+    public InetSocketAddress getSocketAddress() {
+        return (InetSocketAddress) socketAddress;
     }
 
     public ClientType getClientType() {
@@ -128,26 +132,32 @@ public final class ClientEndpoint implements Client {
         this.transactionContext = transactionContext;
     }
 
-    public void setListenerRegistration(String service, String topic, String id) {
-        ListenerRegistration reg = registration;
-        if (reg != null) {
-            getLogger().warning("A listener already exists. De-registering current listener: " + reg);
-            deregisterListener(reg);
-        }
-        registration = new ListenerRegistration(service, topic, id);
+    public void setListenerRegistration(final String service, final String topic, final String id) {
+        destroyActions.add(new Runnable() {
+            public void run() {
+                final EventService eventService = clientEngine.getEventService();
+                eventService.deregisterListener(service, topic, id);
+            }
+        });
+    }
+
+    public void setDistributedObjectListener(final String id){
+        destroyActions.add(new Runnable() {
+            public void run() {
+                clientEngine.getProxyService().removeProxyListener(id);
+            }
+        });
     }
 
     void destroy() throws LoginException {
-        final ListenerRegistration reg = registration;
-        if (reg != null) {
+        for (Runnable destroyAction : destroyActions) {
             try {
-                deregisterListener(reg);
-            } catch (HazelcastInstanceNotActiveException ignored) {
+                destroyAction.run();
             } catch (Exception e) {
-                getLogger().warning(e);
+                getLogger().warning("Exception during destroy action", e);
             }
-            registration = null;
         }
+
         final LoginContext lc = loginContext;
         if (lc != null) {
             lc.logout();
@@ -169,12 +179,6 @@ public final class ClientEndpoint implements Client {
         return clientEngine.getLogger(getClass());
     }
 
-    private void deregisterListener(ListenerRegistration reg) {
-        final EventService eventService = clientEngine.getEventService();
-        eventService.deregisterListener(reg.service, reg.topic, reg.id);
-    }
-
-    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientEndpoint{");
         sb.append("conn=").append(conn);

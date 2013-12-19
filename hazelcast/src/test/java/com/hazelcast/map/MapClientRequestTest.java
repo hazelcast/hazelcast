@@ -23,9 +23,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.query.*;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
@@ -34,14 +34,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class MapClientRequestTest extends ClientTestSupport {
 
     static final String mapName = "test";
@@ -284,4 +287,67 @@ public class MapClientRequestTest extends ClientTestSupport {
         }
         assertEquals(0, testSet.size());
     }
+    @Test
+    public void testEntryProcessorWithPredicate() throws IOException
+    {
+
+        final IMap map = getMap();
+        int size = 10;
+        for (int i = 0; i < size; i++) {
+            map.put(i, new SampleObjects.Employee(i, "", 0, false, 0D, SampleObjects.State.STATE1));
+        }
+        EntryProcessor entryProcessor = new ChangeStateEntryProcessor();
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate p = e.get("id").lessThan(5);
+
+        MapExecuteWithPredicateRequest request = new MapExecuteWithPredicateRequest(map.getName(), entryProcessor, p);
+        final SimpleClient client = getClient();
+        client.send(request);
+        MapEntrySet entrySet = (MapEntrySet) client.receive();
+
+        Map<Integer, Employee> result = new HashMap<Integer, Employee>();
+        for (Map.Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+            final Data keyData = dataEntry.getKey();
+            final Data valueData = dataEntry.getValue();
+            Integer key = (Integer)TestUtil.toObject(keyData);
+            result.put(key, (Employee)TestUtil.toObject(valueData));
+        }
+
+        assertEquals(5,entrySet.getEntrySet().size());
+
+        for (int i = 0; i < 5; i++) {
+            assertEquals(SampleObjects.State.STATE2, ((Employee) map.get(i)).getState());
+        }
+        for (int i = 5; i < size; i++) {
+            assertEquals(SampleObjects.State.STATE1, ((Employee)map.get(i)).getState());
+        }
+        for (int i = 0; i < 5; i++) {
+            assertEquals(result.get(i).getState(), SampleObjects.State.STATE2);
+        }
+
+
+    }
+    private static class ChangeStateEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+
+        ChangeStateEntryProcessor() {
+        }
+
+        public Object process(Map.Entry entry) {
+            SampleObjects.Employee value = (SampleObjects.Employee) entry.getValue();
+            value.setState(SampleObjects.State.STATE2);
+            entry.setValue(value);
+            return value;
+        }
+
+        public EntryBackupProcessor getBackupProcessor() {
+            return ChangeStateEntryProcessor.this;
+        }
+
+        public void processBackup(Map.Entry entry) {
+            SampleObjects.Employee value = (SampleObjects.Employee) entry.getValue();
+            value.setState(SampleObjects.State.STATE2);
+            entry.setValue(value);
+        }
+    }
+
 }

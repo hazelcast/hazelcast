@@ -18,11 +18,15 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.Record;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
+
+import java.io.IOException;
 
 public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
@@ -41,21 +45,32 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
+        MapService mapService = getService();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        Record record = recordStore.getRecords().get( dataKey );
+        Record record = recordStore.getRecord(dataKey);
         if (record != null) {
-            recordStore.getRecords().remove( dataKey );
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
+            recordStore.deleteRecord(dataKey);
         }
-        if(unlockKey)
+        if (unlockKey) {
             recordStore.forceUnlock(dataKey);
+        }
     }
 
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(unlockKey);
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        unlockKey = in.readBoolean();
     }
 
     public int getFactoryId() {
@@ -66,12 +81,11 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         return MapDataSerializerHook.REMOVE_BACKUP;
     }
 
-    private void updateSizeEstimator( long recordSize ) {
-        recordStore.getSizeEstimator().add( recordSize );
+    private void updateSizeEstimator(long recordSize) {
+        recordStore.getSizeEstimator().add(recordSize);
     }
 
-    private long calculateRecordSize( Record record ) {
-        return recordStore.getSizeEstimator().getCost( record );
+    private long calculateRecordSize(Record record) {
+        return recordStore.getSizeEstimator().getCost(record);
     }
-
 }

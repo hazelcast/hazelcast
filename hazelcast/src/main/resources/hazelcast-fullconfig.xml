@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.1.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.2.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -147,7 +147,7 @@
            Possible values:
            BINARY (default): keys and values will be stored as binary data
            OBJECT : values will be stored in their object forms
-           CACHED: object form of values will be cached in queries
+           OFFHEAP : values will be stored in non-heap region of JVM
         -->
         <in-memory-format>BINARY</in-memory-format>
         <!--
@@ -248,8 +248,6 @@
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
 
-        <!-- HEAP or OFFHEAP -->
-        <storage-type>HEAP</storage-type>
     </map>
 
     <multimap name="default">
@@ -260,6 +258,14 @@
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
     </multimap>
+
+    <replicatedmap name="default">
+        <in-memory-format>OBJECT</in-memory-format>
+        <concurrency-level>32</concurrency-level>
+        <replication-delay-millis>100</replication-delay-millis>
+        <async-fillup>true</async-fillup>
+        <statistics-enabled>true</statistics-enabled>
+    </replicatedmap>
 
     <list name="default">
         <statistics-enabled>false</statistics-enabled>
@@ -367,7 +373,7 @@
                     <action>create</action>
                     <action>destroy</action>
                     <action>put</action>
-                    <action>get</action>
+                    <action>read</action>
                 </actions>
             </map-permission>
             <map-permission name="custom" principal="dev">
@@ -378,7 +384,7 @@
                     <action>create</action>
                     <action>destroy</action>
                     <action>put</action>
-                    <action>get</action>
+                    <action>read</action>
                 </actions>
             </map-permission>
             <queue-permission name="default" principal="dev">
@@ -388,12 +394,11 @@
                 <actions>
                     <action>create</action>
                     <action>destroy</action>
-                    <action>offer</action>
-                    <action>poll</action>
+                    <action>add</action>
+                    <action>remove</action>
                 </actions>
             </queue-permission>
             <transaction-permission/>
-            <listener-permission name="instance"/>
         </client-permissions>
     </security>
 

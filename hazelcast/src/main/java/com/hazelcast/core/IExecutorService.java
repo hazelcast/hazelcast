@@ -135,8 +135,8 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
 
     /**
      * Submits task to the specified members. Caller will be notified for the result of the each task by
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
+     * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
      * @param task task
      * @param callback callback
@@ -145,8 +145,8 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
 
     /**
      * Submits task to the all cluster members. Caller will be notified for the result of the each task by
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
+     * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
      * @param task task
      * @param callback callback
@@ -182,8 +182,8 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
 
     /**
      * Submits task to the specified members. Caller will be notified for the result of the each task by
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
+     * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
      * @param task task
      * @param callback callback
@@ -192,8 +192,8 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
 
     /**
      * Submits task to the all cluster members. Caller will be notified for the result of the each task by
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
-     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
+     * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
      * @param task task
      * @param callback callback

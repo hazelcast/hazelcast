@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.operations.MultiMapResponse;
@@ -24,17 +23,20 @@ import com.hazelcast.multimap.operations.RemoveAllOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * @author ali 5/10/13
  */
-public class RemoveAllRequest extends MultiMapKeyBasedRequest implements InitializingObjectRequest {
+public class RemoveAllRequest extends MultiMapKeyBasedRequest {
 
     int threadId = -1;
 
@@ -77,5 +79,9 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest implements Initial
             return new PortableCollection(collection);
         }
         return super.filter(response);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

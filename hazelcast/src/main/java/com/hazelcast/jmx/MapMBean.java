@@ -116,6 +116,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return managedObject.getLocalMapStats().getLastAccessTime();
     }
 
+    @ManagedAnnotation("localLastUpdateTime")
+    @ManagedDescription("the last update time of the locally owned entries.")
+    public long getLocalLastUpdateTime(){
+        return managedObject.getLocalMapStats().getLastUpdateTime();
+    }
+
     @ManagedAnnotation("localHits")
     @ManagedDescription("the number of hits (reads) of the locally owned entries.")
     public long getLocalHits(){
@@ -228,7 +234,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedAnnotation("config")
     @ManagedDescription("MapConfig")
     public String getConfig(){
-        return service.instance.getConfig().getMapConfig(managedObject.getName()).toString();
+        return service.instance.getConfig().findMapConfig(managedObject.getName()).toString();
     }
 
     @ManagedAnnotation("totalAddedEntryCount")

@@ -73,7 +73,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.1.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
         xml.append("<password>").append(config.getGroupConfig().getPassword()).append("</password>");
@@ -281,16 +281,13 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
-            if (m.getStorageType() != null) {
-                xml.append("<storage-type>").append(m.getStorageType().toString()).append("</storage-type>");
-            }
-            if (m.getPartitionStrategyConfig() != null) {
+            if (m.getPartitioningStrategyConfig() != null) {
                 xml.append("<partition-strategy>");
-                PartitionStrategyConfig psc = m.getPartitionStrategyConfig();
-                if (psc.getPartitionStrategy() != null) {
-                    xml.append(psc.getPartitionStrategy().getClass().getName());
+                PartitioningStrategyConfig psc = m.getPartitioningStrategyConfig();
+                if (psc.getPartitioningStrategy() != null) {
+                    xml.append(psc.getPartitioningStrategy().getClass().getName());
                 } else {
-                    xml.append(psc.getPartitionStrategyClass());
+                    xml.append(psc.getPartitioningStrategyClass());
                 }
                 xml.append("</partition-strategy>");
             }
@@ -310,13 +307,13 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
-//            if (mm.getPartitionStrategyConfig() != null) {
+//            if (mm.getPartitioningStrategyConfig() != null) {
 //                xml.append("<partition-strategy>");
-//                PartitionStrategyConfig psc = mm.getPartitionStrategyConfig();
-//                if (psc.getPartitionStrategy() != null) {
-//                    xml.append(psc.getPartitionStrategy().getClass().getName());
+//                PartitioningStrategyConfig psc = mm.getPartitioningStrategyConfig();
+//                if (psc.getPartitioningStrategy() != null) {
+//                    xml.append(psc.getPartitioningStrategy().getClass().getName());
 //                } else {
-//                    xml.append(psc.getPartitionStrategyClass());
+//                    xml.append(psc.getPartitioningStrategyClass());
 //                }
 //                xml.append("</partition-strategy>");
 //            }

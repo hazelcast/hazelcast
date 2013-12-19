@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.MultiTargetClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.operation.AddInterceptorOperationFactory;
 import com.hazelcast.map.MapInterceptor;
@@ -28,17 +29,21 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-public class MapAddInterceptorRequest extends MultiTargetClientRequest implements Portable {
+public class MapAddInterceptorRequest extends MultiTargetClientRequest implements Portable, SecureRequest {
 
     private String name;
     private MapInterceptor mapInterceptor;
+    private transient String id;
 
     public MapAddInterceptorRequest() {
     }
@@ -64,13 +69,13 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     @Override
     protected OperationFactory createOperationFactory() {
         final MapService mapService = getService();
-        String id = mapService.addInterceptor(name, mapInterceptor);
+        id = mapService.addInterceptor(name, mapInterceptor);
         return new AddInterceptorOperationFactory(id, name, mapInterceptor);
     }
 
     @Override
     protected Object reduce(Map<Address, Object> map) {
-        return true;
+        return id;
     }
 
     @Override
@@ -87,7 +92,7 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(out);
+        out.writeObject(mapInterceptor);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -96,4 +101,7 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
         mapInterceptor = in.readObject();
     }
 
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_INTERCEPT);
+    }
 }

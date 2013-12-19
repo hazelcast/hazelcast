@@ -28,7 +28,6 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
     private long newValue;
 
     public SetOperation() {
-        super();
     }
 
     public SetOperation(String name, long newValue) {

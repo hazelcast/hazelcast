@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.RemoveOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,14 +23,17 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/10/13
  */
-public class RemoveRequest extends MultiMapKeyBasedRequest implements InitializingObjectRequest {
+public class RemoveRequest extends MultiMapKeyBasedRequest {
 
     Data value;
 
@@ -61,12 +63,15 @@ public class RemoveRequest extends MultiMapKeyBasedRequest implements Initializi
         value.writeData(out);
     }
 
-    @Override
     public void readPortable(PortableReader reader) throws IOException {
         threadId = reader.readInt("t");
         super.readPortable(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         value = new Data();
         value.readData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

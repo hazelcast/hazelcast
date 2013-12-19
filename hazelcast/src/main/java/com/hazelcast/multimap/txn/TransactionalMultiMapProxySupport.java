@@ -25,7 +25,6 @@ import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
@@ -53,7 +52,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
-        this.config = nodeEngine.getConfig().getMultiMapConfig(name);
+        this.config = nodeEngine.getConfig().findMultiMapConfig(name);
     }
 
     protected void checkTransactionState(){
@@ -167,9 +166,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             GetAllOperation operation = new GetAllOperation(name, key);
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
-                Invocation invocation = getNodeEngine().getOperationService()
-                        .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-                Future<MultiMapResponse> f = invocation.invoke();
+                Future<MultiMapResponse> f = getNodeEngine().getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 MultiMapResponse response = f.get();
                 coll = response.getRecordCollection(getNodeEngine());
             } catch (Throwable t) {
@@ -187,9 +184,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             CountOperation operation = new CountOperation(name, key);
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
-                Invocation invocation = getNodeEngine().getOperationService()
-                        .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-                Future<Integer> f = invocation.invoke();
+                Future<Integer> f = getNodeEngine().getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 return f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -247,9 +242,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, ttl, getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-            Future<MultiMapResponse> f = invocation.invoke();
+            Future<MultiMapResponse> f = nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -261,9 +254,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         TxnGenerateRecordIdOperation operation = new TxnGenerateRecordIdOperation(name, key);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-            Future<Long> f = invocation.invoke();
+            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

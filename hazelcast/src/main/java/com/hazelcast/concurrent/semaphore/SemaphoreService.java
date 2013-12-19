@@ -50,7 +50,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     private final ConstructorFunction<String, Permit> permitConstructor = new ConstructorFunction<String, Permit>() {
         public Permit createNew(String name) {
-            SemaphoreConfig config = nodeEngine.getConfig().getSemaphoreConfig(name);
+            SemaphoreConfig config = nodeEngine.getConfig().findSemaphoreConfig(name);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             return new Permit(partitionId, new SemaphoreConfig(config));
         }
@@ -72,7 +72,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         permitMap.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         permitMap.clear();
     }
 

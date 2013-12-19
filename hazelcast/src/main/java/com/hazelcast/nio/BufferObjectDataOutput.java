@@ -34,6 +34,8 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     void writeByte(int position, final int v) throws IOException;
 
+    void writeZeroBytes(int count);
+
     void writeChar(int position, final int v) throws IOException;
 
     void writeDouble(int position, final double v) throws IOException;
@@ -49,7 +51,4 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
     byte[] getBuffer();
 
     void clear();
-
-    byte[] toByteArray();
-
 }

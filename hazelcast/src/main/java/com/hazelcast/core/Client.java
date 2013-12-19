@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 /**
  * Client interface allows to get information about
@@ -25,7 +25,7 @@ import java.net.SocketAddress;
  * @see ClientService
  * @see ClientListener
  */
-public interface Client {
+public interface Client extends Endpoint {
 
     /**
      * Returns unique uuid for this client
@@ -39,7 +39,7 @@ public interface Client {
      *
      * @return socket address of this client
      */
-    SocketAddress getSocketAddress();
+    InetSocketAddress getSocketAddress();
 
     /**
      * Returns type of this client

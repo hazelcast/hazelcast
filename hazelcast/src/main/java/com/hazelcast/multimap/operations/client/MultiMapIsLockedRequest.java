@@ -23,10 +23,13 @@ import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/23/13
@@ -64,5 +67,9 @@ public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements 
 
     public int getClassId() {
         return MultiMapPortableHook.IS_LOCKED;
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_LOCK);
     }
 }

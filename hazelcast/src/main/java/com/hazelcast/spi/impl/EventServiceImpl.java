@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author mdogan 12/14/12
  */
-public class EventServiceImpl implements EventService, PostJoinAwareService {
+public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
     private final ILogger logger;
@@ -118,6 +118,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     private boolean handleRegistration(Registration reg) {
+        if (nodeEngine.getThisAddress().equals(reg.getSubscriber())) {
+            return false;
+        }
         EventServiceSegment segment = getSegment(reg.serviceName, true);
         return segment.addRegistration(reg.topic, reg);
     }
@@ -153,9 +156,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                        new RegistrationOperation(reg), member.getAddress()).build();
-                calls.add(inv.invoke());
+                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                        new RegistrationOperation(reg), member.getAddress());
+                calls.add(f);
             }
         }
         for (Future f : calls) {
@@ -176,9 +179,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                        new DeregistrationOperation(topic, id), member.getAddress()).build();
-                calls.add(inv.invoke());
+                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                        new DeregistrationOperation(topic, id), member.getAddress());
+                calls.add(f);
             }
         }
         for (Future f : calls) {
@@ -221,7 +224,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             throw new IllegalArgumentException();
         }
         final Registration reg = (Registration) registration;
-        if (reg.isLocal()) {
+        if (isLocal(reg)) {
             executeLocal(serviceName, event, reg, orderKey);
         } else {
             final Address subscriber = registration.getSubscriber();
@@ -238,7 +241,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 throw new IllegalArgumentException();
             }
             final Registration reg = (Registration) registration;
-            if (reg.isLocal()) {
+            if (isLocal(reg)) {
                 executeLocal(serviceName, event, reg, orderKey);
             } else {
                 if (eventData == null) {
@@ -253,9 +256,15 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private void executeLocal(String serviceName, Object event, Registration reg, int orderKey) {
         if (nodeEngine.isActive()) {
             try {
-                eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey, eventQueueTimeoutMs));
+                if (reg.listener != null) {
+                    eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey, eventQueueTimeoutMs));
+                } else {
+                    logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
+                }
             } catch (RejectedExecutionException e) {
-                logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
+                if (eventExecutor.isLive()) {
+                    logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
+                }
             }
         }
     }
@@ -265,10 +274,10 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         final EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % 100000 == 0;
         if (sync) {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).build();
+            Future f = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).invoke();
             try {
-                inv.invoke().get(3, TimeUnit.SECONDS);
+                f.get(3, TimeUnit.SECONDS);
             } catch (Exception ignored) {
             }
         } else {
@@ -290,13 +299,19 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         return segment;
     }
 
+    private boolean isLocal(Registration reg) {
+        return nodeEngine.getThisAddress().equals(reg.getSubscriber());
+    }
+
     @PrivateApi
     void executeEvent(Runnable eventRunnable) {
         if (nodeEngine.isActive()) {
             try {
                 eventExecutor.execute(eventRunnable);
             } catch (RejectedExecutionException e) {
-                logger.warning("EventQueue overloaded! Failed to execute event process: "  + eventRunnable);
+                if (eventExecutor.isLive()) {
+                    logger.warning("EventQueue overloaded! Failed to execute event process: "  + eventRunnable);
+                }
             }
         }
     }
@@ -306,9 +321,11 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(packet));
         } catch (RejectedExecutionException e) {
-            final Connection conn = packet.getConn();
-            String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
-            logger.warning("EventQueue overloaded! Failed to process event packet sent from: "  + endpoint);
+            if (eventExecutor.isLive()) {
+                final Connection conn = packet.getConn();
+                String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
+                logger.warning("EventQueue overloaded! Failed to process event packet sent from: "  + endpoint);
+            }
         }
     }
 
@@ -441,21 +458,31 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             final String serviceName = eventPacket.serviceName;
             EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service == null) {
-                logger.warning("There is no service named: " + serviceName);
+                if (nodeEngine.isActive()) {
+                    logger.warning("There is no service named: " + serviceName);
+                }
                 return;
             }
             EventServiceSegment segment = getSegment(serviceName, false);
             if (segment == null) {
-                logger.warning("No service registration found for " + serviceName);
+                if (nodeEngine.isActive()) {
+                    logger.warning("No service registration found for " + serviceName);
+                }
                 return;
             }
             Registration registration = segment.registrationIdMap.get(eventPacket.id);
             if (registration == null) {
-                logger.warning("No registration found for " + serviceName + " / " + eventPacket.id);
+                if (nodeEngine.isActive()) {
+                    logger.warning("No registration found for " + serviceName + " / " + eventPacket.id);
+                }
                 return;
             }
-            if (!registration.isLocal()) {
-                logger.warning("Invalid target for  " + registration);
+            if (!isLocal(registration)) {
+                logger.severe("Invalid target for  " + registration);
+                return;
+            }
+            if (registration.listener == null) {
+                logger.warning("Something seems wrong! Subscriber is local but listener instance is null! -> " + registration);
                 return;
             }
             service.dispatchEvent(eventObject, registration.listener);
@@ -564,10 +591,6 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
 
         public boolean isLocalOnly() {
             return localOnly;
-        }
-
-        private boolean isLocal() {
-            return listener != null;
         }
 
         @Override

@@ -56,7 +56,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
             OperationService operationService = nodeEngine.getOperationService();
             if (sync) {
                 operationService.createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME, op, target)
-                        .setCallback(callback).setTryCount(10).setTryPauseMillis(250).build().invoke();
+                        .setCallback(callback).setTryCount(10).setTryPauseMillis(250).invoke();
             } else {
                 operationService.send(op, target);
             }

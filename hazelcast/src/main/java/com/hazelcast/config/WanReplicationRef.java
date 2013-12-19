@@ -18,8 +18,30 @@ package com.hazelcast.config;
 
 
 public class WanReplicationRef {
-    String name;
-    String mergePolicy;
+    private String name;
+    private String mergePolicy;
+
+    private WanReplicationRefReadOnly readOnly;
+
+    public WanReplicationRef() {
+    }
+
+    public WanReplicationRef(String name, String mergePolicy) {
+        this.name = name;
+        this.mergePolicy = mergePolicy;
+    }
+
+    public WanReplicationRef(WanReplicationRef ref) {
+        name = ref.name;
+        mergePolicy = ref.mergePolicy;
+    }
+
+    public WanReplicationRefReadOnly getAsReadOnly() {
+        if (readOnly == null ) {
+            readOnly = new WanReplicationRefReadOnly(this);
+        }
+        return readOnly;
+    }
 
     public String getName() {
         return name;

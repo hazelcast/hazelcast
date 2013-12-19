@@ -22,10 +22,12 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,8 +43,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 2/12/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
@@ -81,22 +83,13 @@ public class BasicQueueTest extends HazelcastTestSupport {
     public void testQueueEviction() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final Config config = new Config();
-        config.getQueueConfig("q").setEmptyQueueTtl(0);
+        config.getQueueConfig("q").setEmptyQueueTtl(2);
         final HazelcastInstance hz = factory.newHazelcastInstance(config);
         final IQueue<Object> q = hz.getQueue("q");
 
-        new Thread(){
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                q.drainTo(new LinkedList<Object>());
-            }
-        }.start();
-
         try {
+            assertTrue(q.offer("item"));
+            assertEquals("item", q.poll());
             q.take();
             fail();
         } catch (Exception e){

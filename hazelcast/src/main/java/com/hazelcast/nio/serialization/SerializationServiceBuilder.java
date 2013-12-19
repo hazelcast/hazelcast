@@ -55,9 +55,11 @@ public final class SerializationServiceBuilder {
 
     private boolean enableCompression = false;
 
-    private boolean enableSharedObject = false;
+    private boolean enableSharedObject = true;
 
     private boolean allowUnsafe = false;
+
+    private int initialOutputBufferSize = 4 * 1024;
 
     private PartitioningStrategy partitioningStrategy;
 
@@ -150,6 +152,14 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
+    public SerializationServiceBuilder setInitialOutputBufferSize(int initialOutputBufferSize) {
+        if (initialOutputBufferSize <= 0) {
+            throw new IllegalArgumentException("Initial buffer size must be positive!");
+        }
+        this.initialOutputBufferSize = initialOutputBufferSize;
+        return this;
+    }
+
     public SerializationService build() {
         if (version < 0) {
             version = 0;
@@ -163,7 +173,7 @@ public final class SerializationServiceBuilder {
         final InputOutputFactory inputOutputFactory = createInputOutputFactory();
         final SerializationService ss = new SerializationServiceImpl(inputOutputFactory, version, classLoader, dataSerializableFactories,
                 portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitioningStrategy,
-                enableCompression, enableSharedObject);
+                initialOutputBufferSize, enableCompression, enableSharedObject);
 
         if (config != null) {
             if (config.getGlobalSerializerConfig() != null) {

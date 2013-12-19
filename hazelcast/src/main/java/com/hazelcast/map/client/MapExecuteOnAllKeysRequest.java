@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.InitializingObjectRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
@@ -29,13 +29,16 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable, InitializingObjectRequest {
+public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
 
     private String name;
     private EntryProcessor processor;
@@ -74,11 +77,6 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
     }
 
     @Override
-    public String getObjectName() {
-        return name;
-    }
-
-    @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
@@ -97,5 +95,9 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         processor = in.readObject();
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
     }
 }

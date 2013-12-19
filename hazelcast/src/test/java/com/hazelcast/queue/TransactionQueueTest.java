@@ -21,10 +21,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -43,8 +45,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 3/11/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test
@@ -137,11 +139,6 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         assertNull(instances[0].getMap(mapName).get("lock1"));
     }
 
-    private IQueue getQueue(HazelcastInstance[] instances, String name) {
-        final Random rnd = new Random(System.currentTimeMillis());
-        return instances[rnd.nextInt(instances.length)].getQueue(name);
-    }
-
     @Test
     public void testRollbackQueue() throws Throwable {
         Config config = new Config();
@@ -211,7 +208,11 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             public void run() {
                 while (active && count.get() != numberOfMessages && hazelcastInstance.getLifecycleService().isRunning()) {
                     TransactionContext transactionContext = hazelcastInstance.newTransactionContext();
-                    transactionContext.beginTransaction();
+                    try {
+                        transactionContext.beginTransaction();
+                    } catch (HazelcastInstanceNotActiveException ignored) {
+                        break;
+                    }
                     try {
                         TransactionalQueue<Object> queue = transactionContext.getQueue(inQueueName);
                         Object value = queue.poll();
@@ -254,6 +255,38 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         } finally {
             moveMessage1.active = false;
         }
+    }
+
+    @Test
+    public void testPeekMethod() throws Exception {
+        final Config config = new Config();
+        final int insCount = 4;
+        final String name = "defQueue";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+
+        final TransactionContext context = instances[0].newTransactionContext();
+        context.beginTransaction();
+        try {
+            TransactionalQueue<String> q = context.getQueue(name);
+            final String response1 = q.peek(10, TimeUnit.SECONDS);
+            assertNull(response1);
+
+            assertTrue(q.offer("ali"));
+
+            final String response2 = q.peek();
+            assertEquals("ali", response2);
+            context.commitTransaction();
+        } catch (TransactionException e) {
+            context.rollbackTransaction();
+            throw e;
+        }
+        assertEquals(1, getQueue(instances, name).size());
+    }
+
+    private IQueue getQueue(HazelcastInstance[] instances, String name) {
+        final Random rnd = new Random(System.currentTimeMillis());
+        return instances[rnd.nextInt(instances.length)].getQueue(name);
     }
 
 }

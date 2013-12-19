@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class SerializationServiceImpl implements SerializationService {
 
-    private static final int OUTPUT_BUFFER_SIZE = 4 * 1024;
     private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 
     private static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
@@ -65,6 +64,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private final ManagedContext managedContext;
     private final SerializationContextImpl serializationContext;
     private final PartitioningStrategy globalPartitioningStrategy;
+    private final int outputBufferSize;
 
     private volatile boolean active = true;
 
@@ -73,12 +73,14 @@ public final class SerializationServiceImpl implements SerializationService {
                              Map<Integer, ? extends PortableFactory> portableFactories,
                              Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
                              ManagedContext managedContext, PartitioningStrategy partitionStrategy,
+                             int initialOutputBufferSize,
                              boolean enableCompression, boolean enableSharedObject) {
 
         this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
         this.managedContext = managedContext;
         this.globalPartitioningStrategy = partitionStrategy;
+        this.outputBufferSize = initialOutputBufferSize;
 
         PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
         serializationContext = new SerializationContextImpl(this, loader.getFactories().keySet(), version);
@@ -195,7 +197,10 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public Object toObject(final Data data) {
-        if (data == null || data.bufferSize() == 0) {
+        if (data == null) {
+            return null;
+        }
+        if (data.bufferSize() == 0 && data.isDataSerializable()) {
             return null;
         }
         try {
@@ -293,7 +298,7 @@ public final class SerializationServiceImpl implements SerializationService {
     BufferObjectDataOutput pop() {
         BufferObjectDataOutput out = outputPool.poll();
         if (out == null) {
-            out = inputOutputFactory.createOutput(OUTPUT_BUFFER_SIZE, this);
+            out = inputOutputFactory.createOutput(outputBufferSize, this);
         }
         return out;
     }
@@ -344,8 +349,15 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public void registerGlobal(final Serializer serializer) {
-        if (!global.compareAndSet(null, createSerializerAdapter(serializer))) {
-            throw new IllegalStateException("Fallback serializer is already registered!");
+        SerializerAdapter adapter = createSerializerAdapter(serializer);
+        if (!global.compareAndSet(null, adapter)) {
+            throw new IllegalStateException("Global serializer is already registered!");
+        }
+        SerializerAdapter current = idMap.putIfAbsent(serializer.getTypeId(), adapter);
+        if (current != null && current.getImpl().getClass() != adapter.getImpl().getClass()) {
+            global.compareAndSet(adapter, null);
+            throw new IllegalStateException("Serializer [" + current.getImpl() + "] has been already registered for type-id: "
+                    + serializer.getTypeId());
         }
     }
 
@@ -437,11 +449,11 @@ public final class SerializationServiceImpl implements SerializationService {
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
-            throw new IllegalStateException("Serializer[" + current + "] has been already registered for type: " + type);
+            throw new IllegalStateException("Serializer[" + current.getImpl() + "] has been already registered for type: " + type);
         }
         current = idMap.putIfAbsent(serializer.getTypeId(), serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
-            throw new IllegalStateException("Serializer [" + current + "] has been already registered for type-id: "
+            throw new IllegalStateException("Serializer [" + current.getImpl() + "] has been already registered for type-id: "
                     + serializer.getTypeId());
         }
     }

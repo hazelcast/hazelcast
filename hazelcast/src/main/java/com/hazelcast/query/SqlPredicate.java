@@ -69,7 +69,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 
     private int getApostropheIndexIgnoringDoubles(String str, int start) {
         int i = str.indexOf("'", start);
-        int j = str.indexOf("'", i+1);
+        int j = str.indexOf("'", i + 1);
         //ignore doubles
         while(i == j-1){
             i = str.indexOf("'", j+1);
@@ -164,6 +164,12 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, like((String) first, (String) second));
+                    } else if ("ILIKE".equalsIgnoreCase(token)) {
+                        int position = (i - 2);
+                        validateOperandPosition(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, ilike((String) first, (String) second));
                     } else if ("REGEX".equalsIgnoreCase(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
@@ -255,5 +261,27 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     @Override
     public String toString() {
         return predicate.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SqlPredicate)) {
+            return false;
+        }
+
+        SqlPredicate that = (SqlPredicate) o;
+
+        if (!sql.equals(that.sql)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return sql.hashCode();
     }
 }

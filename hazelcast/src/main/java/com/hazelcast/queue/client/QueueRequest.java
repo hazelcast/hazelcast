@@ -16,21 +16,24 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/8/13
  */
-public abstract class QueueRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest {
+public abstract class QueueRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String name;
 
@@ -61,10 +64,6 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
         return QueueService.SERVICE_NAME;
     }
 
-    public String getObjectName() {
-        return name;
-    }
-
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
@@ -77,5 +76,9 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         timeoutMillis = reader.readLong("t");
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_READ);
     }
 }

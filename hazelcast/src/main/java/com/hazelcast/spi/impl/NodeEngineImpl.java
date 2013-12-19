@@ -35,6 +35,8 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.storage.DataRef;
+import com.hazelcast.storage.Storage;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -53,7 +55,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
 
-    final OperationServiceImpl operationService;
+    final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final WaitNotifyServiceImpl waitNotifyService;
@@ -64,7 +66,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService = new ProxyServiceImpl(this);
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
-        operationService = new OperationServiceImpl(this);
+        operationService = new BasicOperationService(this);
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
@@ -312,10 +314,6 @@ public class NodeEngineImpl implements NodeEngine {
         if (eventPostJoinOp != null) {
             postJoinOps.add(eventPostJoinOp);
         }
-        Operation proxyPostJoinOp = proxyService.getPostJoinOperation();
-        if (proxyPostJoinOp != null) {
-            postJoinOps.add(proxyPostJoinOp);
-        }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
             final Operation pjOp = service.getPostJoinOperation();
@@ -335,12 +333,16 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getClusterService().getClusterTime();
     }
 
+    public Storage<DataRef> getOffHeapStorage() {
+        return node.initializer.getOffHeapStorage();
+    }
+
     @PrivateApi
-    public void shutdown() {
+    public void shutdown(final boolean terminate) {
         logger.finest( "Shutting down services...");
         waitNotifyService.shutdown();
         proxyService.shutdown();
-        serviceManager.shutdown();
+        serviceManager.shutdown(terminate);
         executionService.shutdown();
         eventService.shutdown();
         operationService.shutdown();

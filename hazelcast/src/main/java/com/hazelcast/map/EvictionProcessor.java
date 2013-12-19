@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -31,11 +30,10 @@ import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
+public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
     final NodeEngine nodeEngine;
     final MapService mapService;
@@ -53,15 +51,16 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
-            Operation operation = new EvictOperation(mapName, key, true);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            try {
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .build();
-                Future f = invocation.invoke();
-                futures.add(f);
-            } catch (Throwable t) {
-                logger.warning(t);
+                // execute eviction if the node is owner of the key (it can be backup)
+            if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                Operation operation = new EvictOperation(mapName, key, true);
+                try {
+                    Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                    futures.add(f);
+                } catch (Throwable t) {
+                    logger.warning(t);
+                }
             }
         }
         for (Future future : futures) {

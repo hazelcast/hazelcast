@@ -32,6 +32,7 @@ import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.lock.proxy.LockProxy;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.multimap.MultiMapService;
@@ -52,6 +53,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
@@ -141,10 +143,19 @@ public final class HazelcastClient implements HazelcastInstance {
         if (config == null) {
             config = new XmlClientConfigBuilder().build();
         }
-        final HazelcastClient client = new HazelcastClient(config);
-        client.start();
-        final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
-        CLIENTS.put(client.id, proxy);
+
+        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        HazelcastClientProxy proxy;
+        try{
+            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
+            final HazelcastClient client = new HazelcastClient(config);
+            client.start();
+
+            proxy = new HazelcastClientProxy(client);
+            CLIENTS.put(client.id, proxy);
+        } finally {
+            Thread.currentThread().setContextClassLoader(tccl);
+        }
         return proxy;
     }
 
@@ -217,6 +228,11 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
+    }
+
+    @Override
     public ILock getLock(String key) {
         return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
     }
@@ -231,6 +247,11 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public Cluster getCluster() {
         return new ClientClusterProxy(clusterService);
+    }
+
+    @Override
+    public Client getLocalEndpoint() {
+        return clusterService.getLocalClient();
     }
 
     @Override
@@ -284,6 +305,11 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public IAtomicLong getAtomicLong(String name) {
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
     @Override

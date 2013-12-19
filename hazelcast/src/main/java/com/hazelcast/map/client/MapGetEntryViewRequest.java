@@ -18,6 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.operation.GetEntryViewOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -27,11 +28,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
-public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Portable, RetryableRequest {
+public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private String name;
     private Data key;
@@ -80,5 +84,9 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_READ);
     }
 }

@@ -53,6 +53,8 @@ public class Config {
 
     private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
 
+    private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
+
     private final Map<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
 
     private final Map<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
@@ -82,6 +84,10 @@ public class Config {
     private String licenseKey;
 
     public Config() {
+    }
+
+    public Config(String instanceName){
+        this.instanceName = instanceName;
     }
 
     /**
@@ -159,6 +165,13 @@ public class Config {
         return this;
     }
 
+    public MapConfig findMapConfig(String name){
+        name = getBaseName(name);
+        MapConfig config;
+        if ((config = lookupByPattern(mapConfigs, name)) != null) return config.getAsReadOnly();
+        return getMapConfig("default").getAsReadOnly();
+    }
+
     public MapConfig getMapConfig(String name) {
         name = getBaseName(name);
         MapConfig config;
@@ -199,6 +212,13 @@ public class Config {
         return this;
     }
 
+    public QueueConfig findQueueConfig(String name){
+        name = getBaseName(name);
+        QueueConfig config;
+        if ((config = lookupByPattern(queueConfigs, name)) != null) return config.getAsReadOnly();
+        return getQueueConfig("default").getAsReadOnly();
+    }
+
     public QueueConfig getQueueConfig(String name) {
         name = getBaseName(name);
         QueueConfig config;
@@ -231,6 +251,13 @@ public class Config {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    public ListConfig findListConfig(String name){
+        name = getBaseName(name);
+        ListConfig config;
+        if ((config = lookupByPattern(listConfigs, name)) != null) return config.getAsReadOnly();
+        return getListConfig("default").getAsReadOnly();
     }
 
     public ListConfig getListConfig(String name) {
@@ -267,6 +294,13 @@ public class Config {
         return this;
     }
 
+    public SetConfig findSetConfig(String name){
+        name = getBaseName(name);
+        SetConfig config;
+        if ((config = lookupByPattern(setConfigs, name)) != null) return config.getAsReadOnly();
+        return getSetConfig("default").getAsReadOnly();
+    }
+
     public SetConfig getSetConfig(String name) {
         name = getBaseName(name);
         SetConfig config;
@@ -301,6 +335,13 @@ public class Config {
         return this;
     }
 
+    public MultiMapConfig findMultiMapConfig(String name){
+        name = getBaseName(name);
+        MultiMapConfig config;
+        if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config.getAsReadOnly();
+        return getMultiMapConfig("default").getAsReadOnly();
+    }
+
     public MultiMapConfig getMultiMapConfig(String name) {
         name = getBaseName(name);
         MultiMapConfig config;
@@ -333,6 +374,52 @@ public class Config {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    public ReplicatedMapConfig findReplicatedMapConfig(String name){
+        ReplicatedMapConfig config;
+        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) return config.getAsReadOnly();
+        return getReplicatedMapConfig("default").getAsReadOnly();
+    }
+
+    public ReplicatedMapConfig getReplicatedMapConfig(String name) {
+        ReplicatedMapConfig config;
+        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) return config;
+        ReplicatedMapConfig defConfig = replicatedMapConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new ReplicatedMapConfig();
+            defConfig.setName("default");
+            addReplicatedMapConfig(defConfig);
+        }
+        config = new ReplicatedMapConfig(defConfig);
+        config.setName(name);
+        addReplicatedMapConfig(config);
+        return config;
+    }
+
+    public Config addReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
+        replicatedMapConfigs.put(replicatedMapConfig.getName(), replicatedMapConfig);
+        return this;
+    }
+
+    public Map<String, ReplicatedMapConfig> getReplicatedMapConfigs() {
+        return replicatedMapConfigs;
+    }
+
+    public Config setReplicatedMapConfigs(Map<String, ReplicatedMapConfig> replicatedMapConfigs) {
+        this.replicatedMapConfigs.clear();
+        this.replicatedMapConfigs.putAll(replicatedMapConfigs);
+        for (final Entry<String, ReplicatedMapConfig> entry : this.replicatedMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public TopicConfig findTopicConfig(String name){
+        name = getBaseName(name);
+        TopicConfig config;
+        if ((config = lookupByPattern(topicConfigs, name)) != null) return config.getAsReadOnly();
+        return getTopicConfig("default").getAsReadOnly();
     }
 
     public TopicConfig getTopicConfig(String name) {
@@ -377,6 +464,13 @@ public class Config {
         return this;
     }
 
+    public ExecutorConfig findExecutorConfig(String name){
+        name = getBaseName(name);
+        ExecutorConfig config;
+        if ((config = lookupByPattern(executorConfigs, name)) != null) return config.getAsReadOnly();
+        return getExecutorConfig("default").getAsReadOnly();
+    }
+
     /**
      * Returns the ExecutorConfig for the given name
      *
@@ -385,20 +479,18 @@ public class Config {
      */
     public ExecutorConfig getExecutorConfig(String name) {
         name = getBaseName(name);
-        ExecutorConfig ec = lookupByPattern(executorConfigs, name);
-        if (ec != null) {
-            return ec;
+        ExecutorConfig config;
+        if ((config = lookupByPattern(executorConfigs, name)) != null) return config;
+        ExecutorConfig defConfig = executorConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new ExecutorConfig();
+            defConfig.setName("default");
+            addExecutorConfig(defConfig);
         }
-
-        ExecutorConfig defaultConfig = executorConfigs.get("default");
-        if (defaultConfig != null) {
-            ec = new ExecutorConfig(name, defaultConfig.getPoolSize());
-        }
-        if (ec == null) {
-            ec = new ExecutorConfig(name);
-            executorConfigs.put(name, ec);
-        }
-        return ec;
+        config = new ExecutorConfig(defConfig);
+        config.setName(name);
+        addExecutorConfig(config);
+        return config;
     }
 
     /**
@@ -425,6 +517,13 @@ public class Config {
         return this;
     }
 
+    public SemaphoreConfig findSemaphoreConfig(String name){
+        name = getBaseName(name);
+        SemaphoreConfig config;
+        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) return config.getAsReadOnly();
+        return getSemaphoreConfig("default").getAsReadOnly();
+    }
+
     /**
      * Returns the SemaphoreConfig for the given name
      *
@@ -433,20 +532,18 @@ public class Config {
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
         name = getBaseName(name);
-        SemaphoreConfig sc = lookupByPattern(semaphoreConfigs, name);
-        if (sc != null) {
-            return sc;
+        SemaphoreConfig config;
+        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) return config;
+        SemaphoreConfig defConfig = semaphoreConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new SemaphoreConfig();
+            defConfig.setName("default");
+            addSemaphoreConfig(defConfig);
         }
-
-        SemaphoreConfig defaultConfig = semaphoreConfigs.get("default");
-        if (defaultConfig == null) {
-            defaultConfig = new SemaphoreConfig();
-            defaultConfig.setName("default");
-            addSemaphoreConfig(defaultConfig);
-        }
-        sc = new SemaphoreConfig(defaultConfig);
-        addSemaphoreConfig(sc);
-        return sc;
+        config = new SemaphoreConfig(defConfig);
+        config.setName(name);
+        addSemaphoreConfig(config);
+        return config;
     }
 
     /**
@@ -619,7 +716,6 @@ public class Config {
     }
 
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
-        name = getBaseName(name);
         T t = map.get(name);
         if (t == null) {
             final Set<String> tNames = map.keySet();
@@ -632,7 +728,7 @@ public class Config {
         return t;
     }
 
-    private static boolean nameMatches(final String name, final String pattern) {
+    public static boolean nameMatches(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
         if (index == -1) {
             return name.equals(pattern);

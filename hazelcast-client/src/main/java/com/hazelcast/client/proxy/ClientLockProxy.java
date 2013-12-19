@@ -111,8 +111,6 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     protected void onDestroy() {
-        LockDestroyRequest request = new LockDestroyRequest(getName());
-        invoke(request);
     }
 
     private Data toData(Object o) {

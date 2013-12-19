@@ -64,7 +64,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         numbers.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 

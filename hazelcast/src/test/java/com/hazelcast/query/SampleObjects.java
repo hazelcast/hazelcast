@@ -145,6 +145,7 @@ public final class SampleObjects {
         BigDecimal bigDecimal = new BigDecimal("1.23E3");
 
         public Employee(long id, String name, int age, boolean live, double salary, State state) {
+            this(id,name,age,live,salary);
             this.state = state;
         }
 
@@ -154,6 +155,10 @@ public final class SampleObjects {
 
         public Employee(String name, int age, boolean live, double salary) {
             this(-1, name, age, live, salary);
+        }
+
+        public Employee(String name, String city, int age, boolean live, double salary) {
+            this(-1, name, city, age, live, salary);
         }
 
         public Employee(long id, String name, String city, int age, boolean live, double salary) {
@@ -169,6 +174,58 @@ public final class SampleObjects {
         }
 
         public Employee() {
+        }
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(long id) {
+            this.id = id;
+        }
+
+        public Date getCreateDate() {
+            return createDate;
+        }
+
+        public void setCreateDate(Date createDate) {
+            this.createDate = createDate;
+        }
+
+        public java.sql.Date getSqlDate() {
+            return sqlDate;
+        }
+
+        public void setSqlDate(java.sql.Date sqlDate) {
+            this.sqlDate = sqlDate;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public void setCity(String city) {
+            this.city = city;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public void setActive(boolean active) {
+            this.active = active;
+        }
+
+        public void setSalary(double salary) {
+            this.salary = salary;
+        }
+
+        public void setDate(Timestamp date) {
+            this.date = date;
+        }
+
+        public void setBigDecimal(BigDecimal bigDecimal) {
+            this.bigDecimal = bigDecimal;
         }
 
         public BigDecimal getBigDecimal() {

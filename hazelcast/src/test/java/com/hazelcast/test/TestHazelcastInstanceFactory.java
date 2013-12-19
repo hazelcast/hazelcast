@@ -28,6 +28,7 @@ import com.hazelcast.nio.Address;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class TestHazelcastInstanceFactory {
@@ -55,6 +56,10 @@ public final class TestHazelcastInstanceFactory {
         }
     }
 
+    public HazelcastInstance newHazelcastInstance() {
+        return newHazelcastInstance(new Config());
+    }
+
     public HazelcastInstance newHazelcastInstance(Config config) {
         if (mockNetwork) {
             if (nodeIndex.get() >= addresses.length) {
@@ -73,6 +78,13 @@ public final class TestHazelcastInstanceFactory {
             instances[i] = newHazelcastInstance(config);
         }
         return instances;
+    }
+
+    public Collection<HazelcastInstance> getAllHazelcastInstances() {
+        if (mockNetwork) {
+            return registry.getAllHazelcastInstances();
+        }
+        return Hazelcast.getAllHazelcastInstances();
     }
 
     public void shutdownAll() {

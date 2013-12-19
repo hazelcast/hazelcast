@@ -47,10 +47,10 @@ final class ConnectionImpl implements Connection {
     }
 
     private final Socket socket;
-    private Address endpoint;
     private final ObjectDataOutputStream out;
     private final ObjectDataInputStream in;
     private final int id = newConnId();
+    private volatile Address endpoint;
     private volatile long lastRead = Clock.currentTimeMillis();
 
     public ConnectionImpl(Address address, SocketOptions options, SerializationService serializationService) throws IOException {
@@ -95,7 +95,7 @@ final class ConnectionImpl implements Connection {
     }
 
     @Override
-    public Address getEndpoint() {
+    public Address getRemoteEndpoint() {
         return endpoint;
     }
 
@@ -146,7 +146,11 @@ final class ConnectionImpl implements Connection {
         return "Connection [" + endpoint + " -> " + socket.getLocalSocketAddress() + "]";
     }
 
-    public void setEndpoint(Address address){
+    public void setRemoteEndpoint(Address address){
         this.endpoint = address;
+    }
+
+    public InetSocketAddress getLocalSocketAddress() {
+        return (InetSocketAddress) socket.getLocalSocketAddress();
     }
 }

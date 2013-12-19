@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -57,5 +58,9 @@ public class CollectionAddRequest extends CollectionRequest {
         super.readPortable(reader);
         value = new Data();
         value.readData(reader.getRawDataInput());
+    }
+
+    public String getRequiredAction() {
+        return ActionConstants.ACTION_ADD;
     }
 }

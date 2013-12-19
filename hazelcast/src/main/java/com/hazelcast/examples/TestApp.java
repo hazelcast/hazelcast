@@ -16,6 +16,8 @@
 
 package com.hazelcast.examples;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,6 +31,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 
+import static java.lang.String.format;
+
 /**
  * Special thanks to Alexandre Vasseur for providing this very nice test
  * application.
@@ -37,11 +41,14 @@ import java.util.concurrent.locks.Lock;
  */
 public class TestApp implements EntryListener, ItemListener, MessageListener {
 
+    public static final int LOAD_EXECUTORS_COUNT = 16;
     private IQueue<Object> queue = null;
 
     private ITopic<Object> topic = null;
 
     private IMap<Object, Object> map = null;
+
+    private MultiMap<Object, Object> multiMap = null;
 
     private ISet<Object> set = null;
 
@@ -86,6 +93,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         return map;
     }
 
+    public MultiMap<Object, Object> getMultiMap() {
+//        if (map == null) {
+        multiMap = hazelcast.getMultiMap(namespace);
+//        }
+        return multiMap;
+    }
+
+
     public IAtomicLong getAtomicNumber() {
         atomicNumber = hazelcast.getAtomicLong(namespace);
         return atomicNumber;
@@ -114,16 +129,22 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         topic = null;
     }
 
-    public static void main(String[] args) throws Exception {
-        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
-        testApp.start(args);
-    }
-
-    public void stop() {
+     public void stop() {
         running = false;
     }
 
     public void start(String[] args) throws Exception {
+        getMap().size();
+        getList().size();
+        getSet().size();
+        getQueue().size();
+        getTopic().getLocalTopicStats();
+        getMultiMap().size();
+        hazelcast.getExecutorService("default").getLocalExecutorStats();
+        for(int k=1;k<=LOAD_EXECUTORS_COUNT;k++){
+            hazelcast.getExecutorService("e"+k).getLocalExecutorStats();
+        }
+
         if (lineReader == null) {
             lineReader = new DefaultLineReader();
         }
@@ -167,19 +188,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-
-
     protected void handleCommand(String command) {
         if(command.contains("__")) {
-        namespace = command.split("__")[0];
-        command = command.substring(command.indexOf("__")+2);
+            namespace = command.split("__")[0];
+            command = command.substring(command.indexOf("__")+2);
         }
 
         if (echo) {
-            if (Thread.currentThread().getName().toLowerCase().indexOf("main") < 0)
-                println(" [" + Thread.currentThread().getName() + "] " + command);
-            else
-                println(command);
+            handleEcho(command);
         }
         if (command == null || command.startsWith("//"))
             return;
@@ -236,32 +252,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 e.printStackTrace();
             }
         } else if (first.startsWith("@")) {
-            if (first.length() == 1) {
-                println("usage: @<file-name>");
-                return;
-            }
-            File f = new File(first.substring(1));
-            println("Executing script file " + f.getAbsolutePath());
-            if (f.exists()) {
-                try {
-                    BufferedReader br = new BufferedReader(new FileReader(f));
-                    String l = br.readLine();
-                    while (l != null) {
-                        handleCommand(l);
-                        l = br.readLine();
-                    }
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                println("File not found! " + f.getAbsolutePath());
-            }
+            handleAt(first);
         } else if (command.indexOf(';') != -1) {
-            StringTokenizer st = new StringTokenizer(command, ";");
-            while (st.hasMoreTokens()) {
-                handleCommand(st.nextToken());
-            }
+            handleColon(command);
             return;
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
@@ -271,59 +264,26 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
         } else if ("ns".equals(first)) {
-            if (args.length > 1) {
-                namespace = args[1];
-                println("namespace: " + namespace);
-//                init();
-            }
+            handleNamespace(args);
         } else if ("whoami".equals(first)) {
-            println(hazelcast.getCluster().getLocalMember());
+            handleWhoami();
         } else if ("who".equals(first)) {
-            StringBuilder sb = new StringBuilder("\n\nMembers [");
-            final Collection<Member> members = hazelcast.getCluster().getMembers();
-            sb.append(members != null ? members.size() : 0);
-            sb.append("] {");
-            if (members != null) {
-                for (Member member : members) {
-                    sb.append("\n\t").append(member);
-                }
-            }
-            sb.append("\n}\n");
-            println(sb.toString());
+            handleWho();
         } else if ("jvm".equals(first)) {
-            System.gc();
-            println("Memory max: " + Runtime.getRuntime().maxMemory() / 1024 / 1024
-                    + "M");
-            println("Memory free: "
-                    + Runtime.getRuntime().freeMemory()
-                    / 1024
-                    / 1024
-                    + "M "
-                    + (int) (Runtime.getRuntime().freeMemory() * 100 / Runtime.getRuntime()
-                    .maxMemory()) + "%");
-            long total = Runtime.getRuntime().totalMemory();
-            long free = Runtime.getRuntime().freeMemory();
-            println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB");
-            println("# procs: " + Runtime.getRuntime().availableProcessors());
-            println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
-                    + " " + ManagementFactory.getOperatingSystemMXBean().getName() + " "
-                    + ManagementFactory.getOperatingSystemMXBean().getVersion());
-            println("JVM: " + ManagementFactory.getRuntimeMXBean().getVmVendor() + " "
-                    + ManagementFactory.getRuntimeMXBean().getVmName() + " "
-                    + ManagementFactory.getRuntimeMXBean().getVmVersion());
-        } else if (first.indexOf("ock") != -1 && first.indexOf(".") == -1) {
+            handleJvm();
+        } else if (first.contains("ock") && !first.contains(".")) {
             handleLock(args);
-        } else if (first.indexOf(".size") != -1) {
+        } else if (first.contains(".size")) {
             handleSize(args);
-        } else if (first.indexOf(".clear") != -1) {
+        } else if (first.contains(".clear")) {
             handleClear(args);
-        } else if (first.indexOf(".destroy") != -1) {
+        } else if (first.contains(".destroy")) {
             handleDestroy(args);
-        } else if (first.indexOf(".iterator") != -1) {
+        } else if (first.contains(".iterator")) {
             handleIterator(args);
-        } else if (first.indexOf(".contains") != -1) {
+        } else if (first.contains(".contains")) {
             handleContains(args);
-        } else if (first.indexOf(".stats") != -1) {
+        } else if (first.contains(".stats")) {
             handStats(args);
         } else if ("t.publish".equals(first)) {
             handleTopicPublish(args);
@@ -375,6 +335,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapRemoveMany(args);
         } else if (command.equalsIgnoreCase("m.localKeys")) {
             handleMapLocalKeys();
+        } else if (command.equalsIgnoreCase("m.localSize")) {
+            handleMapLocalSize();
         } else if (command.equals("m.keys")) {
             handleMapKeys();
         } else if (command.equals("m.values")) {
@@ -387,12 +349,30 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapTryLock(args);
         } else if (first.equals("m.unlock")) {
             handleMapUnlock(args);
-        } else if (first.indexOf(".addListener") != -1) {
+        } else if (first.contains(".addListener")) {
             handleAddListener(args);
         } else if (first.equals("m.removeMapListener")) {
             handleRemoveListener(args);
         } else if (first.equals("m.unlock")) {
             handleMapUnlock(args);
+        } else if (first.equals("mm.put")) {
+            handleMultiMapPut(args);
+        } else if (first.equals("mm.get")) {
+            handleMultiMapGet(args);
+        } else if (first.equals("mm.remove")) {
+            handleMultiMapRemove(args);
+        } else if (command.equals("mm.keys")) {
+            handleMultiMapKeys();
+        } else if (command.equals("mm.values")) {
+            handleMultiMapValues();
+        } else if (command.equals("mm.entries")) {
+            handleMultiMapEntries();
+        } else if (first.equals("mm.lock")) {
+            handleMultiMapLock(args);
+        } else if (first.equalsIgnoreCase("mm.tryLock")) {
+            handleMultiMapTryLock(args);
+        } else if (first.equals("mm.unlock")) {
+            handleMultiMapUnlock(args);
         } else if (first.equals("l.add")) {
             handleListAdd(args);
         } else if (first.equals("l.set")) {
@@ -411,8 +391,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleAtomicNumberInc(args);
         } else if ("a.dec".equals(first)) {
             handleAtomicNumberDec(args);
-//        } else if (first.equals("execute")) {
-//            execute(args);
+        } else if (first.equals("execute")) {
+            execute(args);
         } else if (first.equals("partitions")) {
             handlePartitions(args);
 //        } else if (first.equals("txn")) {
@@ -421,23 +401,185 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //            hazelcast.getTransaction().commit();
 //        } else if (first.equals("rollback")) {
 //            hazelcast.getTransaction().rollback();
-//        } else if (first.equalsIgnoreCase("executeOnKey")) {
-//            executeOnKey(args);
-//        } else if (first.equalsIgnoreCase("executeOnMember")) {
-//            executeOnMember(args);
-//        } else if (first.equalsIgnoreCase("executeOnMembers")) {
-//            executeOnMembers(args);
-//        } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
-//            executeLongTaskOnOtherMember(args);
-//        } else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
-//            executeLong(args);
+        } else if (first.equalsIgnoreCase("executeOnKey")) {
+            executeOnKey(args);
+        } else if (first.equalsIgnoreCase("executeOnMember")) {
+            executeOnMember(args);
+        } else if (first.equalsIgnoreCase("executeOnMembers")) {
+            executeOnMembers(args);
+       // } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
+       //     executeLongTaskOnOtherMember(args);
+        //} else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
+        //    executeLong(args);
         } else if (first.equalsIgnoreCase("instances")) {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
+        }else if(first.startsWith("e")&&first.endsWith(".simulateLoad")){
+             handleExecutorSimulate(args);
         } else {
             println("type 'help' for help");
         }
+    }
+
+    private void handleExecutorSimulate(String[] args) {
+        String first = args[0];
+        int threadCount = Integer.parseInt(first.substring(1, first.indexOf(".")));
+        if(threadCount<1||threadCount>16){
+            throw new RuntimeException("threadcount can't be smaller than 1 or larger than 16");
+        }
+
+        int taskCount = Integer.parseInt(args[1]);
+        int durationSec = Integer.parseInt(args[2]);
+
+        long startMs = System.currentTimeMillis();
+
+        IExecutorService executor = hazelcast.getExecutorService("e"+threadCount);
+        List<Future> futures = new LinkedList<Future>();
+        List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
+
+        int totalThreadCount = hazelcast.getCluster().getMembers().size()*threadCount;
+
+        int latchId = 0;
+        for(int k=0;k<taskCount;k++){
+            Member member = members.get(k%members.size());
+            if(taskCount%totalThreadCount==0){
+                latchId = taskCount/totalThreadCount;
+                hazelcast.getCountDownLatch("latch"+latchId).trySetCount(totalThreadCount);
+
+            }
+            Future f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);
+            futures.add(f);
+        }
+
+        for(Future f: futures){
+            try {
+                f.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        long durationMs = System.currentTimeMillis()-startMs;
+        println(format("Executed %s tasks in %s ms", taskCount,durationMs));
+    }
+
+    private static class SimulateLoadTask implements Callable,Serializable, HazelcastInstanceAware{
+        private final int delay;
+        private final int taskId;
+        private final String latchId;
+         private transient HazelcastInstance hz;
+        private SimulateLoadTask(int delay, int taskId, String latchId) {
+            this.delay = delay;
+            this.taskId = taskId;
+            this.latchId = latchId;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hz = hazelcastInstance;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            try {
+                Thread.sleep(delay*1000);
+            } catch (InterruptedException e) {
+            }
+
+            hz.getCountDownLatch(latchId).countDown();
+            System.out.println("Finished task:"+taskId);
+            return null;
+        }
+    }
+
+    private void handleColon(String command) {
+        StringTokenizer st = new StringTokenizer(command, ";");
+        while (st.hasMoreTokens()) {
+            handleCommand(st.nextToken());
+        }
+    }
+
+    private void handleAt(String first) {
+        if (first.length() == 1) {
+            println("usage: @<file-name>");
+            return;
+        }
+        File f = new File(first.substring(1));
+        println("Executing script file " + f.getAbsolutePath());
+        if (f.exists()) {
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(f));
+                String l = br.readLine();
+                while (l != null) {
+                    handleCommand(l);
+                    l = br.readLine();
+                }
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            println("File not found! " + f.getAbsolutePath());
+        }
+    }
+
+    private void handleEcho(String command) {
+        if (!Thread.currentThread().getName().toLowerCase().contains("main"))
+            println(" [" + Thread.currentThread().getName() + "] " + command);
+        else
+            println(command);
+    }
+
+    private void handleNamespace(String[] args) {
+        if (args.length > 1) {
+            namespace = args[1];
+            println("namespace: " + namespace);
+//                init();
+        }
+    }
+
+    private void handleJvm() {
+        System.gc();
+        println("Memory max: " + Runtime.getRuntime().maxMemory() / 1024 / 1024
+                + "M");
+        println("Memory free: "
+                + Runtime.getRuntime().freeMemory()
+                / 1024
+                / 1024
+                + "M "
+                + (int) (Runtime.getRuntime().freeMemory() * 100 / Runtime.getRuntime()
+                .maxMemory()) + "%");
+        long total = Runtime.getRuntime().totalMemory();
+        long free = Runtime.getRuntime().freeMemory();
+        println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB");
+        println("# procs: " + Runtime.getRuntime().availableProcessors());
+        println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
+                + " " + ManagementFactory.getOperatingSystemMXBean().getName() + " "
+                + ManagementFactory.getOperatingSystemMXBean().getVersion());
+        println("JVM: " + ManagementFactory.getRuntimeMXBean().getVmVendor() + " "
+                + ManagementFactory.getRuntimeMXBean().getVmName() + " "
+                + ManagementFactory.getRuntimeMXBean().getVmVersion());
+    }
+
+    private void handleWhoami() {
+        println(hazelcast.getCluster().getLocalMember());
+    }
+
+    private void handleWho() {
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
+        final Collection<Member> members = hazelcast.getCluster().getMembers();
+        sb.append(members != null ? members.size() : 0);
+        sb.append("] {");
+        if (members != null) {
+            for (Member member : members) {
+                sb.append("\n\t").append(member);
+            }
+        }
+        sb.append("\n}\n");
+        println(sb.toString());
     }
 
     private void handleAtomicNumberGet(String[] args) {
@@ -488,6 +630,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    // ==================== list ===================================
+
     protected void handleListContains(String[] args) {
         println(getList().contains(args[1]));
     }
@@ -520,6 +664,25 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         final int index = Integer.parseInt(args[1]);
         println(getList().set(index, args[2]));
     }
+
+    protected void handleListAddMany(String[] args) {
+        int count = 1;
+        if (args.length > 1)
+            count = Integer.parseInt(args[1]);
+        int successCount = 0;
+        long t0 = Clock.currentTimeMillis();
+        for (int i = 0; i < count; i++) {
+            boolean success = getList().add("obj" + i);
+            if (success)
+                successCount++;
+        }
+        long t1 = Clock.currentTimeMillis();
+        println("Added " + successCount + " objects.");
+        println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
+                + " evt/s");
+    }
+
+    // ==================== map ===================================
 
     protected void handleMapPut(String[] args) {
         println(getMap().put(args[1], args[2]));
@@ -597,17 +760,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handStats(String[] args) {
-        String iteratorStr = args[0];
-        if (iteratorStr.startsWith("s.")) {
-        } else if (iteratorStr.startsWith("m.")) {
-            println(getMap().getLocalMapStats());
-        } else if (iteratorStr.startsWith("q.")) {
-            println(getQueue().getLocalQueueStats());
-        } else if (iteratorStr.startsWith("l.")) {
-        }
-    }
-
     protected void handleMapGetMany(String[] args) {
         int count = 1;
         if (args.length > 1)
@@ -637,6 +789,162 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("true");
     }
 
+    protected void handleMapTryLock(String[] args) {
+        String key = args[1];
+        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        boolean locked;
+        if (time == 0)
+            locked = getMap().tryLock(key);
+        else
+            try {
+                locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                locked = false;
+            }
+        println(locked);
+    }
+
+    protected void handleMapUnlock(String[] args) {
+        getMap().unlock(args[1]);
+        println("true");
+    }
+
+    protected void handleMapLocalKeys() {
+        Set set = getMap().localKeySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            println(it.next());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMapLocalSize() {
+        println("Local Size = " + getMap().localKeySet().size());
+    }
+
+    protected void handleMapKeys() {
+        Set set = getMap().keySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            println(it.next());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMapEntries() {
+        Set set = getMap().entrySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            Map.Entry entry = (Entry) it.next();
+            println(entry.getKey() + " : " + entry.getValue());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMapValues() {
+        Collection set = getMap().values();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            println(it.next());
+        }
+        println("Total " + count);
+    }
+
+    // ==================== multimap ===================================
+
+    protected void handleMultiMapPut(String[] args) {
+        println(getMultiMap().put(args[1], args[2]));
+    }
+
+    protected void handleMultiMapGet(String[] args) {
+        println(getMultiMap().get(args[1]));
+    }
+
+    protected void handleMultiMapRemove(String[] args) {
+        println(getMultiMap().remove(args[1]));
+    }
+    protected void handleMultiMapKeys() {
+        Set set = getMultiMap().keySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            println(it.next());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMultiMapEntries() {
+        Set set = getMultiMap().entrySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            Map.Entry entry = (Entry) it.next();
+            println(entry.getKey() + " : " + entry.getValue());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMultiMapValues() {
+        Collection set = getMultiMap().values();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            println(it.next());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMultiMapLock(String[] args) {
+        getMultiMap().lock(args[1]);
+        println("true");
+    }
+
+    protected void handleMultiMapTryLock(String[] args) {
+        String key = args[1];
+        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        boolean locked;
+        if (time == 0)
+            locked = getMultiMap().tryLock(key);
+        else
+            try {
+                locked = getMultiMap().tryLock(key, time, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                locked = false;
+            }
+        println(locked);
+    }
+
+    protected void handleMultiMapUnlock(String[] args) {
+        getMultiMap().unlock(args[1]);
+        println("true");
+    }
+
+    // =======================================================
+
+    private void handStats(String[] args) {
+        String iteratorStr = args[0];
+        if (iteratorStr.startsWith("s.")) {
+        } else if (iteratorStr.startsWith("m.")) {
+            println(getMap().getLocalMapStats());
+        } else if (iteratorStr.startsWith("mm.")) {
+            println(getMultiMap().getLocalMultiMapStats());
+        } else if (iteratorStr.startsWith("q.")) {
+            println(getQueue().getLocalQueueStats());
+        } else if (iteratorStr.startsWith("l.")) {
+        }
+    }
+
     @SuppressWarnings("LockAcquiredButNotSafelyReleased")
     protected void handleLock(String[] args) {
         String lockStr = args[0];
@@ -662,28 +970,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             }
         }
     }
-
-    protected void handleMapTryLock(String[] args) {
-        String key = args[1];
-        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
-        boolean locked = false;
-        if (time == 0)
-            locked = getMap().tryLock(key);
-        else
-            try {
-                locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                locked = false;
-            }
-        println(locked);
-    }
-
-    protected void handleMapUnlock(String[] args) {
-        getMap().unlock(args[1]);
-        println("true");
-    }
-
-    protected void handleAddListener(String[] args) {
+  protected void handleAddListener(String[] args) {
         String first = args[0];
         if (first.startsWith("s.")) {
             getSet().addItemListener(this, true);
@@ -692,6 +979,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 getMap().addEntryListener(this, args[1], true);
             } else {
                 getMap().addEntryListener(this, true);
+            }
+        } else if (first.startsWith("mm.")) {
+            if (args.length > 1) {
+                getMultiMap().addEntryListener(this, args[1], true);
+            } else {
+                getMultiMap().addEntryListener(this, true);
             }
         } else if (first.startsWith("q.")) {
             getQueue().addItemListener(this, true);
@@ -722,52 +1015,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //        }
     }
 
-    protected void handleMapLocalKeys() {
-        Set set = getMap().localKeySet();
-        Iterator it = set.iterator();
-        int count = 0;
-        while (it.hasNext()) {
-            count++;
-            println(it.next());
-        }
-        println("Total " + count);
-    }
-
-    protected void handleMapKeys() {
-        Set set = getMap().keySet();
-        Iterator it = set.iterator();
-        int count = 0;
-        while (it.hasNext()) {
-            count++;
-            println(it.next());
-        }
-        println("Total " + count);
-    }
-
-    protected void handleMapEntries() {
-        Set set = getMap().entrySet();
-        Iterator it = set.iterator();
-        int count = 0;
-        long time = Clock.currentTimeMillis();
-        while (it.hasNext()) {
-            count++;
-            Map.Entry entry = (Entry) it.next();
-            println(entry.getKey() + " : " + entry.getValue());
-        }
-        println("Total " + count);
-    }
-
-    protected void handleMapValues() {
-        Collection set = getMap().values();
-        Iterator it = set.iterator();
-        int count = 0;
-        while (it.hasNext()) {
-            count++;
-            println(it.next());
-        }
-        println("Total " + count);
-    }
-
     protected void handleSetAdd(String[] args) {
         println(getSet().add(args[1]));
     }
@@ -793,23 +1040,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 + " evt/s");
     }
 
-    protected void handleListAddMany(String[] args) {
-        int count = 1;
-        if (args.length > 1)
-            count = Integer.parseInt(args[1]);
-        int successCount = 0;
-        long t0 = Clock.currentTimeMillis();
-        for (int i = 0; i < count; i++) {
-            boolean success = getList().add("obj" + i);
-            if (success)
-                successCount++;
-        }
-        long t1 = Clock.currentTimeMillis();
-        println("Added " + successCount + " objects.");
-        println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
-                + " evt/s");
-    }
-
     protected void handleSetRemoveMany(String[] args) {
         int count = 1;
         if (args.length > 1)
@@ -827,6 +1057,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 + " evt/s");
     }
 
+
     protected void handleIterator(String[] args) {
         Iterator it = null;
         String iteratorStr = args[0];
@@ -834,6 +1065,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             it = getSet().iterator();
         } else if (iteratorStr.startsWith("m.")) {
             it = getMap().keySet().iterator();
+        } else if (iteratorStr.startsWith("mm.")) {
+            it = getMultiMap().keySet().iterator();
         } else if (iteratorStr.startsWith("q.")) {
             it = getQueue().iterator();
         } else if (iteratorStr.startsWith("l.")) {
@@ -872,6 +1105,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             result = getSet().contains(data);
         } else if (iteratorStr.startsWith("m.")) {
             result = (key) ? getMap().containsKey(data) : getMap().containsValue(data);
+        } else if (iteratorStr.startsWith("mmm.")) {
+            result = (key) ? getMultiMap().containsKey(data) : getMultiMap().containsValue(data);
         } else if (iteratorStr.startsWith("q.")) {
             result = getQueue().contains(data);
         } else if (iteratorStr.startsWith("l.")) {
@@ -887,6 +1122,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             size = getSet().size();
         } else if (iteratorStr.startsWith("m.")) {
             size = getMap().size();
+        } else if (iteratorStr.startsWith("mm.")) {
+            size = getMultiMap().size();
         } else if (iteratorStr.startsWith("q.")) {
             size = getQueue().size();
         } else if (iteratorStr.startsWith("l.")) {
@@ -901,6 +1138,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             getSet().clear();
         } else if (iteratorStr.startsWith("m.")) {
             getMap().clear();
+        } else if (iteratorStr.startsWith("mm.")) {
+            getMultiMap().clear();
         } else if (iteratorStr.startsWith("q.")) {
             getQueue().clear();
         } else if (iteratorStr.startsWith("l.")) {
@@ -915,6 +1154,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             getSet().destroy();
         } else if (iteratorStr.startsWith("m.")) {
             getMap().destroy();
+        } else if (iteratorStr.startsWith("mm.")) {
+            getMultiMap().destroy();
         } else if (iteratorStr.startsWith("q.")) {
             getQueue().destroy();
         } else if (iteratorStr.startsWith("l.")) {
@@ -1010,129 +1251,133 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println(getQueue().remainingCapacity());
     }
 
-//    private void execute(String[] args) {
-//        // execute <echo-string>
-//        doExecute(false, false, args);
-//    }
-//
-//    private void executeOnKey(String[] args) {
-//        // executeOnKey <echo-string> <key>
-//        doExecute(true, false, args);
-//    }
-//
-//    private void executeOnMember(String[] args) {
-//        // executeOnMember <echo-string> <memberIndex>
-//        doExecute(false, true, args);
-//    }
-//
-//    private void ex(String input) throws Exception {
-//        FutureTask<String> task = new DistributedTask<String>(new Echo(input));
-//        ExecutorService executorService = hazelcast.getExecutorService("default");
-//        executorService.execute(task);
-//        String echoResult = task.get();
-//    }
-//
-//    private void doExecute(boolean onKey, boolean onMember, String[] args) {
-//        // executeOnKey <echo-string> <key>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            Echo callable = new Echo(args[1]);
-//            FutureTask<String> task = null;
-//            if (onKey) {
-//                String key = args[2];
-//                task = new DistributedTask<String>(callable, key);
-//            } else if (onMember) {
-//                int memberIndex = Integer.parseInt(args[2]);
-//                Member member = (Member) hazelcast.getCluster().getMembers().toArray()[memberIndex];
-//                task = new DistributedTask<String>(callable, member);
-//            } else {
-//                task = new DistributedTask<String>(callable);
-//            }
-//            executorService.execute(task);
-//            println("Result: " + task.get());
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void executeOnMembers(String[] args) {
-//        // executeOnMembers <echo-string>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            MultiTask<String> echoTask = new MultiTask(new Echo(args[1]), hazelcast.getCluster()
-//                    .getMembers());
-//            executorService.execute(echoTask);
-//            Collection<String> results = echoTask.get();
-//            for (String result : results) {
-//                println(result);
-//            }
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void executeLong(String[] args) {
-//        // executeOnMembers <echo-string>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), hazelcast.getCluster()
-//                    .getMembers()) {
-//                @Override
-//                public void setMemberLeft(Member member) {
-//                    println("Member Left " + member);
-//                }
-//
-//                @Override
-//                public void done() {
-//                    println("Done!");
-//                }
-//            };
-//            executorService.execute(echoTask);
-//            Collection<String> results = echoTask.get();
-//            for (String result : results) {
-//                println(result);
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void executeLongTaskOnOtherMember(String[] args) {
-//        // executeOnMembers <echo-string>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            Member otherMember = null;
-//            Set<Member> members = hazelcast.getCluster().getMembers();
-//            for (Member member : members) {
-//                if (!member.localMember()) {
-//                    otherMember = member;
-//                }
-//            }
-//            if (otherMember == null) {
-//                otherMember = hazelcast.getCluster().getLocalMember();
-//            }
-//            DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
-//                @Override
-//                public void setMemberLeft(Member member) {
-//                    println("Member Left " + member);
-//                }
-//
-//                @Override
-//                public void done() {
-//                    println("Done!");
-//                }
-//            };
-//            executorService.execute(echoTask);
-//            Object result = echoTask.get();
-//            println(result);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
+    private void execute(String[] args) {
+        // execute <echo-string>
+        doExecute(false, false, args);
+    }
+
+    private void executeOnKey(String[] args) {
+        // executeOnKey <echo-string> <key>
+        doExecute(true, false, args);
+    }
+
+    private void executeOnMember(String[] args) {
+        // executeOnMember <echo-string> <memberIndex>
+        doExecute(false, true, args);
+    }
+
+    private void ex(String input) throws Exception {
+        IExecutorService executorService = hazelcast.getExecutorService("default");
+        Future<String> f = executorService.submit(new Echo(input));
+        String echoResult = f.get();
+    }
+
+    private void doExecute(boolean onKey, boolean onMember, String[] args) {
+        // executeOnKey <echo-string> <key>
+        try {
+            IExecutorService executorService = hazelcast.getExecutorService("default");
+            Echo callable = new Echo(args[1]);
+            Future<String> future;
+            if (onKey) {
+                String key = args[2];
+                future = executorService.submitToKeyOwner(callable,key);
+            } else if (onMember) {
+                int memberIndex = Integer.parseInt(args[2]);
+                List<Member> members = new LinkedList(hazelcast.getCluster().getMembers());
+                if(memberIndex>=members.size()){
+                    throw new IndexOutOfBoundsException("Member index: "+memberIndex+" must be smaller than "+members.size());
+                }
+                Member member = members.get(memberIndex);
+                future = executorService.submitToMember(callable,member);
+            } else {
+                future = executorService.submit(callable);
+            }
+            println("Result: " + future.get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeOnMembers(String[] args) {
+        // executeOnMembers <echo-string>
+        try {
+            IExecutorService executorService = hazelcast.getExecutorService("default");
+            Echo task = new Echo(args[1]);
+            Map<Member,Future<String>> results = executorService.submitToAllMembers(task);
+
+            for (Future f : results.values()) {
+                println(f.get());
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeLong(String[] args) {
+        // executeOnMembers <echo-string>
+        /*
+        try {
+            ExecutorService executorService = hazelcast.getExecutorService("default");
+
+            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), hazelcast.getCluster()
+                    .getMembers()) {
+                @Override
+                public void setMemberLeft(Member member) {
+                    println("Member Left " + member);
+                }
+
+                @Override
+                public void done() {
+                    println("Done!");
+                }
+            };
+            executorService.execute(echoTask);
+            Collection<String> results = echoTask.get();
+            for (String result : results) {
+                println(result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  *.
+    }
+
+    private void executeLongTaskOnOtherMember(String[] args) {
+        // executeOnMembers <echo-string>
+    /*
+        try {
+            ExecutorService executorService = hazelcast.getExecutorService("default");
+            Member otherMember = null;
+            Set<Member> members = hazelcast.getCluster().getMembers();
+            for (Member member : members) {
+                if (!member.localMember()) {
+                    otherMember = member;
+                }
+            }
+            if (otherMember == null) {
+                otherMember = hazelcast.getCluster().getLocalMember();
+            }
+            DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
+                @Override
+                public void setMemberLeft(Member member) {
+                    println("Member Left " + member);
+                }
+
+                @Override
+                public void done() {
+                    println("Done!");
+                }
+            };
+            executorService.execute(echoTask);
+           Object result = echoTask.get();
+           println(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  */
+    }
 
     public void entryAdded(EntryEvent event) {
         println(event);
@@ -1239,6 +1484,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list <string> (defaults to \"default\"");
         println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
         println("");
+
         println("-- Queue commands");
         println("q.offer <string>                     //adds a string object to the queue");
         println("q.poll                               //takes an object from the queue");
@@ -1248,6 +1494,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("q.size                               //size of the queue");
         println("q.clear                              //clears the queue");
         println("");
+
         println("-- Set commands");
         println("s.add <string>                       //adds a string object to the set");
         println("s.remove <string>                    //removes the string object from the set");
@@ -1257,12 +1504,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("s.size                               //size of the set");
         println("s.clear                              //clears the set");
         println("");
+
         println("-- Lock commands");
         println("lock <key>                           //same as Hazelcast.getLock(key).lock()");
         println("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
         println("tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds");
         println("unlock <key>                         //same as Hazelcast.getLock(key).unlock()");
         println("");
+
         println("-- Map commands");
         println("m.put <key> <value>                  //puts an entry to the map");
         println("m.remove <key>                       //removes the entry of given key from the map");
@@ -1275,13 +1524,34 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("m.entries                            //iterates the entries of the map");
         println("m.iterator [remove]                  //iterates the keys of the map, remove if specified");
         println("m.size                               //size of the map");
+        println("m.localSize                          //local size of the map");
         println("m.clear                              //clears the map");
         println("m.destroy                            //destroys the map");
         println("m.lock <key>                         //locks the key");
         println("m.tryLock <key>                      //tries to lock the key and returns immediately");
         println("m.tryLock <key> <time>               //tries to lock the key within given seconds");
         println("m.unlock <key>                       //unlocks the key");
+        println("m.stats                              //shows the local stats of the map");
         println("");
+
+        println("-- MultiMap commands");
+        println("mm.put <key> <value>                  //puts an entry to the multimap");
+        println("mm.get <key>                          //returns the value of given key from the multimap");
+        println("mm.remove <key>                       //removes the entry of given key from the multimap");
+        println("mm.size                               //size of the multimap");
+        println("mm.clear                              //clears the multimap");
+        println("mm.destroy                            //destroys the multimap");
+        println("mm.iterator [remove]                  //iterates the keys of the multimap, remove if specified");
+        println("mm.keys                               //iterates the keys of the multimap");
+        println("mm.values                             //iterates the values of the multimap");
+        println("mm.entries                            //iterates the entries of the multimap");
+        println("mm.lock <key>                         //locks the key");
+        println("mm.tryLock <key>                      //tries to lock the key and returns immediately");
+        println("mm.tryLock <key> <time>               //tries to lock the key within given seconds");
+        println("mm.unlock <key>                       //unlocks the key");
+        println("mm.stats                              //shows the local stats of the multimap");
+        println("");
+
         println("-- List commands:");
         println("l.add <string>");
         println("l.add <index> <string>");
@@ -1293,17 +1563,21 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("l.size");
         println("l.clear");
         print("");
+
         println("-- IAtomicLong commands:");
         println("a.get");
         println("a.set <long>");
         println("a.inc");
         println("a.dec");
         print("");
+
         println("-- Executor Service commands:");
-        println("execute	<echo-input>				//executes an echo task on random member");
-        println("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
-        println("execute0nMember <echo-input> <key>	//executes an echo task on the member with given index");
-        println("execute0nMembers <echo-input> 		//executes an echo task on all of the members");
+        println("execute <echo-input>                            //executes an echo task on random member");
+        println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
+        println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
+        println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
+        println("e<threadcount>.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with given number of thread (e1..e16)");
+
         println("");
         silent = silentBefore;
     }
@@ -1317,4 +1591,35 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (!silent)
             System.out.print(obj);
     }
+
+    public static void main(String[] args) throws Exception {
+        String version = getVersion();
+
+        Config config = new Config();
+        config.getManagementCenterConfig().setEnabled(true);
+        config.getManagementCenterConfig().setUrl("http://localhost:8080/mancenter-"+version);
+
+        for(int k=1;k<= LOAD_EXECUTORS_COUNT;k++){
+            config.addExecutorConfig(new ExecutorConfig("e"+k).setPoolSize(k));
+        }
+        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
+        testApp.start(args);
+    }
+
+    private static String getVersion() throws IOException {
+        InputStream in = TestApp.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+        if (in == null) {
+            throw new IOException("hazelcast-runtime.properties is not found");
+        }
+
+        try {
+            Properties props = new Properties();
+            props.load(in);
+
+            return props.getProperty("hazelcast.version");
+        } finally {
+            in.close();
+        }
+    }
+
 }

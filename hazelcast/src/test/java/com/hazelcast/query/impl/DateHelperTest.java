@@ -16,11 +16,16 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -28,7 +33,11 @@ import java.util.Locale;
 /**
  * @author mdogan 7/4/13
  */
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class DateHelperTest {
+
+    public static final String DATE_FORMAT = "EEE MMM dd HH:mm:ss zzz yyyy";
 
     @Test
     public void testSqlDate() {
@@ -52,7 +61,7 @@ public class DateHelperTest {
         final long now = System.currentTimeMillis();
 
         final Date date1 = new Date(now);
-        final Date date2 = DateHelper.parseDate(date1.toString());
+        final Date date2 = DateHelper.parseDate(new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US).format(date1));
 
         Calendar cal1 = Calendar.getInstance(Locale.US);
         cal1.setTimeInMillis(date1.getTime());

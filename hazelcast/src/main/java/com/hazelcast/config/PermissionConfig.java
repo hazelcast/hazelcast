@@ -41,7 +41,7 @@ public class PermissionConfig {
     public enum PermissionType {
         MAP, QUEUE, TOPIC, MULTIMAP, LIST, SET, ID_GENERATOR,
         LOCK, ATOMIC_LONG, COUNTDOWN_LATCH, SEMAPHORE,
-        EXECUTOR_SERVICE, LISTENER, TRANSACTION, ALL
+        EXECUTOR_SERVICE, TRANSACTION, ALL
     }
 
     public PermissionConfig addEndpoint(String endpoint) {

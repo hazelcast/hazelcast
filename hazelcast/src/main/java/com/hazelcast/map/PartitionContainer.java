@@ -25,21 +25,21 @@ import java.util.concurrent.ConcurrentMap;
 public class PartitionContainer {
     private final MapService mapService;
     private final int partitionId;
-    private final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
+    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
     }
 
-    private final ConstructorFunction<String, PartitionRecordStore> recordStoreConstructor
-            = new ConstructorFunction<String, PartitionRecordStore>() {
-        public PartitionRecordStore createNew(String name) {
-            return new PartitionRecordStore(name, PartitionContainer.this);
+    private final ConstructorFunction<String, RecordStore> recordStoreConstructor
+            = new ConstructorFunction<String, RecordStore>() {
+        public RecordStore createNew(String name) {
+            return new DefaultRecordStore(name, mapService, partitionId);
         }
     };
 
-    public ConcurrentMap<String, PartitionRecordStore> getMaps() {
+    public ConcurrentMap<String, RecordStore> getMaps() {
         return maps;
     }
 
@@ -55,16 +55,22 @@ public class PartitionContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);
     }
 
+    public RecordStore getExistingRecordStore(String mapName) {
+        return maps.get(mapName);
+    }
+
     void destroyMap(String name) {
-        PartitionRecordStore recordStore = maps.remove(name);
+        RecordStore recordStore = maps.remove(name);
         if (recordStore != null)
-            recordStore.clear();
+            recordStore.clearPartition();
     }
 
     void clear() {
-        for (PartitionRecordStore recordStore : maps.values()) {
-            recordStore.clear();
+        for (RecordStore recordStore : maps.values()) {
+            recordStore.clearPartition();
         }
         maps.clear();
     }
+
+
 }

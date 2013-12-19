@@ -18,7 +18,11 @@ package com.hazelcast.concurrent.semaphore.client;
 
 import com.hazelcast.concurrent.semaphore.ReduceOperation;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 /**
  * @author ali 5/13/13
@@ -38,5 +42,9 @@ public class ReduceRequest extends SemaphoreRequest {
 
     public int getClassId() {
         return SemaphorePortableHook.REDUCE;
+    }
+
+    public Permission getRequiredPermission() {
+        return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }
 }

@@ -55,7 +55,7 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return false;
     }
 
-    public final ExceptionAction onException(Throwable throwable) {
+    public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return ExceptionAction.THROW_EXCEPTION;
         }

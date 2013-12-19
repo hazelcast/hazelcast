@@ -34,7 +34,7 @@ import java.io.IOException;
 public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOperation {
 
     private long version;
-    private boolean shouldBackup = false;
+    private boolean successful = false;
 
     public TxnDeleteOperation() {
     }
@@ -47,10 +47,16 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     @Override
     public void run() {
         recordStore.unlock(dataKey, getCallerUuid(), getThreadId());
-        Record record = recordStore.getRecords().get(dataKey);
+        Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()){
-            shouldBackup = recordStore.remove(dataKey) != null;
+            dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey));
+            successful = dataOldValue != null;
         }
+    }
+
+    public void afterRun() {
+        if (successful)
+            super.afterRun();
     }
 
     @Override
@@ -82,7 +88,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public boolean shouldBackup() {
-        return shouldBackup;
+        return true;
     }
 
     public WaitNotifyKey getNotifiedKey() {

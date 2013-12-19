@@ -34,13 +34,13 @@ public class GroupProperties {
     public static final String PROP_MEMCACHE_ENABLED = "hazelcast.memcache.enabled";
     public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
     public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
-    public static final String PROP_CACHED_NULL_TTL_SECONDS = "hazelcast.cached.null.ttl.seconds";
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
+    public static final String PROP_SOCKET_CLIENT_BIND = "hazelcast.socket.client.bind";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
     public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
@@ -80,6 +80,7 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
+    public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
 
     public final GroupProperty OPERATION_THREAD_COUNT;
@@ -87,7 +88,9 @@ public class GroupProperties {
     public final GroupProperty EVENT_THREAD_COUNT;
 
     public final GroupProperty HEALTH_MONITORING_LEVEL;
+
     public final GroupProperty HEALTH_MONITORING_DELAY_SECONDS;
+
     public final GroupProperty IO_THREAD_COUNT;
 
     public final GroupProperty EVENT_QUEUE_CAPACITY;
@@ -106,8 +109,6 @@ public class GroupProperties {
 
     public final GroupProperty MAP_LOAD_CHUNK_SIZE;
 
-    public final GroupProperty CACHED_NULL_TTL_SECONDS;
-
     public final GroupProperty MERGE_FIRST_RUN_DELAY_SECONDS;
 
     public final GroupProperty MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -117,6 +118,8 @@ public class GroupProperties {
     public final GroupProperty SOCKET_SERVER_BIND_ANY;
 
     public final GroupProperty SOCKET_CLIENT_BIND_ANY;
+
+    public final GroupProperty SOCKET_CLIENT_BIND;
 
     public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE; // number of kilobytes
 
@@ -196,6 +199,8 @@ public class GroupProperties {
 
     public final GroupProperty ELASTIC_MEMORY_SHARED_STORAGE;
 
+    public final GroupProperty ELASTIC_MEMORY_UNSAFE_ENABLED;
+
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
     public GroupProperties(Config config) {
@@ -212,13 +217,13 @@ public class GroupProperties {
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
         MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");
-        CACHED_NULL_TTL_SECONDS = new GroupProperty(config, PROP_CACHED_NULL_TTL_SECONDS, "1");
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
         final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);
         SOCKET_CLIENT_BIND_ANY = new GroupProperty(config, PROP_SOCKET_CLIENT_BIND_ANY, SOCKET_BIND_ANY);
+        SOCKET_CLIENT_BIND = new GroupProperty(config, PROP_SOCKET_CLIENT_BIND, "true");
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
         SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");
         SOCKET_LINGER_SECONDS = new GroupProperty(config, PROP_SOCKET_LINGER_SECONDS, "0");
@@ -258,6 +263,7 @@ public class GroupProperties {
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
+        ELASTIC_MEMORY_UNSAFE_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_UNSAFE_ENABLED, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
     }
 

@@ -25,17 +25,18 @@ import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.PartitionStrategyConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,8 +52,8 @@ import static org.junit.Assert.*;
 /**
  * @author mdogan 8/21/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class PartitionControlledIdTest extends HazelcastTestSupport {
 
     private HazelcastInstance[] instances;
@@ -61,7 +62,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     public void setUp() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         Config config = new Config();
-        config.getMapConfig("default").setPartitionStrategyConfig(new PartitionStrategyConfig(new StringAndPartitionAwarePartitioningStrategy()));
+        config.getMapConfig("default").setPartitioningStrategyConfig(new PartitioningStrategyConfig(new StringAndPartitionAwarePartitioningStrategy()));
         instances = factory.newInstances(config);
         warmUpPartitions(instances);
     }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.1-SNAPSHOT</version>
+        <version>3.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -31,20 +31,6 @@
 
     <build>
         <plugins>
-            <!--  this create jar file of code from src/test/java so modules with tests can share code -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -108,6 +94,7 @@
                         </goals>
                         <configuration>
                             <instructions>
+                                <Bundle-Activator>com.hazelcast.osgi.Activator</Bundle-Activator>
                                 <Export-Package>
                                     com.hazelcast.*
                                 </Export-Package>
@@ -116,6 +103,8 @@
                                     !org.junit,
                                     org.apache.log4j;resolution:=optional,
                                     org.slf4j;resolution:=optional,
+                                    org.codehaus.groovy.jsr223;resolution:=optional,
+                                    org.jruby.embed.jsr223;resolution:=optional,
                                     *
                                 </Import-Package>
                             </instructions>
@@ -141,6 +130,13 @@
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
@@ -182,11 +178,35 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
         <dependency>
-            <groupId>spy</groupId>
+            <groupId>net.spy</groupId>
             <artifactId>spymemcached</artifactId>
-            <version>2.8.12</version>
+            <version>2.10.2</version>
             <scope>test</scope>
+        </dependency>
+
+        <!--OSGi dep-->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>4.2.0</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>2.1.8</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby-complete</artifactId>
+            <version>1.7.6</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
         <!-- dependencies for benchmarking -->
@@ -204,15 +224,4 @@
         </dependency>
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>spy</id>
-            <name>Spy Repository</name>
-            <layout>default</layout>
-            <url>http://files.couchbase.com/maven2/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>

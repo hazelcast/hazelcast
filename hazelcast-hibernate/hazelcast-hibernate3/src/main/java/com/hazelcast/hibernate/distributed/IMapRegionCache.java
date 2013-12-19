@@ -32,7 +32,6 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 11/9/12
@@ -84,7 +83,7 @@ public class IMapRegionCache implements RegionCache {
                             final CacheEntry previousEntry = (CacheEntry) map.get(key);
                             if (previousEntry == null ||
                                 versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                                map.set(key, value, 0, TimeUnit.MILLISECONDS);
+                                map.set(key, value);
                                 return true;
                             } else {
                                 return false;
@@ -99,12 +98,12 @@ public class IMapRegionCache implements RegionCache {
                     return false;
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
-                map.set(key, value, 0, TimeUnit.MILLISECONDS);
+                map.set(key, value);
                 return true;
             }
             return false;
         } else {
-            map.set(key, value, 0, TimeUnit.MILLISECONDS);
+            map.set(key, value);
             return true;
         }
     }

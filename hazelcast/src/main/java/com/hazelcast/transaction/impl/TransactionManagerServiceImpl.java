@@ -91,7 +91,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         txBackupLogs.clear();
     }
 
-    public void shutdown() {
+    public void shutdown(boolean terminate) {
         reset();
     }
 
@@ -115,8 +115,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                         Collection<Future> futures = new ArrayList<Future>(memberList.size());
                         for (MemberImpl member : memberList) {
                             Operation op = new BroadcastTxRollbackOperation(txnId);
-                            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, member.getAddress()).build();
-                            futures.add(inv.invoke());
+                            Future f = nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, member.getAddress());
+                            futures.add(f);
                         }
                         for (Future future : futures) {
                             try {

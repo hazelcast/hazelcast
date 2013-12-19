@@ -71,40 +71,6 @@
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="list" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:sequence>
-                                    <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
-                                        <xs:complexType>
-                                            <xs:sequence>
-                                                <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
-                                            </xs:sequence>
-                                        </xs:complexType>
-                                    </xs:element>
-                                </xs:sequence>
-                                <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
-                            </xs:complexType>
-                        </xs:element>
-                        <xs:element name="set" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:sequence>
-                                    <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
-                                        <xs:complexType>
-                                            <xs:sequence>
-                                                <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
-                                            </xs:sequence>
-                                        </xs:complexType>
-                                    </xs:element>
-                                </xs:sequence>
-                                <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
-                            </xs:complexType>
-                        </xs:element>
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
@@ -165,7 +131,6 @@
                                 <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
-                                <xs:attribute name="storage-type" use="optional" type="xs:string" default="HEAP"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
@@ -185,6 +150,40 @@
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="value-collection-type" type="xs:string" use="optional"
                                               default="SET"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="list" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="set" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="topic" minOccurs="0" maxOccurs="unbounded">
@@ -723,15 +722,6 @@
                         <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="listener-permission" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:complexContent>
-                                    <xs:extension base="base-permission">
-                                        <xs:attribute name="name" type="non-space-string" use="required"/>
-                                    </xs:extension>
-                                </xs:complexContent>
-                            </xs:complexType>
-                        </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -829,25 +819,18 @@
                                 <xs:enumeration value="all"/>
                                 <xs:enumeration value="create"/>
                                 <xs:enumeration value="destroy"/>
-                                <xs:enumeration value="put"/>
-                                <xs:enumeration value="add"/>
-                                <xs:enumeration value="get"/>
-                                <xs:enumeration value="set"/>
+                                <xs:enumeration value="modify"/>
+                                <xs:enumeration value="read"/>
                                 <xs:enumeration value="remove"/>
-                                <xs:enumeration value="offer"/>
-                                <xs:enumeration value="poll"/>
-                                <xs:enumeration value="take"/>
                                 <xs:enumeration value="lock"/>
                                 <xs:enumeration value="listen"/>
-                                <xs:enumeration value="publish"/>
-                                <xs:enumeration value="increment"/>
-                                <xs:enumeration value="decrement"/>
-                                <xs:enumeration value="execute"/>
-                                <xs:enumeration value="countdown"/>
-                                <xs:enumeration value="acquire"/>
                                 <xs:enumeration value="release"/>
-                                <xs:enumeration value="drain"/>
-                                <xs:enumeration value="statistics"/>
+                                <xs:enumeration value="acquire"/>
+                                <xs:enumeration value="put"/>
+                                <xs:enumeration value="add"/>
+                                <xs:enumeration value="index"/>
+                                <xs:enumeration value="intercept"/>
+                                <xs:enumeration value="publish"/>
                             </xs:restriction>
                         </xs:simpleType>
                         <xs:simpleType>

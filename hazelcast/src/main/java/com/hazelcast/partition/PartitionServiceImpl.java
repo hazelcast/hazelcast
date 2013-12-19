@@ -17,7 +17,10 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -194,7 +197,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             try {
                 if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
                     Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
-                            node.getMasterAddress()).setTryCount(1).build().invoke();
+                            node.getMasterAddress()).setTryCount(1).invoke();
                     f.get(1, TimeUnit.SECONDS);
                 }
             } catch (Exception e) {
@@ -224,7 +227,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         partitions[partition.getPartitionId()].setPartitionInfo(partition);
                     }
                     initialized = true;
-                    sendPartitionRuntimeState();
+                    sendPartitionRuntimeState(true);
                 }
             } finally {
                 lock.unlock();
@@ -251,8 +254,16 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (node.isMaster() && node.isActive()) {
             lock.lock();
             try {
-                clearMigrationQueue();
+                migrationQueue.clear();
                 migrationQueue.offer(new RepartitioningTask());
+
+                if (initialized) {
+                    // send initial partition table to newly joined node.
+                    PartitionStateOperation op = new PartitionStateOperation(node.clusterService.getMemberList(), getPartitions(),
+                            new ArrayList<MigrationInfo>(completedMigrations),
+                            node.getClusterService().getClusterTime(), stateVersion.get());
+                    nodeEngine.getOperationService().send(op, member.getAddress());
+                }
             } finally {
                 lock.unlock();
             }
@@ -268,7 +279,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
         lock.lock();
         try {
-            clearMigrationQueue();
+            migrationQueue.clear();
             if (!activeMigrations.isEmpty()) {
                 if (node.isMaster()) {
                     rollbackActiveMigrationsFromPreviousMaster(node.getLocalMember().getUuid());
@@ -279,29 +290,44 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                 }
             }
-            // Inactivate migration and sending of PartitionRuntimeState (@see #sendPartitionRuntimeState).
-            // Let all members notice the dead and fix their own records and indexes.
+            // Pause migration and let all other members notice the dead member
+            // and fix their own partitions.
             // Otherwise new master may take action fast and send new partition state
-            // before other members realize the dead one and fix their records.
-            migrationActive.set(false);
-            for (PartitionImpl partition : partitions) {
+            // before other members realize the dead one.
+            pauseMigration();
+            for (final PartitionImpl partition : partitions) {
+                boolean promote = false;
+                if (deadAddress.equals(partition.getOwner()) && thisAddress.equals(partition.getReplicaAddress(1))) {
+                    promote = true;
+                }
                 // shift partition table up.
                 while (partition.onDeadAddress(deadAddress));
+
+                if (promote) {
+                    final Operation op = new PromoteFromBackupOperation();
+                    op.setPartitionId(partition.getPartitionId()).setNodeEngine(nodeEngine).setValidateTarget(false).setService(this);
+                    nodeEngine.getOperationService().executeOperation(op);
+                }
             }
 
             if (node.isMaster()) {
                 migrationQueue.offer(new RepartitioningTask());
             }
 
-            // Activate migration back after connectionDropTime x 10 milliseconds,
-            // thinking optimistically that all nodes notice the dead one in this period.
-            final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
-                    * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
+            // Add a delay before activating migration, to give other nodes time to notice the dead one.
+            long migrationActivationDelay = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
+                    * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 5;
+
+            long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+            // delay should be smaller than call timeout, otherwise operations may fail because of invalid partition table
+            migrationActivationDelay = Math.min(migrationActivationDelay, callTimeout / 2);
+            migrationActivationDelay = Math.max(migrationActivationDelay, 1000L);
+
             nodeEngine.getExecutionService().schedule(new Runnable() {
                 public void run() {
-                    migrationActive.set(true);
+                    resumeMigration();
                 }
-            }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
+            }, migrationActivationDelay, TimeUnit.MILLISECONDS);
         } finally {
             lock.unlock();
         }
@@ -315,7 +341,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     if (!currentMasterUuid.equals(migrationInfo.getMasterUuid())) {
                         // Still there is possibility of the other endpoint commits the migration
                         // but this node roll-backs!
-                        logger.info("Rolling-back migration instantiated by the old master -> " + migrationInfo);
+                        logger.info("Rolling-back migration initiated by the old master -> " + migrationInfo);
                         finalizeActiveMigration(migrationInfo);
                     }
                 }
@@ -325,7 +351,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    private void sendPartitionRuntimeState() {
+    private void sendPartitionRuntimeState(boolean required) {
         if (!initialized) {
             // do not send partition state until initialized!
             return;
@@ -333,7 +359,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (!node.isMaster() || !node.isActive() || !node.joined()) {
             return;
         }
-        if (!migrationActive.get()) {
+        if (!required && !migrationActive.get()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
@@ -362,6 +388,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         lock.lock();
         try {
             if (!node.isActive() || !node.joined()) {
+                logger.finest("Node should be active(" + node.isActive() + ") and joined(" + node.joined()
+                        + ") to be able to process partition table!");
                 return;
             }
             final Address sender = partitionState.getEndpoint();
@@ -377,7 +405,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                                 " => Sender: " + sender + ", Master: " + master + "! ");
                         return;
                     } else {
-                        logger.warning("Received a ClusterRuntimeState, but its sender doesn't seem master!" +
+                        logger.warning("Received a ClusterRuntimeState, but its sender doesn't seem to be master!" +
                                 " => Sender: " + sender + ", Master: " + master + "! " +
                                 "(Ignore if master node has changed recently.)");
                     }
@@ -393,8 +421,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     if (address != null && getMember(address) == null) {
                         if (logger.isFinestEnabled()) {
                             logger.finest(
-                                    "Unknown " + address + " is found in partition table sent from master "
-                                            + sender + ". Probably it's already left the cluster. Partition: " + newPartition);
+                                    "Unknown " + address + " found in partition table sent from master "
+                                            + sender + ". It has probably already left the cluster. Partition: " + newPartition);
                         }
                         unknownAddresses.add(address);
                     }
@@ -405,7 +433,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (!unknownAddresses.isEmpty() && logger.isLoggable(Level.WARNING)) {
                 StringBuilder s = new StringBuilder("Following unknown addresses are found in partition table")
                         .append(" sent from master[").append(sender).append("].")
-                        .append(" (Probably they have recently joined to or left the cluster.)")
+                        .append(" (Probably they have recently joined or left the cluster.)")
                         .append(" {");
                 for (Address address : unknownAddresses) {
                     s.append("\n\t").append(address);
@@ -514,7 +542,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (oldMaster) {
                     logger.info("Finalizing migration instantiated by the old master -> " + oldMigration);
                 } else {
-                    logger.finest( "Finalizing previous migration -> " + oldMigration);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Finalizing previous migration -> " + oldMigration);
+                    }
                 }
                 finalizeActiveMigration(oldMigration);
                 activeMigrations.put(partitionId, newMigration);
@@ -661,7 +691,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             }
 
             if (!node.isMaster()) {
-                while (timeoutInMillis > 0 && hasOnGoingMigrationMaster()) { // ignore elapsed time during master inv.
+                while (timeoutInMillis > 0 && hasOnGoingMigrationMaster(Level.WARNING)) { // ignore elapsed time during master inv.
                     logger.info("Waiting for the master node to complete remaining migrations!");
                     try {
                         //noinspection BusyWait
@@ -698,23 +728,21 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public boolean hasOnGoingMigration() {
-        return hasOnGoingMigrationLocal() || (!node.isMaster() && hasOnGoingMigrationMaster());
+        return hasOnGoingMigrationLocal() || (!node.isMaster() && hasOnGoingMigrationMaster(Level.FINEST));
     }
 
-    private boolean hasOnGoingMigrationMaster() {
+    private boolean hasOnGoingMigrationMaster(Level level) {
         Operation op = new HasOngoingMigration();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, node.getMasterAddress())
-                .setTryCount(100).setTryPauseMillis(100).build();
-        Future f = inv.invoke();
+        Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, node.getMasterAddress())
+                .setTryCount(100).setTryPauseMillis(100).invoke();
         try {
             return (Boolean) f.get(1, TimeUnit.MINUTES);
         } catch (InterruptedException ignored) {
         } catch (Exception e) {
-            logger.warning("Could not get a response from master about migrations! -> " + e.toString());
+            logger.log(level, "Could not get a response from master about migrations! -> " + e.toString());
         }
         return false;
     }
-
     boolean hasOnGoingMigrationLocal() {
         return !activeMigrations.isEmpty() || !migrationQueue.isEmpty() || shouldWaitMigrationOrBackups(Level.OFF);
     }
@@ -965,7 +993,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (!migrationQueue.isEmpty() && migrationActive.get()) {
                     logger.info("Remaining migration tasks in queue => " + migrationQueue.size());
                 }
-                sendPartitionRuntimeState();
+                sendPartitionRuntimeState(false);
             }
         }
     }
@@ -994,13 +1022,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         public void run() {
             if (node.isMaster() && node.isActive()) {
-                final PartitionStateGenerator psg = partitionStateGenerator;
-                final Set<Member> members = node.getClusterService().getMembers();
                 lock.lock();
                 try {
                     if (!initialized) {
                         return;
                     }
+                    migrationQueue.clear();
+                    final PartitionStateGenerator psg = partitionStateGenerator;
+                    final Set<Member> members = node.getClusterService().getMembers();
                     final PartitionImpl[] newState = psg.reArrange(memberGroupFactory.createMemberGroups(members), partitions);
                     int migrationCount = 0;
                     int lostCount = 0;
@@ -1027,7 +1056,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             currentPartition.setPartitionInfo(newPartition);
                         }
                     }
-                    sendPartitionRuntimeState();
+                    sendPartitionRuntimeState(false);
 
                     if (lostCount > 0) {
                         logger.warning("Assigning new owners for " + lostCount + " LOST partitions!");
@@ -1102,13 +1131,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
                 Boolean result = Boolean.FALSE;
                 MemberImpl fromMember = getMember(migrationInfo.getSource());
-                logger.finest( "Started Migration : " + migrationInfo);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Started Migration : " + migrationInfo);
+                }
                 systemLogService.logPartition("Started Migration : " + migrationInfo);
                 if (fromMember != null) {
-                    Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                            migrationRequestOp, migrationInfo.getSource()).setTryPauseMillis(1000).build();
+                    Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
+                            migrationRequestOp, migrationInfo.getSource()).setTryPauseMillis(1000).invoke();
 
-                    Future future = inv.invoke();
                     try {
                         result = (Boolean) nodeEngine.toObject(future.get(partitionMigrationTimeout, TimeUnit.SECONDS));
                     } catch (Throwable e) {
@@ -1121,8 +1151,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     result = Boolean.TRUE;
                 }
                 if (Boolean.TRUE.equals(result)) {
-                    logger.finest( "Finished Migration: " + migrationInfo);
-                    systemLogService.logPartition("Finished Migration: " + migrationInfo);
+                    String message =  "Finished Migration: " + migrationInfo;
+                    logger.finest(message);
+                    systemLogService.logPartition(message);
                     processMigrationResult();
                 } else {
                     final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
@@ -1143,7 +1174,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             try {
                 addCompletedMigration(migrationInfo);
                 finalizeActiveMigration(migrationInfo);
-                sendPartitionRuntimeState();
+                sendPartitionRuntimeState(true);
             } finally {
                 lock.unlock();
             }
@@ -1162,7 +1193,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (backupTask != null) {
                     backupTask.run();
                 }
-                sendPartitionRuntimeState();
+                sendPartitionRuntimeState(true);
             } finally {
                 lock.unlock();
             }
@@ -1198,19 +1229,21 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         }
                     }
                     final boolean hasNoTasks = migrationQueue.isEmpty();
-                    if (hasNoTasks && migrating) {
-                        migrating = false;
-                        logger.info("All migration tasks has been completed, queues are empty.");
-                    }
-                    if (!migrationActive.get() || hasNoTasks) {
+                    if (hasNoTasks) {
+                        if (migrating) {
+                            migrating = false;
+                            logger.info("All migration tasks has been completed, queues are empty.");
+                        }
                         evictCompletedMigrations();
+                        Thread.sleep(sleepTime);
+                    } else if (!migrationActive.get()) {
                         Thread.sleep(sleepTime);
                     }
                 }
             } catch (InterruptedException e) {
                 logger.finest( "MigrationThread is interrupted: " + e.getMessage());
             } finally {
-                clearMigrationQueue();
+                migrationQueue.clear();
             }
         }
 
@@ -1230,7 +1263,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
 
         void stopNow() {
-            clearMigrationQueue();
+            migrationQueue.clear();
             thread.interrupt();
         }
     }
@@ -1280,7 +1313,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public void reset() {
-        clearMigrationQueue();
+        migrationQueue.clear();
         replicaSyncRequests.clear();
         replicaSyncScheduler.cancelAll();
         lock.lock();
@@ -1299,14 +1332,18 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    public void shutdown() {
+    public void pauseMigration() {
+        migrationActive.set(false);
+    }
+
+    public void resumeMigration() {
+        migrationActive.set(true);
+    }
+
+    public void shutdown(boolean terminate) {
         logger.finest( "Shutting down the partition service");
         migrationThread.stopNow();
         reset();
-    }
-
-    private void clearMigrationQueue() {
-        migrationQueue.clear();
     }
 
     public long getMigrationQueueSize() {

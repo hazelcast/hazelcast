@@ -17,20 +17,23 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.InitializingObjectRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 6/10/13
  */
-public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -43,10 +46,6 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
 
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public int getFactoryId() {
@@ -63,5 +62,9 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
 
     public Data toData(Object obj){
         return getClientEngine().toData(obj);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }
 }

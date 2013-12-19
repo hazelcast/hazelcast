@@ -17,13 +17,14 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Function;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,11 +35,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class AtomicLongTest extends HazelcastTestSupport {
 
     @Test
@@ -149,5 +150,167 @@ public class AtomicLongTest extends HazelcastTestSupport {
         } finally {
             ex.shutdownNow();
         }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @ClientCompatibleTest
+    public void apply_whenCalledWithNullFunction() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicLong ref = hazelcastInstance.getAtomicLong("apply_whenCalledWithNullFunction");
+
+        ref.apply(null);
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void apply() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicLong ref = hazelcastInstance.getAtomicLong("apply");
+
+        assertEquals(new Long(1), ref.apply(new AddOneFunction()));
+        assertEquals(0, ref.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void apply_whenException() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        IAtomicLong ref = hazelcastInstance.getAtomicLong("apply");
+        ref.set(1);
+        try {
+            ref.apply(new FailingFunction());
+            fail();
+        } catch (WoohaaException expected) {
+        }
+
+        assertEquals(1, ref.get());
+    }
+
+   @Test(expected = IllegalArgumentException.class)
+   @ClientCompatibleTest
+   public void alter_whenCalledWithNullFunction() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("alter_whenCalledWithNullFunction");
+
+       ref.alter(null);
+   }
+
+   @Test
+   @ClientCompatibleTest
+   public void alter_whenException() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("alter_whenException");
+       ref.set(10);
+
+       try {
+           ref.alter(new FailingFunction());
+           fail();
+       } catch (WoohaaException expected) {
+       }
+
+       assertEquals(10, ref.get());
+   }
+
+   @Test
+   @ClientCompatibleTest
+   public void alter() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("alter");
+
+       ref.set(10);
+       ref.alter(new AddOneFunction());
+       assertEquals(11, ref.get());
+
+   }
+
+   @Test(expected = IllegalArgumentException.class)
+   @ClientCompatibleTest
+   public void alterAndGet_whenCalledWithNullFunction() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("alterAndGet_whenCalledWithNullFunction");
+
+       ref.alterAndGet(null);
+   }
+
+   @Test
+   @ClientCompatibleTest
+   public void alterAndGet_whenException() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("alterAndGet_whenException");
+       ref.set(10);
+
+       try {
+           ref.alterAndGet(new FailingFunction());
+           fail();
+       } catch (WoohaaException expected) {
+       }
+
+       assertEquals(10, ref.get());
+   }
+
+   @Test
+   @ClientCompatibleTest
+   public void alterAndGet() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("alterAndGet");
+
+       ref.set(10);
+       assertEquals(11, ref.alterAndGet(new AddOneFunction()));
+       assertEquals(11, ref.get());
+  }
+
+   @Test(expected = IllegalArgumentException.class)
+   @ClientCompatibleTest
+   public void getAndAlter_whenCalledWithNullFunction() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("getAndAlter_whenCalledWithNullFunction");
+
+       ref.getAndAlter(null);
+   }
+
+   @Test
+   @ClientCompatibleTest
+   public void getAndAlter_whenException() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("getAndAlter_whenException");
+       ref.set(10);
+
+       try {
+           ref.getAndAlter(new FailingFunction());
+           fail();
+       } catch (WoohaaException expected) {
+       }
+
+       assertEquals(10, ref.get());
+   }
+
+   @Test
+   @ClientCompatibleTest
+   public void getAndAlter() {
+       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+       IAtomicLong ref = hazelcastInstance.getAtomicLong("getAndAlter");
+
+       ref.set(10);
+       assertEquals(10, ref.getAndAlter(new AddOneFunction()));
+       assertEquals(11, ref.get());
+   }
+
+    private static class AddOneFunction implements Function<Long, Long> {
+        @Override
+        public Long apply(Long input) {
+            return input+1;
+        }
+    }
+
+
+    private static class FailingFunction implements Function<Long, Long> {
+        @Override
+        public Long apply(Long input) {
+            throw new WoohaaException();
+        }
+    }
+
+    private static class WoohaaException extends RuntimeException {
+
     }
 }

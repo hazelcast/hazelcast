@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,8 +197,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     protected  <T> T invoke(CollectionOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future f = inv.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(),operation,partitionId);
             return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

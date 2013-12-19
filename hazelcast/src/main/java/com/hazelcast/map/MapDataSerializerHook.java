@@ -17,9 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.map.operation.*;
-import com.hazelcast.map.record.CachedDataRecord;
-import com.hazelcast.map.record.DataRecord;
-import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
@@ -38,9 +35,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE = 2;
     public static final int PUT_BACKUP = 3;
     public static final int REMOVE_BACKUP = 4;
-    public static final int DATA_RECORD = 5;
-    public static final int OBJECT_RECORD = 6;
-    public static final int CACHED_RECORD = 7;
+//    public static final int DATA_RECORD = 5;
+//    public static final int OBJECT_RECORD = 6;
+//    public static final int CACHED_RECORD = 7;
     public static final int KEY_SET = 8;
     public static final int VALUES = 9;
     public static final int ENTRY_SET = 10;
@@ -73,21 +70,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new RemoveOperation();
             }
         };
-        constructors[DATA_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new DataRecord();
-            }
-        };
-        constructors[OBJECT_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ObjectRecord();
-            }
-        };
-        constructors[CACHED_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CachedDataRecord();
-            }
-        };
         constructors[PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutBackupOperation();
@@ -98,6 +80,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new RemoveBackupOperation();
             }
         };
+
         constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapKeySet();

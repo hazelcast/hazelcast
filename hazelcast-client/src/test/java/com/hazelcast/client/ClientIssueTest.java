@@ -18,11 +18,13 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,14 +32,18 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static org.junit.Assert.*;
 
 /**
  * @ali 7/3/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientIssueTest {
 
     @After
@@ -136,7 +142,7 @@ public class ClientIssueTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setSmartRouting(false);
 
-        clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT));
+        clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(InMemoryFormat.OBJECT));
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
@@ -212,8 +218,146 @@ public class ClientIssueTest {
         } catch (HazelcastInstanceNotActiveException ignored){
         }
         assertFalse(instance.getLifecycleService().isRunning());
+    }
+
+    @Test
+    public void testClientConnectionEvents() throws InterruptedException {
+        final LinkedList<LifecycleState> list = new LinkedList<LifecycleState>();
+        list.offer(LifecycleState.STARTING);
+        list.offer(LifecycleState.STARTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
+        list.offer(LifecycleState.CLIENT_DISCONNECTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
 
 
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(list.size());
+        LifecycleListener listener = new LifecycleListener(){
+            public void stateChanged(LifecycleEvent event) {
+                final LifecycleState state = list.poll();
+                if (state != null && state.equals(event.getState())){
+                    latch.countDown();
+                }
+            }
+        };
+        final ListenerConfig listenerConfig = new ListenerConfig(listener);
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(listenerConfig);
+        clientConfig.setConnectionAttemptLimit(100);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        Thread.sleep(100);
+
+        instance.shutdown();
+
+        Thread.sleep(800);
+
+        Hazelcast.newHazelcastInstance();
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    /**
+     * add membership listener
+     */
+    @Test
+    public void testIssue1181() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
+            public void init(InitialMembershipEvent event) {
+                for (int i=0; i<event.getMembers().size(); i++){
+                    latch.countDown();
+                }
+            }
+
+            public void memberAdded(MembershipEvent membershipEvent) {
+
+            }
+
+            public void memberRemoved(MembershipEvent membershipEvent) {
+
+            }
+        }));
+        HazelcastClient.newHazelcastClient(clientConfig);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testInterceptor() throws InterruptedException {
+
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final IMap<Object, Object> map = client.getMap("map");
+        final MapInterceptorImpl interceptor = new MapInterceptorImpl();
+
+        final String id = map.addInterceptor(interceptor);
+        assertNotNull(id);
+
+
+        map.put("key1", "value");
+        assertEquals("value", map.get("key1"));
+        map.put("key1", "value1");
+        assertEquals("getIntercepted", map.get("key1"));
+
+        assertFalse(map.replace("key1", "getIntercepted", "val"));
+        assertTrue(map.replace("key1", "value1", "val"));
+
+        assertEquals("val", map.get("key1"));
+
+
+
+        map.put("key2", "oldValue");
+        assertEquals("oldValue", map.get("key2"));
+        map.put("key2", "newValue");
+        assertEquals("putIntercepted", map.get("key2"));
+
+        map.put("key3", "value2");
+        assertEquals("value2", map.get("key3"));
+        assertEquals("removeIntercepted", map.remove("key3"));
+
+
+
+    }
+
+    static class MapInterceptorImpl implements MapInterceptor {
+
+
+        MapInterceptorImpl() {
+        }
+
+        public Object interceptGet(Object value) {
+            if ("value1".equals(value)){
+                return "getIntercepted";
+            }
+            return null;
+        }
+
+        public void afterGet(Object value) {
+
+        }
+
+        public Object interceptPut(Object oldValue, Object newValue) {
+            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)){
+                return "putIntercepted";
+            }
+            return null;
+        }
+
+        public void afterPut(Object value) {
+        }
+
+        public Object interceptRemove(Object removedValue) {
+            if ("value2".equals(removedValue)){
+                return "removeIntercepted";
+            }
+            return null;
+        }
+
+        public void afterRemove(Object value) {
+        }
 
     }
 

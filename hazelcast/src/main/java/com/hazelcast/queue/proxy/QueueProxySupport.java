@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
@@ -49,7 +48,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         super(nodeEngine, queueService);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-        this.config = nodeEngine.getConfig().getQueueConfig(name);
+        this.config = nodeEngine.getConfig().findQueueConfig(name);
     }
 
     @Override
@@ -79,8 +78,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         OfferOperation operation = new OfferOperation(name, timeout, data);
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
-            Future f = inv.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, getPartitionId());
             return (Boolean) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrowAllowInterrupted(throwable);
@@ -106,8 +104,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         PollOperation operation = new PollOperation(name, timeout);
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
-            Future f = inv.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, getPartitionId());
             return f.get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrowAllowInterrupted(throwable);
@@ -161,8 +158,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     private <T> T invoke(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
-            Future f = inv.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,operation,partitionId);
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -172,8 +168,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     private Object invokeData(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, getPartitionId()).build();
-            Future f = inv.invoke();
+            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,operation,partitionId);
             return f.get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

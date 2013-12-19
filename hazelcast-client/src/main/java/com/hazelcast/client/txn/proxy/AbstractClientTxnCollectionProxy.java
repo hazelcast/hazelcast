@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.client.CollectionDestroyRequest;
 
 /**
  * @ali 9/4/13
@@ -29,9 +28,6 @@ public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy
     }
 
     void onDestroy() {
-        final CollectionDestroyRequest request = new CollectionDestroyRequest(getName());
-        request.setServiceName(getServiceName());
-        invoke(request);
     }
 
     public String getName() {

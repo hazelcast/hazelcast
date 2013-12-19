@@ -50,7 +50,7 @@ public class MapConfig {
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
-    private int maxIdleSeconds = DEFAULT_TTL_SECONDS;
+    private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
 
     private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
 
@@ -62,6 +62,8 @@ public class MapConfig {
 
     private boolean readBackupData = false;
 
+    private boolean optimizeQueries = false;
+
     private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
 
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
@@ -72,19 +74,11 @@ public class MapConfig {
 
     private List<MapIndexConfig> mapIndexConfigs;
 
-    private StorageType storageType = null;
-
     private boolean statisticsEnabled = true;
 
-    private PartitionStrategyConfig partitionStrategyConfig;
+    private PartitioningStrategyConfig partitioningStrategyConfig;
 
-    public enum InMemoryFormat {
-        BINARY, OBJECT, CACHED
-    }
-
-    public enum StorageType {
-        HEAP, OFFHEAP
-    }
+    private MapConfigReadOnly readOnly;
 
     public enum EvictionPolicy {
         LRU, LFU, NONE
@@ -100,20 +94,31 @@ public class MapConfig {
     public MapConfig(MapConfig config) {
         this.name = config.name;
         this.backupCount = config.backupCount;
+        this.asyncBackupCount = config.asyncBackupCount;
         this.evictionPercentage = config.evictionPercentage;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
-        this.maxSizeConfig = config.maxSizeConfig;
+        this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
         this.evictionPolicy = config.evictionPolicy;
         this.inMemoryFormat = config.inMemoryFormat;
-        this.mapStoreConfig = config.mapStoreConfig;
-        this.nearCacheConfig = config.nearCacheConfig;
+        this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
+        this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
         this.readBackupData = config.readBackupData;
+        this.optimizeQueries = config.optimizeQueries;
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
-        this.wanReplicationRef = config.wanReplicationRef;
+        this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
-        this.partitionStrategyConfig = config.partitionStrategyConfig;
+        this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
+        this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
+                ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
+    }
+
+    public MapConfigReadOnly getAsReadOnly(){
+        if (readOnly == null){
+            readOnly = new MapConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**
@@ -143,7 +148,7 @@ public class MapConfig {
      * Possible values:
      * BINARY (default): keys and values will be stored as binary data
      * OBJECT : values will be stored in their object forms
-     * CACHED: object form of values will be cached
+     * OFFHEAP : values will be stored in non-heap region of JVM
      *
      * @param inMemoryFormat the record type to set
      * @throws IllegalArgumentException if inMemoryFormat is null.
@@ -371,15 +376,6 @@ public class MapConfig {
         return this;
     }
 
-    public StorageType getStorageType() {
-        return storageType;
-    }
-
-    public MapConfig setStorageType(StorageType storageType) {
-        this.storageType = storageType;
-        return this;
-    }
-
     public MapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
         getEntryListenerConfigs().add(listenerConfig);
         return this;
@@ -414,17 +410,26 @@ public class MapConfig {
         return this;
     }
 
-    public PartitionStrategyConfig getPartitionStrategyConfig() {
-        return partitionStrategyConfig;
+    public PartitioningStrategyConfig getPartitioningStrategyConfig() {
+        return partitioningStrategyConfig;
     }
 
-    public MapConfig setPartitionStrategyConfig(PartitionStrategyConfig partitionStrategyConfig) {
-        this.partitionStrategyConfig = partitionStrategyConfig;
+    public MapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitioningStrategyConfig) {
+        this.partitioningStrategyConfig = partitioningStrategyConfig;
         return this;
     }
 
     public boolean isNearCacheEnabled() {
         return nearCacheConfig != null;
+    }
+
+    public boolean isOptimizeQueries() {
+        return optimizeQueries;
+    }
+
+    public MapConfig setOptimizeQueries(boolean optimizeQueries) {
+        this.optimizeQueries = optimizeQueries;
+        return this;
     }
 
     public boolean isCompatible(MapConfig other) {
@@ -523,7 +528,6 @@ public class MapConfig {
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
-        sb.append(", storageType=").append(storageType);
         sb.append('}');
         return sb.toString();
     }

@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.CachedDataRecord;
-import com.hazelcast.map.record.DataRecord;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,7 +32,9 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +56,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     @Override
     public void run() throws Exception {
-        List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
+        List<Integer> initialPartitions = mapService.getOwnedPartitions();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
@@ -70,7 +72,7 @@ public class QueryOperation extends AbstractMapOperation {
             // run in parallel
             runParallel(initialPartitions);
         }
-        List<Integer> finalPartitions = mapService.getOwnedPartitions().get();
+        List<Integer> finalPartitions = mapService.getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
@@ -89,9 +91,9 @@ public class QueryOperation extends AbstractMapOperation {
                     final PartitionContainer container = mapService.getPartitionContainer(partition);
                     final RecordStore recordStore = container.getRecordStore(name);
                     ConcurrentMap<Object, QueryableEntry> partitionResult = null;
-                    for (Record record : recordStore.getRecords().values()) {
+                    for (Record record : recordStore.getReadonlyRecordMap().values()) {
                         Data key = record.getKey();
-                        Object value = null;
+                        Object value;
                         if (record instanceof CachedDataRecord) {
                             CachedDataRecord cachedDataRecord = (CachedDataRecord) record;
                             value = cachedDataRecord.getCachedValue();
@@ -99,10 +101,11 @@ public class QueryOperation extends AbstractMapOperation {
                                 value = ss.toObject(cachedDataRecord.getValue());
                                 cachedDataRecord.setCachedValue(value);
                             }
-                        } else if (record instanceof DataRecord) {
-                            value = ss.toObject(((DataRecord) record).getValue());
                         } else {
                             value = record.getValue();
+                            if (value instanceof Data) {
+                                value = ss.toObject((Data) value);
+                            }
                         }
                         if (value == null) {
                             continue;
@@ -128,6 +131,17 @@ public class QueryOperation extends AbstractMapOperation {
                 }
             }
         }
+    }
+
+    @Override
+    public ExceptionAction onException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        if (throwable instanceof TargetNotMemberException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        return super.onException(throwable);
     }
 
     @Override

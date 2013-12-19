@@ -18,11 +18,13 @@ package com.hazelcast.hibernate;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
+import org.hibernate.stat.Statistics;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,8 +37,8 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
 
     protected Properties getCacheProperties() {
@@ -47,7 +49,7 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
 
     @Test
     public void testEntity() {
-        final HazelcastInstance hz = getHazelcastInstance();
+        final HazelcastInstance hz = getHazelcastInstance(sf);
         assertNotNull(hz);
         final int count = 100;
         final int childCount = 3;
@@ -57,7 +59,7 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         Session session = sf.openSession();
         try {
             for (int i = 0; i < count; i++) {
-                DummyEntity e = (DummyEntity) session.get(DummyEntity.class, new Long(i));
+                DummyEntity e = (DummyEntity) session.get(DummyEntity.class, (long) i);
                 session.evict(e);
                 list.add(e);
             }
@@ -78,6 +80,8 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         } finally {
             session.close();
         }
+
+        Statistics stats = sf.getStatistics();
         assertEquals((childCount + 1) * count, stats.getEntityInsertCount());
         // twice put of entity and properties (on load and update) and once put of collection
         assertEquals((childCount + 1) * count * 2 + count, stats.getSecondLevelCachePutCount());

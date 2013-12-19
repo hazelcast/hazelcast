@@ -19,13 +19,15 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,8 +44,8 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class BackupTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
@@ -242,10 +244,24 @@ public class BackupTest extends HazelcastTestSupport {
                 ix = rand.nextInt(nodeCount);
             } while (instances[ix] == null);
 
+            final CountDownLatch latch = new CountDownLatch(1);
+            // add listener
+            instances[ix].getLifecycleService().addLifecycleListener(new LifecycleListener() {
+                @Override
+                public void stateChanged(LifecycleEvent event) {
+                    if (event.getState().equals(LifecycleEvent.LifecycleState.SHUTDOWN)) {
+                        latch.countDown();
+                    }
+                }
+            });
+            latch.await(3, TimeUnit.SECONDS);
+            // shutdown.
             TestUtil.terminateInstance(instances[ix]);
             instances[ix] = null;
             checkMapSizes(mapSize, backupCount, instances);
+
         }
+
     }
 
     private static void checkMapSizes(final int expectedSize, int backupCount, HazelcastInstance... instances) throws InterruptedException {
@@ -266,7 +282,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
         final int expectedBackupSize = Math.min(nodeCount - 1, backupCount) * expectedSize;
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1200; i++) {
             long ownedSize = getTotalOwnedEntryCount(maps);
             long backupSize = getTotalBackupEntryCount(maps);
             if (ownedSize == expectedSize && backupSize == expectedBackupSize) {
@@ -280,7 +296,7 @@ public class BackupTest extends HazelcastTestSupport {
                     break;
                 }
             }
-            Thread.sleep(250);
+            Thread.sleep(500);
         }
         long backupSize = getTotalBackupEntryCount(maps);
         assertEquals("Backup size invalid, node-count: " + nodeCount, expectedBackupSize, backupSize);
@@ -317,7 +333,7 @@ public class BackupTest extends HazelcastTestSupport {
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
         final int count = 10000;
         final int totalCount = count * (instances.length() - 1);
-        final Thread[] threads = new Thread[instances.length()];
+        final CountDownLatch latch = new CountDownLatch(instances.length());
 
         for (int i = 0; i < instances.length(); i++) {
             final int finalI = i;
@@ -336,16 +352,15 @@ public class BackupTest extends HazelcastTestSupport {
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                    } finally {
+                        latch.countDown();
                     }
                 }
             };
-            threads[i] = thread;
             thread.start();
         }
 
-        for (Thread thread : threads) {
-            thread.join();
-        }
+        assertTrue(latch.await(5, TimeUnit.MINUTES));
 
         final int trials = 50;
         for (int i = 0; i < trials; i++) {
@@ -422,7 +437,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
 
         try {
-            assertTrue(latch.await(2, TimeUnit.MINUTES));
+            assertTrue(latch.await(5, TimeUnit.MINUTES));
             assertEquals("Data lost!", size, map.size());
         } finally {
             ex.shutdownNow();
@@ -496,7 +511,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
 
         try {
-            assertTrue(latch.await(2, TimeUnit.MINUTES));
+            assertTrue(latch.await(5, TimeUnit.MINUTES));
             assertEquals("Remove failed!", 0, map.size());
         } finally {
             ex.shutdown();

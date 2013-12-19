@@ -19,8 +19,10 @@ package com.hazelcast.spring.context;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -33,6 +35,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -44,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
-@Category(SerialTest.class)
+@Category(QuickTest.class)
 public class TestManagedContext {
 
     @Resource(name = "instance1")
@@ -138,5 +141,24 @@ public class TestManagedContext {
         latch.await(1, TimeUnit.MINUTES);
         Assert.assertTrue("transaction manager could not proxy the submitted task.",
                 transactionManager.isCommitted());
+    }
+
+    @Test
+    public void testEntryProcessor() {
+        final IMap<Object,Object> map = instance1.getMap("testEntryProcessor");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        map.put("key4", "value4");
+        map.put("key5", "value5");
+
+        final Map<Object,Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
+        Assert.assertEquals(5, objectMap.size());
+        for (Object o : objectMap.values()) {
+            Assert.assertEquals("notNull", o);
+        }
+
+        final Object result = map.executeOnKey("key8", new SomeEntryProcessor());
+        Assert.assertEquals("notNull", result);
     }
 }

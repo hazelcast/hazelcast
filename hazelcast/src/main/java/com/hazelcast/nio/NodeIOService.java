@@ -69,7 +69,11 @@ public class NodeIOService implements IOService {
 
     public void onFatalError(Exception e) {
         getSystemLogService().logConnection(e.getClass().getName() + ": " + e.getMessage());
-        node.shutdown(false, false);
+        new Thread(node.threadGroup, node.getThreadNamePrefix("io.error.shutdown")) {
+            public void run() {
+                node.shutdown(false);
+            }
+        }.start();
     }
 
     public SocketInterceptorConfig getSocketInterceptorConfig() {
@@ -145,6 +149,10 @@ public class NodeIOService implements IOService {
 
     public int getSocketPort() {
         return node.getConfig().getNetworkConfig().getPort();
+    }
+
+    public boolean isSocketBind() {
+        return node.groupProperties.SOCKET_CLIENT_BIND.getBoolean();
     }
 
     public boolean isSocketBindAny() {

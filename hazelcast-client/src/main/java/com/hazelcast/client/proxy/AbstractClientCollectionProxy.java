@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,9 +154,6 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     protected void onDestroy() {
-        final CollectionDestroyRequest request = new CollectionDestroyRequest(getName());
-        request.setServiceName(getServiceName());
-        invoke(request);
     }
 
     protected  <T> T invoke(Object req) {

@@ -34,6 +34,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_RESPONSE = 1;
     public static final int HEADER_EVENT = 2;
     public static final int HEADER_WAN_REPLICATION = 3;
+    public static final int HEADER_URGENT = 4;
 
     private short header;
     private int partitionId;
@@ -77,6 +78,12 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
         return partitionId;
     }
 
+    @Override
+    public boolean isUrgent(){
+        return isHeaderSet(HEADER_URGENT);
+    }
+
+    @Override
     public final boolean writeTo(ByteBuffer destination) {
         if (!isStatusSet(stVersion)) {
             if (!destination.hasRemaining()) {
@@ -102,6 +109,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
         return super.writeTo(destination);
     }
 
+    @Override
     public final boolean readFrom(ByteBuffer source) {
         if (!isStatusSet(stVersion)) {
             if (!source.hasRemaining()) {
@@ -134,7 +142,6 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public int size() {
         return (data != null  ? data.totalSize() : 0) + 7; // 7 = byte(version) + short(header) + int(partitionId)
     }
-
 
     @Override
     public String toString() {

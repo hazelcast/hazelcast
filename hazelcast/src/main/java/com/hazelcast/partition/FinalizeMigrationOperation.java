@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.logging.Level;
 
 // runs locally...
 final class FinalizeMigrationOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation {

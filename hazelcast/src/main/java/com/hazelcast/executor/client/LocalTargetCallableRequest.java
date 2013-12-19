@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -46,6 +47,10 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
     }
 
     protected Operation prepareOperation() {
+        final SecurityContext securityContext = getClientEngine().getSecurityContext();
+        if (securityContext != null){
+            callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
+        }
         return new CallableTaskOperation(name, null, callable);
     }
 
@@ -74,4 +79,5 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
         name = in.readUTF();
         callable = in.readObject();
     }
+
 }

@@ -47,7 +47,7 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream implement
     ByteArrayObjectDataInput(byte buffer[], SerializationService service) {
         super();
         this.buffer = buffer;
-        this.size = buffer.length;
+        this.size = buffer != null ? buffer.length : 0;
         this.service = service;
     }
 

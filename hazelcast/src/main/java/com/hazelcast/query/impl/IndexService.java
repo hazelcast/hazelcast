@@ -26,9 +26,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class IndexService {
-    final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
-    final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
-    volatile boolean hasIndex = false;
+    private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
+    private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
+    private volatile boolean hasIndex = false;
 
     public synchronized Index destroyIndex(String attribute) {
         return mapIndexes.remove(attribute);

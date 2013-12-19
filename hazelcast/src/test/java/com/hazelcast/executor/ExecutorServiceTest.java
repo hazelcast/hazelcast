@@ -20,10 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,8 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class ExecutorServiceTest extends HazelcastTestSupport {
 
     public static final int simpleTestNodeCount = 3;
@@ -602,6 +602,58 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             tasks.add(new BasicTestTask());
         }
         futures = executor.invokeAll(tasks);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+            assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+        }
+    }
+    @Test
+    public void testInvokeAllTimeoutCancelled() throws Exception {
+        ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
+        assertFalse(executor.isShutdown());
+        // Only one task
+        ArrayList<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
+        tasks.add(new CancellationAwareTask(0));
+        List<Future<Boolean>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), Boolean.TRUE);
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new CancellationAwareTask(i < 2 ? 0 : 20000));
+        }
+        futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+            if (i < 2) {
+                assertEquals(futures.get(i).get(), Boolean.TRUE);
+            } else {
+                boolean excepted = false;
+                try {
+                    futures.get(i).get();
+                } catch (CancellationException e) {
+                    excepted = true;
+                }
+                assertTrue(excepted);
+            }
+        }
+    }
+    @Test
+    public void testInvokeAllTimeoutSuccess() throws Exception {
+        ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
+        assertFalse(executor.isShutdown());
+        // Only one task
+        ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
+        tasks.add(new BasicTestTask());
+        List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new BasicTestTask());
+        }
+        futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), COUNT);
         for (int i = 0; i < COUNT; i++) {
             assertEquals(futures.get(i).get(), BasicTestTask.RESULT);

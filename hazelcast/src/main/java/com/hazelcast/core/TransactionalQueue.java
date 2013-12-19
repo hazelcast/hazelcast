@@ -52,6 +52,16 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
     /**
      * {@inheritDoc}
      */
+    E peek();
+
+    /**
+     * {@inheritDoc}
+     */
+    E peek(long timeout, TimeUnit unit) throws InterruptedException;
+
+    /**
+     * {@inheritDoc}
+     */
     int size();
 
 }

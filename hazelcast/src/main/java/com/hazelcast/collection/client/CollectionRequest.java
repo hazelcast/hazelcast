@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,24 @@
 package com.hazelcast.collection.client;
 
 import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.security.permission.ListPermission;
+import com.hazelcast.security.permission.SetPermission;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @ali 9/4/13
  */
-public abstract class CollectionRequest extends PartitionClientRequest implements Portable {
+public abstract class CollectionRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String serviceName;
 
@@ -70,4 +76,16 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
         serviceName = reader.readUTF("s");
         name = reader.readUTF("n");
     }
+
+    public final Permission getRequiredPermission() {
+        final String action = getRequiredAction();
+        if (ListService.SERVICE_NAME.equals(serviceName)){
+            return new ListPermission(name, action);
+        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+            return new SetPermission(name, action);
+        }
+        throw new IllegalArgumentException("No service matched!!!");
+    }
+
+    public abstract String getRequiredAction();
 }

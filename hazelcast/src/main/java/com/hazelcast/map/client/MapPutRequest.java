@@ -16,19 +16,22 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.*;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
-public class MapPutRequest extends KeyBasedClientRequest implements Portable, InitializingObjectRequest {
+public class MapPutRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     protected Data key;
     protected Data value;
@@ -78,10 +81,6 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, In
         return MapService.SERVICE_NAME;
     }
 
-    public String getObjectName() {
-        return name;
-    }
-
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("t", threadId);
@@ -100,6 +99,10 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, In
         key.readData(in);
         value = new Data();
         value.readData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_PUT);
     }
 
 }

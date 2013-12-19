@@ -39,7 +39,9 @@ public class SocketAcceptor implements Runnable {
     public void run() {
         Selector selector = null;
         try {
-            log(Level.FINEST, "Starting SocketAcceptor on " + serverSocketChannel);
+            if (logger.isFinestEnabled()) {
+                log(Level.FINEST, "Starting SocketAcceptor on " + serverSocketChannel);
+            }
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
@@ -73,7 +75,9 @@ public class SocketAcceptor implements Runnable {
     private void closeSelector(Selector selector) {
         if (selector != null) {
             try {
-                logger.finest( "Closing selector " + Thread.currentThread().getName());
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Closing selector " + Thread.currentThread().getName());
+                }
                 selector.close();
             } catch (final Exception ignored) {
             }

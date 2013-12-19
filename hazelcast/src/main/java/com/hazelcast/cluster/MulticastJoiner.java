@@ -22,13 +22,13 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.RandomPicker;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 public class MulticastJoiner extends AbstractJoiner {
 
@@ -138,17 +138,21 @@ public class MulticastJoiner extends AbstractJoiner {
             throw new IllegalArgumentException();
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
-        logger.finest( "Master connection " + conn);
+        if (logger.isFinestEnabled()) {
+            logger.finest( "Master connection " + conn);
+        }
         systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {
-            logger.finest( "Connecting to master node: " + masterAddress);
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Connecting to master node: " + masterAddress);
+            }
             return false;
         }
     }
 
-    private final int publishInterval = 100;
+    private static final int publishInterval = 100;
 
     private Address findMasterWithMulticast() {
         try {
@@ -183,7 +187,7 @@ public class MulticastJoiner extends AbstractJoiner {
         try {
             lastDigits = Integer.valueOf(host.substring(host.lastIndexOf(".") + 1));
         } catch (NumberFormatException e) {
-            lastDigits = (int) (512 * Math.random());
+            lastDigits = RandomPicker.getInt(512);
         }
         lastDigits = lastDigits % 100;
         int portDiff = node.getThisAddress().getPort() - networkConfig.getPort();

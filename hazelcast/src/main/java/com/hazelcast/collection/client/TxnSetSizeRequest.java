@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@ package com.hazelcast.collection.client;
 
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SetPermission;
+
+import java.security.Permission;
 
 /**
  * @ali 9/4/13
@@ -41,5 +45,9 @@ public class TxnSetSizeRequest extends TxnCollectionRequest {
 
     public int getClassId() {
         return CollectionPortableHook.TXN_SET_SIZE;
+    }
+
+    public Permission getRequiredPermission() {
+        return new SetPermission(name, ActionConstants.ACTION_READ);
     }
 }

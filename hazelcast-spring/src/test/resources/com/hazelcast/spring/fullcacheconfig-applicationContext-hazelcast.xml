@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.0.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE" >
@@ -130,7 +130,7 @@
                     read-backup-data="true"
                     eviction-policy="NONE"
                     merge-policy="PUT_IF_ABSENT"
-                    storage-type="HEAP">
+                    in-memory-format="BINARY">
                 <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"/>
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
                                invalidate-on-change="true"/>
@@ -211,8 +211,29 @@
                 <hz:listener implementation="dummyMembershipListener"/>
             </hz:listeners>
 
+            <hz:serialization allow-unsafe="false"
+                              byte-order="BIG_ENDIAN"
+                              check-class-def-errors="false"
+                              enable-compression="false"
+                              enable-shared-object="false"
+                              portable-version="13"
+                              use-native-byte-order="false" >
+
+                <hz:data-serializable-factories>
+                    <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+                </hz:data-serializable-factories>
+                <hz:portable-factories>
+                    <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory" />
+                </hz:portable-factories>
+                <hz:serializers>
+                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject1" class-name="com.hazelcast.spring.serialization.DummySerializer"/>
+                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2" implementation="dummySerializer"/>
+                </hz:serializers>
+            </hz:serialization>
         </hz:config>
     </hz:hazelcast>
+
+    <bean id="dummySerializer" class="com.hazelcast.spring.serialization.DummySerializer" />
 
     <hz:map id="map1" instance-ref="instance" name="map1"/>
     <hz:map id="map2" instance-ref="instance" name="map2"/>
@@ -224,6 +245,7 @@
     <hz:executorService id="executorService" instance-ref="instance" name="executorService"/>
     <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
     <hz:atomicLong id="atomicLong" instance-ref="instance" name="atomicLong"/>
+    <hz:atomicReference id="atomicReference" instance-ref="instance" name="atomicReference"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
     <hz:lock id="lock" instance-ref="instance" name="lock"/>

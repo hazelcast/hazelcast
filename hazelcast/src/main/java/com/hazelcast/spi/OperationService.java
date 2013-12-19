@@ -60,6 +60,12 @@ public interface OperationService {
      */
     void executeOperation(final Operation op);
 
+    <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
+
+    <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId, Callback callback);
+
+    <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
+
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
@@ -128,4 +134,5 @@ public interface OperationService {
      * @return
      */
     boolean send(Operation op, Connection connection);
+
 }

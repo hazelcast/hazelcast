@@ -17,16 +17,21 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -34,8 +39,8 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class IssuesTest extends HazelcastTestSupport {
 
     @Test
@@ -157,6 +162,111 @@ public class IssuesTest extends HazelcastTestSupport {
         map.put("key", "value");
         assertTrue(map.containsKey("key"));
         h.getLifecycleService().shutdown();
+    }
+
+    @Test
+    public void testIssue1067GlobalSerializer() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        final Config config = new Config();
+        config.getSerializationConfig().setGlobalSerializerConfig(new GlobalSerializerConfig()
+                .setImplementation(new StreamSerializer() {
+                    public void write(ObjectDataOutput out, Object object) throws IOException {
+                    }
+                    public Object read(ObjectDataInput in) throws IOException {
+                        return new DummyValue();
+                    }
+                    public int getTypeId() {
+                        return 123;
+                    }
+                    public void destroy() {
+                    }
+                }));
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        IMap<Object, Object> map = hz.getMap("test");
+        for (int i = 0; i < 10; i++) {
+            map.put(i, new DummyValue());
+        }
+        assertEquals(10, map.size());
+
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        IMap<Object, Object> map2 = hz2.getMap("test");
+        assertEquals(10, map2.size());
+        assertEquals(10, map.size());
+
+        for (int i = 0; i < 10; i++) {
+            Object o = map2.get(i);
+            assertNotNull(o);
+            assertTrue(o instanceof DummyValue);
+        }
+    }
+
+    private static class DummyValue {
+    }
+
+    @Test
+    public void testMapInterceptorInstanceAware() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        IMap<Object,Object> map = hz1.getMap("test");
+
+        InstanceAwareMapInterceptorImpl interceptor = new InstanceAwareMapInterceptorImpl();
+        map.addInterceptor(interceptor);
+        assertNotNull(interceptor.hazelcastInstance);
+        assertEquals(hz1, interceptor.hazelcastInstance);
+
+        for (int i=0; i<100; i++){
+            map.put(i, i);
+        }
+
+        for (int i=0; i<100; i++){
+            assertEquals("notNull", map.get(i));
+        }
+    }
+
+    static class InstanceAwareMapInterceptorImpl implements MapInterceptor, HazelcastInstanceAware {
+
+        transient HazelcastInstance hazelcastInstance;
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hazelcastInstance = hazelcastInstance;
+        }
+
+        @Override
+        public Object interceptGet(Object value) {
+            return null;
+        }
+
+        @Override
+        public void afterGet(Object value) {
+
+        }
+
+        @Override
+        public Object interceptPut(Object oldValue, Object newValue) {
+            if (hazelcastInstance != null){
+                return "notNull";
+            }
+            return ">null";
+        }
+
+        @Override
+        public void afterPut(Object value) {
+
+        }
+
+        @Override
+        public Object interceptRemove(Object removedValue) {
+            return null;
+        }
+
+        @Override
+        public void afterRemove(Object value) {
+
+        }
     }
 
 }

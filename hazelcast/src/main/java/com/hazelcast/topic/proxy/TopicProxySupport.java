@@ -48,7 +48,7 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
 
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
-        TopicConfig config = nodeEngine.getConfig().getTopicConfig(name);
+        TopicConfig config = nodeEngine.getConfig().findTopicConfig(name);
         final List<ListenerConfig> messageListenerConfigs = config.getMessageListenerConfigs();
         for (ListenerConfig listenerConfig : messageListenerConfigs) {
             MessageListener listener;

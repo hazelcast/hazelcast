@@ -20,8 +20,9 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -37,8 +38,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 6/7/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientTxnQueueTest {
 
     static final String name = "test";
@@ -61,7 +62,7 @@ public class ClientTxnQueueTest {
 
     @Test
     public void testTransactionalOfferPoll1() throws Exception {
-        final String name = "defQueue";
+        final String name = "testTransactionalOfferPoll1";
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
@@ -109,29 +110,20 @@ public class ClientTxnQueueTest {
         assertEquals("item0", hz.getQueue(name1).poll());
     }
 
+    @Test
+    public void testTransactionalPeek() throws Exception {
+        final String name = "defQueue";
 
-//    @Test
-//    public void testQueueWithMap() throws Exception {
-//        final String queueName = "defQueue";
-//        final String mapName = "defMap";
-//        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-//        final HazelcastInstance[] instances = factory.newInstances(config);
-//        instances[0].getMap(mapName).lock("lock1");
-//
-//        try {
-//            final TransactionContext context = instances[1].newTransactionContext(new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
-//            context.beginTransaction();
-//
-//            boolean offered = context.getQueue(queueName).offer("item1");
-//            assertTrue(offered);
-//            context.getMap(mapName).put("lock1", "value1");
-//            fail();
-//
-//        } catch (TransactionException ex) {
-//            // expected
-//        }
-//        assertEquals(0, instances[0].getQueue(queueName).size());
-//        assertNull(instances[0].getMap(mapName).get("lock1"));
-//    }
+        final TransactionContext context = hz.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> q = context.getQueue(name);
+        assertTrue(q.offer("ali"));
+        String s = q.peek();
+        assertEquals("ali",s);
+        s = q.peek();
+        assertEquals("ali",s);
+        context.commitTransaction();
+        assertEquals(1, hz.getQueue(name).size());
+    }
 
 }

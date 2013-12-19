@@ -20,8 +20,8 @@ import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.concurrent.semaphore.client.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,8 +35,8 @@ import static org.junit.Assert.*;
 /**
  * @author ali 5/13/13
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class SemaphoreClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";

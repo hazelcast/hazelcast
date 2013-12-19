@@ -90,7 +90,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 if (e instanceof IllegalStateException) {
                     level = Level.FINEST;
                 }
-                getLogger().log(level, e.getMessage(), e);
+                if (getLogger().isLoggable(level)) {
+                    getLogger().log(level, e.getMessage(), e);
+                }
                 success = false;
             } finally {
                 migrationInfo.doneProcessing();
@@ -135,6 +137,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
     private static class ErrorResponseHandler implements ResponseHandler {
         public void sendResponse(final Object obj) {
             throw new HazelcastException("Migration operations can not send response!");
+        }
+
+        public boolean isLocal() {
+            return true;
         }
     }
 

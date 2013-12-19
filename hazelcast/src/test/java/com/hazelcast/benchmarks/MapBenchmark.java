@@ -16,8 +16,6 @@
 
 package com.hazelcast.benchmarks;
 
-
-import com.carrotsearch.junitbenchmarks.BenchmarkOptions;
 import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
@@ -61,15 +59,35 @@ public class MapBenchmark {
 
     @Test
     public void get() throws Exception {
-        for(int k=0;k<100000;k++){
+        long startMs = System.currentTimeMillis();
+        int iterations = 10000000;
+
+        map.put("foo","");
+        for(int k=0;k<iterations;k++){
+            if(k%1000000==0){
+                System.out.println("At: "+k);
+            }
             map.get("foo");
         }
+        long durationMs = System.currentTimeMillis()-startMs;
+        double performance = (iterations*1000d)/durationMs;
+        System.out.println("Performance: " + performance);
     }
 
     @Test
-    public void set() throws Exception {
-        for(int k=0;k<100000;k++){
-            map.set("foo", "bar");
+    public void put() throws Exception {
+        long startMs = System.currentTimeMillis();
+        int iterations = 10000000;
+
+        map.put("foo","");
+        for(int k=0;k<iterations;k++){
+            if(k%1000000==0){
+                System.out.println("At: "+k);
+            }
+            map.put("foo","");
         }
+        long durationMs = System.currentTimeMillis()-startMs;
+        double performance = (iterations*1000d)/durationMs;
+        System.out.println("Performance: " + performance);
     }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -59,7 +60,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         final Address destination = migrationInfo.getDestination();
         final Member target = nodeEngine.getClusterService().getMember(destination);
         if (target == null) {
-            throw new RetryableHazelcastException("Destination of migration could not be found! => " + toString());
+            throw new TargetNotMemberException("Destination of migration could not be found! => " + toString());
         }
         if (destination.equals(source)) {
             getLogger().warning("Source and destination addresses are the same! => " + toString());
@@ -70,11 +71,17 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         if (source == null || !source.equals(nodeEngine.getThisAddress())) {
             throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
         }
+
+        PartitionServiceImpl partitionService = getService();
+        PartitionImpl partition = partitionService.getPartition(migrationInfo.getPartitionId());
+        final Address owner = partition.getOwner();
+        if (owner == null) {
+            throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
+                    + migrationInfo);
+        }
+
         if (migrationInfo.startProcessing()) {
             try {
-                PartitionServiceImpl partitionService = getService();
-                PartitionImpl partition = partitionService.getPartition(migrationInfo.getPartitionId());
-                final Address owner = partition.getOwner();
                 if (!source.equals(owner)) {
                     throw new HazelcastException("Cannot migrate! This node is not owner of the partition => "
                             + migrationInfo + " -> " + partition);
@@ -104,10 +111,10 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                                     data = out.toByteArray();
                                 }
                                 final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
-                                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
-                                        migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
-                                Future future = inv.invoke();
+                                Future future = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
+                                        migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).invoke();
                                 Boolean result = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
+                                migrationInfo.doneProcessing();
                                 responseHandler.sendResponse(result);
                             } catch (Throwable e) {
                                 responseHandler.sendResponse(Boolean.FALSE);
@@ -129,12 +136,26 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 getLogger().warning( e);
                 success = false;
             } finally {
-                migrationInfo.doneProcessing();
+//                if (returnResponse) {
+                    migrationInfo.doneProcessing();
+//                }
             }
         } else {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);
             success = false;
         }
+    }
+
+
+    @Override
+    public ExceptionAction onException(Throwable throwable) {
+        if (throwable instanceof TargetNotMemberException) {
+            NodeEngine nodeEngine = getNodeEngine();
+            if (nodeEngine != null && nodeEngine.getClusterService().getMember(migrationInfo.getDestination()) == null) {
+                return ExceptionAction.THROW_EXCEPTION;
+            }
+        }
+        return super.onException(throwable);
     }
 
     @Override

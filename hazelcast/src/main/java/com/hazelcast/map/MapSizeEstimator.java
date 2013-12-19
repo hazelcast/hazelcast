@@ -16,51 +16,39 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.record.DataRecord;
 import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ahmet
  * Date: 06.09.2013
- *
- * Time: 07:51
  */
-class MapSizeEstimator extends AbstractSizeEstimator {
+class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
 
-    protected MapSizeEstimator(){
-        super();
+    private volatile long _size;
+
+    public long getSize() {
+        return _size;
     }
 
+    public void add(long size) {
+        _size += size;
+    }
 
-    @Override
-    public <T> long getCost(T record) {
+    public void reset() {
+        _size = 0;
+    }
 
-        // immediate check nothing to do if record is null
-        if( record == null ){
-            return 0;
+    public long getCost(T record) {
+        if (record == null) {
+            return 0L;
         }
-
-        if( record instanceof DataRecord)
-        {
-            final Record rec = (Record)record;
-            long size = 0;
-            // key ref. size in map.
-            size += 4 * ((Integer.SIZE/Byte.SIZE));
-            size += rec.getCost() ;
-            return size;
+        if (record instanceof ObjectRecord) {
+            return 0L;
         }
-        else if( record instanceof ObjectRecord)
-        {
-            // todo calculate object size properly.
-            // calculating object size is omitted for now.
-            return 0;
-        }
-
-        final String msg =  "MapSizeEstimator::not known object for map heap cost" +
-                " calculation [" + record.getClass().getCanonicalName()+"]";
-
-        throw new RuntimeException( msg ) ;
+        // entry size in CHM
+        long refSize = 4 * ((Integer.SIZE / Byte.SIZE));
+        final long valueSize = record.getCost();
+        return refSize + valueSize;
     }
 }

@@ -16,25 +16,28 @@
 
 package com.hazelcast.topic.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.topic.PublishOperation;
 import com.hazelcast.topic.TopicPortableHook;
 import com.hazelcast.topic.TopicService;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/14/13
  */
-public class PublishRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest {
+public class PublishRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -73,10 +76,6 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
         return TopicPortableHook.PUBLISH;
     }
 
-    public String getObjectName() {
-        return name;
-    }
-
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -88,5 +87,9 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
         final ObjectDataInput in = reader.getRawDataInput();
         message = new Data();
         message.readData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new TopicPermission(name, ActionConstants.ACTION_PUBLISH);
     }
 }

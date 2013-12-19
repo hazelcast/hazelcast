@@ -84,6 +84,14 @@ public interface HazelcastInstance {
     <K, V> IMap<K, V> getMap(String name);
 
     /**
+     * Returns the replicated map instance with the specified name.
+     *
+     * @param name name of the distributed map
+     * @return replicated map instance with specified name
+     */
+    <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
+
+    /**
      * Returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap
@@ -133,6 +141,21 @@ public interface HazelcastInstance {
      * @return cluster that this Hazelcast instance is part of
      */
     Cluster getCluster();
+
+
+    /**
+     * Returns the local Endpoint which this HazelcastInstance is belongs to.
+     * <p/>
+     *
+     * Returned endpoint will be a {@link Member} instance for cluster nodes
+     * and a {@link Client} instance for clients.
+     *
+     * @see Member
+     * @see Client
+     *
+     * @return local endpoint
+     */
+    Endpoint getLocalEndpoint();
 
     /**
      * Returns the distributed executor service for the given
@@ -207,6 +230,15 @@ public interface HazelcastInstance {
      * @return IAtomicLong proxy for the given name
      */
     IAtomicLong getAtomicLong(String name);
+
+    /**
+     * Creates cluster-wide atomic reference. Hazelcast IAtomicReference is distributed
+     * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
+     *
+     * @param name name of the IAtomicReference proxy
+     * @return IAtomicReference proxy for the given name
+     */
+    <E> IAtomicReference<E> getAtomicReference(String name);
 
     /**
      * Creates cluster-wide CountDownLatch. Hazelcast ICountDownLatch is distributed

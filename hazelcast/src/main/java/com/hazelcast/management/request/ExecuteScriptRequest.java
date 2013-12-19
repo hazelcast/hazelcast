@@ -16,6 +16,7 @@
 
 package com.hazelcast.management.request;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
@@ -28,11 +29,7 @@ import java.util.Map.Entry;
 
 public class ExecuteScriptRequest implements ConsoleRequest {
 
-    private static final byte NULL = 0;
-    private static final byte MAP = 1;
     private static final byte COLLECTION = 2;
-    private static final byte OTHER = -1;
-
     private String script;
     private String engine;
     private Set<Address> targets;
@@ -65,42 +62,31 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        Object result = null;
-        ScriptExecutorOperation operation = new ScriptExecutorOperation(engine, script, bindings);
+        ArrayList result;
         if (targetAllMembers) {
-            result = mcs.callOnAllMembers(operation);
-        } else if (targets.isEmpty()) {
-            result = NULL;
-        } else if (targets.size() == 1) {
-            result = mcs.call(targets.iterator().next(), operation);
-        } else {
-            result = mcs.callOnAddresses(targets, operation);
-        }
-        if (result != null) {
-            if (result instanceof Map) {
-                dos.writeByte(MAP);
-                writeMap(dos, (Map) result);
-            } else if (result instanceof Collection) {
-                dos.writeByte(COLLECTION);
-                writeCollection(dos, (Collection) result);
-            } else {
-                dos.writeByte(OTHER);
-                dos.writeObject(result);
+            final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
+            final ArrayList list = new ArrayList(members.size());
+            for (Member member : members) {
+                list.add(mcs.callOnMember(member, new ScriptExecutorOperation(engine, script, bindings)));
             }
+            result = list;
         } else {
-            dos.writeByte(NULL);
+            final ArrayList list = new ArrayList(targets.size());
+            for (Address address : targets) {
+                list.add(mcs.callOnAddress(address, new ScriptExecutorOperation(engine, script, bindings)));
+            }
+            result = list;
         }
+
+        dos.writeByte(COLLECTION);//This line left here for compatibility among 3.x
+        //TODO: Currently returning complex data structures like map,array are not possible.
+        writeCollection(dos, result);
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
-        byte flag = in.readByte();
-        switch (flag) {
-            case MAP:
-                return readMap(in);
-            case COLLECTION:
-                return readCollection(in);
-            case OTHER:
-                return in.readObject();
+        byte flag = in.readByte();//This line left here for compatibility among 3.x
+        if (flag == COLLECTION) {
+            return readCollection(in);
         }
         return null;
     }

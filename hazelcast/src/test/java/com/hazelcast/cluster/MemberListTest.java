@@ -26,8 +26,8 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,8 +46,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests for issue #274
  */
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 
 public class MemberListTest {
 
@@ -290,13 +290,25 @@ public class MemberListTest {
 
         // Need to wait for at least as long as PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS
         Thread.sleep(15 * 1000);
+
+        Member master = h1.getCluster().getLocalMember();
+        assertEquals(master, h2.getCluster().getMembers().iterator().next());
+        assertEquals(master, h3.getCluster().getMembers().iterator().next());
+        assertEquals(master, h4.getCluster().getMembers().iterator().next());
+        assertEquals(master, h5.getCluster().getMembers().iterator().next());
+
         h1.getLifecycleService().shutdown();
-        Thread.sleep(3 * 1000);
 
         assertEquals(4, h2.getCluster().getMembers().size());
         assertEquals(4, h3.getCluster().getMembers().size());
         assertEquals(4, h4.getCluster().getMembers().size());
         assertEquals(4, h5.getCluster().getMembers().size());
+
+        master = h2.getCluster().getLocalMember();
+        assertEquals(master, h2.getCluster().getMembers().iterator().next());
+        assertEquals(master, h3.getCluster().getMembers().iterator().next());
+        assertEquals(master, h4.getCluster().getMembers().iterator().next());
+        assertEquals(master, h5.getCluster().getMembers().iterator().next());
 
         Thread.sleep(10 * 1000);
 
@@ -304,6 +316,10 @@ public class MemberListTest {
         assertEquals(4, h3.getCluster().getMembers().size());
         assertEquals(4, h4.getCluster().getMembers().size());
         assertEquals(4, h5.getCluster().getMembers().size());
+        assertEquals(master, h2.getCluster().getMembers().iterator().next());
+        assertEquals(master, h3.getCluster().getMembers().iterator().next());
+        assertEquals(master, h4.getCluster().getMembers().iterator().next());
+        assertEquals(master, h5.getCluster().getMembers().iterator().next());
     }
 
     private static Config buildConfig(boolean multicastEnabled) {
