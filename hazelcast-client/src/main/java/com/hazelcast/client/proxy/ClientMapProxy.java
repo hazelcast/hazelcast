@@ -54,6 +54,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        throw new UnsupportedOperationException("FIXME!!!!!");
+    }
+
+    @Override
     public boolean containsKey(Object key) {
         Data keyData = toData(key);
         MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData);
