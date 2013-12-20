@@ -7,7 +7,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -24,14 +24,14 @@ import static org.junit.Assert.assertTrue;
 @Category(SerialTest.class)
 public class ClientMapIssueTest {
 
-    @AfterClass
+    @After
     public static void destroy() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test()
-    public void testClientDisconnectionWhileQuerying() throws InterruptedException {
+    public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
