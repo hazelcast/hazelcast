@@ -68,6 +68,7 @@ public class MapPortableHook implements PortableHook {
     public static final int TXN_REQUEST = 41;
     public static final int TXN_REQUEST_WITH_SQL_QUERY = 42;
     public static final int EXECUTE_WITH_PREDICATE = 43;
+    public static final int EXECUTE_ON_KEYS = 44;
 
     public int getFactoryId() {
         return F_ID;
@@ -75,7 +76,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[EXECUTE_WITH_PREDICATE + 1];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[EXECUTE_ON_KEYS + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -310,6 +311,11 @@ public class MapPortableHook implements PortableHook {
                 constructors[EXECUTE_WITH_PREDICATE] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapExecuteWithPredicateRequest();
+                    }
+                };
+                constructors[EXECUTE_ON_KEYS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapExecuteOnKeysRequest();
                     }
                 };
 
