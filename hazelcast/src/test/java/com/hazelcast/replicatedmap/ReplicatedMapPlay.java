@@ -21,6 +21,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -52,7 +53,50 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
 
         map1.put(null, 1);
+        map1.remove(1);
+        map1.remove(null);
+        assertFalse(map1.removeEntryListener("2"));
+        map1.removeEntryListener(null);
+        map1.clear();
+        assertEquals(0, map1.size());
     }
+
+
+    @Test
+    public void equalsTest() throws Exception {
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(0);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
+
+        for(int i=0; i<1000; i++){
+            map1.put(i, i);
+        }
+        Thread.sleep(1000);
+
+        assertEquals(1000, map1.size());
+        assertEquals(1000, map2.size());
+
+        assertTrue(map1.equals(map2));
+        assertTrue(map1.hashCode() == map2.hashCode());
+
+        assertTrue(map1.entrySet().equals(map2.entrySet()));
+        assertTrue(map1.values().equals(map2.values()));
+
+        map1.clear();
+        assertEquals(0, map1.size());
+        assertEquals(0, map2.size());
+
+    }
+
 
 
 
@@ -348,9 +392,6 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         }
     }
 
-
-
-
     @Test
     public void play() throws Exception {
 
@@ -358,37 +399,219 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(0);
-        //cfg.getReplicatedMapConfig("default").setConcurrencyLevel(1);
+        cfg.getReplicatedMapConfig("default").setConcurrencyLevel(1);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
+        final ReplicatedMap<Object, Object> mapA = instance1.getReplicatedMap("default");
+        final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
+        final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
+
+        Thread[] pool = new Thread[10];
+        CyclicBarrier gate = new CyclicBarrier(pool.length+1);
+        for(int i=0; i<5; i++){
+            pool[i] = new GatedThread(gate) {
+                public void go() {
+                    for(int i=0; i<1000; i++)
+                        mapA.put(i+"A", i);
+                }
+            };
+            pool[i].start();
+        }
+        for(int i=5; i<10; i++){
+            pool[i] = new GatedThread(gate) {
+                public void go() {
+                    for(int i=0; i<1000; i++)
+                        mapB.put(i+"B", i);
+                }
+            };
+            pool[i].start();
+        }
+        gate.await();
+
+        for(Thread t:pool){
+            t.join();
+        }
+
+        for(int i=0; i<1000; i++){
+            assertEquals(i, mapA.get(i+"A"));
+            assertEquals(i, mapB.get(i + "A"));
+            assertEquals(i, mapC.get(i+"A"));
+
+            assertEquals(i, mapA.get(i+"B"));
+            assertEquals(i, mapB.get(i+"B"));
+            assertEquals(i, mapC.get(i+"B"));
+        }
+    }
+
+
+    @Test
+    public void play2() throws Exception {
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(0);
+        cfg.getReplicatedMapConfig("default").setConcurrencyLevel(1);
+
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
         final ReplicatedMap<Object, Object> mapA = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
-        ExecutorService executor = Executors.newFixedThreadPool(15);
-
-        for(int i=0; i<5; i++){
-            executor.execute(new Runnable() {
-                public void run() {
+        Thread[] pool = new Thread[10];
+        CyclicBarrier gate = new CyclicBarrier(pool.length+1);
+        for(int i=0; i<1; i++){
+            pool[i] = new GatedThread(gate) {
+                public void go() {
                     for(int i=0; i<1000; i++){
-                        mapA.put(i+"A", i);
+                        if(i<500){
+                            mapA.put(i+"A", i);
+                        }
+                        else if(i==500){
+                            mapC.put(i+"C", i);
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            TestUtil.terminateInstance(instance1);
+                        }
+                        else{
+                            mapC.put(i+"C", i);
+                        }
                     }
                 }
-            });
+            };
+            pool[i].start();
         }
-        executor.awaitTermination(30, TimeUnit.SECONDS);
+        for(int i=1; i<10; i++){
+            pool[i] = new GatedThread(gate) {
+                public void go() {
+                    for(int i=0; i<1000; i++)
+                        mapB.put(i+"B", i);
+                }
+            };
+            pool[i].start();
+        }
 
-        for(int i=0; i<1000; i++){
-            assertEquals(i+"A", mapA.get(i));
-            assertEquals(i+"A", mapB.get(i));
-            assertEquals(i+"A", mapC.get(i));
+
+
+        gate.await();
+
+        for(Thread t:pool){
+            t.join();
+        }
+
+        for(int i=0; i<500; i++){
+            assertEquals(i, mapB.get(i+"A"));
+            assertEquals(i, mapC.get(i+"A"));
+            assertEquals(i, mapB.get(i+"B"));
+            assertEquals(i, mapC.get(i+"B"));
+        }
+
+        for(int i=500; i<1000; i++){
+            assertEquals(i, mapB.get(i+"C"));
+            assertEquals(i, mapC.get(i+"C"));
+            assertEquals(i, mapB.get(i+"B"));
+            assertEquals(i, mapC.get(i+"B"));
         }
     }
+
+
+
+    @Test
+    public void play4() throws Exception {
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(0);
+        cfg.getReplicatedMapConfig("default").setConcurrencyLevel(1);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+
+        final ReplicatedMap<Object, Object> mapA = instance1.getReplicatedMap("default");
+        final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
+        final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
+
+
+        Thread[] pool = new Thread[2];
+        CyclicBarrier gate = new CyclicBarrier(pool.length+1);
+        pool[0] = new GatedThread(gate) {
+            public void go() {
+                for(int i=0; i<1000; i++){
+                    mapA.put(i+"A", i);
+                    if(i==500){
+                        mapA.clear();
+                    }
+                }
+            }
+        };
+        pool[1] = new GatedThread(gate) {
+            public void go() {
+                for(int i=0; i<1000; i++)
+                    mapB.put(i+"B", i);
+            }
+        };
+
+        for(Thread t:pool)
+            t.start();
+
+        gate.await();
+
+        for(Thread t:pool)
+            t.join();
+
+
+        assertEquals(500, mapA.size());
+        assertEquals(500, mapB.size());
+        assertEquals(500, mapC.size());
+
+        for(int i=500; i<1000; i++){
+            assertEquals(i, mapA.get(i+"A"));
+            assertEquals(i, mapB.get(i + "A"));
+            assertEquals(i, mapC.get(i+"A"));
+
+            assertEquals(i, mapA.get(i+"B"));
+            assertEquals(i, mapB.get(i+"B"));
+            assertEquals(i, mapC.get(i+"B"));
+        }
+    }
+
+
+
+
+    abstract public class GatedThread extends Thread{
+        private final CyclicBarrier gate;
+
+        public GatedThread(CyclicBarrier gate){
+            this.gate = gate;
+        }
+
+        public void run(){
+            try {
+                gate.await();
+                go();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (BrokenBarrierException e) {
+                e.printStackTrace();
+            }
+        }
+
+        abstract public void go();
+    }
+
+    private void startGatedThread(GatedThread g){g.start();}
 
 
 
