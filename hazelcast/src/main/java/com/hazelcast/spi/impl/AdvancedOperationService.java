@@ -395,6 +395,7 @@ public class AdvancedOperationService extends AbstractOperationService {
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId,
                                                               long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
                                                               Callback<Object> callback) {
+        //todo: we need to deal with other arguments.
         op.setServiceName(serviceName);
         op.setPartitionId(partitionId);
         PartitionOperationQueue scheduler = schedulers[partitionId];
@@ -423,15 +424,20 @@ public class AdvancedOperationService extends AbstractOperationService {
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(final String serviceName, final Operation op, final Address target) {
         if (thisAddress.equals(target)) {
-            throw new RuntimeException();
+            if (serviceName != null) {
+                op.setServiceName(serviceName);
+            }
+            op.setNodeEngine(nodeEngine);
+            doRunOperation(op);
         } else {
             //System.out.println("InvokeOnTarget: " + op);
             long callId = callIdGen.incrementAndGet();
             remoteOperations.put(callId, op);
             OperationAccessor.setCallId(op, callId);
+            //todo: we need to do something with return value.
             send(op, target);
-            return op;
         }
+        return op;
     }
 
     @Override
@@ -491,11 +497,9 @@ public class AdvancedOperationService extends AbstractOperationService {
         }
 
         void processResponse(ResponseOperation response) {
-            try {
-                response.beforeRun();
-                response.run();
-                response.afterRun();
-            } catch (Throwable e) {
+             try {
+                 doRunOperation(response);
+             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
             }
         }
@@ -508,11 +512,12 @@ public class AdvancedOperationService extends AbstractOperationService {
     @Override
     public void onMemberLeft(MemberImpl member) {
         System.out.println("onMemberLeft:" + member);
+        //todo: in the future we need to remove remote operations.
     }
 
     @Override
     public void shutdown() {
-        logger.finest( "Stopping AdvancedOperationService...");
+        logger.finest("Stopping AdvancedOperationService...");
     }
 
     @Override
@@ -523,8 +528,11 @@ public class AdvancedOperationService extends AbstractOperationService {
     @Override
     public void notifyRemoteCall(long callId, Object response) {
         Operation op = remoteOperations.get(callId);
-        op.set(response, false);
 
+        if (response instanceof Response) {
+            response = ((Response) response).response;
+        }
+        op.set(response, false);
     }
 
     @Override
@@ -534,9 +542,7 @@ public class AdvancedOperationService extends AbstractOperationService {
 
     @Override
     public void runOperation(Operation op) {
-
         op.setNodeEngine(nodeEngine);
-
         doRunOperation(op);
     }
 
@@ -551,6 +557,7 @@ public class AdvancedOperationService extends AbstractOperationService {
                 if (responseHandler != null) {
                     responseHandler.sendResponse(op.getResponse());
                 }
+                op.set(op.getResponse(),false);
             }
         } catch (Exception e) {
             e.printStackTrace();
