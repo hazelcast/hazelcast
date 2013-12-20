@@ -113,9 +113,10 @@ public class IdGeneratorProxy implements IdGenerator {
         return true;
     }
 
+
     @Override
     public int hashCode() {
-        int result = getServiceName() != null ? getServiceName().hashCode() : 0;
+        int result = getServiceName().hashCode();
         result = 31 * result + (getId() != null ? getId().hashCode() : 0);
         return result;
     }
