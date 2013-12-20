@@ -39,42 +39,17 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
  */
-abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallback {
+abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback {
 
-    private static final Object NULL_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::NULL_RESPONSE";
-        }
-    };
+    private static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
-    private static final Object RETRY_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::RETRY_RESPONSE";
-        }
-    };
+    private static final Object RETRY_RESPONSE = new InternalResponse("Invocation::RETRY_RESPONSE");
 
-    private static final Object WAIT_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::WAIT_RESPONSE";
-        }
-    };
+    private static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
 
-    private static final Object TIMEOUT_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::TIMEOUT_RESPONSE";
-        }
-    };
+    private static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
-    private static final Object INTERRUPTED_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::INTERRUPTED_RESPONSE";
-        }
-    };
+    private static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
@@ -82,6 +57,8 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
         }
         return timeout;
     }
+
+    private static final long PLUS_TIMEOUT = 10000;
 
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
@@ -142,12 +119,12 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             return callTimeout;
         }
 
-        BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
+        BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         final long defaultCallTimeout = operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
-            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 10000) {
-                return waitTimeoutMillis + 10000;
+            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
+                return waitTimeoutMillis + (defaultCallTimeout > PLUS_TIMEOUT ? PLUS_TIMEOUT : defaultCallTimeout) ;
             }
         }
         return defaultCallTimeout;
@@ -173,7 +150,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
+            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
             if (!operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -229,6 +206,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             if (invocationFuture.interrupted) {
                 invocationFuture.set(INTERRUPTED_RESPONSE);
             } else {
+                invocationFuture.set(WAIT_RESPONSE);
                 final ExecutionService ex = nodeEngine.getExecutionService();
                 final ExecutorService asyncExecutor = ex.getExecutor(ExecutionService.ASYNC_EXECUTOR);
                 // fast retry for the first few invocations
@@ -239,11 +217,11 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
                             tryPauseMillis, TimeUnit.MILLISECONDS);
                 }
             }
-           return;
+            return;
         }
 
         if (response == WAIT_RESPONSE) {
-            //no-op for the time being.
+            invocationFuture.set(WAIT_RESPONSE);
             return;
         }
 
@@ -300,7 +278,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             return;
         }
 
-        final BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
+        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
 
         remote = !thisAddress.equals(invTarget);
@@ -337,7 +315,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
 
     private void registerBackups(BackupAwareOperation op, long callId) {
         final long oldCallId = ((Operation) op).getCallId();
-        final BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
+        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         if (oldCallId != 0) {
             operationService.deregisterBackupCall(oldCallId);
         }
@@ -435,7 +413,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
         @Override
         public void run() throws Exception {
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            BasicOperationService operationService = (BasicOperationService)nodeEngine.operationService;
+            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
             boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(), operationCallId);
             getResponseHandler().sendResponse(executing);
         }
@@ -464,7 +442,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
         }
     }
 
-     private static class ExecutionCallbackNode<E>{
+    private static class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;
         private final Executor executor;
         private final ExecutionCallbackNode<E> next;
@@ -476,8 +454,8 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
         }
     }
 
-    private static class ExecutorCallbackAdapter<E> implements ExecutionCallback<E>{
-        private final Callback  callback;
+    private static class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
+        private final Callback callback;
 
         private ExecutorCallbackAdapter(Callback callback) {
             this.callback = callback;
@@ -498,11 +476,11 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
 
         volatile ExecutionCallbackNode<E> callbackHead;
         volatile Object response;
-        volatile boolean interrupted=false;
+        volatile boolean interrupted = false;
 
         private InvocationFuture(final Callback<E> callback) {
-            if(callback != null){
-                callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),getAsyncExecutor(),null);
+            if (callback != null) {
+                callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback), getAsyncExecutor(), null);
             }
         }
 
@@ -534,14 +512,14 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
                             callback.onResponse((E) responseObj.response);
                         } else if (response == NULL_RESPONSE) {
                             callback.onResponse(null);
-                        } else if(response instanceof Throwable){
+                        } else if (response instanceof Throwable) {
                             callback.onFailure((Throwable) response);
-                        } else{
-                            callback.onResponse((E)response);
+                        } else {
+                            callback.onResponse((E) response);
                         }
                     } catch (Throwable t) {
                         //todo: improved error message
-                        logger.severe("Failed to async for "+BasicInvocation.this,t);
+                        logger.severe("Failed to async for " + BasicInvocation.this, t);
                     }
                 }
             });
@@ -554,10 +532,13 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
 
             ExecutionCallbackNode<E> callbackChain;
             synchronized (this) {
-                if (this.response != null) {
+                if (this.response != null && !(this.response instanceof InternalResponse)) {
                     throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
                 }
                 this.response = response;
+                if (response instanceof InternalResponse) {
+                    return;
+                }
                 callbackChain = callbackHead;
                 callbackHead = null;
                 this.notifyAll();
@@ -567,8 +548,8 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
             operationService.deregisterBackupCall(op.getCallId());
 
-            while(callbackChain!=null){
-                runAsynchronous(callbackChain.callback,callbackChain.executor);
+            while (callbackChain != null) {
+                runAsynchronous(callbackChain.callback, callbackChain.executor);
                 callbackChain = callbackChain.next;
             }
         }
@@ -614,17 +595,23 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
                 final long startMs = Clock.currentTimeMillis();
 
                 long lastPollTime = 0;
+                pollCount++;
                 try {
                     //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
                     if (pollTimeoutMs > 0) {
                         synchronized (this) {
-                            if (response == null) {
+                            if (response == null || response == WAIT_RESPONSE) {
                                 this.wait(pollTimeoutMs);
                             }
                         }
                     }
+                    lastPollTime = Clock.currentTimeMillis() - startMs;
+                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
                     if (response != null) {
+                        if (response == WAIT_RESPONSE) {
+                            continue;
+                        }
                         //if the thread is interrupted, but the response was not an interrupted-response,
                         //we need to restore the interrupt flag.
                         if (response != INTERRUPTED_RESPONSE && interrupted) {
@@ -632,13 +619,10 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
                         }
                         return response;
                     }
-
-                    lastPollTime = Clock.currentTimeMillis() - startMs;
-                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
                 } catch (InterruptedException e) {
                     interrupted = true;
                 }
-                pollCount++;
+
 
                 if (!interrupted && /* response == null && */ longPolling) {
                     // no response!
@@ -692,7 +676,7 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             if (response == TIMEOUT_RESPONSE) {
                 throw new TimeoutException();
             }
-            if(response == INTERRUPTED_RESPONSE){
+            if (response == INTERRUPTED_RESPONSE) {
                 throw new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
             }
             return response;
@@ -739,5 +723,19 @@ abstract class BasicInvocation implements Callback<Object>,BackupCompletionCallb
             logger.warning("'is-executing': " + executing + " -> " + toString());
             return executing;
         }
+    }
+
+    private static class InternalResponse {
+
+        String toString;
+
+        private InternalResponse(String toString) {
+            this.toString = toString;
+        }
+
+        public String toString() {
+            return toString;
+        }
+
     }
 }
