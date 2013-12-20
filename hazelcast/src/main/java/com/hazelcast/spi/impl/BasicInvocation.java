@@ -536,7 +536,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                     throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
                 }
                 this.response = response;
-                if (response instanceof InternalResponse) {
+                if (response == WAIT_RESPONSE) {
                     return;
                 }
                 callbackChain = callbackHead;
@@ -579,10 +579,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
-            if (response != null) {
+            if (response != null && response != WAIT_RESPONSE) {
                 return response;
             }
-
             long timeoutMs = unit.toMillis(time);
             if (timeoutMs < 0) timeoutMs = 0;
 
@@ -678,6 +677,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             }
             if (response == INTERRUPTED_RESPONSE) {
                 throw new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
+            }
+            if (response == WAIT_RESPONSE) {
+                System.err.println("asdf op: " + op);
             }
             return response;
         }
