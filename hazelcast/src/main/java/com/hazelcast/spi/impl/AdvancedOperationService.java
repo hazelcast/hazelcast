@@ -5,6 +5,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 
@@ -76,7 +77,7 @@ public class AdvancedOperationService extends AbstractOperationService {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             schedulers[partitionId] = new PartitionOperationQueue(partitionId, ringbufferSize);
         }
-        this.localCallOptimizationEnabled = false;
+        this.localCallOptimizationEnabled = true;
 
         this.operationThreads = new OperationThread[16];
         for (int k = 0; k < operationThreads.length; k++) {
@@ -85,341 +86,46 @@ public class AdvancedOperationService extends AbstractOperationService {
         }
     }
 
-    public class OperationThread extends Thread {
-
-        private final Slot[] ringBuffer;
-        private final AtomicLong consumerSeq = new AtomicLong();
-        private final AtomicLong producerSeq = new AtomicLong();
-
-        public OperationThread(int capacity) {
-            ringBuffer = new Slot[capacity];
-            for (int k = 0; k < ringBuffer.length; k++) {
-                Slot slot = new Slot();
-                ringBuffer[k] = slot;
-            }
-        }
-
-        public void offer(final Runnable task) {
-            if (task == null) {
-                throw new IllegalArgumentException("task can't be null");
-            }
-
-            final long oldProducerSeq = producerSeq.getAndIncrement();
-            final long newProducerSeq = oldProducerSeq + 1;
-            final int slotIndex = (int) (oldProducerSeq % ringBuffer.length);
-            final Slot slot = ringBuffer[slotIndex];
-            slot.runnable = task;
-            slot.commit(newProducerSeq);
-
-            //todo: now always an unpark is done, but you only want to do it when
-            //the buffer is empty.
-            if (consumerSeq.get() == oldProducerSeq) {
-                LockSupport.unpark(this);
-            }
-        }
-
-        public void run() {
-            for (; ; ) {
-                LockSupport.park();
-
-                long oldConsumerSeq = consumerSeq.get();
-                for (; ; ) {
-                    final long producerSeq = this.producerSeq.get();
-                    if (producerSeq == oldConsumerSeq) {
-                        break;
-                    }
-
-                    final long newConsumerSeq = oldConsumerSeq + 1;
-                    final int slotIndex = (int) (oldConsumerSeq % ringBuffer.length);
-                    final Slot slot = ringBuffer[slotIndex];
-                    slot.awaitCommitted(newConsumerSeq);
-                    final Runnable task = slot.runnable;
-                    slot.runnable = null;
-                    consumerSeq.set(newConsumerSeq);
-                    oldConsumerSeq = newConsumerSeq;
-                    doRun(task);
-                }
-            }
-        }
-
-        private void doRun(Runnable task) {
-            try {
-                task.run();
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-
-        //todo: padding needed to prevent false sharing.
-        private class Slot {
-            private volatile long seq = 0;
-            private Runnable runnable;
-
-
-            public void commit(final long seq) {
-                this.seq = seq;
-            }
-
-            public void awaitCommitted(final long consumerSequence) {
-                for (; ; ) {
-                    if (seq >= consumerSequence) {
-                        return;
-                    }
-                }
-            }
-        }
-    }
 
     private void executeOnOperationThread(Runnable runnable) {
         //todo: we need a better mechanism for finding a suitable threadpool.
         operationThreads[0].offer(runnable);
     }
 
-    /**
-     * A Scheduler responsible for scheduling operations for a specific partitions.
-     * The PartitionOperationQueue will guarantee that at any given moment, at
-     * most 1 thread will be active in that partition.
-     * <p/>
-     * todo:
-     * - improved thread assignment
-     * - add batching for the consumer
-     * - add system messages. System messages can be stored on a different regular queue (e.g. concurrentlinkedqueue)
-     * <p/>
-     * bad things:
-     * - contention on the producersequenceref with concurrent producers
-     * - when a consumer is finished, it needs to unset the scheduled bit on the producersequence,
-     * this will cause contention of the producers with the consumers. This is actually also
-     * the case with actors in akka. The nice thing however is that contention between producer
-     * and condumer will not happen when there is a lot of work being processed since the scheduler
-     * needs to remain 'scheduled'.
-     * <p/>
-     * workstealing: when a partitionthread is finished with running a partitionoperationscheduler,
-     * instead of waiting for more work, it could try to 'steal' another partitionoperationscheduler
-     * that has pending work.
-     */
-    public class PartitionOperationQueue implements Runnable {
-        private final int partitionId;
-
-        private final Slot[] ringbuffer;
-
-        private final AtomicLong producerSeq = new AtomicLong(0);
-
-        //we only have a single consumer
-        private final AtomicLong consumerSeq = new AtomicLong(0);
-
-        private final ConcurrentLinkedQueue priorityQueue = new ConcurrentLinkedQueue();
-
-        public PartitionOperationQueue(final int partitionId, int ringBufferSize) {
-            this.partitionId = partitionId;
-            this.ringbuffer = new Slot[ringBufferSize];
-
-            for (int k = 0; k < ringbuffer.length; k++) {
-                ringbuffer[k] = new Slot();
-            }
-        }
-
-        public int toIndex(long sequence) {
-            if (sequence % 2 == 1) {
-                sequence--;
-            }
-
-            //todo: can be done more efficient by not using mod but using bitshift
-            return (int) ((sequence / 2) % ringbuffer.length);
-        }
-
-        private int size(long producerSeq, long consumerSeq) {
-            if (producerSeq % 2 == 1) {
-                producerSeq--;
-            }
-
-            if (producerSeq == consumerSeq) {
-                return 0;
-            }
-
-            return (int) ((producerSeq - consumerSeq) / 2);
-        }
-
-        public void schedule(Operation op) {
-            try {
-                long oldProducerSeq = producerSeq.get();
-                long consumerSeq = this.consumerSeq.get();
-
-                if (localCallOptimizationEnabled && oldProducerSeq == consumerSeq) {
-                    //there currently is no pending work and the scheduler is not scheduled, so we can try to do a local runs optimization
-
-                    long newProduceSequence = oldProducerSeq + 1;
-
-                    //if we can set the 'uneven' flag, it means that scheduler is not yet running
-                    if (producerSeq.compareAndSet(oldProducerSeq, newProduceSequence)) {
-                        //we managed to signal other consumers that scheduling should not be done, because we do a local runs optimization
-
-                        runOperation(op, true);
-
-                        if (producerSeq.get() > newProduceSequence) {
-                            //work has been produced by another producer, and since we still own the scheduled bit, we can safely
-                            //schedule this
-                            executeOnOperationThread(this);
-                        } else {
-                            //work has not yet been produced, so we are going to unset the scheduled bit.
-                            if (producerSeq.compareAndSet(newProduceSequence, oldProducerSeq)) {
-                                //we successfully managed to set the scheduled bit to false and no new work has been
-                                //scheduled by other producers, so we are done.
-                                return;
-                            }
-
-                            //new work has been scheduled by other producers, but since we still own the scheduled bit,
-                            //we can schedule the work.
-                            //work has been produced, so we need to offload it.
-                            executeOnOperationThread(this);
-                        }
-
-                        return;
-                    }
-
-                    oldProducerSeq = producerSeq.get();
-                } else if (size(oldProducerSeq, consumerSeq) == ringbuffer.length) {
-                    //todo: overload
-                    System.out.println("Overload");
-                    throw new RuntimeException();
-                }
-
-                //this flag indicates if we need to schedule, or if scheduling already is taken care of.
-                boolean schedule;
-                long newProducerSeq;
-                for (; ; ) {
-                    newProducerSeq = oldProducerSeq + 2;
-                    if (oldProducerSeq % 2 == 0) {
-                        //if the scheduled flag is not set, we are going to be responsible for scheduling.
-                        schedule = true;
-                        newProducerSeq++;
-                    } else {
-                        //apparently this scheduler already is scheduled, so we don't need to schedule it.
-                        schedule = false;
-                    }
-
-                    if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
-                        break;
-                    }
-
-                    //we did not manage to claim the slot and potentially set the scheduled but, so we need to try again.
-                    oldProducerSeq = producerSeq.get();
-                }
-
-                //we claimed a slot.
-                int slotIndex = toIndex(newProducerSeq);
-                Slot slot = ringbuffer[slotIndex];
-                slot.op = op;
-                slot.commit(newProducerSeq);
-
-                if (schedule) {
-                    executeOnOperationThread(this);
-                }
-            } catch (RuntimeException e) {
-                e.printStackTrace();
-                throw e;
-            }
-        }
-
-        @Override
-        public void run() {
-            try {
-                long oldConsumerSeq = consumerSeq.get();
-                for (; ; ) {
-                    final long oldProducerSeq = producerSeq.get();
-
-                    priorityQueue.poll();
-
-                    if (oldConsumerSeq == oldProducerSeq - 1) {
-                        //there is no more work, so we are going to try to unschedule
-
-                        //we unset the scheduled flag by subtracting one from the producerSeq
-                        final long newProducerSeq = oldProducerSeq - 1;
-
-                        if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
-                            return;
-                        }
-                        //we did not manage to unset the schedule flag because work has been offered.
-                        //so lets continue running.
-                    } else {
-                        final long newConsumerSeq = oldConsumerSeq + 2;
-                        final int slotIndex = toIndex(newConsumerSeq);
-                        final Slot slot = ringbuffer[slotIndex];
-                        slot.awaitCommitted(newConsumerSeq);
-                        final Operation op = slot.op;
-                        //null the operation to prevent memory leaks.
-                        slot.op = null;
-                        consumerSeq.set(newConsumerSeq);
-                        //todo: we don't need to update the slot-sequence?
-                        runOperation(op, false);
-                        oldConsumerSeq = newConsumerSeq;
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        private void runOperation(Operation op, boolean callerRuns) {
-            try {
-                op.setNodeEngine(nodeEngine);
-                op.setPartitionId(partitionId);
-                op.beforeRun();
-                op.run();
-                Object response = op.returnsResponse() ? op.getResponse() : null;
-                op.afterRun();
-                op.set(response, callerRuns);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        //todo: padding needed to prevent false sharing.
-        private class Slot {
-            private volatile long sequence = 0;
-            private Operation op;
-
-            public void commit(final long sequence) {
-                this.sequence = sequence;
-            }
-
-            public void awaitCommitted(final long consumerSequence) {
-                for (; ; ) {
-                    if (sequence >= consumerSequence) {
-                        return;
-                    }
-                }
-            }
-        }
-    }
 
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId,
                                                               long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
                                                               Callback<Object> callback) {
-        //todo: we need to deal with other arguments.
-        op.setServiceName(serviceName);
-        op.setPartitionId(partitionId);
-        PartitionOperationQueue scheduler = schedulers[partitionId];
-        scheduler.schedule(op);
-        return op;
+        //todo: deal with the other arguments.
+        return invokeOnPartition(serviceName, op, partitionId);
+    }
+
+    private boolean isLocal(int partitionId, int replicaIndex){
+        PartitionView partitionview = nodeEngine.getPartitionService().getPartition(partitionId);
+        Address thatAddress = partitionview.getReplicaAddress(replicaIndex);
+        return thatAddress.equals(thisAddress);
     }
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        op.setServiceName(serviceName);
-        op.setPartitionId(partitionId);
-        PartitionOperationQueue scheduler = schedulers[partitionId];
-        scheduler.schedule(op);
+        if(isLocal(partitionId,0)){
+            op.setServiceName(serviceName);
+            op.setPartitionId(partitionId);
+            PartitionOperationQueue scheduler = schedulers[partitionId];
+            scheduler.schedule(op);
+        }else{
+            throw new RuntimeException();
+        }
+
         return op;
     }
 
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target,
-                                                           long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
-
+                                                           long callTimeout, int tryCount, long tryPauseMillis,
                                                            Callback<Object> callback) {
         //todo: we need to deal with the other arguments.
         return invokeOnTarget(serviceName, op, target);
     }
-
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(final String serviceName, final Operation op, final Address target) {
@@ -638,9 +344,311 @@ public class AdvancedOperationService extends AbstractOperationService {
         @Override
         public InternalCompletableFuture invoke() {
             if (target != null) {
-                return invokeOnTarget(serviceName, op, target, replicaIndex, replicaIndex, tryCount, tryPauseMillis, callback);
+                return invokeOnTarget(serviceName, op, target, replicaIndex, tryCount, tryPauseMillis, callback);
             } else {
                 return invokeOnPartition(serviceName, op, partitionId, replicaIndex, replicaIndex, tryCount, tryPauseMillis, callback);
+            }
+        }
+    }
+
+    public class OperationThread extends Thread {
+
+        private final Slot[] ringBuffer;
+        private final AtomicLong consumerSeq = new AtomicLong();
+        private final AtomicLong producerSeq = new AtomicLong();
+
+        public OperationThread(int capacity) {
+            ringBuffer = new Slot[capacity];
+            for (int k = 0; k < ringBuffer.length; k++) {
+                Slot slot = new Slot();
+                ringBuffer[k] = slot;
+            }
+        }
+
+        public void offer(final Runnable task) {
+            if (task == null) {
+                throw new IllegalArgumentException("task can't be null");
+            }
+
+            final long oldProducerSeq = producerSeq.getAndIncrement();
+            final long newProducerSeq = oldProducerSeq + 1;
+            final int slotIndex = (int) (oldProducerSeq % ringBuffer.length);
+            final Slot slot = ringBuffer[slotIndex];
+            slot.runnable = task;
+            slot.commit(newProducerSeq);
+
+            //todo: now always an unpark is done, but you only want to do it when
+            //the buffer is empty.
+            if (consumerSeq.get() == oldProducerSeq) {
+                LockSupport.unpark(this);
+            }
+        }
+
+        public void run() {
+            for (; ; ) {
+                LockSupport.park();
+
+                long oldConsumerSeq = consumerSeq.get();
+                for (; ; ) {
+                    final long producerSeq = this.producerSeq.get();
+                    if (producerSeq == oldConsumerSeq) {
+                        break;
+                    }
+
+                    final long newConsumerSeq = oldConsumerSeq + 1;
+                    final int slotIndex = (int) (oldConsumerSeq % ringBuffer.length);
+                    final Slot slot = ringBuffer[slotIndex];
+                    slot.awaitCommitted(newConsumerSeq);
+                    final Runnable task = slot.runnable;
+                    slot.runnable = null;
+                    consumerSeq.set(newConsumerSeq);
+                    oldConsumerSeq = newConsumerSeq;
+                    doRun(task);
+                }
+            }
+        }
+
+        private void doRun(Runnable task) {
+            try {
+                task.run();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+
+        //todo: padding needed to prevent false sharing.
+        private class Slot {
+            private volatile long seq = 0;
+            private Runnable runnable;
+
+
+            public void commit(final long seq) {
+                this.seq = seq;
+            }
+
+            public void awaitCommitted(final long consumerSequence) {
+                for (; ; ) {
+                    if (seq >= consumerSequence) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * A Scheduler responsible for scheduling operations for a specific partitions.
+     * The PartitionOperationQueue will guarantee that at any given moment, at
+     * most 1 thread will be active in that partition.
+     * <p/>
+     * todo:
+     * - improved thread assignment
+     * - add batching for the consumer
+     * - add system messages. System messages can be stored on a different regular queue (e.g. concurrentlinkedqueue)
+     * <p/>
+     * bad things:
+     * - contention on the producersequenceref with concurrent producers
+     * - when a consumer is finished, it needs to unset the scheduled bit on the producersequence,
+     * this will cause contention of the producers with the consumers. This is actually also
+     * the case with actors in akka. The nice thing however is that contention between producer
+     * and condumer will not happen when there is a lot of work being processed since the scheduler
+     * needs to remain 'scheduled'.
+     * <p/>
+     * workstealing: when a partitionthread is finished with running a partitionoperationscheduler,
+     * instead of waiting for more work, it could try to 'steal' another partitionoperationscheduler
+     * that has pending work.
+     */
+    public class PartitionOperationQueue implements Runnable {
+        private final int partitionId;
+
+        private final Slot[] ringbuffer;
+
+        private final AtomicLong producerSeq = new AtomicLong(0);
+
+        //we only have a single consumer
+        private final AtomicLong consumerSeq = new AtomicLong(0);
+
+        private final ConcurrentLinkedQueue priorityQueue = new ConcurrentLinkedQueue();
+
+        public PartitionOperationQueue(final int partitionId, int ringBufferSize) {
+            this.partitionId = partitionId;
+            this.ringbuffer = new Slot[ringBufferSize];
+
+            for (int k = 0; k < ringbuffer.length; k++) {
+                ringbuffer[k] = new Slot();
+            }
+        }
+
+        public int toIndex(long sequence) {
+            if (sequence % 2 == 1) {
+                sequence--;
+            }
+
+            //todo: can be done more efficient by not using mod but using bitshift
+            return (int) ((sequence / 2) % ringbuffer.length);
+        }
+
+        private int size(long producerSeq, long consumerSeq) {
+            if (producerSeq % 2 == 1) {
+                producerSeq--;
+            }
+
+            if (producerSeq == consumerSeq) {
+                return 0;
+            }
+
+            return (int) ((producerSeq - consumerSeq) / 2);
+        }
+
+        public void schedule(Operation op) {
+            try {
+                long oldProducerSeq = producerSeq.get();
+                long consumerSeq = this.consumerSeq.get();
+
+                if (localCallOptimizationEnabled && oldProducerSeq == consumerSeq) {
+                    //there currently is no pending work and the scheduler is not scheduled, so we can try to do a local runs optimization
+
+                    long newProduceSequence = oldProducerSeq + 1;
+
+                    //if we can set the 'uneven' flag, it means that scheduler is not yet running
+                    if (producerSeq.compareAndSet(oldProducerSeq, newProduceSequence)) {
+                        //we managed to signal other consumers that scheduling should not be done, because we do a local runs optimization
+
+                        runOperation(op, true);
+
+                        if (producerSeq.get() > newProduceSequence) {
+                            //work has been produced by another producer, and since we still own the scheduled bit, we can safely
+                            //schedule this
+                            executeOnOperationThread(this);
+                        } else {
+                            //work has not yet been produced, so we are going to unset the scheduled bit.
+                            if (producerSeq.compareAndSet(newProduceSequence, oldProducerSeq)) {
+                                //we successfully managed to set the scheduled bit to false and no new work has been
+                                //scheduled by other producers, so we are done.
+                                return;
+                            }
+
+                            //new work has been scheduled by other producers, but since we still own the scheduled bit,
+                            //we can schedule the work.
+                            //work has been produced, so we need to offload it.
+                            executeOnOperationThread(this);
+                        }
+
+                        return;
+                    }
+
+                    oldProducerSeq = producerSeq.get();
+                } else if (size(oldProducerSeq, consumerSeq) == ringbuffer.length) {
+                    //todo: overload
+                    System.out.println("Overload");
+                    throw new RuntimeException();
+                }
+
+                //this flag indicates if we need to schedule, or if scheduling already is taken care of.
+                boolean schedule;
+                long newProducerSeq;
+                for (; ; ) {
+                    newProducerSeq = oldProducerSeq + 2;
+                    if (oldProducerSeq % 2 == 0) {
+                        //if the scheduled flag is not set, we are going to be responsible for scheduling.
+                        schedule = true;
+                        newProducerSeq++;
+                    } else {
+                        //apparently this scheduler already is scheduled, so we don't need to schedule it.
+                        schedule = false;
+                    }
+
+                    if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
+                        break;
+                    }
+
+                    //we did not manage to claim the slot and potentially set the scheduled but, so we need to try again.
+                    oldProducerSeq = producerSeq.get();
+                }
+
+                //we claimed a slot.
+                int slotIndex = toIndex(newProducerSeq);
+                Slot slot = ringbuffer[slotIndex];
+                slot.op = op;
+                slot.commit(newProducerSeq);
+
+                if (schedule) {
+                    executeOnOperationThread(this);
+                }
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                throw e;
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                long oldConsumerSeq = consumerSeq.get();
+                for (; ; ) {
+                    final long oldProducerSeq = producerSeq.get();
+
+                    priorityQueue.poll();
+
+                    if (oldConsumerSeq == oldProducerSeq - 1) {
+                        //there is no more work, so we are going to try to unschedule
+
+                        //we unset the scheduled flag by subtracting one from the producerSeq
+                        final long newProducerSeq = oldProducerSeq - 1;
+
+                        if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
+                            return;
+                        }
+                        //we did not manage to unset the schedule flag because work has been offered.
+                        //so lets continue running.
+                    } else {
+                        final long newConsumerSeq = oldConsumerSeq + 2;
+                        final int slotIndex = toIndex(newConsumerSeq);
+                        final Slot slot = ringbuffer[slotIndex];
+                        slot.awaitCommitted(newConsumerSeq);
+                        final Operation op = slot.op;
+                        //null the operation to prevent memory leaks.
+                        slot.op = null;
+                        consumerSeq.set(newConsumerSeq);
+                        //todo: we don't need to update the slot-sequence?
+                        runOperation(op, false);
+                        oldConsumerSeq = newConsumerSeq;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void runOperation(Operation op, boolean callerRuns) {
+            try {
+                op.setNodeEngine(nodeEngine);
+                op.setPartitionId(partitionId);
+                op.beforeRun();
+                op.run();
+                Object response = op.returnsResponse() ? op.getResponse() : null;
+                op.afterRun();
+                op.set(response, callerRuns);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        //todo: padding needed to prevent false sharing.
+        private class Slot {
+            private volatile long sequence = 0;
+            private Operation op;
+
+            public void commit(final long sequence) {
+                this.sequence = sequence;
+            }
+
+            public void awaitCommitted(final long consumerSequence) {
+                for (; ; ) {
+                    if (sequence >= consumerSequence) {
+                        return;
+                    }
+                }
             }
         }
     }
