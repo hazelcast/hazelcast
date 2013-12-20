@@ -107,17 +107,12 @@ public class IdGeneratorProxy implements IdGenerator {
         Object id = getId();
         if (id != null ? !id.equals(that.getId()) : that.getId() != null) return false;
 
-        String serviceName = getServiceName();
-        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) return false;
-
-        return true;
+        return  getServiceName().equals(that.getServiceName());
     }
 
 
     @Override
     public int hashCode() {
-        int result = getServiceName().hashCode();
-        result = 31 * result + (getId() != null ? getId().hashCode() : 0);
-        return result;
+        return  31 * getServiceName().hashCode() + (getId() != null ? getId().hashCode() : 0);
     }
 }
