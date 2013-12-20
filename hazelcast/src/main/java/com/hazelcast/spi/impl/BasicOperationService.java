@@ -58,13 +58,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see com.hazelcast.spi.impl.BasicPartitionInvocation
  * @see com.hazelcast.spi.impl.BasicTargetInvocation
  */
-final class BasicOperationService implements InternalOperationService {
+final class BasicOperationService extends AbstractOperationService{
 
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
-    private final NodeEngineImpl nodeEngine;
-    private final Node node;
-    private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
     private final ConcurrentMap<Long, RemoteCall> remoteCalls;
     private final ExecutorService[] operationExecutors;
@@ -80,10 +77,8 @@ final class BasicOperationService implements InternalOperationService {
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
-        this.node = nodeEngine.getNode();
-        this.logger = node.getLogger(OperationService.class.getName());
-        defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+       super(nodeEngine);
+         defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
         final int coreSize = Runtime.getRuntime().availableProcessors();
         final boolean reallyMultiCore = coreSize >= 8;
         final int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
@@ -187,11 +182,7 @@ final class BasicOperationService implements InternalOperationService {
         return partitionId > -1 ? operationExecutors[partitionId % operationThreadCount] : defaultOperationExecutor;
     }
 
-    private int getPartitionIdForExecution(Operation op) {
-        return op instanceof PartitionAwareOperation ? op.getPartitionId() : -1;
-    }
-
-    /**
+     /**
      * Runs operation in calling thread.
      * @param op
      */
@@ -584,40 +575,6 @@ final class BasicOperationService implements InternalOperationService {
             partitionResults.put(failedPartition, result);
         }
         return partitionResults;
-    }
-
-    @Override
-    public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
-        Address target = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
-        if (target == null) {
-            logger.warning("No target available for partition: " + partitionId + " and replica: " + replicaIndex);
-            return false;
-        }
-        return send(op, target);
-    }
-
-    @Override
-    public boolean send(final Operation op, final Address target) {
-        if (target == null) {
-            throw new IllegalArgumentException("Target is required!");
-        }
-        if (nodeEngine.getThisAddress().equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
-        } else {
-            return send(op, node.getConnectionManager().getOrConnect(target));
-        }
-    }
-
-    @Override
-    public boolean send(final Operation op, final Connection connection) {
-        Data data = nodeEngine.toData(op);
-        final int partitionId = getPartitionIdForExecution(op);
-        Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
-        packet.setHeader(Packet.HEADER_OP);
-        if (op instanceof ResponseOperation) {
-            packet.setHeader(Packet.HEADER_RESPONSE);
-        }
-        return nodeEngine.send(packet, connection);
     }
 
     @PrivateApi

@@ -1,15 +1,16 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.exception.CallerNotMemberException;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
@@ -48,18 +49,27 @@ import java.util.concurrent.locks.LockSupport;
  * <p/>
  * Documentation of unsafe:
  * http://www.docjar.com/docs/api/sun/misc/Unsafe.html
+ * <p/>
+ * More info about AtomicLong.lazySet instead of using AtomicLong.set
+ * https://groups.google.com/forum/#!searchin/lmax-disruptor/thread/lmax-disruptor/PwnvICvrJQU/PgsxWiQCONQJ
  */
-public class AdvancedOperationService implements InternalOperationService {
+public class AdvancedOperationService extends AbstractOperationService {
 
-    private final NodeEngineImpl nodeEngine;
-    private final Node node;
     private final PartitionOperationQueue[] schedulers;
     private final boolean localCallOptimizationEnabled;
     private final OperationThread[] operationThreads;
 
+    //todo: we need to optimize this executor.
+    private final Executor responseExecutor = Executors.newFixedThreadPool(10);
+    private final Executor defaultExecutor = Executors.newFixedThreadPool(10);
+    private final Address thisAddress;
+    private final AtomicLong callIdGen = new AtomicLong(0);
+    private final ConcurrentMap<Long, Operation> remoteOperations = new ConcurrentHashMap<>();
+
     public AdvancedOperationService(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
-        this.node = nodeEngine.getNode();
+        super(nodeEngine);
+
+        this.thisAddress = nodeEngine.getThisAddress();
         int partitionCount = node.getGroupProperties().PARTITION_COUNT.getInteger();
         this.schedulers = new PartitionOperationQueue[partitionCount];
         int ringbufferSize = 16384;
@@ -89,15 +99,15 @@ public class AdvancedOperationService implements InternalOperationService {
             }
         }
 
-        public void offer(Runnable task) {
+        public void offer(final Runnable task) {
             if (task == null) {
                 throw new IllegalArgumentException("task can't be null");
             }
 
-            long oldProducerSeq = producerSeq.getAndIncrement();
-            long newProducerSeq = oldProducerSeq + 1;
-            int slotIndex = (int) (oldProducerSeq % ringBuffer.length);
-            Slot slot = ringBuffer[slotIndex];
+            final long oldProducerSeq = producerSeq.getAndIncrement();
+            final long newProducerSeq = oldProducerSeq + 1;
+            final int slotIndex = (int) (oldProducerSeq % ringBuffer.length);
+            final Slot slot = ringBuffer[slotIndex];
             slot.runnable = task;
             slot.commit(newProducerSeq);
 
@@ -114,16 +124,16 @@ public class AdvancedOperationService implements InternalOperationService {
 
                 long oldConsumerSeq = consumerSeq.get();
                 for (; ; ) {
-                    long producerSeq = this.producerSeq.get();
+                    final long producerSeq = this.producerSeq.get();
                     if (producerSeq == oldConsumerSeq) {
                         break;
                     }
 
-                    long newConsumerSeq = oldConsumerSeq + 1;
-                    int slotIndex = (int) (oldConsumerSeq % ringBuffer.length);
-                    Slot slot = ringBuffer[slotIndex];
+                    final long newConsumerSeq = oldConsumerSeq + 1;
+                    final int slotIndex = (int) (oldConsumerSeq % ringBuffer.length);
+                    final Slot slot = ringBuffer[slotIndex];
                     slot.awaitCommitted(newConsumerSeq);
-                    Runnable task = slot.runnable;
+                    final Runnable task = slot.runnable;
                     slot.runnable = null;
                     consumerSeq.set(newConsumerSeq);
                     oldConsumerSeq = newConsumerSeq;
@@ -140,15 +150,16 @@ public class AdvancedOperationService implements InternalOperationService {
             }
         }
 
+        //todo: padding needed to prevent false sharing.
         private class Slot {
             private volatile long seq = 0;
             private Runnable runnable;
 
-            public void commit(long seq) {
+            public void commit(final long seq) {
                 this.seq = seq;
             }
 
-            public void awaitCommitted(long consumerSequence) {
+            public void awaitCommitted(final long consumerSequence) {
                 for (; ; ) {
                     if (seq >= consumerSequence) {
                         return;
@@ -159,6 +170,7 @@ public class AdvancedOperationService implements InternalOperationService {
     }
 
     private void executeOnOperationThread(Runnable runnable) {
+        //todo: we need a better mechanism for finding a suitable threadpool.
         operationThreads[0].offer(runnable);
     }
 
@@ -168,9 +180,6 @@ public class AdvancedOperationService implements InternalOperationService {
      * most 1 thread will be active in that partition.
      * <p/>
      * todo:
-     * - deal with 'overflow' so overproducing..
-     * the producer can run to where the consumer is. So all slots with have a value, lower than the current
-     * consumersequence, can be used.
      * - improved thread assignment
      * - add batching for the consumer
      * - add system messages. System messages can be stored on a different regular queue (e.g. concurrentlinkedqueue)
@@ -213,7 +222,7 @@ public class AdvancedOperationService implements InternalOperationService {
                 sequence--;
             }
 
-            //todo: can be done more efficient by not using mod
+            //todo: can be done more efficient by not using mod but using bitshift
             return (int) ((sequence / 2) % ringbuffer.length);
         }
 
@@ -364,15 +373,16 @@ public class AdvancedOperationService implements InternalOperationService {
             }
         }
 
+        //todo: padding needed to prevent false sharing.
         private class Slot {
             private volatile long sequence = 0;
             private Operation op;
 
-            public void commit(long sequence) {
+            public void commit(final long sequence) {
                 this.sequence = sequence;
             }
 
-            public void awaitCommitted(long consumerSequence) {
+            public void awaitCommitted(final long consumerSequence) {
                 for (; ; ) {
                     if (sequence >= consumerSequence) {
                         return;
@@ -392,7 +402,6 @@ public class AdvancedOperationService implements InternalOperationService {
         return op;
     }
 
-
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         op.setServiceName(serviceName);
@@ -404,29 +413,106 @@ public class AdvancedOperationService implements InternalOperationService {
 
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target,
                                                            long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
+
                                                            Callback<Object> callback) {
-        throw new UnsupportedOperationException();
+        //todo: we need to deal with the other arguments.
+        return invokeOnTarget(serviceName, op, target);
     }
 
 
     @Override
-    public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        throw new UnsupportedOperationException();
+    public <E> InternalCompletableFuture<E> invokeOnTarget(final String serviceName, final Operation op, final Address target) {
+        if (thisAddress.equals(target)) {
+            throw new RuntimeException();
+        } else {
+            //System.out.println("InvokeOnTarget: " + op);
+            long callId = callIdGen.incrementAndGet();
+            remoteOperations.put(callId, op);
+            OperationAccessor.setCallId(op, callId);
+            send(op, target);
+            return op;
+        }
     }
 
     @Override
     public void handleOperation(Packet packet) {
-        throw new UnsupportedOperationException();
+        //System.out.println("handleOperation:" + packet);
+
+        try {
+            final Executor executor;
+            if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+                executor = responseExecutor;
+            } else if (packet.getPartitionId() == -1) {
+                executor = defaultExecutor;
+            } else {
+                throw new RuntimeException();
+            }
+            executor.execute(new RemoteOperationProcessor(packet));
+        } catch (RejectedExecutionException e) {
+            if (nodeEngine.isActive()) {
+                throw e;
+            }
+        }
+    }
+
+    private class RemoteOperationProcessor implements Runnable {
+        final Packet packet;
+
+        public RemoteOperationProcessor(Packet packet) {
+            this.packet = packet;
+        }
+
+        @Override
+        public void run() {
+            final Connection conn = packet.getConn();
+            try {
+                final Address caller = conn.getEndPoint();
+                final Data data = packet.getData();
+                final Operation op = (Operation) nodeEngine.toObject(data);
+                op.setNodeEngine(nodeEngine);
+                OperationAccessor.setCallerAddress(op, caller);
+                OperationAccessor.setConnection(op, conn);
+                if (op instanceof ResponseOperation) {
+                    processResponse((ResponseOperation) op);
+                } else {
+                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+                    if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
+                        final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
+                                op.getClass().getName(), op.getServiceName());
+                        handleOperationError(op, error);
+                    } else {
+                        doRunOperation(op);
+                        //doRunOperation(op);
+                    }
+                }
+            } catch (Throwable e) {
+                logger.severe(e);
+            }
+        }
+
+        void processResponse(ResponseOperation response) {
+            try {
+                response.beforeRun();
+                response.run();
+                response.afterRun();
+            } catch (Throwable e) {
+                logger.severe("While processing response...", e);
+            }
+        }
+    }
+
+    private void handleOperationError(Operation op, Exception error) {
+        throw new RuntimeException();
     }
 
     @Override
     public void onMemberLeft(MemberImpl member) {
-        throw new UnsupportedOperationException();
+        System.out.println("onMemberLeft:" + member);
     }
 
     @Override
     public void shutdown() {
-
+        logger.finest( "Stopping AdvancedOperationService...");
     }
 
     @Override
@@ -436,7 +522,9 @@ public class AdvancedOperationService implements InternalOperationService {
 
     @Override
     public void notifyRemoteCall(long callId, Object response) {
-        throw new UnsupportedOperationException();
+        Operation op = remoteOperations.get(callId);
+        op.set(response, false);
+
     }
 
     @Override
@@ -446,11 +534,32 @@ public class AdvancedOperationService implements InternalOperationService {
 
     @Override
     public void runOperation(Operation op) {
-        throw new UnsupportedOperationException();
+
+        op.setNodeEngine(nodeEngine);
+
+        doRunOperation(op);
+    }
+
+    public void doRunOperation(Operation op) {
+        //System.out.println("doRunOperation:" + op);
+        try {
+            op.beforeRun();
+            op.run();
+            op.afterRun();
+            if (op.returnsResponse()) {
+                ResponseHandler responseHandler = op.getResponseHandler();
+                if (responseHandler != null) {
+                    responseHandler.sendResponse(op.getResponse());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void executeOperation(Operation op) {
+        System.out.println("executeOperation:" + op);
         throw new UnsupportedOperationException();
     }
 
@@ -476,21 +585,6 @@ public class AdvancedOperationService implements InternalOperationService {
 
     @Override
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory, Address target) throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean send(Operation op, int partitionId, int replicaIndex) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean send(Operation op, Address target) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean send(Operation op, Connection connection) {
         throw new UnsupportedOperationException();
     }
 
@@ -536,7 +630,11 @@ public class AdvancedOperationService implements InternalOperationService {
 
         @Override
         public InternalCompletableFuture invoke() {
-            throw new UnsupportedOperationException();
+            if (target != null) {
+                return invokeOnTarget(serviceName, op, target, replicaIndex, replicaIndex, tryCount, tryPauseMillis, callback);
+            } else {
+                return invokeOnPartition(serviceName, op, partitionId, replicaIndex, replicaIndex, tryCount, tryPauseMillis, callback);
+            }
         }
     }
 }

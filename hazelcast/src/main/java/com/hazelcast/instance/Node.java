@@ -526,6 +526,7 @@ public class Node {
                 joiner.join(joined);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
                 logger.warning("Trying to rejoin: " + e.getMessage());
                 rejoin();

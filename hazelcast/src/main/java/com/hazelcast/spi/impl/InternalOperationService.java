@@ -14,6 +14,12 @@ import com.hazelcast.spi.OperationService;
  */
 public interface InternalOperationService extends OperationService{
 
+    /**
+     * Handles a remotely invoked operation. The operation is wrapped in a packet, send over the line
+     * and is passed to this method. There the Operation will be unpacked and executed.
+     *
+     * @param packet the packet containing the operation.
+     */
     void handleOperation(Packet packet);
 
     void onMemberLeft(MemberImpl member);

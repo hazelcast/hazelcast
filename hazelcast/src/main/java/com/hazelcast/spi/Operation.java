@@ -312,6 +312,13 @@ public abstract class Operation implements DataSerializable, InternalCompletable
     public void set(Object result, boolean runOnCallingThread){
         if(runOnCallingThread){
             this.result = result;
+        }else if(!hasWaiters){
+            this.result = result;
+            if(hasWaiters){
+                synchronized (this){
+                    notifyAll();
+                }
+            }
         }else{
             synchronized (this){
                 this.result = result;
@@ -419,6 +426,9 @@ public abstract class Operation implements DataSerializable, InternalCompletable
 
         hasWaiters = true;
 
+        if (result != NO_RESULT) {
+            return result;
+        }
 
         synchronized (this) {
             while (result == NO_RESULT) {

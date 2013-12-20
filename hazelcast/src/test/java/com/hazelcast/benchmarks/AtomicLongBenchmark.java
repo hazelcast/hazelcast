@@ -27,8 +27,6 @@ import com.hazelcast.concurrent.atomiclong.GetOperation;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.instance.Node;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.*;
@@ -39,7 +37,7 @@ import java.util.concurrent.Future;
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-atomiclong")
 @BenchmarkHistoryChart(filePrefix = "benchmark-atomiclong-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
-public class AtomicLongBenchmark extends HazelcastTestSupport{
+public class AtomicLongBenchmark extends HazelcastTestSupport {
     @Rule
     public TestRule benchmarkRun = new BenchmarkRule();
 
@@ -53,7 +51,7 @@ public class AtomicLongBenchmark extends HazelcastTestSupport{
 
     @Before
     public void before() {
-        atomicLong = (AtomicLongProxy)hazelcastInstance.getAtomicLong("atomicLong");
+        atomicLong = (AtomicLongProxy) hazelcastInstance.getAtomicLong("atomicLong");
     }
 
     @After
@@ -91,7 +89,7 @@ public class AtomicLongBenchmark extends HazelcastTestSupport{
     @Test
     public void noResponse() throws Exception {
         long startMs = System.currentTimeMillis();
-        int iterations = 50*1000*1000;
+        int iterations = 50 * 1000 * 1000;
 
         OperationService opService = getNode(hazelcastInstance).nodeEngine.getOperationService();
         Future[] futures = new Future[1000];
@@ -101,14 +99,14 @@ public class AtomicLongBenchmark extends HazelcastTestSupport{
             NoResponseOperation no = new NoResponseOperation(atomicLong.getName());
             no.setPartitionId(atomicLong.getPartitionId());
             no.setService(atomicLong.getService());
-            Future f = opService.invokeOnPartition(AtomicLongService.SERVICE_NAME,no,atomicLong.getPartitionId());
-            futures[futureIndex]=f;
+            Future f = opService.invokeOnPartition(AtomicLongService.SERVICE_NAME, no, atomicLong.getPartitionId());
+            futures[futureIndex] = f;
             futureIndex++;
-            if(futureIndex>=futures.length){
-                for(Future fu:futures){
+            if (futureIndex >= futures.length) {
+                for (Future fu : futures) {
                     fu.get();
                 }
-                futureIndex=0;
+                futureIndex = 0;
             }
 
             if (k % 2000000 == 0) {
@@ -123,7 +121,7 @@ public class AtomicLongBenchmark extends HazelcastTestSupport{
     @Test
     public void getAsync() throws Exception {
         long startMs = System.currentTimeMillis();
-        int iterations = 50*1000*1000;
+        int iterations = 50 * 1000 * 1000;
 
         OperationService opService = getNode(hazelcastInstance).nodeEngine.getOperationService();
 
@@ -137,14 +135,14 @@ public class AtomicLongBenchmark extends HazelcastTestSupport{
             GetOperation no = new GetOperation(name);
             no.setPartitionId(partitionId);
             no.setService(service);
-            Future f = opService.invokeOnPartition(AtomicLongService.SERVICE_NAME,no,partitionId);
-            futures[futureIndex]=f;
+            Future f = opService.invokeOnPartition(AtomicLongService.SERVICE_NAME, no, partitionId);
+            futures[futureIndex] = f;
             futureIndex++;
-            if(futureIndex>=futures.length){
-                for(Future fu:futures){
+            if (futureIndex >= futures.length) {
+                for (Future fu : futures) {
                     fu.get();
                 }
-                futureIndex=0;
+                futureIndex = 0;
             }
 
             if (k % 2000000 == 0) {
@@ -159,7 +157,7 @@ public class AtomicLongBenchmark extends HazelcastTestSupport{
     @Test
     public void get() throws Exception {
         long startMs = System.currentTimeMillis();
-        int iterations = 50*1000*1000;
+        int iterations = 50 * 1000 * 1000;
         for (int k = 0; k < iterations; k++) {
             atomicLong.get();
             if (k % 200000 == 0) {
