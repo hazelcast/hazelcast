@@ -54,11 +54,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
-    public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        throw new UnsupportedOperationException("FIXME!!!!!");
-    }
-
-    @Override
     public boolean containsKey(Object key) {
         Data keyData = toData(key);
         MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData);
@@ -546,6 +541,26 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             result.put(key, toObject(valueData));
         }
         return result;
+    }
+    @Override
+    public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        Set<Data> dataKeys = new HashSet<Data>(keys.size());
+        for(K key : keys)
+        {
+            dataKeys.add(toData(key));
+        }
+
+        MapExecuteOnKeysRequest request = new MapExecuteOnKeysRequest(name,entryProcessor,dataKeys);
+        MapEntrySet entrySet = invoke(request);
+        Map<K, Object> result = new HashMap<K, Object>();
+        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+            final Data keyData = dataEntry.getKey();
+            final Data valueData = dataEntry.getValue();
+            K key = toObject(keyData);
+            result.put(key, toObject(valueData));
+        }
+        return result;
+
     }
 
     @Override
