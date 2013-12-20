@@ -678,9 +678,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             if (response == INTERRUPTED_RESPONSE) {
                 throw new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
             }
-            if (response == WAIT_RESPONSE) {
-                System.err.println("asdf op: " + op);
-            }
             return response;
         }
 
