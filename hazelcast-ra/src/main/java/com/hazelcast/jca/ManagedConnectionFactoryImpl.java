@@ -161,10 +161,10 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
 				if (con instanceof ManagedConnectionImpl) {
 					ManagedConnectionImpl conn = (ManagedConnectionImpl) con;
 					ConnectionRequestInfo otherCxRequestInfo = conn.getCxRequestInfo();
-					if (((null == otherCxRequestInfo) && (null == cxRequestInfo))
-							|| otherCxRequestInfo.equals(cxRequestInfo)) {
-						return conn;
-					}
+                    if ( null == otherCxRequestInfo || otherCxRequestInfo.equals(cxRequestInfo) ){
+                        return conn;
+                    }
+
 				} else {
 					log(Level.WARNING, "Unexpected element in list: " + con);
 				}

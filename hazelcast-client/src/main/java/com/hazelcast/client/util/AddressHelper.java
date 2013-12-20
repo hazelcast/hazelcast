@@ -59,7 +59,7 @@ public final class AddressHelper {
             for (int i=0; i<portTryCount; i++){
                 socketAddresses.add(new InetSocketAddress(inetAddress, port+i));
             }
-        } else {
+        } else if (inetAddress instanceof Inet6Address){
             final Collection<Inet6Address> addresses = AddressUtil.getPossibleInetAddressesFor((Inet6Address) inetAddress);
             for (Inet6Address inet6Address : addresses) {
                 for (int i=0; i<portTryCount; i++){

@@ -640,8 +640,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void startJoin() {
         logger.finest( "Starting Join.");
-        lock.lock();
         try {
+            lock.lock();
+
             joinInProgress = true;
             // pause migrations until join, member-update and post-join operations are completed.
             node.getPartitionService().pauseMigration();
