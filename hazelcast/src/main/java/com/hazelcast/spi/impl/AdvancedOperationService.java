@@ -155,6 +155,7 @@ public class AdvancedOperationService extends AbstractOperationService {
             private volatile long seq = 0;
             private Runnable runnable;
 
+
             public void commit(final long seq) {
                 this.seq = seq;
             }
@@ -364,7 +365,6 @@ public class AdvancedOperationService extends AbstractOperationService {
                 op.setPartitionId(partitionId);
                 op.beforeRun();
                 op.run();
-
                 Object response = op.returnsResponse() ? op.getResponse() : null;
                 op.afterRun();
                 op.set(response, callerRuns);
