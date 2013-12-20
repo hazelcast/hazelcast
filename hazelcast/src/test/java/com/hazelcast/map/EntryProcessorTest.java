@@ -67,6 +67,34 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapEntryProcessorCallback() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final AtomicInteger result = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        map.put(1, 1);
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        map.submitToKey(1, entryProcessor, new ExecutionCallback<Integer>() {
+            @Override
+            public void onResponse(Integer response) {
+                result.set(response);
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                latch.countDown();
+            }
+        });
+        latch.await(10, TimeUnit.SECONDS);
+        assertEquals(2, result.get());
+    }
+
+    @Test
     public void testNotExistingEntryProcessor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();

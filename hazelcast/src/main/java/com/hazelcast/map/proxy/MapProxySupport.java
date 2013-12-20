@@ -654,7 +654,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             {
                 return nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setCallback(new ExecutionCallbackAdapter(callback))
+                        .setCallback(new MapExecutionCallbackAdapter(callback))
                         .invoke();
             }
         } catch (Throwable t) {
@@ -858,5 +858,24 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public final String getServiceName() {
         return SERVICE_NAME;
+    }
+
+    private class MapExecutionCallbackAdapter implements Callback {
+
+        private final ExecutionCallback executionCallback;
+
+        public MapExecutionCallbackAdapter(ExecutionCallback executionCallback) {
+            this.executionCallback = executionCallback;
+        }
+
+        @Override
+        public void notify(Object response) {
+            if (response instanceof Throwable) {
+                executionCallback.onFailure((Throwable) response);
+            } else {
+                executionCallback.onResponse(getService().toObject(response));
+            }
+        }
+
     }
 }
