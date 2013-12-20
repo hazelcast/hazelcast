@@ -28,7 +28,7 @@ import java.util.*;
 public class QueryResult implements DataSerializable {
 
     private List<Integer> partitionIds;
-    private final Set<QueryResultEntry> result = new HashSet<QueryResultEntry>();
+    private final Set<QueryResultEntry> result = new LinkedHashSet<QueryResultEntry>();
 
     public List<Integer> getPartitionIds() {
         return partitionIds;
