@@ -24,7 +24,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,14 +45,15 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapIssueTest {
 
-    @AfterClass
-    public static void destroy() {
+    @After
+    public void reset(){
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
+
     @Test
-    public void testClientDisconnectionWhileQuerying() throws InterruptedException {
+    public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
