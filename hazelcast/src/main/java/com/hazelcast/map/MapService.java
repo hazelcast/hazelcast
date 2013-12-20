@@ -40,8 +40,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.*;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionView;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -50,10 +52,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.*;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
@@ -1032,10 +1031,13 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public QueryResult queryOnPartition(String mapName, Predicate predicate, int partitionId) {
         final QueryResult result = new QueryResult();
+        List<QueryEntry> list = new LinkedList<QueryEntry>();
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
         Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         SerializationService serializationService = nodeEngine.getSerializationService();
+        final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate)predicate : null;
+        Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
         for (Record record : records.values()) {
             Data key = record.getKey();
             Object value = record.getValue();
@@ -1044,8 +1046,24 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
             if (predicate.apply(queryEntry)) {
-                result.add(new QueryResultEntryImpl(key, key, queryEntry.getValueData()));
+                if (pagingPredicate != null) {
+                    Map.Entry anchor = pagingPredicate.getAnchor();
+                    if (anchor != null &&
+                            SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), anchor, queryEntry) >= 0 ) {
+                        continue;
+                    }
+                }
+                list.add(queryEntry);
             }
+        }
+        if (pagingPredicate != null) {
+            Collections.sort(list, wrapperComparator);
+            if (list.size() > pagingPredicate.getPageSize()) {
+                list = list.subList(0, pagingPredicate.getPageSize());
+            }
+        }
+        for (QueryEntry entry : list) {
+            result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
         }
         return result;
     }
