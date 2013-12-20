@@ -552,13 +552,23 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        MapService service = getService();
+        final MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        executeOnKeyInternal(keyData,entryProcessor,callback);
+
+        // The callback needs to be de-serialized
+        executeOnKeyInternal(keyData, entryProcessor, new ExecutionCallback() {
+            public void onResponse(Object response) {
+                callback.onResponse(service.toObject(response));
+            }
+
+            public void onFailure(Throwable t) {
+               callback.onFailure(t);
+            }
+        });
     }
     @Override
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
@@ -567,7 +577,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        Future f = executeOnKeyInternal(keyData,entryProcessor,null);
+        Future f = executeOnKeyInternal(keyData, entryProcessor, null);
         return new DelegatingFuture(f,service.getSerializationService());
     }
 
