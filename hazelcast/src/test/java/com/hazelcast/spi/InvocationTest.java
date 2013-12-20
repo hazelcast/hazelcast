@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -68,6 +69,30 @@ public class InvocationTest extends HazelcastTestSupport {
 
         assertTrue(latch.await(1, TimeUnit.MINUTES));
         assertTrue(interruptedFlag.get());
+    }
+
+    @Test
+    public void testWaitingInfinitelyForTryLock() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        hz.getLock("testWaitingInfinitelyForTryLock").lock();
+
+        new Thread(){
+            public void run() {
+                try {
+                    hz.getLock("testWaitingInfinitelyForTryLock").tryLock(5, TimeUnit.SECONDS);
+                    latch.countDown();
+                } catch (Exception ignored) {
+                }
+            }
+        }.start();
+
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
+
     }
 
     @Test
