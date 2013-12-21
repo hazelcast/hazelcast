@@ -56,6 +56,12 @@ Near cache is highly recommended for the maps that are read-mostly. Here is a ne
             -->
             <invalidate-on-change>true</invalidate-on-change>
 
+            <!--
+                You may want also local entries to be cached.
+                This is useful when in memory format for near cache is different than the map's one.
+                By default it is disabled.
+            -->
+            <cache-local-entries>false</cache-local-entries>
         </near-cache>
     </map>
 </hazelcast>
