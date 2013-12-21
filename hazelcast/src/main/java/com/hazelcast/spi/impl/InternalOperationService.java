@@ -24,11 +24,20 @@ public interface InternalOperationService extends OperationService{
 
     void onMemberLeft(MemberImpl member);
 
-    void shutdown();
 
     void notifyBackupCall(long callId);
 
     void notifyRemoteCall(long callId, Object response);
 
     boolean isCallTimedOut(Operation op);
+
+    /**
+     * Starts the InternalOperationService. Will only be called once.
+     */
+    void start();
+
+    /**
+     * Shuts down the InternalOperationService. Will only be called once.
+     */
+    void shutdown();
 }

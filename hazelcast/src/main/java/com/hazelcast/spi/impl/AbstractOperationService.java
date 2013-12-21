@@ -6,6 +6,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -15,7 +16,7 @@ public abstract class AbstractOperationService implements InternalOperationServi
     protected final Node node;
     protected final ILogger logger;
 
-    public AbstractOperationService(NodeEngineImpl nodeEngine){
+    public AbstractOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(getClass().getName());
@@ -43,12 +44,12 @@ public abstract class AbstractOperationService implements InternalOperationServi
         }
     }
 
-    protected final  int getPartitionIdForExecution(Operation op) {
+    protected final int getPartitionIdForExecution(Operation op) {
         return op instanceof PartitionAwareOperation ? op.getPartitionId() : -1;
     }
 
     @Override
-    public final  boolean send(final Operation op, final Connection connection) {
+    public final boolean send(final Operation op, final Connection connection) {
         Data data = nodeEngine.toData(op);
         final int partitionId = getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
@@ -57,5 +58,10 @@ public abstract class AbstractOperationService implements InternalOperationServi
             packet.setHeader(Packet.HEADER_RESPONSE);
         }
         return nodeEngine.send(packet, connection);
+    }
+
+    @Override
+    public void start() {
+        //nop-op
     }
 }

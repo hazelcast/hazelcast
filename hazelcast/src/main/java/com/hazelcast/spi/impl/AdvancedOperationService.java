@@ -5,6 +5,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -14,6 +15,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
+
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 
 /**
@@ -66,6 +69,7 @@ public class AdvancedOperationService extends AbstractOperationService {
     private final Address thisAddress;
     private final AtomicLong callIdGen = new AtomicLong(0);
     private final ConcurrentMap<Long, Operation> remoteOperations = new ConcurrentHashMap<>();
+    private PartitionService partitionService;
 
     public AdvancedOperationService(NodeEngineImpl nodeEngine) {
         super(nodeEngine);
@@ -92,7 +96,6 @@ public class AdvancedOperationService extends AbstractOperationService {
         operationThreads[0].offer(runnable);
     }
 
-
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId,
                                                               long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
                                                               Callback<Object> callback) {
@@ -100,21 +103,33 @@ public class AdvancedOperationService extends AbstractOperationService {
         return invokeOnPartition(serviceName, op, partitionId);
     }
 
-    private boolean isLocal(int partitionId, int replicaIndex){
-        PartitionView partitionview = nodeEngine.getPartitionService().getPartition(partitionId);
-        Address thatAddress = partitionview.getReplicaAddress(replicaIndex);
+    private Address getAddress(int partitionId, int replicaIndex) {
+        PartitionView partitionview = partitionService.getPartition(partitionId);
+        return partitionview.getReplicaAddress(replicaIndex);
+    }
+
+    private boolean isLocal(Address thatAddress) {
         return thatAddress.equals(thisAddress);
     }
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        if(isLocal(partitionId,0)){
+        isNotNull(op, "operation");
+
+        Address target = getAddress(partitionId, 0);
+        if (isLocal(target)) {
             op.setServiceName(serviceName);
             op.setPartitionId(partitionId);
             PartitionOperationQueue scheduler = schedulers[partitionId];
             scheduler.schedule(op);
-        }else{
-            throw new RuntimeException();
+        } else {
+            long callId = callIdGen.incrementAndGet();
+            remoteOperations.put(callId, op);
+            OperationAccessor.setCallId(op, callId);
+            OperationAccessor.setCallerAddress(op, thisAddress);
+            //todo: we need to do something with return value.
+            //todo: is this a blocking call?
+            send(op, target);
         }
 
         return op;
@@ -129,37 +144,45 @@ public class AdvancedOperationService extends AbstractOperationService {
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(final String serviceName, final Operation op, final Address target) {
-        if (thisAddress.equals(target)) {
-            if (serviceName != null) {
-                op.setServiceName(serviceName);
-            }
+        isNotNull(op, "operation");
+        isNotNull(target, "target");
+
+        if (serviceName != null) {
+            op.setServiceName(serviceName);
+        }
+
+        if (isLocal(target)) {
             op.setNodeEngine(nodeEngine);
+            //todo: we should offload this call
             doRunOperation(op);
         } else {
             //System.out.println("InvokeOnTarget: " + op);
+
             long callId = callIdGen.incrementAndGet();
             remoteOperations.put(callId, op);
             OperationAccessor.setCallId(op, callId);
             //todo: we need to do something with return value.
+            //todo: is this a blocking call?
             send(op, target);
         }
         return op;
     }
 
     @Override
-    public void handleOperation(Packet packet) {
+    public void handleOperation(final Packet packet) {
         //System.out.println("handleOperation:" + packet);
 
         try {
-            final Executor executor;
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                executor = responseExecutor;
-            } else if (packet.getPartitionId() == -1) {
-                executor = defaultExecutor;
+                responseExecutor.execute(new RemoteOperationProcessor(packet));
             } else {
-                throw new RuntimeException();
+                final int partitionId = packet.getPartitionId();
+                if (partitionId == -1) {
+                    defaultExecutor.execute(new RemoteOperationProcessor(packet));
+                } else {
+                    schedulers[partitionId].schedule(packet);
+                }
             }
-            executor.execute(new RemoteOperationProcessor(packet));
         } catch (RejectedExecutionException e) {
             if (nodeEngine.isActive()) {
                 throw e;
@@ -167,52 +190,9 @@ public class AdvancedOperationService extends AbstractOperationService {
         }
     }
 
-    private class RemoteOperationProcessor implements Runnable {
-        final Packet packet;
-
-        public RemoteOperationProcessor(Packet packet) {
-            this.packet = packet;
-        }
-
-        @Override
-        public void run() {
-            final Connection conn = packet.getConn();
-            try {
-                final Address caller = conn.getEndPoint();
-                final Data data = packet.getData();
-                final Operation op = (Operation) nodeEngine.toObject(data);
-                op.setNodeEngine(nodeEngine);
-                OperationAccessor.setCallerAddress(op, caller);
-                OperationAccessor.setConnection(op, conn);
-                if (op instanceof ResponseOperation) {
-                    processResponse((ResponseOperation) op);
-                } else {
-                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-                    if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
-                        final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
-                                op.getClass().getName(), op.getServiceName());
-                        handleOperationError(op, error);
-                    } else {
-                        doRunOperation(op);
-                        //doRunOperation(op);
-                    }
-                }
-            } catch (Throwable e) {
-                logger.severe(e);
-            }
-        }
-
-        void processResponse(ResponseOperation response) {
-             try {
-                 doRunOperation(response);
-             } catch (Throwable e) {
-                logger.severe("While processing response...", e);
-            }
-        }
-    }
 
     private void handleOperationError(Operation op, Exception error) {
-        throw new RuntimeException();
+        throw new RuntimeException(error);
     }
 
     @Override
@@ -224,6 +204,11 @@ public class AdvancedOperationService extends AbstractOperationService {
     @Override
     public void shutdown() {
         logger.finest("Stopping AdvancedOperationService...");
+    }
+
+    @Override
+    public void start() {
+        partitionService = node.getPartitionService();
     }
 
     @Override
@@ -252,7 +237,7 @@ public class AdvancedOperationService extends AbstractOperationService {
         doRunOperation(op);
     }
 
-    public void doRunOperation(Operation op) {
+    private void doRunOperation(Operation op) {
         //System.out.println("doRunOperation:" + op);
         try {
             op.beforeRun();
@@ -263,7 +248,7 @@ public class AdvancedOperationService extends AbstractOperationService {
                 if (responseHandler != null) {
                     responseHandler.sendResponse(op.getResponse());
                 }
-                op.set(op.getResponse(),false);
+                op.set(op.getResponse(), false);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -329,6 +314,49 @@ public class AdvancedOperationService extends AbstractOperationService {
     @Override
     public long getExecutedOperationCount() {
         return 0;
+    }
+
+    private class RemoteOperationProcessor implements Runnable {
+        final Packet packet;
+
+        public RemoteOperationProcessor(Packet packet) {
+            this.packet = packet;
+        }
+
+        @Override
+        public void run() {
+            final Connection conn = packet.getConn();
+            try {
+                final Address caller = conn.getEndPoint();
+                final Data data = packet.getData();
+                final Operation op = (Operation) nodeEngine.toObject(data);
+                op.setNodeEngine(nodeEngine);
+                OperationAccessor.setCallerAddress(op, caller);
+                OperationAccessor.setConnection(op, conn);
+                if (op instanceof ResponseOperation) {
+                    processResponse((ResponseOperation) op);
+                } else {
+                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+                    if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
+                        final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
+                                op.getClass().getName(), op.getServiceName());
+                        handleOperationError(op, error);
+                    } else {
+                        doRunOperation(op);
+                    }
+                }
+            } catch (Throwable e) {
+                logger.severe(e);
+            }
+        }
+
+        void processResponse(ResponseOperation response) {
+            try {
+                doRunOperation(response);
+            } catch (Throwable e) {
+                logger.severe("While processing response...", e);
+            }
+        }
     }
 
     private class AdvancedInvocationBuilder extends AbstractInvocationBuilder {
@@ -403,6 +431,7 @@ public class AdvancedOperationService extends AbstractOperationService {
                     slot.runnable = null;
                     consumerSeq.set(newConsumerSeq);
                     oldConsumerSeq = newConsumerSeq;
+
                     doRun(task);
                 }
             }
@@ -500,7 +529,51 @@ public class AdvancedOperationService extends AbstractOperationService {
             return (int) ((producerSeq - consumerSeq) / 2);
         }
 
+        public void schedule(Packet packet) {
+            assert packet != null;
+            try {
+                long oldProducerSeq = producerSeq.get();
+
+                //this flag indicates if we need to schedule, or if scheduling already is taken care of.
+                boolean schedule;
+                long newProducerSeq;
+                for (; ; ) {
+                    newProducerSeq = oldProducerSeq + 2;
+                    if (oldProducerSeq % 2 == 0) {
+                        //if the scheduled flag is not set, we are going to be responsible for scheduling.
+                        schedule = true;
+                        newProducerSeq++;
+                    } else {
+                        //apparently this scheduler already is scheduled, so we don't need to schedule it.
+                        schedule = false;
+                    }
+
+                    if (producerSeq.compareAndSet(oldProducerSeq, newProducerSeq)) {
+                        break;
+                    }
+
+                    //we did not manage to claim the slot and potentially set the scheduled but, so we need to try again.
+                    oldProducerSeq = producerSeq.get();
+                }
+
+                //we claimed a slot.
+                int slotIndex = toIndex(newProducerSeq);
+                Slot slot = ringbuffer[slotIndex];
+                slot.packet = packet;
+                slot.commit(newProducerSeq);
+
+                if (schedule) {
+                    executeOnOperationThread(this);
+                }
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                throw e;
+            }
+        }
+
         public void schedule(Operation op) {
+            assert op != null;
+
             try {
                 long oldProducerSeq = producerSeq.get();
                 long consumerSeq = this.consumerSeq.get();
@@ -607,11 +680,22 @@ public class AdvancedOperationService extends AbstractOperationService {
                         final Slot slot = ringbuffer[slotIndex];
                         slot.awaitCommitted(newConsumerSeq);
                         final Operation op = slot.op;
-                        //null the operation to prevent memory leaks.
-                        slot.op = null;
+                        final Packet packet = slot.packet;
+
+                        if (op != null) {
+                            slot.op = null;
+                        }
+
+                        if (packet != null) {
+                            slot.packet = null;
+                        }
+
                         consumerSeq.set(newConsumerSeq);
-                        //todo: we don't need to update the slot-sequence?
-                        runOperation(op, false);
+                        if (op != null) {
+                            runOperation(op, false);
+                        } else {
+                            runPacket(packet);
+                        }
                         oldConsumerSeq = newConsumerSeq;
                     }
                 }
@@ -620,7 +704,29 @@ public class AdvancedOperationService extends AbstractOperationService {
             }
         }
 
-        private void runOperation(Operation op, boolean callerRuns) {
+        private void runPacket(Packet packet) {
+            final Connection conn = packet.getConn();
+            try {
+                final Address caller = conn.getEndPoint();
+                final Data data = packet.getData();
+                final Operation op = (Operation) nodeEngine.toObject(data);
+                op.setNodeEngine(nodeEngine);
+                OperationAccessor.setCallerAddress(op, caller);
+                OperationAccessor.setConnection(op, conn);
+                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+                if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
+                    final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
+                            op.getClass().getName(), op.getServiceName());
+                    handleOperationError(op, error);
+                } else {
+                    runOperation(op, false);
+                }
+            } catch (Throwable e) {
+                logger.severe(e);
+            }
+        }
+
+        private void runOperation(final Operation op,  final boolean callerRuns) {
             try {
                 op.setNodeEngine(nodeEngine);
                 op.setPartitionId(partitionId);
@@ -638,6 +744,7 @@ public class AdvancedOperationService extends AbstractOperationService {
         private class Slot {
             private volatile long sequence = 0;
             private Operation op;
+            private Packet packet;
 
             public void commit(final long sequence) {
                 this.sequence = sequence;

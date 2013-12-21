@@ -18,14 +18,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class LMaxDisruptorOperationService implements InternalOperationService {
+public class LMaxDisruptorOperationService extends AbstractOperationService {
 
-    private final NodeEngineImpl nodeEngine;
     private final RingBuffer<Slot> ringBuffer;
     private final Disruptor<Slot> disruptor;
 
     public LMaxDisruptorOperationService(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
+        super(nodeEngine);
         ExecutorService executorService = Executors.newCachedThreadPool();
         disruptor = new Disruptor<Slot>(FACTORY, 1024, executorService);
         disruptor.handleEventsWith(new SlotEventHandler());
@@ -150,46 +149,31 @@ public class LMaxDisruptorOperationService implements InternalOperationService {
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory, Collection<Integer> partitions) throws Exception {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory, Address target) throws Exception {
-        return null;
-    }
-
-    @Override
-    public boolean send(Operation op, int partitionId, int replicaIndex) {
-        return false;
-    }
-
-    @Override
-    public boolean send(Operation op, Address target) {
-        return false;
-    }
-
-    @Override
-    public boolean send(Operation op, Connection connection) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 }
