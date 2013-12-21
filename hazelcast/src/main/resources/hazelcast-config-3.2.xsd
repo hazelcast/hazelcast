@@ -783,6 +783,7 @@
             <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU"/>
             <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
         </xs:sequence>
     </xs:complexType>
     <xs:simpleType name="eviction-policy">
