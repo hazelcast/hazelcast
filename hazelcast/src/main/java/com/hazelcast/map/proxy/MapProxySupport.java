@@ -21,7 +21,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.executor.ExecutionCallbackAdapter;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
 import com.hazelcast.map.operation.*;
@@ -32,8 +31,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionView;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.*;
@@ -144,7 +143,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (nearCacheEnabled) {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                    .equals(nodeEngine.getClusterService().getThisAddress())) {
+                    .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
                 mapService.putNearCache(name, key, result);
             }
         }

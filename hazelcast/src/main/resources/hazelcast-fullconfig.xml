@@ -233,6 +233,7 @@
             <max-idle-seconds>0</max-idle-seconds>
             <eviction-policy>LFU</eviction-policy>
             <invalidate-on-change>true</invalidate-on-change>
+            <cache-local-entries>false</cache-local-entries>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">

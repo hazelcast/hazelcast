@@ -250,4 +250,29 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals(map.containsKey("key5"), false);
     }
 
+    @Test
+    public void testCacheLocalEntries() {
+        int n = 2;
+        String mapName = "test";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setCacheLocalEntries(true));
+        HazelcastInstance instance = createHazelcastInstanceFactory(n).newInstances(config)[0];
+
+        IMap<String, String> map = instance.getMap(mapName);
+
+        int noOfEntries = 100;
+        for (int i = 0; i < noOfEntries; i++) {
+            map.put("key"+i, "value"+i);
+        }
+
+        //warm-up cache
+        for (int i = 0; i < noOfEntries; i++) {
+            map.get("key" + i);
+        }
+
+        NearCache nearCache = getNearCache(mapName, instance);
+        assertEquals(noOfEntries, nearCache.size());
+    }
+
 }
