@@ -39,6 +39,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -58,7 +59,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private final int partitionCount;
     private final PartitionImpl[] partitions;
     private final PartitionReplicaVersions[] replicaVersions;
-    private final ConcurrentMap<Integer, ReplicaSyncInfo> replicaSyncRequests;
+    private final AtomicReferenceArray<ReplicaSyncInfo> replicaSyncRequests;
     private final EntryTaskScheduler<Integer, ReplicaSyncInfo> replicaSyncScheduler;
     private final AtomicInteger replicaSyncProcessCount = new AtomicInteger();
     private final MigrationThread migrationThread;
@@ -112,7 +113,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         migrationThread = new MigrationThread(node);
         proxy = new PartitionServiceProxy(this);
 
-        replicaSyncRequests = new ConcurrentHashMap<Integer, ReplicaSyncInfo>(partitionCount);
+        replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(new ReplicaSyncInfo[partitionCount]);
         replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
                 new ReplicaSyncEntryProcessor(), ScheduleType.SCHEDULE_IF_NEW);
 
@@ -154,7 +155,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         public void process(EntryTaskScheduler<Integer, ReplicaSyncInfo> scheduler, Collection<ScheduledEntry<Integer, ReplicaSyncInfo>> entries) {
             for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : entries) {
                 final ReplicaSyncInfo syncInfo = entry.getValue();
-                if (replicaSyncRequests.remove(entry.getKey(), syncInfo)) {
+                if (replicaSyncRequests.compareAndSet(entry.getKey(), syncInfo, null)) {
                     logger.info("Re-sending sync replica request for partition: " + syncInfo.partitionId + ", replica: " + syncInfo.replicaIndex);
                     syncPartitionReplica(syncInfo.partitionId, syncInfo.replicaIndex, false);
                 }
@@ -618,12 +619,12 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             final ReplicaSyncInfo syncInfo = new ReplicaSyncInfo(partitionId, replicaIndex, target);
             boolean sendRequest = false;
             if (currentSyncInfo == null) {
-                sendRequest = replicaSyncRequests.putIfAbsent(partitionId, syncInfo) == null;
+                sendRequest = replicaSyncRequests.compareAndSet(partitionId, null,syncInfo);
             } else if (currentSyncInfo.requestTime < (Clock.currentTimeMillis() - 10000)
                     || nodeEngine.getClusterService().getMember(currentSyncInfo.target) == null) {
-                sendRequest = replicaSyncRequests.replace(partitionId, currentSyncInfo, syncInfo);
+                sendRequest = replicaSyncRequests.compareAndSet(partitionId, currentSyncInfo, syncInfo);
             } else if (force) {
-                replicaSyncRequests.put(partitionId, syncInfo);
+                replicaSyncRequests.set(partitionId, syncInfo);
                 sendRequest = true;
             }
             if (target.equals(nodeEngine.getThisAddress())) {
@@ -874,7 +875,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     // called in operation threads
     void finalizeReplicaSync(int partitionId, long[] versions) {
         setPartitionReplicaVersions(partitionId, versions);
-        replicaSyncRequests.remove(partitionId);
+        replicaSyncRequests.set(partitionId, null);
         replicaSyncScheduler.cancel(partitionId);
     }
 
@@ -1314,7 +1315,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public void reset() {
         migrationQueue.clear();
-        replicaSyncRequests.clear();
+        for (int k = 0; k < replicaSyncRequests.length(); k++) {
+            replicaSyncRequests.set(k, null);
+        }
         replicaSyncScheduler.cancelAll();
         lock.lock();
         try {
