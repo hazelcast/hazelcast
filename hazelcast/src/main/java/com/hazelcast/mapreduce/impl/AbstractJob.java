@@ -25,6 +25,8 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected final String name;
 
+    protected final String jobId = UUID.randomUUID().toString();
+
     protected final KeyValueSource<KeyIn, ValueIn> keyValueSource;
 
     protected Mapper<KeyIn, ValueIn, ?, ?> mapper;
@@ -52,6 +54,11 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
             throw new IllegalStateException("mapper already set");
         this.mapper = mapper;
         return new MappingJobImpl<KeyIn, KeyOut, ValueOut>();
+    }
+
+    @Override
+    public String getJobId() {
+        return jobId;
     }
 
     @Override
@@ -131,6 +138,11 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
             implements MappingJob<EntryKey, Key, Value> {
 
         @Override
+        public String getJobId() {
+            return jobId;
+        }
+
+        @Override
         public MappingJob<EntryKey, Key, Value> onKeys(Iterable<EntryKey> keys) {
             addKeys((Iterable<KeyIn>) keys);
             return this;
@@ -186,6 +198,11 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
             implements ReducingJob<EntryKey, Key, Value> {
 
         @Override
+        public String getJobId() {
+            return jobId;
+        }
+
+        @Override
         public <ValueOut> SubmittableJob<EntryKey, Map<Key, ValueOut>> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
             if (reducerFactory == null)
@@ -228,6 +245,11 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected class SubmittableJobImpl<EntryKey, Value>
             implements SubmittableJob<EntryKey, Value> {
+
+        @Override
+        public String getJobId() {
+            return jobId;
+        }
 
         @Override
         public SubmittableJob<EntryKey, Value> onKeys(Iterable<EntryKey> keys) {

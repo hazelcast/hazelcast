@@ -46,6 +46,8 @@ public class ClientMapReduceRequest
 
     protected String name;
 
+    protected String jobId;
+
     protected List keys;
 
     protected KeyPredicate predicate;
@@ -63,10 +65,11 @@ public class ClientMapReduceRequest
     public ClientMapReduceRequest() {
     }
 
-    public ClientMapReduceRequest(String name, List keys, KeyPredicate predicate, Mapper mapper,
+    public ClientMapReduceRequest(String name, String jobId, List keys, KeyPredicate predicate, Mapper mapper,
                                   CombinerFactory combinerFactory, ReducerFactory reducerFactory,
                                   KeyValueSource keyValueSource, int chunkSize) {
         this.name = name;
+        this.jobId = jobId;
         this.keys = keys;
         this.predicate = predicate;
         this.mapper = mapper;
@@ -78,8 +81,8 @@ public class ClientMapReduceRequest
 
     @Override
     protected void invoke() {
-        OperationFactory factory = new KeyValueMapReduceOperationFactory(name, chunkSize, keys, predicate,
-                keyValueSource, mapper, combinerFactory);
+        OperationFactory factory = new KeyValueMapReduceOperationFactory(name, jobId, chunkSize,
+                keys, predicate, keyValueSource, mapper, combinerFactory);
 
         ClientEndpoint endpoint = getEndpoint();
         ClientEngine engine = getClientEngine();
@@ -138,6 +141,7 @@ public class ClientMapReduceRequest
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeUTF(jobId);
         out.writeObject(predicate);
         out.writeObject(mapper);
         out.writeObject(combinerFactory);
@@ -153,6 +157,7 @@ public class ClientMapReduceRequest
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        jobId = in.readUTF();
         predicate = in.readObject();
         mapper = in.readObject();
         combinerFactory = in.readObject();

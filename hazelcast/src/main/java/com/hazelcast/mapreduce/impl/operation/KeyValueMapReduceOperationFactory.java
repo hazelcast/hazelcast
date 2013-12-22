@@ -34,18 +34,18 @@ public class KeyValueMapReduceOperationFactory<KeyIn, ValueIn, KeyOut, ValueOut>
         super();
     }
 
-    public KeyValueMapReduceOperationFactory(String name, int chunkSize, List<KeyIn> keys,
-                                             KeyPredicate<KeyIn> predicate,
+    public KeyValueMapReduceOperationFactory(String name, String jobId, int chunkSize,
+                                             List<KeyIn> keys, KeyPredicate<KeyIn> predicate,
                                              KeyValueSource<KeyIn, ValueIn> keyValueSource,
                                              Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
                                              CombinerFactory<KeyOut, ValueOut, ?> combinerFactory) {
-        super(name, chunkSize, keys, predicate, keyValueSource, mapper, combinerFactory);
+        super(name, jobId, chunkSize, keys, predicate, keyValueSource, mapper, combinerFactory);
     }
 
     @Override
     public Operation createOperation() {
         return new KeyValueMapReduceOperation<KeyIn, ValueIn, KeyOut, ValueOut>(
-                name, chunkSize, keys, predicate, mapper, keyValueSource, combinerFactory);
+                name, jobId, chunkSize, keys, predicate, mapper, keyValueSource, combinerFactory);
     }
 
     @Override

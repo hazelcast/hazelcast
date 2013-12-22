@@ -31,6 +31,14 @@ import com.hazelcast.core.CompletableFuture;
 public interface SubmittableJob<EntryKey, ValueIn> {
 
     /**
+     * Returns the unique identifier for this mapreduce job. This jobId is used to identify the same
+     * job on all cluster nodes and is unique in the cluster.
+     *
+     * @return jobId for this job
+     */
+    String getJobId();
+
+    /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
      * the task setting them can improve execution speed.
      *

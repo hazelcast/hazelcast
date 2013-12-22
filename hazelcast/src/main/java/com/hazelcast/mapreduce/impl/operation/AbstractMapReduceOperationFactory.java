@@ -43,17 +43,20 @@ public abstract class AbstractMapReduceOperationFactory<KeyIn, ValueIn, KeyOut, 
 
     protected int chunkSize;
 
+    protected String jobId;
+
     protected String name;
 
     protected AbstractMapReduceOperationFactory() {
     }
 
-    protected AbstractMapReduceOperationFactory(String name, int chunkSize, List<KeyIn> keys,
-                                                KeyPredicate<KeyIn> predicate,
+    protected AbstractMapReduceOperationFactory(String name, String jobId, int chunkSize,
+                                                List<KeyIn> keys, KeyPredicate<KeyIn> predicate,
                                                 KeyValueSource<KeyIn, ValueIn> keyValueSource,
                                                 Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
                                                 CombinerFactory<KeyOut, ValueOut, ?> combinerFactory) {
         this.name = name;
+        this.jobId = jobId;
         this.chunkSize = chunkSize;
         this.keys = keys;
         this.predicate = predicate;
@@ -65,6 +68,7 @@ public abstract class AbstractMapReduceOperationFactory<KeyIn, ValueIn, KeyOut, 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeUTF(jobId);
         out.writeObject(mapper);
         out.writeObject(keyValueSource);
         out.writeObject(combinerFactory);
@@ -81,6 +85,7 @@ public abstract class AbstractMapReduceOperationFactory<KeyIn, ValueIn, KeyOut, 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        jobId = in.readUTF();
         mapper = in.readObject();
         keyValueSource = in.readObject();
         combinerFactory = in.readObject();

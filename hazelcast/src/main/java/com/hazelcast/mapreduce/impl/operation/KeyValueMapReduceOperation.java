@@ -33,12 +33,12 @@ public class KeyValueMapReduceOperation<KeyIn, ValueIn, KeyOut, ValueOut>
         super();
     }
 
-    public KeyValueMapReduceOperation(String name, int chunkSize, List<KeyIn> keys,
-                                      KeyPredicate<KeyIn> predicate,
+    public KeyValueMapReduceOperation(String name, String jobId, int chunkSize,
+                                      List<KeyIn> keys, KeyPredicate<KeyIn> predicate,
                                       Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
                                       KeyValueSource<KeyIn, ValueIn> keyValueSource,
                                       CombinerFactory<KeyOut, ValueOut, ?> combinerFactory) {
-        super(name, chunkSize, keys, predicate, mapper, combinerFactory);
+        super(name, jobId, chunkSize, keys, predicate, mapper, combinerFactory);
         this.keyValueSource = keyValueSource;
     }
 
@@ -55,7 +55,7 @@ public class KeyValueMapReduceOperation<KeyIn, ValueIn, KeyOut, ValueOut>
     }
 
     @Override
-    public void mappingPhase(Context<KeyOut, ValueOut> context) {
+    public void executeMappingPhase(Context<KeyOut, ValueOut> context) {
         while (keyValueSource.hasNext()) {
             if (matches(keyValueSource.key())) {
                 Map.Entry<KeyIn, ValueIn> entry = keyValueSource.element();

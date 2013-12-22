@@ -25,8 +25,10 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.AbstractJob;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.process.ProcessJob;
+import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
 
@@ -60,8 +62,8 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
         protected void invokeTask() throws Exception {
             ClientContext context = getContext();
             ClientInvocationService cis = context.getInvocationService();
-            ClientMapReduceRequest request = new ClientMapReduceRequest(name, new ArrayList(keys), predicate,
-                    mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
+            ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, new ArrayList(keys),
+                    predicate, mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
             cis.invokeOnRandomTarget(request);
         }
 

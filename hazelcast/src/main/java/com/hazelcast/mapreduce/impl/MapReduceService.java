@@ -21,6 +21,7 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
@@ -35,7 +36,7 @@ public class MapReduceService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
 
-    private final ConstructorFunction<String, JobTracker> constructor = new ConstructorFunction<String, JobTracker>() {
+    private final ConstructorFunction<String, JobTracker> trackerConstructor = new ConstructorFunction<String, JobTracker>() {
         @Override
         public JobTracker createNew(String arg) {
             JobTrackerConfig jobTrackerConfig = config.findJobTrackerConfig(arg);
@@ -43,7 +44,16 @@ public class MapReduceService implements ManagedService, RemoteService {
         }
     };
 
+    private final ConstructorFunction<JobSupervisorKey, JobSupervisor> supervisorConstructor = new ConstructorFunction<JobSupervisorKey, JobSupervisor>() {
+        @Override
+        public JobSupervisor createNew(JobSupervisorKey arg) {
+            JobTracker jobTracker = (JobTracker) createDistributedObject(arg.name);
+            return new JobSupervisor(arg.name, arg.jobId, jobTracker);
+        }
+    };
+
     private final ConcurrentMap<String, JobTracker> jobTrackers = new ConcurrentHashMap<String, JobTracker>();
+    private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final Config config;
@@ -53,6 +63,15 @@ public class MapReduceService implements ManagedService, RemoteService {
         this.config = config;
         this.nodeEngine = nodeEngine;
         this.hazelcastInstance = hazelcastInstance;
+    }
+
+    public JobTracker getJobTracker(String name) {
+        return (JobTracker) createDistributedObject(name);
+    }
+
+    public JobSupervisor getJobSupervisor(String name, String jobId) {
+        JobSupervisorKey key = new JobSupervisorKey(name, jobId);
+        return ConcurrencyUtil.getOrPutIfAbsent(jobSupervisors, key, supervisorConstructor);
     }
 
     @Override
@@ -73,7 +92,7 @@ public class MapReduceService implements ManagedService, RemoteService {
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        return ConcurrencyUtil.getOrPutSynchronized(jobTrackers, objectName, jobTrackers, constructor);
+        return ConcurrencyUtil.getOrPutSynchronized(jobTrackers, objectName, jobTrackers, trackerConstructor);
     }
 
     @Override
@@ -81,6 +100,16 @@ public class MapReduceService implements ManagedService, RemoteService {
         JobTracker jobTracker = jobTrackers.remove(objectName);
         if (jobTracker != null) {
             jobTracker.destroy();
+        }
+    }
+
+    private static class JobSupervisorKey {
+        private final String name;
+        private final String jobId;
+
+        private JobSupervisorKey(String name, String jobId) {
+            this.name = name;
+            this.jobId = jobId;
         }
     }
 

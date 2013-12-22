@@ -17,6 +17,11 @@
 package com.hazelcast.mapreduce.impl.operation;
 
 import com.hazelcast.mapreduce.*;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.mapreduce.impl.task.DefaultContext;
+import com.hazelcast.mapreduce.impl.task.JobSupervisor;
+import com.hazelcast.mapreduce.impl.task.MapCombineTask;
+import com.hazelcast.mapreduce.impl.task.MappingPhase;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -29,7 +34,9 @@ import java.util.Map;
 
 public abstract class AbstractMapReduceOperation<KeyIn, ValueIn, KeyOut, ValueOut>
         extends AbstractNamedOperation
-        implements PartitionAwareOperation {
+        implements PartitionAwareOperation, MappingPhase<KeyOut, ValueOut> {
+
+    protected String jobId;
 
     protected Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper;
 
@@ -41,17 +48,17 @@ public abstract class AbstractMapReduceOperation<KeyIn, ValueIn, KeyOut, ValueOu
 
     protected int chunkSize;
 
-    protected transient Object response;
-
     protected AbstractMapReduceOperation() {
     }
 
-    protected AbstractMapReduceOperation(String name, int chunkSize, List<KeyIn> keys,
-                                         KeyPredicate<KeyIn> predicate,
+    protected AbstractMapReduceOperation(String name, String jobId, int chunkSize,
+                                         List<KeyIn> keys, KeyPredicate<KeyIn> predicate,
                                          Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
                                          CombinerFactory<KeyOut, ValueOut, ?> combinerFactory) {
         super(name);
+        this.jobId = jobId;
         this.keys = keys;
+        this.chunkSize = chunkSize;
         this.predicate = predicate;
         this.mapper = mapper;
         this.combinerFactory = combinerFactory;
@@ -59,33 +66,21 @@ public abstract class AbstractMapReduceOperation<KeyIn, ValueIn, KeyOut, ValueOu
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     @Override
     public Object getResponse() {
-        return response;
+        return null;
     }
 
     @Override
     public final void run() throws Exception {
-        DefaultContext<KeyOut, ValueOut> context = createContext();
-
-        if (mapper instanceof LifecycleMapper) {
-            ((LifecycleMapper) mapper).initialize(context);
-        }
-        mappingPhase(context);
-        if (mapper instanceof LifecycleMapper) {
-            ((LifecycleMapper) mapper).finalized(context);
-        }
-
-        Map<KeyOut, Object> chunkMap = context.finish();
-        // TODO Send final chunk from this partition
-        // Wrap into LastChunkResponse object
-        response = chunkMap;
+        MapReduceService mapReduceService = getService();
+        JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
+        MapCombineTask task = new MapCombineTask(chunkSize, this, mapper, combinerFactory);
+        supervisor.executeMapCombineTask(task);
     }
-
-    protected abstract void mappingPhase(Context<KeyOut, ValueOut> context);
 
     protected boolean matches(KeyIn key) {
         if ((keys == null || keys.size() == 0) && predicate == null) {
@@ -102,18 +97,6 @@ public abstract class AbstractMapReduceOperation<KeyIn, ValueIn, KeyOut, ValueOu
             return predicate.evaluate(key);
         }
         return false;
-    }
-
-    protected DefaultContext<KeyOut, ValueOut> createContext() {
-        return new DefaultContext<KeyOut, ValueOut>(combinerFactory, this);
-    }
-
-    <Chunk> void onEmit(DefaultContext<KeyOut, ValueOut> context) {
-        if (context.getCollected() == chunkSize) {
-            Map<KeyOut, Chunk> chunkMap = context.requestChunk();
-            // TODO Send chunkMap to reducers
-            // Wrap into IntermediateChunkResponse object
-        }
     }
 
     @Override

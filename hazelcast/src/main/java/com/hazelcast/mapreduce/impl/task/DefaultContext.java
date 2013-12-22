@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce.impl.operation;
+package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
+import com.hazelcast.mapreduce.impl.operation.AbstractMapReduceOperation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,13 +30,13 @@ public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
 
     private final Map<KeyIn, Combiner<KeyIn, ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<KeyIn, ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
-    private final AbstractMapReduceOperation<?, ?, KeyIn, ValueIn> operation;
+    private final MapCombineTask mapCombineTask;
 
     private int collected = 0;
 
     protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory,
-                             AbstractMapReduceOperation<?, ?, KeyIn, ValueIn> operation) {
-        this.operation = operation;
+                             MapCombineTask mapCombineTask) {
+        this.mapCombineTask = mapCombineTask;
         this.combinerFactory = combinerFactory != null ?
                 combinerFactory : new CollectingCombinerFactory<KeyIn, ValueIn>();
     }
@@ -45,7 +46,7 @@ public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
         Combiner<KeyIn, ValueIn, ?> combiner = getOrCreateCombiner(key);
         combiner.combine(key, value);
         collected++;
-        operation.onEmit(this);
+        mapCombineTask.onEmit(this);
     }
 
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {
