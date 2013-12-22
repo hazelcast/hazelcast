@@ -18,13 +18,15 @@ package com.hazelcast.mapreduce.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.mapreduce.*;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
-import com.hazelcast.mapreduce.impl.operation.KeyValueMapReduceOperationFactory;
+import com.hazelcast.mapreduce.impl.operation.KeyValueMapReduceOperation;
+import com.hazelcast.mapreduce.impl.operation.MapReduceOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,8 +35,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import org.jruby.runtime.profile.Invocation;
 
 import java.io.IOException;
 import java.util.*;
@@ -81,8 +81,7 @@ public class ClientMapReduceRequest
 
     @Override
     protected void invoke() {
-        OperationFactory factory = new KeyValueMapReduceOperationFactory(name, jobId, chunkSize,
-                keys, predicate, keyValueSource, mapper, combinerFactory);
+        MapReduceOperationFactory factory = buildFactoryAdapter();
 
         ClientEndpoint endpoint = getEndpoint();
         ClientEngine engine = getClientEngine();
@@ -93,7 +92,7 @@ public class ClientMapReduceRequest
         Map<Integer, List> mappedKeys = MapReduceUtil.mapKeys(ps, keys);
         for (Map.Entry<Integer, List> entry : mappedKeys.entrySet()) {
             Operation op = factory.createOperation(entry.getKey(), entry.getValue());
-            InvocationBuilder builder = createInvocationBuilder(getServiceName(), op, entry.getKey());
+            InvocationBuilder builder = buildInvocationBuilder(getServiceName(), op, entry.getKey());
             futures.put(entry.getKey(), builder.invoke());
         }
 
@@ -116,7 +115,7 @@ public class ClientMapReduceRequest
         for (Integer partitionId : failedPartitions) {
             List keys = mappedKeys.get(partitionId);
             Operation operation = factory.createOperation(partitionId, keys);
-            InvocationBuilder builder = createInvocationBuilder(getServiceName(), operation, partitionId);
+            InvocationBuilder builder = buildInvocationBuilder(getServiceName(), operation, partitionId);
             results.put(partitionId, builder.invoke());
         }
 
@@ -181,11 +180,25 @@ public class ClientMapReduceRequest
         return MapReduceDataSerializerHook.CLIENT_MAP_REDUCE_REQUEST;
     }
 
+    private InvocationBuilder buildInvocationBuilder(String serviceName, Operation operation, int partitionId) {
+        return createInvocationBuilder(serviceName, operation, partitionId).setExecutorName(MapReduceUtil.buildExecutorName(name));
+    }
+
     private Object toObject(SerializationService ss, Object value) {
         if (value instanceof Data) {
             return ss.toObject((Data) value);
         }
         return value;
+    }
+
+    private MapReduceOperationFactory buildFactoryAdapter() {
+        return new MapReduceOperationFactory() {
+            @Override
+            public Operation createOperation(int partitionId, List keys) {
+                return new KeyValueMapReduceOperation(name, jobId, chunkSize,
+                        keys, predicate, mapper, keyValueSource, combinerFactory);
+            }
+        };
     }
 
 }

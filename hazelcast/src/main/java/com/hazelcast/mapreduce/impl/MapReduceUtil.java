@@ -22,6 +22,8 @@ import java.util.*;
 
 public final class MapReduceUtil {
 
+    private static final String EXECUTOR_NAME_PREFIX = "mapreduce::hz::";
+
     private MapReduceUtil() {
     }
 
@@ -37,6 +39,10 @@ public final class MapReduceUtil {
             selectedKeys.add(key);
         }
         return mappedKeys;
+    }
+
+    public static String buildExecutorName(String name) {
+        return EXECUTOR_NAME_PREFIX + name;
     }
 
 }
