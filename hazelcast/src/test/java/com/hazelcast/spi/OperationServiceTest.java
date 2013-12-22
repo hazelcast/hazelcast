@@ -1,28 +1,62 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionView;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class OperationServiceTest extends HazelcastTestSupport {
 
     @Test
-    public void test() throws InterruptedException {
-        HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances();
+    public void invokeOnLocalTargetWithCallback() throws Exception {
+        HazelcastInstance local = createHazelcastInstanceFactory(1).newHazelcastInstance();
 
-        System.out.println("Waiting");
-        waitForPartitionStabilization();
-        System.out.println("Completed waiting");
+        DummyOperation op = new DummyOperation();
+        OperationService operationService = getNode(local).nodeEngine.getOperationService();
+        Address target = getAddress(local);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Callback callback = new Callback() {
+            @Override
+            public void notify(Object object) {
+                latch.countDown();
+            }
+        };
+        Future f = operationService.createInvocationBuilder(null, op, target).setCallback(callback).invoke();
+        assertEquals(new Integer(10), f.get());
+        assertTrue("the callback failed to be called", latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
+    public void invokeOnRemoteTargetWithCallback() throws Exception {
+        HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances();
+        HazelcastInstance local = instances[0];
+        HazelcastInstance remote = instances[1];
+
+        DummyOperation op = new DummyOperation();
+        OperationService operationService = getNode(local).nodeEngine.getOperationService();
+        Address target = getAddress(remote);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Callback callback = new Callback() {
+            @Override
+            public void notify(Object object) {
+                latch.countDown();
+            }
+        };
+        Future f = operationService.createInvocationBuilder(null, op, target).setCallback(callback).invoke();
+        assertEquals(new Integer(10), f.get());
+        assertTrue("the callback failed to be called", latch.await(10, TimeUnit.SECONDS));
+    }
+
+     @Test
     public void invokeOnRemoteTarget() throws Exception {
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = instances[0];
@@ -30,7 +64,7 @@ public class OperationServiceTest extends HazelcastTestSupport {
 
         DummyOperation op = new DummyOperation();
         OperationService operationService = getNode(local).nodeEngine.getOperationService();
-        Future f = operationService.invokeOnTarget(null, op, new Address(remote.getCluster().getLocalMember().getSocketAddress()));
+        Future f = operationService.invokeOnTarget(null, op, getAddress(remote));
         assertEquals(new Integer(10), f.get());
     }
 
@@ -40,12 +74,12 @@ public class OperationServiceTest extends HazelcastTestSupport {
 
         DummyOperation op = new DummyOperation();
         OperationService operationService = getNode(local).nodeEngine.getOperationService();
-        Future f = operationService.invokeOnTarget(null, op, new Address(local.getCluster().getLocalMember().getSocketAddress()));
+        Future f = operationService.invokeOnTarget(null, op, getAddress(local));
         assertEquals(new Integer(10), f.get());
     }
 
     @Test
-    public void invokeOnLocalPartition()throws Exception{
+    public void invokeOnLocalPartition() throws Exception {
         HazelcastInstance local = createHazelcastInstanceFactory(1).newHazelcastInstance();
 
         DummyOperation op = new DummyOperation();
@@ -55,7 +89,7 @@ public class OperationServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void invokeOnRemotePartition()throws Exception{
+    public void invokeOnRemotePartition() throws Exception {
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = instances[0];
         HazelcastInstance remote = instances[1];
@@ -67,18 +101,36 @@ public class OperationServiceTest extends HazelcastTestSupport {
         int partitionId = findAnyAssignedPartition(remote);
         Future f = operationService.invokeOnPartition(null, op, partitionId);
         assertEquals(new Integer(10), f.get());
+
+        System.out.println("Successfully retrieved data from remote partition");
     }
 
-    private int findAnyAssignedPartition(HazelcastInstance hz){
-        for(Partition p: hz.getPartitionService().getPartitions()){
-           if(p.getOwner().localMember()){
-               return p.getPartitionId();
-           }
+    private int findAnyAssignedPartition(HazelcastInstance hz) {
+        for (Partition p : hz.getPartitionService().getPartitions()) {
+            System.out.println("Before");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("After");
+            Member owner = p.getOwner();
+            if (owner == null) {
+                continue;
+            }
+            if (owner.localMember()) {
+                return p.getPartitionId();
+            }
         }
 
         throw new RuntimeException("No owned partition found");
     }
 
+    private Address getAddress(HazelcastInstance hz) {
+        return new Address(hz.getCluster().getLocalMember().getSocketAddress());
+    }
+
+    //todo: needs to be changed by warmUpPartitions
     private void waitForPartitionStabilization() throws InterruptedException {
         System.out.println("Starting wait for partition stabilization");
         Thread.sleep(5000);
@@ -88,6 +140,9 @@ public class OperationServiceTest extends HazelcastTestSupport {
     public static class DummyOperation extends AbstractOperation {
         @Override
         public void run() throws Exception {
+            System.out.println("================================================");
+            System.out.println("DummyOperation has run");
+            System.out.println("================================================");
         }
 
         @Override
@@ -99,6 +154,5 @@ public class OperationServiceTest extends HazelcastTestSupport {
         public Object getResponse() {
             return new Integer(10);
         }
-
     }
 }

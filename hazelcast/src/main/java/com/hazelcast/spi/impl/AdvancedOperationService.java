@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -70,18 +71,22 @@ public class AdvancedOperationService extends AbstractOperationService {
     private final AtomicLong callIdGen = new AtomicLong(0);
     private final ConcurrentMap<Long, Operation> remoteOperations = new ConcurrentHashMap<>();
     private PartitionService partitionService;
+    private ClusterServiceImpl clusterService;
 
     public AdvancedOperationService(NodeEngineImpl nodeEngine) {
         super(nodeEngine);
 
         this.thisAddress = nodeEngine.getThisAddress();
+        if (thisAddress == null) {
+            throw new RuntimeException("thisAddress can't be null");
+        }
         int partitionCount = node.getGroupProperties().PARTITION_COUNT.getInteger();
         this.schedulers = new PartitionOperationQueue[partitionCount];
         int ringbufferSize = 16384;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             schedulers[partitionId] = new PartitionOperationQueue(partitionId, ringbufferSize);
         }
-        this.localCallOptimizationEnabled = true;
+        this.localCallOptimizationEnabled = false;
 
         this.operationThreads = new OperationThread[16];
         for (int k = 0; k < operationThreads.length; k++) {
@@ -89,7 +94,6 @@ public class AdvancedOperationService extends AbstractOperationService {
             operationThreads[k].start();
         }
     }
-
 
     private void executeOnOperationThread(Runnable runnable) {
         //todo: we need a better mechanism for finding a suitable threadpool.
@@ -99,8 +103,33 @@ public class AdvancedOperationService extends AbstractOperationService {
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId,
                                                               long callTimeout, int replicaIndex, int tryCount, long tryPauseMillis,
                                                               Callback<Object> callback) {
-        //todo: deal with the other arguments.
-        return invokeOnPartition(serviceName, op, partitionId);
+        isNotNull(op, "operation");
+
+        if (serviceName != null) {
+            op.setServiceName(serviceName);
+        }
+        op.setPartitionId(partitionId);
+        if (callback != null) {
+            ResponseHandlerFactory.setLocalResponseHandler(op, callback);
+        }
+
+        Address target = getAddress(partitionId, replicaIndex);
+        if (isLocal(target)) {
+            PartitionOperationQueue scheduler = schedulers[partitionId];
+            scheduler.schedule(op);
+        } else {
+            long callId = callIdGen.incrementAndGet();
+            remoteOperations.put(callId, op);
+
+            OperationAccessor.setCallId(op, callId);
+            OperationAccessor.setCallerAddress(op, thisAddress);
+            OperationAccessor.setCallTimeout(op, callTimeout);
+
+            //todo: we need to do something with return value.
+            send(op, target);
+        }
+
+        return op;
     }
 
     private Address getAddress(int partitionId, int replicaIndex) {
@@ -114,41 +143,28 @@ public class AdvancedOperationService extends AbstractOperationService {
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        isNotNull(op, "operation");
-
-        Address target = getAddress(partitionId, 0);
-        if (isLocal(target)) {
-            op.setServiceName(serviceName);
-            op.setPartitionId(partitionId);
-            PartitionOperationQueue scheduler = schedulers[partitionId];
-            scheduler.schedule(op);
-        } else {
-            long callId = callIdGen.incrementAndGet();
-            remoteOperations.put(callId, op);
-            OperationAccessor.setCallId(op, callId);
-            OperationAccessor.setCallerAddress(op, thisAddress);
-            //todo: we need to do something with return value.
-            //todo: is this a blocking call?
-            send(op, target);
-        }
-
-        return op;
+        return invokeOnPartition(
+                serviceName,
+                op,
+                partitionId,
+                AbstractInvocationBuilder.DEFAULT_CALL_TIMEOUT,
+                AbstractInvocationBuilder.DEFAULT_REPLICA_INDEX,
+                AbstractInvocationBuilder.DEFAULT_TRY_COUNT,
+                AbstractInvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
+                null);
     }
 
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target,
                                                            long callTimeout, int tryCount, long tryPauseMillis,
                                                            Callback<Object> callback) {
-        //todo: we need to deal with the other arguments.
-        return invokeOnTarget(serviceName, op, target);
-    }
-
-    @Override
-    public <E> InternalCompletableFuture<E> invokeOnTarget(final String serviceName, final Operation op, final Address target) {
         isNotNull(op, "operation");
         isNotNull(target, "target");
 
         if (serviceName != null) {
             op.setServiceName(serviceName);
+        }
+        if (callback != null) {
+            ResponseHandlerFactory.setLocalResponseHandler(op, callback);
         }
 
         if (isLocal(target)) {
@@ -166,6 +182,18 @@ public class AdvancedOperationService extends AbstractOperationService {
             send(op, target);
         }
         return op;
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnTarget(final String serviceName, final Operation op, final Address target) {
+        return invokeOnTarget(
+                serviceName,
+                op,
+                target,
+                AbstractInvocationBuilder.DEFAULT_CALL_TIMEOUT,
+                AbstractInvocationBuilder.DEFAULT_TRY_COUNT,
+                AbstractInvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
+                null);
     }
 
     @Override
@@ -190,7 +218,6 @@ public class AdvancedOperationService extends AbstractOperationService {
         }
     }
 
-
     private void handleOperationError(Operation op, Exception error) {
         throw new RuntimeException(error);
     }
@@ -208,7 +235,9 @@ public class AdvancedOperationService extends AbstractOperationService {
 
     @Override
     public void start() {
-        partitionService = node.getPartitionService();
+        logger.finest("Starting AdvancedOperationService...");
+        this.partitionService = node.getPartitionService();
+        this.clusterService = node.getClusterService();
     }
 
     @Override
@@ -217,13 +246,23 @@ public class AdvancedOperationService extends AbstractOperationService {
     }
 
     @Override
-    public void notifyRemoteCall(long callId, Object response) {
-        Operation op = remoteOperations.get(callId);
+    public void notifyRemoteCall(final long callId, Object response) {
+        final Operation op = remoteOperations.get(callId);
+
+        if (op == null) {
+            return;
+        }
 
         if (response instanceof Response) {
             response = ((Response) response).response;
         }
+
         op.set(response, false);
+
+        final ResponseHandler responseHandler = op.getResponseHandler();
+        if (responseHandler != null) {
+            responseHandler.sendResponse(response);
+        }
     }
 
     @Override
@@ -238,17 +277,22 @@ public class AdvancedOperationService extends AbstractOperationService {
     }
 
     private void doRunOperation(Operation op) {
-        //System.out.println("doRunOperation:" + op);
+        System.out.println(op);
         try {
             op.beforeRun();
             op.run();
             op.afterRun();
+
+            ResponseHandler responseHandler = op.getResponseHandler();
+            Object response = null;
+
             if (op.returnsResponse()) {
-                ResponseHandler responseHandler = op.getResponseHandler();
-                if (responseHandler != null) {
-                    responseHandler.sendResponse(op.getResponse());
-                }
-                op.set(op.getResponse(), false);
+                response = op.getResponse();
+                op.set(response, false);
+            }
+
+            if (responseHandler != null) {
+                responseHandler.sendResponse(response);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -256,9 +300,18 @@ public class AdvancedOperationService extends AbstractOperationService {
     }
 
     @Override
-    public void executeOperation(Operation op) {
-        System.out.println("executeOperation:" + op);
-        throw new UnsupportedOperationException();
+    public void executeOperation(final Operation op) {
+        final int partitionId = getPartitionIdForExecution(op);
+        op.setNodeEngine(nodeEngine);
+        if (partitionId == -1) {
+            defaultExecutor.execute(new Runnable() {
+                public void run() {
+                    doRunOperation(op);
+                }
+            });
+        } else {
+            schedulers[partitionId].schedule(op);
+        }
     }
 
     @Override
@@ -337,7 +390,7 @@ public class AdvancedOperationService extends AbstractOperationService {
                     processResponse((ResponseOperation) op);
                 } else {
                     ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-                    if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
+                    if (!OperationAccessor.isJoinOperation(op) && clusterService.getMember(op.getCallerAddress()) == null) {
                         final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
                                 op.getClass().getName(), op.getServiceName());
                         handleOperationError(op, error);
@@ -352,7 +405,9 @@ public class AdvancedOperationService extends AbstractOperationService {
 
         void processResponse(ResponseOperation response) {
             try {
-                doRunOperation(response);
+                response.beforeRun();
+                response.run();
+                response.afterRun();
             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
             }
@@ -714,7 +769,8 @@ public class AdvancedOperationService extends AbstractOperationService {
                 OperationAccessor.setCallerAddress(op, caller);
                 OperationAccessor.setConnection(op, conn);
                 ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-                if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
+
+                if (!OperationAccessor.isJoinOperation(op) && clusterService.getMember(op.getCallerAddress()) == null) {
                     final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
                             op.getClass().getName(), op.getServiceName());
                     handleOperationError(op, error);
@@ -726,15 +782,26 @@ public class AdvancedOperationService extends AbstractOperationService {
             }
         }
 
-        private void runOperation(final Operation op,  final boolean callerRuns) {
+        private void runOperation(final Operation op, final boolean callerRuns) {
+            System.out.println(op);
             try {
                 op.setNodeEngine(nodeEngine);
                 op.setPartitionId(partitionId);
                 op.beforeRun();
                 op.run();
-                Object response = op.returnsResponse() ? op.getResponse() : null;
                 op.afterRun();
-                op.set(response, callerRuns);
+
+                ResponseHandler responseHandler = op.getResponseHandler();
+
+                Object response = null;
+                if (op.returnsResponse()) {
+                    response = op.getResponse();
+                    op.set(response, callerRuns);
+                }
+
+                if (responseHandler != null) {
+                    responseHandler.sendResponse(response);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

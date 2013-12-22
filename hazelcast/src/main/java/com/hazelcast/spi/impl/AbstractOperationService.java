@@ -6,7 +6,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -19,7 +18,7 @@ public abstract class AbstractOperationService implements InternalOperationServi
     public AbstractOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
-        this.logger = node.getLogger(getClass().getName());
+        this.logger = node.getLogger(getClass());
     }
 
     @Override
@@ -61,7 +60,12 @@ public abstract class AbstractOperationService implements InternalOperationServi
     }
 
     @Override
+    public void shutdown() {
+        //no-op
+    }
+
+    @Override
     public void start() {
-        //nop-op
+        //no-op
     }
 }
