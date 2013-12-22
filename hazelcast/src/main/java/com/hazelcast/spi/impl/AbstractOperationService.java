@@ -28,7 +28,13 @@ public abstract class AbstractOperationService implements InternalOperationServi
             logger.warning("No target available for partition: " + partitionId + " and replica: " + replicaIndex);
             return false;
         }
-        return send(op, target);
+        Data data = nodeEngine.toData(op);
+        Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
+        packet.setHeader(Packet.HEADER_OP);
+        if (op instanceof ResponseOperation) {
+            packet.setHeader(Packet.HEADER_RESPONSE);
+        }
+        return nodeEngine.send(packet, node.getConnectionManager().getOrConnect(target));
     }
 
     @Override

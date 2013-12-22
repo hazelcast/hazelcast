@@ -22,7 +22,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * <h1>Disruptor</h1>
- * The PartitionOperationQueue uses a disruptor to exchange work (operations) with operation threads.
+ * The PartitionOperationScheduler uses a disruptor to exchange work (operations) with operation threads.
  * <p/>
  * There are 2 differences:
  * <ol>
@@ -31,7 +31,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * and in the disruptor implementation, there is a separate array with the same size as the ringbuffer called
  * </li>
  * <li>
- * Another difference is that in the sequence field we also encode if a PartitionOperationQueue is scheduled to
+ * Another difference is that in the sequence field we also encode if a PartitionOperationScheduler is scheduled to
  * a thread. This is needed for the caller runs optimization. With this optimization you need to be able to
  * atomically either publish the work and potentially set the scheduled flag, or to set the scheduled flag and
  * run the operation in the calling thread.
@@ -60,7 +60,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class AdvancedOperationService extends AbstractOperationService {
 
-    private final PartitionOperationQueue[] schedulers;
+    private final PartitionOperationScheduler[] schedulers;
     private final boolean localCallOptimizationEnabled;
     private final OperationThread[] operationThreads;
 
@@ -81,10 +81,10 @@ public class AdvancedOperationService extends AbstractOperationService {
             throw new RuntimeException("thisAddress can't be null");
         }
         int partitionCount = node.getGroupProperties().PARTITION_COUNT.getInteger();
-        this.schedulers = new PartitionOperationQueue[partitionCount];
-        int ringbufferSize = 16384;
+        this.schedulers = new PartitionOperationScheduler[partitionCount];
+        int ringbufferSize = 8192;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            schedulers[partitionId] = new PartitionOperationQueue(partitionId, ringbufferSize);
+            schedulers[partitionId] = new PartitionOperationScheduler(partitionId, ringbufferSize);
         }
         this.localCallOptimizationEnabled = false;
 
@@ -115,7 +115,7 @@ public class AdvancedOperationService extends AbstractOperationService {
 
         Address target = getAddress(partitionId, replicaIndex);
         if (isLocal(target)) {
-            PartitionOperationQueue scheduler = schedulers[partitionId];
+            PartitionOperationScheduler scheduler = schedulers[partitionId];
             scheduler.schedule(op);
         } else {
             long callId = callIdGen.incrementAndGet();
@@ -124,9 +124,8 @@ public class AdvancedOperationService extends AbstractOperationService {
             OperationAccessor.setCallId(op, callId);
             OperationAccessor.setCallerAddress(op, thisAddress);
             OperationAccessor.setCallTimeout(op, callTimeout);
-
             //todo: we need to do something with return value.
-            send(op, target);
+            send(op, partitionId,replicaIndex);
         }
 
         return op;
@@ -247,7 +246,9 @@ public class AdvancedOperationService extends AbstractOperationService {
 
     @Override
     public void notifyRemoteCall(final long callId, Object response) {
-        final Operation op = remoteOperations.get(callId);
+        //todo: we are removing the operation immediately but in the future you only want
+        //todo it e.g. when all backups have returned.
+        final Operation op = remoteOperations.remove(callId);
 
         if (op == null) {
             return;
@@ -277,7 +278,7 @@ public class AdvancedOperationService extends AbstractOperationService {
     }
 
     private void doRunOperation(Operation op) {
-        System.out.println(op);
+        //System.out.println(op);
         try {
             op.beforeRun();
             op.run();
@@ -522,7 +523,7 @@ public class AdvancedOperationService extends AbstractOperationService {
 
     /**
      * A Scheduler responsible for scheduling operations for a specific partitions.
-     * The PartitionOperationQueue will guarantee that at any given moment, at
+     * The PartitionOperationScheduler will guarantee that at any given moment, at
      * most 1 thread will be active in that partition.
      * <p/>
      * todo:
@@ -542,7 +543,7 @@ public class AdvancedOperationService extends AbstractOperationService {
      * instead of waiting for more work, it could try to 'steal' another partitionoperationscheduler
      * that has pending work.
      */
-    public class PartitionOperationQueue implements Runnable {
+    public class PartitionOperationScheduler implements Runnable {
         private final int partitionId;
 
         private final Slot[] ringbuffer;
@@ -554,7 +555,7 @@ public class AdvancedOperationService extends AbstractOperationService {
 
         private final ConcurrentLinkedQueue priorityQueue = new ConcurrentLinkedQueue();
 
-        public PartitionOperationQueue(final int partitionId, int ringBufferSize) {
+        public PartitionOperationScheduler(final int partitionId, int ringBufferSize) {
             this.partitionId = partitionId;
             this.ringbuffer = new Slot[ringBufferSize];
 
@@ -783,9 +784,10 @@ public class AdvancedOperationService extends AbstractOperationService {
         }
 
         private void runOperation(final Operation op, final boolean callerRuns) {
-            System.out.println(op);
+
+            //System.out.println(op);
             try {
-                op.setNodeEngine(nodeEngine);
+                 op.setNodeEngine(nodeEngine);
                 op.setPartitionId(partitionId);
                 op.beforeRun();
                 op.run();
