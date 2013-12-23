@@ -303,7 +303,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         }
 
         public boolean equals(Object o){
-            if(o instanceof Delayed){
+            if(o!=null && o instanceof Delayed){
                 return this.compareTo((Delayed)o)==0;
             }
             return false;
