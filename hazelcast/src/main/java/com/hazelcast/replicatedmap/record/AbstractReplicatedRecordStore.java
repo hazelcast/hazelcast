@@ -147,6 +147,13 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         long time = System.currentTimeMillis();
         checkState();
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
+
+        // Force return null on ttl expiration (but before cleanup thread run)
+        long ttlMillis = replicatedRecord == null ? 0 : replicatedRecord.getTtlMillis();
+        if (ttlMillis > 0 && System.currentTimeMillis() - replicatedRecord.getUpdateTime() > ttlMillis) {
+            replicatedRecord = null;
+        }
+
         Object value = replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
         if (replicatedMapConfig.isStatisticsEnabled()) {
             mapStats.incrementGets(System.currentTimeMillis() - time);
