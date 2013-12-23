@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.UTFUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -36,55 +35,62 @@ import static org.junit.Assert.assertEquals;
 public class UTFUtilTest {
 
     private static final Random RANDOM = new Random(-System.nanoTime());
+    private static final int BENCHMARK_ROUNDS = 1; // 100;
 
     @Test
     public void testShortSizedText_1Chunk() throws Exception {
-        for (int i = 2; i < 100; i += 2) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-            DataOutputStream dos = new DataOutputStream(baos);
+        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
+            for (int i = 2; i < 100; i += 2) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+                DataOutputStream dos = new DataOutputStream(baos);
 
-            String randomString = random(i * 100);
-            UTFUtil.writeUTF(dos, randomString);
+                String randomString = random(i * 100);
+                UTFUtil.writeUTF(dos, randomString);
 
-            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            DataInputStream dis = new DataInputStream(bais);
-            String result = UTFUtil.readUTF(dis);
+                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                DataInputStream dis = new DataInputStream(bais);
+                String result = UTFUtil.readUTF(dis);
 
-            assertEquals(randomString, result);
+                assertEquals(randomString, result);
+            }
         }
     }
 
     @Test
     public void testMiddleSizedText_2Chunks() throws Exception {
-        for (int i = 170; i < 300; i += 2) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-            DataOutputStream dos = new DataOutputStream(baos);
+        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
+            for (int i = 170; i < 300; i += 2) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+                DataOutputStream dos = new DataOutputStream(baos);
 
-            String randomString = random(i * 100);
-            UTFUtil.writeUTF(dos, randomString);
+                String randomString = random(i * 100);
+                UTFUtil.writeUTF(dos, randomString);
 
-            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            DataInputStream dis = new DataInputStream(bais);
-            String result = UTFUtil.readUTF(dis);
+                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                DataInputStream dis = new DataInputStream(bais);
+                String result = UTFUtil.readUTF(dis);
 
-            assertEquals(randomString, result);
+                assertEquals(randomString, result);
+            }
         }
     }
 
     @Test
     public void testLongSizedText_min3Chunks() throws Exception {
-        for (int i = 330; i < 900; i += 5) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-            DataOutputStream dos = new DataOutputStream(baos);
+        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
+            for (int i = 330; i < 900; i += 5) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+                DataOutputStream dos = new DataOutputStream(baos);
 
-            String randomString = random(i * 100);
-            UTFUtil.writeUTF(dos, randomString);
+                String randomString = random(i * 100);
+                UTFUtil.writeUTF(dos, randomString);
 
-            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            DataInputStream dis = new DataInputStream(bais);
-            String result = UTFUtil.readUTF(dis);
+                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                DataInputStream dis = new DataInputStream(bais);
+                String result = UTFUtil.readUTF(dis);
 
-            assertEquals(randomString, result);
+                assertEquals(randomString, result);
+            }
         }
     }
 
@@ -122,9 +128,9 @@ public class UTFUtilTest {
             } else {
                 ch = chars[random.nextInt(gap) + start];
             }
-            if ((letters && Character.isLetter(ch))
-                    || (numbers && Character.isDigit(ch))
-                    || (!letters && !numbers)) {
+            //if ((letters && Character.isLetter(ch))
+            //        || (numbers && Character.isDigit(ch))
+            //        || (!letters && !numbers)) {
                 if (ch >= 56320 && ch <= 57343) {
                     if (count == 0) {
                         count++;
@@ -149,9 +155,9 @@ public class UTFUtilTest {
                 } else {
                     buffer[count] = ch;
                 }
-            } else {
-                count++;
-            }
+            //} else {
+            //    count++;
+            //}
         }
         return new String(buffer);
     }
