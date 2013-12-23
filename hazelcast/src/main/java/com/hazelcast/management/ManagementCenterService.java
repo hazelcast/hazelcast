@@ -530,7 +530,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
         private ByteArrayOutputStream getStateAsCompressedArray() throws IOException {
             TimedMemberState ts = getTimedMemberState();
-            final JsonWriter jsonWriter = new JsonWriter();
+            final JsonWriter jsonWriter = new JsonWriter(1000);
             jsonWriter.write(ts);
             final String jsonString = jsonWriter.getJsonString();
             final ByteArrayOutputStream compressByteArray = new ByteArrayOutputStream();

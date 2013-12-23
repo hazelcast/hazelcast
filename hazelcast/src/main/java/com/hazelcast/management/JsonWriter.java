@@ -11,7 +11,15 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 
 public class JsonWriter {
-    private StringBuilder jsonString = new StringBuilder();
+    private final StringBuilder jsonString;
+
+    public JsonWriter() {
+        jsonString = new StringBuilder();
+    }
+
+    public JsonWriter(int capacity) {
+        jsonString = new StringBuilder(capacity);
+    }
 
     public void write(Object o) {
         if (o instanceof JsonWritable) {
@@ -28,14 +36,14 @@ public class JsonWriter {
     }
 
     public void write(String name, Object o) {
-        if(o == null) return;
+        if (o == null) return;
         jsonString.append("\"").append(name).append("\"").append(":");
         write(o);
         jsonString.append(',');
     }
 
     public void write(String name, AtomicLong o) {
-        if(o == null) return;
+        if (o == null) return;
         jsonString.append("\"").append(name).append("\"").append(":");
         jsonString.append("{\"value\":");
         write(o);
