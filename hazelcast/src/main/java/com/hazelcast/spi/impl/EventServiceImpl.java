@@ -22,6 +22,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -130,7 +131,7 @@ public class EventServiceImpl implements EventService {
         if (segment != null) {
             final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
             if (reg != null && !reg.isLocalOnly()) {
-                invokeDeregistrationOnOtherNodes(serviceName, topic, String.valueOf(id));
+                invokeDeregistrationOnOtherNodes(reg, serviceName, topic, String.valueOf(id));
             }
             return reg != null;
         }
@@ -151,50 +152,74 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
-                        new RegistrationOperation(reg), member.getAddress());
-                calls.add(f);
+    private void invokeRegistrationOnOtherNodes(String serviceName, final Registration reg) {
+        if (!tryToSendRegistrationOperationToSingleAddressOnly(serviceName, reg, new RegistrationOperation(reg))) {
+            Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+            Collection<Future> calls = new ArrayList<Future>(members.size());
+            for (MemberImpl member : members) {
+                if (!member.localMember()) {
+                    Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                            new RegistrationOperation(reg), member.getAddress());
+                    calls.add(f);
+                }
             }
-        }
-        for (Future f : calls) {
-            try {
-                f.get(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            } catch (TimeoutException ignored) {
-            } catch (MemberLeftException e) {
-                logger.finest("Member left while registering listener...", e);
-            } catch (ExecutionException e) {
-                throw new HazelcastException(e);
+            for (Future f : calls) {
+                getRegistrationFuture(f, "Member left while registering listener...");
             }
         }
     }
 
-    private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
-                        new DeregistrationOperation(topic, id), member.getAddress());
-                calls.add(f);
+    private Address getRegistrationAddressIfPossible(Registration registration) {
+        EventFilter filter = registration.getFilter();
+        if (filter != null && filter instanceof EntryEventFilter) {
+            EntryEventFilter entryEventFilter = (EntryEventFilter) filter;
+            if (entryEventFilter.getKey() != null) {
+                Data key = entryEventFilter.getKey();
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+                return nodeEngine.getPartitionService().getPartitionOwner(partitionId);
             }
         }
-        for (Future f : calls) {
-            try {
-                f.get(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            } catch (TimeoutException ignored) {
-            } catch (MemberLeftException e) {
-                logger.finest("Member left while de-registering listener...", e);
-            } catch (ExecutionException e) {
-                throw new HazelcastException(e);
+        return null;
+    }
+
+    private void getRegistrationFuture(Future f, String errorOnMemberLeft) {
+        try {
+            f.get(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        } catch (TimeoutException ignored) {
+        } catch (MemberLeftException e) {
+            logger.finest(errorOnMemberLeft, e);
+        } catch (ExecutionException e) {
+            throw new HazelcastException(e);
+        }
+    }
+
+
+    private void invokeDeregistrationOnOtherNodes(Registration reg, String serviceName, final String topic, final String id) {
+        if (!tryToSendRegistrationOperationToSingleAddressOnly(serviceName, reg, new DeregistrationOperation(topic, id))) {
+            Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+            Collection<Future> calls = new ArrayList<Future>(members.size());
+            for (MemberImpl member : members) {
+                if (!member.localMember()) {
+                    Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                            new DeregistrationOperation(topic, id), member.getAddress());
+                    calls.add(f);
+                }
+            }
+            for (Future f : calls) {
+                getRegistrationFuture(f, "Member left while de-registering listener...");
             }
         }
+    }
+
+    private boolean tryToSendRegistrationOperationToSingleAddressOnly(String serviceName, Registration registration, Operation operation) {
+        Address registrationAddressIfPossible = getRegistrationAddressIfPossible(registration);
+        if (registrationAddressIfPossible != null) {
+            Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName, operation, registrationAddressIfPossible);
+            getRegistrationFuture(f, "Member left while (de-)registering listener...");
+            return true;
+        }
+        return false;
     }
 
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
