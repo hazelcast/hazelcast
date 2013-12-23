@@ -66,6 +66,4 @@ public interface ClientEngine {
 
     SecurityContext getSecurityContext();
 
-    void sendResponse(ClientEndpoint endpoint, Object response);
-
 }

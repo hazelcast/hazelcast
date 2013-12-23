@@ -37,7 +37,7 @@ import java.util.List;
 
 public final class ClientEndpoint implements Client {
 
-    private final ClientEngine clientEngine;
+    private final ClientEngineImpl clientEngine;
     private final Connection conn;
     private String uuid;
     private LoginContext loginContext = null;
@@ -50,7 +50,7 @@ public final class ClientEndpoint implements Client {
     private List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
 
 
-    ClientEndpoint(ClientEngine clientEngine, Connection conn, String uuid) {
+    ClientEndpoint(ClientEngineImpl clientEngine, Connection conn, String uuid) {
         this.clientEngine = clientEngine;
         this.conn = conn;
         socketAddress = conn instanceof TcpIpConnection ?
@@ -177,6 +177,16 @@ public final class ClientEndpoint implements Client {
 
     private ILogger getLogger() {
         return clientEngine.getLogger(getClass());
+    }
+
+    public void sendResponse(Object response, long callId){
+        if (response instanceof Throwable) {
+            response = ClientExceptionConverters.get(getClientType()).convert((Throwable) response);
+        }
+        if (response == null) {
+            response = ClientEngineImpl.NULL;
+        }
+        clientEngine.sendResponse(this, new ClientResponse(response, callId));
     }
 
     public String toString() {
