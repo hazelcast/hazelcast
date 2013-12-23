@@ -48,11 +48,13 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
             if(list.isEmpty()){
                 logger.warning("No EC2 instances found!");
             }else{
-                StringBuilder sb = new StringBuilder("Found the following EC2 instances:\n");
-                for(String ip: list){
-                    sb.append("    ").append(ip).append("\n");
+                if(logger.isFinestEnabled()){
+                    StringBuilder sb = new StringBuilder("Found the following EC2 instances:\n");
+                    for(String ip: list){
+                        sb.append("    ").append(ip).append("\n");
+                    }
+                    logger.finest(sb.toString());
                 }
-                logger.finest(sb.toString());
             }
             return list;
         } catch (Exception e) {
