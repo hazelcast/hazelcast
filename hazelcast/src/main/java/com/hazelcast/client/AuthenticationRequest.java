@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -60,7 +61,6 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         ClientEngineImpl clientEngine = getService();
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        clientEngine.sendResponse(endpoint, clientEngine.getThisAddress());
         boolean authenticated;
         if (credentials == null) {
             authenticated = false;
@@ -122,7 +122,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
             }
             endpoint.authenticated(principal, firstConnection);
             clientEngine.bind(endpoint);
-            return principal;
+            return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
         } else {
             clientEngine.removeEndpoint(connection);
             return new AuthenticationException("Invalid credentials!");

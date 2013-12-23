@@ -42,7 +42,7 @@ public class GetDistributedObjectsRequest extends ClientRequest implements Porta
             dataArrayList.add(serializationService.toData(distributedObjectInfo));
         }
         SerializableCollection collection = new SerializableCollection(dataArrayList);
-        clientEngine.sendResponse(endpoint, collection);
+        endpoint.sendResponse(collection, getCallId());
     }
 
     @Override

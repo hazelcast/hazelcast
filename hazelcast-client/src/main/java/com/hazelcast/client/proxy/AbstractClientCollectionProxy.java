@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.client.*;
@@ -26,6 +27,7 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
+import java.util.concurrent.Future;
 
 /**
  * @ali 9/4/13
@@ -156,13 +158,14 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     protected void onDestroy() {
     }
 
-    protected  <T> T invoke(Object req) {
+    protected  <T> T invoke(ClientRequest req) {
         if (req instanceof CollectionRequest){
             CollectionRequest request = (CollectionRequest)req;
             request.setServiceName(getServiceName());
         }
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());
+            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

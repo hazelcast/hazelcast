@@ -16,23 +16,21 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.nio.Address;
+
+import java.util.concurrent.Future;
 
 /**
  * @author mdogan 5/16/13
  */
 public interface ClientInvocationService {
 
-    <T> T invokeOnRandomTarget(Object request) throws Exception;
+    <T> Future<T> invokeOnRandomTarget(ClientRequest request) throws Exception;
 
-    <T> T invokeOnTarget(Object request, Address target) throws Exception;
+    <T> Future<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
 
-    <T> T invokeOnKeyOwner(Object request, Object key) throws Exception;
+    <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception;
 
-    void invokeOnRandomTarget(Object request, ResponseHandler handler) throws Exception;
-
-    void invokeOnTarget(Object request, Address target, ResponseHandler handler) throws Exception;
-
-    void invokeOnKeyOwner(Object request, Object key, ResponseHandler handler) throws Exception;
 
 }

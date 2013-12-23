@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.*;
@@ -28,6 +29,7 @@ import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -244,9 +246,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     protected void onDestroy() {
     }
 
-    private <T> T invoke(Object req){
+    private <T> T invoke(ClientRequest req){
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());
+            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

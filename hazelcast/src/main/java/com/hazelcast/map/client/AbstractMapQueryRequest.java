@@ -105,7 +105,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
-        getClientEngine().sendResponse(endpoint, result);
+        endpoint.sendResponse(result, getCallId());
     }
 
     protected abstract Predicate getPredicate();

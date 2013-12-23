@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.atomiclong.client.*;
 import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
@@ -29,6 +30,8 @@ import com.hazelcast.core.Function;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -127,9 +130,10 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     protected void onDestroy() {
     }
 
-    private <T> T invoke(Object req){
+    private <T> T invoke(ClientRequest req){
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
+            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

@@ -54,7 +54,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
                 if (endpoint.live()){
                     Data messageData = clientEngine.toData(message.getMessageObject());
                     PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), message.getPublishingMember().getUuid());
-                    clientEngine.sendResponse(endpoint,portableMessage);
+//                    clientEngine.sendResponse(endpoint,portableMessage); //TODO
                 }
             }
         };

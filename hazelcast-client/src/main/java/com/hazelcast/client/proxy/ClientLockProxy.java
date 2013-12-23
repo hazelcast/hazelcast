@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.lock.client.*;
 import com.hazelcast.core.ICondition;
@@ -24,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -128,9 +130,10 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private <T> T invoke(Object req) {
+    private <T> T invoke(ClientRequest req) {
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getKeyData());
+            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getKeyData());
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

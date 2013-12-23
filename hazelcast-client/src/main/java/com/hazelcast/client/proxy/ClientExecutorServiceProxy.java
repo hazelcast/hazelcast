@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.*;
@@ -366,17 +367,19 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return getContext().getSerializationService().toData(o);
     }
 
-    private <T> T invoke(Object request, Address target){
+    private <T> T invoke(ClientRequest request, Address target){
         try {
-            return getContext().getInvocationService().invokeOnTarget(request, target);
+            final Future<T> future = getContext().getInvocationService().invokeOnTarget(request, target);
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private <T> T invoke(Object request){
+    private <T> T invoke(ClientRequest request){
         try {
-            return getContext().getInvocationService().invokeOnRandomTarget(request);
+            final Future<T> future = getContext().getInvocationService().invokeOnRandomTarget(request);
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

@@ -108,7 +108,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
             socketInterceptor.onConnect(connection.getSocket());
         }
         connection.init();
-        authenticator.auth(connection);
+//        authenticator.auth(connection);
         return connection;
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.DataAdapter;
 
 import java.util.Collection;
 
@@ -37,4 +38,6 @@ public interface ClientClusterService {
     int getSize();
 
     long getClusterTime();
+
+    void handlePacket(DataAdapter packet);
 }

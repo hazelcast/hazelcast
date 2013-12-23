@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.multimap.operations.client.*;
@@ -32,6 +33,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -221,17 +223,19 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     protected void onDestroy() {
     }
 
-    private <T> T invoke(Object req, Data key) {
+    private <T> T invoke(ClientRequest req, Data key) {
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, key);
+            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, key);
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private <T> T invoke(Object req) {
+    private <T> T invoke(ClientRequest req) {
         try {
-            return getContext().getInvocationService().invokeOnRandomTarget(req);
+            final Future<T> future = getContext().getInvocationService().invokeOnRandomTarget(req);
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

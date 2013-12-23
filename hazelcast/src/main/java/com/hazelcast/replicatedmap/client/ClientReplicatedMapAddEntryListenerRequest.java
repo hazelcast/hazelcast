@@ -61,7 +61,7 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
                     ReplicatedMapPortableEntryEvent portableEntryEvent =
                             new ReplicatedMapPortableEntryEvent(key, value, oldValue,
                                     event.getEventType(), event.getMember().getUuid());
-                    clientEngine.sendResponse(endpoint, portableEntryEvent);
+//                    clientEngine.sendResponse(endpoint, portableEntryEvent); //TODO
                 }
             }
 

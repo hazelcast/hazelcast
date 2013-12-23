@@ -17,6 +17,7 @@
 package com.hazelcast.client.connection;
 
 import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.connection.nio.ClientConnection;
 
 import java.io.IOException;
 
@@ -25,6 +26,6 @@ import java.io.IOException;
  */
 public interface Authenticator {
 
-    void auth(Connection connection) throws AuthenticationException, IOException;
+    void auth(ClientConnection connection) throws AuthenticationException, IOException;
 
 }

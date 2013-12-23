@@ -59,11 +59,11 @@ public final class ListenerSupport  {
                 while (active && !Thread.currentThread().isInterrupted()) {
                     try {
                         EventResponseHandler eventResponseHandler = new EventResponseHandler();
-                        if (partitionKey == null){
-                            context.getInvocationService().invokeOnRandomTarget(registrationRequest, eventResponseHandler);
-                        } else {
-                            context.getInvocationService().invokeOnKeyOwner(registrationRequest, partitionKey, eventResponseHandler);
-                        }
+//                        if (partitionKey == null){
+//                            context.getInvocationService().invokeOnRandomTarget(registrationRequest, eventResponseHandler);
+//                        } else {
+//                            context.getInvocationService().invokeOnKeyOwner(registrationRequest, partitionKey, eventResponseHandler);
+//                        }
                     } catch (Exception e) {
                         if (callback != null) {
                             callback.notify(e);

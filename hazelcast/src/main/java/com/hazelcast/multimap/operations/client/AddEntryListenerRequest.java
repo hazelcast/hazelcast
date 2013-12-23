@@ -81,7 +81,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
                     Data value = clientEngine.toData(event.getValue());
                     Data oldValue = clientEngine.toData(event.getOldValue());
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
-                    clientEngine.sendResponse(endpoint, portableEntryEvent);
+//                    clientEngine.sendResponse(endpoint, portableEntryEvent); //TODO
                 }
             }
         };

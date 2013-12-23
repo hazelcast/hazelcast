@@ -21,6 +21,7 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.DummyClientConnectionManager;
 import com.hazelcast.client.connection.SmartClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.*;
@@ -66,6 +67,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -86,6 +88,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final LifecycleServiceImpl lifecycleService;
     private final SerializationService serializationService;
     private final ClientConnectionManager connectionManager;
+    public final ClientConnectionManagerImpl nioManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientInvocationServiceImpl invocationService;
@@ -125,8 +128,10 @@ public final class HazelcastClient implements HazelcastInstance {
         }
         if (config.isSmartRouting()) {
             connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+            nioManager = new ClientConnectionManagerImpl(this, clusterService.getAuthenticator(), loadBalancer);
         } else {
             connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+            nioManager = null;
         }
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
@@ -326,7 +331,8 @@ public final class HazelcastClient implements HazelcastInstance {
     public Collection<DistributedObject> getDistributedObjects() {
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
-            final SerializableCollection serializableCollection = (SerializableCollection) invocationService.invokeOnRandomTarget(request);
+            final Future<SerializableCollection> future = invocationService.invokeOnRandomTarget(request);
+            final SerializableCollection serializableCollection = future.get();
             for (Data data : serializableCollection) {
                 final DistributedObjectInfo o = (DistributedObjectInfo) serializationService.toObject(data);
                 getDistributedObject(o.getServiceName(), o.getName());

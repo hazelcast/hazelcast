@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
@@ -533,17 +534,19 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return (T) getContext().getSerializationService().toObject(data);
     }
 
-    private <T> T invoke(Object req, Data keyData) {
+    private <T> T invoke(ClientRequest req, Data keyData) {
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, keyData);
+            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, keyData);
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private <T> T invoke(Object req) {
+    private <T> T invoke(ClientRequest req) {
         try {
-            return getContext().getInvocationService().invokeOnRandomTarget(req);
+            final Future<T> future = getContext().getInvocationService().invokeOnRandomTarget(req);
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

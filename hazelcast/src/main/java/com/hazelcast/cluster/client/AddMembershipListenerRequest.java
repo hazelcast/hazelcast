@@ -47,14 +47,14 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED));
+//                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED)); //TODO
                 }
             }
 
             public void memberRemoved(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED));
+//                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED)); //TODO
                 }
             }
         });

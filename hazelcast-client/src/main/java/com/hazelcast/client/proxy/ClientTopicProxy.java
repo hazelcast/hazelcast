@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ITopic;
@@ -28,6 +29,8 @@ import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.util.concurrent.Future;
 
 /**
  * @author ali 5/24/13
@@ -79,9 +82,10 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return key;
     }
 
-    private <T> T invoke(Object req) {
+    private <T> T invoke(ClientRequest req) {
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
+            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

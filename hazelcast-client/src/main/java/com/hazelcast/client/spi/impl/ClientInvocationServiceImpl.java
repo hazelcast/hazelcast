@@ -16,10 +16,17 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientInvocationService;
-import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.serialization.SerializationService;
+
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author mdogan 5/16/13
@@ -27,26 +34,54 @@ import com.hazelcast.nio.Address;
 public final class ClientInvocationServiceImpl implements ClientInvocationService {
 
     private final HazelcastClient client;
+    private final ClientConnectionManagerImpl connectionManager;
+    private final SerializationService serializationService;
+
+    private ConcurrentMap<Long, ClientCallFuture> futureMap = new ConcurrentHashMap<Long, ClientCallFuture>();
+    private AtomicLong requestIncrementer = new AtomicLong();
 
     public ClientInvocationServiceImpl(HazelcastClient client) {
         this.client = client;
+        connectionManager = client.nioManager;
+        this.serializationService = client.getSerializationService();
     }
 
-    public Object invokeOnRandomTarget(Object request) throws Exception {
+    public Future invokeOnRandom(ClientRequest request) throws Exception {
+        final ClientCallFuture future = new ClientCallFuture();
+        final long requestId = 1L;//nextRequestId();
+        request.setCallId(requestId);
+        futureMap.put(requestId, future);
+
+        final Data data = serializationService.toData(request);
+        connectionManager.getRandomConnection().write(new DataAdapter(data, serializationService.getSerializationContext()));
+        return future;
+    }
+    public Future invokeOn(ClientRequest request, Address target) throws Exception {
+        final ClientCallFuture future = new ClientCallFuture();
+        final long requestId = 1L;//nextRequestId();
+        request.setCallId(requestId);
+        futureMap.put(requestId, future);
+
+        final Data data = serializationService.toData(request);
+        connectionManager.getOrConnect(target).write(new DataAdapter(data, serializationService.getSerializationContext()));
+        return future;
+    }
+
+    public <T> Future<T> invokeOnRandomTarget(ClientRequest request) throws Exception {
         ClientClusterServiceImpl clusterService = getClusterService();
         return clusterService.sendAndReceive(request);
     }
 
-    public Object invokeOnTarget(Object request, Address target) throws Exception {
+    public <T> Future<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
         ClientClusterServiceImpl clusterService = getClusterService();
-        return clusterService.sendAndReceive(target, request);
+        final ClientCallFuture future = new ClientCallFuture();
+        final long callId = clusterService.registerCall(future);
+        request.setCallId(callId);
+        clusterService.send(request, target);
+        return future;
     }
 
-    private ClientClusterServiceImpl getClusterService() {
-        return (ClientClusterServiceImpl) client.getClientClusterService();
-    }
-
-    public Object invokeOnKeyOwner(Object request, Object key) throws Exception {
+    public <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception {
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
         if (owner != null) {
@@ -55,23 +90,29 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return invokeOnRandomTarget(request);
     }
 
-    public void invokeOnRandomTarget(Object request, ResponseHandler handler) throws Exception {
-        ClientClusterServiceImpl clusterService = getClusterService();
-        clusterService.sendAndHandle(request, handler);
+    private ClientClusterServiceImpl getClusterService() {
+        return (ClientClusterServiceImpl) client.getClientClusterService();
     }
 
-    public void invokeOnTarget(Object request, Address target, ResponseHandler handler) throws Exception {
-        ClientClusterServiceImpl clusterService = getClusterService();
-        clusterService.sendAndHandle(target, request, handler);
-    }
+//    public void invokeOnRandomTarget(Object request, ResponseHandler handler) throws Exception {
+//        ClientClusterServiceImpl clusterService = getClusterService();
+//        clusterService.sendAndHandle(request, handler);
+//    }
+//
+//    public void invokeOnTarget(Object request, Address target, ResponseHandler handler) throws Exception {
+//        ClientClusterServiceImpl clusterService = getClusterService();
+//        clusterService.sendAndHandle(target, request, handler);
+//    }
+//
+//    public void invokeOnKeyOwner(Object request, Object key, ResponseHandler handler) throws Exception {
+//        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+//        final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
+//        if (owner != null) {
+//            invokeOnTarget(request, owner, handler);
+//        }
+//        invokeOnRandomTarget(request, handler);
+//    }
 
-    public void invokeOnKeyOwner(Object request, Object key, ResponseHandler handler) throws Exception {
-        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
-        final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
-        if (owner != null) {
-            invokeOnTarget(request, owner, handler);
-        }
-        invokeOnRandomTarget(request, handler);
-    }
+
 
 }

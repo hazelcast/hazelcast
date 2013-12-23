@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Connection;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.client.spi.ResponseStream;
@@ -37,6 +38,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -49,6 +51,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -73,6 +77,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private volatile ClientPrincipal principal;
     private volatile boolean active = false;
 
+    private final AtomicLong callIdIncrementer = new AtomicLong();
+    private final ConcurrentMap<Long, ClientCallFuture> callMap = new ConcurrentHashMap<Long, ClientCallFuture>();
+
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
@@ -80,7 +87,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         redoOperation = clientConfig.isRedoOperation();
         credentials = clientConfig.getCredentials();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 EventListener listener = listenerConfig.getImplementation();
                 if (listener == null) {
@@ -181,7 +188,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             } catch (Exception e) {
                 if (e instanceof IOException) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
+                        logger.finest("Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
                     release = false;
@@ -189,7 +196,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                            logger.finest("Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -234,22 +241,22 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             throw new HazelcastInstanceNotActiveException();
         }
         Connection connection = null;
-        int retryCount = RETRY_COUNT;
-        while (connection == null && retryCount > 0) {
-            if (address != null) {
-                connection = client.getConnectionManager().getConnection(address);
-                address = null;
-            } else {
-                connection = client.getConnectionManager().getRandomConnection();
-            }
-            if (connection == null) {
-                retryCount--;
-                beforeRetry();
-            }
-        }
-        if (connection == null) {
-            throw new IOException("Unable to connect to " + address);
-        }
+//        int retryCount = RETRY_COUNT;
+//        while (connection == null && retryCount > 0) {
+//            if (address != null) {
+//                connection = client.getConnectionManager().getConnection(address);
+//                address = null;
+//            } else {
+//                connection = client.getConnectionManager().getRandomConnection();
+//            }
+//            if (connection == null) {
+//                retryCount--;
+//                beforeRetry();
+//            }
+//        }
+//        if (connection == null) {
+//            throw new IOException("Unable to connect to " + address);
+//        }
         return connection;
     }
 
@@ -272,7 +279,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private void _sendAndHandle(ConnectionFactory connectionFactory, Object obj, ResponseHandler handler) throws IOException {
         ResponseStream stream = null;
         while (stream == null) {
-            if (!active){
+            if (!active) {
                 throw new HazelcastInstanceNotActiveException();
             }
             Connection conn = null;
@@ -285,7 +292,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             } catch (Exception e) {
                 if (e instanceof IOException) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
+                        logger.finest("Error on connection... conn: " + conn + ", error: " + e);
                     }
                 }
                 if (conn != null) {
@@ -294,7 +301,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                            logger.finest("Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -326,7 +333,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return id;
     }
 
-    private void initMembershipListener(){
+    private void initMembershipListener() {
         for (MembershipListener membershipListener : listeners.values()) {
             if (membershipListener instanceof InitialMembershipListener) {
                 // TODO: needs sync with membership events...
@@ -541,7 +548,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 } catch (IOException e) {
                     active = false;
                     lastError = e;
-                    logger.finest( "IO error during initial connection...", e);
+                    logger.finest("IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
                     active = false;
                     lastError = e;
@@ -568,8 +575,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
     }
 
-    private void fireConnectionEvent(boolean disconnected){
-        final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl)client.getLifecycleService();
+    private void fireConnectionEvent(boolean disconnected) {
+        final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
         final LifecycleState state = disconnected ? LifecycleState.CLIENT_DISCONNECTED : LifecycleState.CLIENT_CONNECTED;
         lifecycleService.fireLifecycleEvent(state);
     }
@@ -587,31 +594,48 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return client.getClientConfig();
     }
 
-    private class ManagerAuthenticator implements Authenticator {
-        public void auth(Connection connection) throws AuthenticationException, IOException {
+    public class ManagerAuthenticator implements Authenticator {
+
+        public void auth(ClientConnection connection) throws AuthenticationException, IOException {
             final Object response = authenticate(connection, credentials, principal, true, true);
             principal = (ClientPrincipal) response;
         }
     }
 
     private class ClusterAuthenticator implements Authenticator {
-        public void auth(Connection connection) throws AuthenticationException, IOException {
+        public void auth(ClientConnection connection) throws AuthenticationException, IOException {
             authenticate(connection, credentials, principal, false, false);
         }
     }
 
-    private Object authenticate(Connection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth, boolean firstConnection) throws IOException {
+    private Object authenticate(ClientConnection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth, boolean firstConnection) throws IOException {
+        final SerializationService ss = getSerializationService();
+        final ClientCallFuture future = new ClientCallFuture();
+        final long callId = registerCall(future);
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         auth.setReAuth(reAuth);
         auth.setFirstConnection(firstConnection);
-        final SerializationService serializationService = getSerializationService();
-        connection.write(serializationService.toData(auth));
-        final Data addressData = connection.read();
-        Address address = ErrorHandler.returnResultOrThrowException(serializationService.toObject(addressData));
-        connection.setRemoteEndpoint(address);
+        auth.setCallId(callId);
+        send(auth, connection);
 
-        final Data data = connection.read();
-        return ErrorHandler.returnResultOrThrowException(serializationService.toObject(data));
+        Object result;
+        try {
+            result = future.get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new AuthenticationException(e.getMessage());
+        }
+        final SerializableCollection coll = ErrorHandler.returnResultOrThrowException(result);
+        final Iterator<Data> iter = coll.getCollection().iterator();
+        if (iter.hasNext()) {
+            final Data addressData = iter.next();
+            final Address address = (Address) ss.toObject(addressData);
+            connection.setRemoteEndpoint(address);
+            if (iter.hasNext()) {
+                final Data principalData = iter.next();
+                return ss.toObject(principalData);
+            }
+        }
+        throw new AuthenticationException(); //TODO
     }
 
     public String membersString() {
@@ -628,4 +652,52 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return sb.toString();
     }
 
+    //NIO
+
+    public long registerCall(ClientCallFuture future) {
+        final long callId = callIdIncrementer.incrementAndGet();
+        callMap.put(callId, future);
+        return callId;
+    }
+
+    public boolean send(ClientRequest request) throws IOException {
+        final ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        return send(request, connection);
+    }
+
+    public boolean send(ClientRequest request, Address target) throws IOException {
+        final ClientConnection connection = client.getConnectionManager().getOrConnect(target);
+        return send(request, connection);
+    }
+
+    private boolean send(ClientRequest request, ClientConnection connection) {
+        final SerializationService ss = getSerializationService();
+        final Data data = ss.toData(request);
+        return connection.write(new DataAdapter(data)); //TODO serContext?
+    }
+
+    public void handlePacket(DataAdapter packet) {
+        client.getClientExecutionService().execute(new ClientPacketProcessor(packet));
+    }
+
+    class ClientPacketProcessor implements Runnable {
+
+        DataAdapter packet;
+
+        ClientPacketProcessor(DataAdapter packet) {
+            this.packet = packet;
+        }
+
+        public void run() {
+            final ClientResponse clientResponse = (ClientResponse)getSerializationService().toObject(packet.getData());
+            final long callId = clientResponse.getCallId();
+            final Object response = clientResponse.getResponse();
+            final ClientCallFuture future = callMap.remove(callId);
+            if (future == null) {
+                logger.warning("No call for callId: " + callId + ", response: " + response);
+                return;
+            }
+            future.setResponse(response);
+        }
+    }
 }

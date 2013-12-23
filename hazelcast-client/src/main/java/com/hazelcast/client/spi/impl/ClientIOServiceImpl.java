@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.spi.impl;
 
-import java.util.concurrent.Callable;
+import com.hazelcast.client.spi.ClientIOService;
 
 /**
- * @author mdogan 5/6/13
+ * @author ali 17/12/13
  */
-public abstract class CallableClientRequest extends ClientRequest implements Callable {
+public class ClientIOServiceImpl implements ClientIOService {
 
-    final void process() throws Exception {
-        final Object result;
-        try {
-            result = call();
-            getEndpoint().sendResponse(result, getCallId());
-        } catch (Exception e) {
-            clientEngine.getLogger(getClass()).warning(e);
-            getEndpoint().sendResponse(e, getCallId());
-        }
-    }
+
+
 }
