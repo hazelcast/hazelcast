@@ -77,7 +77,7 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
     }
 
     public boolean equals(Object o){
-        if(o instanceof SystemLogRecord){
+        if(o!=null && o instanceof SystemLogRecord){
             return this.compareTo((SystemLogRecord)o)==0;
         }
         return false;
