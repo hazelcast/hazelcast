@@ -16,6 +16,7 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.management.JsonWriter;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,13 +27,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
-    private long creationTime;
     private final AtomicLong pending = new AtomicLong(0);
     private final AtomicLong started = new AtomicLong(0);
     private final AtomicLong completed = new AtomicLong(0);
     private final AtomicLong cancelled = new AtomicLong(0);
     private final AtomicLong totalStartLatency = new AtomicLong(0);
     private final AtomicLong totalExecutionTime = new AtomicLong(0);
+    private long creationTime;
 
     public LocalExecutorStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -85,6 +86,16 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         return totalExecutionTime.get();
     }
 
+    @Override
+    public void toJson(JsonWriter writer) {
+        writer.write("creationTime", creationTime);
+        writer.write("pending", pending);
+        writer.write("started", started);
+        writer.write("totalStartLatency", totalStartLatency);
+        writer.write("completed", completed);
+        writer.write("totalExecutionTime", totalExecutionTime);
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(pending.get());
@@ -101,5 +112,24 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         totalStartLatency.set(in.readLong());
         completed.set(in.readLong());
         totalExecutionTime.set(in.readLong());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LocalExecutorStatsImpl that = (LocalExecutorStatsImpl) o;
+
+        if (creationTime != that.creationTime) return false;
+        if (!(cancelled.get() == that.cancelled.get())) return false;
+        if (!(completed.get() == that.completed.get())) return false;
+        if (!(pending.get() == that.pending.get())) return false;
+        if (!(started.get() == that.started.get())) return false;
+        if (!(started.get() == that.started.get())) return false;
+        if (!(totalExecutionTime.get() == that.totalExecutionTime.get())) return false;
+        if (!(totalStartLatency.get() == that.totalStartLatency.get())) return false;
+
+        return true;
     }
 }

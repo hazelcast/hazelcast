@@ -16,6 +16,8 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.management.JsonWritable;
+import com.hazelcast.management.JsonWriter;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,9 +29,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class TimedMemberState implements DataSerializable, Cloneable {
+public class TimedMemberState implements DataSerializable, JsonWritable, Cloneable {
     long time;
-    MemberState memberState = null;
+    MemberStateImpl memberState = null;
     Set<String> instanceNames = null;
     List<String> memberList;
     Boolean master;
@@ -44,6 +46,16 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         st.setMaster(master);
         st.setClusterName(clusterName);
         return st;
+    }
+
+    @Override
+    public void toJson(JsonWriter writer) {
+        writer.write("time", time);
+        writer.write("master", master);
+        writer.write("memberState", memberState);
+        writer.write("clusterName", clusterName);
+        writer.write("instanceNames", instanceNames);
+        writer.write("memberList", memberList);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -109,40 +121,59 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         this.clusterName = clusterName;
     }
 
-    public void setTime(long time) {
-        this.time = time;
-    }
-
     public long getTime() {
         return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
     }
 
     public Set<String> getInstanceNames() {
         return instanceNames;
     }
 
-
     public void setInstanceNames(Set<String> longInstanceNames) {
         this.instanceNames = longInstanceNames;
     }
 
+
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("TimedMemberState{\n");
-        sb.append("\t");
-        sb.append(memberState);
-        sb.append("\n");
-        sb.append("}\n");
-        sb.append("Instances : ");
-        sb.append(instanceNames);
-        return sb.toString();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TimedMemberState that = (TimedMemberState) o;
+
+        if (time != that.time) return false;
+        if (clusterName != null ? !clusterName.equals(that.clusterName) : that.clusterName != null) return false;
+        if (instanceNames != null ? !instanceNames.equals(that.instanceNames) : that.instanceNames != null)
+            return false;
+        if (master != null ? !master.equals(that.master) : that.master != null) return false;
+        if (memberList != null ? !memberList.equals(that.memberList) : that.memberList != null) return false;
+        if (memberState != null ? !memberState.equals(that.memberState) : that.memberState != null) return false;
+
+        return true;
     }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (time ^ (time >>> 32));
+        result = 31 * result + (memberState != null ? memberState.hashCode() : 0);
+        result = 31 * result + (instanceNames != null ? instanceNames.hashCode() : 0);
+        result = 31 * result + (memberList != null ? memberList.hashCode() : 0);
+        result = 31 * result + (master != null ? master.hashCode() : 0);
+        result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
+        return result;
+    }
+
 
     public MemberState getMemberState() {
         return memberState;
     }
 
     public void setMemberState(MemberState memberState) {
-        this.memberState = memberState;
+        this.memberState = (MemberStateImpl)memberState;
     }
+
 }

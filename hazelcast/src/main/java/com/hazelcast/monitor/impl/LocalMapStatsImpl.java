@@ -16,6 +16,7 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.management.JsonWriter;
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
@@ -54,6 +55,33 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer) {
+        writer.write("getCount", getCount);
+        writer.write("putCount", putCount);
+        writer.write("removeCount", removeCount);
+        writer.write("numberOfOtherOperations", numberOfOtherOperations);
+        writer.write("numberOfEvents", numberOfEvents);
+        writer.write("lastAccessTime", lastAccessTime);
+        writer.write("lastUpdateTime", lastUpdateTime);
+        writer.write("hits", hits);
+        writer.write("ownedEntryCount", ownedEntryCount);
+        writer.write("backupEntryCount", backupEntryCount);
+        writer.write("backupCount", backupCount);
+        writer.write("ownedEntryMemoryCost", ownedEntryMemoryCost);
+        writer.write("backupEntryMemoryCost", backupEntryMemoryCost);
+        writer.write("creationTime", creationTime);
+        writer.write("lockedEntryCount", lockedEntryCount);
+        writer.write("dirtyEntryCount", dirtyEntryCount);
+        writer.write("totalGetLatencies", totalGetLatencies);
+        writer.write("totalPutLatencies", totalPutLatencies);
+        writer.write("totalRemoveLatencies", totalRemoveLatencies);
+        writer.write("maxGetLatency", maxGetLatency);
+        writer.write("maxPutLatency", maxPutLatency);
+        writer.write("maxRemoveLatency", maxRemoveLatency);
+        writer.write("heapCost", heapCost);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -266,12 +294,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         numberOfEvents.incrementAndGet();
     }
 
-    public void setHeapCost(long heapCost) {
-        this.heapCost = heapCost;
-    }
-
     public long getHeapCost() {
         return heapCost;
+    }
+
+    public void setHeapCost(long heapCost) {
+        this.heapCost = heapCost;
     }
 
     public String toString() {
@@ -307,5 +335,38 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_STATS;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LocalMapStatsImpl that = (LocalMapStatsImpl) o;
+
+        if (getCount.get() != that.getCount.get()) return false;
+        if (putCount.get() != that.putCount.get()) return false;
+        if (removeCount.get() != that.removeCount.get()) return false;
+        if (numberOfEvents.get() != that.numberOfEvents.get()) return false;
+        if (numberOfOtherOperations.get() != that.numberOfOtherOperations.get()) return false;
+        if (lastAccessTime.get() != that.lastAccessTime.get()) return false;
+        if (lastUpdateTime.get() != that.lastUpdateTime.get()) return false;
+        if (hits.get() != that.hits.get()) return false;
+        if (ownedEntryCount != that.ownedEntryCount) return false;
+        if (backupEntryCount != that.backupEntryCount) return false;
+        if (backupCount != that.backupCount) return false;
+        if (ownedEntryMemoryCost != that.ownedEntryMemoryCost) return false;
+        if (backupEntryMemoryCost != that.backupEntryMemoryCost) return false;
+        if (creationTime != that.creationTime) return false;
+        if (lockedEntryCount != that.lockedEntryCount) return false;
+        if (dirtyEntryCount != that.dirtyEntryCount) return false;
+        if (totalGetLatencies.get() != that.totalGetLatencies.get()) return false;
+        if (totalPutLatencies.get() != that.totalPutLatencies.get()) return false;
+        if (totalRemoveLatencies.get() != that.totalRemoveLatencies.get()) return false;
+        if (maxGetLatency.get() != that.maxGetLatency.get()) return false;
+        if (maxPutLatency.get() != that.maxPutLatency.get()) return false;
+        if (maxRemoveLatency.get() != that.maxRemoveLatency.get()) return false;
+        if (heapCost != that.heapCost) return false;
+        return true;
     }
 }

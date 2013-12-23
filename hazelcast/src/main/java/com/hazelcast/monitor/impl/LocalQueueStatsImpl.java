@@ -16,6 +16,7 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.management.JsonWriter;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,6 +42,22 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
 
     public LocalQueueStatsImpl() {
         creationTime = Clock.currentTimeMillis();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer) {
+        writer.write("ownedItemCount", ownedItemCount);
+        writer.write("backupItemCount", backupItemCount);
+        writer.write("minAge", minAge);
+        writer.write("maxAge", maxAge);
+        writer.write("aveAge", aveAge);
+        writer.write("creationTime", creationTime);
+        writer.write("numberOfOffers", numberOfOffers);
+        writer.write("numberOfPolls", numberOfPolls);
+        writer.write("numberOfRejectedOffers", numberOfRejectedOffers);
+        writer.write("numberOfEmptyPolls", numberOfEmptyPolls);
+        writer.write("numberOfOtherOperations", numberOfOtherOperations);
+        writer.write("numberOfEvents", numberOfEvents);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -169,5 +186,26 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         return numberOfEvents.get();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        LocalQueueStatsImpl that = (LocalQueueStatsImpl) o;
+
+        if (aveAge != that.aveAge) return false;
+        if (backupItemCount != that.backupItemCount) return false;
+        if (creationTime != that.creationTime) return false;
+        if (maxAge != that.maxAge) return false;
+        if (minAge != that.minAge) return false;
+        if (ownedItemCount != that.ownedItemCount) return false;
+        if (numberOfEmptyPolls.get() != that.numberOfEmptyPolls.get()) return false;
+        if (numberOfEvents.get() != that.numberOfEvents.get()) return false;
+        if (numberOfOffers.get() != that.numberOfOffers.get()) return false;
+        if (numberOfOtherOperations.get() != that.numberOfOtherOperations.get()) return false;
+        if (numberOfPolls.get() != that.numberOfPolls.get()) return false;
+        if (numberOfRejectedOffers.get() != that.numberOfRejectedOffers.get()) return false;
+
+        return true;
+    }
 }

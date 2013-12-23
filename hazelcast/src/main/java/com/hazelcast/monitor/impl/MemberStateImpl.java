@@ -16,6 +16,7 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.management.JsonWriter;
 import com.hazelcast.monitor.*;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,8 +31,7 @@ import java.util.Map;
 
 public class MemberStateImpl implements MemberState {
     private static final long serialVersionUID = -1817978625085375340L;
-
-    Address address = new Address();
+    String address;
     Map<String, Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
@@ -40,8 +40,20 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
     List<Integer> partitions = new ArrayList<Integer>(271);
 
+    @Override
+    public void toJson(JsonWriter writer) {
+        writer.write("address", address);
+        writer.write("runtimeProps", runtimeProps);
+        writer.write("mapStats", mapStats);
+        writer.write("multiMapStats", multiMapStats);
+        writer.write("queueStats", queueStats);
+        writer.write("topicStats", topicStats);
+        writer.write("executorStats", executorStats);
+        writer.write("partitions", partitions);
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
-        address.writeData(out);
+        out.writeUTF(address);
         out.writeInt(mapStats.size());
         for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -80,7 +92,7 @@ public class MemberStateImpl implements MemberState {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        address.readData(in);
+        address = in.readUTF();
         DataSerializable impl;
         String name;
         for (int i = in.readInt(); i > 0; i--) {
@@ -169,12 +181,12 @@ public class MemberStateImpl implements MemberState {
         return executorStats.get(executorName);
     }
 
-    public Address getAddress() {
+    public String getAddress() {
         return address;
     }
 
     public void setAddress(Address address) {
-        this.address = address;
+        this.address = address.getHost() + ":" + address.getPort();
     }
 
     public void putLocalMapStats(String name, LocalMapStatsImpl localMapStats) {
@@ -197,9 +209,31 @@ public class MemberStateImpl implements MemberState {
         executorStats.put(name, localExecutorStats);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MemberStateImpl that = (MemberStateImpl) o;
+
+        if (address != null ? !address.equals(that.address) : that.address != null) return false;
+        if (executorStats != null ? !executorStats.equals(that.executorStats) : that.executorStats != null)
+            return false;
+        if (mapStats != null ? !mapStats.equals(that.mapStats) : that.mapStats != null) return false;
+        if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null)
+            return false;
+        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) return false;
+        if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) return false;
+        if (runtimeProps != null ? !runtimeProps.equals(that.runtimeProps) : that.runtimeProps != null) return false;
+        if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) return false;
+
+        return true;
+    }
+
+    @Override
     public String toString() {
         return "MemberStateImpl{" +
-                "address=" + address +
+                "address='" + address + '\'' +
                 ", runtimeProps=" + runtimeProps +
                 ", mapStats=" + mapStats +
                 ", multiMapStats=" + multiMapStats +

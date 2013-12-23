@@ -39,10 +39,8 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+
+import java.io.*;
 import java.lang.management.*;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
@@ -51,12 +49,15 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
     public final static AtomicBoolean DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO =  new AtomicBoolean(false);
 
-    public static final String HOSTED_MANCENTER_URL = "http://mancenter-lb-321763326.us-east-1.elb.amazonaws.com:8080/mancenter-3.2-SNAPSHOT";
+    public static final String HOSTED_MANCENTER_URL = "http://localhost:8085/mancenter";
 
     private final HazelcastInstanceImpl instance;
     private final TaskPoller taskPoller;
@@ -231,48 +232,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             t.interrupt();
         }
     }
-
-//    public List<Edge> detectDeadlock() {
-//        Collection<Map<String, MapLockState>> collection =
-//                (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());
-//        List<Vertex> graph = new ArrayList<Vertex>();
-//        for (Map<String, MapLockState> mapLockStateMap : collection) {
-//            for (MapLockState map : mapLockStateMap.values()) {
-//                for (Object key : map.getLockOwners().keySet()) {
-//                    Vertex owner = new Vertex(map.getLockOwners().get(key));
-//                    Vertex requester = new Vertex(map.getLockRequested().get(key));
-//                    int index = graph.indexOf(owner);
-//                    if (index >= 0) {
-//                        owner = graph.get(index);
-//                    } else {
-//                        graph.add(owner);
-//                    }
-//                    index = graph.indexOf(requester);
-//                    if (index >= 0) {
-//                        requester = graph.get(index);
-//                    } else {
-//                        graph.add(requester);
-//                    }
-//                    Edge edge = new Edge();
-//                    edge.from = requester;
-//                    edge.to = owner;
-//                    edge.key = key;
-//                    edge.mapName = map.getMapName();
-//                    edge.globalLock = map.isGlobalLock();
-//                    owner.addIncoming(edge);
-//                    requester.addOutgoing(edge);
-//                }
-//            }
-//        }
-//        List<Edge> list = new ArrayList<Edge>();
-//        if (graph != null && graph.size() > 0) {
-//            try {
-//                graph.get(0).visit(list);
-//            } catch (RuntimeException e) {
-//            }
-//        }
-//        return list;
-//    }
 
     public void setVersionMismatch(boolean mismatch) {
         versionMismatch = mismatch;
@@ -539,18 +498,21 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                     try {
                         URL url = createCollectorUrl();
-                        System.out.println(url);
+//                        System.out.println(url);
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setDoOutput(true);
                         connection.setRequestMethod("POST");
                         connection.setConnectTimeout(1000);
                         connection.setReadTimeout(1000);
                         final OutputStream outputStream = connection.getOutputStream();
-                        identifier.write(outputStream);
-                        final ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
-                        TimedMemberState ts = getTimedMemberState();
-                        ts.writeData(out);
-                        out.flush();
+                        DataOutputStream dataOutput = new DataOutputStream(outputStream);
+                        identifier.write(dataOutput);
+
+                        final ByteArrayOutputStream compressByteArray = getStateAsCompressedArray();
+
+                        dataOutput.writeInt(compressByteArray.size());
+                        dataOutput.write(compressByteArray.toByteArray());
+                        dataOutput.flush();
                         connection.getInputStream();
                     } catch (Exception e) {
                         logger.warning(e);
@@ -564,6 +526,17 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 logger.warning("Web Management Center will be closed due to exception.", throwable);
                 shutdown();
             }
+        }
+
+        private ByteArrayOutputStream getStateAsCompressedArray() throws IOException {
+            TimedMemberState ts = getTimedMemberState();
+            final JsonWriter jsonWriter = new JsonWriter(1000);
+            jsonWriter.write(ts);
+            final String jsonString = jsonWriter.getJsonString();
+            final ByteArrayOutputStream compressByteArray = new ByteArrayOutputStream();
+            final byte[] bytes = jsonString.getBytes();
+            ManagementCenterService.compress(bytes, compressByteArray);
+            return compressByteArray;
         }
 
         private URL createCollectorUrl() throws MalformedURLException {
@@ -617,7 +590,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 connection.setConnectTimeout(2000);
                 connection.setReadTimeout(2000);
                 final OutputStream outputStream = connection.getOutputStream();
-                identifier.write(outputStream);
+                identifier.write(new DataOutputStream(outputStream));
                 final ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
                 out.writeInt(taskId);
                 out.writeInt(request.getType());
@@ -644,7 +617,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                     try {
                         URL url = createTaskPollerUrl(address, groupConfig);
-                        System.out.println(url);
+//                        System.out.println(url);
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
@@ -684,5 +657,34 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             }
             return new URL(urlString);
         }
+    }
+
+    public static void compress(byte[] input, OutputStream out) throws IOException {
+        Deflater deflater = new Deflater();
+        deflater.setLevel(Deflater.DEFAULT_COMPRESSION);
+        deflater.setStrategy(Deflater.FILTERED);
+        deflater.setInput(input);
+        deflater.finish();
+        byte[] buf = new byte[1024];
+        while (!deflater.finished()) {
+            int count = deflater.deflate(buf);
+            out.write(buf, 0, count);
+        }
+        deflater.end();
+    }
+
+    public static void decompress(byte[] compressedData, OutputStream out) throws IOException {
+        Inflater inflater = new Inflater();
+        inflater.setInput(compressedData);
+        byte[] buf = new byte[1024];
+        while (!inflater.finished()) {
+            try {
+                int count = inflater.inflate(buf);
+                out.write(buf, 0, count);
+            } catch (DataFormatException e) {
+                throw new IOException(e);
+            }
+        }
+        inflater.end();
     }
 }
