@@ -389,8 +389,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         lock.lock();
         try {
             if (!node.isActive() || !node.joined()) {
-                logger.finest("Node should be active(" + node.isActive() + ") and joined(" + node.joined()
+                if(logger.isFinestEnabled()){
+                    logger.finest("Node should be active(" + node.isActive() + ") and joined(" + node.joined()
                         + ") to be able to process partition table!");
+                }
                 return;
             }
             final Address sender = partitionState.getEndpoint();
@@ -1242,7 +1244,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                 }
             } catch (InterruptedException e) {
-                logger.finest( "MigrationThread is interrupted: " + e.getMessage());
+                if(logger.isFinestEnabled()){
+                    logger.finest( "MigrationThread is interrupted: " + e.getMessage());
+                }
             } finally {
                 migrationQueue.clear();
             }
