@@ -22,10 +22,8 @@ import com.hazelcast.concurrent.lock.client.*;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -115,10 +113,6 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     protected void onDestroy() {
     }
 
-    private Data toData(Object o) {
-        return getContext().getSerializationService().toData(o);
-    }
-
     private Data getKeyData() {
         if (key == null) {
             key = toData(getName());
@@ -130,12 +124,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private <T> T invoke(ClientRequest req) {
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getKeyData());
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected  <T> T invoke(ClientRequest req) {
+        return super.invoke(req, getKeyData());
     }
 }

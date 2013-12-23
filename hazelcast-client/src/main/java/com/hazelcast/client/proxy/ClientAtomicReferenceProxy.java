@@ -22,9 +22,6 @@ import com.hazelcast.concurrent.atomicreference.client.*;
 import com.hazelcast.core.Function;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
-
-import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -107,13 +104,8 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     protected void onDestroy() {
     }
 
-    private <T> T invoke(ClientRequest req) {
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected  <T> T invoke(ClientRequest req) {
+        return super.invoke(req, getKey());
     }
 
     private Data getKey() {
@@ -123,8 +115,5 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
         return key;
     }
 
-    private Data toData(Object object) {
-        return getContext().getSerializationService().toData(object);
-    }
 }
 

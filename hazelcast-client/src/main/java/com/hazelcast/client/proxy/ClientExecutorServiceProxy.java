@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.*;
@@ -29,7 +28,6 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -361,28 +359,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private String getRejectionMessage() {
         return "ExecutorService[" + name + "] is shutdown! In order to create a new ExecutorService with name '" +
                 name + "', you need to destroy current ExecutorService first!";
-    }
-
-    private Data toData(Object o) {
-        return getContext().getSerializationService().toData(o);
-    }
-
-    private <T> T invoke(ClientRequest request, Address target){
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnTarget(request, target);
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    private <T> T invoke(ClientRequest request){
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnRandomTarget(request);
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
     }
 
     private <T> Future<T> checkSync(Future<T> f) {

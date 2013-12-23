@@ -51,7 +51,11 @@ public class ClientCallFuture<V> implements CompletableFuture<V> {
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (response == null) {
-            this.wait(unit.toMillis(timeout));
+            synchronized (this) {
+                if (response == null) {
+                    this.wait(unit.toMillis(timeout));
+                }
+            }
         }
         return resolveResponse();
     }

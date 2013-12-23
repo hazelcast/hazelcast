@@ -40,7 +40,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class SmartClientConnectionManager implements ClientConnectionManager {
+public class SmartClientConnectionManager {
 
     private static final ILogger logger = Logger.getLogger(ClientConnectionManager.class);
 

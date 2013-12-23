@@ -23,6 +23,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
@@ -48,9 +49,9 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -79,6 +80,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private final AtomicLong callIdIncrementer = new AtomicLong();
     private final ConcurrentMap<Long, ClientCallFuture> callMap = new ConcurrentHashMap<Long, ClientCallFuture>();
+    private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<Long, EventHandler>();
+    private final ConcurrentMap<String, Long> registrationIdMap = new ConcurrentHashMap<String, Long>();
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
@@ -137,40 +140,14 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return Clock.currentTimeMillis();
     }
 
-    <T> T sendAndReceive(Object obj) throws IOException {
-        return _sendAndReceive(randomConnectionFactory, obj);
-    }
-
-    <T> T sendAndReceive(final Address address, Object obj) throws IOException {
-        return _sendAndReceive(new TargetConnectionFactory(address), obj);
-    }
-
     public Client getLocalClient() {
         ClientPrincipal cp = principal;
-        Connection conn = clusterThread.conn;
+        ClientConnection conn = clusterThread.conn;
         return new ClientImpl(cp != null ? cp.getUuid() : null, conn != null ? conn.getLocalSocketAddress() : null);
     }
 
     private interface ConnectionFactory {
         Connection create() throws IOException;
-    }
-
-    private final ConnectionFactory randomConnectionFactory = new ConnectionFactory() {
-        public Connection create() throws IOException {
-            return getRandomConnection();
-        }
-    };
-
-    private class TargetConnectionFactory implements ConnectionFactory {
-        final Address target;
-
-        private TargetConnectionFactory(Address target) {
-            this.target = target;
-        }
-
-        public Connection create() throws IOException {
-            return getConnection(target);
-        }
     }
 
     private <T> T _sendAndReceive(ConnectionFactory connectionFactory, Object obj) throws IOException {
@@ -268,14 +245,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    void sendAndHandle(final Address address, Object obj, ResponseHandler handler) throws IOException {
-        _sendAndHandle(new TargetConnectionFactory(address), obj, handler);
-    }
-
-    void sendAndHandle(Object obj, ResponseHandler handler) throws IOException {
-        _sendAndHandle(randomConnectionFactory, obj, handler);
-    }
-
     private void _sendAndHandle(ConnectionFactory connectionFactory, Object obj, ResponseHandler handler) throws IOException {
         ResponseStream stream = null;
         while (stream == null) {
@@ -368,25 +337,18 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-
-    private class InitialConnectionCall implements Callable<Connection> {
-
-        public Connection call() throws Exception {
-            return connectToOne(getConfigAddresses());
-        }
-    }
-
-    private class ClusterListenerThread extends Thread {
+    private class ClusterListenerThread extends Thread implements EventHandler<ClientMembershipEvent> {
 
         private ClusterListenerThread(ThreadGroup group, String name) {
             super(group, name);
         }
 
-        private volatile Connection conn;
+        private volatile ClientConnection conn;
         private final List<MemberImpl> members = new LinkedList<MemberImpl>();
 
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
+                String registrationId = null;
                 try {
                     if (conn == null) {
                         try {
@@ -397,8 +359,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                             return;
                         }
                     }
-                    loadInitialMemberList();
-                    listenMembershipEvents();
+                    registrationId = loadInitialMemberList();
                 } catch (Exception e) {
                     if (client.getLifecycleService().isRunning()) {
                         if (logger.isFinestEnabled()) {
@@ -406,6 +367,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         } else {
                             logger.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
                         }
+                    }
+                    if (registrationId != null) {
+                        deRegisterListener(registrationId);
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
@@ -419,21 +383,25 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         }
 
-        private Connection pickConnection() throws Exception {
-            final Collection<InetSocketAddress> addresses = new HashSet<InetSocketAddress>();
+        private ClientConnection pickConnection() throws Exception {
+            final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
             if (!members.isEmpty()) {
-                addresses.addAll(getClusterAddresses());
+                for (MemberImpl member : members) {
+                    socketAddresses.add(member.getInetSocketAddress());
+                }
+                Collections.shuffle(socketAddresses);
             }
-            addresses.addAll(getConfigAddresses());
-            return connectToOne(addresses);
+            socketAddresses.addAll(getConfigAddresses());
+            return connectToOne(socketAddresses);
         }
 
-        private void loadInitialMemberList() throws IOException {
+        private String loadInitialMemberList() throws IOException, ExecutionException, InterruptedException {
             final SerializationService serializationService = getSerializationService();
-            final Data request = serializationService.toData(new AddMembershipListenerRequest());
-            conn.write(request);
-            final Data response = conn.read();
-            SerializableCollection coll = ErrorHandler.returnResultOrThrowException(serializationService.toObject(response));
+            final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
+
+            final ClientCallFuture future = innerSendAndHandle(request, conn, this);
+            Object response = future.get();
+            SerializableCollection coll = ErrorHandler.returnResultOrThrowException(response);
 
             Map<String, MemberImpl> prevMembers = Collections.emptyMap();
             if (!members.isEmpty()) {
@@ -443,8 +411,13 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
                 members.clear();
             }
-            for (Data d : coll.getCollection()) {
-                members.add((MemberImpl) serializationService.toObject(d));
+            final Iterator<Data> iter = coll.getCollection().iterator();
+            String registrationId = null;
+            if (iter.hasNext()) {
+                registrationId = serializationService.toObject(iter.next());
+            }
+            while (iter.hasNext()) {
+                members.add((MemberImpl) serializationService.toObject(iter.next()));
             }
             updateMembersRef();
             logger.info(membersString());
@@ -462,25 +435,21 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (MembershipEvent event : events) {
                 fireMembershipEvent(event);
             }
+            return registrationId;
         }
 
-        private void listenMembershipEvents() throws IOException {
-            final SerializationService serializationService = getSerializationService();
-            while (!Thread.currentThread().isInterrupted()) {
-                final Data eventData = conn.read();
-                final ClientMembershipEvent event = (ClientMembershipEvent) serializationService.toObject(eventData);
-                final MemberImpl member = (MemberImpl) event.getMember();
-                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                    members.add(member);
-                } else {
-                    members.remove(member);
-                    getConnectionManager().removeConnectionPool(member.getAddress());
-                }
-                updateMembersRef();
-                logger.info(membersString());
-                fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                        Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
+        public void handle(ClientMembershipEvent event) {
+            final MemberImpl member = (MemberImpl) event.getMember();
+            if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                members.add(member);
+            } else {
+                members.remove(member);
+//                    getConnectionManager().removeConnectionPool(member.getAddress());// TODO
             }
+            updateMembersRef();
+            logger.info(membersString());
+            fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
+                    Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
         }
 
         private void fireMembershipEvent(final MembershipEvent event) {
@@ -505,33 +474,16 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             membersRef.set(Collections.unmodifiableMap(map));
         }
 
-        private Collection<InetSocketAddress> getClusterAddresses() {
-            final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-            for (MemberImpl member : members) {
-                socketAddresses.add(member.getInetSocketAddress());
-            }
-            Collections.shuffle(socketAddresses);
-            return socketAddresses;
-        }
-
-        void setInitialConn(Connection conn) {
-            this.conn = conn;
-        }
-
         void shutdown() {
             interrupt();
-            final Connection c = conn;
+            final ClientConnection c = conn;
             if (c != null) {
-                try {
-                    c.close();
-                } catch (IOException e) {
-                    logger.warning("Error while closing connection!", e);
-                }
+                c.close();
             }
         }
     }
 
-    private Connection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
+    private ClientConnection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
         final int connectionAttemptLimit = getClientConfig().getConnectionAttemptLimit();
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
         int attempt = 0;
@@ -541,7 +493,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 try {
-                    final Connection connection = getConnectionManager().firstConnection(address, authenticator);
+                    final ClientConnection connection = getConnectionManager().firstConnection(address, authenticator);
                     active = true;
                     fireConnectionEvent(false);
                     return connection;
@@ -586,7 +538,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         for (String address : getClientConfig().getAddresses()) {
             socketAddresses.addAll(AddressHelper.getSocketAddresses(address));
         }
-        Collections.shuffle(socketAddresses);
+//        Collections.shuffle(socketAddresses);
         return socketAddresses;
     }
 
@@ -610,17 +562,14 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private Object authenticate(ClientConnection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth, boolean firstConnection) throws IOException {
         final SerializationService ss = getSerializationService();
-        final ClientCallFuture future = new ClientCallFuture();
-        final long callId = registerCall(future);
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         auth.setReAuth(reAuth);
         auth.setFirstConnection(firstConnection);
-        auth.setCallId(callId);
-        send(auth, connection);
+        final ClientCallFuture future = innerSend(auth, connection);
 
         Object result;
         try {
-            result = future.get(10, TimeUnit.SECONDS);
+            result = future.get(120, TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new AuthenticationException(e.getMessage());
         }
@@ -660,20 +609,65 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return callId;
     }
 
+    public boolean deRegisterCall(long callId) {
+        return callMap.remove(callId) != null;
+    }
+
     public boolean send(ClientRequest request) throws IOException {
         final ClientConnection connection = client.getConnectionManager().getRandomConnection();
-        return send(request, connection);
+        return _send(request, connection);
     }
 
     public boolean send(ClientRequest request, Address target) throws IOException {
         final ClientConnection connection = client.getConnectionManager().getOrConnect(target);
-        return send(request, connection);
+        return _send(request, connection);
     }
 
-    private boolean send(ClientRequest request, ClientConnection connection) {
+    public boolean sendAndHandle(ClientRequest request, EventHandler handler) throws IOException {
+        final ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        return _sendAndHandle(request, connection, handler);
+    }
+
+    public boolean sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException {
+        final ClientConnection connection = client.getConnectionManager().getOrConnect(target);
+        return _sendAndHandle(request, connection, handler);
+    }
+
+    public void registerListener(String uuid, long callId) {
+        registrationIdMap.put(uuid, callId);
+    }
+
+    public boolean deRegisterListener(String uuid) {
+        return registrationIdMap.remove(uuid) != null;
+    }
+
+    private boolean _send(ClientRequest request, ClientConnection connection) {
         final SerializationService ss = getSerializationService();
         final Data data = ss.toData(request);
         return connection.write(new DataAdapter(data)); //TODO serContext?
+    }
+
+    private boolean _sendAndHandle(ClientRequest request, ClientConnection connection, EventHandler handler) {
+        final SerializationService ss = getSerializationService();
+        final Data data = ss.toData(request);
+        eventHandlerMap.put(request.getCallId(), handler);
+        return connection.write(new DataAdapter(data)); //TODO serContext?
+    }
+
+    private ClientCallFuture innerSend(ClientRequest request, ClientConnection connection) {
+        final ClientCallFuture future = new ClientCallFuture();
+        final long callId = registerCall(future);
+        request.setCallId(callId);
+        _send(request, connection);
+        return future;
+    }
+
+    private ClientCallFuture innerSendAndHandle(ClientRequest request, ClientConnection connection, EventHandler handler) {
+        final ClientCallFuture future = new ClientCallFuture();
+        final long callId = registerCall(future);
+        request.setCallId(callId);
+        _sendAndHandle(request, connection, handler);
+        return future;
     }
 
     public void handlePacket(DataAdapter packet) {
@@ -689,15 +683,33 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
 
         public void run() {
-            final ClientResponse clientResponse = (ClientResponse)getSerializationService().toObject(packet.getData());
+            final ClientResponse clientResponse = getSerializationService().toObject(packet.getData());
             final long callId = clientResponse.getCallId();
             final Object response = clientResponse.getResponse();
+            final boolean event = clientResponse.isEvent();
+            if (event) {
+                handleEvent(response, callId);
+            } else {
+                handlePacket(response, callId);
+            }
+        }
+
+        private void handlePacket(Object response, long callId){
             final ClientCallFuture future = callMap.remove(callId);
             if (future == null) {
                 logger.warning("No call for callId: " + callId + ", response: " + response);
                 return;
             }
             future.setResponse(response);
+        }
+
+        private void handleEvent(Object event, long callId){
+            final EventHandler eventHandler = eventHandlerMap.get(callId);
+            if (eventHandler == null) {
+                logger.warning("No eventHandler for callId: " + callId + ", event: " + event);
+                return;
+            }
+            eventHandler.handle(event);
         }
     }
 }

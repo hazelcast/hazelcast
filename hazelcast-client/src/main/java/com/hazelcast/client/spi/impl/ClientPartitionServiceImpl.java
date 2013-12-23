@@ -30,9 +30,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,7 +74,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 try {
                     final ClientClusterService clusterService = client.getClientClusterService();
                     final Address master = clusterService.getMasterAddress();
-                    final PartitionsResponse response = getPartitionsFrom((ClientClusterServiceImpl) clusterService, master);
+                    final PartitionsResponse response = getPartitionsFrom(master);
                     if (response != null) {
                         processPartitionResponse(response);
                     }
@@ -91,7 +91,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         final Collection<MemberImpl> memberList = clusterService.getMemberList();
         for (MemberImpl member : memberList) {
             final Address target = member.getAddress();
-            PartitionsResponse response = getPartitionsFrom((ClientClusterServiceImpl) clusterService, target);
+            PartitionsResponse response = getPartitionsFrom(target);
             if (response != null) {
                 processPartitionResponse(response);
                 return;
@@ -100,10 +100,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         throw new IllegalStateException("Cannot get initial partitions!");
     }
 
-    private PartitionsResponse getPartitionsFrom(ClientClusterServiceImpl clusterService, Address address) {
+    private PartitionsResponse getPartitionsFrom(Address address) {
         try {
-            return clusterService.sendAndReceive(address, new GetPartitionsRequest());
-        } catch (IOException e) {
+            final Future<PartitionsResponse> future = client.getInvocationService().invokeOnTarget(new GetPartitionsRequest(), address);
+            return future.get();
+        } catch (Exception e) {
             logger.severe("Error while fetching cluster partition table!", e);
         }
         return null;

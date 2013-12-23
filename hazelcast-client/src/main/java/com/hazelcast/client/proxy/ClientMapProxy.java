@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
@@ -29,7 +28,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
@@ -279,7 +277,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public boolean removeEntryListener(String id) {
-        return stopListening(id);
+        final MapRemoveEntryListenerRequest request = new MapRemoveEntryListenerRequest(name, id);
+        return stopListening(request, id);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
@@ -523,32 +522,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     protected void onDestroy() {
         if (nearCache != null){
             nearCache.destroy();
-        }
-    }
-
-    private Data toData(Object o) {
-        return getContext().getSerializationService().toData(o);
-    }
-
-    private <T> T toObject(Data data) {
-        return (T) getContext().getSerializationService().toObject(data);
-    }
-
-    private <T> T invoke(ClientRequest req, Data keyData) {
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, keyData);
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    private <T> T invoke(ClientRequest req) {
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnRandomTarget(req);
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
         }
     }
 

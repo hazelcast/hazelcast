@@ -16,24 +16,20 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.multimap.operations.client.*;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.multimap.operations.client.*;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,30 +45,30 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean put(K key, V value) {
-        Data keyData = getSerializationService().toData(key);
-        Data valueData = getSerializationService().toData(value);
+        Data keyData = toData(key);
+        Data valueData = toData(value);
         PutRequest request = new PutRequest(name, keyData, valueData, -1, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
 
     public Collection<V> get(K key) {
-        Data keyData = getSerializationService().toData(key);
+        Data keyData = toData(key);
         GetAllRequest request = new GetAllRequest(name, keyData);
         PortableCollection result = invoke(request, keyData);
         return toObjectCollection(result, true);
     }
 
     public boolean remove(Object key, Object value) {
-        Data keyData = getSerializationService().toData(key);
-        Data valueData = getSerializationService().toData(value);
+        Data keyData = toData(key);
+        Data valueData = toData(value);
         RemoveRequest request = new RemoveRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
 
     public Collection<V> remove(Object key) {
-        Data keyData = getSerializationService().toData(key);
+        Data keyData = toData(key);
         RemoveAllRequest request = new RemoveAllRequest(name, keyData, ThreadUtil.getThreadId());
         PortableCollection result = invoke(request, keyData);
         return toObjectCollection(result, true);
@@ -100,30 +96,30 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Set<Map.Entry> dataEntrySet = result.getEntrySet();
         Set<Map.Entry<K,V>> entrySet = new HashSet<Map.Entry<K, V>>(dataEntrySet.size());
         for (Map.Entry entry : dataEntrySet) {
-            Object key = getSerializationService().toObject((Data)entry.getKey());
-            Object val = getSerializationService().toObject((Data)entry.getValue());
+            Object key = toObject((Data)entry.getKey());
+            Object val = toObject((Data)entry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry(key, val));
         }
         return entrySet;
     }
 
     public boolean containsKey(K key) {
-        Data keyData = getSerializationService().toData(key);
+        Data keyData = toData(key);
         ContainsEntryRequest request = new ContainsEntryRequest(name, keyData, null);
         Boolean result = invoke(request, keyData);
         return result;
     }
 
     public boolean containsValue(Object value) {
-        Data valueData = getSerializationService().toData(value);
+        Data valueData = toData(value);
         ContainsEntryRequest request = new ContainsEntryRequest(name, null, valueData);
         Boolean result = invoke(request);
         return result;
     }
 
     public boolean containsEntry(K key, V value) {
-        Data keyData = getSerializationService().toData(key);
-        Data valueData = getSerializationService().toData(value);
+        Data keyData = toData(key);
+        Data valueData = toData(value);
         ContainsEntryRequest request = new ContainsEntryRequest(name, keyData, valueData);
         Boolean result = invoke(request, keyData);
         return result;
@@ -141,7 +137,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public int valueCount(K key) {
-        Data keyData = getSerializationService().toData(key);
+        Data keyData = toData(key);
         CountRequest request = new CountRequest(name, keyData);
         Integer result = invoke(request, keyData);
         return result;
@@ -158,31 +154,32 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean removeEntryListener(String registrationId) {
-        return stopListening(registrationId);
+        final RemoveEntryListenerRequest request = new RemoveEntryListenerRequest();
+        return stopListening(request, registrationId);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-        final Data keyData = getSerializationService().toData(key);
+        final Data keyData = toData(key);
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, keyData, includeValue);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
         return listen(request, keyData, handler);
     }
 
     public void lock(K key) {
-        final Data keyData = getSerializationService().toData(key);
+        final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(), name);
         invoke(request, keyData);
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
-        final Data keyData = getSerializationService().toData(key);
+        final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
                 getTimeInMillis(leaseTime, timeUnit), -1, name);
         invoke(request, keyData);
     }
 
     public boolean isLocked(K key) {
-        final Data keyData = getSerializationService().toData(key);
+        final Data keyData = toData(key);
         final MultiMapIsLockedRequest request = new MultiMapIsLockedRequest(keyData, name);
         final Boolean result = invoke(request, keyData);
         return result;
@@ -197,7 +194,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        final Data keyData = getSerializationService().toData(key);
+        final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
                 Long.MAX_VALUE, getTimeInMillis(time, timeunit), name);
         Boolean result = invoke(request, keyData);
@@ -205,13 +202,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void unlock(K key) {
-        final Data keyData = getSerializationService().toData(key);
+        final Data keyData = toData(key);
         MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), name);
         invoke(request, keyData);
     }
 
     public void forceUnlock(K key) {
-        final Data keyData = getSerializationService().toData(key);
+        final Data keyData = toData(key);
         MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), true, name);
         invoke(request, keyData);
     }
@@ -221,24 +218,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     protected void onDestroy() {
-    }
-
-    private <T> T invoke(ClientRequest req, Data key) {
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, key);
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    private <T> T invoke(ClientRequest req) {
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnRandomTarget(req);
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
     }
 
     private Collection toObjectCollection(PortableCollection result, boolean list) {
@@ -253,13 +232,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             return collection;
         }
         for (Data data : coll) {
-            collection.add(getSerializationService().toObject(data));
+            collection.add(toObject(data));
         }
         return collection;
-    }
-
-    private SerializationService getSerializationService(){
-        return getContext().getSerializationService();
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
@@ -272,10 +247,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                 V value = null;
                 V oldValue = null;
                 if (includeValue){
-                    value = (V)getSerializationService().toObject(event.getValue());
-                    oldValue = (V)getSerializationService().toObject(event.getOldValue());
+                    value = (V)toObject(event.getValue());
+                    oldValue = (V)toObject(event.getOldValue());
                 }
-                K key = (K)getSerializationService().toObject(event.getKey());
+                K key = (K)toObject(event.getKey());
                 Member member = getContext().getClusterService().getMember(event.getUuid());
                 EntryEvent<K,V> entryEvent = new EntryEvent<K, V>(name, member,
                         event.getEventType().getType(), key, oldValue, value);

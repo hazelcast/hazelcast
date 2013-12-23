@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -95,27 +94,14 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
                 + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
         if (authenticated) {
-            if (principal != null) {
-                final ClusterService clusterService = clientEngine.getClusterService();
-                if (reAuth) {
-                    //TODO @ali check reAuth
-
-//                    if (clusterService.getMember(principal.getOwnerUuid()) != null) {
-//                        return new AuthenticationException("Owner member is already member of this cluster, cannot re-auth!");
-//                    } else {
-                        principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
-                        final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
-                        for (MemberImpl member : members) {
-                            if (!member.localMember()) {
-                                clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid(), firstConnection), member.getAddress());
-                            }
-                        }
-//                    }
+            if (principal != null && reAuth) {
+                principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
+                final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
+                for (MemberImpl member : members) {
+                    if (!member.localMember()) {
+                        clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid(), firstConnection), member.getAddress());
+                    }
                 }
-//                else if (clusterService.getMember(principal.getOwnerUuid()) == null) {
-//                    clientEngine.removeEndpoint(connection);
-//                    return new AuthenticationException("Owner member is not member of this cluster!");
-//                }
             }
             if (principal == null) {
                 principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());

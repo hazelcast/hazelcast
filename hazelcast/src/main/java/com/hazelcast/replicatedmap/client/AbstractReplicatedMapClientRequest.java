@@ -32,6 +32,9 @@ public abstract class AbstractReplicatedMapClientRequest
 
     private String mapName;
 
+    protected AbstractReplicatedMapClientRequest() {
+    }
+
     public AbstractReplicatedMapClientRequest(String mapName) {
         this.mapName = mapName;
     }

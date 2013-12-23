@@ -76,7 +76,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
                 if (endpoint.live()){
                     Data item = clientEngine.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
-//                    clientEngine.sendResponse(endpoint, portableItemEvent); //TODO
+                    endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }
         };

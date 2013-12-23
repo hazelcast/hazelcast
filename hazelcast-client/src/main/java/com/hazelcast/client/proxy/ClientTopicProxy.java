@@ -28,9 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
-import com.hazelcast.util.ExceptionUtil;
-
-import java.util.concurrent.Future;
+import com.hazelcast.topic.client.RemoveMessageListenerRequest;
 
 /**
  * @author ali 5/24/13
@@ -65,7 +63,8 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     }
 
     public boolean removeMessageListener(String registrationId) {
-        return stopListening(registrationId);
+        final RemoveMessageListenerRequest request = new RemoveMessageListenerRequest(name, registrationId);
+        return stopListening(request, registrationId);
     }
 
     public LocalTopicStats getLocalTopicStats() {
@@ -82,12 +81,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return key;
     }
 
-    private <T> T invoke(ClientRequest req) {
-        try {
-            final Future<T> future = getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected  <T> T invoke(ClientRequest req) {
+        return super.invoke(req, getKey());
     }
 }

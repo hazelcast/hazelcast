@@ -16,10 +16,13 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataAdapter;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -40,4 +43,20 @@ public interface ClientClusterService {
     long getClusterTime();
 
     void handlePacket(DataAdapter packet);
+
+    long registerCall(ClientCallFuture future);
+
+    public boolean deRegisterCall(long callId);
+
+    boolean send(ClientRequest request) throws IOException;
+
+    boolean send(ClientRequest request, Address target) throws IOException ;
+
+    boolean sendAndHandle(ClientRequest request, EventHandler handler) throws IOException ;
+
+    boolean sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException ;
+
+    void registerListener(String uuid, long callId);
+
+    public boolean deRegisterListener(String uuid);
 }

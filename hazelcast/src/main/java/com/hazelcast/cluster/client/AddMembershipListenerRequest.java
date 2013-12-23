@@ -18,7 +18,6 @@ package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.ClientPortableHook;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.MembershipEvent;
@@ -37,34 +36,37 @@ import java.util.Collection;
  */
 public final class AddMembershipListenerRequest extends CallableClientRequest implements Portable {
 
+    public AddMembershipListenerRequest() {
+    }
+
     @Override
     public Object call() throws Exception {
         final ClusterServiceImpl service = getService();
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
 
-        final String registration = service.addMembershipListener(new MembershipListener() {
+        final String registrationId = service.addMembershipListener(new MembershipListener() {
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-//                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED)); //TODO
+                    endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
                 }
             }
 
             public void memberRemoved(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-//                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED)); //TODO
+                    endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
                 }
             }
         });
 
         final String name = ClusterServiceImpl.SERVICE_NAME;
-        endpoint.setListenerRegistration(name, name, registration);
+        endpoint.setListenerRegistration(name, name, registrationId);
 
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
+        response.add(serializationService.toData(registrationId));
         for (MemberImpl member : memberList) {
             response.add(serializationService.toData(member));
         }

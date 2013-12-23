@@ -31,6 +31,8 @@ public class ClientResponse implements IdentifiedDataSerializable {
 
     long callId;
 
+    boolean event;
+
     public ClientResponse() {
     }
 
@@ -39,12 +41,22 @@ public class ClientResponse implements IdentifiedDataSerializable {
         this.callId = callId;
     }
 
+    public ClientResponse(Object response, long callId, boolean event) {
+        this.response = response;
+        this.callId = callId;
+        this.event = event;
+    }
+
     public Object getResponse() {
         return response;
     }
 
     public long getCallId() {
         return callId;
+    }
+
+    public boolean isEvent() {
+        return event;
     }
 
     public int getFactoryId() {
@@ -58,10 +70,12 @@ public class ClientResponse implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(callId);
         out.writeObject(response);
+        out.writeBoolean(event);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         callId = in.readLong();
         response = in.readObject();
+        event = in.readBoolean();
     }
 }

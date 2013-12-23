@@ -75,7 +75,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     Data value = clientEngine.toData(event.getValue());
                     Data oldValue = clientEngine.toData(event.getOldValue());
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
-                    //clientEngine.sendResponse(endpoint, portableEntryEvent); //TODO
+                    endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
 

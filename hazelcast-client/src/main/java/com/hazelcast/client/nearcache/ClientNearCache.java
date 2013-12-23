@@ -16,16 +16,18 @@
 
 package com.hazelcast.client.nearcache;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.ListenerSupport;
+import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.client.MapAddEntryListenerRequest;
+import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.client.ClientReplicatedMapAddEntryListenerRequest;
-import com.hazelcast.spi.Callback;
+import com.hazelcast.replicatedmap.client.ClientReplicatedMapRemoveEntryListenerRequest;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -58,8 +60,8 @@ public class ClientNearCache<K> {
     final AtomicBoolean canCleanUp;
     final AtomicBoolean canEvict;
     final ConcurrentMap<K, CacheRecord<K>> cache;
-    ListenerSupport listenerSupport = null;
     public static final Object NULL_OBJECT = new Object();
+    String registrationId = null;
 
     public ClientNearCache(String mapName, ClientNearCacheType cacheType, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
@@ -82,7 +84,7 @@ public class ClientNearCache<K> {
 
     private void addInvalidateListener(){
         try {
-            Object request;
+            ClientRequest request;
             EventHandler handler;
             if (cacheType == ClientNearCacheType.Map) {
                 request = new MapAddEntryListenerRequest(mapName, false);
@@ -101,13 +103,7 @@ public class ClientNearCache<K> {
             } else {
                 throw new IllegalStateException("Near cache is not available for this type of data structure");
             }
-            listenerSupport = new ListenerSupport(context, request, handler, null);
-            listenerSupport.listen(new Callback<Exception>() {
-                public void notify(Exception ignored) {
-                    cache.clear();
-                }
-            });
-
+            registrationId = ListenerUtil.listen(context, request, null, handler); //TODO callback
         } catch (Exception e) {
             Logger.getLogger(ClientNearCache.class).severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
@@ -209,8 +205,16 @@ public class ClientNearCache<K> {
     }
 
     public void destroy() {
-        if (listenerSupport != null){
-            listenerSupport.stop();
+        if (registrationId != null){
+            ClientRequest request;
+            if (cacheType == ClientNearCacheType.Map) {
+                request = new MapRemoveEntryListenerRequest(mapName, registrationId);
+            } else if (cacheType == ClientNearCacheType.ReplicatedMap) {
+                request = new ClientReplicatedMapRemoveEntryListenerRequest(mapName, registrationId);
+            } else {
+                throw new IllegalStateException("Near cache is not available for this type of data structure");
+            }
+            ListenerUtil.stopListening(context, request, registrationId);
         }
         cache.clear();
     }

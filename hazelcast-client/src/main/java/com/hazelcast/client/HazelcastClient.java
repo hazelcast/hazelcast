@@ -19,8 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.DummyClientConnectionManager;
-import com.hazelcast.client.connection.SmartClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
@@ -33,21 +31,21 @@ import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.lock.proxy.LockProxy;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.proxy.LockProxy;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -88,7 +86,6 @@ public final class HazelcastClient implements HazelcastInstance {
     private final LifecycleServiceImpl lifecycleService;
     private final SerializationService serializationService;
     private final ClientConnectionManager connectionManager;
-    public final ClientConnectionManagerImpl nioManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientInvocationServiceImpl invocationService;
@@ -127,11 +124,9 @@ public final class HazelcastClient implements HazelcastInstance {
             loadBalancer = new RoundRobinLB();
         }
         if (config.isSmartRouting()) {
-            connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
-            nioManager = new ClientConnectionManagerImpl(this, clusterService.getAuthenticator(), loadBalancer);
+            connectionManager = new ClientConnectionManagerImpl(this, clusterService.getAuthenticator(), loadBalancer);
         } else {
-            connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
-            nioManager = null;
+            connectionManager = new ClientConnectionManagerImpl(this, clusterService.getAuthenticator(), loadBalancer);
         }
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();

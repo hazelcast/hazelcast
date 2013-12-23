@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.*;
 import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
+import com.hazelcast.topic.client.RemoveMessageListenerRequest;
 
 import java.util.Collection;
 
@@ -32,6 +33,7 @@ public class TopicPortableHook implements PortableHook {
 
     public static final int PUBLISH = 1;
     public static final int ADD_LISTENER = 2;
+    public static final int REMOVE_LISTENER = 3;
     public static final int PORTABLE_MESSAGE = 4;
 
     @Override
@@ -48,6 +50,8 @@ public class TopicPortableHook implements PortableHook {
                         return new PublishRequest();
                     case ADD_LISTENER:
                         return new AddMessageListenerRequest();
+                    case REMOVE_LISTENER:
+                        return new RemoveMessageListenerRequest();
                     case PORTABLE_MESSAGE:
                         return new PortableMessage();
                 }

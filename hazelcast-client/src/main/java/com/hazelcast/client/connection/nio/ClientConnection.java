@@ -20,6 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.*;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -28,7 +29,7 @@ import java.nio.channels.SocketChannel;
 /**
  * @author ali 16/12/13
  */
-public class ClientConnection implements Connection {
+public class ClientConnection implements Connection, Closeable {
 
     private volatile boolean live = true;
 
@@ -66,7 +67,7 @@ public class ClientConnection implements Connection {
     }
 
     public Address getEndPoint() {
-        return null; //TODO ?
+        return remoteEndpoint;
     }
 
     public boolean live() {
@@ -133,6 +134,10 @@ public class ClientConnection implements Connection {
         return remoteEndpoint;
     }
 
+    public InetSocketAddress getLocalSocketAddress() {
+        return (InetSocketAddress)socketChannel.socket().getLocalSocketAddress();
+    }
+
     private void close0() throws IOException {
         if (!live) {
             return;
@@ -146,8 +151,6 @@ public class ClientConnection implements Connection {
     }
 
     public void close(Throwable t) {
-        System.err.println("fatal ex");
-        t.printStackTrace();
         if (!live) {
             return;
         }
@@ -195,4 +198,5 @@ public class ClientConnection implements Connection {
         sb.append('}');
         return sb.toString();
     }
+
 }

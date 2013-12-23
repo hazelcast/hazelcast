@@ -32,5 +32,10 @@ public interface ClientInvocationService {
 
     <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception;
 
+    <T> Future<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception;
+
+    <T> Future<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception;
+
+    <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception;
 
 }

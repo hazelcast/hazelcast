@@ -132,7 +132,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return getOrConnect(address, authenticator);
     }
 
-    public ClientConnection getOrConnect(Address address, Authenticator authenticator) throws IOException {
+    public ClientConnection firstConnection(Address address, Authenticator authenticator) throws IOException {
+        return getOrConnect(address, authenticator);
+    }
+
+    private ClientConnection getOrConnect(Address address, Authenticator authenticator) throws IOException {
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
             synchronized (this) {
@@ -184,6 +188,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public void handlePacket(DataAdapter packet) {
         client.getClientClusterService().handlePacket(packet);
     }
+
+
 
 
 }

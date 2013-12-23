@@ -189,6 +189,10 @@ public final class ClientEndpoint implements Client {
         clientEngine.sendResponse(this, new ClientResponse(response, callId));
     }
 
+    public void sendEvent(Object event, long callId){
+        clientEngine.sendResponse(this, new ClientResponse(event, callId, true));
+    }
+
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientEndpoint{");
         sb.append("conn=").append(conn);

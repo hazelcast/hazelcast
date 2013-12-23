@@ -21,14 +21,13 @@ import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -127,11 +126,11 @@ public class TransactionContextProxy implements TransactionContext {
     private Connection connect() {
         Connection conn = null;
         for (int i = 0; i < CONNECTION_TRY_COUNT; i++) {
-            try {
-                conn = client.getConnectionManager().getRandomConnection();
-            } catch (IOException e) {
-                continue;
-            }
+//            try {
+//                conn = client.getConnectionManager().getRandomConnection();
+//            } catch (IOException e) {
+//                continue;
+//            }
             if (conn != null) {
                 break;
             }

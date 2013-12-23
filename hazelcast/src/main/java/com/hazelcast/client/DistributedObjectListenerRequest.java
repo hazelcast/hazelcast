@@ -43,7 +43,7 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
                 if (endpoint.live()){
                     final PortableDistributedObjectEvent portableDistributedObjectEvent
                             = new PortableDistributedObjectEvent(event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
-//                    clientEngine.sendResponse(endpoint, portableDistributedObjectEvent); //TODO
+                    endpoint.sendEvent(portableDistributedObjectEvent, getCallId());
                 }
             }
         };

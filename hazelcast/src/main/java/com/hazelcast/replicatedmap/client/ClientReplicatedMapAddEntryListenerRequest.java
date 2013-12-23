@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.nio.ObjectDataInput;
@@ -48,7 +47,6 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
     @Override
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
 
         EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
@@ -61,7 +59,7 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
                     ReplicatedMapPortableEntryEvent portableEntryEvent =
                             new ReplicatedMapPortableEntryEvent(key, value, oldValue,
                                     event.getEventType(), event.getMember().getUuid());
-//                    clientEngine.sendResponse(endpoint, portableEntryEvent); //TODO
+                    endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
 

@@ -32,9 +32,5 @@ public interface ClientConnectionManager {
 
     public ClientConnection getOrConnect(Address address) throws IOException ;
 
-    public void removeConnectionPool(Address address);
-
-    public Connection newConnection(Address address, Authenticator authenticator) throws IOException ;
-
-    public Connection firstConnection(Address address, Authenticator authenticator) throws IOException ;
+    public ClientConnection firstConnection(Address address, Authenticator authenticator) throws IOException ;
 }

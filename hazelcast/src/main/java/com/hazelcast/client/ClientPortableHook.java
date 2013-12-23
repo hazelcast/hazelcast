@@ -39,6 +39,7 @@ public class ClientPortableHook implements PortableHook {
     public static final int MEMBERSHIP_LISTENER = 10;
     public static final int CLIENT_PING = 11;
     public static final int GET_PARTITIONS = 12;
+    public static final int REMOVE_LISTENER = 13;
 
     public int getFactoryId() {
         return ID;

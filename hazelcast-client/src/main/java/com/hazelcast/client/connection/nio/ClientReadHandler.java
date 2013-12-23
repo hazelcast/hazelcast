@@ -74,6 +74,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
                 boolean complete = packet.readFrom(buffer);
                 if (complete) {
                     connectionManager.handlePacket(packet);
+                    packet = null;
                 } else {
                     break;
                 }

@@ -153,6 +153,12 @@ public class ReplicatedMapPortableHook implements PortableHook {
                         return new ClientReplicatedMapAddEntryListenerRequest();
                     }
                 };
+                constructors[REMOVE_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    @Override
+                    public Portable createNew(Integer arg) {
+                        return new ClientReplicatedMapRemoveEntryListenerRequest();
+                    }
+                };
                 constructors[MAP_ENTRY_EVENT] = new ConstructorFunction<Integer, Portable>() {
                     @Override
                     public Portable createNew(Integer arg) {
