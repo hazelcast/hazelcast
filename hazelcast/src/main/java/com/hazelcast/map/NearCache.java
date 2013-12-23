@@ -230,7 +230,7 @@ public class NearCache {
         }
 
         public boolean equals(Object o){
-            if(o instanceof CacheRecord){
+            if(o!=null && o instanceof CacheRecord){
                 return this.compareTo((CacheRecord)o)==0;
             }
             return false;
