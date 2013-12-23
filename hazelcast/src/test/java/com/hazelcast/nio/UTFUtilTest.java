@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.nio;
 
 import com.hazelcast.nio.UTFUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
