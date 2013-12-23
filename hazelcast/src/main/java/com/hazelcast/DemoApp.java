@@ -18,11 +18,11 @@ public class DemoApp {
             }
         }
 
-        String projectId = null;
+        String clusterId = null;
         if (args.length >= 2) {
-            projectId = args[1];
-            if (projectId.equals("null")) {
-                projectId = null;
+            clusterId = args[1];
+            if (clusterId.equals("null")) {
+                clusterId = null;
             }
         }
 
@@ -36,14 +36,14 @@ public class DemoApp {
 
         System.out.println("Starting demo application with the following settings");
         System.out.println("SecurityToken: "+securityToken);
-        System.out.println("ProjectId: "+projectId);
+        System.out.println("ClusterId: "+clusterId);
         System.out.println("Group: "+group);
 
         Config config = new Config();
         System.out.println(config.getManagementCenterConfig());
         config.getManagementCenterConfig().setEnabled(true);
         config.getManagementCenterConfig().setSecurityToken(securityToken);
-        config.getManagementCenterConfig().setProjectId(projectId);
+        config.getManagementCenterConfig().setClusterId(clusterId);
         //we need to set a group to prevent forming a cluster with app1
         if(group!=null) {
             config.getGroupConfig().setName(group);
@@ -189,7 +189,6 @@ public class DemoApp {
         public void run(){
             Random random = new Random();
             topic.addMessageListener(new MessageListener() {
-                @Override
                 public void onMessage(Message message) {
                 }
             });
@@ -208,7 +207,6 @@ public class DemoApp {
 
 
     private static class Task implements Serializable,Runnable{
-        @Override
         public void run() {
         }
     }
