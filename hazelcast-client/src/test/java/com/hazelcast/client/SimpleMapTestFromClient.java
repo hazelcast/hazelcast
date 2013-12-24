@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.junit.Ignore;
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Ignore("not a JUnit test")
 public class SimpleMapTestFromClient {
 
-    public static int THREAD_COUNT = 4;
+    public static int THREAD_COUNT = 40;
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
@@ -37,7 +38,9 @@ public class SimpleMapTestFromClient {
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {
             for (String arg : args) {
@@ -70,7 +73,7 @@ public class SimpleMapTestFromClient {
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    IMap<String, byte[]> map = hazelcast.getMap("default");
+                    IMap<String, byte[]> map = client.getMap("default");
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
@@ -96,7 +99,7 @@ public class SimpleMapTestFromClient {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
-                                + hazelcast.getCluster().getMembers().size());
+                                + client.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
                         System.out.println("Operations per Second : " + currentStats.total()

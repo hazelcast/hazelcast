@@ -58,7 +58,7 @@ public class ClientConnection implements Connection, Closeable {
     public boolean write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
-                logger.finest( "Connection is closed, won't write packet -> " + packet);
+                logger.finest("Connection is closed, won't write packet -> " + packet);
             }
             return false;
         }
@@ -135,10 +135,10 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress)socketChannel.socket().getLocalSocketAddress();
+        return (InetSocketAddress) socketChannel.socket().getLocalSocketAddress();
     }
 
-    private void close0() throws IOException {
+    private void innerClose() throws IOException {
         if (!live) {
             return;
         }
@@ -155,9 +155,9 @@ public class ClientConnection implements Connection, Closeable {
             return;
         }
         try {
-            close0();
+            innerClose();
         } catch (Exception e) {
-            logger.warning( e);
+            logger.warning(e);
         }
         String message = "Connection [" + socketChannel.socket().getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {

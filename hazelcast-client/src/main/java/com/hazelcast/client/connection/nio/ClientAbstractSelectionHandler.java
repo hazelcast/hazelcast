@@ -18,7 +18,6 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOSelector;
 import com.hazelcast.nio.SelectionHandler;
 
@@ -58,10 +57,6 @@ public abstract class ClientAbstractSelectionHandler implements SelectionHandler
             sk.cancel();
         }
         connection.close(e);
-        final ConnectionType connectionType = connection.getType();
-        if (connectionType.isClient() && !connectionType.isBinary()) {
-            return;
-        }
         StringBuilder sb = new StringBuilder();
         sb.append(Thread.currentThread().getName());
         sb.append(" Closing socket to endpoint ");

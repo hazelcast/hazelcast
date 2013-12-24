@@ -132,6 +132,7 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
     }
 
     public void shutdown() {
+        writeQueue.clear();
         while (poll() != null) ;
     }
 

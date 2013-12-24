@@ -182,7 +182,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
 
     public void destroyConnection(ClientConnection clientConnection) {
-
+        //TODO
     }
 
     public void handlePacket(DataAdapter packet) {
