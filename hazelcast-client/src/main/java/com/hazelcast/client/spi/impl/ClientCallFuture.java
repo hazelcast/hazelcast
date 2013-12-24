@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 
@@ -74,7 +75,7 @@ public class ClientCallFuture<V> implements CompletableFuture<V> {
     }
 
     private V resolveResponse() {
-        return (V) response;
+        return (V) ErrorHandler.returnResultOrThrowException(response);
     }
 
     public void andThen(ExecutionCallback<V> callback) {

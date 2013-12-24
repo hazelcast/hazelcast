@@ -67,7 +67,7 @@ public class MapLockRequest extends AbstractLockRequest implements SecureRequest
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        super.readPortable(reader);
+        super.read(reader);
     }
 
     public Permission getRequiredPermission() {

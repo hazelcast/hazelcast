@@ -54,13 +54,13 @@ public class RemoveRequest extends QueueRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         data.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         data = new Data();
         data.readData(in);

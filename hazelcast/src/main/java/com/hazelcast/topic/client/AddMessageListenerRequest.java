@@ -60,7 +60,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
         };
         String registrationId = service.addMessageListener(name, listener);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
-        return null;
+        return registrationId;
     }
 
     public String getServiceName() {

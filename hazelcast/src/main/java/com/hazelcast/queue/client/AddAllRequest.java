@@ -56,7 +56,7 @@ public class AddAllRequest extends QueueRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+        super.write(writer);
         writer.writeInt("s",dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
         for (Data data: dataList){
@@ -65,7 +65,7 @@ public class AddAllRequest extends QueueRequest {
     }
 
     public void read(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+        super.read(reader);
         int size = reader.readInt("s");
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);

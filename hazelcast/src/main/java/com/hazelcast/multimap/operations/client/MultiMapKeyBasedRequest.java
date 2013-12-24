@@ -44,14 +44,14 @@ public abstract class MultiMapKeyBasedRequest extends MultiMapRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

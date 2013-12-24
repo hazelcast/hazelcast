@@ -87,7 +87,7 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
             registrationId = replicatedRecordStore.addEntryListener(listener, predicate, key);
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getMapName(), registrationId);
-        return true;
+        return registrationId;
     }
 
     @Override

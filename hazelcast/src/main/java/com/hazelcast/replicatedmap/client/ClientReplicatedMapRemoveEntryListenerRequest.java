@@ -39,8 +39,7 @@ public class ClientReplicatedMapRemoveEntryListenerRequest extends AbstractRepli
 
     public Object call() throws Exception {
         final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
-        replicatedRecordStore.removeEntryListenerInternal(registrationId);
-        return null;
+        return replicatedRecordStore.removeEntryListenerInternal(registrationId);
     }
 
     public int getClassId() {

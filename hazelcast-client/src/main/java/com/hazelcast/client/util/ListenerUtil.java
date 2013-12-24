@@ -31,14 +31,14 @@ public final class ListenerUtil {
 
     public static String listen(ClientContext context, ClientRequest request, Object key, EventHandler handler) {
         //TODO callback
-        final Future<String> future;
+        final Future future;
         try {
             if (key == null) {
                 future = context.getInvocationService().invokeOnRandomTarget(request, handler);
             } else {
                 future = context.getInvocationService().invokeOnKeyOwner(request, key, handler);
             }
-            String registrationId = future.get();
+            String registrationId = context.getSerializationService().toObject(future.get());
             context.getClusterService().registerListener(registrationId, request.getCallId());
             return registrationId;
         } catch (Exception e) {
@@ -48,14 +48,14 @@ public final class ListenerUtil {
 
     public static String listen(HazelcastClient client, ClientRequest request, Object key, EventHandler handler) {
         //TODO callback
-        final Future<String> future;
+        final Future future;
         try {
             if (key == null) {
                 future = client.getInvocationService().invokeOnRandomTarget(request, handler);
             } else {
                 future = client.getInvocationService().invokeOnKeyOwner(request, key, handler);
             }
-            String registrationId = future.get();
+            String registrationId = client.getSerializationService().toObject(future.get());
             client.getClientClusterService().registerListener(registrationId, request.getCallId());
             return registrationId;
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public final class ListenerUtil {
         final Future<Boolean> future;
         try {
             future = context.getInvocationService().invokeOnRandomTarget(request);
-            Boolean result = future.get();
+            Boolean result = context.getSerializationService().toObject(future.get());
             context.getClusterService().deRegisterListener(registrationId);
             return result;
         } catch (Exception e) {

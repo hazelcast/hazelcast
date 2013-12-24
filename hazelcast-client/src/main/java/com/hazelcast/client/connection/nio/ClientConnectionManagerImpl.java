@@ -143,11 +143,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 clientConnection = connections.get(address);
                 if (clientConnection == null) {
                     clientConnection = connect(address);
-                    connections.put(address, clientConnection);
+                    authenticator.auth(clientConnection);
+                    connections.put(clientConnection.getRemoteEndpoint(), clientConnection);
                 }
             }
         }
-        authenticator.auth(clientConnection);
         return clientConnection;
     }
 

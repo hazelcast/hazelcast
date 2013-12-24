@@ -87,7 +87,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
         };
         String registrationId = service.addListener(name, listener, key, includeValue, false);
         endpoint.setListenerRegistration(MultiMapService.SERVICE_NAME, name, registrationId);
-        return null;
+        return registrationId;
     }
 
     public String getServiceName() {

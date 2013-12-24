@@ -104,7 +104,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         }
         String registrationId = mapService.addEventListener(listener, eventFilter, name);
         endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
-        return true;
+        return registrationId;
     }
 
     public String getServiceName() {
