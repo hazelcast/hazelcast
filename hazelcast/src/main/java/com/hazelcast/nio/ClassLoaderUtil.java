@@ -51,11 +51,31 @@ public final class ClassLoaderUtil {
     }
 
     public static <T> T newInstance(final Class<T> klass) throws Exception {
-        final Constructor<T> constructor = klass.getDeclaredConstructor();
+        final Constructor<T> constructor = getConstructor(klass);
+        return constructor.newInstance();
+    }
+
+    /**
+     * Loads the no arg Constructor for the given class.
+     *
+     *
+     * @param className the name of the class.
+     * @param classLoader the classLoader
+     * @return the loaded Constructor.
+     * @throws Exception  if the constructor could not be loaded successfully
+     */
+    public static <T> Constructor<T> loadNoArgConstructor(final String className, ClassLoader classLoader) throws Exception {
+        Class clazz = loadClass(classLoader,className);
+        final Constructor<T> constructor = getConstructor(clazz);
+        return constructor;
+    }
+
+    private static <T> Constructor<T> getConstructor(Class clazz) throws NoSuchMethodException {
+        final Constructor<T> constructor = clazz.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }
-        return constructor.newInstance();
+        return constructor;
     }
 
     public static Class<?> loadClass(final ClassLoader classLoader, final String className)

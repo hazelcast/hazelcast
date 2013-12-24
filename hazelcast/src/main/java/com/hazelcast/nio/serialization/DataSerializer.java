@@ -20,13 +20,17 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.UTFUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
@@ -38,6 +42,14 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
     private final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
+
+    private final ConcurrentMap<ClassLoader, ConcurrentMap<String,Constructor<DataSerializable>>> constructorCacheMap =
+            new ConcurrentHashMap<ClassLoader, ConcurrentMap<String, Constructor<DataSerializable>>>();
+
+    private final  ConcurrentMap<String,Constructor<DataSerializable>> defaultConstructorCache =
+            new ConcurrentHashMap<String, Constructor<DataSerializable>>();
+
+    private final ConcurrentMap<String,byte[]> serializedClassNameMap = new ConcurrentHashMap<String,byte[]>();
 
     DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories, ClassLoader classLoader) {
         try {
@@ -99,8 +111,13 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
                 }
                 // TODO: @mm - we can check if DS class is final.
             } else {
-                className = in.readUTF();
-                ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
+                int size = in.readInt();
+                byte[] bytes = new byte[size];
+                in.readFully(bytes);
+                className = UTFUtil.toString(bytes);
+                ClassLoader classLoader = in.getClassLoader();
+                Constructor<DataSerializable> constructor = loadNoArgConstructor(className, classLoader);
+                ds = constructor.newInstance();
             }
             ds.readData(in);
             return ds;
@@ -116,6 +133,38 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         }
     }
 
+    /**
+     * Loads the noArg constructor.
+     *
+     * Constructor caching is applied because retrieving the constructor based on reflection is a very expensive
+     * process.
+     *
+     * @param className
+     * @param classLoader
+     * @return
+     * @throws Exception
+     */
+    private Constructor<DataSerializable> loadNoArgConstructor(String className, ClassLoader classLoader) throws Exception {
+        ConcurrentMap<String, Constructor<DataSerializable>> constructorCache;
+        if (classLoader == null) {
+            constructorCache = defaultConstructorCache;
+        } else {
+            constructorCache = constructorCacheMap.get(classLoader);
+            if (constructorCache == null) {
+                constructorCache = new ConcurrentHashMap<String, Constructor<DataSerializable>>();
+                ConcurrentMap<String, Constructor<DataSerializable>> oldValue = constructorCacheMap.putIfAbsent(classLoader, constructorCache);
+                constructorCache = oldValue != null ? oldValue : constructorCache;
+            }
+        }
+
+        Constructor<DataSerializable> constructor = constructorCache.get(className);
+        if (constructor == null) {
+            constructor = ClassLoaderUtil.loadNoArgConstructor(className, classLoader);
+            constructorCache.putIfAbsent(className, constructor);
+        }
+        return constructor;
+    }
+
     public final void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
         final boolean identified = obj instanceof IdentifiedDataSerializable;
         out.writeBoolean(identified);
@@ -124,12 +173,22 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
             out.writeInt(ds.getFactoryId());
             out.writeInt(ds.getId());
         } else {
-            out.writeUTF(obj.getClass().getName());
+            String className = obj.getClass().getName();
+            byte[] bytes = serializedClassNameMap.get(className);
+            if(bytes == null){
+                bytes = UTFUtil.toBytes(className);
+                serializedClassNameMap.putIfAbsent(className, bytes);
+            }
+            out.writeInt(bytes.length);
+            out.write(bytes);
         }
         obj.writeData(out);
     }
 
     public void destroy() {
         factories.clear();
+        serializedClassNameMap.clear();
+        constructorCacheMap.clear();
+        defaultConstructorCache.clear();
     }
 }

@@ -68,13 +68,18 @@ public final class SerializationServiceImpl implements SerializationService {
 
     private volatile boolean active = true;
 
-    SerializationServiceImpl(InputOutputFactory inputOutputFactory, int version, ClassLoader classLoader,
+    SerializationServiceImpl(InputOutputFactory inputOutputFactory,
+                             int version,
+                             ClassLoader classLoader,
                              Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                              Map<Integer, ? extends PortableFactory> portableFactories,
-                             Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
-                             ManagedContext managedContext, PartitioningStrategy partitionStrategy,
+                             Collection<ClassDefinition> classDefinitions,
+                             boolean checkClassDefErrors,
+                             ManagedContext managedContext,
+                             PartitioningStrategy partitionStrategy,
                              int initialOutputBufferSize,
-                             boolean enableCompression, boolean enableSharedObject) {
+                             boolean enableCompression,
+                             boolean enableSharedObject) {
 
         this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
@@ -226,6 +231,7 @@ public final class SerializationServiceImpl implements SerializationService {
         return null;
     }
 
+
     public void writeObject(final ObjectDataOutput out, final Object obj) {
         final boolean isNull = obj == null;
         try {
@@ -295,6 +301,11 @@ public final class SerializationServiceImpl implements SerializationService {
         throw new HazelcastSerializationException(e);
     }
 
+    /**
+     * Takes a BufferObjectDataOutput from the pool, or creates one there is nothing in the pool.
+     *
+     * @return the BufferObjectDataOutput.
+     */
     BufferObjectDataOutput pop() {
         BufferObjectDataOutput out = outputPool.poll();
         if (out == null) {
@@ -303,6 +314,11 @@ public final class SerializationServiceImpl implements SerializationService {
         return out;
     }
 
+    /**
+     * Returns a BufferObjectDataOutput to the pool.
+     *
+     * @param out the BufferObjectDataOutput to be returned to the pool.
+     */
     void push(BufferObjectDataOutput out) {
         if (out != null) {
             out.clear();
