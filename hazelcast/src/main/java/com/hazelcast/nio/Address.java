@@ -34,6 +34,11 @@ public final class Address implements IdentifiedDataSerializable {
     private static final byte IPv4 = 4;
     private static final byte IPv6 = 6;
 
+    //we are going to cache the hashcode. We are going to apply the same technique used with caching the
+    //hashcode in String where the hashcode is stored in non volatile field. This is allowed because values
+    //are not allowed to appear out of thin air, so the returned hashcode either is 0, which will lead to
+    //calculating the hashcode, or it will a previous calcuted hashcode.
+    private int hashcode;
     private int port = -1;
     private String host;
     private byte type;
@@ -77,6 +82,7 @@ public final class Address implements IdentifiedDataSerializable {
         this.hostSet = address.hostSet;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(port);
         out.write(type);
@@ -89,6 +95,7 @@ public final class Address implements IdentifiedDataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         port = in.readInt();
         type = in.readByte();
@@ -131,9 +138,10 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        int result = port;
-        result = 31 * result + host.hashCode();
-        return result;
+        if (hashcode == 0) {
+            hashcode = host.hashCode() * 31 + port;
+        }
+        return hashcode;
     }
 
     public boolean isIPv4() {
