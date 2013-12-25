@@ -556,6 +556,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return mapService.addLocalEventListener(listener, name);
     }
 
+    public String addLocalEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, boolean includeValue) {
+        final MapService mapService = getService();
+        EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
+        return mapService.addLocalEventListener(listener, eventFilter, name);
+    }
+
     protected String addEntryListenerInternal(
             final EntryListener listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);

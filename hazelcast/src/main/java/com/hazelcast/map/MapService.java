@@ -681,6 +681,11 @@ public class MapService implements ManagedService, MigrationAwareService,
         return registration.getId();
     }
 
+    public String addLocalEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
+        EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, mapName, eventFilter, entryListener);
+        return registration.getId();
+    }
+
     public String addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
         return registration.getId();

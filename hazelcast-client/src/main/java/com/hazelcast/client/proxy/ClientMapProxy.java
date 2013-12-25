@@ -26,8 +26,8 @@ import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.*;
@@ -290,6 +290,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
+    @Override
+    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
     public String addInterceptor(MapInterceptor interceptor) {
         MapAddInterceptorRequest request = new MapAddInterceptorRequest(name, interceptor);
         return invoke(request);
