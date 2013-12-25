@@ -163,8 +163,8 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         super.writeInternal(out);
         int pCount = partitions.size();
         out.writeInt(pCount);
-        for (int i = 0; i < pCount; i++) {
-            out.writeInt(partitions.get(i));
+        for (Integer partition : partitions) {
+            out.writeInt(partition);
         }
         out.writeObject(operationFactory);
     }

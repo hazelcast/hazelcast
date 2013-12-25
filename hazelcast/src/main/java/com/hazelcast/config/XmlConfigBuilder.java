@@ -472,7 +472,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             mName = "add" + target.getClass().getSimpleName();
             method = getMethod(parent, mName);
         }
-        method.invoke(parent, new Object[]{target});
+        method.invoke(parent, target);
     }
 
     private void invoke(Object target, Method method, String value) {
@@ -484,13 +484,13 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         Class<?> arg = method.getParameterTypes()[0];
         try {
             if (arg == String.class) {
-                method.invoke(target, new Object[]{value});
+                method.invoke(target, value);
             } else if (arg == int.class) {
-                method.invoke(target, new Object[]{Integer.parseInt(value)});
+                method.invoke(target, Integer.parseInt(value));
             } else if (arg == long.class) {
-                method.invoke(target, new Object[]{Long.parseLong(value)});
+                method.invoke(target, Long.parseLong(value));
             } else if (arg == boolean.class) {
-                method.invoke(target, new Object[]{Boolean.parseBoolean(value)});
+                method.invoke(target, Boolean.parseBoolean(value));
             }
         } catch (Exception e) {
             logger.warning(e);
@@ -977,7 +977,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         SSLConfig sslConfig = new SSLConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {

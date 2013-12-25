@@ -290,7 +290,7 @@ public final class SampleObjects {
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             sb.append("Employee");
             sb.append("{name='").append(name).append('\'');
             sb.append(", city=").append(city);

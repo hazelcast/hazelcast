@@ -117,7 +117,7 @@ public final class CipherHelper {
                 md.reset();
                 byte[] saltDigest = md.digest(salt);
                 bbPass.put(saltDigest);
-                boolean isCBC = algorithm.indexOf("/CBC/") != -1;
+                boolean isCBC = algorithm.contains("/CBC/");
                 SecretKey key = null;
                 //CBC mode requires IvParameter with 8 byte input
                 int ivLength = 8;

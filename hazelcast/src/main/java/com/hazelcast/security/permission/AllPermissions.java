@@ -103,10 +103,8 @@ public final class AllPermissions extends ClusterPermission {
 			if (getClass() != obj.getClass())
 				return false;
 			AllPermissionsCollection other = (AllPermissionsCollection) obj;
-			if (all != other.all)
-				return false;
-			return true;
-		}
+            return all == other.all;
+        }
 	}
 
 }

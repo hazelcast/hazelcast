@@ -203,7 +203,7 @@ public abstract class AbstractXmlConfigHelper {
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
         socketInterceptorConfig.setEnabled(enabled);
 
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
