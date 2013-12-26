@@ -12,6 +12,7 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return creation time of this NearCache on this member
      */
     long getCreationTime();
+
     /**
      * Returns the number of entries owned by this member.
      *
@@ -19,7 +20,14 @@ public interface NearCacheStats extends LocalInstanceStats {
      */
     long getOwnedEntryCount();
 
+
+    /**
+     * Returns memory cost (number of bytes) of entries in this cache.
+     *
+     * @return memory cost (number of bytes) of entries in this cache.
+     */
     long getOwnedEntryMemoryCost();
+
     /**
      * Returns the number of hits (reads) of the locally owned entries.
      *
@@ -33,6 +41,13 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return number of misses.
      */
     long getMisses();
+
+    /**
+     * Returns the hit/miss ratio  of the locally owned entries.
+     *
+     * @return hit/miss ratio.
+     */
+    double getRatio();
 
 
 }

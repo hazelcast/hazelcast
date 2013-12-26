@@ -6,7 +6,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * User: eminn
@@ -18,8 +18,9 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private long ownedEntryCount;
     private long ownedEntryMemoryCost;
     private long creationTime;
-    private AtomicInteger hits = new AtomicInteger(0);
-    private AtomicInteger misses = new AtomicInteger(0);
+    private AtomicLong hits = new AtomicLong(0);
+    private AtomicLong misses = new AtomicLong(0);
+    private double ratio = 0.0;
 
     public NearCacheStatsImpl() {
         this.creationTime = Clock.currentTimeMillis();
@@ -54,9 +55,14 @@ public class NearCacheStatsImpl implements NearCacheStats {
         return misses.get();
     }
 
-    public void setHits(int hits) {
+    public void setHits(long hits) {
         this.hits.set(hits);
     }
+
+    public double getRatio() {
+        return (double)hits.get() / misses.get()  ;
+    }
+
 
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
 
@@ -72,15 +78,20 @@ public class NearCacheStatsImpl implements NearCacheStats {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(ownedEntryCount);
         out.writeLong(ownedEntryMemoryCost);
-        out.writeInt(hits.get());
+        out.writeLong(hits.get());
+        out.writeLong(misses.get());
+        out.writeDouble(ratio);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         this.ownedEntryCount = in.readLong();
         this.ownedEntryMemoryCost = in.readLong();
-        this.hits.set(in.readInt());
+        this.hits.set(in.readLong());
+        this.misses.set(in.readLong());
+        this.ratio = in.readDouble();
     }
+
 
     @Override
     public String toString() {
@@ -89,6 +100,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 ", ownedEntryMemoryCost=" + ownedEntryMemoryCost +
                 ", creationTime=" + creationTime +
                 ", hits=" + hits +
+                ", misses=" + misses +
+                ", ratio=" + ratio +
                 '}';
     }
 }
