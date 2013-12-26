@@ -17,10 +17,12 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.core.*;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -348,7 +350,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         final Collection<MemberImpl> members = getMemberList();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime(), false);
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members, false), getClusterTime(), false);
         for (MemberImpl member : members) {
             if (member.equals(thisMember)) {
                 continue;
@@ -457,7 +459,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                             logger.finest(message);
                         }
                         // send members update back to node trying to join again...
-                        nodeEngine.getOperationService().send(new MemberInfoUpdateOperation(createMemberInfos(getMemberList()), getClusterTime(), false),
+                        nodeEngine.getOperationService().send(new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true), getClusterTime(), false),
                                 member.getAddress());
                         return;
                     }
@@ -480,7 +482,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     sendMasterAnswer(joinMessage);
                 }
                 if (node.isMaster() && node.joined() && node.isActive()) {
-                    final MemberInfo newMemberInfo = new MemberInfo(joinMessage.getAddress(), joinMessage.getUuid());
+                    final MemberInfo newMemberInfo = new MemberInfo(joinMessage.getAddress(), joinMessage.getUuid(), joinMessage.getAttributes());
                     if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
                         final Credentials cr = joinMessage.getCredentials();
                         ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
@@ -656,7 +658,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 // pause migrations until join, member-update and post-join operations are completed.
                 node.getPartitionService().pauseMigration();
                 final Collection<MemberImpl> members = getMemberList();
-                final Collection<MemberInfo> memberInfos = createMemberInfos(members);
+                final Collection<MemberInfo> memberInfos = createMemberInfos(members, true);
                 for (MemberInfo memberJoining : setJoins) {
                     memberInfos.add(memberJoining);
                 }
@@ -696,10 +698,14 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members) {
+    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members, boolean joinOperation) {
         final Collection<MemberInfo> memberInfos = new LinkedList<MemberInfo>();
         for (MemberImpl member : members) {
-            memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid()));
+            if (joinOperation) {
+                memberInfos.add(new MemberInfo(member));
+            } else {
+                memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes()));
+            }
         }
         return memberInfos;
     }
@@ -730,7 +736,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             for (MemberInfo memberInfo : members) {
                 MemberImpl member = oldMemberMap.get(memberInfo.address);
                 if (member == null) {
-                    member = createMember(memberInfo.address, memberInfo.uuid, thisAddress.getScopeId());
+                    member = createMember(memberInfo.address, memberInfo.uuid, thisAddress.getScopeId(), memberInfo.attributes);
                 }
                 newMembers[k++] = member;
                 member.didRead();
@@ -743,6 +749,24 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             heartBeater();
             node.setJoined();
             logger.info(membersString());
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void updateMemberAttribute(String uuid, MapOperationType operationType, String key, Object value) {
+        lock.lock();
+        try {
+            Map<Address, MemberImpl> memberMap = membersRef.get();
+            if (memberMap != null) {
+                for (MemberImpl member : memberMap.values()) {
+                    if (member.getUuid().equals(uuid)) {
+                        member.updateAttribute(operationType, key, value);
+                        sendMemberAttributeEvent(member, operationType, key, value);
+                        break;
+                    }
+                }
+            }
         } finally {
             lock.unlock();
         }
@@ -894,9 +918,31 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId) {
+    private void sendMemberAttributeEvent(MemberImpl member, MapOperationType operationType, String key, Object value) {
+        final MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(getClusterProxy(), member, operationType, key, value);
+        final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
+        final MemberAttributeServiceEvent event = new MemberAttributeServiceEvent(getClusterProxy(), member, operationType, key, value);
+        if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
+            for (final MembershipAwareService service : membershipAwareServices) {
+                // service events should not block each other
+                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                    public void run() {
+                        service.memberAttributeChanged(event);
+                    }
+                });
+            }
+        }
+        final EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        for (EventRegistration reg : registrations) {
+            eventService.publishEvent(SERVICE_NAME, reg, memberAttributeEvent, reg.getId().hashCode());
+        }
+    }
+
+    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, Object> attributes) {
         address.setScopeId(ipV6ScopeId);
-        return new MemberImpl(address, thisAddress.equals(address), nodeUuid);
+        return new MemberImpl(address, thisAddress.equals(address), nodeUuid,
+                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), attributes);
     }
 
     @Override
@@ -1017,8 +1063,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
         if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
             listener.memberAdded(event);
-        } else {
+        } else if (event.getEventType() == MembershipEvent.MEMBER_REMOVED) {
             listener.memberRemoved(event);
+        } else if (event.getEventType() == MembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
+            listener.memberAttributeChanged((MemberAttributeEvent) event);
         }
     }
 

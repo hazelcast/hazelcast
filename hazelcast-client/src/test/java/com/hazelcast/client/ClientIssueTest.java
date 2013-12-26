@@ -317,6 +317,10 @@ public class ClientIssueTest {
             public void memberRemoved(MembershipEvent membershipEvent) {
 
             }
+
+            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+
+            }
         }));
         HazelcastClient.newHazelcastClient(clientConfig);
         assertTrue(latch.await(10, TimeUnit.SECONDS));

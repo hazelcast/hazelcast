@@ -153,6 +153,9 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         releaseLocksOf(uuid);
     }
 
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+    }
+
     private void releaseLocksOf(final String uuid) {
         for (LockStoreContainer container : containers) {
             for (LockStoreImpl lockStore : container.getLockStores()) {

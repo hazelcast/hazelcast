@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedExecutorService> implements IExecutorService {
 
     private final String name;
-    private final Random random = new Random();
+    private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
     private volatile long lastSubmitTime = 0L;
@@ -55,6 +55,57 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     @Override
+    public void execute(Runnable command, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        executeOnMember(command, members.get(selectedMember));
+    }
+
+    @Override
+    public void executeOnMembers(Runnable command, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        executeOnMembers(command, members);
+    }
+
+    @Override
+    public <T> Future<T> submit(Callable<T> task, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        return submitToMember(task, members.get(selectedMember));
+    }
+
+    @Override
+    public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        return submitToMembers(task, members);
+    }
+
+    @Override
+    public void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback callback) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        submitToMember(task, members.get(selectedMember), callback);
+    }
+
+    @Override
+    public void submitToMembers(Runnable task, MemberSelector memberSelector, MultiExecutionCallback callback) {
+        List<Member> members = selectMembers(memberSelector);
+        submitToMembers(task, members, callback);
+    }
+
+    @Override
+    public <T> void submit(Callable<T> task, MemberSelector memberSelector, ExecutionCallback<T> callback) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        submitToMember(task, members.get(selectedMember), callback);
+    }
+
+    @Override
+    public <T> void submitToMembers(Callable<T> task, MemberSelector memberSelector, MultiExecutionCallback callback) {
+        List<Member> members = selectMembers(memberSelector);
+        submitToMembers(task, members, callback);
+    }
+
     public void execute(Runnable command) {
         Callable<?> callable = createRunnableAdapter(command);
         submit(callable);
@@ -480,4 +531,19 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     private ExecutorService getAsyncExecutor() {
         return getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
+
+    private List<Member> selectMembers(MemberSelector memberSelector) {
+        if (memberSelector == null) {
+            throw new IllegalArgumentException("memberSelector must not be null");
+        }
+        List<Member> selected = new ArrayList<Member>();
+        Collection<MemberImpl> members = getNodeEngine().getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            if (memberSelector.acceptTask(member)) {
+                selected.add(member);
+            }
+        }
+        return selected;
+    }
+
 }

@@ -35,7 +35,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     public void setup(){
        server1 = Hazelcast.newHazelcastInstance();
        client = HazelcastClient.newHazelcastClient();
-       listener = new MemberShipEventLoger();
+           listener = new MemberShipEventLoger();
     }
 
     @After
@@ -148,6 +148,9 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
         public void memberRemoved(MembershipEvent event) {
             events.add(event);
+        }
+
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
         }
     }
 }

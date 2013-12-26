@@ -33,6 +33,8 @@ public class MembershipEvent extends EventObject {
 
     public static final int MEMBER_REMOVED = 2;
 
+    public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
+
     private final Member member;
 
     private final int eventType;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 
@@ -90,6 +91,8 @@ final class NodeShutdownLatch {
             if (localMember.equals(event.getMember())) {
                 latch.release();
             }
+        }
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
         }
     }
 }

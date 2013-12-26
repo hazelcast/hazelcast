@@ -313,6 +313,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     }
 
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+    }
+
     String addClientListener(ClientListener clientListener) {
         final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
         return registration.getId();
