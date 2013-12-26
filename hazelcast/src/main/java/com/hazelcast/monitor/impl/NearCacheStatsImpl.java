@@ -20,7 +20,6 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private long creationTime;
     private AtomicLong hits = new AtomicLong(0);
     private AtomicLong misses = new AtomicLong(0);
-    private double ratio = 0.0;
 
     public NearCacheStatsImpl() {
         this.creationTime = Clock.currentTimeMillis();
@@ -80,7 +79,6 @@ public class NearCacheStatsImpl implements NearCacheStats {
         out.writeLong(ownedEntryMemoryCost);
         out.writeLong(hits.get());
         out.writeLong(misses.get());
-        out.writeDouble(ratio);
     }
 
     @Override
@@ -89,7 +87,6 @@ public class NearCacheStatsImpl implements NearCacheStats {
         this.ownedEntryMemoryCost = in.readLong();
         this.hits.set(in.readLong());
         this.misses.set(in.readLong());
-        this.ratio = in.readDouble();
     }
 
 
@@ -101,7 +98,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 ", creationTime=" + creationTime +
                 ", hits=" + hits +
                 ", misses=" + misses +
-                ", ratio=" + ratio +
+                ", ratio=" + getRatio() +
                 '}';
     }
 }

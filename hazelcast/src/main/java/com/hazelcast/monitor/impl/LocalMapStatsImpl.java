@@ -82,7 +82,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(maxPutLatency.get());
         out.writeLong(maxRemoveLatency.get());
         out.writeLong(heapCost);
-        nearCacheStats.writeData(out);
+        boolean hasNearCache = nearCacheStats != null;
+        out.writeBoolean(hasNearCache);
+        if(hasNearCache)
+        {
+            nearCacheStats.writeData(out);
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -109,8 +114,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxPutLatency.set(in.readLong());
         maxRemoveLatency.set(in.readLong());
         heapCost = in.readLong();
-        nearCacheStats = new NearCacheStatsImpl();
-        nearCacheStats.readData(in);
+        boolean hasNearCache = in.readBoolean();
+        if(hasNearCache)
+        {
+            nearCacheStats = new NearCacheStatsImpl();
+            nearCacheStats.readData(in);
+        }
     }
 
     public long getOwnedEntryCount() {

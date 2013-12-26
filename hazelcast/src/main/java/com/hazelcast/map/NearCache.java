@@ -102,7 +102,7 @@ public class NearCache {
     private NearCacheStatsImpl createNearCacheStats() {
         long ownedEntryCount = 0;
         long ownedEntryMemoryCost = 0;
-        int hits = 0;
+        long hits = 0;
         for (CacheRecord record : cache.values())
         {
             ownedEntryCount++;
