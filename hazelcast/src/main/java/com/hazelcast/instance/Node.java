@@ -47,10 +47,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -151,7 +148,7 @@ public class Node {
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
-        final Map<String, Object> memberAttributes = config.getMemberAttributeConfig().getAttributes();
+        final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
         localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
@@ -624,6 +621,19 @@ public class Node {
 
     public BuildInfo getBuildInfo() {
         return buildInfo;
+    }
+
+    private Map<String, Object> findMemberAttributes(MemberAttributeConfig attributeConfig) {
+        Map<String, Object> attributes = new HashMap<String, Object>(attributeConfig.getAttributes());
+        Properties properties = System.getProperties();
+        for (String key : properties.stringPropertyNames()) {
+            if (key.startsWith("hazelcast.member.attribute.")) {
+                String shortKey = key.substring("hazelcast.member.attribute.".length());
+                String value = properties.getProperty(key);
+                attributes.put(shortKey, value);
+            }
+        }
+        return attributes;
     }
 
     private static final ConstructorFunction<String, BuildInfo> BUILD_INFO_CONSTRUCTOR = new ConstructorFunction<String, BuildInfo>() {

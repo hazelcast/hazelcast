@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import java.util.Collections;
 import java.util.Map;
 
 public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
@@ -36,7 +37,7 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
 
     @Override
     public Map<String, Object> getAttributes() {
-        throw new UnsupportedOperationException("This config is read-only");
+        return Collections.unmodifiableMap(super.getAttributes());
     }
 
 }

@@ -232,6 +232,29 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         h2.getLifecycleService().shutdown();
     }
 
+    @Test(timeout = 120000)
+    public void testCommandLineAttributes() throws Exception {
+        System.setProperty("hazelcast.member.attribute.Test-2", "1234");
+        System.setProperty("hazelcast.member.attribute.Test-3", "12345");
+        System.setProperty("hazelcast.member.attribute.Test-4", "123456");
+
+        Config c = new Config();
+        c.getMemberAttributeConfig().setAttribute("Test-1", 123);
+        c.getMemberAttributeConfig().setAttribute("Test-2", 123);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+
+        HazelcastInstance h1 = factory.newHazelcastInstance(c);
+        Member m1 = h1.getCluster().getLocalMember();
+        m1.setAttribute("Test-4", Integer.valueOf(1234567));
+
+        assertEquals(123, m1.getAttribute("Test-1"));
+        assertEquals("1234", m1.getAttribute("Test-2"));
+        assertEquals("12345", m1.getAttribute("Test-3"));
+        assertEquals(1234567, m1.getAttribute("Test-4"));
+
+        h1.getLifecycleService().shutdown();
+    }
+
     private static class LatchMembershipListener implements MembershipListener {
         private final CountDownLatch latch;
 
