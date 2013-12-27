@@ -13,7 +13,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestRule;
 
 import java.io.IOException;
@@ -21,7 +24,7 @@ import java.io.IOException;
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-dataserializable")
 @BenchmarkHistoryChart(filePrefix = "benchmark-dataserializable-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
-public class DataSerializableBenchmark extends HazelcastTestSupport{
+public class DataSerializableBenchmark extends HazelcastTestSupport {
 
     private static SerializationService serializationService;
     @Rule
@@ -41,52 +44,52 @@ public class DataSerializableBenchmark extends HazelcastTestSupport{
     }
 
     @Test
-    public void serialize_DataSerializable() throws Exception {
+    public void serialize() throws Exception {
         long startMs = System.currentTimeMillis();
-        int iterations = 50000000;
+        int iterations = 100000000;
 
         DataSerializable object = new DataSerializableObject();
-        for(int k=0;k<iterations;k++){
-            if(k%1000000==0){
-                System.out.println("At: "+k);
+        for (int k = 0; k < iterations; k++) {
+            if (k % 5000000 == 0) {
+                System.out.println("At: " + k);
             }
             Data data = serializationService.toData(object);
-            if(data==null){
+            if (data == null) {
                 throw new NullPointerException();
             }
         }
-        long durationMs = System.currentTimeMillis()-startMs;
-        double performance = (iterations*1000d)/durationMs;
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
         System.out.println("Serialize DataSerializable performance: " + performance);
     }
 
     @Test
-    public void deserialize_DataSerializable() throws Exception {
+    public void deserialize() throws Exception {
         long startMs = System.currentTimeMillis();
-        int iterations = 50000000;
+        int iterations = 100000000;
 
         DataSerializable object = new DataSerializableObject();
         Data data = serializationService.toData(object);
-        for(int k=0;k<iterations;k++){
-            if(k%1000000==0){
-                System.out.println("At: "+k);
+        for (int k = 0; k < iterations; k++) {
+            if (k % 5000000 == 0) {
+                System.out.println("At: " + k);
             }
             Object x = serializationService.toObject(data);
-            if(x == null){
+            if (x == null) {
                 throw new NullPointerException();
             }
         }
-        long durationMs = System.currentTimeMillis()-startMs;
-        double performance = (iterations*1000d)/durationMs;
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
         System.out.println("Deserialize DataSerializable performance: " + performance);
     }
 
-    private static class DataSerializableObject implements DataSerializable{
+    private static class DataSerializableObject implements DataSerializable {
         private int field;
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-           out.writeInt(field);
+            out.writeInt(field);
         }
 
         @Override
@@ -95,10 +98,10 @@ public class DataSerializableBenchmark extends HazelcastTestSupport{
         }
     }
 
-    public static void main(String[] args)throws Exception{
+    public static void main(String[] args) throws Exception {
         DataSerializableBenchmark.beforeClass();
         DataSerializableBenchmark benchmark = new DataSerializableBenchmark();
-        benchmark.serialize_DataSerializable();
+        benchmark.serialize();
         AtomicLongBenchmark.afterClass();
     }
 }

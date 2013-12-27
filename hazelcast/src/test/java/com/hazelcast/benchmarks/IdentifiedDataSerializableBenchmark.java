@@ -45,13 +45,13 @@ public class IdentifiedDataSerializableBenchmark extends HazelcastTestSupport {
     }
 
     @Test
-    public void serialize_DataSerializable() throws Exception {
+    public void serialize() throws Exception {
         long startMs = System.currentTimeMillis();
         int iterations = 100 * 1000 * 1000;
 
         DataSerializable object = new DummyObject();
         for (int k = 0; k < iterations; k++) {
-            if (k % 1000000 == 0) {
+            if (k % 5000000 == 0) {
                 System.out.println("At: " + k);
             }
             Data data = serializationService.toData(object);
@@ -65,14 +65,14 @@ public class IdentifiedDataSerializableBenchmark extends HazelcastTestSupport {
     }
 
     @Test
-    public void deserialize_DataSerializable() throws Exception {
+    public void deserialize() throws Exception {
         long startMs = System.currentTimeMillis();
         int iterations = 100 * 1000 * 1000;
 
         DummyObject object = new DummyObject();
         Data data = serializationService.toData(object);
         for (int k = 0; k < iterations; k++) {
-            if (k % 1000000 == 0) {
+            if (k % 5000000 == 0) {
                 System.out.println("At: " + k);
             }
             Object x = serializationService.toObject(data);
@@ -119,9 +119,11 @@ public class IdentifiedDataSerializableBenchmark extends HazelcastTestSupport {
     }
 
     public static void main(String[] args) throws Exception {
-        DataSerializableBenchmark.beforeClass();
-        DataSerializableBenchmark benchmark = new DataSerializableBenchmark();
-        benchmark.serialize_DataSerializable();
+        IdentifiedDataSerializableBenchmark.beforeClass();
+        IdentifiedDataSerializableBenchmark benchmark = new IdentifiedDataSerializableBenchmark();
+        benchmark.serialize();
+        benchmark.serialize();
+        benchmark.serialize();
         AtomicLongBenchmark.afterClass();
     }
 }
