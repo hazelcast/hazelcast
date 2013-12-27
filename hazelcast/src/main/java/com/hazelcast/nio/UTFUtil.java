@@ -20,7 +20,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * @author mdogan 1/23/13
@@ -38,7 +41,18 @@ public final class UTFUtil {
             try {
                 Constructor<String> constructor = String.class.getDeclaredConstructor(char[].class, boolean.class);
                 constructor.setAccessible(true);
-                stringCreator = new FastStringCreator(constructor);
+
+                try {
+                    // Test if ASM lib is available
+                    Class.forName("org.objectweb.asm.ClassWriter");
+                    Class<? extends StringCreatorBuilder> clazz = (Class<? extends StringCreatorBuilder>)
+                            Class.forName("com.hazelcast.nio.AsmStringCreatorBuilder");
+                    StringCreatorBuilder builder = clazz.newInstance();
+                    stringCreator = builder.build();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                    stringCreator = new FastStringCreator(constructor);
+                }
             } catch (Throwable t) {
                 faststring = false;
             }
@@ -124,8 +138,8 @@ public final class UTFUtil {
     }
 
     private static void readShortUTF(final DataInput in, final char[] data,
-                                       final int beginIndex, final int endIndex,
-                                       byte[] buffer) throws IOException {
+                                     final int beginIndex, final int endIndex,
+                                     byte[] buffer) throws IOException {
         final int utflen = in.readShort();
         int c = 0, char2, char3;
         int count = 0;
@@ -171,7 +185,7 @@ public final class UTFUtil {
                 case 14:
                     /* 1110 xxxx 10xx xxxx 10xx xxxx */
                     lastCount = count++;
-                    if (count + 2> utflen)
+                    if (count + 2 > utflen)
                         throw new UTFDataFormatException("malformed input: partial character at end");
                     char2 = buffered(buffer, count++, utflen, in);
                     char3 = buffered(buffer, count++, utflen, in);
@@ -203,7 +217,11 @@ public final class UTFUtil {
         return buffer[innerPos];
     }
 
-    private static interface StringCreator {
+    public static interface StringCreatorBuilder {
+        StringCreator build() throws ReflectiveOperationException;
+    }
+
+    public static interface StringCreator {
         String buildString(char[] chars);
     }
 

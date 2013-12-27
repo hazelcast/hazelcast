@@ -186,6 +186,13 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>3.3.1</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!--OSGi dep-->
         <dependency>
             <groupId>org.osgi</groupId>
