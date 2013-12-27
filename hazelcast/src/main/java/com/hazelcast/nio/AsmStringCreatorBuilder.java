@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.Map;
 import java.util.function.Function;
 
 class AsmStringCreatorBuilder implements Opcodes, UTFUtil.StringCreatorBuilder {
@@ -32,7 +33,7 @@ class AsmStringCreatorBuilder implements Opcodes, UTFUtil.StringCreatorBuilder {
     public UTFUtil.StringCreator build() throws ReflectiveOperationException {
         ClassWriter cw = new ClassWriter(0);
         cw.visit(V1_6, ACC_PUBLIC + ACC_FINAL, "sun/reflect/AsmString", null,
-                "sun/reflect/MagicAccessorImpl", new String[]{"java/util/function/Function"});
+                "sun/reflect/MagicAccessorImpl", new String[]{"java/util/Map"});
 
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
@@ -42,7 +43,7 @@ class AsmStringCreatorBuilder implements Opcodes, UTFUtil.StringCreatorBuilder {
         mv.visitMaxs(1, 1);
         mv.visitEnd();
 
-        mv = cw.visitMethod(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        mv = cw.visitMethod(ACC_PUBLIC, "get", "(Ljava/lang/Object;)Ljava/lang/Object;", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
         mv.visitTypeInsn(NEW, "java/lang/String");
@@ -54,24 +55,24 @@ class AsmStringCreatorBuilder implements Opcodes, UTFUtil.StringCreatorBuilder {
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(5, 5);
         mv.visitEnd();
-        final byte[] data = cw.toByteArray();
+
+        cw.visitEnd();
+        final byte[] impl = cw.toByteArray();
 
         final sun.misc.Unsafe unsafe = UnsafeHelper.UNSAFE;
         Class clazz = AccessController.doPrivileged(new PrivilegedAction<Class>() {
             @Override
             public Class run() {
-                Class<?> stringClass = String.class;
-
                 ClassLoader cl = sun.reflect.ConstructorAccessor.class.getClassLoader();
-                return unsafe.defineClass("sun/reflect/AsmString", data, 0, data.length, cl, null);
+                return unsafe.defineClass("sun/reflect/AsmString", impl, 0, impl.length, cl, null);
             }
         });
 
-        final Function function = (Function) clazz.newInstance();
+        final Map accessor = (Map) clazz.newInstance();
         return new UTFUtil.StringCreator() {
             @Override
             public String buildString(char[] chars) {
-                return (String) function.apply(chars);
+                return (String) accessor.get(chars);
             }
         };
     }
