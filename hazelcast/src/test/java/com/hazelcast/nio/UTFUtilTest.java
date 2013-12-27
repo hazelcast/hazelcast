@@ -39,17 +39,18 @@ public class UTFUtilTest {
 
     @Test
     public void testShortSizedText_1Chunk() throws Exception {
+        byte[] buffer = new byte[1024];
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 2; i < 100; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                UTFUtil.writeUTF(dos, randomString);
+                UTFUtil.writeUTF(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = UTFUtil.readUTF(dis);
+                String result = UTFUtil.readUTF(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -58,17 +59,18 @@ public class UTFUtilTest {
 
     @Test
     public void testMiddleSizedText_2Chunks() throws Exception {
+        byte[] buffer = new byte[1024];
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 170; i < 300; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                UTFUtil.writeUTF(dos, randomString);
+                UTFUtil.writeUTF(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = UTFUtil.readUTF(dis);
+                String result = UTFUtil.readUTF(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -77,17 +79,18 @@ public class UTFUtilTest {
 
     @Test
     public void testLongSizedText_min3Chunks() throws Exception {
+        byte[] buffer = new byte[1024];
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 330; i < 900; i += 5) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                UTFUtil.writeUTF(dos, randomString);
+                UTFUtil.writeUTF(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = UTFUtil.readUTF(dis);
+                String result = UTFUtil.readUTF(dis, buffer);
 
                 assertEquals(randomString, result);
             }
