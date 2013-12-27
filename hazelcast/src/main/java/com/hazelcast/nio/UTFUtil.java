@@ -35,32 +35,8 @@ public final class UTFUtil {
     private static final StringCreator STRING_CREATOR;
 
     static {
-        boolean faststring = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring", "true"));
-        StringCreator stringCreator = null;
-        if (faststring) {
-            try {
-                Constructor<String> constructor = String.class.getDeclaredConstructor(char[].class, boolean.class);
-                constructor.setAccessible(true);
-
-                try {
-                    // Test if ASM lib is available
-                    Class.forName("org.objectweb.asm.ClassWriter");
-                    Class<? extends StringCreatorBuilder> clazz = (Class<? extends StringCreatorBuilder>)
-                            Class.forName("com.hazelcast.nio.AsmStringCreatorBuilder");
-                    StringCreatorBuilder builder = clazz.newInstance();
-                    stringCreator = builder.build();
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                    stringCreator = new FastStringCreator(constructor);
-                }
-            } catch (Throwable t) {
-                faststring = false;
-            }
-        }
-        if (!faststring) {
-            stringCreator = new DefaultStringCreator();
-        }
-        STRING_CREATOR = stringCreator;
+        // Find the best matching String creator to prevent as much allocations as possible
+        STRING_CREATOR = findBestStringCreator();
     }
 
     public static void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
@@ -215,6 +191,98 @@ public final class UTFUtil {
             in.readFully(buffer, 0, length);
         }
         return buffer[innerPos];
+    }
+
+    private static StringCreator findBestStringCreator() {
+        boolean faststringEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring", "true"));
+        boolean asmEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.asm", "true"));
+        boolean bcelEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.bcel", "true"));
+        boolean debugEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.debug", "false"));
+
+        if (!faststringEnabled) {
+            return new DefaultStringCreator();
+        }
+
+        try {
+            // Give access to the package private String constructor
+            Constructor<String> constructor = String.class.getDeclaredConstructor(char[].class, boolean.class);
+            constructor.setAccessible(true);
+
+            if (bcelEnabled && isBcelAvailable(debugEnabled)) {
+                StringCreator stringCreator = tryLoadBcelStringCreator(debugEnabled);
+                if (stringCreator != null) {
+                    return stringCreator;
+                }
+            }
+
+            if (asmEnabled && isAsmAvailable(debugEnabled)) {
+                StringCreator stringCreator = tryLoadAsmStringCreator(debugEnabled);
+                if (stringCreator != null) {
+                    return stringCreator;
+                }
+            }
+
+            // If bytecode generation is not possible use reflection
+            return new FastStringCreator(constructor);
+
+        } catch (Throwable ignore) {
+            if (debugEnabled) {
+                ignore.printStackTrace();
+            }
+        }
+
+        // If everything else goes wrong just use default
+        return new DefaultStringCreator();
+    }
+
+    private static StringCreator tryLoadAsmStringCreator(boolean debugEnabled) {
+        try {
+            Class<?> asmBuilder = Class.forName("com.hazelcast.nio.AsmStringCreatorBuilder");
+            StringCreatorBuilder builder = (UTFUtil.StringCreatorBuilder) asmBuilder.newInstance();
+            return builder.build();
+        } catch (Throwable ignore) {
+            if (debugEnabled) {
+                ignore.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private static boolean isAsmAvailable(boolean debugEnabled) {
+        try {
+            Class.forName("org.objectweb.asm.ClassWriter");
+            return true;
+        } catch (Throwable ignore) {
+            if (debugEnabled) {
+                ignore.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    private static StringCreator tryLoadBcelStringCreator(boolean debugEnabled) {
+        try {
+            Class<?> bcelBuilder = Class.forName("com.hazelcast.nio.BcelStringCreatorBuilder");
+            StringCreatorBuilder builder = (UTFUtil.StringCreatorBuilder) bcelBuilder.newInstance();
+            return builder.build();
+        } catch (Throwable ignore) {
+            if (debugEnabled) {
+                ignore.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private static boolean isBcelAvailable(boolean debugEnabled) {
+        try {
+            Class.forName("org.apache.bcel.generic.ClassGen");
+            return true;
+        } catch (Throwable ignore) {
+            if (debugEnabled) {
+                ignore.printStackTrace();
+            }
+        }
+        return false;
     }
 
     public static interface StringCreatorBuilder {

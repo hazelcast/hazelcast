@@ -19,14 +19,10 @@ package com.hazelcast.nio;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import sun.invoke.anon.AnonymousClassLoader;
 
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.Map;
-import java.util.function.Function;
 
 class AsmStringCreatorBuilder implements Opcodes, UTFUtil.StringCreatorBuilder {
 
