@@ -7,8 +7,6 @@ import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 import com.carrotsearch.junitbenchmarks.annotation.LabelType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -19,13 +17,11 @@ import org.junit.*;
 import org.junit.rules.TestRule;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.Executor;
 
 @AxisRange(min = 0, max = 1)
-@BenchmarkMethodChart(filePrefix = "benchmark-serialization")
-@BenchmarkHistoryChart(filePrefix = "benchmark-serialization-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
-public class SerializationServiceBenchmark extends HazelcastTestSupport{
+@BenchmarkMethodChart(filePrefix = "benchmark-dataserializable")
+@BenchmarkHistoryChart(filePrefix = "benchmark-dataserializable-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
+public class DataSerializableBenchmark extends HazelcastTestSupport{
 
     private static SerializationService serializationService;
     @Rule
@@ -76,7 +72,7 @@ public class SerializationServiceBenchmark extends HazelcastTestSupport{
                 System.out.println("At: "+k);
             }
             Object x = serializationService.toObject(data);
-            if(data == null){
+            if(x == null){
                 throw new NullPointerException();
             }
         }
@@ -100,8 +96,8 @@ public class SerializationServiceBenchmark extends HazelcastTestSupport{
     }
 
     public static void main(String[] args)throws Exception{
-        SerializationServiceBenchmark.beforeClass();
-        SerializationServiceBenchmark benchmark = new SerializationServiceBenchmark();
+        DataSerializableBenchmark.beforeClass();
+        DataSerializableBenchmark benchmark = new DataSerializableBenchmark();
         benchmark.serialize_DataSerializable();
         AtomicLongBenchmark.afterClass();
     }
