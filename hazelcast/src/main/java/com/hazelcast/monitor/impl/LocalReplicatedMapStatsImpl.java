@@ -255,6 +255,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         return 0;
     }
 
+    @Override
+    public NearCacheStatsImpl getNearCacheStats() {
+        throw new UnsupportedOperationException("Replicated map has no Near Cache!");
+    }
+
     public String toString() {
         return "LocalReplicatedMapStatsImpl{" +
                 "lastAccessTime=" + lastAccessTime +
