@@ -294,17 +294,20 @@ final class BasicOperationService implements InternalOperationService {
 
      @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        return createInvocationBuilder(serviceName, op, partitionId).invoke();
+         return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
+                 InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS, InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null).invoke();
     }
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return createInvocationBuilder(serviceName, op, target).invoke();
+        return new BasicTargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
+                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null).invoke();
     }
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId, Callback callback) {
-        return createInvocationBuilder(serviceName, op, partitionId).setCallback(callback).invoke();
+        return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
+                InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS, InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, null).invoke();
     }
 
     /**
