@@ -49,14 +49,14 @@ public class UTFUtilTest {
             // [6] = enable Javassist generator
             {true, false, false, false, false, false, false},
             {true, true, false, false, false, false, false},
-            {false, true, true, true, false, false, false},
-            {false, true, true, false, true, false, false},
-            {false, true, true, false, false, true, false},
-            {false, true, true, false, false, false, true},
             {false, true, false, true, false, false, false},
             {false, true, false, false, true, false, false},
             {false, true, false, false, false, true, false},
-            {false, true, false, false, false, false, true}
+            {false, true, false, false, false, false, true},
+            {false, true, true, true, false, false, false},
+            {false, true, true, false, true, false, false},
+            {false, true, true, false, false, true, false},
+            {false, true, true, false, false, false, true}
     };
 
     private static final String TYPE_DEFAULT = "DefaultStringCreator";
@@ -71,13 +71,14 @@ public class UTFUtilTest {
     private static final String TYPE_MAGIC_JAVASSIST = "JavassistMagicAccessorStringCreatorBuilder$2";
 
     private static final String[] CLASSTYPES_JAVA8 = {
-            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_JAVA8_ASM, TYPE_JAVA8_BCEL, TYPE_JAVA8_INTERNAL_BCEL,
-            TYPE_JAVA8_JAVASSIST, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
+            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL,
+            TYPE_MAGIC_JAVASSIST, TYPE_JAVA8_ASM, TYPE_JAVA8_BCEL, TYPE_JAVA8_INTERNAL_BCEL,
+            TYPE_JAVA8_JAVASSIST
     };
 
     private static final String[] CLASSTYPES_JAVA6 = {
-            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL,
-            TYPE_MAGIC_JAVASSIST, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
+            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL,
+            TYPE_MAGIC_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
     };
 
     private static final String[] CLASSTYPES;
@@ -99,12 +100,12 @@ public class UTFUtilTest {
                 continue;
             }
 
-            boolean faststringEnabled = parameters[0];
-            boolean java8Enabled = parameters[1];
-            boolean asmEnabled = parameters[2];
-            boolean bcelEnabled = parameters[3];
-            boolean internalBcelEnabled = parameters[4];
-            boolean javassistEnabled = parameters[5];
+            boolean faststringEnabled = parameters[1];
+            boolean java8Enabled = parameters[2];
+            boolean asmEnabled = parameters[3];
+            boolean bcelEnabled = parameters[4];
+            boolean internalBcelEnabled = parameters[5];
+            boolean javassistEnabled = parameters[6];
 
             UTFUtil.StringCreator stringCreator = StringCreatorUtil.findBestStringCreator(faststringEnabled,
                     java8Enabled, asmEnabled, bcelEnabled, internalBcelEnabled, javassistEnabled, false);
@@ -141,12 +142,12 @@ public class UTFUtilTest {
                 continue;
             }
 
-            boolean faststringEnabled = parameters[0];
-            boolean java8Enabled = parameters[1];
-            boolean asmEnabled = parameters[2];
-            boolean bcelEnabled = parameters[3];
-            boolean internalBcelEnabled = parameters[4];
-            boolean javassistEnabled = parameters[5];
+            boolean faststringEnabled = parameters[1];
+            boolean java8Enabled = parameters[2];
+            boolean asmEnabled = parameters[3];
+            boolean bcelEnabled = parameters[4];
+            boolean internalBcelEnabled = parameters[5];
+            boolean javassistEnabled = parameters[6];
 
             UTFUtil.StringCreator stringCreator = StringCreatorUtil.findBestStringCreator(faststringEnabled,
                     java8Enabled, asmEnabled, bcelEnabled, internalBcelEnabled, javassistEnabled, false);
@@ -183,12 +184,12 @@ public class UTFUtilTest {
                 continue;
             }
 
-            boolean faststringEnabled = parameters[0];
-            boolean java8Enabled = parameters[1];
-            boolean asmEnabled = parameters[2];
-            boolean bcelEnabled = parameters[3];
-            boolean internalBcelEnabled = parameters[4];
-            boolean javassistEnabled = parameters[5];
+            boolean faststringEnabled = parameters[1];
+            boolean java8Enabled = parameters[2];
+            boolean asmEnabled = parameters[3];
+            boolean bcelEnabled = parameters[4];
+            boolean internalBcelEnabled = parameters[5];
+            boolean javassistEnabled = parameters[6];
 
             UTFUtil.StringCreator stringCreator = StringCreatorUtil.findBestStringCreator(faststringEnabled,
                     java8Enabled, asmEnabled, bcelEnabled, internalBcelEnabled, javassistEnabled, false);
@@ -305,7 +306,10 @@ public class UTFUtilTest {
 
     private static boolean executeTest(boolean[] parameters) {
         if (isSunOracleJVM()) {
-            return true;
+            if (isOracleJava8()) {
+                return true;
+            }
+            return !parameters[2];
         }
         for (int i = 2; i < parameters.length; i++) {
             if (parameters[i]) {
