@@ -40,16 +40,23 @@ public class UTFUtilTest {
     private static final int BENCHMARK_ROUNDS = 1; // 100;
 
     private static final boolean[][] PARAMETERS = {
-            {false, false, false, false, false, false},
-            {true, false, false, false, false, false},
-            {true, true, true, false, false, false},
-            {true, true, false, true, false, false},
-            {true, true, false, false, true, false},
-            {true, true, false, false, false, true},
-            {true, false, true, false, false, false},
-            {true, false, false, true, false, false},
-            {true, false, false, false, true, false},
-            {true, false, false, false, false, true}
+            // [0] = avail outside Sun / Oracle JVM
+            // [1] = use faststring
+            // [2] = enable Java8 way (not hooked that deep into the JVM)
+            // [3] = enable ASM generator
+            // [4] = enable BCEL generator
+            // [5] = enable JVM internal BCEL generator (com.sun.org.apache.bcel.internal)
+            // [6] = enable Javassist generator
+            {true, false, false, false, false, false, false},
+            {true, true, false, false, false, false, false},
+            {false, true, true, true, false, false, false},
+            {false, true, true, false, true, false, false},
+            {false, true, true, false, false, true, false},
+            {false, true, true, false, false, false, true},
+            {false, true, false, true, false, false, false},
+            {false, true, false, false, true, false, false},
+            {false, true, false, false, false, true, false},
+            {false, true, false, false, false, false, true}
     };
 
     private static final String TYPE_DEFAULT = "DefaultStringCreator";
@@ -88,6 +95,10 @@ public class UTFUtilTest {
         byte[] buffer = new byte[1024];
         for (int z = 0; z < PARAMETERS.length; z++) {
             boolean[] parameters = PARAMETERS[z];
+            if (!executeTest(parameters)) {
+                continue;
+            }
+
             boolean faststringEnabled = parameters[0];
             boolean java8Enabled = parameters[1];
             boolean asmEnabled = parameters[2];
@@ -126,6 +137,10 @@ public class UTFUtilTest {
         byte[] buffer = new byte[1024];
         for (int z = 0; z < PARAMETERS.length; z++) {
             boolean[] parameters = PARAMETERS[z];
+            if (!executeTest(parameters)) {
+                continue;
+            }
+
             boolean faststringEnabled = parameters[0];
             boolean java8Enabled = parameters[1];
             boolean asmEnabled = parameters[2];
@@ -164,6 +179,10 @@ public class UTFUtilTest {
         byte[] buffer = new byte[1024];
         for (int z = 0; z < PARAMETERS.length; z++) {
             boolean[] parameters = PARAMETERS[z];
+            if (!executeTest(parameters)) {
+                continue;
+            }
+
             boolean faststringEnabled = parameters[0];
             boolean java8Enabled = parameters[1];
             boolean asmEnabled = parameters[2];
@@ -279,6 +298,27 @@ public class UTFUtilTest {
             if (method.getReturnType().equals(String.class)) {
                 return true;
             }
+        } catch (Throwable ignore) {
+        }
+        return false;
+    }
+
+    private static boolean executeTest(boolean[] parameters) {
+        if (isSunOracleJVM()) {
+            return true;
+        }
+        for (int i = 2; i < parameters.length; i++) {
+            if (parameters[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isSunOracleJVM() {
+        try {
+            Class.forName("sun.reflect.MagicAccessorImpl");
+            return true;
         } catch (Throwable ignore) {
         }
         return false;
