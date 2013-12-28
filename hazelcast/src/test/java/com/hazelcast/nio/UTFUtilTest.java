@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.utf8.StringCreatorUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.lang.reflect.Method;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -37,22 +39,84 @@ public class UTFUtilTest {
     private static final Random RANDOM = new Random(-System.nanoTime());
     private static final int BENCHMARK_ROUNDS = 1; // 100;
 
+    private static final boolean[][] PARAMETERS = {
+            {false, false, false, false, false, false},
+            {true, false, false, false, false, false},
+            {true, true, true, false, false, false},
+            {true, true, false, true, false, false},
+            {true, true, false, false, true, false},
+            {true, true, false, false, false, true},
+            {true, false, true, false, false, false},
+            {true, false, false, true, false, false},
+            {true, false, false, false, true, false},
+            {true, false, false, false, false, true}
+    };
+
+    private static final String TYPE_DEFAULT = "DefaultStringCreator";
+    private static final String TYPE_FASTSTRING = "FastStringCreator";
+    private static final String TYPE_JAVA8_ASM = "AsmStringAccessor";
+    private static final String TYPE_JAVA8_BCEL = "BcelStringAccessor";
+    private static final String TYPE_JAVA8_INTERNAL_BCEL = "InternalBcelStringAccessor";
+    private static final String TYPE_JAVA8_JAVASSIST = "JavassistStringAccessor";
+    private static final String TYPE_MAGIC_ASM = "AsmMagicAccessorStringCreatorBuilder$2";
+    private static final String TYPE_MAGIC_BCEL = "BcelMagicAccessorStringCreatorBuilder$2";
+    private static final String TYPE_MAGIC_INTERNAL_BCEL = "InternalBcelMagicAccessorStringCreatorBuilder$2";
+    private static final String TYPE_MAGIC_JAVASSIST = "JavassistMagicAccessorStringCreatorBuilder$2";
+
+    private static final String[] CLASSTYPES_JAVA8 = {
+            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_JAVA8_ASM, TYPE_JAVA8_BCEL, TYPE_JAVA8_INTERNAL_BCEL,
+            TYPE_JAVA8_JAVASSIST, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
+    };
+
+    private static final String[] CLASSTYPES_JAVA6 = {
+            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL,
+            TYPE_MAGIC_JAVASSIST, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
+    };
+
+    private static final String[] CLASSTYPES;
+
+    static {
+        if (isOracleJava8()) {
+            CLASSTYPES = CLASSTYPES_JAVA8;
+        } else {
+            CLASSTYPES = CLASSTYPES_JAVA6;
+        }
+    }
+
     @Test
     public void testShortSizedText_1Chunk() throws Exception {
         byte[] buffer = new byte[1024];
-        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
-            for (int i = 2; i < 100; i += 2) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-                DataOutputStream dos = new DataOutputStream(baos);
+        for (int z = 0; z < PARAMETERS.length; z++) {
+            boolean[] parameters = PARAMETERS[z];
+            boolean faststringEnabled = parameters[0];
+            boolean java8Enabled = parameters[1];
+            boolean asmEnabled = parameters[2];
+            boolean bcelEnabled = parameters[3];
+            boolean internalBcelEnabled = parameters[4];
+            boolean javassistEnabled = parameters[5];
 
-                String randomString = random(i * 100);
-                UTFUtil.writeUTF(dos, randomString, buffer);
+            UTFUtil.StringCreator stringCreator = StringCreatorUtil.findBestStringCreator(faststringEnabled,
+                    java8Enabled, asmEnabled, bcelEnabled, internalBcelEnabled, javassistEnabled, false);
 
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-                DataInputStream dis = new DataInputStream(bais);
-                String result = UTFUtil.readUTF(dis, buffer);
+            String className = stringCreator.getClass().toString();
+            assertContains(className, CLASSTYPES[z]);
 
-                assertEquals(randomString, result);
+            UTFUtil utfUtil = new UTFUtil(stringCreator);
+
+            for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
+                for (int i = 2; i < 100; i += 2) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+                    DataOutputStream dos = new DataOutputStream(baos);
+
+                    String randomString = random(i * 100);
+                    utfUtil.writeUTF(dos, randomString, buffer);
+
+                    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                    DataInputStream dis = new DataInputStream(bais);
+                    String result = utfUtil.readUTF(dis, buffer);
+
+                    assertEquals(randomString, result);
+                }
             }
         }
     }
@@ -60,19 +124,37 @@ public class UTFUtilTest {
     @Test
     public void testMiddleSizedText_2Chunks() throws Exception {
         byte[] buffer = new byte[1024];
-        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
-            for (int i = 170; i < 300; i += 2) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-                DataOutputStream dos = new DataOutputStream(baos);
+        for (int z = 0; z < PARAMETERS.length; z++) {
+            boolean[] parameters = PARAMETERS[z];
+            boolean faststringEnabled = parameters[0];
+            boolean java8Enabled = parameters[1];
+            boolean asmEnabled = parameters[2];
+            boolean bcelEnabled = parameters[3];
+            boolean internalBcelEnabled = parameters[4];
+            boolean javassistEnabled = parameters[5];
 
-                String randomString = random(i * 100);
-                UTFUtil.writeUTF(dos, randomString, buffer);
+            UTFUtil.StringCreator stringCreator = StringCreatorUtil.findBestStringCreator(faststringEnabled,
+                    java8Enabled, asmEnabled, bcelEnabled, internalBcelEnabled, javassistEnabled, false);
 
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-                DataInputStream dis = new DataInputStream(bais);
-                String result = UTFUtil.readUTF(dis, buffer);
+            String className = stringCreator.getClass().toString();
+            assertContains(className, CLASSTYPES[z]);
 
-                assertEquals(randomString, result);
+            UTFUtil utfUtil = new UTFUtil(stringCreator);
+
+            for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
+                for (int i = 170; i < 300; i += 2) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+                    DataOutputStream dos = new DataOutputStream(baos);
+
+                    String randomString = random(i * 100);
+                    utfUtil.writeUTF(dos, randomString, buffer);
+
+                    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                    DataInputStream dis = new DataInputStream(bais);
+                    String result = utfUtil.readUTF(dis, buffer);
+
+                    assertEquals(randomString, result);
+                }
             }
         }
     }
@@ -80,21 +162,46 @@ public class UTFUtilTest {
     @Test
     public void testLongSizedText_min3Chunks() throws Exception {
         byte[] buffer = new byte[1024];
-        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
-            for (int i = 330; i < 900; i += 5) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-                DataOutputStream dos = new DataOutputStream(baos);
+        for (int z = 0; z < PARAMETERS.length; z++) {
+            boolean[] parameters = PARAMETERS[z];
+            boolean faststringEnabled = parameters[0];
+            boolean java8Enabled = parameters[1];
+            boolean asmEnabled = parameters[2];
+            boolean bcelEnabled = parameters[3];
+            boolean internalBcelEnabled = parameters[4];
+            boolean javassistEnabled = parameters[5];
 
-                String randomString = random(i * 100);
-                UTFUtil.writeUTF(dos, randomString, buffer);
+            UTFUtil.StringCreator stringCreator = StringCreatorUtil.findBestStringCreator(faststringEnabled,
+                    java8Enabled, asmEnabled, bcelEnabled, internalBcelEnabled, javassistEnabled, false);
 
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-                DataInputStream dis = new DataInputStream(bais);
-                String result = UTFUtil.readUTF(dis, buffer);
+            String className = stringCreator.getClass().toString();
+            assertContains(className, CLASSTYPES[z]);
 
-                assertEquals(randomString, result);
+            UTFUtil utfUtil = new UTFUtil(stringCreator);
+
+            for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
+                for (int i = 330; i < 900; i += 5) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+                    DataOutputStream dos = new DataOutputStream(baos);
+
+                    String randomString = random(i * 100);
+                    utfUtil.writeUTF(dos, randomString, buffer);
+
+                    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                    DataInputStream dis = new DataInputStream(bais);
+                    String result = utfUtil.readUTF(dis, buffer);
+
+                    assertEquals(randomString, result);
+                }
             }
         }
+    }
+
+    private static void assertContains(String className, String classType) {
+        if (className.contains(classType)) {
+            return;
+        }
+        throw new AssertionError(className + " does not contains " + classType);
     }
 
     private static String random(int count) {
@@ -134,35 +241,47 @@ public class UTFUtilTest {
             //if ((letters && Character.isLetter(ch))
             //        || (numbers && Character.isDigit(ch))
             //        || (!letters && !numbers)) {
-                if (ch >= 56320 && ch <= 57343) {
-                    if (count == 0) {
-                        count++;
-                    } else {
-                        // low surrogate, insert high surrogate after putting it in
-                        buffer[count] = ch;
-                        count--;
-                        buffer[count] = (char) (55296 + random.nextInt(128));
-                    }
-                } else if (ch >= 55296 && ch <= 56191) {
-                    if (count == 0) {
-                        count++;
-                    } else {
-                        // high surrogate, insert low surrogate before putting it in
-                        buffer[count] = (char) (56320 + random.nextInt(128));
-                        count--;
-                        buffer[count] = ch;
-                    }
-                } else if (ch >= 56192 && ch <= 56319) {
-                    // private high surrogate, no effing clue, so skip it
+            if (ch >= 56320 && ch <= 57343) {
+                if (count == 0) {
                     count++;
                 } else {
+                    // low surrogate, insert high surrogate after putting it in
+                    buffer[count] = ch;
+                    count--;
+                    buffer[count] = (char) (55296 + random.nextInt(128));
+                }
+            } else if (ch >= 55296 && ch <= 56191) {
+                if (count == 0) {
+                    count++;
+                } else {
+                    // high surrogate, insert low surrogate before putting it in
+                    buffer[count] = (char) (56320 + random.nextInt(128));
+                    count--;
                     buffer[count] = ch;
                 }
+            } else if (ch >= 56192 && ch <= 56319) {
+                // private high surrogate, no effing clue, so skip it
+                count++;
+            } else {
+                buffer[count] = ch;
+            }
             //} else {
             //    count++;
             //}
         }
         return new String(buffer);
+    }
+
+    private static boolean isOracleJava8() {
+        try {
+            Class<?> clazz = Class.forName("sun.misc.JavaLangAccess");
+            Method method = clazz.getDeclaredMethod("newStringUnsafe", char[].class);
+            if (method.getReturnType().equals(String.class)) {
+                return true;
+            }
+        } catch (Throwable ignore) {
+        }
+        return false;
     }
 
 }

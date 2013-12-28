@@ -186,10 +186,11 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Used for compiling the StringCreator builder -->
         <dependency>
-            <groupId>asm</groupId>
+            <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>3.3.1</version>
+            <version>4.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -198,6 +199,13 @@
             <version>5.1</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.12.1.GA</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Used for compiling the StringCreator builder -->
 
         <!--OSGi dep-->
         <dependency>

@@ -183,7 +183,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     public void writeUTF(String str) throws IOException {
-        UTFUtil.writeUTF(this, str, utfBuffer);
+        UTFUtil.INSTANCE.writeUTF(this, str, utfBuffer);
     }
 
     public void write(byte[] b) throws IOException {

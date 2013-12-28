@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.utf8;
 
+import com.hazelcast.nio.UTFUtil;
+import com.hazelcast.nio.UnsafeHelper;
 import org.apache.bcel.Constants;
 import org.apache.bcel.generic.*;
 
@@ -23,11 +25,14 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 
-public class BcelStringCreatorBuilder implements Constants, UTFUtil.StringCreatorBuilder {
+class BcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorBuilder {
 
     @Override
-    public UTFUtil.StringCreator build() throws ReflectiveOperationException {
-        ClassGen classGen = new ClassGen("sun.reflect.BcelString",
+    public UTFUtil.StringCreator build() throws Exception {
+        final int id = StringCreatorUtil.CLASS_ID_COUNTER.getAndIncrement();
+        final String className = "sun.reflect.BcelString" + id;
+
+        ClassGen classGen = new ClassGen(className,
                 "sun.reflect.MagicAccessorImpl", "<generated>", ACC_PUBLIC | ACC_FINAL,
                 new String[]{"java/util/Map"});
 
@@ -37,15 +42,27 @@ public class BcelStringCreatorBuilder implements Constants, UTFUtil.StringCreato
         InstructionList il = new InstructionList();
         il.append(ilf.createNew("java.lang.String"));
         il.append(InstructionConstants.DUP);
-        il.append(InstructionConstants.ALOAD_1);
-        il.append(ilf.createCast(Type.OBJECT, new ArrayType(Type.CHAR, 1)));
-        il.append(InstructionConstants.ICONST_1);
-        il.append(ilf.createInvoke("java.lang.String", "<init>", Type.VOID,
-                new Type[]{new ArrayType(Type.CHAR, 1), Type.BOOLEAN}, INVOKESPECIAL));
-        il.append(ilf.createReturn(Type.OBJECT));
+        if (StringCreatorUtil.isJava6()) {
+            il.append(InstructionConstants.ICONST_0);
+            il.append(InstructionConstants.ALOAD_1);
+            il.append(ilf.createCast(Type.OBJECT, new ArrayType(Type.CHAR, 1)));
+            il.append(InstructionConstants.ARRAYLENGTH);
+            il.append(InstructionConstants.ALOAD_1);
+            il.append(ilf.createCast(Type.OBJECT, new ArrayType(Type.CHAR, 1)));
+            il.append(ilf.createInvoke("java.lang.String", "<init>", Type.VOID,
+                    new Type[]{Type.INT, Type.INT, new ArrayType(Type.CHAR, 1)}, INVOKESPECIAL));
+            il.append(ilf.createReturn(Type.OBJECT));
+        } else {
+            il.append(InstructionConstants.ALOAD_1);
+            il.append(ilf.createCast(Type.OBJECT, new ArrayType(Type.CHAR, 1)));
+            il.append(InstructionConstants.ICONST_1);
+            il.append(ilf.createInvoke("java.lang.String", "<init>", Type.VOID,
+                    new Type[]{new ArrayType(Type.CHAR, 1), Type.BOOLEAN}, INVOKESPECIAL));
+            il.append(ilf.createReturn(Type.OBJECT));
+        }
 
         MethodGen mg = new MethodGen(ACC_PUBLIC, Type.OBJECT, new Type[]{Type.OBJECT}, new String[]{"key"},
-                "get", "sun.reflect.BcelString", il, classGen.getConstantPool());
+                "get", className, il, classGen.getConstantPool());
         classGen.addMethod(mg.getMethod());
 
         final byte[] impl = classGen.getJavaClass().getBytes();
@@ -55,7 +72,7 @@ public class BcelStringCreatorBuilder implements Constants, UTFUtil.StringCreato
             @Override
             public Class run() {
                 ClassLoader cl = sun.reflect.ConstructorAccessor.class.getClassLoader();
-                return unsafe.defineClass("sun/reflect/BcelString", impl, 0, impl.length, cl, null);
+                return unsafe.defineClass("sun/reflect/BcelString" + id, impl, 0, impl.length, cl, null);
             }
         });
 

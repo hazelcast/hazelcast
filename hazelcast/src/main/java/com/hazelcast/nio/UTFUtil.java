@@ -16,30 +16,32 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.utf8.StringCreatorUtil;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 
-/**
- * @author mdogan 1/23/13
- */
 public final class UTFUtil {
 
     private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
-    private static final StringCreator STRING_CREATOR;
+    public static final UTFUtil INSTANCE;
 
     static {
         // Find the best matching String creator to prevent as much allocations as possible
-        STRING_CREATOR = findBestStringCreator();
+        StringCreator stringCreator = StringCreatorUtil.findBestStringCreator();
+        INSTANCE = new UTFUtil(stringCreator);
     }
 
-    public static void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
+    private final StringCreator stringCreator;
+
+    public UTFUtil(StringCreator stringCreator) {
+        this.stringCreator = stringCreator;
+    }
+
+    public void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
         boolean isNull = str == null;
         out.writeBoolean(isNull);
         if (isNull) return;
@@ -54,7 +56,7 @@ public final class UTFUtil {
         }
     }
 
-    private static void writeShortUTF(final DataOutput out, final String str,
+    private void writeShortUTF(final DataOutput out, final String str,
                                       final int beginIndex, final int endIndex,
                                       byte[] buffer) throws IOException {
         int utfLength = 0;
@@ -99,7 +101,7 @@ public final class UTFUtil {
         out.write(buffer, 0, length == 0 ? buffer.length : length);
     }
 
-    public static String readUTF(final DataInput in, byte[] buffer) throws IOException {
+    public String readUTF(final DataInput in, byte[] buffer) throws IOException {
         boolean isNull = in.readBoolean();
         if (isNull) return null;
         int length = in.readInt();
@@ -110,10 +112,10 @@ public final class UTFUtil {
             int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
             readShortUTF(in, data, beginIndex, endIndex, buffer);
         }
-        return STRING_CREATOR.buildString(data);
+        return stringCreator.buildString(data);
     }
 
-    private static void readShortUTF(final DataInput in, final char[] data,
+    private void readShortUTF(final DataInput in, final char[] data,
                                      final int beginIndex, final int endIndex,
                                      byte[] buffer) throws IOException {
         final int utflen = in.readShort();
@@ -176,7 +178,7 @@ public final class UTFUtil {
         }
     }
 
-    private static void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
+    private void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
         int innerPos = pos % buffer.length;
         if (pos > 0 && innerPos == 0) {
             out.write(buffer, 0, buffer.length);
@@ -184,7 +186,7 @@ public final class UTFUtil {
         buffer[innerPos] = value;
     }
 
-    private static byte buffered(byte[] buffer, int pos, int utfLenght, DataInput in) throws IOException {
+    private byte buffered(byte[] buffer, int pos, int utfLenght, DataInput in) throws IOException {
         int innerPos = pos % buffer.length;
         if (innerPos == 0) {
             int length = Math.min(buffer.length, utfLenght - pos);
@@ -193,129 +195,8 @@ public final class UTFUtil {
         return buffer[innerPos];
     }
 
-    private static StringCreator findBestStringCreator() {
-        boolean faststringEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring", "true"));
-        boolean asmEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.asm", "true"));
-        boolean bcelEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.bcel", "true"));
-        boolean debugEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.debug", "false"));
-
-        if (!faststringEnabled) {
-            return new DefaultStringCreator();
-        }
-
-        try {
-            // Give access to the package private String constructor
-            Constructor<String> constructor = String.class.getDeclaredConstructor(char[].class, boolean.class);
-            constructor.setAccessible(true);
-
-            if (bcelEnabled && isBcelAvailable(debugEnabled)) {
-                StringCreator stringCreator = tryLoadBcelStringCreator(debugEnabled);
-                if (stringCreator != null) {
-                    return stringCreator;
-                }
-            }
-
-            if (asmEnabled && isAsmAvailable(debugEnabled)) {
-                StringCreator stringCreator = tryLoadAsmStringCreator(debugEnabled);
-                if (stringCreator != null) {
-                    return stringCreator;
-                }
-            }
-
-            // If bytecode generation is not possible use reflection
-            return new FastStringCreator(constructor);
-
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-
-        // If everything else goes wrong just use default
-        return new DefaultStringCreator();
-    }
-
-    private static StringCreator tryLoadAsmStringCreator(boolean debugEnabled) {
-        try {
-            Class<?> asmBuilder = Class.forName("com.hazelcast.nio.AsmStringCreatorBuilder");
-            StringCreatorBuilder builder = (UTFUtil.StringCreatorBuilder) asmBuilder.newInstance();
-            return builder.build();
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    private static boolean isAsmAvailable(boolean debugEnabled) {
-        try {
-            Class.forName("org.objectweb.asm.ClassWriter");
-            return true;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return false;
-    }
-
-    private static StringCreator tryLoadBcelStringCreator(boolean debugEnabled) {
-        try {
-            Class<?> bcelBuilder = Class.forName("com.hazelcast.nio.BcelStringCreatorBuilder");
-            StringCreatorBuilder builder = (UTFUtil.StringCreatorBuilder) bcelBuilder.newInstance();
-            return builder.build();
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    private static boolean isBcelAvailable(boolean debugEnabled) {
-        try {
-            Class.forName("org.apache.bcel.generic.ClassGen");
-            return true;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return false;
-    }
-
-    public static interface StringCreatorBuilder {
-        StringCreator build() throws ReflectiveOperationException;
-    }
-
     public static interface StringCreator {
         String buildString(char[] chars);
-    }
-
-    private static class DefaultStringCreator implements StringCreator {
-        @Override
-        public String buildString(char[] chars) {
-            return new String(chars);
-        }
-    }
-
-    private static class FastStringCreator implements StringCreator {
-
-        private final Constructor<String> constructor;
-
-        private FastStringCreator(Constructor<String> constructor) {
-            this.constructor = constructor;
-        }
-
-        @Override
-        public String buildString(char[] chars) {
-            try {
-                return constructor.newInstance(chars, Boolean.TRUE);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
 }

@@ -182,7 +182,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeUTF(final String str) throws IOException {
-        UTFUtil.writeUTF(this, str, utfBuffer);
+        UTFUtil.INSTANCE.writeUTF(this, str, utfBuffer);
     }
 
     public void writeCharArray(char[] chars) throws IOException {
