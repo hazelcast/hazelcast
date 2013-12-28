@@ -150,7 +150,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 }
             } catch (Exception e) {
                 final ILogger logger = getLogger();
-                logger.finest( "While executing callable: " + callableToString, e);
+                if(logger.isFinestEnabled()){
+                    logger.finest( "While executing callable: " + callableToString, e);
+                }
                 result = e;
             } finally {
                 if (uuid != null) {
