@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.nio.utf8.StringCreatorUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.JvmUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 public class UTFUtilTest {
 
     private static final Random RANDOM = new Random(-System.nanoTime());
-    private static final int BENCHMARK_ROUNDS = 1; // 100;
+    private static final int BENCHMARK_ROUNDS = 10; // 100;
 
     private static final boolean[][] PARAMETERS = {
             // [0] = avail outside Sun / Oracle JVM
@@ -67,27 +68,47 @@ public class UTFUtilTest {
     private static final String TYPE_JAVA8_JAVASSIST = "JavassistStringAccessor";
     private static final String TYPE_MAGIC_ASM = "AsmMagicAccessorStringCreatorBuilder$2";
     private static final String TYPE_MAGIC_BCEL = "BcelMagicAccessorStringCreatorBuilder$2";
-    private static final String TYPE_MAGIC_INTERNAL_BCEL = "InternalBcelMagicAccessorStringCreatorBuilder$2";
+    private static final String TYPE_MAGIC_ORACLE_INTERNAL_BCEL = "OracleBcelMagicAccessorStringCreatorBuilder$2";
+    private static final String TYPE_MAGIC_IBM_INTERNAL_BCEL = "IBMBcelMagicAccessorStringCreatorBuilder$2";
     private static final String TYPE_MAGIC_JAVASSIST = "JavassistMagicAccessorStringCreatorBuilder$2";
 
-    private static final String[] CLASSTYPES_JAVA8 = {
-            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_INTERNAL_BCEL,
+    private static final String[] CLASSTYPES_ORACLE_JAVA8 = {
+            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_ORACLE_INTERNAL_BCEL,
             TYPE_MAGIC_JAVASSIST, TYPE_JAVA8_ASM, TYPE_JAVA8_BCEL, TYPE_JAVA8_INTERNAL_BCEL,
             TYPE_JAVA8_JAVASSIST
     };
 
-    private static final String[] CLASSTYPES_JAVA6 = {
+    private static final String[] CLASSTYPES_IBM_JAVA8 = {
+            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL, TYPE_MAGIC_IBM_INTERNAL_BCEL,
+            TYPE_MAGIC_JAVASSIST, TYPE_JAVA8_ASM, TYPE_JAVA8_BCEL, TYPE_JAVA8_INTERNAL_BCEL,
+            TYPE_JAVA8_JAVASSIST
+    };
+
+    private static final String[] CLASSTYPES_ORACLE_JAVA6 = {
             TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL,
-            TYPE_MAGIC_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
+            TYPE_MAGIC_ORACLE_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
+    };
+
+    private static final String[] CLASSTYPES_IBM_JAVA6 = {
+            TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL,
+            TYPE_MAGIC_IBM_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
     };
 
     private static final String[] CLASSTYPES;
 
     static {
-        if (isOracleJava8()) {
-            CLASSTYPES = CLASSTYPES_JAVA8;
+        if (JvmUtil.getJvmVendor() == JvmUtil.Vendor.IBM) {
+            if (JvmUtil.getJvmVersion() == JvmUtil.Version.Java8) {
+                CLASSTYPES = CLASSTYPES_IBM_JAVA8;
+            } else {
+                CLASSTYPES = CLASSTYPES_IBM_JAVA6;
+            }
         } else {
-            CLASSTYPES = CLASSTYPES_JAVA6;
+            if (isOracleJava8()) {
+                CLASSTYPES = CLASSTYPES_ORACLE_JAVA8;
+            } else {
+                CLASSTYPES = CLASSTYPES_ORACLE_JAVA6;
+            }
         }
     }
 

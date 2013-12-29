@@ -17,8 +17,8 @@
 package com.hazelcast.nio.utf8;
 
 import com.hazelcast.nio.UTFUtil;
-import com.sun.org.apache.bcel.internal.Constants;
-import com.sun.org.apache.bcel.internal.generic.*;
+import org.apache.bcel.Constants;
+import org.apache.bcel.generic.*;
 import sun.misc.JavaLangAccess;
 import sun.misc.SharedSecrets;
 

@@ -18,8 +18,8 @@ package com.hazelcast.nio.utf8;
 
 import com.hazelcast.nio.UTFUtil;
 import com.hazelcast.nio.UnsafeHelper;
-import com.ibm.xtq.bcel.Constants;
-import com.ibm.xtq.bcel.generic.*;
+import org.apache.bcel.Constants;
+import org.apache.bcel.generic.*;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -62,6 +62,13 @@ class IBMBcelMagicAccessorStringCreatorBuilder implements Constants, StringCreat
 
         MethodGen mg = new MethodGen(ACC_PUBLIC, Type.OBJECT, new Type[]{Type.OBJECT}, new String[]{"key"},
                 "get", className, il, classGen.getConstantPool());
+        if (StringCreatorUtil.useOldStringConstructor()) {
+            mg.setMaxStack(6);
+            mg.setMaxLocals(6);
+        } else {
+            mg.setMaxStack(5);
+            mg.setMaxLocals(5);
+        }
         classGen.addMethod(mg.getMethod());
 
         final byte[] impl = classGen.getJavaClass().getBytes();

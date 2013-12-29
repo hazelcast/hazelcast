@@ -159,7 +159,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <!-- redirectTestOutputToFile>true</redirectTestOutputToFile -->
                     <!-- 1C means 1 process per cpu core -->
                     <!-- forkCount>1C</forkCount>
                     <reuseForks>true</reuseForks>
@@ -168,11 +168,16 @@
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <parallel>methods</parallel -->
 
+                    <!-- Prevent all faststring generators for normal calls -->
                     <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
+                        -Dhazelcast.nio.faststring.asm=false
+                        -Dhazelcast.nio.faststring.bcel=false
+                        -Dhazelcast.nio.faststring.internalbcel=false
+                        -Dhazelcast.nio.faststring.javassist=false
                     </argLine>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>

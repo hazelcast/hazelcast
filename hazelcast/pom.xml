@@ -44,6 +44,29 @@
 
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>relocate-packages</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <classpathScope>compile</classpathScope>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <arguments>
+                        <argument>${basedir}</argument>
+                    </arguments>
+                    <mainClass>com.hazelcast.nio.utf8.CompileTimeRelocator</mainClass>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
                 <version>1.7</version>
                 <configuration>
