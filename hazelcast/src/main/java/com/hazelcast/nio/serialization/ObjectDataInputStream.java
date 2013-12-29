@@ -34,6 +34,8 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     private final DataInputStream dataInput;
     private final ByteOrder byteOrder;
 
+    private final byte[] utfBuffer = new byte[1024];
+
     public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
         this(in, serializationService, ByteOrder.BIG_ENDIAN);
     }
@@ -208,7 +210,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public String readUTF() throws IOException {
-        return UTFUtil.readUTF(this);
+        return UTFUtil.readUTF(this, utfBuffer);
     }
 
     public void close() throws IOException {

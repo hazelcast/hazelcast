@@ -36,6 +36,8 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     final SerializationService service;
 
+    private final byte[] utfBuffer = new byte[1024];
+
     ByteArrayObjectDataOutput(int size, SerializationService service) {
         this.initialSize = size;
         this.buffer = new byte[size];
@@ -180,7 +182,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeUTF(final String str) throws IOException {
-        UTFUtil.writeUTF(this, str);
+        UTFUtil.writeUTF(this, str, utfBuffer);
     }
 
     public void writeCharArray(char[] chars) throws IOException {
