@@ -417,22 +417,23 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             }
 
             final Set<Address> unknownAddresses = new HashSet<Address>();
-            PartitionView[] newPartitions = partitionState.getPartitions();
-            for (PartitionView newPartition : newPartitions) {
-                PartitionImpl currentPartition = partitions[newPartition.getPartitionId()];
+            Address[][] state = partitionState.getPartitionState();
+            for(int partitionId=0;partitionId<state.length;partitionId++){
+                Address[] replicas = state[partitionId];
+                PartitionImpl currentPartition = partitions[partitionId];
                 for (int index = 0; index < PartitionView.MAX_REPLICA_COUNT; index++) {
-                    Address address = newPartition.getReplicaAddress(index);
+                    Address address = replicas[index];
                     if (address != null && getMember(address) == null) {
                         if (logger.isFinestEnabled()) {
                             logger.finest(
                                     "Unknown " + address + " found in partition table sent from master "
-                                            + sender + ". It has probably already left the cluster. Partition: " + newPartition);
+                                            + sender + ". It has probably already left the cluster. Partition: " + partitionId);
                         }
                         unknownAddresses.add(address);
                     }
                 }
                 // backup replicas will be assigned after active migrations are finalized.
-                currentPartition.setOwner(newPartition.getOwner());
+                currentPartition.setOwner(replicas[0]);
             }
             if (!unknownAddresses.isEmpty() && logger.isLoggable(Level.WARNING)) {
                 StringBuilder s = new StringBuilder("Following unknown addresses are found in partition table")
@@ -456,9 +457,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 rollbackActiveMigrationsFromPreviousMaster(masterMember.getUuid());
             }
 
-            for (PartitionView newPartition : newPartitions) {
-                PartitionImpl currentPartition = partitions[newPartition.getPartitionId()];
-                currentPartition.setPartitionInfo(newPartition);
+            for(int partitionId=0;partitionId<partitionCount;partitionId++){
+                PartitionImpl partition = partitions[partitionId];
+                Address[] replicas = state[partitionId];
+                partition.setPartitionInfo(replicas);
             }
 
             stateVersion.set(partitionState.getVersion());
