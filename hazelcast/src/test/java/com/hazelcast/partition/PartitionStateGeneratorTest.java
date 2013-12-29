@@ -210,22 +210,12 @@ public class PartitionStateGeneratorTest {
         }
 
         @Override
-        public Address getReplicaAddress(int index) {
-           return replicas[index];
-        }
-
-        @Override
-        public boolean isBackup(Address address) {
-            throw new UnsupportedOperationException();
+        public Address getReplicaAddress(int replicaIndex) {
+           return replicas[replicaIndex];
         }
 
         @Override
         public boolean isOwnerOrBackup(Address address) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getReplicaIndexOf(Address address) {
             throw new UnsupportedOperationException();
         }
     }

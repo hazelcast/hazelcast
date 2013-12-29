@@ -1455,8 +1455,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
 
         @Override
-        public Address getReplicaAddress(int index) {
-            return (addresses.length() > index) ? addresses.get(index) : null;
+        public Address getReplicaAddress(int replicaIndex) {
+            return (addresses.length() > replicaIndex) ? addresses.get(replicaIndex) : null;
         }
 
         void setReplicaAddress(int index, Address address) {
@@ -1488,26 +1488,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             return false;
         }
 
-        void setPartitionInfo(PartitionView partition) {
-            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-                setReplicaAddress(i, partition.getReplicaAddress(i));
-            }
-        }
-
         void setPartitionInfo(Address[] replicas) {
             for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
                 setReplicaAddress(i, replicas[i]);
             }
-        }
-
-        @Override
-        public boolean isBackup(Address address) {
-            for (int i = 1; i < MAX_REPLICA_COUNT; i++) {
-                if (address.equals(getReplicaAddress(i))) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         @Override
@@ -1518,46 +1502,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 }
             }
             return false;
-        }
-
-        @Override
-        public int getReplicaIndexOf(Address address) {
-            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-                if (address.equals(addresses.get(i))) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            PartitionImpl that = (PartitionImpl) o;
-            if (partitionId != that.partitionId) return false;
-            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-                Address a1 = addresses.get(i);
-                Address a2 = that.addresses.get(i);
-                if (a1 == null) {
-                    if (a2 != null) {
-                        return false;
-                    }
-                } else if (!a1.equals(a2)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = partitionId;
-            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-                Address address = addresses.get(i);
-                result = 31 * result + (address != null ? address.hashCode() : 0);
-            }
-            return result;
         }
 
         @Override

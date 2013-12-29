@@ -19,22 +19,43 @@ package com.hazelcast.partition;
 import com.hazelcast.nio.Address;
 
 /**
+ *
+ *
  * @author mdogan 6/17/13
  */
 public interface PartitionView {
 
-    static final int MAX_REPLICA_COUNT = 7;
-    static final int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;
+    int MAX_REPLICA_COUNT = 7;
+    int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;
 
+    /**
+     * Returns the partition id. The partition id will be between 0 and partitionCount (exclusive).
+     *
+     * @return the id of the partition.
+     */
     int getPartitionId();
 
+    /**
+     * Returns the Address of the owner of this partition.
+     *
+     * If no owner has been set yet, null is returned.  The value could be stale when returned.
+     *
+     * @return the owner.
+     */
     Address getOwner();
 
-    Address getReplicaAddress(int index);
-
-    boolean isBackup(Address address);
+    /**
+     * Returns Address of the replica.
+     *
+     * The owner has replica index 0.
+     *
+     * todo: Can null be returned?
+     * todo: what to do when index is out of bounds.
+     *
+     * @param replicaIndex the index of the replica.
+     * @return the Address of the replica.
+     */
+    Address getReplicaAddress(int replicaIndex);
 
     boolean isOwnerOrBackup(Address address);
-
-    int getReplicaIndexOf(Address address);
 }
