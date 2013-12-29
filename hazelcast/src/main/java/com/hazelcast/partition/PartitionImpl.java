@@ -89,6 +89,12 @@ final class PartitionImpl implements PartitionView {
         }
     }
 
+    void setPartitionInfo(Address[] replicas) {
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            setReplicaAddress(i, replicas[i]);
+        }
+    }
+
     @Override
     public boolean isBackup(Address address) {
         for (int i = 1; i < MAX_REPLICA_COUNT; i++) {

@@ -16,11 +16,35 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.nio.Address;
+
 import java.util.Collection;
 
 public interface PartitionStateGenerator {
 
-    PartitionImpl[] initialize(final Collection<MemberGroup> groups, final int partitionCount);
+    /**
+     * Returns the initial layout for the partitions.
+     * <p/>
+     * A 2 dimensional array of addresses is returned where the first index is the partition id, and
+     * the second index is the replica index.
+     *
+     * @param groups
+     * @param partitionCount the number of partitions.
+     * @return
+     */
+    Address[][] initialize(final Collection<MemberGroup> groups, final int partitionCount);
 
-    PartitionImpl[] reArrange(final Collection<MemberGroup> groups, final PartitionView[] currentState);
+    /**
+     * Rearranges the partition layout.
+     * <p/>
+     * This method does not actually change the partitions, but send back the updated layout.
+     * <p/>
+     * A 2 dimensional array of addresses is returned where the first index is the partition id, and
+     * the second index is the replica index.
+     *
+     * @param groups
+     * @param currentState the current partition state.
+     * @return
+     */
+    Address[][] reArrange(final Collection<MemberGroup> groups, final PartitionView[] currentState);
 }

@@ -68,7 +68,7 @@ public class PartitionRuntimeState implements DataSerializable {
     protected void setPartitions(Partitions partitions, Map<Address, Integer> addressIndexes) {
         for (PartitionView partition : partitions) {
             ShortPartitionInfo spi = new ShortPartitionInfo(partition.getPartitionId());
-            for (int i = 0; i < PartitionImpl.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
                 Address address = partition.getReplicaAddress(i);
                 if (address == null) {
                     spi.addressIndexes[i] = -1;
@@ -191,7 +191,7 @@ public class PartitionRuntimeState implements DataSerializable {
     private class ShortPartitionInfo implements DataSerializable {
 
         int partitionId;
-        int[] addressIndexes = new int[PartitionImpl.MAX_REPLICA_COUNT];
+        int[] addressIndexes = new int[PartitionView.MAX_REPLICA_COUNT];
 
         ShortPartitionInfo(int partitionId) {
             this.partitionId = partitionId;
@@ -202,14 +202,14 @@ public class PartitionRuntimeState implements DataSerializable {
 
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(partitionId);
-            for (int i = 0; i < PartitionImpl.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
                 out.writeInt(addressIndexes[i]);
             }
         }
 
         public void readData(ObjectDataInput in) throws IOException {
             partitionId = in.readInt();
-            for (int i = 0; i < PartitionImpl.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
                 addressIndexes[i] = in.readInt();
             }
         }
