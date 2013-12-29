@@ -48,8 +48,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public static final String SERVICE_NAME = "hz:core:partitionService";
 
-    private static final long REPARTITIONING_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(600); // 10 MINUTES
-
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -117,8 +115,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new SyncReplicaVersionTask(), 30, 30, TimeUnit.SECONDS);
     }
 
-
-
     @Override
     public void init(final NodeEngine nodeEngine, Properties properties) {
         migrationThread.start();
@@ -129,15 +125,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
         nodeEngine.getExecutionService().scheduleAtFixedRate(new SendClusterStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
-
-//        nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
-//            public void run() {
-//                if (node.isMaster() && node.isActive() && initialized && shouldCheckRepartitioning()) {
-//                    logger.finest( "Checking partition table for repartitioning...");
-//                    migrationQueue.add(new RepartitioningTask(false));
-//                }
-//            }
-//        }, 180, 180, TimeUnit.SECONDS);
     }
 
     @Override
