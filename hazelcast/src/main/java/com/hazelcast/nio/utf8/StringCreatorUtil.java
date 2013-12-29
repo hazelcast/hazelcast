@@ -17,6 +17,7 @@
 package com.hazelcast.nio.utf8;
 
 import com.hazelcast.nio.UTFUtil;
+import com.hazelcast.util.JvmUtil;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -25,6 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class StringCreatorUtil {
 
     static final AtomicInteger CLASS_ID_COUNTER = new AtomicInteger();
+
+    private static final boolean IS_IBM_JVM;
+    private static final boolean IS_ORACLE_JVM;
+
+    static {
+        IS_IBM_JVM = JvmUtil.getJvmVendor() == JvmUtil.Vendor.IBM;
+        IS_ORACLE_JVM = JvmUtil.getJvmVendor() == JvmUtil.Vendor.SunOracle;
+    }
 
     private StringCreatorUtil() {
     }
@@ -53,7 +62,7 @@ public final class StringCreatorUtil {
         try {
             // Give access to the package private String constructor
             Constructor<String> constructor = null;
-            if (isJava6()) {
+            if (useOldStringConstructor()) {
                 constructor = String.class.getDeclaredConstructor(int.class, int.class, char[].class);
             } else {
                 constructor = String.class.getDeclaredConstructor(char[].class, boolean.class);
@@ -64,7 +73,8 @@ public final class StringCreatorUtil {
 
             if (java8Enabled && isOracleJava8(debugEnabled)) {
                 if ((internalBcelEnabled || bcelEnabled) && isBcelAvailable(debugEnabled)) {
-                    boolean internal = internalBcelEnabled && isInternaBcelAvailable(debugEnabled);
+                    boolean internal = internalBcelEnabled
+                            && (isOracleBcelAvailable(debugEnabled) || isIBMBcelAvailable(debugEnabled));
                     UTFUtil.StringCreator stringCreator = tryLoadBcelJava8StringCreator(internal, debugEnabled);
                     if (stringCreator != null) {
                         return stringCreator;
@@ -87,7 +97,8 @@ public final class StringCreatorUtil {
             }
 
             if ((internalBcelEnabled || bcelEnabled) && isBcelAvailable(debugEnabled)) {
-                boolean internal = internalBcelEnabled && isInternaBcelAvailable(debugEnabled);
+                boolean internal = internalBcelEnabled
+                        && (isOracleBcelAvailable(debugEnabled) || isIBMBcelAvailable(debugEnabled));
                 UTFUtil.StringCreator stringCreator = tryLoadBcelMagicAccessorStringCreator(internal, debugEnabled);
                 if (stringCreator != null) {
                     return stringCreator;
@@ -121,7 +132,7 @@ public final class StringCreatorUtil {
         return new DefaultStringCreator();
     }
 
-    static boolean isJava6() {
+    static boolean useOldStringConstructor() {
         try {
             Class<String> clazz = String.class;
             Constructor<String> c = clazz.getDeclaredConstructor(int.class, int.class, char[].class);
@@ -147,160 +158,70 @@ public final class StringCreatorUtil {
     }
 
     private static UTFUtil.StringCreator tryLoadAsmJava8StringCreator(boolean debugEnabled) {
-        try {
-            Class<?> asmBuilder = Class.forName("com.hazelcast.nio.utf8.AsmJava8JlaStringCreatorBuilder");
-            StringCreatorBuilder builder = (StringCreatorBuilder) asmBuilder.newInstance();
-            UTFUtil.StringCreator stringCreator = builder.build();
-            if (debugEnabled && stringCreator != null) {
-                System.err.println("StringCreator from AsmJava8 selected");
-            }
-            return stringCreator;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return null;
+        return loadStringCreator("com.hazelcast.nio.utf8.AsmJava8JlaStringCreatorBuilder", debugEnabled);
     }
-
     private static UTFUtil.StringCreator tryLoadAsmMagicAccessorStringCreator(boolean debugEnabled) {
-        try {
-            Class<?> asmBuilder = Class.forName("com.hazelcast.nio.utf8.AsmMagicAccessorStringCreatorBuilder");
-            StringCreatorBuilder builder = (StringCreatorBuilder) asmBuilder.newInstance();
-            UTFUtil.StringCreator stringCreator = builder.build();
-            if (debugEnabled && stringCreator != null) {
-                System.err.println("StringCreator from AsmMagicAccessor selected");
-            }
-            return stringCreator;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return null;
+        return loadStringCreator("com.hazelcast.nio.utf8.AsmMagicAccessorStringCreatorBuilder", debugEnabled);
     }
-
     private static boolean isAsmAvailable(boolean debugEnabled) {
-        try {
-            Class.forName("org.objectweb.asm.ClassWriter");
-            return true;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return false;
+        return isClassAvailable("org.objectweb.asm.ClassWriter", debugEnabled);
     }
 
     private static UTFUtil.StringCreator tryLoadJavassistJava8StringCreator(boolean debugEnabled) {
-        try {
-            Class<?> asmBuilder = Class.forName("com.hazelcast.nio.utf8.JavassistJava8JlaStringCreatorBuilder");
-            StringCreatorBuilder builder = (StringCreatorBuilder) asmBuilder.newInstance();
-            UTFUtil.StringCreator stringCreator = builder.build();
-            if (debugEnabled && stringCreator != null) {
-                System.err.println("StringCreator from JavassistJava8 selected");
-            }
-            return stringCreator;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return null;
+        return loadStringCreator("com.hazelcast.nio.utf8.JavassistJava8JlaStringCreatorBuilder", debugEnabled);
     }
-
     private static UTFUtil.StringCreator tryLoadJavassistMagicAccessorStringCreator(boolean debugEnabled) {
-        try {
-            Class<?> asmBuilder = Class.forName("com.hazelcast.nio.utf8.JavassistMagicAccessorStringCreatorBuilder");
-            StringCreatorBuilder builder = (StringCreatorBuilder) asmBuilder.newInstance();
-            UTFUtil.StringCreator stringCreator = builder.build();
-            if (debugEnabled && stringCreator != null) {
-                System.err.println("StringCreator from JavassistMagicAccessor selected");
-            }
-            return stringCreator;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return null;
+        return loadStringCreator("com.hazelcast.nio.utf8.JavassistMagicAccessorStringCreatorBuilder", debugEnabled);
     }
     private static boolean isJavassistAvailable(boolean debugEnabled) {
-        try {
-            Class.forName("javassist.bytecode.ClassFileWriter");
-            return true;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return false;
+        return isClassAvailable("javassist.bytecode.ClassFileWriter", debugEnabled);
     }
 
     private static UTFUtil.StringCreator tryLoadBcelJava8StringCreator(boolean internal, boolean debugEnabled) {
-        try {
-            Class<?> bcelBuilder;
-            if (internal) {
-                bcelBuilder = Class.forName("com.hazelcast.nio.utf8.InternalBcelJava8JlaStringCreatorBuilder");
+        String classname;
+        if (internal) {
+            if (IS_ORACLE_JVM) {
+                classname = "com.hazelcast.nio.utf8.OracleBcelJava8JlaStringCreatorBuilder";
             } else {
-                bcelBuilder = Class.forName("com.hazelcast.nio.utf8.BcelJava8JlaStringCreatorBuilder");
+                classname = "com.hazelcast.nio.utf8.IBMBcelJava8JlaStringCreatorBuilder";
             }
-            StringCreatorBuilder builder = (StringCreatorBuilder) bcelBuilder.newInstance();
-            UTFUtil.StringCreator stringCreator = builder.build();
-            if (debugEnabled && stringCreator != null) {
-                System.err.println("StringCreator from " + (internal ? "Internal" : "") + "BcelJava8 selected");
-            }
-            return stringCreator;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
+        } else {
+            classname = "com.hazelcast.nio.utf8.BcelJava8JlaStringCreatorBuilder";
         }
-        return null;
+        return loadStringCreator(classname, debugEnabled);
     }
-
     private static UTFUtil.StringCreator tryLoadBcelMagicAccessorStringCreator(boolean internal, boolean debugEnabled) {
-        try {
-            Class<?> bcelBuilder;
-            if (internal) {
-                bcelBuilder = Class.forName("com.hazelcast.nio.utf8.InternalBcelMagicAccessorStringCreatorBuilder");
+        String classname;
+        if (internal) {
+            if (IS_ORACLE_JVM) {
+                classname = "com.hazelcast.nio.utf8.OracleBcelMagicAccessorStringCreatorBuilder";
             } else {
-                bcelBuilder = Class.forName("com.hazelcast.nio.utf8.BcelMagicAccessorStringCreatorBuilder");
+                classname = "com.hazelcast.nio.utf8.IBMBcelMagicAccessorStringCreatorBuilder";
             }
-            StringCreatorBuilder builder = (StringCreatorBuilder) bcelBuilder.newInstance();
-            UTFUtil.StringCreator stringCreator = builder.build();
-            if (debugEnabled && stringCreator != null) {
-                System.err.println("StringCreator from " + (internal ? "Internal" : "") + "BcelMagicAccessor selected");
-            }
-            return stringCreator;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
+        } else {
+            classname = "com.hazelcast.nio.utf8.BcelMagicAccessorStringCreatorBuilder";
         }
-        return null;
-    }
-
-    private static boolean isInternaBcelAvailable(boolean debugEnabled) {
-        try {
-            Class.forName("com.sun.org.apache.bcel.internal.generic.ClassGen");
-            return true;
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return false;
+        return loadStringCreator(classname, debugEnabled);
     }
 
     private static boolean isBcelAvailable(boolean debugEnabled) {
-        return isInternaBcelAvailable(debugEnabled)
+        return isOracleBcelAvailable(debugEnabled)
+                || isIBMBcelAvailable(debugEnabled)
                 || isExternalBcelAvailable(debugEnabled);
     }
-
+    private static boolean isOracleBcelAvailable(boolean debugEnabled) {
+        return isClassAvailable("com.sun.org.apache.bcel.internal.generic.ClassGen", debugEnabled);
+    }
+    private static boolean isIBMBcelAvailable(boolean debugEnabled) {
+        return IS_IBM_JVM && isClassAvailable("com.ibm.xtq.bcel.generic.ClassGen", debugEnabled);
+    }
     private static boolean isExternalBcelAvailable(boolean debugEnabled) {
+        return IS_ORACLE_JVM && isClassAvailable("org.apache.bcel.generic.ClassGen", debugEnabled);
+    }
+
+    private static boolean isClassAvailable(String classname, boolean debugEnabled) {
         try {
-            Class.forName("org.apache.bcel.generic.ClassGen");
+            Class.forName(classname);
             return true;
         } catch (Throwable ignore) {
             if (debugEnabled) {
@@ -308,6 +229,23 @@ public final class StringCreatorUtil {
             }
         }
         return false;
+    }
+
+    private static UTFUtil.StringCreator loadStringCreator(String classname, boolean debugEnabled) {
+        try {
+            Class<?> builderClass = Class.forName(classname);
+            StringCreatorBuilder builder = (StringCreatorBuilder) builderClass.newInstance();
+            UTFUtil.StringCreator stringCreator = builder.build();
+            if (debugEnabled && stringCreator != null) {
+                System.err.println("StringCreator " + classname + " selected");
+            }
+            return stringCreator;
+        } catch (Throwable ignore) {
+            if (debugEnabled) {
+                ignore.printStackTrace();
+            }
+        }
+        return null;
     }
 
     private static class DefaultStringCreator implements UTFUtil.StringCreator {
@@ -328,7 +266,7 @@ public final class StringCreatorUtil {
         @Override
         public String buildString(char[] chars) {
             try {
-                if (isJava6()) {
+                if (useOldStringConstructor()) {
                     return constructor.newInstance(0, chars.length, chars);
                 } else {
                     return constructor.newInstance(chars, Boolean.TRUE);

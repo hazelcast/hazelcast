@@ -49,7 +49,7 @@ class AsmMagicAccessorStringCreatorBuilder implements Opcodes, StringCreatorBuil
         mv.visitVarInsn(ALOAD, 0);
         mv.visitTypeInsn(NEW, "java/lang/String");
         mv.visitInsn(DUP);
-        if (StringCreatorUtil.isJava6()) {
+        if (StringCreatorUtil.useOldStringConstructor()) {
             mv.visitInsn(ICONST_0);
             mv.visitVarInsn(ALOAD, 1);
             mv.visitTypeInsn(CHECKCAST, "[C");

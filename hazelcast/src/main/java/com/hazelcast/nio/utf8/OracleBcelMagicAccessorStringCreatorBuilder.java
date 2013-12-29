@@ -25,7 +25,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 
-class InternalBcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorBuilder {
+class OracleBcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorBuilder {
 
     @Override
     public UTFUtil.StringCreator build() throws Exception {
@@ -41,7 +41,7 @@ class InternalBcelMagicAccessorStringCreatorBuilder implements Constants, String
         InstructionList il = new InstructionList();
         il.append(ilf.createNew("java.lang.String"));
         il.append(InstructionConstants.DUP);
-        if (StringCreatorUtil.isJava6()) {
+        if (StringCreatorUtil.useOldStringConstructor()) {
             il.append(InstructionConstants.ICONST_0);
             il.append(InstructionConstants.ALOAD_1);
             il.append(ilf.createCast(Type.OBJECT, new ArrayType(Type.CHAR, 1)));

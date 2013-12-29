@@ -18,23 +18,22 @@ package com.hazelcast.nio.utf8;
 
 import com.hazelcast.nio.UTFUtil;
 import com.hazelcast.nio.UnsafeHelper;
-import org.apache.bcel.Constants;
-import org.apache.bcel.generic.*;
+import com.ibm.xtq.bcel.Constants;
+import com.ibm.xtq.bcel.generic.*;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 
-class BcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorBuilder {
+class IBMBcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorBuilder {
 
     @Override
     public UTFUtil.StringCreator build() throws Exception {
         final int id = StringCreatorUtil.CLASS_ID_COUNTER.getAndIncrement();
-        final String className = "sun.reflect.BcelString" + id;
+        final String className = "sun.reflect.InternalBcelString" + id;
 
-        ClassGen classGen = new ClassGen(className,
-                "sun.reflect.MagicAccessorImpl", "<generated>", ACC_PUBLIC | ACC_FINAL,
-                new String[]{"java/util/Map"});
+        ClassGen classGen = new ClassGen(className, "sun.reflect.MagicAccessorImpl", "<generated>",
+                ACC_PUBLIC | ACC_FINAL, new String[]{"java/util/Map"});
 
         classGen.addEmptyConstructor(ACC_PUBLIC);
 
@@ -72,7 +71,7 @@ class BcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorB
             @Override
             public Class run() {
                 ClassLoader cl = sun.reflect.ConstructorAccessor.class.getClassLoader();
-                return unsafe.defineClass("sun/reflect/BcelString" + id, impl, 0, impl.length, cl, null);
+                return unsafe.defineClass("sun/reflect/InternalBcelString" + id, impl, 0, impl.length, cl, null);
             }
         });
 

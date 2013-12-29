@@ -56,7 +56,7 @@ public class JavassistMagicAccessorStringCreatorBuilder implements Opcode, Strin
         mw.add(NEW);
         mw.add16(stringClass);
         mw.add(DUP);
-        if (StringCreatorUtil.isJava6()) {
+        if (StringCreatorUtil.useOldStringConstructor()) {
             mw.add(ICONST_0);
             mw.add(ALOAD_1);
             mw.add(CHECKCAST);

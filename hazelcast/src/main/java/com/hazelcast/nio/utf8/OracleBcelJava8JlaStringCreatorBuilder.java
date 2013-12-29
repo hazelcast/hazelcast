@@ -25,7 +25,7 @@ import sun.misc.SharedSecrets;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
-class InternalBcelJava8JlaStringCreatorBuilder implements Constants, StringCreatorBuilder {
+class OracleBcelJava8JlaStringCreatorBuilder implements Constants, StringCreatorBuilder {
 
     @Override
     public UTFUtil.StringCreator build() throws Exception {
