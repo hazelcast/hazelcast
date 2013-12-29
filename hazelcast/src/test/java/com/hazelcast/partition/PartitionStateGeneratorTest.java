@@ -210,6 +210,11 @@ public class PartitionStateGeneratorTest {
         }
 
         @Override
+        public boolean isMigrating() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Address getReplicaAddress(int replicaIndex) {
            return replicas[replicaIndex];
         }

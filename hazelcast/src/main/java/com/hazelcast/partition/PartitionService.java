@@ -29,20 +29,52 @@ import java.util.Map;
  */
 public interface PartitionService extends CoreService {
 
+    /**
+     *
+     * @param partitionId
+     * @return
+     */
     Address getPartitionOwner(int partitionId);
 
-    boolean isPartitionMigrating(int partitionId);
-
+    /**
+     * Returns the PartitionView for a given partitionId.
+     *
+     * The PartitionView for a given partitionId wil never change; so it can be cached safely.
+     *
+     * @param partitionId the partitionId
+     * @return the PartitionView.
+     */
     PartitionView getPartition(int partitionId);
 
+    /**
+     * Returns the partition id for a Data key.
+     *
+     * @param key the Data key.
+     * @return the partition id.
+     * @throws java.lang.NullPointerException if key is null.
+     */
     int getPartitionId(Data key);
 
+    /**
+     * Returns the partition id for a given object.
+     *
+     * @param key the object key.
+     * @return the partition id.
+     */
     int getPartitionId(Object key);
 
+    /**
+     * Returns the number of partitions.
+     *
+     * @return the number of partitions.
+     */
     int getPartitionCount();
 
-    int getStateVersion();
-
+    /**
+     * Checks if there currently are any migrations.
+     *
+     * @return true if there are migrations, false otherwise.
+     */
     boolean hasOnGoingMigration();
 
     List<Integer> getMemberPartitions(Address target);
@@ -53,5 +85,5 @@ public interface PartitionService extends CoreService {
 
     String addMigrationListener(MigrationListener migrationListener);
 
-    boolean removeMigrationListener(final String registrationId);
+    boolean removeMigrationListener(String registrationId);
 }

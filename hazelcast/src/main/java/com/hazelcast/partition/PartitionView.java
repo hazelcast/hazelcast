@@ -38,19 +38,33 @@ public interface PartitionView {
     /**
      * Returns the Address of the owner of this partition.
      *
-     * If no owner has been set yet, null is returned.  The value could be stale when returned.
+     * If no owner has been set yet, null is returned.
+     *
+     * The value could be stale when returned.
      *
      * @return the owner.
      */
     Address getOwner();
 
     /**
+     * Checks if there currently is a migration going on in this partition.
+     *
+     * The returned value could be stale when it is returned.
+     *
+     * @return true if there is a migration going on, false otherwise.
+     */
+    boolean isMigrating();
+
+    /**
      * Returns Address of the replica.
      *
      * The owner has replica index 0.
      *
-     * todo: Can null be returned?
+     * The returned value could be null if the owner/replica has not yet been set.
+     *
      * todo: what to do when index is out of bounds.
+     *
+     * The returned value could be stale when it is returned.
      *
      * @param replicaIndex the index of the replica.
      * @return the Address of the replica.
