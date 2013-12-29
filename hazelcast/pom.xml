@@ -42,6 +42,8 @@
                 </configuration>
             </plugin>
 
+            <!-- Relocate packages inside the Oracle / IBM internal generators
+                 since those packages my not be available while compiling -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
