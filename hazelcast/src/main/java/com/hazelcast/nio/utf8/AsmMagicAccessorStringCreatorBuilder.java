@@ -34,7 +34,7 @@ class AsmMagicAccessorStringCreatorBuilder implements Opcodes, StringCreatorBuil
 
         ClassWriter cw = new ClassWriter(0);
         cw.visit(V1_6, ACC_PUBLIC + ACC_FINAL, className, null, "sun/reflect/MagicAccessorImpl",
-                new String[]{"java/util/Map"});
+                new String[]{"java/util/Map" });
 
         MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
@@ -76,7 +76,7 @@ class AsmMagicAccessorStringCreatorBuilder implements Opcodes, StringCreatorBuil
         Class clazz = AccessController.doPrivileged(new PrivilegedAction<Class>() {
             @Override
             public Class run() {
-                ClassLoader cl = sun.reflect.ConstructorAccessor.class.getClassLoader();
+                ClassLoader cl = StringCreatorUtil.MAGIC_CLASSLOADER;
                 return unsafe.defineClass(className, impl, 0, impl.length, cl, null);
             }
         });

@@ -34,7 +34,7 @@ class BcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorB
 
         ClassGen classGen = new ClassGen(className,
                 "sun.reflect.MagicAccessorImpl", "<generated>", ACC_PUBLIC | ACC_FINAL,
-                new String[]{"java/util/Map"});
+                new String[]{"java/util/Map" });
 
         classGen.addEmptyConstructor(ACC_PUBLIC);
 
@@ -61,7 +61,7 @@ class BcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorB
             il.append(ilf.createReturn(Type.OBJECT));
         }
 
-        MethodGen mg = new MethodGen(ACC_PUBLIC, Type.OBJECT, new Type[]{Type.OBJECT}, new String[]{"key"},
+        MethodGen mg = new MethodGen(ACC_PUBLIC, Type.OBJECT, new Type[]{Type.OBJECT}, new String[]{"key" },
                 "get", className, il, classGen.getConstantPool());
         if (StringCreatorUtil.useOldStringConstructor()) {
             mg.setMaxStack(6);
@@ -78,7 +78,7 @@ class BcelMagicAccessorStringCreatorBuilder implements Constants, StringCreatorB
         Class clazz = AccessController.doPrivileged(new PrivilegedAction<Class>() {
             @Override
             public Class run() {
-                ClassLoader cl = sun.reflect.ConstructorAccessor.class.getClassLoader();
+                ClassLoader cl = StringCreatorUtil.MAGIC_CLASSLOADER;
                 return unsafe.defineClass("sun/reflect/BcelString" + id, impl, 0, impl.length, cl, null);
             }
         });

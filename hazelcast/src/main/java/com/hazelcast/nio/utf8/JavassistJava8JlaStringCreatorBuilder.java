@@ -21,7 +21,6 @@ import javassist.bytecode.*;
 import javassist.bytecode.ClassFileWriter.ConstPoolWriter;
 import javassist.bytecode.ClassFileWriter.FieldWriter;
 import javassist.bytecode.ClassFileWriter.MethodWriter;
-import sun.misc.SharedSecrets;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -80,11 +79,11 @@ public class JavassistJava8JlaStringCreatorBuilder implements Opcode, StringCrea
 
         AnonClassLoader cl = new AnonClassLoader(getClass().getClassLoader());
         Class<?> clazz = cl.loadClass("com.hazelcast.nio.utf8.JavassistStringAccessor" + id, impl);
-        Constructor constructor = clazz.getConstructor(sun.misc.JavaLangAccess.class);
+        Constructor constructor = clazz.getConstructor(StringCreatorUtil.JAVA_LANG_ACCESS_CLASS);
 
-        Field jlaField = SharedSecrets.class.getDeclaredField("javaLangAccess");
+        Field jlaField = StringCreatorUtil.SHARED_SECRET_CLASS.getDeclaredField("javaLangAccess");
         jlaField.setAccessible(true);
 
-        return (UTFUtil.StringCreator) constructor.newInstance(jlaField.get(SharedSecrets.class));
+        return (UTFUtil.StringCreator) constructor.newInstance(jlaField.get(StringCreatorUtil.SHARED_SECRET_CLASS));
     }
 }

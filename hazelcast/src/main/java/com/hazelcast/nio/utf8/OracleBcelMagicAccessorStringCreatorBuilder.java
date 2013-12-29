@@ -33,7 +33,7 @@ class OracleBcelMagicAccessorStringCreatorBuilder implements Constants, StringCr
         final String className = "sun.reflect.InternalBcelString" + id;
 
         ClassGen classGen = new ClassGen(className, "sun.reflect.MagicAccessorImpl", "<generated>",
-                ACC_PUBLIC | ACC_FINAL, new String[]{"java/util/Map"});
+                ACC_PUBLIC | ACC_FINAL, new String[]{"java/util/Map" });
 
         classGen.addEmptyConstructor(ACC_PUBLIC);
 
@@ -60,7 +60,7 @@ class OracleBcelMagicAccessorStringCreatorBuilder implements Constants, StringCr
             il.append(ilf.createReturn(Type.OBJECT));
         }
 
-        MethodGen mg = new MethodGen(ACC_PUBLIC, Type.OBJECT, new Type[]{Type.OBJECT}, new String[]{"key"},
+        MethodGen mg = new MethodGen(ACC_PUBLIC, Type.OBJECT, new Type[]{Type.OBJECT}, new String[]{"key" },
                 "get", className, il, classGen.getConstantPool());
         if (StringCreatorUtil.useOldStringConstructor()) {
             mg.setMaxStack(6);
@@ -77,7 +77,7 @@ class OracleBcelMagicAccessorStringCreatorBuilder implements Constants, StringCr
         Class clazz = AccessController.doPrivileged(new PrivilegedAction<Class>() {
             @Override
             public Class run() {
-                ClassLoader cl = sun.reflect.ConstructorAccessor.class.getClassLoader();
+                ClassLoader cl = StringCreatorUtil.MAGIC_CLASSLOADER;
                 return unsafe.defineClass("sun/reflect/InternalBcelString" + id, impl, 0, impl.length, cl, null);
             }
         });

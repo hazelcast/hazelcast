@@ -16,10 +16,8 @@
 
 package com.hazelcast.nio.utf8;
 
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import org.apache.bcel.Constants;
 import org.apache.bcel.classfile.*;
-import org.apache.bcel.generic.ClassGen;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,8 +29,6 @@ import java.util.regex.Pattern;
 public final class CompileTimeRelocator {
 
     private static final String[][] RELOCATIONS = {
-            {"com.hazelcast.nio.utf8.IBMBcelJava8JlaStringCreatorBuilder",
-                    "org.apache.bcel.", "com.ibm.xtq.bcel." },
             {"com.hazelcast.nio.utf8.IBMBcelMagicAccessorStringCreatorBuilder",
                     "org.apache.bcel.", "com.ibm.xtq.bcel." },
             {"com.hazelcast.nio.utf8.OracleBcelJava8JlaStringCreatorBuilder",

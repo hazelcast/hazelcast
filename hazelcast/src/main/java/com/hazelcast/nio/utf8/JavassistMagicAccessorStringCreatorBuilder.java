@@ -19,7 +19,8 @@ package com.hazelcast.nio.utf8;
 import com.hazelcast.nio.UTFUtil;
 import com.hazelcast.nio.UnsafeHelper;
 import javassist.bytecode.*;
-import javassist.bytecode.ClassFileWriter.*;
+import javassist.bytecode.ClassFileWriter.ConstPoolWriter;
+import javassist.bytecode.ClassFileWriter.MethodWriter;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -83,13 +84,13 @@ public class JavassistMagicAccessorStringCreatorBuilder implements Opcode, Strin
         }
         mw.end(null, null);
 
-        final byte[] impl = cfw.end(AccessFlag.PUBLIC, thisClass, superClass, new int[] {interfaceClass}, null);
+        final byte[] impl = cfw.end(AccessFlag.PUBLIC, thisClass, superClass, new int[]{interfaceClass}, null);
 
         final sun.misc.Unsafe unsafe = UnsafeHelper.UNSAFE;
         Class clazz = AccessController.doPrivileged(new PrivilegedAction<Class>() {
             @Override
             public Class run() {
-                ClassLoader cl = sun.reflect.ConstructorAccessor.class.getClassLoader();
+                ClassLoader cl = StringCreatorUtil.MAGIC_CLASSLOADER;
                 return unsafe.defineClass("sun/reflect/JavassistString" + id, impl, 0, impl.length, cl, null);
             }
         });

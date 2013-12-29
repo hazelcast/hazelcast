@@ -21,7 +21,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import sun.misc.SharedSecrets;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -35,7 +34,7 @@ class AsmJava8JlaStringCreatorBuilder implements Opcodes, StringCreatorBuilder {
 
         ClassWriter cw = new ClassWriter(0);
         cw.visit(V1_6, ACC_PUBLIC + ACC_FINAL, className, null,
-                "java/lang/Object", new String[]{"com/hazelcast/nio/UTFUtil$StringCreator"});
+                "java/lang/Object", new String[]{"com/hazelcast/nio/UTFUtil$StringCreator" });
 
         FieldVisitor fv = cw.visitField(ACC_FINAL + ACC_PRIVATE, "jla", "Lsun/misc/JavaLangAccess;", null, null);
         fv.visitEnd();
@@ -66,11 +65,11 @@ class AsmJava8JlaStringCreatorBuilder implements Opcodes, StringCreatorBuilder {
 
         AnonClassLoader cl = new AnonClassLoader(getClass().getClassLoader());
         Class<?> clazz = cl.loadClass("com.hazelcast.nio.utf8.AsmStringAccessor" + id, impl);
-        Constructor constructor = clazz.getConstructor(sun.misc.JavaLangAccess.class);
+        Constructor constructor = clazz.getConstructor(StringCreatorUtil.JAVA_LANG_ACCESS_CLASS);
 
-        Field jlaField = SharedSecrets.class.getDeclaredField("javaLangAccess");
+        Field jlaField = StringCreatorUtil.SHARED_SECRET_CLASS.getDeclaredField("javaLangAccess");
         jlaField.setAccessible(true);
 
-        return (UTFUtil.StringCreator) constructor.newInstance(jlaField.get(SharedSecrets.class));
+        return (UTFUtil.StringCreator) constructor.newInstance(jlaField.get(StringCreatorUtil.SHARED_SECRET_CLASS));
     }
 }

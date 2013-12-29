@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class StringCreatorUtil {
 
     static final AtomicInteger CLASS_ID_COUNTER = new AtomicInteger();
+    static final ClassLoader MAGIC_CLASSLOADER;
+    static final Class<?> JAVA_LANG_ACCESS_CLASS;
+    static final Class<?> SHARED_SECRET_CLASS;
 
     private static final boolean IS_IBM_JVM;
     private static final boolean IS_ORACLE_JVM;
@@ -33,6 +36,9 @@ public final class StringCreatorUtil {
     static {
         IS_IBM_JVM = JvmUtil.getJvmVendor() == JvmUtil.Vendor.IBM;
         IS_ORACLE_JVM = JvmUtil.getJvmVendor() == JvmUtil.Vendor.SunOracle;
+        MAGIC_CLASSLOADER = findMagicClassLoader();
+        JAVA_LANG_ACCESS_CLASS = findJavaLangAccess();
+        SHARED_SECRET_CLASS = findSharedSecret();
     }
 
     private StringCreatorUtil() {
@@ -160,9 +166,11 @@ public final class StringCreatorUtil {
     private static UTFUtil.StringCreator tryLoadAsmJava8StringCreator(boolean debugEnabled) {
         return loadStringCreator("com.hazelcast.nio.utf8.AsmJava8JlaStringCreatorBuilder", debugEnabled);
     }
+
     private static UTFUtil.StringCreator tryLoadAsmMagicAccessorStringCreator(boolean debugEnabled) {
         return loadStringCreator("com.hazelcast.nio.utf8.AsmMagicAccessorStringCreatorBuilder", debugEnabled);
     }
+
     private static boolean isAsmAvailable(boolean debugEnabled) {
         return isClassAvailable("org.objectweb.asm.ClassWriter", debugEnabled);
     }
@@ -170,9 +178,11 @@ public final class StringCreatorUtil {
     private static UTFUtil.StringCreator tryLoadJavassistJava8StringCreator(boolean debugEnabled) {
         return loadStringCreator("com.hazelcast.nio.utf8.JavassistJava8JlaStringCreatorBuilder", debugEnabled);
     }
+
     private static UTFUtil.StringCreator tryLoadJavassistMagicAccessorStringCreator(boolean debugEnabled) {
         return loadStringCreator("com.hazelcast.nio.utf8.JavassistMagicAccessorStringCreatorBuilder", debugEnabled);
     }
+
     private static boolean isJavassistAvailable(boolean debugEnabled) {
         return isClassAvailable("javassist.bytecode.ClassFileWriter", debugEnabled);
     }
@@ -180,16 +190,13 @@ public final class StringCreatorUtil {
     private static UTFUtil.StringCreator tryLoadBcelJava8StringCreator(boolean internal, boolean debugEnabled) {
         String classname;
         if (internal) {
-            if (IS_ORACLE_JVM) {
-                classname = "com.hazelcast.nio.utf8.OracleBcelJava8JlaStringCreatorBuilder";
-            } else {
-                classname = "com.hazelcast.nio.utf8.IBMBcelJava8JlaStringCreatorBuilder";
-            }
+            classname = "com.hazelcast.nio.utf8.OracleBcelJava8JlaStringCreatorBuilder";
         } else {
             classname = "com.hazelcast.nio.utf8.BcelJava8JlaStringCreatorBuilder";
         }
         return loadStringCreator(classname, debugEnabled);
     }
+
     private static UTFUtil.StringCreator tryLoadBcelMagicAccessorStringCreator(boolean internal, boolean debugEnabled) {
         String classname;
         if (internal) {
@@ -209,12 +216,15 @@ public final class StringCreatorUtil {
                 || isIBMBcelAvailable(debugEnabled)
                 || isExternalBcelAvailable(debugEnabled);
     }
+
     private static boolean isOracleBcelAvailable(boolean debugEnabled) {
         return isClassAvailable("com.sun.org.apache.bcel.internal.generic.ClassGen", debugEnabled);
     }
+
     private static boolean isIBMBcelAvailable(boolean debugEnabled) {
         return IS_IBM_JVM && isClassAvailable("com.ibm.xtq.bcel.generic.ClassGen", debugEnabled);
     }
+
     private static boolean isExternalBcelAvailable(boolean debugEnabled) {
         return IS_ORACLE_JVM && isClassAvailable("org.apache.bcel.generic.ClassGen", debugEnabled);
     }
@@ -244,6 +254,31 @@ public final class StringCreatorUtil {
             if (debugEnabled) {
                 ignore.printStackTrace();
             }
+        }
+        return null;
+    }
+
+    private static ClassLoader findMagicClassLoader() {
+        try {
+            Class<?> clazz = Class.forName("sun.reflect.ConstructorAccessor");
+            return clazz.getClassLoader();
+        } catch (Throwable ignore) {
+        }
+        return null;
+    }
+
+    private static Class<?> findJavaLangAccess() {
+        try {
+            return Class.forName("sun.misc.JavaLangAccess");
+        } catch (Throwable ignore) {
+        }
+        return null;
+    }
+
+    private static Class<?> findSharedSecret() {
+        try {
+            return Class.forName("sun.misc.SharedSecrets");
+        } catch (Throwable ignore) {
         }
         return null;
     }
