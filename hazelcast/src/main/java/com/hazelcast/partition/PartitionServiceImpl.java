@@ -1376,7 +1376,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         @Override
         public Address getReplicaAddress(int replicaIndex) {
-            return (addresses.length() > replicaIndex) ? addresses.get(replicaIndex) : null;
+            return addresses.get(replicaIndex);
         }
 
         void setReplicaAddress(int index, Address address) {
