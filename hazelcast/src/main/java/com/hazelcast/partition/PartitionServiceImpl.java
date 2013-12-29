@@ -117,49 +117,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new SyncReplicaVersionTask(), 30, 30, TimeUnit.SECONDS);
     }
 
-    private class LocalPartitionListener implements PartitionListener {
-        final Address thisAddress;
-        private LocalPartitionListener(Address thisAddress) {
-            this.thisAddress = thisAddress;
-        }
 
-        @Override
-        public void replicaChanged(PartitionReplicaChangeEvent event) {
-            if (event.getReplicaIndex() > 0) {
-                // backup replica owner changed!
-                if (thisAddress.equals(event.getOldAddress())) {
-                    final PartitionImpl partition = partitions[event.getPartitionId()];
-                    if (!partition.isOwnerOrBackup(thisAddress)) {
-                        clearPartitionReplica(event.getPartitionId(), event.getReplicaIndex());
-                    }
-                } else if (thisAddress.equals(event.getNewAddress())) {
-                    syncPartitionReplica(event.getPartitionId(), event.getReplicaIndex(), true);
-                }
-            }
-            if (event.getReplicaIndex() == 0 && event.getNewAddress() == null && node.isActive() && node.joined()) {
-                final String warning = "Owner of partition is being removed! " +
-                        "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
-                logger.warning(warning);
-                systemLogService.logWarningPartition(warning);
-            }
-            if (node.isMaster()) {
-                stateVersion.incrementAndGet();
-            }
-        }
-    }
-
-    private class ReplicaSyncEntryProcessor implements ScheduledEntryProcessor<Integer, ReplicaSyncInfo> {
-        @Override
-        public void process(EntryTaskScheduler<Integer, ReplicaSyncInfo> scheduler, Collection<ScheduledEntry<Integer, ReplicaSyncInfo>> entries) {
-            for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : entries) {
-                final ReplicaSyncInfo syncInfo = entry.getValue();
-                if (replicaSyncRequests.compareAndSet(entry.getKey(), syncInfo, null)) {
-                    logger.info("Re-sending sync replica request for partition: " + syncInfo.partitionId + ", replica: " + syncInfo.replicaIndex);
-                    syncPartitionReplica(syncInfo.partitionId, syncInfo.replicaIndex, false);
-                }
-            }
-        }
-    }
 
     @Override
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -899,51 +857,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         replicaSyncProcessCount.decrementAndGet();
     }
 
-    private class PartitionReplicaVersions {
-        final int partitionId;
-        final long versions[] = new long[PartitionImpl.MAX_BACKUP_COUNT]; // read and updated only by operation/partition threads
-
-        private PartitionReplicaVersions(int partitionId) {
-            this.partitionId = partitionId;
-        }
-
-        long[] incrementAndGet(int backupCount) {
-            for (int i = 0; i < backupCount; i++) {
-                versions[i]++;
-            }
-            return versions;
-        }
-
-        long[] get() {
-            return versions;
-        }
-
-        boolean update(final long[] newVersions, int currentReplica) {
-            final int index = currentReplica - 1;
-            final long current = versions[index];
-            final long next = newVersions[index];
-            final boolean updated = (current == next - 1);
-            if (updated) {
-                System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
-            }
-            return updated;
-        }
-
-        void reset(long[] newVersions) {
-            System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("PartitionReplicaVersions");
-            sb.append("{partitionId=").append(partitionId);
-            sb.append(", versions=").append(Arrays.toString(versions));
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
     @Override
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
         final int members = node.getClusterService().getSize();
@@ -979,6 +892,117 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return ownedPartitions;
     }
 
+    @Override
+    public void reset() {
+        migrationQueue.clear();
+        for (int k = 0; k < replicaSyncRequests.length(); k++) {
+            replicaSyncRequests.set(k, null);
+        }
+        replicaSyncScheduler.cancelAll();
+        lock.lock();
+        try {
+            initialized = false;
+            for (PartitionImpl partition : partitions) {
+                for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
+                    partition.setReplicaAddress(i, null);
+                    partition.isMigrating=false;
+                }
+            }
+            activeMigrations.clear();
+            completedMigrations.clear();
+            stateVersion.set(0);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void pauseMigration() {
+        migrationActive.set(false);
+    }
+
+    public void resumeMigration() {
+        migrationActive.set(true);
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        logger.finest( "Shutting down the partition service");
+        migrationThread.stopNow();
+        reset();
+    }
+
+    public long getMigrationQueueSize() {
+        return migrationQueue.size();
+    }
+
+    public PartitionServiceProxy getPartitionServiceProxy() {
+        return proxy;
+    }
+
+    private void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationStatus status) {
+        final MemberImpl current = getMember(migrationInfo.getSource());
+        final MemberImpl newOwner = getMember(migrationInfo.getDestination());
+        final MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
+        final EventService eventService = nodeEngine.getEventService();
+        final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        eventService.publishEvent(SERVICE_NAME, registrations, event, event.getPartitionId());
+    }
+
+    @Override
+    public String addMigrationListener(MigrationListener migrationListener) {
+        final EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, migrationListener);
+        return registration.getId();
+    }
+
+    @Override
+    public boolean removeMigrationListener(final String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
+    }
+
+    @Override
+    public void dispatchEvent(MigrationEvent migrationEvent, MigrationListener migrationListener) {
+        switch (migrationEvent.getStatus()) {
+            case STARTED:
+                migrationListener.migrationStarted(migrationEvent);
+                break;
+            case COMPLETED:
+                migrationListener.migrationCompleted(migrationEvent);
+                break;
+            case FAILED:
+                migrationListener.migrationFailed(migrationEvent);
+                break;
+        }
+    }
+
+    private static MemberGroupFactory newMemberGroupFactory(PartitionGroupConfig partitionGroupConfig) {
+        PartitionGroupConfig.MemberGroupType memberGroupType;
+
+        if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
+            memberGroupType = PartitionGroupConfig.MemberGroupType.PER_MEMBER;
+        }else{
+            memberGroupType = partitionGroupConfig.getGroupType();
+        }
+
+        switch (memberGroupType) {
+            case HOST_AWARE:
+                return new HostAwareMemberGroupFactory();
+            case CUSTOM:
+                return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
+            case PER_MEMBER:
+                return new SingleMemberGroupFactory();
+            default:
+                throw new RuntimeException("Unknown MemberGroupType:"+memberGroupType);
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("PartitionManager[" + stateVersion + "] {\n");
+        sb.append("\n");
+        sb.append("migrationQ: ").append(migrationQueue.size());
+        sb.append("\n}");
+        return sb.toString();
+    }
 
     public static class AssignPartitions extends AbstractOperation {
         @Override
@@ -1332,118 +1356,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    @Override
-    public void reset() {
-        migrationQueue.clear();
-        for (int k = 0; k < replicaSyncRequests.length(); k++) {
-            replicaSyncRequests.set(k, null);
-        }
-        replicaSyncScheduler.cancelAll();
-        lock.lock();
-        try {
-            initialized = false;
-            for (PartitionImpl partition : partitions) {
-                for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
-                    partition.setReplicaAddress(i, null);
-                    partition.isMigrating=false;
-                }
-            }
-            activeMigrations.clear();
-            completedMigrations.clear();
-            stateVersion.set(0);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public void pauseMigration() {
-        migrationActive.set(false);
-    }
-
-    public void resumeMigration() {
-        migrationActive.set(true);
-    }
-
-    @Override
-    public void shutdown(boolean terminate) {
-        logger.finest( "Shutting down the partition service");
-        migrationThread.stopNow();
-        reset();
-    }
-
-    public long getMigrationQueueSize() {
-        return migrationQueue.size();
-    }
-
-    public PartitionServiceProxy getPartitionServiceProxy() {
-        return proxy;
-    }
-
-    private void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationStatus status) {
-        final MemberImpl current = getMember(migrationInfo.getSource());
-        final MemberImpl newOwner = getMember(migrationInfo.getDestination());
-        final MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
-        final EventService eventService = nodeEngine.getEventService();
-        final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        eventService.publishEvent(SERVICE_NAME, registrations, event, event.getPartitionId());
-    }
-
-    @Override
-    public String addMigrationListener(MigrationListener migrationListener) {
-        final EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, migrationListener);
-        return registration.getId();
-    }
-
-    @Override
-    public boolean removeMigrationListener(final String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
-    }
-
-    @Override
-    public void dispatchEvent(MigrationEvent migrationEvent, MigrationListener migrationListener) {
-        switch (migrationEvent.getStatus()) {
-            case STARTED:
-                migrationListener.migrationStarted(migrationEvent);
-                break;
-            case COMPLETED:
-                migrationListener.migrationCompleted(migrationEvent);
-                break;
-            case FAILED:
-                migrationListener.migrationFailed(migrationEvent);
-                break;
-        }
-    }
-
-    private static MemberGroupFactory newMemberGroupFactory(PartitionGroupConfig partitionGroupConfig) {
-        PartitionGroupConfig.MemberGroupType memberGroupType;
-
-        if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
-            memberGroupType = PartitionGroupConfig.MemberGroupType.PER_MEMBER;
-        }else{
-            memberGroupType = partitionGroupConfig.getGroupType();
-        }
-
-        switch (memberGroupType) {
-            case HOST_AWARE:
-                return new HostAwareMemberGroupFactory();
-            case CUSTOM:
-                return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
-            case PER_MEMBER:
-                return new SingleMemberGroupFactory();
-            default:
-                throw new RuntimeException("Unknown MemberGroupType:"+memberGroupType);
-        }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("PartitionManager[" + stateVersion + "] {\n");
-        sb.append("\n");
-        sb.append("migrationQ: ").append(migrationQueue.size());
-        sb.append("\n}");
-        return sb.toString();
-    }
-
     private final class PartitionImpl implements PartitionView {
 
         private final int partitionId;
@@ -1537,6 +1449,95 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 }
             }
             sb.append("}");
+            return sb.toString();
+        }
+    }
+
+    private class LocalPartitionListener implements PartitionListener {
+        final Address thisAddress;
+        private LocalPartitionListener(Address thisAddress) {
+            this.thisAddress = thisAddress;
+        }
+
+        @Override
+        public void replicaChanged(PartitionReplicaChangeEvent event) {
+            if (event.getReplicaIndex() > 0) {
+                // backup replica owner changed!
+                if (thisAddress.equals(event.getOldAddress())) {
+                    final PartitionImpl partition = partitions[event.getPartitionId()];
+                    if (!partition.isOwnerOrBackup(thisAddress)) {
+                        clearPartitionReplica(event.getPartitionId(), event.getReplicaIndex());
+                    }
+                } else if (thisAddress.equals(event.getNewAddress())) {
+                    syncPartitionReplica(event.getPartitionId(), event.getReplicaIndex(), true);
+                }
+            }
+            if (event.getReplicaIndex() == 0 && event.getNewAddress() == null && node.isActive() && node.joined()) {
+                final String warning = "Owner of partition is being removed! " +
+                        "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
+                logger.warning(warning);
+                systemLogService.logWarningPartition(warning);
+            }
+            if (node.isMaster()) {
+                stateVersion.incrementAndGet();
+            }
+        }
+    }
+
+    private class ReplicaSyncEntryProcessor implements ScheduledEntryProcessor<Integer, ReplicaSyncInfo> {
+        @Override
+        public void process(EntryTaskScheduler<Integer, ReplicaSyncInfo> scheduler, Collection<ScheduledEntry<Integer, ReplicaSyncInfo>> entries) {
+            for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : entries) {
+                final ReplicaSyncInfo syncInfo = entry.getValue();
+                if (replicaSyncRequests.compareAndSet(entry.getKey(), syncInfo, null)) {
+                    logger.info("Re-sending sync replica request for partition: " + syncInfo.partitionId + ", replica: " + syncInfo.replicaIndex);
+                    syncPartitionReplica(syncInfo.partitionId, syncInfo.replicaIndex, false);
+                }
+            }
+        }
+    }
+
+    private class PartitionReplicaVersions {
+        final int partitionId;
+        final long versions[] = new long[PartitionImpl.MAX_BACKUP_COUNT]; // read and updated only by operation/partition threads
+
+        private PartitionReplicaVersions(int partitionId) {
+            this.partitionId = partitionId;
+        }
+
+        long[] incrementAndGet(int backupCount) {
+            for (int i = 0; i < backupCount; i++) {
+                versions[i]++;
+            }
+            return versions;
+        }
+
+        long[] get() {
+            return versions;
+        }
+
+        boolean update(final long[] newVersions, int currentReplica) {
+            final int index = currentReplica - 1;
+            final long current = versions[index];
+            final long next = newVersions[index];
+            final boolean updated = (current == next - 1);
+            if (updated) {
+                System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
+            }
+            return updated;
+        }
+
+        void reset(long[] newVersions) {
+            System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("PartitionReplicaVersions");
+            sb.append("{partitionId=").append(partitionId);
+            sb.append(", versions=").append(Arrays.toString(versions));
+            sb.append('}');
             return sb.toString();
         }
     }
