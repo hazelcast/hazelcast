@@ -1428,4 +1428,151 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         sb.append("\n}");
         return sb.toString();
     }
+
+    private final class PartitionImpl implements PartitionView {
+
+        private final int partitionId;
+        private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
+        private final PartitionListener partitionListener;
+
+        PartitionImpl(int partitionId, PartitionListener partitionListener) {
+            this.partitionId = partitionId;
+            this.partitionListener = partitionListener;
+        }
+
+        @Override
+        public int getPartitionId() {
+            return partitionId;
+        }
+
+        @Override
+        public Address getOwner() {
+            return addresses.get(0);
+        }
+
+        void setOwner(Address ownerAddress) {
+            setReplicaAddress(0, ownerAddress);
+        }
+
+        @Override
+        public Address getReplicaAddress(int index) {
+            return (addresses.length() > index) ? addresses.get(index) : null;
+        }
+
+        void setReplicaAddress(int index, Address address) {
+            boolean changed = false;
+            Address currentAddress = addresses.get(index);
+            if (partitionListener != null) {
+                if (currentAddress == null) {
+                    changed = (address != null);
+                } else {
+                    changed = !currentAddress.equals(address);
+                }
+            }
+            addresses.set(index, address);
+            if (changed) {
+                partitionListener.replicaChanged(new PartitionReplicaChangeEvent(partitionId, index, currentAddress, address));
+            }
+        }
+
+        boolean onDeadAddress(Address deadAddress) {
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                if (deadAddress.equals(addresses.get(i))) {
+                    for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
+                        setReplicaAddress(a, addresses.get(a + 1));
+                    }
+                    setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void setPartitionInfo(PartitionView partition) {
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                setReplicaAddress(i, partition.getReplicaAddress(i));
+            }
+        }
+
+        void setPartitionInfo(Address[] replicas) {
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                setReplicaAddress(i, replicas[i]);
+            }
+        }
+
+        @Override
+        public boolean isBackup(Address address) {
+            for (int i = 1; i < MAX_REPLICA_COUNT; i++) {
+                if (address.equals(getReplicaAddress(i))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isOwnerOrBackup(Address address) {
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                if (address.equals(getReplicaAddress(i))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public int getReplicaIndexOf(Address address) {
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                if (address.equals(addresses.get(i))) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PartitionImpl that = (PartitionImpl) o;
+            if (partitionId != that.partitionId) return false;
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                Address a1 = addresses.get(i);
+                Address a2 = that.addresses.get(i);
+                if (a1 == null) {
+                    if (a2 != null) {
+                        return false;
+                    }
+                } else if (!a1.equals(a2)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = partitionId;
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                Address address = addresses.get(i);
+                result = 31 * result + (address != null ? address.hashCode() : 0);
+            }
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("Partition [").append(partitionId).append("]{\n");
+            for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+                Address address = addresses.get(i);
+                if (address != null) {
+                    sb.append('\t');
+                    sb.append(i).append(":").append(address);
+                    sb.append("\n");
+                }
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+    }
 }
