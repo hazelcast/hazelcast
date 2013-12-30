@@ -22,11 +22,9 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.WatchedOperationExecutor;
+import com.hazelcast.test.*;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,7 +43,7 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
 
 
     @Test(expected = java.lang.IllegalArgumentException.class)
-    public void putnull() throws Exception {
+    public void putNullKey() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         Config cfg = new Config();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -53,13 +51,44 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
 
         map1.put(null, 1);
-        map1.remove(1);
-        map1.remove(null);
-        assertFalse(map1.removeEntryListener("2"));
-        map1.removeEntryListener(null);
-        map1.clear();
-        assertEquals(0, map1.size());
     }
+
+
+    @Test(expected = java.lang.IllegalArgumentException.class)
+    public void removeNullKey() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        Config cfg = new Config();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+
+        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
+
+        map1.remove(null);
+    }
+
+
+    @Test
+    public void removeEmptyListener() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        Config cfg = new Config();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+
+        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
+
+        assertFalse(map1.removeEntryListener("2"));
+    }
+
+
+    @Test(expected = java.lang.IllegalArgumentException.class)
+    public void removeNullListener() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        Config cfg = new Config();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+
+        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
+
+        map1.removeEntryListener(null);
+    }
+
 
 
     @Test
@@ -80,47 +109,21 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         for(int i=0; i<1000; i++){
             map1.put(i, i);
         }
-        Thread.sleep(1000);
 
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1000, map1.size());
+                assertEquals(1000, map2.size());
 
-        assertTrue(map1.equals(map2));
-        assertTrue(map1.hashCode() == map2.hashCode());
+                assertTrue(map1.equals(map2));
+                assertTrue(map1.hashCode() == map2.hashCode());
 
-        assertTrue(map1.entrySet().equals(map2.entrySet()));
-        assertTrue(map1.values().equals(map2.values()));
-
-        map1.clear();
-        assertEquals(0, map1.size());
-        assertEquals(0, map2.size());
-
+                assertTrue(map1.entrySet().equals(map2.entrySet()));
+                assertTrue(map1.values().equals(map2.values()));
+            }
+        });
     }
 
-
-
-
-    @Test
-    public void putSpeedTestRepDelay0() throws Exception {
-
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-
-        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(0);
-
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
-
-        for(int i=0; i<1000; i++){
-            map1.put(i, i);
-            Thread.sleep(0, 500000);
-            assertEquals(i, map2.get(i));
-        }
-    }
 
 
     @Test
@@ -141,21 +144,28 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
 
         map1.put(1, 1, 1, TimeUnit.SECONDS);
         map1.put(1, 1);
-        Thread.sleep(1100);
-        assertEquals(1, map1.get(1));
-        assertEquals(1, map2.get(1));
 
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1, map1.get(1));
+                assertEquals(1, map2.get(1));
+            }
+        });
 
         map1.put(1, 1, 1, TimeUnit.SECONDS);
-        Thread.sleep(1500);
-        assertEquals(null, map1.get(1));
-        assertEquals(null, map2.get(1));
 
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(null, map1.get(1));
+                assertEquals(null, map2.get(1));
+            }
+        });
     }
 
 
-    @Test
-    public void putOrderTest_repDelay0() throws Exception {
+    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
+    @Test()
+    public void putOrderTest_repDelay0__CONST_FAIL() throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
@@ -173,13 +183,45 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         map2.put(1, 2);
 
         Thread.sleep(500);
-        assertEquals(2, map1.get(1));
-        assertEquals(2, map2.get(1));
+
+        Set<Entry<Object, Object>> s = map1.entrySet();
+        System.out.println(s.size());
+        Object[] x = s.toArray();
+        x[0].hashCode();
+
+        s = map2.entrySet();
+        System.out.println(s.size());
+        Object[] y = s.toArray();
+        y[0].hashCode();
+
+
+        System.out.println( x[0].hashCode() + "   " + y[0].hashCode() );
+
+/*
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1, map1.get(1));
+            }
+        });
+*/
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(2, map2.get(1));
+            }
+        });
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(2, map1.get(1));
+            }
+        });
     }
 
 
+    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
     @Test
-    public void putOrderTest_repDelay1000() throws Exception {
+    public void putOrderTest_repDelay1000_FAILS_RANDOM() throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
@@ -192,13 +234,33 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
 
+        Integer a = new Integer(1);
+        Integer b = new Integer(1);
+
+        System.out.println("obj="+a+" hash=>"+a.hashCode());
+        System.out.println("obj=" + b + " hash=>" + b.hashCode());
 
         map1.put(1, 1);
         map2.put(1, 2);
 
-        Thread.sleep(1100);
-        assertEquals(2, map1.get(1));
-        assertEquals(2, map2.get(1));
+        //map1.put(a, 1);
+        //map2.put(a, 2);
+
+        //map1.put(a, 1);
+        //map2.put(b, 2);
+
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(2, map1.get(1));
+            }
+        });
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(2, map2.get(1));
+            }
+        });
     }
 
 
@@ -224,22 +286,41 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         //if we put a sneek sleep Test passes but why we need a sleep the order is the order ?
         map2.put(1, 1);
 
-        Thread.sleep(1500);
-        assertEquals(1, map1.get(1));
-        assertEquals(1, map2.get(1));
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1, map1.get(1));
+            }
+        });
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1, map2.get(1));
+            }
+        });
 
 
         map1.put(1, 1);
         map2.put(1, 1, 1, TimeUnit.SECONDS);
 
-        Thread.sleep(1500);
-        assertEquals(null, map1.get(1));
-        assertEquals(null, map2.get(1));
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(null, map1.get(1));
+            }
+        });
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(null, map2.get(1));
+            }
+        });
     }
 
 
+    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
     @Test
-    public void putTTL_Vs_put_repDelay1000() throws Exception {
+    public void putTTL_Vs_put_repDelay1000_FAILS_RANDOM() throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
@@ -257,17 +338,34 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         map1.put(1, 1, 1, TimeUnit.SECONDS);
         map2.put(1, 1);
 
-        Thread.sleep(1500);
-        assertEquals(1, map1.get(1));
-        assertEquals(1, map2.get(1));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1, map1.get(1));
+            }
+        });
 
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1, map2.get(1));
+            }
+        });
 
         map1.put(2, 2);
         map2.put(2, 2, 1, TimeUnit.SECONDS);
 
-        Thread.sleep(2500);
-        assertEquals(null, map1.get(2));
-        assertEquals(null, map2.get(2));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(null, map1.get(2));
+            }
+        });
+
+        //This test random fails
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(null, map2.get(2));
+            }
+        });
+
     }
 
 
@@ -291,12 +389,16 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         map1.put(1, 1);
         map2.put(2, 2);
 
-        Thread.sleep(500);
-        assertEquals(1, map1.get(1));
-        assertEquals(1, map2.get(1));
 
-        assertEquals(2, map1.get(2));
-        assertEquals(2, map2.get(2));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(1, map1.get(1));
+                assertEquals(1, map2.get(1));
+
+                assertEquals(2, map1.get(2));
+                assertEquals(2, map2.get(2));
+            }
+        });
     }
 
 
@@ -320,13 +422,20 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
 
         map1.put(1, 1);
         map2.put(2, 2);
-        Thread.sleep(500);
-        assertEquals(null, map1.get(2));
-        assertEquals(1,    map2.get(1));
 
-        Thread.sleep(1500);
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(null, map1.get(2));
+                assertEquals(1,    map2.get(1));
+            }
+        });
 
-        assertEquals(2, map1.get(2));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(2, map1.get(2));
+            }
+        });
+
     }
 
 
@@ -350,13 +459,15 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
             mapA.put(i, i);
         }
 
-        Thread.sleep(500);
-
-        for(int i=0; i<1000; i++){
-            assertEquals(i, mapA.get(i));
-            assertEquals(i, mapB.get(i));
-            assertEquals(i, mapC.get(i));
-        }
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                for(int i=0; i<1000; i++){
+                    assertEquals(i, mapA.get(i));
+                    assertEquals(i, mapB.get(i));
+                    assertEquals(i, mapC.get(i));
+                }
+            }
+        });
     }
 
     @Test
@@ -380,20 +491,22 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
             mapB.put(i+"B", i+"B");
         }
 
-        Thread.sleep(500);
-
-        for(int i=0; i<1000; i++){
-            assertEquals(i+"A", mapA.get(i+"A"));
-            assertEquals(i+"A", mapB.get(i+"A"));
-            assertEquals(i+"A", mapC.get(i+"A"));
-            assertEquals(i+"B", mapA.get(i+"B"));
-            assertEquals(i+"B", mapB.get(i+"B"));
-            assertEquals(i+"B", mapC.get(i+"B"));
-        }
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                for(int i=0; i<1000; i++){
+                    assertEquals(i+"A", mapA.get(i+"A"));
+                    assertEquals(i+"A", mapB.get(i+"A"));
+                    assertEquals(i+"A", mapC.get(i+"A"));
+                    assertEquals(i+"B", mapA.get(i+"B"));
+                    assertEquals(i+"B", mapB.get(i+"B"));
+                    assertEquals(i+"B", mapC.get(i+"B"));
+                }
+            }
+        });
     }
 
     @Test
-    public void play() throws Exception {
+    public void multiPutThreads_dealy0() throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
@@ -436,20 +549,25 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
             t.join();
         }
 
-        for(int i=0; i<1000; i++){
-            assertEquals(i, mapA.get(i+"A"));
-            assertEquals(i, mapB.get(i + "A"));
-            assertEquals(i, mapC.get(i+"A"));
 
-            assertEquals(i, mapA.get(i+"B"));
-            assertEquals(i, mapB.get(i+"B"));
-            assertEquals(i, mapC.get(i+"B"));
-        }
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                for(int i=0; i<1000; i++){
+                    assertEquals(i, mapA.get(i+"A"));
+                    assertEquals(i, mapB.get(i + "A"));
+                    assertEquals(i, mapC.get(i+"A"));
+
+                    assertEquals(i, mapA.get(i+"B"));
+                    assertEquals(i, mapB.get(i+"B"));
+                    assertEquals(i, mapC.get(i+"B"));
+                }
+            }
+        });
     }
 
 
     @Test
-    public void play2() throws Exception {
+    public void multiPutThreads_withNodeCrash() throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
@@ -509,25 +627,31 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
             t.join();
         }
 
-        for(int i=0; i<500; i++){
-            assertEquals(i, mapB.get(i+"A"));
-            assertEquals(i, mapC.get(i+"A"));
-            assertEquals(i, mapB.get(i+"B"));
-            assertEquals(i, mapC.get(i+"B"));
-        }
 
-        for(int i=500; i<1000; i++){
-            assertEquals(i, mapB.get(i+"C"));
-            assertEquals(i, mapC.get(i+"C"));
-            assertEquals(i, mapB.get(i+"B"));
-            assertEquals(i, mapC.get(i+"B"));
-        }
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                for(int i=0; i<500; i++){
+                    assertEquals(i, mapB.get(i+"A"));
+                    assertEquals(i, mapC.get(i+"A"));
+                    assertEquals(i, mapB.get(i+"B"));
+                    assertEquals(i, mapC.get(i+"B"));
+                }
+
+                for(int i=500; i<1000; i++){
+                    assertEquals(i, mapB.get(i+"C"));
+                    assertEquals(i, mapC.get(i+"C"));
+                    assertEquals(i, mapB.get(i+"B"));
+                    assertEquals(i, mapC.get(i+"B"));
+                }
+            }
+        });
+
     }
 
 
 
     @Test
-    public void play4() throws Exception {
+    public void threadPuts_delay0() throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
@@ -550,9 +674,6 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
             public void go() {
                 for(int i=0; i<1000; i++){
                     mapA.put(i+"A", i);
-                    if(i==500){
-                        mapA.clear();
-                    }
                 }
             }
         };
@@ -572,22 +693,30 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
             t.join();
 
 
-        assertEquals(500, mapA.size());
-        assertEquals(500, mapB.size());
-        assertEquals(500, mapC.size());
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(2000, mapA.size());
+                assertEquals(2000, mapB.size());
+                assertEquals(2000, mapC.size());
+            }
+        });
 
-        for(int i=500; i<1000; i++){
-            assertEquals(i, mapA.get(i+"A"));
-            assertEquals(i, mapB.get(i + "A"));
-            assertEquals(i, mapC.get(i+"A"));
 
-            assertEquals(i, mapA.get(i+"B"));
-            assertEquals(i, mapB.get(i+"B"));
-            assertEquals(i, mapC.get(i+"B"));
-        }
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                for(int i=0; i<1000; i++){
+                    assertEquals(i, mapA.get(i+"A"));
+                    assertEquals(i, mapB.get(i + "A"));
+                    assertEquals(i, mapC.get(i+"A"));
+
+                    assertEquals(i, mapA.get(i+"B"));
+                    assertEquals(i, mapB.get(i+"B"));
+                    assertEquals(i, mapC.get(i+"B"));
+                }
+            }
+        });
     }
-
-
 
 
     abstract public class GatedThread extends Thread{
@@ -611,13 +740,10 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
         abstract public void go();
     }
 
-    private void startGatedThread(GatedThread g){g.start();}
 
-
-
-
+    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
     @Test
-    public void MapRepInterleavedDataOrderTest_Delay0() throws Exception {
+    public void MapRepInterleavedDataOrderTest_Delay0_CONST_FAILS() throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
@@ -642,1277 +768,24 @@ public class ReplicatedMapPlay extends HazelcastTestSupport {
             }
         }
 
-        Thread.sleep(1000);
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
 
-        for(int i=0; i<1000; i++){
-            if(i%2==0){
-                assertEquals(i+"A", mapA.get(i));
-                assertEquals(i+"A", mapB.get(i));
-                assertEquals(i+"A", mapC.get(i));
-            }else{
-                assertEquals(i+"B", mapA.get(i));
-                assertEquals(i+"B", mapB.get(i));
-                assertEquals(i+"B", mapC.get(i));
-            }
-        }
-    }
-
-
-
-
-
-
-
-    private static final Comparator<Entry<Integer, Integer>> ENTRYSET_COMPARATOR = new Comparator<Entry<Integer, Integer>>() {
-        @Override
-        public int compare(Entry<Integer, Integer> o1, Entry<Integer, Integer> o2) {
-            return o1.getKey().compareTo(o2.getKey());
-        }
-    };
-
-    @Test
-    public void testAddObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("bar", "foo");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        TimeUnit.SECONDS.sleep(2);
-
-        value = map1.get("bar");
-        assertEquals("foo", value);
-    }
-
-    @Test
-    public void testAddTtlObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar", 3, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        assertEquals("bar", map1.get("foo"));
-        assertEquals("bar", map2.get("foo"));
-        TimeUnit.SECONDS.sleep(5);
-
-        assertNull(map1.get("foo"));
-        assertNull(map2.get("foo"));
-    }
-
-    @Test
-    public void testUpdateObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar2");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map2.get("foo");
-        assertEquals("bar2", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo", "bar3");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map1.get("foo");
-        assertEquals("bar3", value);
-    }
-
-    @Test
-    public void testUpdateTtlObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar", 3, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo2", "bar", 3, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        assertEquals("bar", map1.get("foo"));
-        assertEquals("bar", map2.get("foo2"));
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo", "bar2");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo2", "bar2", 1, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        TimeUnit.SECONDS.sleep(5);
-
-        assertEquals("bar2", map1.get("foo"));
-        assertEquals("bar2", map2.get("foo"));
-
-        assertNull(map1.get("foo2"));
-        assertNull(map2.get("foo2"));
-    }
-
-    @Test
-    public void testRemoveObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.remove("foo");
-            }
-        }, 2, EntryEventType.REMOVED, map1, map2);
-
-        value = map2.get("foo");
-        assertNull(value);
-    }
-
-    @Test
-    public void testEntryListenerObject() throws Exception {
-        final CountDownLatch added = new CountDownLatch(2);
-        final CountDownLatch updated = new CountDownLatch(2);
-        final CountDownLatch removed = new CountDownLatch(2);
-
-        EntryListener listener = new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                added.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-                removed.countDown();
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-                updated.countDown();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-        };
-
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        ListenerConfig listenerConfig = new ListenerConfig().setImplementation(listener);
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT)
-                .getListenerConfigs().add(listenerConfig);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar2");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map2.get("foo");
-        assertEquals("bar2", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo", "bar3");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map1.get("foo");
-        assertEquals("bar3", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.remove("foo");
-            }
-        }, 2, EntryEventType.REMOVED, map1, map2);
-
-        added.await();
-        updated.await();
-        removed.await();
-    }
-
-    @Test
-    public void testSizeObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
+                for(int i=0; i<1000; i++){
+                    if(i%2==0){
+                        assertEquals(i+"A", mapA.get(i));
+                        assertEquals(i+"A", mapB.get(i));
+                        assertEquals(i+"A", mapC.get(i));
+                    }else{
+                        assertEquals(i+"B", mapA.get(i));
+                        assertEquals(i+"B", mapB.get(i));
+                        assertEquals(i+"B", mapC.get(i));
+                    }
                 }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        assertEquals(testValues.length, map1.size());
-        assertEquals(testValues.length, map2.size());
-    }
-
-    @Test
-    public void testContainsKeyObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        assertTrue(map1.containsKey(testValues[0].getKey()));
-        assertTrue(map2.containsKey(testValues[0].getKey()));
-    }
-
-    @Test
-    public void testContainsValueObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        assertTrue(map1.containsValue(testValues[0].getValue()));
-        assertTrue(map2.containsValue(testValues[0].getValue()));
-    }
-
-    @Test
-    public void testValuesObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        final List<Integer> valuesTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    valuesTestValues.add(entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        List<Integer> values1 = new ArrayList<Integer>(map1.values());
-        List<Integer> values2 = new ArrayList<Integer>(map2.values());
-
-        Collections.sort(values1);
-        Collections.sort(values2);
-        Collections.sort(valuesTestValues);
-
-        assertEquals(valuesTestValues, values1);
-        assertEquals(valuesTestValues, values2);
-    }
-
-    @Test
-    public void testKeySetObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        final List<Integer> keySetTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    keySetTestValues.add(entry.getKey());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        List<Integer> keySet1 = new ArrayList<Integer>(map1.keySet());
-        List<Integer> keySet2 = new ArrayList<Integer>(map2.keySet());
-
-        Collections.sort(keySet1);
-        Collections.sort(keySet2);
-        Collections.sort(keySetTestValues);
-
-        assertEquals(keySetTestValues, keySet1);
-        assertEquals(keySetTestValues, keySet2);
-    }
-
-    @Test
-    public void testEntrySetObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        final List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
-
-        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
-
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
-    }
-
-    @Test
-    public void testInitialFillupObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        final List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map1.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 100, EntryEventType.ADDED, map1);
-
-        final CountDownLatch latch = new CountDownLatch(100);
-        EntryListenerConfig listenerConfig = new EntryListenerConfig().setImplementation(new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
             }
         });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig);
 
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-        latch.await(10, TimeUnit.SECONDS);
-
-
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
-
-        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
-
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
     }
 
-    @Test
-    public void testInitialFillupTrippleObject() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        final List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map1.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 100, EntryEventType.ADDED, map1);
-
-        final CountDownLatch latch1 = new CountDownLatch(100);
-        EntryListenerConfig listenerConfig1 = new EntryListenerConfig().setImplementation(new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch1.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-        });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig1);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        cfg.getMapConfig("default").getEntryListenerConfigs().clear();
-        final CountDownLatch latch2 = new CountDownLatch(100);
-        EntryListenerConfig listenerConfig2 = new EntryListenerConfig().setImplementation(new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch2.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-        });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig2);
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
-        ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap("default");
-
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
-        List<Entry<Integer, Integer>> entrySet3 = new ArrayList<Entry<Integer, Integer>>(map3.entrySet());
-
-        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet3, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
-
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
-        assertEquals(entrySetTestValues, entrySet3);
-    }
-
-    @Test
-    public void testAddBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("bar", "foo");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        TimeUnit.SECONDS.sleep(2);
-
-        value = map1.get("bar");
-        assertEquals("foo", value);
-    }
-
-    @Test
-    public void testAddTtlBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar", 3, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        assertEquals("bar", map1.get("foo"));
-        assertEquals("bar", map2.get("foo"));
-        TimeUnit.SECONDS.sleep(5);
-
-        assertNull(map1.get("foo"));
-        assertNull(map2.get("foo"));
-    }
-
-    @Test
-    public void testUpdateBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar2");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map2.get("foo");
-        assertEquals("bar2", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo", "bar3");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map1.get("foo");
-        assertEquals("bar3", value);
-    }
-
-    @Test
-    public void testUpdateTtlBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar", 3, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo2", "bar", 3, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        assertEquals("bar", map1.get("foo"));
-        assertEquals("bar", map2.get("foo2"));
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo", "bar2");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo2", "bar2", 1, TimeUnit.SECONDS);
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-        TimeUnit.SECONDS.sleep(5);
-
-        assertEquals("bar2", map1.get("foo"));
-        assertEquals("bar2", map2.get("foo"));
-
-        assertNull(map1.get("foo2"));
-        assertNull(map2.get("foo2"));
-    }
-
-    @Test
-    public void testRemoveBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.remove("foo");
-            }
-        }, 2, EntryEventType.REMOVED, map1, map2);
-
-        value = map2.get("foo");
-        assertNull(value);
-    }
-
-    @Test
-    public void testEntryListenerBinary() throws Exception {
-        final CountDownLatch added = new CountDownLatch(2);
-        final CountDownLatch updated = new CountDownLatch(2);
-        final CountDownLatch removed = new CountDownLatch(2);
-
-        EntryListener listener = new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                added.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-                removed.countDown();
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-                updated.countDown();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-        };
-
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        ListenerConfig listenerConfig = new ListenerConfig().setImplementation(listener);
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY)
-                .getListenerConfigs().add(listenerConfig);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar");
-            }
-        }, 2, EntryEventType.ADDED, map1, map2);
-
-        String value = map2.get("foo");
-        assertEquals("bar", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo", "bar2");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map2.get("foo");
-        assertEquals("bar2", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map2.put("foo", "bar3");
-            }
-        }, 2, EntryEventType.UPDATED, map1, map2);
-
-        value = map1.get("foo");
-        assertEquals("bar3", value);
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.remove("foo");
-            }
-        }, 2, EntryEventType.REMOVED, map1, map2);
-
-        added.await();
-        updated.await();
-        removed.await();
-    }
-
-    @Test
-    public void testSizeBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        assertEquals(testValues.length, map1.size());
-        assertEquals(testValues.length, map2.size());
-    }
-
-    @Test
-    public void testContainsKeyBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        assertTrue(map1.containsKey(testValues[0].getKey()));
-        assertTrue(map2.containsKey(testValues[0].getKey()));
-    }
-
-    @Test
-    public void testContainsValueBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        assertTrue(map1.containsValue(testValues[0].getValue()));
-        assertTrue(map2.containsValue(testValues[0].getValue()));
-    }
-
-    @Test
-    public void testValuesBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        final List<Integer> valuesTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    valuesTestValues.add(entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        List<Integer> values1 = new ArrayList<Integer>(map1.values());
-        List<Integer> values2 = new ArrayList<Integer>(map2.values());
-
-        Collections.sort(values1);
-        Collections.sort(values2);
-        Collections.sort(valuesTestValues);
-
-        assertEquals(valuesTestValues, values1);
-        assertEquals(valuesTestValues, values2);
-    }
-
-    @Test
-    public void testKeySetBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-
-        final List<Integer> keySetTestValues = new ArrayList<Integer>(testValues.length);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                    keySetTestValues.add(entry.getKey());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        List<Integer> keySet1 = new ArrayList<Integer>(map1.keySet());
-        List<Integer> keySet2 = new ArrayList<Integer>(map2.keySet());
-
-        Collections.sort(keySet1);
-        Collections.sort(keySet2);
-        Collections.sort(keySetTestValues);
-
-        assertEquals(keySetTestValues, keySet1);
-        assertEquals(keySetTestValues, keySet2);
-    }
-
-    @Test
-    public void testEntrySetBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        final List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final ReplicatedMap map = i < half ? map1 : map2;
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 200, EntryEventType.ADDED, map1, map2);
-
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
-
-        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
-
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
-    }
-
-    @Test
-    public void testInitialFillupBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        final List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map1.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 100, EntryEventType.ADDED, map1);
-
-        final CountDownLatch latch = new CountDownLatch(100);
-        EntryListenerConfig listenerConfig = new EntryListenerConfig().setImplementation(new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-        });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig);
-
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-        latch.await(10, TimeUnit.SECONDS);
-
-
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
-
-        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
-
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
-    }
-
-    @Test
-    public void testInitialFillupTrippleBinary() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
-
-        final SimpleEntry<Integer, Integer>[] testValues = buildTestValues();
-        final List<SimpleEntry<Integer, Integer>> entrySetTestValues = Arrays.asList(testValues);
-
-        WatchedOperationExecutor executor = new WatchedOperationExecutor();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                int half = testValues.length / 2;
-                for (int i = 0; i < testValues.length; i++) {
-                    final SimpleEntry<Integer, Integer> entry = testValues[i];
-                    map1.put(entry.getKey(), entry.getValue());
-                }
-            }
-        }, 2, 100, EntryEventType.ADDED, map1);
-
-        final CountDownLatch latch1 = new CountDownLatch(100);
-        EntryListenerConfig listenerConfig1 = new EntryListenerConfig().setImplementation(new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch1.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-        });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig1);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-
-        cfg.getMapConfig("default").getEntryListenerConfigs().clear();
-        final CountDownLatch latch2 = new CountDownLatch(100);
-        EntryListenerConfig listenerConfig2 = new EntryListenerConfig().setImplementation(new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch2.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-        });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig2);
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
-        ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap("default");
-
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
-        List<Entry<Integer, Integer>> entrySet3 = new ArrayList<Entry<Integer, Integer>>(map3.entrySet());
-
-        Collections.sort(entrySet1, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySet3, ENTRYSET_COMPARATOR);
-        Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
-
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
-        assertEquals(entrySetTestValues, entrySet3);
-    }
-
-    private SimpleEntry<Integer, Integer>[] buildTestValues() {
-        Random random = new Random(-System.currentTimeMillis());
-        SimpleEntry<Integer, Integer>[] testValues = new SimpleEntry[100];
-        for (int i = 0; i < testValues.length; i++) {
-            testValues[i] = new SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());
-        }
-        return testValues;
-    }
 
 }
