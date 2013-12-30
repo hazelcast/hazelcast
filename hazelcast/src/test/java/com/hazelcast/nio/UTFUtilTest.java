@@ -212,6 +212,8 @@ public class UTFUtilTest {
             boolean internalBcelEnabled = parameters[5];
             boolean javassistEnabled = parameters[6];
 
+            System.out.println("Running test for " + CLASSTYPES[z]);
+
             UTFUtil.StringCreator stringCreator = StringCreatorUtil.findBestStringCreator(faststringEnabled,
                     java8Enabled, asmEnabled, bcelEnabled, internalBcelEnabled, javassistEnabled, false);
 

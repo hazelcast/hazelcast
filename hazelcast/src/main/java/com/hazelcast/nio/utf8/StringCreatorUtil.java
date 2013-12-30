@@ -30,8 +30,12 @@ public final class StringCreatorUtil {
     static final Class<?> JAVA_LANG_ACCESS_CLASS;
     static final Class<?> SHARED_SECRET_CLASS;
 
+    private static final boolean DEBUG_ENABLED = Boolean.parseBoolean(
+            System.getProperty("hazelcast.nio.faststring.debug", "false"));
+
     private static final boolean IS_IBM_JVM;
     private static final boolean IS_ORACLE_JVM;
+    private static final boolean IS_ORACLE_JAVA8;
 
     static {
         IS_IBM_JVM = JvmUtil.getJvmVendor() == JvmUtil.Vendor.IBM;
@@ -39,6 +43,16 @@ public final class StringCreatorUtil {
         MAGIC_CLASSLOADER = findMagicClassLoader();
         JAVA_LANG_ACCESS_CLASS = findJavaLangAccess();
         SHARED_SECRET_CLASS = findSharedSecret();
+        IS_ORACLE_JAVA8 = findOracleJava8UnsafeMethod();
+
+        if (DEBUG_ENABLED) {
+            System.err.println("JVM Vendor: " + JvmUtil.getJvmVendor().name());
+            System.err.println("JVM Version: " + JvmUtil.getJvmVersion().name());
+            System.err.println("Magic Classloader: " + MAGIC_CLASSLOADER);
+            System.err.println("JavaLangAccess: " + JAVA_LANG_ACCESS_CLASS);
+            System.err.println("SharedSecret: " + SHARED_SECRET_CLASS);
+            System.err.println("sun.misc.Unsafe::newStringUnsafe available: " + IS_ORACLE_JAVA8);
+        }
     }
 
     private StringCreatorUtil() {
@@ -51,10 +65,9 @@ public final class StringCreatorUtil {
         boolean bcelEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.bcel", "true"));
         boolean internalBcelEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.internalbcel", "true"));
         boolean javassistEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.javassist", "true"));
-        boolean debugEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring.debug", "false"));
 
         return findBestStringCreator(faststringEnabled, java8Enabled, asmEnabled,
-                bcelEnabled, internalBcelEnabled, javassistEnabled, debugEnabled);
+                bcelEnabled, internalBcelEnabled, javassistEnabled, DEBUG_ENABLED);
     }
 
     public static UTFUtil.StringCreator findBestStringCreator(boolean faststringEnabled, boolean java8Enabled,
@@ -149,18 +162,7 @@ public final class StringCreatorUtil {
     }
 
     private static boolean isOracleJava8(boolean debugEnabled) {
-        try {
-            Class<?> clazz = Class.forName("sun.misc.JavaLangAccess");
-            Method method = clazz.getDeclaredMethod("newStringUnsafe", char[].class);
-            if (method.getReturnType().equals(String.class)) {
-                return true;
-            }
-        } catch (Throwable ignore) {
-            if (debugEnabled) {
-                ignore.printStackTrace();
-            }
-        }
-        return false;
+        return IS_ORACLE_JAVA8;
     }
 
     private static UTFUtil.StringCreator tryLoadAsmJava8StringCreator(boolean debugEnabled) {
@@ -281,6 +283,18 @@ public final class StringCreatorUtil {
         } catch (Throwable ignore) {
         }
         return null;
+    }
+
+    private static boolean findOracleJava8UnsafeMethod() {
+        try {
+            Class<?> clazz = Class.forName("sun.misc.JavaLangAccess");
+            Method method = clazz.getDeclaredMethod("newStringUnsafe", char[].class);
+            if (method.getReturnType().equals(String.class)) {
+                return true;
+            }
+        } catch (Throwable ignore) {
+        }
+        return false;
     }
 
     private static class DefaultStringCreator implements UTFUtil.StringCreator {
