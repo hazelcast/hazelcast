@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import java.io.Serializable;
-
 /**
  * <p>
  * The abstract Reducer class is used to build reducers for the {@link Job}.<br>
@@ -54,8 +52,7 @@ import java.io.Serializable;
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
  */
-public abstract class Reducer<KeyIn, ValueIn, ValueOut>
-        implements Serializable {
+public abstract class Reducer<KeyIn, ValueIn, ValueOut> {
 
     /**
      * This method is called before the first value is submitted to this Reducer instance.

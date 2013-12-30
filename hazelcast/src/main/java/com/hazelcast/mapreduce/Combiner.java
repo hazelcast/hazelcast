@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import java.io.Serializable;
-
 /**
  * <p>
  * The abstract Combiner class is used to build combiners for the {@link Job}.<br>
@@ -76,8 +74,7 @@ import java.io.Serializable;
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
  */
-public abstract class Combiner<KeyIn, ValueIn, ValueOut>
-        implements Serializable {
+public abstract class Combiner<KeyIn, ValueIn, ValueOut> {
 
     /**
      * This method is called before the first value is submitted to this Combiner instance.
