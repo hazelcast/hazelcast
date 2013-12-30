@@ -332,11 +332,7 @@ final class BasicOperationService implements InternalOperationService {
                     throw new IllegalArgumentException("Partition id cannot be negative! -> " + partitionId);
                 }
                 final PartitionView partitionView = nodeEngine.getPartitionService().getPartition(partitionId);
-                if (partitionView == null) {
-                    throw new PartitionMigratingException(node.getThisAddress(), partitionId,
-                            op.getClass().getName(), op.getServiceName());
-                }
-                if (retryDuringMigration(op) && node.partitionService.isPartitionMigrating(partitionId)) {
+                if (retryDuringMigration(op) && partitionView.isMigrating()) {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                         op.getClass().getName(), op.getServiceName());
                 }
