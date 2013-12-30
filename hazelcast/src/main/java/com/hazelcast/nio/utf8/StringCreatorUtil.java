@@ -115,7 +115,7 @@ public final class StringCreatorUtil {
                 }
             }
 
-            if (!IS_IBM_JVM || JvmUtil.getJvmVersion() != JvmUtil.Version.Java6) {
+            if (MAGIC_CLASSLOADER != null) {
                 if ((internalBcelEnabled || bcelEnabled) && isBcelAvailable(debugEnabled)) {
                     boolean internal = internalBcelEnabled
                             && (isOracleBcelAvailable(debugEnabled) || isIBMBcelAvailable(debugEnabled));
