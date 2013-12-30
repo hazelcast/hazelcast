@@ -115,26 +115,28 @@ public final class StringCreatorUtil {
                 }
             }
 
-            if ((internalBcelEnabled || bcelEnabled) && isBcelAvailable(debugEnabled)) {
-                boolean internal = internalBcelEnabled
-                        && (isOracleBcelAvailable(debugEnabled) || isIBMBcelAvailable(debugEnabled));
-                UTFUtil.StringCreator stringCreator = tryLoadBcelMagicAccessorStringCreator(internal, debugEnabled);
-                if (stringCreator != null) {
-                    return stringCreator;
+            if (!IS_IBM_JVM || JvmUtil.getJvmVersion() != JvmUtil.Version.Java6) {
+                if ((internalBcelEnabled || bcelEnabled) && isBcelAvailable(debugEnabled)) {
+                    boolean internal = internalBcelEnabled
+                            && (isOracleBcelAvailable(debugEnabled) || isIBMBcelAvailable(debugEnabled));
+                    UTFUtil.StringCreator stringCreator = tryLoadBcelMagicAccessorStringCreator(internal, debugEnabled);
+                    if (stringCreator != null) {
+                        return stringCreator;
+                    }
                 }
-            }
 
-            if (asmEnabled && isAsmAvailable(debugEnabled)) {
-                UTFUtil.StringCreator stringCreator = tryLoadAsmMagicAccessorStringCreator(debugEnabled);
-                if (stringCreator != null) {
-                    return stringCreator;
+                if (asmEnabled && isAsmAvailable(debugEnabled)) {
+                    UTFUtil.StringCreator stringCreator = tryLoadAsmMagicAccessorStringCreator(debugEnabled);
+                    if (stringCreator != null) {
+                        return stringCreator;
+                    }
                 }
-            }
 
-            if (javassistEnabled && isJavassistAvailable(debugEnabled)) {
-                UTFUtil.StringCreator stringCreator = tryLoadJavassistMagicAccessorStringCreator(debugEnabled);
-                if (stringCreator != null) {
-                    return stringCreator;
+                if (javassistEnabled && isJavassistAvailable(debugEnabled)) {
+                    UTFUtil.StringCreator stringCreator = tryLoadJavassistMagicAccessorStringCreator(debugEnabled);
+                    if (stringCreator != null) {
+                        return stringCreator;
+                    }
                 }
             }
 
