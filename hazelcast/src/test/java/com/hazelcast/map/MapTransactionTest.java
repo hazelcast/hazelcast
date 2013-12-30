@@ -284,7 +284,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         map.put(key, 0);
         new Thread(new TxnIncrementor(count1, h1, latch)).start();
         new Thread(new TxnIncrementor(count2, h2, latch)).start();
-        latch.await(100, TimeUnit.SECONDS);
+        latch.await(600, TimeUnit.SECONDS);
         assertEquals(new Integer(count1 + count2), map.get(key));
     }
 
