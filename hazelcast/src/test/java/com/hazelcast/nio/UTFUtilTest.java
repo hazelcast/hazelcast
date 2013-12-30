@@ -89,13 +89,9 @@ public class UTFUtilTest {
             TYPE_MAGIC_ORACLE_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
     };
 
-    private static final String[] CLASSTYPES_IBM_JAVA7 = {
+    private static final String[] CLASSTYPES_IBM_JAVA6 = {
             TYPE_DEFAULT, TYPE_FASTSTRING, TYPE_MAGIC_ASM, TYPE_MAGIC_BCEL,
             TYPE_MAGIC_IBM_INTERNAL_BCEL, TYPE_MAGIC_JAVASSIST
-    };
-
-    private static final String[] CLASSTYPES_IBM_JAVA6 = {
-            TYPE_DEFAULT, TYPE_FASTSTRING
     };
 
     private static final String[] CLASSTYPES;
@@ -104,8 +100,6 @@ public class UTFUtilTest {
         if (JvmUtil.getJvmVendor() == JvmUtil.Vendor.IBM) {
             if (JvmUtil.getJvmVersion() == JvmUtil.Version.Java8) {
                 CLASSTYPES = CLASSTYPES_IBM_JAVA8;
-            } else if (JvmUtil.getJvmVersion() == JvmUtil.Version.Java7) {
-                CLASSTYPES = CLASSTYPES_IBM_JAVA7;
             } else {
                 CLASSTYPES = CLASSTYPES_IBM_JAVA6;
             }
@@ -341,15 +335,6 @@ public class UTFUtilTest {
             return !parameters[2];
         }
         if (JvmUtil.getJvmVendor() == JvmUtil.Vendor.IBM) {
-            JvmUtil.Version version = JvmUtil.getJvmVersion();
-            if (version == JvmUtil.Version.Java6) {
-                for (int i = 2; i < parameters.length; i++) {
-                    if (parameters[i]) {
-                        return false;
-                    }
-                }
-                return true;
-            }
             return !parameters[2];
         }
         for (int i = 2; i < parameters.length; i++) {

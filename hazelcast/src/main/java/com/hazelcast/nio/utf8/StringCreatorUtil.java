@@ -265,7 +265,11 @@ public final class StringCreatorUtil {
     private static ClassLoader findMagicClassLoader() {
         try {
             Class<?> clazz = Class.forName("sun.reflect.ConstructorAccessor");
-            return clazz.getClassLoader();
+            ClassLoader cl = clazz.getClassLoader();
+            if (cl == null) {
+                cl = ClassLoader.getSystemClassLoader();
+            }
+            return cl;
         } catch (Throwable ignore) {
         }
         return null;
