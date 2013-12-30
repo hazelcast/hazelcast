@@ -388,7 +388,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public String readUTF() throws IOException {
-        return UTFUtil.readUTF(this, utfBuffer);
+        return UTFUtil.INSTANCE.readUTF(this, utfBuffer);
     }
 
     public Object readObject() throws IOException {
