@@ -168,11 +168,16 @@
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <parallel>methods</parallel -->
 
+                    <!-- Prevent all faststring generators for normal calls -->
                     <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
+                        -Dhazelcast.nio.faststring.asm=false
+                        -Dhazelcast.nio.faststring.bcel=false
+                        -Dhazelcast.nio.faststring.internalbcel=false
+                        -Dhazelcast.nio.faststring.javassist=false
                     </argLine>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>

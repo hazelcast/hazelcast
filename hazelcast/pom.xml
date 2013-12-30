@@ -42,6 +42,31 @@
                 </configuration>
             </plugin>
 
+            <!-- Relocate packages inside the Oracle / IBM internal generators
+                 since those packages my not be available while compiling -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>relocate-packages</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <classpathScope>compile</classpathScope>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <arguments>
+                        <argument>${basedir}</argument>
+                    </arguments>
+                    <mainClass>com.hazelcast.nio.utf8.CompileTimeRelocator</mainClass>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
@@ -185,6 +210,27 @@
             <version>2.10.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Used for compiling the StringCreator builder -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>4.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>bcel</groupId>
+            <artifactId>bcel</artifactId>
+            <version>5.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.12.1.GA</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Used for compiling the StringCreator builder -->
 
         <!--OSGi dep-->
         <dependency>

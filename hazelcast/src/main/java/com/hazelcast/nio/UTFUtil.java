@@ -16,40 +16,32 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.utf8.StringCreatorUtil;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
-import java.lang.reflect.Constructor;
 
-/**
- * @author mdogan 1/23/13
- */
 public final class UTFUtil {
 
     private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
-    private static final StringCreator STRING_CREATOR;
+    public static final UTFUtil INSTANCE;
 
     static {
-        boolean faststring = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring", "true"));
-        StringCreator stringCreator = null;
-        if (faststring) {
-            try {
-                Constructor<String> constructor = String.class.getDeclaredConstructor(char[].class, boolean.class);
-                constructor.setAccessible(true);
-                stringCreator = new FastStringCreator(constructor);
-            } catch (Throwable t) {
-                faststring = false;
-            }
-        }
-        if (!faststring) {
-            stringCreator = new DefaultStringCreator();
-        }
-        STRING_CREATOR = stringCreator;
+        // Find the best matching String creator to prevent as much allocations as possible
+        StringCreator stringCreator = StringCreatorUtil.findBestStringCreator();
+        INSTANCE = new UTFUtil(stringCreator);
     }
 
-    public static void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
+    private final StringCreator stringCreator;
+
+    public UTFUtil(StringCreator stringCreator) {
+        this.stringCreator = stringCreator;
+    }
+
+    public void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
         boolean isNull = str == null;
         out.writeBoolean(isNull);
         if (isNull) return;
@@ -64,7 +56,7 @@ public final class UTFUtil {
         }
     }
 
-    private static void writeShortUTF(final DataOutput out, final String str,
+    private void writeShortUTF(final DataOutput out, final String str,
                                       final int beginIndex, final int endIndex,
                                       byte[] buffer) throws IOException {
         int utfLength = 0;
@@ -109,7 +101,7 @@ public final class UTFUtil {
         out.write(buffer, 0, length == 0 ? buffer.length : length);
     }
 
-    public static String readUTF(final DataInput in, byte[] buffer) throws IOException {
+    public String readUTF(final DataInput in, byte[] buffer) throws IOException {
         boolean isNull = in.readBoolean();
         if (isNull) return null;
         int length = in.readInt();
@@ -120,12 +112,12 @@ public final class UTFUtil {
             int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
             readShortUTF(in, data, beginIndex, endIndex, buffer);
         }
-        return STRING_CREATOR.buildString(data);
+        return stringCreator.buildString(data);
     }
 
-    private static void readShortUTF(final DataInput in, final char[] data,
-                                       final int beginIndex, final int endIndex,
-                                       byte[] buffer) throws IOException {
+    private void readShortUTF(final DataInput in, final char[] data,
+                                     final int beginIndex, final int endIndex,
+                                     byte[] buffer) throws IOException {
         final int utflen = in.readShort();
         int c = 0, char2, char3;
         int count = 0;
@@ -171,7 +163,7 @@ public final class UTFUtil {
                 case 14:
                     /* 1110 xxxx 10xx xxxx 10xx xxxx */
                     lastCount = count++;
-                    if (count + 2> utflen)
+                    if (count + 2 > utflen)
                         throw new UTFDataFormatException("malformed input: partial character at end");
                     char2 = buffered(buffer, count++, utflen, in);
                     char3 = buffered(buffer, count++, utflen, in);
@@ -186,7 +178,7 @@ public final class UTFUtil {
         }
     }
 
-    private static void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
+    private void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
         int innerPos = pos % buffer.length;
         if (pos > 0 && innerPos == 0) {
             out.write(buffer, 0, buffer.length);
@@ -194,7 +186,7 @@ public final class UTFUtil {
         buffer[innerPos] = value;
     }
 
-    private static byte buffered(byte[] buffer, int pos, int utfLenght, DataInput in) throws IOException {
+    private byte buffered(byte[] buffer, int pos, int utfLenght, DataInput in) throws IOException {
         int innerPos = pos % buffer.length;
         if (innerPos == 0) {
             int length = Math.min(buffer.length, utfLenght - pos);
@@ -203,33 +195,8 @@ public final class UTFUtil {
         return buffer[innerPos];
     }
 
-    private static interface StringCreator {
+    public static interface StringCreator {
         String buildString(char[] chars);
-    }
-
-    private static class DefaultStringCreator implements StringCreator {
-        @Override
-        public String buildString(char[] chars) {
-            return new String(chars);
-        }
-    }
-
-    private static class FastStringCreator implements StringCreator {
-
-        private final Constructor<String> constructor;
-
-        private FastStringCreator(Constructor<String> constructor) {
-            this.constructor = constructor;
-        }
-
-        @Override
-        public String buildString(char[] chars) {
-            try {
-                return constructor.newInstance(chars, Boolean.TRUE);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
 }
