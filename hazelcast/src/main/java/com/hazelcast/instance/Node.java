@@ -263,7 +263,9 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        logger.finest(getThisAddress() + " failed connecting to " + address);
+        if(logger.isFinestEnabled()){
+            logger.finest(getThisAddress() + " failed connecting to " + address);
+        }
         failedConnections.add(address);
     }
 
@@ -313,13 +315,17 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.finest("** setting master address to " + master);
+            if(logger.isFinestEnabled()){
+                logger.finest("** setting master address to " + master);
+            }
         }
         masterAddress = master;
     }
 
     public void start() {
-        logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        if(logger.isFinestEnabled()){
+            logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        }
         if (completelyShutdown) return;
         nodeEngine.start();
         connectionManager.start();
@@ -354,7 +360,9 @@ public class Node {
 
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
-        logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
+        if(logger.isFinestEnabled()){
+            logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
+        }
         if (!terminate && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
@@ -399,7 +407,9 @@ public class Node {
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
                 if (thread.isAlive()) {
-                    logger.finest("Shutting down thread " + thread.getName());
+                    if(logger.isFinestEnabled()){
+                        logger.finest("Shutting down thread " + thread.getName());
+                    }
                     thread.interrupt();
                 }
             }
@@ -413,7 +423,9 @@ public class Node {
         joined.set(false);
         joiner.reset();
         final String uuid = UuidUtil.createMemberUuid(address);
-        logger.finest("Generated new UUID for local member: " + uuid);
+        if(logger.isFinestEnabled()){
+            logger.finest("Generated new UUID for local member: " + uuid);
+        }
         localMember.setUuid(uuid);
     }
 

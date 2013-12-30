@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -188,6 +189,38 @@ public class NearCacheTest extends HazelcastTestSupport {
             assertNull(map2.get(i));
             assertNull(map3.get(i));
         }
+    }
+    @Test
+    public void testNearCacheStats() throws Exception
+    {
+        String mapName = "NearCacheStatsTest";
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        IMap<Integer,Integer> map = instances[0].getMap("NearCacheStatsTest");
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i,i);
+        }
+        //populate near cache
+        for (int i = 0; i < 1000; i++) {
+            map.get(i);
+        }
+
+        NearCacheStats stats =  map.getLocalMapStats().getNearCacheStats();
+
+        assertTrue("owned Entries", 400 < stats.getOwnedEntryCount());
+        assertTrue("misses", 1000 == stats.getMisses());
+        //make some hits
+        for (int i = 0; i < 1000; i++) {
+            map.get(i);
+        }
+        NearCacheStats stats2 =   map.getLocalMapStats().getNearCacheStats();
+
+        assertTrue("hits", 400 < stats2.getHits());
+        assertTrue("misses", 400 < stats2.getMisses());
+        assertTrue("hits+misses", 2000 == stats2.getHits() + stats2.getMisses());
     }
 
     @Test

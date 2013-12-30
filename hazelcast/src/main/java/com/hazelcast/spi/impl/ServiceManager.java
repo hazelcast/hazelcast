@@ -179,7 +179,9 @@ final class ServiceManager {
 
     private void shutdownService(final ManagedService service, final boolean terminate) {
         try {
-            logger.finest( "Shutting down service -> " + service);
+            if(logger.isFinestEnabled()){
+                logger.finest( "Shutting down service -> " + service);
+            }
             service.shutdown(terminate);
         } catch (Throwable t) {
             logger.severe("Error while shutting down service[" + service + "]: " + t.getMessage(), t);

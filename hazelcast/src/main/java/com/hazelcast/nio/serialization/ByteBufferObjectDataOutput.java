@@ -34,6 +34,8 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
 
     private final SerializationService service;
 
+    private final byte[] utfBuffer = new byte[1024];
+
     ByteBufferObjectDataOutput(int size, SerializationService service, ByteOrder order) {
         this.buffer = new DynamicByteBuffer(size, false);
         this.service = service;
@@ -206,7 +208,7 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
     }
 
     public void writeUTF(final String str) throws IOException {
-        UTFUtil.writeUTF(this, str);
+        UTFUtil.writeUTF(this, str, utfBuffer);
     }
 
     public void writeObject(Object object) throws IOException {

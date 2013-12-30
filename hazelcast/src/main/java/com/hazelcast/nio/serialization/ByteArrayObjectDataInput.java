@@ -38,6 +38,8 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream implement
 
     final SerializationService service;
 
+    private final byte[] utfBuffer = new byte[1024];
+
     ByteArrayObjectDataInput(Data data, SerializationService service) {
         this(data.buffer, service);
         final ClassDefinition cd = data.classDefinition;
@@ -424,7 +426,7 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream implement
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public String readUTF() throws IOException {
-        return UTFUtil.readUTF(this);
+        return UTFUtil.readUTF(this, utfBuffer);
     }
 
     public Object readObject() throws IOException {

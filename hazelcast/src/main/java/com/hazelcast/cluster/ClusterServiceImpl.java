@@ -420,7 +420,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         } else {
             node.setMasterAddress(null);
         }
-        logger.finest( "Now Master " + node.getMasterAddress());
+        if(logger.isFinestEnabled()){
+            logger.finest( "Now Master " + node.getMasterAddress());
+        }
     }
 
     void handleJoinRequest(JoinRequestOperation joinRequest) {

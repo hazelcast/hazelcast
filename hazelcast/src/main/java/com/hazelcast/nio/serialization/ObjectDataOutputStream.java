@@ -34,6 +34,8 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     private final DataOutputStream dataOut;
     private final ByteOrder byteOrder;
 
+    private final byte[] utfBuffer = new byte[1024];
+
     public ObjectDataOutputStream(OutputStream outputStream, SerializationService serializationService) {
         this(outputStream, serializationService, ByteOrder.BIG_ENDIAN);
     }
@@ -181,7 +183,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     public void writeUTF(String str) throws IOException {
-        UTFUtil.writeUTF(this, str);
+        UTFUtil.writeUTF(this, str, utfBuffer);
     }
 
     public void write(byte[] b) throws IOException {

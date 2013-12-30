@@ -49,7 +49,7 @@ public final class UTFUtil {
         STRING_CREATOR = stringCreator;
     }
 
-    public static void writeUTF(final DataOutput out, final String str) throws IOException {
+    public static void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
         boolean isNull = str == null;
         out.writeBoolean(isNull);
         if (isNull) return;
@@ -60,12 +60,13 @@ public final class UTFUtil {
         for (int i = 0; i < chunkSize; i++) {
             int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
             int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-            writeShortUTF(out, str, beginIndex, endIndex);
+            writeShortUTF(out, str, beginIndex, endIndex, buffer);
         }
     }
 
     private static void writeShortUTF(final DataOutput out, final String str,
-                                      final int beginIndex, final int endIndex) throws IOException {
+                                      final int beginIndex, final int endIndex,
+                                      byte[] buffer) throws IOException {
         int utfLength = 0;
         int c, count = 0;
             /* use charAt instead of copying String to char array */
@@ -85,30 +86,30 @@ public final class UTFUtil {
         }
         out.writeShort(utfLength);
         int i;
-        final byte[] byteArray = new byte[utfLength];
         for (i = beginIndex; i < endIndex; i++) {
             c = str.charAt(i);
             if (!((c >= 0x0001) && (c <= 0x007F)))
                 break;
-            byteArray[count++] = (byte) c;
+            buffering(buffer, count++, (byte) c, out);
         }
         for (; i < endIndex; i++) {
             c = str.charAt(i);
             if ((c >= 0x0001) && (c <= 0x007F)) {
-                byteArray[count++] = (byte) c;
+                buffering(buffer, count++, (byte) c, out);
             } else if (c > 0x07FF) {
-                byteArray[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                byteArray[count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
-                byteArray[count++] = (byte) (0x80 | ((c) & 0x3F));
+                buffering(buffer, count++, (byte) (0xE0 | ((c >> 12) & 0x0F)), out);
+                buffering(buffer, count++, (byte) (0x80 | ((c >> 6) & 0x3F)), out);
+                buffering(buffer, count++, (byte) (0x80 | ((c) & 0x3F)), out);
             } else {
-                byteArray[count++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
-                byteArray[count++] = (byte) (0x80 | ((c) & 0x3F));
+                buffering(buffer, count++, (byte) (0xC0 | ((c >> 6) & 0x1F)), out);
+                buffering(buffer, count++, (byte) (0x80 | ((c) & 0x3F)), out);
             }
         }
-        out.write(byteArray, 0, utfLength);
+        int length = count % buffer.length;
+        out.write(buffer, 0, length == 0 ? buffer.length : length);
     }
 
-    public static String readUTF(final DataInput in) throws IOException {
+    public static String readUTF(final DataInput in, byte[] buffer) throws IOException {
         boolean isNull = in.readBoolean();
         if (isNull) return null;
         int length = in.readInt();
@@ -117,29 +118,31 @@ public final class UTFUtil {
         for (int i = 0; i < chunkSize; i++) {
             int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
             int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-            readShortUTF(in, data, beginIndex, endIndex);
+            readShortUTF(in, data, beginIndex, endIndex, buffer);
         }
         return STRING_CREATOR.buildString(data);
     }
 
     private static void readShortUTF(final DataInput in, final char[] data,
-                                       final int beginIndex, final int endIndex) throws IOException {
+                                       final int beginIndex, final int endIndex,
+                                       byte[] buffer) throws IOException {
         final int utflen = in.readShort();
-        byte[] bytearr = null;
-        bytearr = new byte[utflen];
-        int c, char2, char3;
+        int c = 0, char2, char3;
         int count = 0;
         int chararr_count = beginIndex;
-        in.readFully(bytearr, 0, utflen);
+        int lastCount = -1;
         while (count < utflen) {
-            c = bytearr[count] & 0xff;
+            c = buffered(buffer, count, utflen, in) & 0xff;
             if (c > 127)
                 break;
+            lastCount = count;
             count++;
             data[chararr_count++] = (char) c;
         }
         while (count < utflen) {
-            c = bytearr[count] & 0xff;
+            if (lastCount > -1 && lastCount < count) {
+                c = buffered(buffer, count, utflen, in) & 0xff;
+            }
             switch (c >> 4) {
                 case 0:
                 case 1:
@@ -150,27 +153,28 @@ public final class UTFUtil {
                 case 6:
                 case 7:
                     /* 0xxxxxxx */
+                    lastCount = count;
                     count++;
                     data[chararr_count++] = (char) c;
                     break;
                 case 12:
                 case 13:
                     /* 110x xxxx 10xx xxxx */
-                    count += 2;
-                    if (count > utflen)
+                    lastCount = count++;
+                    if (count + 1 > utflen)
                         throw new UTFDataFormatException("malformed input: partial character at end");
-                    char2 = bytearr[count - 1];
+                    char2 = buffered(buffer, count++, utflen, in);
                     if ((char2 & 0xC0) != 0x80)
                         throw new UTFDataFormatException("malformed input around byte " + count);
                     data[chararr_count++] = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
                     break;
                 case 14:
                     /* 1110 xxxx 10xx xxxx 10xx xxxx */
-                    count += 3;
-                    if (count > utflen)
+                    lastCount = count++;
+                    if (count + 2> utflen)
                         throw new UTFDataFormatException("malformed input: partial character at end");
-                    char2 = bytearr[count - 2];
-                    char3 = bytearr[count - 1];
+                    char2 = buffered(buffer, count++, utflen, in);
+                    char3 = buffered(buffer, count++, utflen, in);
                     if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80))
                         throw new UTFDataFormatException("malformed input around byte " + (count - 1));
                     data[chararr_count++] = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
@@ -180,6 +184,23 @@ public final class UTFUtil {
                     throw new UTFDataFormatException("malformed input around byte " + count);
             }
         }
+    }
+
+    private static void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
+        int innerPos = pos % buffer.length;
+        if (pos > 0 && innerPos == 0) {
+            out.write(buffer, 0, buffer.length);
+        }
+        buffer[innerPos] = value;
+    }
+
+    private static byte buffered(byte[] buffer, int pos, int utfLenght, DataInput in) throws IOException {
+        int innerPos = pos % buffer.length;
+        if (innerPos == 0) {
+            int length = Math.min(buffer.length, utfLenght - pos);
+            in.readFully(buffer, 0, length);
+        }
+        return buffer[innerPos];
     }
 
     private static interface StringCreator {
@@ -204,7 +225,7 @@ public final class UTFUtil {
         @Override
         public String buildString(char[] chars) {
             try {
-                return constructor.newInstance(chars, true);
+                return constructor.newInstance(chars, Boolean.TRUE);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

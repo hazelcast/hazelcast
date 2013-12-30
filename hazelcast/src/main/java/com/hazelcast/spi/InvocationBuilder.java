@@ -17,6 +17,8 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.PartitionView;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
@@ -24,15 +26,42 @@ import com.hazelcast.nio.Address;
  * The original design exposed the actual Invocation class, but this will limit flexibility since
  * the whole invocation can't be changed or fully removed easily.
  */
-public interface InvocationBuilder {
+public abstract class InvocationBuilder {
 
-    InvocationBuilder setReplicaIndex(int replicaIndex);
+    public final static long DEFAULT_CALL_TIMEOUT = -1L;
+    public final static int DEFAULT_REPLICA_INDEX = 0;
+    public final static int DEFAULT_TRY_COUNT = 250;
+    public final static long DEFAULT_TRY_PAUSE_MILLIS=500;
 
-    InvocationBuilder setTryCount(int tryCount);
+    protected final NodeEngineImpl nodeEngine;
+    protected final String serviceName;
+    protected final Operation op;
+    protected final int partitionId;
+    protected final Address target;
+    protected Callback<Object> callback;
 
-    InvocationBuilder setTryPauseMillis(long tryPauseMillis);
+    protected long callTimeout = DEFAULT_CALL_TIMEOUT;
+    protected int replicaIndex = 0;
+    protected int tryCount = 250;
+    protected long tryPauseMillis = 500;
+    protected String executorName = null;
 
-    InvocationBuilder setCallTimeout(long callTimeout);
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
+        this(nodeEngine, serviceName, op, partitionId, null);
+    }
+
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
+        this(nodeEngine, serviceName, op, -1, target);
+    }
+
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+                                   int partitionId, Address target) {
+        this.nodeEngine = nodeEngine;
+        this.serviceName = serviceName;
+        this.op = op;
+        this.partitionId = partitionId;
+        this.target = target;
+    }
 
     /**
      * Gets the name of the Executor to use. This functionality is useful if you want to customize which
@@ -42,34 +71,86 @@ public interface InvocationBuilder {
      *
      * @return the name of the executor. Returns null if no explicit executor has been configured.
      */
-    String getExecutorName();
+    public String getExecutorName() {
+        return executorName;
+    }
 
     /**
      * Sets the executor name. Value can be null, meaning that no custom executor will be used.
      *
      * @param executorName  the name of the executor.
      */
-    InvocationBuilder setExecutorName(String executorName);
 
-    String getServiceName();
+    public InvocationBuilder setExecutorName(String executorName) {
+        this.executorName = executorName;
+        return this;
+    }
 
-    Operation getOp();
+    public InvocationBuilder setReplicaIndex(int replicaIndex) {
+        if (replicaIndex < 0 || replicaIndex >= PartitionView.MAX_REPLICA_COUNT) {
+            throw new IllegalArgumentException("Replica index is out of range [0-"
+                    + (PartitionView.MAX_REPLICA_COUNT - 1) + "]");
+        }
+        this.replicaIndex = replicaIndex;
+        return this;
+    }
 
-    int getReplicaIndex();
+    public InvocationBuilder setTryCount(int tryCount) {
+        this.tryCount = tryCount;
+        return this;
+    }
 
-    int getTryCount();
+    public InvocationBuilder setTryPauseMillis(long tryPauseMillis) {
+        this.tryPauseMillis = tryPauseMillis;
+        return this;
+    }
 
-    long getTryPauseMillis();
+    public InvocationBuilder setCallTimeout(long callTimeout) {
+        this.callTimeout = callTimeout;
+        return this;
+    }
 
-    Address getTarget();
 
-    int getPartitionId();
+    public String getServiceName() {
+        return serviceName;
+    }
 
-    long getCallTimeout();
+    public Operation getOp() {
+        return op;
+    }
 
-    Callback getCallback();
+    public int getReplicaIndex() {
+        return replicaIndex;
+    }
 
-    InvocationBuilder setCallback(Callback<Object> callback);
+    public int getTryCount() {
+        return tryCount;
+    }
 
-    InternalCompletableFuture invoke();
+    public long getTryPauseMillis() {
+        return tryPauseMillis;
+    }
+
+    public Address getTarget() {
+        return target;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    public long getCallTimeout() {
+        return callTimeout;
+    }
+
+    public Callback getCallback() {
+        return callback;
+    }
+
+    public InvocationBuilder setCallback(Callback<Object> callback) {
+        this.callback = callback;
+        return this;
+    }
+
+    public abstract InternalCompletableFuture invoke();
 }
