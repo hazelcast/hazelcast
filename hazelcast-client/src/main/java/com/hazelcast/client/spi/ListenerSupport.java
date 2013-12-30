@@ -20,9 +20,9 @@ import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.spi.Callback;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +84,7 @@ public final class ListenerSupport  {
             }
         } catch (InterruptedException ignored) {
         }
-        return UUID.randomUUID().toString();
+        return UuidUtil.buildRandomUuidString();
     }
 
     public void stop() {

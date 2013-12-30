@@ -16,7 +16,12 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
@@ -24,10 +29,23 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -90,7 +108,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
         Callable<T> callable = createRunnableAdapter(task);
         final NodeEngine nodeEngine = getNodeEngine();
-        final String uuid = UUID.randomUUID().toString();
+        final String uuid = UuidUtil.buildRandomUuidString();
         final int partitionId = getTaskPartitionId(callable);
 
         final Future future = nodeEngine.getOperationService().invokeOnPartition(DistributedExecutorService.SERVICE_NAME,
@@ -117,7 +135,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             throw new RejectedExecutionException(getRejectionMessage());
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        final String uuid = UUID.randomUUID().toString();
+        final String uuid = UuidUtil.buildRandomUuidString();
 
         final boolean sync = !preventSync && checkSync();
         final Future future = nodeEngine.getOperationService().invokeOnPartition(
@@ -169,7 +187,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             throw new RejectedExecutionException(getRejectionMessage());
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        final String uuid = UUID.randomUUID().toString();
+        final String uuid = UuidUtil.buildRandomUuidString();
         final Address target = ((MemberImpl) member).getAddress();
 
         final boolean sync = checkSync();

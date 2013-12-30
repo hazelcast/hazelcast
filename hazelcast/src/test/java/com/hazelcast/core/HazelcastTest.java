@@ -19,11 +19,10 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -68,6 +67,6 @@ public class HazelcastTest {
     }
 
     public String uniqueName() {
-        return UUID.randomUUID().toString();
+        return UuidUtil.buildRandomUuidString();
     }
 }
