@@ -58,11 +58,10 @@ public class MapReduceService implements ManagedService, RemoteService {
     private final NodeEngine nodeEngine;
     private final Config config;
 
-    public MapReduceService(Config config, NodeEngine nodeEngine,
-                            HazelcastInstance hazelcastInstance) {
-        this.config = config;
+    public MapReduceService(NodeEngine nodeEngine) {
+        this.config = nodeEngine.getConfig();
         this.nodeEngine = nodeEngine;
-        this.hazelcastInstance = hazelcastInstance;
+        this.hazelcastInstance = nodeEngine.getHazelcastInstance();
     }
 
     public JobTracker getJobTracker(String name) {
