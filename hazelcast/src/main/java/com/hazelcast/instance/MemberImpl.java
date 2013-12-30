@@ -17,7 +17,6 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
-import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.MemberAttributeChangedOperation;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -28,7 +27,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
@@ -39,12 +37,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
-    private final Map<String, Object> attributes = new HashMap<String, Object>();
+    private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
 
     private boolean localMember;
     private Address address;
@@ -65,7 +63,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance) {
-        this(address, localMember, null, instance, null);
+        this(address, localMember, uuid, instance, null);
     }
 
     public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance, Map<String, Object> attributes) {
@@ -180,8 +178,12 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     public void setAttribute(String key, Object value) {
         if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        if (value == null) throw new IllegalArgumentException("value must not be null");
         if (value != null) {
-            attributes.put(key, value);
+            Object oldValue = attributes.put(key, value);
+            if (value.equals(oldValue)) {
+                return;
+            }
         } else {
             attributes.remove(key);
         }
@@ -197,10 +199,8 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             String uuid = nodeEngine.getLocalMember().getUuid();
             operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
             try {
-                for (Member m : nodeEngine.getClusterService().getMembers()) {
-                    MemberImpl member = (MemberImpl) m;
-                    InvocationBuilder inv = os.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
-                    inv.invoke();
+                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
+                    os.send(operation, member.getAddress());
                 }
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
