@@ -57,12 +57,12 @@ class BasicCompletableFuture<V> implements CompletableFuture<V> {
         isNotNull(callback, "callback");
         isNotNull(executor, "executor");
 
-        synchronized (this) {
-            if (isDone()) {
-                runAsynchronous(callback, executor);
-                return;
-            }
+        if (isDone()) {
+            runAsynchronous(callback, executor);
+            return;
+        }
 
+        synchronized (this) {
             this.callbackHead = new ExecutionCallbackNode<V>(callback, executor, callbackHead);
         }
     }
@@ -79,7 +79,7 @@ class BasicCompletableFuture<V> implements CompletableFuture<V> {
 
     @Override
     public boolean isDone() {
-        return future.isDone();
+        return result != NULL_VALUE || future.isDone();
     }
 
     @Override
