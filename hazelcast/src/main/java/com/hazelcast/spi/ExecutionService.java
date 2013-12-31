@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.concurrent.*;
@@ -52,5 +53,7 @@ public interface ExecutionService {
     ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
 
     ScheduledExecutorService getScheduledExecutor();
+
+    <V> CompletableFuture<V> asCompletableFuture(Future<V> future);
 
 }
