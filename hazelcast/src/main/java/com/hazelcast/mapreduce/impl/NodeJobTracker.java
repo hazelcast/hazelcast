@@ -35,7 +35,7 @@ class NodeJobTracker extends AbstractJobTracker {
 
     @Override
     public <K, V> Job<K, V> newJob(KeyValueSource<K, V> source) {
-        return new KeyValueJob<K, V>(name, nodeEngine, source);
+        return new KeyValueJob<K, V>(name, this, nodeEngine, source);
     }
 
     @Override

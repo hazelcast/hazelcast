@@ -16,31 +16,71 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
     private final NodeEngine nodeEngine;
 
-    public KeyValueJob(String name, NodeEngine nodeEngine, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
-        super(name, keyValueSource);
+    public KeyValueJob(String name, JobTracker jobTracker, NodeEngine nodeEngine,
+                       KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+        super(name, jobTracker, keyValueSource);
         this.nodeEngine = nodeEngine;
     }
 
     @Override
-    protected void invokeTask() throws Exception {
+    protected <T> CompletableFuture<T> invoke() {
         OperationService os = nodeEngine.getOperationService();
-        PartitionService ps = nodeEngine.getPartitionService();
-        SerializationService ss = nodeEngine.getSerializationService();
+        ExecutionService es = nodeEngine.getExecutionService();
+        ManagedExecutorService mes = es.getExecutor(name);
+        return (CompletableFuture<T>) mes.submit(new TrackedJob<T>());
+    }
 
-        Map<Integer, List<KeyIn>> mappedKeys = MapReduceUtil.mapKeys(ps, keys);
+    private class TrackedJob<T>
+            implements TrackableJob<T> {
 
+        private TrackedJob() {
+            ((AbstractJobTracker) jobTracker).registerTrackableJob(this);
+        }
+
+        @Override
+        public JobTracker getJobTracker() {
+            return jobTracker;
+        }
+
+        @Override
+        public String getJobId() {
+            return jobId;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public T call() throws Exception {
+            OperationService os = nodeEngine.getOperationService();
+            PartitionService ps = nodeEngine.getPartitionService();
+            SerializationService ss = nodeEngine.getSerializationService();
+
+            Map<Integer, List<KeyIn>> mappedKeys = MapReduceUtil.mapKeys(ps, keys);
+
+            // TODO
+            return (T) os.invokeOnAllPartitions(MapReduceService.SERVICE_NAME, null);
+        }
     }
 
 }

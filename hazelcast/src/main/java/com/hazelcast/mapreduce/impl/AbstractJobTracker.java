@@ -21,7 +21,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.spi.InitializingObject;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public abstract class AbstractJobTracker implements JobTracker, InitializingObject {
+
+    protected final Map<String, TrackableJob> trackableJobs = new ConcurrentHashMap<String, TrackableJob>();
 
     protected final HazelcastInstance hazelcastInstance;
     protected final JobTrackerConfig jobTrackerConfig;
@@ -59,6 +64,14 @@ public abstract class AbstractJobTracker implements JobTracker, InitializingObje
     @Override
     public final String getServiceName() {
         return MapReduceService.SERVICE_NAME;
+    }
+
+    public <V> void registerTrackableJob(TrackableJob<V> trackableJob) {
+        trackableJobs.put(trackableJob.getJobId(), trackableJob);
+    }
+
+    public <V> boolean unregisterTrackableJob(TrackableJob<V> trackableJob) {
+        return trackableJobs.remove(trackableJob) != null;
     }
 
 }

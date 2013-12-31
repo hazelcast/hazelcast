@@ -25,6 +25,8 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected final String name;
 
+    protected final JobTracker jobTracker;
+
     protected final String jobId = UUID.randomUUID().toString();
 
     protected final KeyValueSource<KeyIn, ValueIn> keyValueSource;
@@ -41,8 +43,9 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected int chunkSize = -1;
 
-    public AbstractJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+    public AbstractJob(String name, JobTracker jobTracker, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         this.name = name;
+        this.jobTracker = jobTracker;
         this.keyValueSource = keyValueSource;
     }
 
@@ -81,10 +84,10 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected <T> CompletableFuture<T> submit(Collator collator) {
         prepareKeyPredicate();
-
-
-        return null;
+        return invoke();
     }
+
+    protected abstract <T> CompletableFuture<T> invoke();
 
     protected void prepareKeyPredicate() {
         if (predicate == null) {
@@ -102,8 +105,6 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
             }
         }
     }
-
-    protected abstract void invokeTask() throws Exception;
 
     private void addKeys(Iterable<KeyIn> keys) {
         if (this.keys == null) {
