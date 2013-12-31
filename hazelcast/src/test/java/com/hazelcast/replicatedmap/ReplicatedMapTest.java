@@ -67,7 +67,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 0, EntryEventType.ADDED, map1, map2);
+        }, 2, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
