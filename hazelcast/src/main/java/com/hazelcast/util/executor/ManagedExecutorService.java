@@ -16,12 +16,20 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * @author mdogan 2/18/13
@@ -34,13 +42,15 @@ public final class ManagedExecutorService implements ExecutorService {
     private final ExecutorService cachedExecutor;
     private final BlockingQueue<Runnable> taskQ;
     private final Lock lock = new ReentrantLock();
+    private final NodeEngine nodeEngine;
+    private final ILogger logger;
     private volatile int size;
 
-    public ManagedExecutorService(String name, ExecutorService cachedExecutor, int maxPoolSize) {
-        this(name, cachedExecutor, maxPoolSize, Integer.MAX_VALUE);
+    public ManagedExecutorService(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor, int maxPoolSize) {
+        this(nodeEngine, name, cachedExecutor, maxPoolSize, Integer.MAX_VALUE);
     }
 
-    public ManagedExecutorService(String name, ExecutorService cachedExecutor, int maxPoolSize, int queueCapacity) {
+    public ManagedExecutorService(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor, int maxPoolSize, int queueCapacity) {
         if (maxPoolSize <= 0) {
             throw new IllegalArgumentException("Max pool size must be positive!");
         }
@@ -48,8 +58,10 @@ public final class ManagedExecutorService implements ExecutorService {
             throw new IllegalArgumentException("Queue capacity must be positive!");
         }
         this.name = name;
+        this.nodeEngine = nodeEngine;
         this.maxPoolSize = maxPoolSize;
         this.cachedExecutor = cachedExecutor;
+        this.logger = nodeEngine.getLogger(ManagedExecutorService.class);
         this.taskQ = new LinkedBlockingQueue<Runnable>(queueCapacity);
     }
 
@@ -85,13 +97,13 @@ public final class ManagedExecutorService implements ExecutorService {
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        final RunnableFuture<T> rf = new FutureTask<T>(task);
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task);
         execute(rf);
         return rf;
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        final RunnableFuture<T> rf = new FutureTask<T>(task, result);
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result);
         execute(rf);
         return rf;
     }
@@ -187,4 +199,103 @@ public final class ManagedExecutorService implements ExecutorService {
             }
         }
     }
+
+    private class CompletableFutureTask<V> extends FutureTask<V> implements CompletableFuture<V> {
+
+        private volatile ExecutionCallbackNode<V> callbackHead;
+
+        public CompletableFutureTask(Callable<V> callable) {
+            super(callable);
+        }
+
+        public CompletableFutureTask(Runnable runnable, V result) {
+            super(runnable, result);
+        }
+
+        @Override
+        public void run() {
+            try {
+                super.run();
+            } finally {
+                fireCallbacks();
+            }
+        }
+
+        @Override
+        public void andThen(ExecutionCallback<V> callback) {
+            andThen(callback, getAsyncExecutor());
+        }
+
+        @Override
+        public void andThen(ExecutionCallback<V> callback, Executor executor) {
+            isNotNull(callback, "callback");
+            isNotNull(executor, "executor");
+
+            if (isDone()) {
+                runAsynchronous(callback, executor);
+                return;
+            }
+
+            synchronized (this) {
+                this.callbackHead = new ExecutionCallbackNode<V>(callback, executor, callbackHead);
+            }
+        }
+
+        private Object readResult() {
+            try {
+                return get();
+            } catch (Throwable t) {
+                return t;
+            }
+        }
+
+        private void fireCallbacks() {
+            ExecutionCallbackNode<V> callbackChain;
+            synchronized (this) {
+                callbackChain = callbackHead;
+                callbackHead = null;
+            }
+
+            while (callbackChain != null) {
+                runAsynchronous(callbackChain.callback, callbackChain.executor);
+                callbackChain = callbackChain.next;
+            }
+        }
+
+        private void runAsynchronous(final ExecutionCallback<V> callback, final Executor executor) {
+            final Object result = readResult();
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (result instanceof Throwable) {
+                            callback.onFailure((Throwable) result);
+                        } else {
+                            callback.onResponse((V) result);
+                        }
+                    } catch (Throwable t) {
+                        //todo: improved error message
+                        logger.severe("Failed to async for " + CompletableFutureTask.this, t);
+                    }
+                }
+            });
+        }
+
+        private ExecutorService getAsyncExecutor() {
+            return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        }
+    }
+
+    private static class ExecutionCallbackNode<E> {
+        private final ExecutionCallback<E> callback;
+        private final Executor executor;
+        private final ExecutionCallbackNode<E> next;
+
+        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
+            this.callback = callback;
+            this.executor = executor;
+            this.next = next;
+        }
+    }
+
 }

@@ -105,7 +105,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 logger.info("Overriding ExecutorService['" + name + "'] pool-size and queue-capacity using " + cfg);
             }
         }
-        final ManagedExecutorService executor = new ManagedExecutorService(name, cachedExecutorService,
+        final ManagedExecutorService executor = new ManagedExecutorService(nodeEngine, name, cachedExecutorService,
                 poolSize, queueCapacity);
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
@@ -118,7 +118,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
-                    return new ManagedExecutorService(name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
+                    return new ManagedExecutorService(nodeEngine, name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
                 }
             };
 
@@ -130,6 +130,9 @@ public final class ExecutionServiceImpl implements ExecutionService {
     public <V> CompletableFuture<V> asCompletableFuture(Future<V> future) {
         if (future == null) {
             throw new IllegalArgumentException("future must not be null");
+        }
+        if (future instanceof CompletableFuture) {
+            return (CompletableFuture<V>) future;
         }
         return registerCompletableFuture(future);
     }
