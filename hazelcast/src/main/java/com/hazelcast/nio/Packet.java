@@ -22,6 +22,9 @@ import com.hazelcast.nio.serialization.SerializationContext;
 
 import java.nio.ByteBuffer;
 
+/**
+ * A Packet is a piece of data send over the line.
+ */
 public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
 
     public static final byte VERSION = 1;
@@ -54,10 +57,23 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
         this.partitionId = partitionId;
     }
 
+    /**
+     * Gets the Connection this Packet was send with.
+     *
+     * @return the Connection. Could be null.
+     */
     public Connection getConn() {
         return conn;
     }
 
+    /**
+     * Sets the Connection this Packet is send with.
+     *
+     * This is done on the reading side of the Packet to make it possible to retrieve information about
+     * the sender of the Packet.
+     *
+     * @param conn the connection.
+     */
     public void setConn(final Connection conn) {
         this.conn = conn;
     }
@@ -70,10 +86,21 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
         return (header & 1 << bit) != 0;
     }
 
+    /**
+     * Returns the header of the Packet. The header is used to figure out what the content is of this Packet before
+     * the actual payload needs to be processed.
+     *
+     * @return  the header.
+     */
     public short getHeader() {
         return header;
     }
 
+    /**
+     * Returns the partition id of this packet. If this packet is not for a particular partition, -1 is returned.
+     *
+     * @return the partition id.
+     */
     public int getPartitionId() {
         return partitionId;
     }
@@ -139,6 +166,11 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
         return super.readFrom(source);
     }
 
+    /**
+     * Returns an estimation of the packet, including its payload, in bytes.
+     *
+     * @return the size of the packet.
+     */
     public int size() {
         return (data != null  ? data.totalSize() : 0) + 7; // 7 = byte(version) + short(header) + int(partitionId)
     }

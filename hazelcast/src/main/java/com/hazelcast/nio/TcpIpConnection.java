@@ -25,6 +25,9 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 
+/**
+ * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
+ */
 public final class TcpIpConnection implements Connection {
 
     private final SocketChannelWrapper socketChannel;
@@ -64,6 +67,7 @@ public final class TcpIpConnection implements Connection {
         return systemLogService;
     }
 
+    @Override
     public ConnectionType getType() {
         return type;
     }
@@ -72,6 +76,7 @@ public final class TcpIpConnection implements Connection {
         return connectionManager;
     }
 
+    @Override
     public boolean write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
@@ -83,6 +88,7 @@ public final class TcpIpConnection implements Connection {
         return true;
     }
 
+    @Override
     public boolean isClient() {
         final ConnectionType t = type;
         return (t != null) && t != ConnectionType.NONE && t.isClient();
@@ -98,14 +104,17 @@ public final class TcpIpConnection implements Connection {
         return socketChannel;
     }
 
+    @Override
     public InetAddress getInetAddress() {
         return socketChannel.socket().getInetAddress();
     }
 
+    @Override
     public int getPort() {
         return socketChannel.socket().getPort();
     }
 
+    @Override
     public InetSocketAddress getRemoteSocketAddress() {
         return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
     }
@@ -118,18 +127,22 @@ public final class TcpIpConnection implements Connection {
         return writeHandler;
     }
 
+    @Override
     public boolean live() {
         return live;
     }
 
+    @Override
     public long lastWriteTime() {
         return writeHandler.getLastHandle();
     }
 
+    @Override
     public long lastReadTime() {
         return readHandler.getLastHandle();
     }
 
+    @Override
     public Address getEndPoint() {
         return endPoint;
     }
@@ -171,6 +184,7 @@ public final class TcpIpConnection implements Connection {
         writeHandler.shutdown();
     }
 
+    @Override
     public void close() {
         close(null);
     }

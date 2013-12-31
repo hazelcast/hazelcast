@@ -17,6 +17,8 @@
 package com.hazelcast.nio;
 
 /**
+ * An enumeration of all possible Connection types.
+ *
 * @author mdogan 7/3/13
 */
 public enum ConnectionType {
