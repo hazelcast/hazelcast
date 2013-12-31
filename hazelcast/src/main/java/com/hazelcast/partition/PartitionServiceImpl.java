@@ -1386,36 +1386,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             return addresses[replicaIndex];
         }
 
-        /*
-        void setReplicaAddress(final int index, final Address newAddress) {
-            Address currentAddress;
-            for (; ; ) {
-                Address[] currentAddresses = addresses;
-                currentAddress = currentAddresses[index];
-                boolean changed = false;
-                if (partitionListener != null) {
-                    if (currentAddress == null) {
-                        changed = (newAddress != null);
-                    } else {
-                        changed = !currentAddress.equals(newAddress);
-                    }
-                }
-
-                if(!changed){
-                    return;
-                }
-
-                Address[] newAddresses = new Address[MAX_REPLICA_COUNT];
-                arraycopy(currentAddresses, 0, newAddresses, 0, MAX_BACKUP_COUNT);
-                newAddresses[index] = newAddress;
-                if (addressesUpdater.compareAndSet(this, currentAddresses, newAddresses)) {
-                    break;
-                }
-            }
-
-            partitionListener.replicaChanged(new PartitionReplicaChangeEvent(partitionId, index, currentAddress, newAddress));
-        } */
-
         void setReplicaAddress(int replicaIndex, Address newAddress) {
             boolean changed = false;
             Address oldAddress;
