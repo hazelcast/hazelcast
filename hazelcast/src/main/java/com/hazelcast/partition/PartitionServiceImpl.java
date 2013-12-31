@@ -33,15 +33,13 @@ import com.hazelcast.util.scheduler.*;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus;
+import static java.lang.System.arraycopy;
 
 public class PartitionServiceImpl implements PartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
@@ -342,7 +340,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (!node.isActive() || !node.joined()) {
                 if(logger.isFinestEnabled()){
                     logger.finest("Node should be active(" + node.isActive() + ") and joined(" + node.joined()
-                        + ") to be able to process partition table!");
+                            + ") to be able to process partition table!");
                 }
                 return;
             }
@@ -1343,10 +1341,19 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
+    private static final AtomicReferenceFieldUpdater<PartitionImpl, Address[]> addressesUpdater
+            = AtomicReferenceFieldUpdater.newUpdater(PartitionImpl.class, Address[].class, "addresses");
+
     private final class PartitionImpl implements PartitionView {
 
         private final int partitionId;
-        private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
+
+        //The content of this array will never be updated, so it can be safely read using a volatile read.
+        //Writing to 'addresses' is done using the 'addressUpdater' AtomicReferenceFieldUpdater which involves a
+        //cas to prevent lost updates.
+        //The old approach relied on a AtomicReferenceArray, but this performed a lot slower that the current approach.
+        //Number of reads will outweigh the number of writes to the field.
+        volatile Address[] addresses = new Address[MAX_REPLICA_COUNT];
         private final PartitionListener partitionListener;
         private volatile boolean isMigrating = false;
 
@@ -1367,7 +1374,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         @Override
         public Address getOwner() {
-            return addresses.get(0);
+            return addresses[0];
         }
 
         void setOwner(Address ownerAddress) {
@@ -1376,30 +1383,71 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         @Override
         public Address getReplicaAddress(int replicaIndex) {
-            return addresses.get(replicaIndex);
+            return addresses[replicaIndex];
         }
 
-        void setReplicaAddress(int index, Address address) {
-            boolean changed = false;
-            Address currentAddress = addresses.get(index);
-            if (partitionListener != null) {
-                if (currentAddress == null) {
-                    changed = (address != null);
-                } else {
-                    changed = !currentAddress.equals(address);
+        /*
+        void setReplicaAddress(final int index, final Address newAddress) {
+            Address currentAddress;
+            for (; ; ) {
+                Address[] currentAddresses = addresses;
+                currentAddress = currentAddresses[index];
+                boolean changed = false;
+                if (partitionListener != null) {
+                    if (currentAddress == null) {
+                        changed = (newAddress != null);
+                    } else {
+                        changed = !currentAddress.equals(newAddress);
+                    }
+                }
+
+                if(!changed){
+                    return;
+                }
+
+                Address[] newAddresses = new Address[MAX_REPLICA_COUNT];
+                arraycopy(currentAddresses, 0, newAddresses, 0, MAX_BACKUP_COUNT);
+                newAddresses[index] = newAddress;
+                if (addressesUpdater.compareAndSet(this, currentAddresses, newAddresses)) {
+                    break;
                 }
             }
-            addresses.set(index, address);
+
+            partitionListener.replicaChanged(new PartitionReplicaChangeEvent(partitionId, index, currentAddress, newAddress));
+        } */
+
+        void setReplicaAddress(int replicaIndex, Address newAddress) {
+            boolean changed = false;
+            Address oldAddress;
+            for (; ; ) {
+                Address[] oldAddresses = addresses;
+                oldAddress = oldAddresses[replicaIndex];
+                if (partitionListener != null) {
+                    if (oldAddress == null) {
+                        changed = (newAddress != null);
+                    } else {
+                        changed = !oldAddress.equals(newAddress);
+                    }
+                }
+
+                Address[] newAddresses = new Address[MAX_REPLICA_COUNT];
+                arraycopy(oldAddresses, 0, newAddresses, 0, MAX_REPLICA_COUNT);
+                newAddresses[replicaIndex] = newAddress;
+                if (addressesUpdater.compareAndSet(this, oldAddresses, newAddresses)) {
+                    break;
+                }
+            }
+
             if (changed) {
-                partitionListener.replicaChanged(new PartitionReplicaChangeEvent(partitionId, index, currentAddress, address));
+                partitionListener.replicaChanged(new PartitionReplicaChangeEvent(partitionId, replicaIndex, oldAddress, newAddress));
             }
         }
 
         boolean onDeadAddress(Address deadAddress) {
             for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-                if (deadAddress.equals(addresses.get(i))) {
+                if (deadAddress.equals(addresses[i])) {
                     for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
-                        setReplicaAddress(a, addresses.get(a + 1));
+                        setReplicaAddress(a, addresses[a + 1]);
                     }
                     setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
                     return true;
@@ -1428,7 +1476,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         public String toString() {
             StringBuilder sb = new StringBuilder("Partition [").append(partitionId).append("]{\n");
             for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-                Address address = addresses.get(i);
+                Address address = addresses[i];
                 if (address != null) {
                     sb.append('\t');
                     sb.append(i).append(":").append(address);
@@ -1509,13 +1557,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             final long next = newVersions[index];
             final boolean updated = (current == next - 1);
             if (updated) {
-                System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
+                arraycopy(newVersions, 0, versions, 0, newVersions.length);
             }
             return updated;
         }
 
         void reset(long[] newVersions) {
-            System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
+            arraycopy(newVersions, 0, versions, 0, newVersions.length);
         }
 
         @Override
