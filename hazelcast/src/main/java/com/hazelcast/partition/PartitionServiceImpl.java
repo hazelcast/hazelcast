@@ -1349,7 +1349,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         private final int partitionId;
 
         //The content of this array will never be updated, so it can be safely read using a volatile read.
-        //Writing to 'addresses' is done using a 'addressUpdated' which involves a cas to prevent lost updates.
+        //Writing to 'addresses' is done using the 'addressUpdater' AtomicReferenceFieldUpdater which involves a
+        //cas to prevent lost updates.
         //The old approach relied on a AtomicReferenceArray, but this performed a lot slower that the current approach.
         //Number of reads will outweigh the number of writes to the field.
         volatile Address[] addresses = new Address[MAX_REPLICA_COUNT];
