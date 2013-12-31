@@ -16,10 +16,7 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -290,7 +287,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+    public CompletableFuture putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -305,7 +302,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future removeAsync(final K key) {
+    public CompletableFuture removeAsync(final K key) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -583,13 +580,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         executeOnKeyInternal(keyData,entryProcessor,callback);
     }
     @Override
-    public Future submitToKey(K key, EntryProcessor entryProcessor) {
+    public CompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        Future f = executeOnKeyInternal(keyData,entryProcessor,null);
+        CompletableFuture f = executeOnKeyInternal(keyData,entryProcessor,null);
         return new DelegatingFuture(f,service.getSerializationService());
     }
 
