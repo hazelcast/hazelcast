@@ -24,13 +24,13 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 public final class ShutdownOperation extends AbstractNamedOperation {
 
     public ShutdownOperation() {
-        super();
     }
 
     public ShutdownOperation(String name) {
         super(name);
     }
 
+    @Override
     public void run() throws Exception {
         DistributedExecutorService service = getService();
         service.shutdownExecutor(getName());

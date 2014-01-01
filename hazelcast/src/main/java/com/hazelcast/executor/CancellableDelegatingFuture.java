@@ -19,6 +19,7 @@ package com.hazelcast.executor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -67,12 +68,11 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         }
         final CancellationOperation op = new CancellationOperation(uuid, mayInterruptIfRunning);
         final InvocationBuilder builder;
+        OperationService operationService = nodeEngine.getOperationService();
         if (partitionId > -1) {
-            builder = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                    op, partitionId);
+            builder = operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId);
         } else {
-            builder = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                    op, target);
+            builder = operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, target);
         }
         builder.setTryCount(50).setTryPauseMillis(250);
 

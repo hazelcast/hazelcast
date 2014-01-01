@@ -39,30 +39,37 @@ public final class CancellationOperation extends Operation {
         this.interrupt = interrupt;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         DistributedExecutorService service = getService();
         response = service.cancel(uuid, interrupt);
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
+    @Override
     public Object getResponse() {
         return response;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(uuid);
         out.writeBoolean(interrupt);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         uuid = in.readUTF();
         interrupt = in.readBoolean();
