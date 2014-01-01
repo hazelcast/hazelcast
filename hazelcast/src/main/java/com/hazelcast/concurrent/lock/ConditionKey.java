@@ -36,10 +36,12 @@ public final class ConditionKey implements WaitNotifyKey {
         this.conditionId = conditionId;
     }
 
+    @Override
     public String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     public String getObjectName() {
         return name;
     }

@@ -36,10 +36,12 @@ public final class InternalLockNamespace implements ObjectNamespace {
         this.name = name;
     }
 
+    @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
+    @Override
     public String getObjectName() {
         return name;
     }

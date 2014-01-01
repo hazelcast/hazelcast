@@ -27,7 +27,7 @@ import java.util.Collection;
  */
 public interface LockService extends SharedService {
 
-    final static String SERVICE_NAME = "hz:impl:lockService";
+    String SERVICE_NAME = "hz:impl:lockService";
 
     void registerLockStoreConstructor(String serviceName, ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction);
 
@@ -36,5 +36,4 @@ public interface LockService extends SharedService {
     void clearLockStore(int partitionId, ObjectNamespace namespace);
 
     Collection<LockResource> getAllLocks();
-
 }

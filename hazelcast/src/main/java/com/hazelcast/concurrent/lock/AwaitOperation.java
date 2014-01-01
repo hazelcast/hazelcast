@@ -26,7 +26,8 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-public class AwaitOperation extends BaseLockOperation implements WaitSupport, BackupAwareOperation {
+public class AwaitOperation extends BaseLockOperation
+        implements WaitSupport, BackupAwareOperation {
 
     private String conditionId;
     private transient boolean firstRun = false;
@@ -40,11 +41,13 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
         this.conditionId = conditionId;
     }
 
+    @Override
     public void beforeRun() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         firstRun = lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
     }
 
+    @Override
     public void run() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         if (!lockStore.lock(key, getCallerUuid(), threadId)) {
@@ -59,28 +62,34 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
         }
     }
 
+    @Override
     public ConditionKey getWaitKey() {
         return new ConditionKey(namespace.getObjectName(), key, conditionId);
     }
 
+    @Override
     public boolean shouldWait() {
         final boolean shouldWait = firstRun || !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
         firstRun = false;
         return shouldWait;
     }
 
+    @Override
     public long getWaitTimeoutMillis() {
         return timeout;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new AwaitBackupOperation(namespace, key, threadId, conditionId, getCallerUuid());
     }
 
+    @Override
     public void onWaitExpire() {
         expired = true;
         final LockStoreImpl lockStore = getLockStore();

@@ -31,6 +31,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 
 /**
  * @author mdogan 2/13/13
@@ -49,10 +51,12 @@ final class ConditionImpl implements ICondition {
         this.namespace = lockProxy.getNamespace();
     }
 
+    @Override
     public void await() throws InterruptedException {
         await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public void awaitUninterruptibly() {
         try {
             await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -62,6 +66,7 @@ final class ConditionImpl implements ICondition {
         }
     }
 
+    @Override
     public long awaitNanos(long nanosTimeout) throws InterruptedException {
         final long start = System.nanoTime();
         await(nanosTimeout, TimeUnit.NANOSECONDS);
@@ -69,29 +74,34 @@ final class ConditionImpl implements ICondition {
         return (end - start);
     }
 
+    @Override
     public boolean await(long time, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
         final int threadId = ThreadUtil.getThreadId();
 
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME,new BeforeAwaitOperation(namespace, lockProxy.key, threadId, conditionId),partitionId);
+            BeforeAwaitOperation op = new BeforeAwaitOperation(namespace, lockProxy.key, threadId, conditionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, op,partitionId);
             f.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME,new AwaitOperation(namespace, lockProxy.key, threadId, unit.toMillis(time), conditionId), partitionId);
+            AwaitOperation op = new AwaitOperation(namespace, lockProxy.key, threadId, unit.toMillis(time), conditionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, op, partitionId);
             return Boolean.TRUE.equals(f.get());
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrowAllowInterrupted(t);
+            throw rethrowAllowInterrupted(t);
         }
     }
 
+    @Override
     public boolean awaitUntil(Date deadline) throws InterruptedException {
         final long until = deadline.getTime();
         return await(until - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public void signal() {
         signal(false);
     }
@@ -103,10 +113,11 @@ final class ConditionImpl implements ICondition {
         try {
             f.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
+    @Override
     public void signalAll() {
         signal(true);
     }
