@@ -61,6 +61,7 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
         }
     }
 
+    @Override
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
             final OperationService operationService = getNodeEngine().getOperationService();

@@ -36,6 +36,7 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         this.deadAddress = deadAddress;
     }
 
+    @Override
     public void run() {
         final ClusterServiceImpl clusterService = getService();
         final Address caller = getCallerAddress();
@@ -49,11 +50,13 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         deadAddress = new Address();
         deadAddress.readData(in);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         deadAddress.writeData(out);
     }

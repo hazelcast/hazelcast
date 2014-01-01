@@ -47,6 +47,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final ClientEngine clientEngine = getClientEngine();
 
         final String registration = service.addMembershipListener(new MembershipListener() {
+            @Override
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
@@ -54,6 +55,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
                 }
             }
 
+            @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();

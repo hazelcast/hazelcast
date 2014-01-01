@@ -46,6 +46,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         this.sendResponse = sendResponse;
     }
 
+    @Override
     public void run() throws Exception {
         processMemberUpdate();
     }

@@ -42,6 +42,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static java.util.Collections.unmodifiableSet;
 
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener> {
@@ -107,6 +108,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         node.connectionManager.addConnectionListener(this);
     }
 
+    @Override
     public void init(final NodeEngine nodeEngine, Properties properties) {
         long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeFirstRunDelay = mergeFirstRunDelay <= 0 ? 100 : mergeFirstRunDelay; // milliseconds
@@ -627,6 +629,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
+    @Override
     public void reset() {
         lock.lock();
         try {
@@ -747,6 +750,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return true;
     }
 
+    @Override
     public void connectionAdded(final Connection connection) {
         MemberImpl member = getMember(connection.getEndPoint());
         if (member != null) {
@@ -754,6 +758,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
+    @Override
     public void connectionRemoved(Connection connection) {
         if (logger.isFinestEnabled()) {
             logger.finest( "Connection is removed " + connection.getEndPoint());
@@ -804,12 +809,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     MemberImpl newMember = newMembers.iterator().next();
                     node.getPartitionService().memberAdded(newMember); // sync call
                     eventMembers.add(newMember);
-                    sendMembershipEventNotifications(newMember, Collections.unmodifiableSet(eventMembers), true); // async events
+                    sendMembershipEventNotifications(newMember, unmodifiableSet(eventMembers), true); // async events
                 } else {
                     for (MemberImpl newMember : newMembers) {
                         node.getPartitionService().memberAdded(newMember); // sync call
                         eventMembers.add(newMember);
-                        sendMembershipEventNotifications(newMember, Collections.unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true); // async events
+                        sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true); // async events
                     }
                 }
             }
@@ -830,7 +835,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 setMembersRef(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
                 nodeEngine.onMemberLeft(deadMember);                  // sync call
-                sendMembershipEventNotifications(deadMember, Collections.unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false); // async events
+                sendMembershipEventNotifications(deadMember, unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false); // async events
                 if (node.isMaster()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest( deadMember + " is dead. Sending remove to all other members.");
@@ -887,6 +892,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return new MemberImpl(address, thisAddress.equals(address), nodeUuid);
     }
 
+    @Override
     public MemberImpl getMember(Address address) {
         if (address == null) {
             return null;
@@ -895,6 +901,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return memberMap != null ? memberMap.get(address) : null;
     }
 
+    @Override
     public MemberImpl getMember(String uuid) {
         if (uuid == null) {
             return null;
@@ -920,23 +927,28 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         membersRef.set(members);
     }
 
+    @Override
     public Collection<MemberImpl> getMemberList() {
         final Map<Address, MemberImpl> map = membersRef.get();
         return map != null ? Collections.unmodifiableCollection(map.values()) : Collections.<MemberImpl>emptySet();
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         reset();
     }
 
+    @Override
     public Address getMasterAddress() {
         return node.getMasterAddress();
     }
 
+    @Override
     public boolean isMaster() {
         return node.isMaster();
     }
 
+    @Override
     public Address getThisAddress() {
         return thisAddress;
     }
@@ -945,16 +957,19 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return node.getLocalMember();
     }
 
+    @Override
     public Set<Member> getMembers() {
         final Collection<MemberImpl> members = getMemberList();
         return members != null ? new LinkedHashSet<Member>(members) : new HashSet<Member>(0);
     }
 
+    @Override
     public int getSize() {
         final Collection<MemberImpl> members = getMemberList();
         return members != null ? members.size() : 0;
     }
 
+    @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
     }
@@ -966,6 +981,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
+    //todo: remove since unused?
     public long getClusterTimeFor(long localTime) {
         return localTime + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
     }
@@ -990,6 +1006,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
+    @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
         if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
             listener.memberAdded(event);

@@ -42,10 +42,12 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int MEMBERSHIP_EVENT = 8;
     public static final int PING = 9;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable> ctors[] = new ConstructorFunction[10];
         ctors[DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

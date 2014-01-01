@@ -89,6 +89,7 @@ public class TcpIpJoiner extends AbstractJoiner {
 
         private transient boolean approvedAsMaster = false;
 
+        @Override
         public void run() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             Node node = nodeEngine.getNode();
@@ -120,6 +121,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
+    //todo: why are we passing argument if not used?
     private void joinViaPossibleMembers(AtomicBoolean joined) {
         try {
             node.getFailedConnections().clear();
