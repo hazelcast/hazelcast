@@ -65,20 +65,25 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return permitMap.containsKey(name);
     }
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
+    @Override
     public void reset() {
         permitMap.clear();
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         permitMap.clear();
     }
 
+    @Override
     public void memberAdded(MembershipServiceEvent event) {
     }
 
+    @Override
     public void memberRemoved(MembershipServiceEvent event) {
         String caller = event.getMember().getUuid();
         onOwnerDisconnected(caller);
@@ -97,17 +102,21 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         }
     }
 
+    @Override
     public SemaphoreProxy createDistributedObject(String objectId) {
         return new SemaphoreProxy(objectId, this, nodeEngine);
     }
 
+    @Override
     public void destroyDistributedObject(String objectId) {
         permitMap.remove(objectId);
     }
 
+    @Override
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, Permit> migrationData = new HashMap<String, Permit>();
         for (Map.Entry<String, Permit> entry: permitMap.entrySet()){
@@ -127,6 +136,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         permitMap.putAll(migrationData);
     }
 
+    @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
             clearMigrationData(event.getPartitionId());
@@ -143,16 +153,19 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         }
     }
 
+    @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearMigrationData(event.getPartitionId());
         }
     }
 
+    @Override
     public void clearPartitionReplica(int partitionId) {
         clearMigrationData(partitionId);
     }
 
+    @Override
     public void clientDisconnected(String clientUuid) {
         onOwnerDisconnected(clientUuid);
     }

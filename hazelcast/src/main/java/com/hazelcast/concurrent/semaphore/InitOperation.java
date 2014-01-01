@@ -30,15 +30,18 @@ public class InitOperation extends SemaphoreBackupAwareOperation {
         super(name, permitCount);
     }
 
+    @Override
     public void run() throws Exception {
         Permit permit = getPermit();
         response = permit.init(permitCount);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new InitBackupOperation(name, permitCount);
     }

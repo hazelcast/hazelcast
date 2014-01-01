@@ -39,36 +39,44 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
         this.firstCaller = firstCaller;
     }
 
+    @Override
     public void run() throws Exception {
         response = getPermit().memberRemoved(firstCaller);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public boolean returnsResponse() {
         return false;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new DeadMemberBackupOperation(name, firstCaller);
     }
 
+    @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(firstCaller);
     }
 
+    @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         firstCaller = in.readUTF();
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return new SemaphoreWaitNotifyKey(name, "acquire");
     }

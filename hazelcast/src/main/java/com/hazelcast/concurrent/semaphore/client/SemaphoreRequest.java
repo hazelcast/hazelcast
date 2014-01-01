@@ -30,10 +30,10 @@ import java.io.IOException;
 /**
  * @author ali 5/13/13
  */
-public abstract class SemaphoreRequest extends PartitionClientRequest implements Portable, SecureRequest {
+public abstract class SemaphoreRequest extends PartitionClientRequest
+        implements Portable, SecureRequest {
 
     String name;
-
     int permitCount;
 
     protected SemaphoreRequest() {
@@ -44,28 +44,34 @@ public abstract class SemaphoreRequest extends PartitionClientRequest implements
         this.permitCount = permitCount;
     }
 
+    @Override
     protected int getPartition() {
         Data key = getClientEngine().getSerializationService().toData(name);
         return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
+    @Override
     protected int getReplicaIndex() {
         return 0;
     }
 
+    @Override
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return SemaphorePortableHook.F_ID;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         writer.writeInt("p",permitCount);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         permitCount = reader.readInt("p");

@@ -28,6 +28,7 @@ public class ReduceBackupOperation extends SemaphoreBackupOperation {
         super(name, permitCount, null);
     }
 
+    @Override
     public void run() throws Exception {
         getPermit().reduce(permitCount);
         response = true;

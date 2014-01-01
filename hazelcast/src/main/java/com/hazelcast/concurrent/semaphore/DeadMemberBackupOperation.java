@@ -28,10 +28,9 @@ public class DeadMemberBackupOperation extends SemaphoreBackupOperation {
         super(name, -1, firstCaller);
     }
 
+    @Override
     public void run() throws Exception {
         getPermit().memberRemoved(firstCaller);
         response = true;
     }
-
-
 }

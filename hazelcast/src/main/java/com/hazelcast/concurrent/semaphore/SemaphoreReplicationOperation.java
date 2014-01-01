@@ -38,6 +38,7 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
         this.migrationData = migrationData;
     }
 
+    @Override
     public void run() throws Exception {
         SemaphoreService service = getService();
         for (Permit permit : migrationData.values()) {
@@ -46,6 +47,7 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
         service.insertMigrationData(migrationData);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Permit> entry : migrationData.entrySet()) {
@@ -54,6 +56,7 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         migrationData = new HashMap<String, Permit>(size);
