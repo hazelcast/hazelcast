@@ -32,10 +32,12 @@ public final class CallableTaskOperation extends BaseCallableTaskOperation imple
         super(name, uuid, callable);
     }
 
+    @Override
     public int getFactoryId() {
         return ExecutorDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return ExecutorDataSerializerHook.CALLABLE_TASK;
     }

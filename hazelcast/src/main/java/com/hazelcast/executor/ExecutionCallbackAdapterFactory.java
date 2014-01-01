@@ -52,7 +52,7 @@ class ExecutionCallbackAdapterFactory {
     private  void onResponse(Member member, Object response) {
         if (done.get()) throw new IllegalStateException("This callback is invalid!");
         if (members.contains(member)) {
-            ValueWrapper current = null;
+            ValueWrapper current;
             if ((current = responses.put(member, new ValueWrapper(response))) != null) {
                 logger.warning("Replacing current callback value[" + current.value
                         + " with value[" + response + "].");
