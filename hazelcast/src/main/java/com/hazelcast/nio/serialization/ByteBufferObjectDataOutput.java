@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.DynamicByteBuffer;
-import com.hazelcast.nio.UTFUtil;
+import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -208,7 +208,7 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
     }
 
     public void writeUTF(final String str) throws IOException {
-        UTFUtil.writeUTF(this, str, utfBuffer);
+        UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
     }
 
     public void writeObject(Object object) throws IOException {

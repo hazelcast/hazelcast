@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class UTFUtilTest {
+public class UTFEncoderDecoderTest {
 
     private static final Random RANDOM = new Random(-System.nanoTime());
     private static final int BENCHMARK_ROUNDS = 10; // 100;
@@ -42,18 +42,18 @@ public class UTFUtilTest {
     public void testShortSizedText_1Chunk_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = newUTFUtil(false);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 2; i < 100; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF0(dos, randomString, buffer);
+                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF0(dis, buffer);
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -64,8 +64,8 @@ public class UTFUtilTest {
     public void testShortSizedText_1Chunk_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = newUTFUtil(true);
-        assertContains(utfUtil.getStringCreator().getClass().toString(), "FastStringCreator");
+        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(true);
+        assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 2; i < 100; i += 2) {
@@ -73,11 +73,11 @@ public class UTFUtilTest {
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF0(dos, randomString, buffer);
+                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF0(dis, buffer);
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -88,18 +88,18 @@ public class UTFUtilTest {
     public void testMiddleSizedText_2Chunks_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = newUTFUtil(false);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 170; i < 300; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF0(dos, randomString, buffer);
+                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF0(dis, buffer);
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -110,8 +110,8 @@ public class UTFUtilTest {
     public void testMiddleSizedText_2Chunks_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = newUTFUtil(true);
-        assertContains(utfUtil.getStringCreator().getClass().toString(), "FastStringCreator");
+        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(true);
+        assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 170; i < 300; i += 2) {
@@ -119,11 +119,11 @@ public class UTFUtilTest {
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF0(dos, randomString, buffer);
+                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF0(dis, buffer);
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -134,18 +134,18 @@ public class UTFUtilTest {
     public void testLongSizedText_min3Chunks_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = newUTFUtil(false);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 330; i < 900; i += 5) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF0(dos, randomString, buffer);
+                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF0(dis, buffer);
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -156,8 +156,8 @@ public class UTFUtilTest {
     public void testLongSizedText_min3Chunks_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = newUTFUtil(true);
-        assertContains(utfUtil.getStringCreator().getClass().toString(), "FastStringCreator");
+        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(true);
+        assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 330; i < 900; i += 5) {
@@ -165,11 +165,11 @@ public class UTFUtilTest {
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF0(dos, randomString, buffer);
+                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF0(dis, buffer);
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -187,9 +187,9 @@ public class UTFUtilTest {
         return random(count, 0, 0, true, true, null, RANDOM);
     }
 
-    private static UTFUtil newUTFUtil(boolean fastStringCreator) {
+    private static UTFEncoderDecoder newUTFUtil(boolean fastStringCreator) {
         try {
-            Constructor<UTFUtil> constructor = UTFUtil.class.getDeclaredConstructor(boolean.class);
+            Constructor<UTFEncoderDecoder> constructor = UTFEncoderDecoder.class.getDeclaredConstructor(boolean.class);
             constructor.setAccessible(true);
             return constructor.newInstance(fastStringCreator);
         } catch (Exception e) {

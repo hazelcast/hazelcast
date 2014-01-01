@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.DynamicByteBuffer;
-import com.hazelcast.nio.UTFUtil;
+import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -388,7 +388,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public String readUTF() throws IOException {
-        return UTFUtil.readUTF(this, utfBuffer);
+        return UTFEncoderDecoder.readUTF(this, utfBuffer);
     }
 
     public Object readObject() throws IOException {

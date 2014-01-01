@@ -25,11 +25,11 @@ import java.io.UTFDataFormatException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-public final class UTFUtil {
+public final class UTFEncoderDecoder {
 
     private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
-    private static final UTFUtil INSTANCE;
+    private static final UTFEncoderDecoder INSTANCE;
 
     static {
         INSTANCE = buildUTFUtil();
@@ -37,11 +37,11 @@ public final class UTFUtil {
 
     private final StringCreator stringCreator;
 
-    private UTFUtil(boolean fastStringCreator) {
+    private UTFEncoderDecoder(boolean fastStringCreator) {
         this(fastStringCreator ? buildFastStringCreator() : new DefaultStringCreator());
     }
 
-    private UTFUtil(StringCreator stringCreator) {
+    private UTFEncoderDecoder(StringCreator stringCreator) {
         this.stringCreator = stringCreator;
     }
 
@@ -221,25 +221,25 @@ public final class UTFUtil {
         return false;
     }
 
-    private static UTFUtil buildUTFUtil() {
+    private static UTFEncoderDecoder buildUTFUtil() {
         boolean enterpriseAvailable = HazelcastUtil.isEnterprise();
         if (enterpriseAvailable) {
             try {
                 Class<?> clazz = Class.forName("com.hazelcast.nio.utf8.EnterpriseStringCreator");
                 Method method = clazz.getDeclaredMethod("findBestStringCreator");
-                return new UTFUtil((StringCreator) method.invoke(clazz));
+                return new UTFEncoderDecoder((StringCreator) method.invoke(clazz));
             } catch (Throwable t) {
             }
         }
         boolean faststringEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring", "true"));
-        return new UTFUtil(faststringEnabled ? buildFastStringCreator() : new DefaultStringCreator());
+        return new UTFEncoderDecoder(faststringEnabled ? buildFastStringCreator() : new DefaultStringCreator());
     }
 
     private static StringCreator buildFastStringCreator() {
         try {
             // Give access to the package private String constructor
             Constructor<String> constructor = null;
-            if (UTFUtil.useOldStringConstructor()) {
+            if (UTFEncoderDecoder.useOldStringConstructor()) {
                 constructor = String.class.getDeclaredConstructor(int.class, int.class, char[].class);
             } else {
                 constructor = String.class.getDeclaredConstructor(char[].class, boolean.class);
@@ -253,14 +253,14 @@ public final class UTFUtil {
         return null;
     }
 
-    private static class DefaultStringCreator implements UTFUtil.StringCreator {
+    private static class DefaultStringCreator implements UTFEncoderDecoder.StringCreator {
         @Override
         public String buildString(char[] chars) {
             return new String(chars);
         }
     }
 
-    private static class FastStringCreator implements UTFUtil.StringCreator {
+    private static class FastStringCreator implements UTFEncoderDecoder.StringCreator {
 
         private final Constructor<String> constructor;
 
@@ -271,7 +271,7 @@ public final class UTFUtil {
         @Override
         public String buildString(char[] chars) {
             try {
-                if (UTFUtil.useOldStringConstructor()) {
+                if (UTFEncoderDecoder.useOldStringConstructor()) {
                     return constructor.newInstance(0, chars.length, chars);
                 } else {
                     return constructor.newInstance(chars, Boolean.TRUE);
