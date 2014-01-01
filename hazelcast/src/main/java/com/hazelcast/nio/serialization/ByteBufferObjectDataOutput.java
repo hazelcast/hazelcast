@@ -208,7 +208,7 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
     }
 
     public void writeUTF(final String str) throws IOException {
-        UTFUtil.INSTANCE.writeUTF(this, str, utfBuffer);
+        UTFUtil.writeUTF(this, str, utfBuffer);
     }
 
     public void writeObject(Object object) throws IOException {

@@ -426,7 +426,7 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream implement
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public String readUTF() throws IOException {
-        return UTFUtil.INSTANCE.readUTF(this, utfBuffer);
+        return UTFUtil.readUTF(this, utfBuffer);
     }
 
     public Object readObject() throws IOException {

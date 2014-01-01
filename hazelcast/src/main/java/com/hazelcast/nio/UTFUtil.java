@@ -29,7 +29,7 @@ public final class UTFUtil {
 
     private static final int STRING_CHUNK_SIZE = 16 * 1024;
 
-    public static final UTFUtil INSTANCE;
+    private static final UTFUtil INSTANCE;
 
     static {
         INSTANCE = buildUTFUtil();
@@ -37,11 +37,11 @@ public final class UTFUtil {
 
     private final StringCreator stringCreator;
 
-    public UTFUtil(boolean fastStringCreator) {
+    private UTFUtil(boolean fastStringCreator) {
         this(fastStringCreator ? buildFastStringCreator() : new DefaultStringCreator());
     }
 
-    public UTFUtil(StringCreator stringCreator) {
+    private UTFUtil(StringCreator stringCreator) {
         this.stringCreator = stringCreator;
     }
 
@@ -49,7 +49,15 @@ public final class UTFUtil {
         return stringCreator;
     }
 
-    public void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
+    public static void writeUTF(final DataOutput out, final String str, byte[] buffer) throws IOException {
+        INSTANCE.writeUTF0(out, str, buffer);
+    }
+
+    public static String readUTF(final DataInput in, byte[] buffer) throws IOException {
+        return INSTANCE.readUTF0(in, buffer);
+    }
+
+    public void writeUTF0(final DataOutput out, final String str, byte[] buffer) throws IOException {
         boolean isNull = str == null;
         out.writeBoolean(isNull);
         if (isNull) return;
@@ -109,7 +117,7 @@ public final class UTFUtil {
         out.write(buffer, 0, length == 0 ? buffer.length : length);
     }
 
-    public String readUTF(final DataInput in, byte[] buffer) throws IOException {
+    public String readUTF0(final DataInput in, byte[] buffer) throws IOException {
         boolean isNull = in.readBoolean();
         if (isNull) return null;
         int length = in.readInt();

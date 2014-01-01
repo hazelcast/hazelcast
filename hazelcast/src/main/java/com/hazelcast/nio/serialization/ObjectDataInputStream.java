@@ -210,7 +210,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public String readUTF() throws IOException {
-        return UTFUtil.INSTANCE.readUTF(this, utfBuffer);
+        return UTFUtil.readUTF(this, utfBuffer);
     }
 
     public void close() throws IOException {

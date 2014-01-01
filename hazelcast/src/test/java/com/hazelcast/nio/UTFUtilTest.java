@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.lang.reflect.Constructor;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -41,18 +42,18 @@ public class UTFUtilTest {
     public void testShortSizedText_1Chunk_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = new UTFUtil(false);
+        UTFUtil utfUtil = newUTFUtil(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 2; i < 100; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF(dos, randomString, buffer);
+                utfUtil.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF(dis, buffer);
+                String result = utfUtil.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -63,7 +64,7 @@ public class UTFUtilTest {
     public void testShortSizedText_1Chunk_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = new UTFUtil(true);
+        UTFUtil utfUtil = newUTFUtil(true);
         assertContains(utfUtil.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
@@ -72,11 +73,11 @@ public class UTFUtilTest {
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF(dos, randomString, buffer);
+                utfUtil.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF(dis, buffer);
+                String result = utfUtil.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -87,18 +88,18 @@ public class UTFUtilTest {
     public void testMiddleSizedText_2Chunks_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = new UTFUtil(false);
+        UTFUtil utfUtil = newUTFUtil(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 170; i < 300; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF(dos, randomString, buffer);
+                utfUtil.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF(dis, buffer);
+                String result = utfUtil.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -109,7 +110,7 @@ public class UTFUtilTest {
     public void testMiddleSizedText_2Chunks_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = new UTFUtil(true);
+        UTFUtil utfUtil = newUTFUtil(true);
         assertContains(utfUtil.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
@@ -118,11 +119,11 @@ public class UTFUtilTest {
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF(dos, randomString, buffer);
+                utfUtil.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF(dis, buffer);
+                String result = utfUtil.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -133,18 +134,18 @@ public class UTFUtilTest {
     public void testLongSizedText_min3Chunks_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = new UTFUtil(false);
+        UTFUtil utfUtil = newUTFUtil(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 330; i < 900; i += 5) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF(dos, randomString, buffer);
+                utfUtil.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF(dis, buffer);
+                String result = utfUtil.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -155,7 +156,7 @@ public class UTFUtilTest {
     public void testLongSizedText_min3Chunks_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFUtil utfUtil = new UTFUtil(true);
+        UTFUtil utfUtil = newUTFUtil(true);
         assertContains(utfUtil.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
@@ -164,11 +165,11 @@ public class UTFUtilTest {
                 DataOutputStream dos = new DataOutputStream(baos);
 
                 String randomString = random(i * 100);
-                utfUtil.writeUTF(dos, randomString, buffer);
+                utfUtil.writeUTF0(dos, randomString, buffer);
 
                 ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 DataInputStream dis = new DataInputStream(bais);
-                String result = utfUtil.readUTF(dis, buffer);
+                String result = utfUtil.readUTF0(dis, buffer);
 
                 assertEquals(randomString, result);
             }
@@ -184,6 +185,16 @@ public class UTFUtilTest {
 
     private static String random(int count) {
         return random(count, 0, 0, true, true, null, RANDOM);
+    }
+
+    private static UTFUtil newUTFUtil(boolean fastStringCreator) {
+        try {
+            Constructor<UTFUtil> constructor = UTFUtil.class.getDeclaredConstructor(boolean.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(fastStringCreator);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /*
