@@ -41,6 +41,7 @@ public class MemberInfo implements DataSerializable {
         this.uuid = uuid;
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
@@ -49,6 +50,7 @@ public class MemberInfo implements DataSerializable {
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         boolean hasUuid = uuid != null;

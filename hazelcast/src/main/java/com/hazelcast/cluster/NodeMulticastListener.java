@@ -40,6 +40,7 @@ public class NodeMulticastListener implements MulticastListener {
         this.logger = node.getLogger("NodeMulticastListener");
     }
 
+    @Override
     public void onMessage(Object msg) {
         if (msg != null && msg instanceof JoinMessage) {
             JoinMessage joinMessage = (JoinMessage) msg;

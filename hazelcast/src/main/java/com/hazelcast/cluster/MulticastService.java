@@ -105,6 +105,7 @@ public class MulticastService implements Runnable {
     }
 
     @SuppressWarnings("WhileLoopSpinsOnField")
+    @Override
     public void run() {
         try {
             while (running) {

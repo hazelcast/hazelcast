@@ -52,6 +52,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         this.tryCount = tryCount;
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         credentials = in.readObject();
@@ -61,6 +62,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         tryCount = in.readInt();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeObject(credentials);

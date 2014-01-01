@@ -38,6 +38,7 @@ public class MergeClustersOperation extends AbstractClusterOperation {
         this.newTargetAddress = newTargetAddress;
     }
 
+    @Override
     public void run() {
         final Address caller = getCallerAddress();
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
@@ -53,12 +54,14 @@ public class MergeClustersOperation extends AbstractClusterOperation {
         node.getClusterService().merge(newTargetAddress);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         newTargetAddress = new Address();
         newTargetAddress.readData(in);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         newTargetAddress.writeData(out);

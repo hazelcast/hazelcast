@@ -37,6 +37,7 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
         this.groupPassword = groupPassword;
     }
 
+    @Override
     public void run() {
         GroupConfig groupConfig = getNodeEngine().getConfig().getGroupConfig();
         if (!groupName.equals(groupConfig.getName())) {
