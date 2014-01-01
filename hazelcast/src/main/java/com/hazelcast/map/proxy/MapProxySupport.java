@@ -190,7 +190,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Object o;
             if (mapConfig.isStatisticsEnabled()) {
                 long time = System.currentTimeMillis();
-                f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                f = nodeEngine.getOperationService()
+                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .setResultDeserialized(false)
+                        .invoke();
                 o = f.get();
                 if (operation instanceof BasePutOperation)
                     localMapStats.incrementPuts(System.currentTimeMillis() - time);
@@ -619,7 +622,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         EntryOperation operation = new EntryOperation(name, key, entryProcessor);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            Future future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            Future future = nodeEngine.getOperationService()
+                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .setResultDeserialized(false)
+                    .invoke();
             return (Data) future.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -630,7 +636,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final Collection<Integer> partitionsForKeys = getPartitionsForKeys(keys);
         try {
-            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnPartitions(SERVICE_NAME, new MultipleEntryOperationFactory(name, keys, entryProcessor), partitionsForKeys);
+            MultipleEntryOperationFactory operationFactory = new MultipleEntryOperationFactory(name, keys, entryProcessor);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnPartitions(SERVICE_NAME, operationFactory, partitionsForKeys);
             for (Object o : results.values()) {
                 if (o != null) {
                     final MapService service = getService();
@@ -668,6 +676,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    //todo: dead code??
     public Map executeOnEntries(EntryProcessor entryProcessor) {
         Map result = new HashMap();
         try {
@@ -689,6 +698,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
+    //todo: dead code??
     public Map executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         Map result = new HashMap();
         try {

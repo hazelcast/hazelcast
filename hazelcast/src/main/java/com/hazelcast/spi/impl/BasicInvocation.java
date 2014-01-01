@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
@@ -76,9 +77,11 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     private volatile Address target;
     private boolean remote = false;
     private final String executorName;
+    private final boolean resultDeserialized;
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback, String executorName) {
+                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
+                    String executorName, boolean resultDeserialized) {
         this.logger = nodeEngine.getLogger(BasicInvocation.class);
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
@@ -90,6 +93,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         this.callTimeout = getCallTimeout(callTimeout);
         this.invocationFuture = new InvocationFuture(callback);
         this.executorName = executorName;
+        this.resultDeserialized = resultDeserialized;
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -530,6 +534,18 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 throw new IllegalArgumentException("response can't be null");
             }
 
+            if(response instanceof Response){
+                response = ((Response)response).response;
+            }
+
+            if(response == null){
+                response = NULL_RESPONSE;
+            }
+
+            if(resultDeserialized && response instanceof Data){
+                response = nodeEngine.toObject(response);
+            }
+
             ExecutionCallbackNode<E> callbackChain;
             synchronized (this) {
                 if (this.response != null && !(this.response instanceof InternalResponse)) {
@@ -666,9 +682,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 }
                 throw new ExecutionException((Throwable) response);
             }
-            if (response instanceof Response) {
-                return ((Response) response).response;
-            }
             if (response == NULL_RESPONSE) {
                 return null;
             }
@@ -710,7 +723,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             Boolean executing = Boolean.FALSE;
             try {
                 final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName,
-                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null, null);
+                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null, null,true);
                 Future f = inv.invoke();
                 // TODO: @mm - improve logging (see SystemLogService)
                 logger.warning("Asking if operation execution has been started: " + toString());

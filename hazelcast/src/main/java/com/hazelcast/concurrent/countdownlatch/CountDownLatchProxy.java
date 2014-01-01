@@ -38,16 +38,20 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+
+    @Override
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
-        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                new AwaitOperation(name, getTimeInMillis(timeout, unit)), partitionId);
+        AwaitOperation op = new AwaitOperation(name, getTimeInMillis(timeout, unit));
+        Future<Boolean> f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
+                op, partitionId);
         try {
-            return (Boolean) nodeEngine.toObject(f.get());
+            return f.get();
         } catch (ExecutionException e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);
         }
@@ -57,10 +61,12 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
+    @Override
     public void countDown() {
         final NodeEngine nodeEngine = getNodeEngine();
+        CountDownOperation op = new CountDownOperation(name);
         Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                new CountDownOperation(name), partitionId);
+                op, partitionId);
         try {
             f.get();
         } catch (Exception e) {
@@ -68,28 +74,33 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         }
     }
 
+    @Override
     public int getCount() {
         final NodeEngine nodeEngine = getNodeEngine();
-        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                new GetCountOperation(name), partitionId);
+        GetCountOperation op = new GetCountOperation(name);
+        Future<Integer> f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
+                op, partitionId);
         try {
-            return (Integer) nodeEngine.toObject(f.get());
+            return f.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
+    @Override
     public boolean trySetCount(int count) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                new SetCountOperation(name, count), partitionId);
+        SetCountOperation op = new SetCountOperation(name, count);
+        Future<Boolean> f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
+                op, partitionId);
         try {
-            return (Boolean) nodeEngine.toObject(f.get());
+            return f.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
+    @Override
     public String getServiceName() {
         return CountDownLatchService.SERVICE_NAME;
     }

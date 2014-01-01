@@ -135,7 +135,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     private <T> T invoke(SemaphoreOperation operation) throws ExecutionException, InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Future f = nodeEngine.getOperationService().invokeOnPartition(SemaphoreService.SERVICE_NAME, operation, partitionId);
-        return (T) nodeEngine.toObject(f.get());
+        return (T) f.get();
     }
 
     private void checkNegative(int permits) {
