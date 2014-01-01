@@ -42,6 +42,7 @@ public class IdGeneratorProxy implements IdGenerator {
         local = new AtomicLong(-1);
     }
 
+    @Override
     public boolean init(long id) {
         if (id <= 0) {
             return false;
@@ -59,6 +60,7 @@ public class IdGeneratorProxy implements IdGenerator {
 
     }
 
+    @Override
     public long newId() {
         int value = residue.getAndIncrement();
         if (value >= BLOCK_SIZE) {
@@ -74,10 +76,12 @@ public class IdGeneratorProxy implements IdGenerator {
         return local.get() * BLOCK_SIZE + value;
     }
 
+    @Override
     public Object getId() {
         return name;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -92,6 +96,7 @@ public class IdGeneratorProxy implements IdGenerator {
         return IdGeneratorService.SERVICE_NAME;
     }
 
+    @Override
     public void destroy() {
         atomicLong.destroy();
         residue = null;

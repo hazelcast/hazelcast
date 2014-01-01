@@ -31,7 +31,8 @@ public abstract class InvocationBuilder {
     public final static long DEFAULT_CALL_TIMEOUT = -1L;
     public final static int DEFAULT_REPLICA_INDEX = 0;
     public final static int DEFAULT_TRY_COUNT = 250;
-    public final static long DEFAULT_TRY_PAUSE_MILLIS=500;
+    public final static long DEFAULT_TRY_PAUSE_MILLIS = 500;
+    public final static boolean DEFAULT_DESERIALIZE_RESULT = true;
 
     protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
@@ -45,14 +46,7 @@ public abstract class InvocationBuilder {
     protected int tryCount = 250;
     protected long tryPauseMillis = 500;
     protected String executorName = null;
-
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
-        this(nodeEngine, serviceName, op, partitionId, null);
-    }
-
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-        this(nodeEngine, serviceName, op, -1, target);
-    }
+    protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
 
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
                                    int partitionId, Address target) {
@@ -95,6 +89,31 @@ public abstract class InvocationBuilder {
         return this;
     }
 
+    /**
+     * Checks if the Future should automatically deserialize the result. In most cases you don't want get
+     * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
+     * cases you want to get the raw Data object.
+     *
+     * Defaults to true.
+     *
+     * @return true if the the result is automatically deserialized, false otherwise.
+     */
+    public boolean isResultDeserialized() {
+        return resultDeserialized;
+    }
+
+    /**
+     * Sets the automatic deserialized option for the result.
+     *
+     * @param resultDeserialized true if data
+     * @return the updated InvocationBuilder.
+     * @see #isResultDeserialized()
+     */
+    public InvocationBuilder setResultDeserialized(boolean resultDeserialized) {
+        this.resultDeserialized = resultDeserialized;
+        return this;
+    }
+
     public InvocationBuilder setTryCount(int tryCount) {
         this.tryCount = tryCount;
         return this;
@@ -109,7 +128,6 @@ public abstract class InvocationBuilder {
         this.callTimeout = callTimeout;
         return this;
     }
-
 
     public String getServiceName() {
         return serviceName;
