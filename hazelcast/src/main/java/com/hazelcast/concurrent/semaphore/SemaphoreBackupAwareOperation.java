@@ -30,12 +30,13 @@ public abstract class SemaphoreBackupAwareOperation extends SemaphoreOperation i
         super(name, permitCount);
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return getPermit().getAsyncBackupCount();
     }
 
+    @Override
     public int getSyncBackupCount() {
         return getPermit().getSyncBackupCount();
     }
-
 }

@@ -30,6 +30,7 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
         this.type = type;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof SemaphoreWaitNotifyKey)) return false;
@@ -42,6 +43,7 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (type != null ? type.hashCode() : 0);

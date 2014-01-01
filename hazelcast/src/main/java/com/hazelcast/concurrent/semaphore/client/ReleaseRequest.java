@@ -36,14 +36,17 @@ public class ReleaseRequest extends SemaphoreRequest {
         super(name, permitCount);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ReleaseOperation(name, permitCount);
     }
 
+    @Override
     public int getClassId() {
         return SemaphorePortableHook.RELEASE;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_RELEASE);
     }

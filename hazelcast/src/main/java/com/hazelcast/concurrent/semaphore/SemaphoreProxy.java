@@ -39,10 +39,12 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public boolean init(int permits) {
         checkNegative(permits);
         try {
@@ -52,10 +54,12 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public void acquire() throws InterruptedException {
         acquire(1);
     }
 
+    @Override
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
         try {
@@ -65,6 +69,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public int availablePermits() {
         try {
             return (Integer) invoke(new AvailableOperation(name));
@@ -73,6 +78,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public int drainPermits() {
         try {
             return (Integer) invoke(new DrainOperation(name));
@@ -81,6 +87,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public void reducePermits(int reduction) {
         checkNegative(reduction);
         try {
@@ -90,10 +97,12 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public void release() {
         release(1);
     }
 
+    @Override
     public void release(int permits) {
         checkNegative(permits);
         try {
@@ -103,6 +112,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public boolean tryAcquire() {
         try {
             return tryAcquire(1, 0, TimeUnit.MILLISECONDS);
@@ -111,6 +121,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public boolean tryAcquire(int permits) {
         try {
             return tryAcquire(permits, 0, TimeUnit.MILLISECONDS);
@@ -119,10 +130,12 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
         return tryAcquire(1, timeout, unit);
     }
 
+    @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         checkNegative(permits);
         try {
@@ -144,6 +157,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
+    @Override
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
     }

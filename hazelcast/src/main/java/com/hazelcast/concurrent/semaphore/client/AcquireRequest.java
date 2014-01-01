@@ -42,24 +42,29 @@ public class AcquireRequest extends SemaphoreRequest {
         this.timeout = timeout;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new AcquireOperation(name, permitCount, timeout);
     }
 
+    @Override
     public int getClassId() {
         return SemaphorePortableHook.ACQUIRE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         super.writePortable(writer);
         writer.writeLong("t",timeout);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         super.readPortable(reader);
         timeout = reader.readLong("t");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }
