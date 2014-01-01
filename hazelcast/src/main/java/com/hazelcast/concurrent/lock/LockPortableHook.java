@@ -60,6 +60,7 @@ public class LockPortableHook implements PortableHook {
         };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

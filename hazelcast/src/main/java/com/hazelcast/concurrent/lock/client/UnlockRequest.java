@@ -40,22 +40,25 @@ public final class UnlockRequest extends AbstractUnlockRequest {
         super(key, threadId, force);
     }
 
+    @Override
     protected InternalLockNamespace getNamespace() {
         String name = (String) getClientEngine().toObject(key);
         return new InternalLockNamespace(name);
     }
 
+    @Override
     public int getFactoryId() {
         return LockPortableHook.FACTORY_ID;
     }
 
+    @Override
     public int getClassId() {
         return LockPortableHook.UNLOCK;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         String name = (String) getClientEngine().toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_LOCK);
     }
-
 }

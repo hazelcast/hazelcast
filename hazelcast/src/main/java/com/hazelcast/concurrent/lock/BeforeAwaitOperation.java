@@ -35,6 +35,7 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
         this.conditionId = conditionId;
     }
 
+    @Override
     public void beforeRun() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         boolean isLockOwner = lockStore.isLockedBy(key, getCallerUuid(), threadId);
@@ -43,24 +44,29 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
         }
     }
 
+    @Override
     public void run() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         lockStore.addAwait(key, conditionId, getCallerUuid(), threadId);
         lockStore.unlock(key, getCallerUuid(), threadId);
     }
 
+    @Override
     public boolean shouldNotify() {
         return true;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new BeforeAwaitBackupOperation(namespace, key, threadId, conditionId, getCallerUuid());
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return new LockWaitNotifyKey(namespace, key);
     }

@@ -56,18 +56,22 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         }
     }
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
             public LockStoreInfo createNew(ObjectNamespace key) {
                 return new LockStoreInfo() {
+                    @Override
                     public ObjectNamespace getObjectNamespace() {
                         return new InternalLockNamespace("default");
                     }
 
+                    @Override
                     public int getBackupCount() {
                         return 1;
                     }
 
+                    @Override
                     public int getAsyncBackupCount() {
                         return 0;
                     }
@@ -76,6 +80,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         });
     }
 
+    @Override
     public void reset() {
         for (LockStoreContainer container : containers) {
             for (LockStoreImpl lockStore : container.getLockStores()) {
@@ -84,32 +89,38 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         }
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         for (LockStoreContainer container : containers) {
             container.clear();
         }
     }
 
+    @Override
     public void registerLockStoreConstructor(String serviceName, ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
         if (constructors.putIfAbsent(serviceName, constructorFunction) != null) {
             throw new IllegalArgumentException("LockStore constructor for service[" + serviceName + "] is already registered!");
         }
     }
 
+    @Override
     public LockStore createLockStore(int partitionId, ObjectNamespace namespace) {
         final LockStoreContainer container = getLockContainer(partitionId);
         container.getOrCreateLockStore(namespace);
         return new LockStoreProxy(container, namespace);
     }
 
+    @Override
     public void clearLockStore(int partitionId, ObjectNamespace namespace) {
         final LockStoreContainer container = getLockContainer(partitionId);
         container.clearLockStore(namespace);
     }
 
     private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
+        @Override
         public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace), ScheduleType.POSTPONE);
+            LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
+            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), entryProcessor, ScheduleType.POSTPONE);
         }
     };
 
@@ -131,9 +142,11 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         return getLockContainer(partitionId).getOrCreateLockStore(namespace);
     }
 
+    @Override
     public void memberAdded(MembershipServiceEvent event) {
     }
 
+    @Override
     public void memberRemoved(MembershipServiceEvent event) {
         final MemberImpl member = event.getMember();
         final String uuid = member.getUuid();
@@ -161,6 +174,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         }
     }
 
+    @Override
     public Collection<LockResource> getAllLocks() {
         final Collection<LockResource> locks = new LinkedList<LockResource>();
         for (LockStoreContainer container : containers) {
@@ -171,15 +185,18 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         return locks;
     }
 
+    @Override
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         LockStoreContainer container = containers[event.getPartitionId()];
         LockReplicationOperation op = new LockReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
         return op.isEmpty() ? null : op;
     }
 
+    @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearPartition(event.getPartitionId());
@@ -193,20 +210,24 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         }
     }
 
+    @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartition(event.getPartitionId());
         }
     }
 
+    @Override
     public void clearPartitionReplica(int partitionId) {
         clearPartition(partitionId);
     }
 
+    @Override
     public DistributedObject createDistributedObject(String objectId) {
         return new LockProxy(nodeEngine, this, objectId);
     }
 
+    @Override
     public void destroyDistributedObject(String objectId) {
         final Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {
@@ -215,6 +236,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         }
     }
 
+    @Override
     public void clientDisconnected(String clientUuid) {
         releaseLocksOf(clientUuid);
     }

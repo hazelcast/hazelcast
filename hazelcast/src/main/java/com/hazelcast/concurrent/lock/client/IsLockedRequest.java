@@ -28,7 +28,8 @@ import java.security.Permission;
 /**
  * @author mdogan 5/3/13
  */
-public final class IsLockedRequest extends AbstractIsLockedRequest implements RetryableRequest {
+public final class IsLockedRequest extends AbstractIsLockedRequest
+        implements RetryableRequest {
 
     public IsLockedRequest() {
     }
@@ -41,22 +42,25 @@ public final class IsLockedRequest extends AbstractIsLockedRequest implements Re
         super(key, threadId);
     }
 
+    @Override
     protected InternalLockNamespace getNamespace() {
         String name = (String) getClientEngine().toObject(key);
         return new InternalLockNamespace(name);
     }
 
+    @Override
     public int getFactoryId() {
         return LockPortableHook.FACTORY_ID;
     }
 
+    @Override
     public int getClassId() {
         return LockPortableHook.IS_LOCKED;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         String name = (String) getClientEngine().toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_READ);
     }
-
 }

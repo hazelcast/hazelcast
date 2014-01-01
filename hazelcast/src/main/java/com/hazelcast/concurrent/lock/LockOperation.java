@@ -37,30 +37,37 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
         super(namespace, key, threadId, ttl, timeout);
     }
 
+    @Override
     public void run() throws Exception {
         response = getLockStore().lock(key, getCallerUuid(), threadId, ttl);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new LockBackupOperation(namespace, key, threadId, getCallerUuid());
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public final long getWaitTimeoutMillis() {
         return timeout;
     }
 
+    @Override
     public final WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(namespace, key);
     }
 
+    @Override
     public final boolean shouldWait() {
         return timeout != 0 && !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
     }
 
+    @Override
     public final void onWaitExpire() {
         final Object response = (timeout < 0 || timeout == Long.MAX_VALUE) ? new OperationTimeoutException() : Boolean.FALSE;
         getResponseHandler().sendResponse(response);
