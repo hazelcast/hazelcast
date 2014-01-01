@@ -33,6 +33,7 @@ class TransactionLogKey {
         this.serviceName = serviceName;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof TransactionLogKey)) return false;
@@ -46,6 +47,7 @@ class TransactionLogKey {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = name.hashCode();
         result = 31 * result + (int) (itemId ^ (itemId >>> 32));

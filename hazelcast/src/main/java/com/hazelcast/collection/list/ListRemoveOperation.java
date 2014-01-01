@@ -45,37 +45,44 @@ public class ListRemoveOperation extends CollectionBackupAwareOperation {
         this.index = index;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionRemoveBackupOperation(name, itemId);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.LIST_REMOVE;
     }
 
+    @Override
     public void beforeRun() throws Exception {
         publishEvent(ItemEventType.ADDED, (Data)response);
     }
 
+    @Override
     public void run() throws Exception {
         final CollectionItem item = getOrCreateListContainer().remove(index);
         itemId = item.getItemId();
         response = item.getValue();
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();

@@ -48,14 +48,17 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
         this.retain = retain;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionCompareAndRemoveOperation(name, retain, valueSet);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_COMPARE_AND_REMOVE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         super.writePortable(writer);
         writer.writeBoolean("r", retain);
@@ -66,6 +69,7 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
         }
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         super.readPortable(reader);
         retain = reader.readBoolean("r");
@@ -79,6 +83,7 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
         }
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
     }

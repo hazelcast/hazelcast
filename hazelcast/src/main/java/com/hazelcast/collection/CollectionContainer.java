@@ -349,6 +349,4 @@ public abstract class CollectionContainer implements DataSerializable {
             setId(txCollectionItem.itemId);
         }
     }
-
-
 }

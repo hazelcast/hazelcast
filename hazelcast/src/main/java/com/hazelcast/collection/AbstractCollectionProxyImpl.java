@@ -68,6 +68,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
 
     protected abstract CollectionConfig getConfig(NodeEngine nodeEngine);
 
+    @Override
     public String getName() {
         return name;
     }

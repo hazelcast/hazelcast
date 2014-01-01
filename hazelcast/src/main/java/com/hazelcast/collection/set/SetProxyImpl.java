@@ -30,10 +30,12 @@ public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> 
         super(name, nodeEngine, service);
     }
 
+    @Override
     protected CollectionConfig getConfig(NodeEngine nodeEngine) {
         return nodeEngine.getConfig().findSetConfig(name);
     }
 
+    @Override
     public String getServiceName() {
         return SetService.SERVICE_NAME;
     }

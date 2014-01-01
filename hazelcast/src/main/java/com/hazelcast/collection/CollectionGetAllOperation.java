@@ -33,20 +33,22 @@ public class CollectionGetAllOperation extends CollectionOperation {
         super(name);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_GET_ALL;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         final Collection<Data> all = getOrCreateContainer().getAll();
         response = new SerializableCollection(all);
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 }

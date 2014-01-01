@@ -37,26 +37,31 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation {
         super(name);
     }
 
+    @Override
     public boolean shouldBackup() {
         return itemIdMap != null && !itemIdMap.isEmpty();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionClearBackupOperation(name, itemIdMap.keySet());
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_CLEAR;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         itemIdMap = getOrCreateContainer().clear();
     }
 
+    @Override
     public void afterRun() throws Exception {
         for (Data value : itemIdMap.values()) {
             publishEvent(ItemEventType.REMOVED, value);

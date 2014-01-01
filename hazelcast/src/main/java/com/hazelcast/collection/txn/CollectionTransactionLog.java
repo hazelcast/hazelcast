@@ -50,10 +50,12 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         this.transactionId = transactionId;
     }
 
+    @Override
     public Object getKey() {
         return new TransactionLogKey(name, itemId, serviceName);
     }
 
+    @Override
     public Future prepare(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
         CollectionPrepareOperation operation = new CollectionPrepareOperation(name, itemId, transactionId, removeOperation);
@@ -64,6 +66,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         }
     }
 
+    @Override
     public Future commit(NodeEngine nodeEngine) {
         try {
             return nodeEngine.getOperationService().invokeOnPartition(serviceName, op, partitionId);
@@ -72,6 +75,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         }
     }
 
+    @Override
     public Future rollback(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
         CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
@@ -82,6 +86,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
         out.writeUTF(name);
@@ -91,6 +96,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         out.writeUTF(transactionId);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
         name = in.readUTF();

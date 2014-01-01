@@ -28,7 +28,8 @@ import java.util.HashSet;
 /**
 * @author ali 4/16/13
 */
-public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionProxy<SetService, E> implements TransactionalSet<E> {
+public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionProxy<SetService, E>
+        implements TransactionalSet<E> {
 
     private final HashSet<CollectionItem> set = new HashSet<CollectionItem>();
 
@@ -36,10 +37,12 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
         super(name, tx, nodeEngine, service);
     }
 
+    @Override
     public String getServiceName() {
         return SetService.SERVICE_NAME;
     }
 
+    @Override
     protected Collection<CollectionItem> getCollection() {
         return set;
     }

@@ -44,20 +44,24 @@ public class ListSetRequest extends CollectionRequest {
         this.value = value;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListSetOperation(name, index, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_SET;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         super.writePortable(writer);
         writer.writeInt("i", index);
         value.writeData(writer.getRawDataOutput());
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         super.readPortable(reader);
         index = reader.readInt("i");
@@ -65,6 +69,7 @@ public class ListSetRequest extends CollectionRequest {
         value.readData(reader.getRawDataInput());
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

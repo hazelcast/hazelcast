@@ -34,10 +34,12 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         super(name, nodeEngine, service);
     }
 
+    @Override
     protected CollectionConfig getConfig(NodeEngine nodeEngine) {
         return nodeEngine.getConfig().findListConfig(name);
     }
 
+    @Override
     public void add(int index, E e) {
         throwExceptionIfNull(e);
         final Data value = getNodeEngine().toData(e);
@@ -45,11 +47,13 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         invoke(operation);
     }
 
+    @Override
     public E get(int index) {
         final ListGetOperation operation = new ListGetOperation(name, index);
         return invoke(operation);
     }
 
+    @Override
     public E set(int index, E element) {
         throwExceptionIfNull(element);
         final Data value = getNodeEngine().toData(element);
@@ -57,15 +61,18 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         return invoke(operation);
     }
 
+    @Override
     public E remove(int index) {
         final ListRemoveOperation operation = new ListRemoveOperation(name, index);
         return invoke(operation);
     }
 
+    @Override
     public int indexOf(Object o) {
         return indexOfInternal(false, o);
     }
 
+    @Override
     public int lastIndexOf(Object o) {
         return indexOfInternal(true, o);
     }
@@ -78,6 +85,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         return result;
     }
 
+    @Override
     public boolean addAll(int index, Collection<? extends E> c) {
         throwExceptionIfNull(c);
         List<Data> valueList = new ArrayList<Data>(c.size());
@@ -91,15 +99,18 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         return result;
     }
 
+    @Override
     public ListIterator<E> listIterator() {
         return listIterator(0);
     }
 
+    @Override
     public ListIterator<E> listIterator(int index) {
         final List<E> list = subList(-1, -1);
         return list.listIterator(index);
     }
 
+    @Override
     public List<E> subList(int fromIndex, int toIndex) {
         final ListSubOperation operation = new ListSubOperation(name, fromIndex, toIndex);
         final SerializableCollection result = invoke(operation);
@@ -112,19 +123,23 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         return list;
     }
 
+    @Override
     public Iterator<E> iterator() {
         return listIterator(0);
     }
 
+    @Override
     public Object[] toArray() {
         return subList(-1, -1).toArray();
     }
 
+    @Override
     public <T> T[] toArray(T[] a) {
         throwExceptionIfNull(a);
         return subList(-1,-1).toArray(a);
     }
 
+    @Override
     public String getServiceName() {
         return ListService.SERVICE_NAME;
     }

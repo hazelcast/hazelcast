@@ -40,19 +40,23 @@ public class ListAddRequest extends CollectionAddRequest {
         this.index = index;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListAddOperation(name, index, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_ADD;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("i", index);
         super.writePortable(writer);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         index = reader.readInt("i");
         super.readPortable(reader);
