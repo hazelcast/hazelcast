@@ -22,15 +22,17 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.ExecutionServiceImpl.CompletableFutureEntry;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 class BasicCompletableFuture<V> implements CompletableFuture<V> {
 
     private static final Object NULL_VALUE = new Object();
+
+    private final AtomicReferenceFieldUpdater<BasicCompletableFuture, ExecutionCallbackNode> callbackUpdater;
 
     private final ILogger logger;
     private final Future<V> future;
@@ -45,6 +47,8 @@ class BasicCompletableFuture<V> implements CompletableFuture<V> {
         this.nodeEngine = nodeEngine;
         this.completableFutureEntry = completableFutureEntry;
         this.logger = nodeEngine.getLogger(BasicCompletableFuture.class);
+        this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
+                BasicCompletableFuture.class, ExecutionCallbackNode.class, "callbackHead");
     }
 
     @Override
@@ -61,9 +65,12 @@ class BasicCompletableFuture<V> implements CompletableFuture<V> {
             runAsynchronous(callback, executor);
             return;
         }
-
-        synchronized (this) {
-            this.callbackHead = new ExecutionCallbackNode<V>(callback, executor, callbackHead);
+        for (;;) {
+            ExecutionCallbackNode oldCallbackHead = callbackHead;
+            ExecutionCallbackNode newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
+            if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
+                break;
+            }
         }
     }
 
@@ -105,11 +112,12 @@ class BasicCompletableFuture<V> implements CompletableFuture<V> {
 
     public void fireCallbacks() {
         ExecutionCallbackNode<V> callbackChain;
-        synchronized (this) {
+        for (;;) {
             callbackChain = callbackHead;
-            callbackHead = null;
+            if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
+                break;
+            }
         }
-
         while (callbackChain != null) {
             runAsynchronous(callbackChain.callback, callbackChain.executor);
             callbackChain = callbackChain.next;

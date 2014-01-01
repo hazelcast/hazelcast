@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -202,14 +203,20 @@ public final class ManagedExecutorService implements ExecutorService {
 
     private class CompletableFutureTask<V> extends FutureTask<V> implements CompletableFuture<V> {
 
+        private final AtomicReferenceFieldUpdater<CompletableFutureTask, ExecutionCallbackNode> callbackUpdater;
+
         private volatile ExecutionCallbackNode<V> callbackHead;
 
         public CompletableFutureTask(Callable<V> callable) {
             super(callable);
+            this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
+                    CompletableFutureTask.class, ExecutionCallbackNode.class, "callbackHead");
         }
 
         public CompletableFutureTask(Runnable runnable, V result) {
             super(runnable, result);
+            this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
+                    CompletableFutureTask.class, ExecutionCallbackNode.class, "callbackHead");
         }
 
         @Override
@@ -235,9 +242,12 @@ public final class ManagedExecutorService implements ExecutorService {
                 runAsynchronous(callback, executor);
                 return;
             }
-
-            synchronized (this) {
-                this.callbackHead = new ExecutionCallbackNode<V>(callback, executor, callbackHead);
+            for (;;) {
+                ExecutionCallbackNode oldCallbackHead = callbackHead;
+                ExecutionCallbackNode newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
+                if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
+                    break;
+                }
             }
         }
 
@@ -251,11 +261,12 @@ public final class ManagedExecutorService implements ExecutorService {
 
         private void fireCallbacks() {
             ExecutionCallbackNode<V> callbackChain;
-            synchronized (this) {
+            for (;;) {
                 callbackChain = callbackHead;
-                callbackHead = null;
+                if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
+                    break;
+                }
             }
-
             while (callbackChain != null) {
                 runAsynchronous(callbackChain.callback, callbackChain.executor);
                 callbackChain = callbackChain.next;
