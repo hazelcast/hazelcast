@@ -25,7 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
@@ -102,7 +102,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return serviceName;
     }
 
-    PartitionView getPartition() {
+    InternalPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 

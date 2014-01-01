@@ -19,11 +19,16 @@ package com.hazelcast.partition;
 import com.hazelcast.nio.Address;
 
 /**
+ * Represents a Partition. It is comparable to the {@link com.hazelcast.core.Partition} but it is optimized for internal
+ * usage, so it exposes method not meant for regular Hazelcast users.
  *
+ * The InternalPartition provides access to information about a partition, most importantly the addresses of the
+ * replica's and this information will be updated. So one can cache the InternalPartition and keep asking for
+ * partition information.
  *
  * @author mdogan 6/17/13
  */
-public interface PartitionView {
+public interface InternalPartition {
 
     int MAX_REPLICA_COUNT = 7;
     int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;

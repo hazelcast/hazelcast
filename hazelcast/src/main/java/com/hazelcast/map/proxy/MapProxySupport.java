@@ -29,8 +29,8 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.PartitionView;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
@@ -127,7 +127,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             PartitionService partitionService = mapService.getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
-                PartitionView partition = partitionService.getPartition(partitionId);
+                InternalPartition partition = partitionService.getPartition(partitionId);
                 if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
