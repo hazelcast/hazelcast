@@ -33,14 +33,17 @@ public class CollectionClearRequest extends CollectionRequest {
         super(name);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionClearOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_CLEAR;
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
     }

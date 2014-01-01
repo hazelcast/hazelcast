@@ -62,22 +62,26 @@ public class TxCollectionItem extends CollectionItem {
         return this;
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.TX_COLLECTION_ITEM;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeUTF(transactionId);
         out.writeBoolean(removeOperation);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         transactionId = in.readUTF();
         removeOperation = in.readBoolean();
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof TxCollectionItem)) return false;
@@ -91,6 +95,7 @@ public class TxCollectionItem extends CollectionItem {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + transactionId.hashCode();

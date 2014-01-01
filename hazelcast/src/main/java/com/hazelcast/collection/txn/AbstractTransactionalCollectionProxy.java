@@ -53,6 +53,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
 
     protected abstract Collection<CollectionItem> getCollection();
 
+    @Override
     public String getName() {
         return name;
     }
@@ -71,7 +72,8 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 getCollection().add(new CollectionItem(itemId, value));
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), tx.getTxnId(), new CollectionTxnAddOperation(name, itemId, value)));
+                CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
+                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), tx.getTxnId(), op));
                 return true;
             }
         } catch (Throwable t) {
@@ -108,7 +110,8 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 if (!itemIdSet.add(item.getItemId())) {
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
-                tx.addTransactionLog(new CollectionTransactionLog(item.getItemId(), name, partitionId, getServiceName(), tx.getTxnId(), new CollectionTxnRemoveOperation(name, item.getItemId())));
+                CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
+                tx.addTransactionLog(new CollectionTransactionLog(item.getItemId(), name, partitionId, getServiceName(), tx.getTxnId(), op));
                 return true;
             }
         } catch (Throwable t) {
@@ -140,5 +143,4 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
             throw new NullPointerException("Object is null");
         }
     }
-
 }

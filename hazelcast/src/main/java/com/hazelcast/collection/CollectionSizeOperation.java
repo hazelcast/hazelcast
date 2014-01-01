@@ -28,18 +28,20 @@ public class CollectionSizeOperation extends CollectionOperation {
         super(name);
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         response = getOrCreateContainer().size();
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_SIZE;
     }

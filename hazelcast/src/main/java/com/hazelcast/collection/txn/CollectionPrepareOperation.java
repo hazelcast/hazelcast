@@ -45,30 +45,35 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
         this.transactionId = transactionId;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionPrepareBackupOperation(name, itemId, transactionId, removeOperation);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_PREPARE;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().ensureReserve(itemId);
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
@@ -76,6 +81,7 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
         out.writeUTF(transactionId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();

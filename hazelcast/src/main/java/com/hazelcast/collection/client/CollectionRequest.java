@@ -47,14 +47,17 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
         this.name = name;
     }
 
+    @Override
     protected int getPartition() {
         return getClientEngine().getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
     }
 
+    @Override
     protected int getReplicaIndex() {
         return 0;
     }
 
+    @Override
     public String getServiceName() {
         return serviceName;
     }
@@ -63,20 +66,24 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
         this.serviceName = serviceName;
     }
 
+    @Override
     public int getFactoryId() {
         return CollectionPortableHook.F_ID;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("s", serviceName);
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         serviceName = reader.readUTF("s");
         name = reader.readUTF("n");
     }
 
+    @Override
     public final Permission getRequiredPermission() {
         final String action = getRequiredAction();
         if (ListService.SERVICE_NAME.equals(serviceName)){

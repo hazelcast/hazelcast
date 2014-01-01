@@ -33,14 +33,17 @@ public class CollectionGetAllRequest extends CollectionRequest{
         super(name);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionGetAllOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_GET_ALL;
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

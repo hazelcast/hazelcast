@@ -37,6 +37,7 @@ public class SetReplicationOperation extends CollectionReplicationOperation {
         super(migrationData, partitionId, replicaIndex);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, CollectionContainer>(mapSize);
@@ -48,6 +49,7 @@ public class SetReplicationOperation extends CollectionReplicationOperation {
         }
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.SET_REPLICATION;
     }

@@ -40,24 +40,29 @@ public class ListRemoveRequest extends CollectionRequest {
         this.index = index;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListRemoveOperation(name, index);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_REMOVE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         super.writePortable(writer);
         writer.writeInt("i", index);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         super.readPortable(reader);
         index = reader.readInt("i");
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
     }

@@ -36,18 +36,22 @@ public class TxnListRemoveRequest extends TxnCollectionRequest {
         super(name, value);
     }
 
+    @Override
     public Object call() throws Exception {
         return getEndpoint().getTransactionContext().getList(name).remove(value);
     }
 
+    @Override
     public String getServiceName() {
         return ListService.SERVICE_NAME;
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.TXN_LIST_REMOVE;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new ListPermission(name, ActionConstants.ACTION_REMOVE);
     }
