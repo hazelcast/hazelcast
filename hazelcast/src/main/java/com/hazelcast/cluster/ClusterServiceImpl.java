@@ -647,44 +647,47 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         logger.finest("Starting Join.");
         lock.lock();
         try {
-             joinInProgress = true;
-            // pause migrations until join, member-update and post-join operations are completed.
-            node.getPartitionService().pauseMigration();
-            final Collection<MemberImpl> members = getMemberList();
-            final Collection<MemberInfo> memberInfos = createMemberInfos(members);
-            for (MemberInfo memberJoining : setJoins) {
-                memberInfos.add(memberJoining);
-            }
-            final long time = getClusterTime();
-            // Post join operations must be lock free; means no locks at all;
-            // no partition locks, no key-based locks, no service level locks!
-            final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
-            final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
-                    ? new PostJoinOperation(postJoinOps) : null;
-            final int count = members.size() - 1 + setJoins.size();
-            final List<Future> calls = new ArrayList<Future>(count);
-            for (MemberInfo member : setJoins) {
-                calls.add(invokeClusterOperation(new FinalizeJoinOperation(memberInfos, postJoinOp, time), member.getAddress()));
-            }
-            for (MemberImpl member : members) {
-                if (!member.getAddress().equals(thisAddress)) {
-                    calls.add(invokeClusterOperation(new MemberInfoUpdateOperation(memberInfos, time, true), member.getAddress()));
+            try {
+                joinInProgress = true;
+                // pause migrations until join, member-update and post-join operations are completed.
+                node.getPartitionService().pauseMigration();
+                final Collection<MemberImpl> members = getMemberList();
+                final Collection<MemberInfo> memberInfos = createMemberInfos(members);
+                for (MemberInfo memberJoining : setJoins) {
+                    memberInfos.add(memberJoining);
                 }
-            }
-            updateMembers(memberInfos);
-            for (Future future : calls) {
-                try {
-                    future.get(10, TimeUnit.SECONDS);
-                } catch (TimeoutException ignored) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Finalize join call timed-out: " + future);
+                final long time = getClusterTime();
+                // Post join operations must be lock free; means no locks at all;
+                // no partition locks, no key-based locks, no service level locks!
+                final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
+                final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
+                        ? new PostJoinOperation(postJoinOps) : null;
+                final int count = members.size() - 1 + setJoins.size();
+                final List<Future> calls = new ArrayList<Future>(count);
+                for (MemberInfo member : setJoins) {
+                    calls.add(invokeClusterOperation(new FinalizeJoinOperation(memberInfos, postJoinOp, time), member.getAddress()));
+                }
+                for (MemberImpl member : members) {
+                    if (!member.getAddress().equals(thisAddress)) {
+                        calls.add(invokeClusterOperation(new MemberInfoUpdateOperation(memberInfos, time, true), member.getAddress()));
                     }
-                } catch (Exception e) {
-                    logger.warning("While waiting finalize join calls...", e);
                 }
+                updateMembers(memberInfos);
+                for (Future future : calls) {
+                    try {
+                        future.get(10, TimeUnit.SECONDS);
+                    } catch (TimeoutException ignored) {
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Finalize join call timed-out: " + future);
+                        }
+                    } catch (Exception e) {
+                        logger.warning("While waiting finalize join calls...", e);
+                    }
+                }
+            } finally {
+                node.getPartitionService().resumeMigration();
             }
         } finally {
-            node.getPartitionService().resumeMigration();
             lock.unlock();
         }
     }

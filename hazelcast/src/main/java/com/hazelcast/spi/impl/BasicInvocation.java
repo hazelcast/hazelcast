@@ -257,7 +257,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, invTarget, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }

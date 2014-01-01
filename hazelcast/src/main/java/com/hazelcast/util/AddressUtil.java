@@ -84,7 +84,8 @@ public final class AddressUtil {
 
     public static boolean isIpAddress(String address) {
         try {
-            return getAddressMatcher(address) != null;
+            getAddressMatcher(address);
+            return true;
         } catch (InvalidAddressException e) {
             return false;
         }
@@ -196,6 +197,13 @@ public final class AddressUtil {
         return addresses;
     }
 
+    /**
+     * Gets an AddressMatcher for a given addresses.
+     *
+     * @param address the address
+     * @return the returned AddressMatcher. The returned value will never be null.
+     * @throws com.hazelcast.util.AddressUtil.InvalidAddressException if the address is not valid.
+     */
     public static AddressMatcher getAddressMatcher(String address) {
         final AddressMatcher matcher;
         final int indexColon = address.indexOf(':');

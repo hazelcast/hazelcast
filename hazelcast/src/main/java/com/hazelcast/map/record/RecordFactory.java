@@ -31,7 +31,7 @@ public interface RecordFactory<T> {
 
     void setValue(Record<T> record, Object value);
 
-    boolean equals(Object value1, Object value2);
+    boolean isEquals(Object value1, Object value2);
 
     InMemoryFormat getStorageFormat();
 }

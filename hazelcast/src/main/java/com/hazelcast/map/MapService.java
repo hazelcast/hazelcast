@@ -792,7 +792,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
 
         MapContainer mapContainer = getMapContainer(mapName);
-        return mapContainer.getRecordFactory().equals(value1, value2);
+        return mapContainer.getRecordFactory().isEquals(value1, value2);
     }
 
     @SuppressWarnings("unchecked")

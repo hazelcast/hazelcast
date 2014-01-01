@@ -37,7 +37,7 @@ public class AlterOperation extends AbstractAlterOperation {
 
         Object input = nodeEngine.toObject(reference.get());
         Object output = f.apply(input);
-        shouldBackup = !equals(input,output);
+        shouldBackup = !isEquals(input, output);
         if(shouldBackup){
             backup = nodeEngine.toData(output);
             reference.set(backup);
