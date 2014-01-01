@@ -134,6 +134,12 @@ public class IndexImpl implements Index {
             return -1;
         }
 
+        @Override
+        public int hashCode(){
+            return 0;
+        }
+
+        @Override
         public boolean equals(Object o){
             return this.compareTo(o)==0;
         }
