@@ -150,7 +150,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
-    protected Future<Data> getAsyncInternal(final Data key) {
+    protected CompletableFuture<Data> getAsyncInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
@@ -212,7 +212,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected Future<Data> putAsyncInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
+    protected CompletableFuture<Data> putAsyncInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
@@ -264,7 +264,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return (Boolean) invokeOperation(key, operation);
     }
 
-    protected Future<Data> removeAsyncInternal(final Data key) {
+    protected CompletableFuture<Data> removeAsyncInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         RemoveOperation operation = new RemoveOperation(name, key);
@@ -654,7 +654,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         return result;
     }
-    public Future executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public CompletableFuture executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback callback) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         EntryOperation operation = new EntryOperation(name, key, entryProcessor);

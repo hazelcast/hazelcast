@@ -16,16 +16,12 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
@@ -118,8 +114,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final String uuid = UuidUtil.buildRandomUuidString();
         final int partitionId = getTaskPartitionId(callable);
 
-        final Future future = nodeEngine.getOperationService().invokeOnPartition(DistributedExecutorService.SERVICE_NAME,
-                new CallableTaskOperation(name, uuid, callable), partitionId);
+        final CompletableFuture future = nodeEngine.getOperationService().invokeOnPartition(
+                DistributedExecutorService.SERVICE_NAME, new CallableTaskOperation(name, uuid, callable), partitionId);
         final boolean sync = checkSync();
         if (sync) {
             try {
@@ -146,7 +142,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final String uuid = UuidUtil.buildRandomUuidString();
 
         final boolean sync = !preventSync && checkSync();
-        final Future future = nodeEngine.getOperationService().invokeOnPartition(
+        final CompletableFuture future = nodeEngine.getOperationService().invokeOnPartition(
                 DistributedExecutorService.SERVICE_NAME, new CallableTaskOperation(name, uuid, task), partitionId);
         if (sync) {
             Object response;
@@ -201,8 +197,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final Address target = ((MemberImpl) member).getAddress();
 
         final boolean sync = checkSync();
-        final Future future = nodeEngine.getOperationService().invokeOnTarget(DistributedExecutorService.SERVICE_NAME,
-                new MemberCallableTaskOperation(name, uuid, task), target);
+        final InternalCompletableFuture future = nodeEngine.getOperationService().invokeOnTarget(
+                DistributedExecutorService.SERVICE_NAME, new MemberCallableTaskOperation(name, uuid, task), target);
         if (sync) {
             Object response;
             try {
