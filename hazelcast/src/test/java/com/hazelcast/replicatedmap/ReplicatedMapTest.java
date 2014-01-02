@@ -1295,9 +1295,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         return testValues;
     }
 
-
-
-
     @Test(expected = java.lang.IllegalArgumentException.class)
     public void putNullKey() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1308,7 +1305,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         map1.put(null, 1);
     }
-
 
     @Test(expected = java.lang.IllegalArgumentException.class)
     public void removeNullKey() throws Exception {
@@ -1321,7 +1317,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.remove(null);
     }
 
-
     @Test
     public void removeEmptyListener() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1332,7 +1327,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         assertFalse(map1.removeEntryListener("2"));
     }
-
 
     @Test(expected = java.lang.IllegalArgumentException.class)
     public void removeNullListener() throws Exception {
@@ -1345,8 +1339,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.removeEntryListener(null);
     }
 
-
-
     @Test
     public void equalsTest_inMemoryFormat_Object() throws Exception {
         equalsTest(InMemoryFormat.OBJECT);
@@ -1357,8 +1349,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         equalsTest(InMemoryFormat.BINARY);
     }
 
-    public void equalsTest(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void equalsTest(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1389,8 +1380,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
-
     @Test
     public void sameMap_putTTLandPut_allMostSimil_repDelay0_inMemoryFormat_Object() throws Exception {
         sameMap_putTTLandPut_allMostSimil_repDelay0(InMemoryFormat.OBJECT);
@@ -1401,9 +1390,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         sameMap_putTTLandPut_allMostSimil_repDelay0(InMemoryFormat.BINARY);
     }
 
-
-    public void sameMap_putTTLandPut_allMostSimil_repDelay0(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void sameMap_putTTLandPut_allMostSimil_repDelay0(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1437,11 +1424,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
-    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
-    @Test()
-    public void putOrderTest_repDelay0__CONST_FAIL() throws Exception {
-
+    @Test
+    public void putOrderTest_repDelay0() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -1453,29 +1437,26 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
 
-
         map1.put(1, 1);
         map2.put(1, 2);
 
+        final int result = evalConflictResult(instance1, instance2, 1, 2);
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
-                assertEquals(2, map2.get(1));
+                assertEquals(result, map2.get(1));
             }
         });
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
-                assertEquals(2, map1.get(1));
+                assertEquals(result, map1.get(1));
             }
         });
     }
 
-
-    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
     @Test
-    public void putOrderTest_repDelay1000_FAILS_RANDOM() throws Exception {
-
+    public void putOrderTest_repDelay1000() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -1487,37 +1468,35 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
 
-
         map1.put(1, 1);
         map2.put(1, 2);
 
+        final int result = evalConflictResult(instance1, instance2, 1, 2);
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() {
-                assertEquals(2, map1.get(1));
+                assertEquals(result, map1.get(1));
             }
         });
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
-                assertEquals(2, map2.get(1));
+                assertEquals(result, map2.get(1));
             }
         });
     }
-
-
 
     @Test
     public void putTTL_Vs_put_repDelay0_InMemoryFormat_Object() throws Exception {
         putTTL_Vs_put_repDelay0(InMemoryFormat.OBJECT);
     }
+
     @Test
     public void putTTL_Vs_put_repDelay0_InMemoryFormat_Binary() throws Exception {
         putTTL_Vs_put_repDelay0(InMemoryFormat.BINARY);
     }
 
-    public void putTTL_Vs_put_repDelay0(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void putTTL_Vs_put_repDelay0(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1530,10 +1509,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
 
-
         map1.put(1, 1, 1, TimeUnit.SECONDS);
         map2.put(1, 1);
-
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
@@ -1547,10 +1524,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         });
 
-
         map1.put(1, 1);
         map2.put(1, 1, 1, TimeUnit.SECONDS);
-
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
@@ -1564,11 +1539,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
-    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
     @Test
-    public void putTTL_Vs_put_repDelay1000_FAILS_RANDOM() throws Exception {
-
+    public void putTTL_Vs_put_repDelay1000() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -1585,38 +1557,39 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.put(1, 1, 1, TimeUnit.SECONDS);
         map2.put(1, 1);
 
+        final Integer result1 = evalConflictResult(instance1, instance2, null, 1);
+
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
-                assertEquals(1, map1.get(1));
+                assertEquals(result1, map1.get(1));
             }
         });
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
-                assertEquals(1, map2.get(1));
+                assertEquals(result1, map2.get(1));
             }
         });
 
         map1.put(2, 2);
         map2.put(2, 2, 1, TimeUnit.SECONDS);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(null, map1.get(2));
-            }
-        });
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(null, map2.get(2));
-            }
-        });
+        final Integer result2 = evalConflictResult(instance1, instance2, 2, null);
 
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(result2, map1.get(2));
+            }
+        });
+        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
+            public void run(){
+                assertEquals(result2, map2.get(2));
+            }
+        });
     }
-
 
     @Test
     public void repMap_InMemoryFormatConflict() throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg1 = new Config();
         cfg1.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -1646,9 +1619,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
-
-
     @Test
     public void repMap_RepDelayConflict_InMemoryFormat_Object() throws Exception {
         repMap_RepDelayConflict(InMemoryFormat.OBJECT);
@@ -1658,9 +1628,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         repMap_RepDelayConflict(InMemoryFormat.BINARY);
     }
 
-
-    public void repMap_RepDelayConflict(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void repMap_RepDelayConflict(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg1 = new Config();
         cfg1.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1690,7 +1658,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
                 assertEquals(2, map1.get(2));
             }
         });
-
     }
 
 
@@ -1703,8 +1670,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         multiReplicationDataTest_repDelay0(InMemoryFormat.BINARY);
     }
 
-    public void multiReplicationDataTest_repDelay0(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void multiReplicationDataTest_repDelay0(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1733,7 +1699,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
     @Test
     public void mapRep3wayTest_Delay0_InMemoryFormat_Object() throws Exception {
         mapRep3wayTest_Delay0(InMemoryFormat.OBJECT);
@@ -1743,8 +1708,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         mapRep3wayTest_Delay0(InMemoryFormat.BINARY);
     }
 
-    public void mapRep3wayTest_Delay0(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void mapRep3wayTest_Delay0(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1777,8 +1741,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
-
     @Test
     public void multiPutThreads_dealy0_InMemoryFormat_Object() throws Exception {
         multiPutThreads_dealy0(InMemoryFormat.OBJECT);
@@ -1788,8 +1750,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         multiPutThreads_dealy0(InMemoryFormat.BINARY);
     }
 
-    public void multiPutThreads_dealy0(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void multiPutThreads_dealy0(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1831,7 +1792,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             t.join();
         }
 
-
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
                 for(int i=0; i<1000; i++){
@@ -1847,7 +1807,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
     @Test
     public void multiPutThreads_withNodeCrash_InMemoryFormat_Object() throws Exception {
         multiPutThreads_withNodeCrash(InMemoryFormat.OBJECT);
@@ -1857,8 +1816,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         multiPutThreads_withNodeCrash(InMemoryFormat.BINARY);
     }
 
-    public void multiPutThreads_withNodeCrash(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void multiPutThreads_withNodeCrash(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -1910,7 +1868,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             t.join();
         }
 
-
         HazelcastTestSupport.assertTrueEventually(new AssertTask(){
             public void run(){
                 for(int i=0; i<500; i++){
@@ -1931,8 +1888,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
     }
 
-
-
     @Test
     public void threadPuts_delay0_InMemoryFormat_Object() throws Exception {
         threadPuts_delay0(InMemoryFormat.OBJECT);
@@ -1942,8 +1897,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         threadPuts_delay0(InMemoryFormat.BINARY);
     }
 
-    public void threadPuts_delay0(InMemoryFormat inMemoryFormat) throws Exception {
-
+    private void threadPuts_delay0(InMemoryFormat inMemoryFormat) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -2008,7 +1962,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
     abstract public class GatedThread extends Thread{
         private final CyclicBarrier gate;
 
@@ -2030,11 +1983,9 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         abstract public void go();
     }
 
-
     @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
     @Test
     public void MapRepInterleavedDataOrderTest_Delay0_CONST_FAILS() throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -2076,5 +2027,16 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
+    private <T> T evalConflictResult(HazelcastInstance hz1, HazelcastInstance hz2, T value1, T value2) {
+        Member member1 = hz1.getCluster().getLocalMember();
+        Member member2 = hz2.getCluster().getLocalMember();
+        long member1Hash = member1.getUuid().hashCode();
+        long member2Hash = member2.getUuid().hashCode();
+
+        if (member1Hash >= member2Hash) {
+            return value2;
+        }
+        return value1;
+    }
 
 }
