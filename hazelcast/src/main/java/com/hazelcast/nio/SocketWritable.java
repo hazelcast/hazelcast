@@ -18,11 +18,22 @@ package com.hazelcast.nio;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Represents something that can be written to a {@link com.hazelcast.nio.Connection}.
+ *
+ * todo:
+ * Perhaps this class should be renamed to ConnectionWritable since it is written to a
+ * {@link com.hazelcast.nio.Connection#write(SocketWritable)}. This aligns the names.
+ */
 public interface SocketWritable {
 
+    /**
+     * Asks the SocketWritable to write its content to the destination ByteBuffer.
+     *
+     * @param destination the ByteBuffer to write to.
+     * @return todo: unclear what return value means.
+     */
     boolean writeTo(ByteBuffer destination);
-
-    void onEnqueue();
 
     /**
      * Checks if this SocketWritable is urgent.

@@ -89,7 +89,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void enqueueSocketWritable(SocketWritable socketWritable) {
-        socketWritable.onEnqueue();
         if(socketWritable.isUrgent()){
             urgencyWriteQueue.offer(socketWritable);
         }else{
