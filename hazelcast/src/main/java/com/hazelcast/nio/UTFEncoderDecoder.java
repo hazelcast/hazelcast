@@ -36,13 +36,15 @@ public final class UTFEncoderDecoder {
     }
 
     private final StringCreator stringCreator;
+    private final boolean hazelcastEnterpriseActive;
 
     private UTFEncoderDecoder(boolean fastStringCreator) {
-        this(fastStringCreator ? buildFastStringCreator() : new DefaultStringCreator());
+        this(fastStringCreator ? buildFastStringCreator() : new DefaultStringCreator(), false);
     }
 
-    private UTFEncoderDecoder(StringCreator stringCreator) {
+    private UTFEncoderDecoder(StringCreator stringCreator, boolean hazelcastEnterpriseActive) {
         this.stringCreator = stringCreator;
+        this.hazelcastEnterpriseActive = hazelcastEnterpriseActive;
     }
 
     public StringCreator getStringCreator() {
@@ -55,6 +57,10 @@ public final class UTFEncoderDecoder {
 
     public static String readUTF(final DataInput in, byte[] buffer) throws IOException {
         return INSTANCE.readUTF0(in, buffer);
+    }
+
+    public boolean isHazelcastEnterpriseActive() {
+        return hazelcastEnterpriseActive;
     }
 
     public void writeUTF0(final DataOutput out, final String str, byte[] buffer) throws IOException {
@@ -222,17 +228,14 @@ public final class UTFEncoderDecoder {
     }
 
     private static UTFEncoderDecoder buildUTFUtil() {
-        boolean enterpriseAvailable = HazelcastUtil.isEnterprise();
-        if (enterpriseAvailable) {
-            try {
-                Class<?> clazz = Class.forName("com.hazelcast.nio.utf8.EnterpriseStringCreator");
-                Method method = clazz.getDeclaredMethod("findBestStringCreator");
-                return new UTFEncoderDecoder((StringCreator) method.invoke(clazz));
-            } catch (Throwable t) {
-            }
+        try {
+            Class<?> clazz = Class.forName("com.hazelcast.nio.utf8.EnterpriseStringCreator");
+            Method method = clazz.getDeclaredMethod("findBestStringCreator");
+            return new UTFEncoderDecoder((StringCreator) method.invoke(clazz), true);
+        } catch (Throwable t) {
         }
         boolean faststringEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring", "true"));
-        return new UTFEncoderDecoder(faststringEnabled ? buildFastStringCreator() : new DefaultStringCreator());
+        return new UTFEncoderDecoder(faststringEnabled ? buildFastStringCreator() : new DefaultStringCreator(), false);
     }
 
     private static StringCreator buildFastStringCreator() {

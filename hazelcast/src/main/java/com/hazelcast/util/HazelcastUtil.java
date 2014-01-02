@@ -24,7 +24,7 @@ import java.util.Properties;
 public final class HazelcastUtil {
 
     private static final String VERSION;
-    private static final boolean IS_ENTERPRISE;
+    private static final boolean ENTERPRISE;
     private static final String BUILD;
     private static final int BUILD_NUMBER;
 
@@ -56,7 +56,7 @@ public final class HazelcastUtil {
         VERSION = version;
         BUILD = build;
         BUILD_NUMBER = buildNumber;
-        IS_ENTERPRISE = version.endsWith("-ee");
+        ENTERPRISE = version.endsWith("-ee");
     }
 
     private HazelcastUtil() {
@@ -75,7 +75,7 @@ public final class HazelcastUtil {
     }
 
     public static boolean isEnterprise() {
-        return IS_ENTERPRISE;
+        return ENTERPRISE;
     }
 
 }

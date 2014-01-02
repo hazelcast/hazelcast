@@ -42,7 +42,7 @@ public class UTFEncoderDecoderTest {
     public void testShortSizedText_1Chunk_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(false);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 2; i < 100; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
@@ -64,7 +64,7 @@ public class UTFEncoderDecoderTest {
     public void testShortSizedText_1Chunk_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(true);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
         assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
@@ -88,7 +88,7 @@ public class UTFEncoderDecoderTest {
     public void testMiddleSizedText_2Chunks_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(false);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 170; i < 300; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
@@ -110,7 +110,7 @@ public class UTFEncoderDecoderTest {
     public void testMiddleSizedText_2Chunks_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(true);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
         assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
@@ -134,7 +134,7 @@ public class UTFEncoderDecoderTest {
     public void testLongSizedText_min3Chunks_Default() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(false);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 330; i < 900; i += 5) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
@@ -156,7 +156,7 @@ public class UTFEncoderDecoderTest {
     public void testLongSizedText_min3Chunks_Fast() throws Exception {
         byte[] buffer = new byte[1024];
 
-        UTFEncoderDecoder utfEncoderDecoder = newUTFUtil(true);
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
         assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
 
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
@@ -187,7 +187,7 @@ public class UTFEncoderDecoderTest {
         return random(count, 0, 0, true, true, null, RANDOM);
     }
 
-    private static UTFEncoderDecoder newUTFUtil(boolean fastStringCreator) {
+    private static UTFEncoderDecoder newUTFEncoderDecoder(boolean fastStringCreator) {
         try {
             Constructor<UTFEncoderDecoder> constructor = UTFEncoderDecoder.class.getDeclaredConstructor(boolean.class);
             constructor.setAccessible(true);
