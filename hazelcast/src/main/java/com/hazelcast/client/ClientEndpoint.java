@@ -179,7 +179,7 @@ public final class ClientEndpoint implements Client {
         return clientEngine.getLogger(getClass());
     }
 
-    public void sendResponse(Object response, long callId){
+    public void sendResponse(Object response, int callId){
         if (response instanceof Throwable) {
             response = ClientExceptionConverters.get(getClientType()).convert((Throwable) response);
         }
@@ -189,7 +189,7 @@ public final class ClientEndpoint implements Client {
         clientEngine.sendResponse(this, new ClientResponse(response, callId));
     }
 
-    public void sendEvent(Object event, long callId){
+    public void sendEvent(Object event, int callId){
         clientEngine.sendResponse(this, new ClientResponse(event, callId, true));
     }
 

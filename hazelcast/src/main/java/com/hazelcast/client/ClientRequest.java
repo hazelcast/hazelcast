@@ -28,7 +28,7 @@ import java.io.IOException;
  */
 public abstract class ClientRequest implements Portable {
 
-    long callId = -1;
+    int callId = -1;
 
     transient ClientEngineImpl clientEngine;
 
@@ -64,16 +64,16 @@ public abstract class ClientRequest implements Portable {
 
     public abstract String getServiceName();
 
-    public long getCallId() {
+    public int getCallId() {
         return callId;
     }
 
-    public void setCallId(long callId) {
+    public void setCallId(int callId) {
         this.callId = callId;
     }
 
     public final void writePortable(PortableWriter writer) throws IOException {
-        writer.writeLong("cId", callId);
+        writer.writeInt("cId", callId);
         write(writer);
     }
 
@@ -82,7 +82,7 @@ public abstract class ClientRequest implements Portable {
     }
 
     public final void readPortable(PortableReader reader) throws IOException {
-        callId = reader.readLong("cId");
+        callId = reader.readInt("cId");
         read(reader);
     }
 

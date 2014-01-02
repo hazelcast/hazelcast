@@ -16,14 +16,22 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.ObjectDataInputStream;
+import com.hazelcast.nio.serialization.ObjectDataOutputStream;
+import com.hazelcast.nio.serialization.SerializationService;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -45,14 +53,28 @@ public class ClientConnection implements Connection, Closeable {
 
     private final SocketChannel socketChannel;
 
-    private Address remoteEndpoint;
+    private volatile Address remoteEndpoint;
 
-    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out, int connectionId, SocketChannel socketChannel) {
+    private final ObjectDataOutputStream out;
+
+    private final ObjectDataInputStream in;
+
+    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out, int connectionId, SocketChannel socketChannel) throws IOException {
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in);
         this.writeHandler = new ClientWriteHandler(this, out);
+        final SerializationService ss = connectionManager.getSerializationService();
+        final Socket socket = socketChannel.socket();
+        try {
+            this.out = ss.createObjectDataOutputStream(
+                    new BufferedOutputStream(socket.getOutputStream(), connectionManager.socketSendBufferSize));
+            this.in = ss.createObjectDataInputStream(
+                    new BufferedInputStream(socket.getInputStream(), connectionManager.socketReceiveBufferSize));
+        } catch (IOException e) {
+            throw e;
+        }
     }
 
     public boolean write(SocketWritable packet) {
@@ -64,6 +86,23 @@ public class ClientConnection implements Connection, Closeable {
         }
         writeHandler.enqueueSocketWritable(packet);
         return true;
+    }
+
+    public void init() throws IOException {
+        out.write(Protocols.CLIENT_BINARY.getBytes());
+        out.write(ClientTypes.JAVA.getBytes());
+        out.flush();
+    }
+
+    public void write(Data data) throws IOException {
+        data.writeData(out);
+        out.flush();
+    }
+
+    public Data read() throws IOException {
+        Data data = new Data();
+        data.readData(in);
+        return data;
     }
 
     public Address getEndPoint() {
@@ -148,6 +187,8 @@ public class ClientConnection implements Connection, Closeable {
         }
         readHandler.shutdown();
         writeHandler.shutdown();
+        in.close();
+        out.close();
     }
 
     public void close(Throwable t) {
@@ -166,7 +207,7 @@ public class ClientConnection implements Connection, Closeable {
             message += "Socket explicitly closed";
         }
 
-        logger.info(message);
+        logger.warning(message);
         connectionManager.destroyConnection(this);
     }
 
@@ -188,15 +229,12 @@ public class ClientConnection implements Connection, Closeable {
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientConnection{");
         sb.append("live=").append(live);
-        sb.append(", logger=").append(logger);
         sb.append(", writeHandler=").append(writeHandler);
         sb.append(", readHandler=").append(readHandler);
-        sb.append(", connectionManager=").append(connectionManager);
         sb.append(", connectionId=").append(connectionId);
         sb.append(", socketChannel=").append(socketChannel);
         sb.append(", remoteEndpoint=").append(remoteEndpoint);
         sb.append('}');
         return sb.toString();
     }
-
 }

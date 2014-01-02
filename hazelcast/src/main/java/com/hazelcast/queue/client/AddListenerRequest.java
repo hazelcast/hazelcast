@@ -35,7 +35,7 @@ import java.security.Permission;
 /**
  * @author ali 5/9/13
  */
-public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
     private boolean includeValue;

@@ -144,10 +144,11 @@ final class TransactionProxy {
     }
 
     private <T> T sendAndReceive(Object request) {
-        try {
-            return clusterService.sendAndReceiveFixedConnection(connection, request);
-        } catch (IOException e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+            return null;
+//        try {
+//            return clusterService.sendAndReceiveFixedConnection(connection, request);
+//        } catch (IOException e) {
+//            throw ExceptionUtil.rethrow(e);
+//        }
     }
 }

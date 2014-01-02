@@ -16,18 +16,36 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.util.ErrorHandler;
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class ClientCallFuture<V> implements CompletableFuture<V> {
+public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
 
     private Object response;
+
+    private final ClientRequest request;
+
+    private final ClientClusterServiceImpl clusterService;
+
+    private final EventHandler handler;
+
+    public ClientCallFuture(ClientClusterServiceImpl clusterService, ClientRequest request, EventHandler handler) {
+        this.clusterService = clusterService;
+        this.request = request;
+        this.handler = handler;
+    }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
@@ -61,21 +79,59 @@ public class ClientCallFuture<V> implements CompletableFuture<V> {
         return resolveResponse();
     }
 
-    public void setResponse(Object response) {
+    public void notify(Object response) {
         if (response == null) {
             throw new IllegalArgumentException("response can't be null");
         }
+
+        if (response instanceof TargetDisconnectedException || response instanceof HazelcastInstanceNotActiveException) {
+            if (request instanceof RetryableRequest || clusterService.isRedoOperation()){
+                try {
+                    clusterService._resend(this);
+                } catch (Exception e) {
+                    setResponse(e);
+                }
+                return;
+            }
+        }
+        setResponse(response);
+    }
+
+    private void setResponse(Object response) {
         synchronized (this) {
-            if (this.response != null) {
+            if (this.response != null && handler == null) {
                 throw new IllegalArgumentException("The Future.set method can only be called once");
+            }
+            if (this.response != null && handler != null && response instanceof String) {
+                String uuid = (String)this.response;
+                String alias = (String)response;
+                int callId = request.getCallId();
+                clusterService.reRegisterListener(uuid, alias, callId);
+                return;
             }
             this.response = response;
             this.notifyAll();
         }
     }
 
-    private V resolveResponse() {
-        return (V) ErrorHandler.returnResultOrThrowException(response);
+    private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
+        if (response instanceof Throwable) {
+            ExceptionUtil.fixRemoteStackTrace((Throwable)response, Thread.currentThread().getStackTrace());
+            if (response instanceof ExecutionException) {
+                throw (ExecutionException) response;
+            }
+            if (response instanceof TimeoutException) {
+                throw (TimeoutException) response;
+            }
+            if (response instanceof Error) {
+                throw (Error) response;
+            }
+            if (response instanceof InterruptedException) {
+                throw (InterruptedException) response;
+            }
+            throw new ExecutionException((Throwable)response);
+        }
+        return (V) response;
     }
 
     public void andThen(ExecutionCallback<V> callback) {
@@ -84,5 +140,13 @@ public class ClientCallFuture<V> implements CompletableFuture<V> {
 
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
         //TODO
+    }
+
+    public ClientRequest getRequest() {
+        return request;
+    }
+
+    public EventHandler getHandler() {
+        return handler;
     }
 }

@@ -38,20 +38,12 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     public <T> Future<T> invokeOnRandomTarget(ClientRequest request) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
-        final ClientCallFuture future = new ClientCallFuture();
-        final long callId = clusterService.registerCall(future);
-        request.setCallId(callId);
-        clusterService.send(request);
-        return future;
+        return clusterService.send(request);
     }
 
     public <T> Future<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
-        final ClientCallFuture future = new ClientCallFuture();
-        final long callId = clusterService.registerCall(future);
-        request.setCallId(callId);
-        clusterService.send(request, target);
-        return future;
+        return clusterService.send(request, target);
     }
 
     public <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception {
@@ -65,20 +57,12 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     public <T> Future<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
-        final ClientCallFuture future = new ClientCallFuture();
-        final long callId = clusterService.registerCall(future);
-        request.setCallId(callId);
-        clusterService.sendAndHandle(request, handler);
-        return future;
+        return clusterService.sendAndHandle(request, handler);
     }
 
     public <T> Future<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
-        final ClientCallFuture future = new ClientCallFuture();
-        final long callId = clusterService.registerCall(future);
-        request.setCallId(callId);
-        clusterService.sendAndHandle(request, target, handler);
-        return future;
+        return clusterService.sendAndHandle(request, target, handler);
     }
 
     public <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception {

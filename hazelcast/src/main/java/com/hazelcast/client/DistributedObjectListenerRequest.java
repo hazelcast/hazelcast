@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 /**
  * @ali 10/7/13
  */
-public class DistributedObjectListenerRequest extends CallableClientRequest implements Portable {
+public class DistributedObjectListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     public DistributedObjectListenerRequest() {
     }

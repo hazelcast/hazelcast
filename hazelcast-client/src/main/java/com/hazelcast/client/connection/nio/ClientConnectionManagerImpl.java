@@ -26,11 +26,7 @@ import com.hazelcast.client.connection.Router;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOSelector;
-import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -51,8 +47,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     static final int KILO_BYTE = 1024;
     private static final int BUFFER_SIZE = 16 << 10; // 32k
 
-    public final int socketReceiveBufferSize = 32 * KILO_BYTE;
-    public final int socketSendBufferSize = 32 * KILO_BYTE;
+    public static final int socketReceiveBufferSize = 32 * KILO_BYTE;
+    public static final int socketSendBufferSize = 32 * KILO_BYTE;
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
     private final Authenticator authenticator;
@@ -121,6 +117,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     public void shutdown() {
+        for (ClientConnection connection : connections.values()) {
+            connection.close();
+        }
     }
 
     public ClientConnection getRandomConnection() throws IOException {
@@ -132,18 +131,21 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return getOrConnect(address, authenticator);
     }
 
-    public ClientConnection firstConnection(Address address, Authenticator authenticator) throws IOException {
-        return getOrConnect(address, authenticator);
+    public ClientConnection ownerConnection(Address address, Authenticator authenticator) throws IOException {
+        ClientConnection clientConnection = connect(address, authenticator, true);
+        return clientConnection;
     }
 
     private ClientConnection getOrConnect(Address address, Authenticator authenticator) throws IOException {
+        if (address == null) {
+            throw new Error("TODO");
+        }
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
             synchronized (this) {
                 clientConnection = connections.get(address);
                 if (clientConnection == null) {
-                    clientConnection = connect(address);
-                    authenticator.auth(clientConnection);
+                    clientConnection = connect(address, authenticator, false);
                     connections.put(clientConnection.getRemoteEndpoint(), clientConnection);
                 }
             }
@@ -151,7 +153,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return clientConnection;
     }
 
-    private ClientConnection connect(Address address) throws IOException {
+    private ClientConnection connect(Address address, Authenticator authenticator, boolean isBlock) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
         Socket socket = socketChannel.socket();
         socket.setKeepAlive(socketOptions.isKeepAlive());
@@ -160,9 +162,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (socketOptions.getLingerSeconds() > 0) {
             socket.setSoLinger(true, socketOptions.getLingerSeconds());
         }
-        if (socketOptions.getTimeout() > 0) {
-            socket.setSoTimeout(socketOptions.getTimeout());
-        }
+        socket.setSoTimeout(5000);
         int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
         if (bufferSize < 0) {
             bufferSize = BUFFER_SIZE;
@@ -170,10 +170,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         socket.setSendBufferSize(bufferSize);
         socket.setReceiveBufferSize(bufferSize);
         socketChannel.connect(address.getInetSocketAddress());
-        socketChannel.configureBlocking(false);
         final ClientConnection clientConnection = new ClientConnection(this, inSelector, outSelector, connectionIdGen.incrementAndGet(), socketChannel);
-        clientConnection.getWriteHandler().register();
-        clientConnection.getReadHandler().register();
+        socketChannel.configureBlocking(true);
+        authenticator.auth(clientConnection);
+        socketChannel.configureBlocking(isBlock);
+        socket.setSoTimeout(0);
+        if (!isBlock) {
+            clientConnection.getReadHandler().register();
+        }
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(socket);
         }
@@ -182,10 +186,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
 
     public void destroyConnection(ClientConnection clientConnection) {
-        //TODO
+        Address endpoint = clientConnection.getRemoteEndpoint();
+        if (endpoint != null) {
+            connections.remove(clientConnection.getRemoteEndpoint());
+        }
+        client.getClientClusterService().removeConnectionCalls(clientConnection);
     }
 
-    public void handlePacket(DataAdapter packet) {
+    public void handlePacket(ClientPacket packet) {
         client.getClientClusterService().handlePacket(packet);
     }
 

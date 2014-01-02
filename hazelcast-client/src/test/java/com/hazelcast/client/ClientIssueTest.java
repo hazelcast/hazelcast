@@ -59,6 +59,7 @@ public class ClientIssueTest {
         config1.getGroupConfig().setName("foo");
         config1.getNetworkConfig().setPort(5701);
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
+        instance1.getMap("map").put("key", "value");
 
         final Config config2 = new Config();
         config2.getGroupConfig().setName("bar");
@@ -215,7 +216,7 @@ public class ClientIssueTest {
         try {
             map.get("key1");
             fail();
-        } catch (HazelcastInstanceNotActiveException ignored){
+        } catch (HazelcastException ignored){
         }
         assertFalse(instance.getLifecycleService().isRunning());
     }
@@ -234,6 +235,7 @@ public class ClientIssueTest {
         final CountDownLatch latch = new CountDownLatch(list.size());
         LifecycleListener listener = new LifecycleListener(){
             public void stateChanged(LifecycleEvent event) {
+                System.err.println("asdf event : " + event);
                 final LifecycleState state = list.poll();
                 if (state != null && state.equals(event.getState())){
                     latch.countDown();

@@ -19,6 +19,7 @@ package com.hazelcast.cluster.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientPortableHook;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
@@ -34,7 +35,7 @@ import java.util.Collection;
 /**
  * @author mdogan 5/13/13
  */
-public final class AddMembershipListenerRequest extends CallableClientRequest implements Portable {
+public final class AddMembershipListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     public AddMembershipListenerRequest() {
     }
@@ -66,7 +67,6 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
-        response.add(serializationService.toData(registrationId));
         for (MemberImpl member : memberList) {
             response.add(serializationService.toData(member));
         }

@@ -17,13 +17,14 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.ClientRequest;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.ClientPacket;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.Future;
 
 /**
  * @author mdogan 5/16/13
@@ -42,21 +43,19 @@ public interface ClientClusterService {
 
     long getClusterTime();
 
-    void handlePacket(DataAdapter packet);
+    void handlePacket(ClientPacket packet);
 
-    long registerCall(ClientCallFuture future);
+    Future send(ClientRequest request) throws IOException;
 
-    public boolean deRegisterCall(long callId);
+    Future send(ClientRequest request, Address target) throws IOException ;
 
-    boolean send(ClientRequest request) throws IOException;
+    Future sendAndHandle(ClientRequest request, EventHandler handler) throws IOException ;
 
-    boolean send(ClientRequest request, Address target) throws IOException ;
+    Future sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException ;
 
-    boolean sendAndHandle(ClientRequest request, EventHandler handler) throws IOException ;
-
-    boolean sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException ;
-
-    void registerListener(String uuid, long callId);
+    void registerListener(String uuid, int callId);
 
     public boolean deRegisterListener(String uuid);
+
+    public void removeConnectionCalls(ClientConnection connection);
 }

@@ -29,19 +29,19 @@ public class ClientResponse implements IdentifiedDataSerializable {
 
     Object response;
 
-    long callId;
+    int callId;
 
     boolean event;
 
     public ClientResponse() {
     }
 
-    public ClientResponse(Object response, long callId) {
+    public ClientResponse(Object response, int callId) {
         this.response = response;
         this.callId = callId;
     }
 
-    public ClientResponse(Object response, long callId, boolean event) {
+    public ClientResponse(Object response, int callId, boolean event) {
         this.response = response;
         this.callId = callId;
         this.event = event;
@@ -51,7 +51,7 @@ public class ClientResponse implements IdentifiedDataSerializable {
         return response;
     }
 
-    public long getCallId() {
+    public int getCallId() {
         return callId;
     }
 
@@ -68,13 +68,13 @@ public class ClientResponse implements IdentifiedDataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(callId);
+        out.writeInt(callId);
         out.writeObject(response);
         out.writeBoolean(event);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        callId = in.readLong();
+        callId = in.readInt();
         response = in.readObject();
         event = in.readBoolean();
     }

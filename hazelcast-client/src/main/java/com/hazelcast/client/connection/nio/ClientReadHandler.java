@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.IOSelector;
-import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -34,7 +34,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
 
     private volatile long lastHandle;
 
-    private DataAdapter packet = null;
+    private ClientPacket packet = null;
 
     public ClientReadHandler(ClientConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector);
@@ -69,10 +69,11 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
 
             while (buffer.hasRemaining()) {
                 if (packet == null) {
-                    packet = new DataAdapter(connection.getConnectionManager().getSerializationContext());
+                    packet = new ClientPacket(connection.getConnectionManager().getSerializationContext());
                 }
                 boolean complete = packet.readFrom(buffer);
                 if (complete) {
+                    packet.setConn(connection);
                     connectionManager.handlePacket(packet);
                     packet = null;
                 } else {

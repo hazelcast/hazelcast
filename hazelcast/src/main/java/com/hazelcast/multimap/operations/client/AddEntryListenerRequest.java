@@ -38,7 +38,7 @@ import java.security.Permission;
 /**
  * @author ali 5/10/13
  */
-public class AddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class AddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     String name;
     Data key;

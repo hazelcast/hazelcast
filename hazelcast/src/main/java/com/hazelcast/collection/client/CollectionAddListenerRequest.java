@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.*;
 import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
@@ -43,7 +40,7 @@ import java.security.Permission;
 /**
  * @ali 9/4/13
  */
-public class CollectionAddListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class CollectionAddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
 

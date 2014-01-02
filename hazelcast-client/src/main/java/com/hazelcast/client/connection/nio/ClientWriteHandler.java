@@ -16,9 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.nio.IOSelector;
-import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.util.Clock;
 
@@ -45,7 +43,7 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
 
     private volatile long lastHandle = 0;
 
-    private boolean initialized = false;
+//    private boolean initialized = false;
 
     public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector);
@@ -57,12 +55,12 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
         if (!connection.live()) {
             return;
         }
-        if (!initialized) {
-            initialized = true;
-            buffer.put(Protocols.CLIENT_BINARY.getBytes());
-            buffer.put(ClientTypes.JAVA.getBytes());
-            registerWrite();
-        }
+//        if (!initialized) {
+//            initialized = true;
+//            buffer.put(Protocols.CLIENT_BINARY.getBytes());
+//            buffer.put(ClientTypes.JAVA.getBytes());
+//            registerWrite();
+//        }
 
         if (lastWritable == null && (lastWritable = poll()) == null && buffer.position() == 0) {
             ready = true;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,7 +27,7 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest {
+public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest implements RetryableRequest {
 
     private Predicate predicate;
 
