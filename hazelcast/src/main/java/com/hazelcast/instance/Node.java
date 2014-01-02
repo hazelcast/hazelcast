@@ -626,33 +626,11 @@ public class Node {
     private static final ConstructorFunction<String, BuildInfo> BUILD_INFO_CONSTRUCTOR = new ConstructorFunction<String, BuildInfo>() {
 
         public BuildInfo createNew(String key) {
-
-            String version = System.getProperty("hazelcast.version", "unknown");
-            String build = System.getProperty("hazelcast.build", "unknown");
-            int buildNumber = 0;
-            if ("unknown".equals(version) || "unknown".equals(build)) {
-                try {
-                    final InputStream inRuntimeProperties =
-                            Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-                    if (inRuntimeProperties != null) {
-                        Properties runtimeProperties = new Properties();
-                        runtimeProperties.load(inRuntimeProperties);
-                        inRuntimeProperties.close();
-                        version = runtimeProperties.getProperty("hazelcast.version");
-                        build = runtimeProperties.getProperty("hazelcast.build");
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-            try {
-                buildNumber = Integer.getInteger("hazelcast.build", -1);
-                if (buildNumber == -1) {
-                    buildNumber = Integer.parseInt(build);
-                }
-            } catch (Exception ignored) {
-            }
-
-            return new BuildInfo(version, build, buildNumber);
+            String version = HazelcastUtil.getVersion();
+            String build = HazelcastUtil.getBuild();
+            int buildNumber = HazelcastUtil.getBuildNumber();
+            boolean enterprise = HazelcastUtil.isEnterprise();
+            return new BuildInfo(version, build, buildNumber, enterprise);
         }
     };
 }

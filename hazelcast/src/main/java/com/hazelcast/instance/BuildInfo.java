@@ -24,11 +24,13 @@ public class BuildInfo {
     private final String version;
     private final String build;
     private final int buildNumber;
+    private final boolean enterprise;
 
-    public BuildInfo(String version, String build, int buildNumber) {
+    public BuildInfo(String version, String build, int buildNumber, boolean enterprise) {
         this.version = version;
         this.build = build;
         this.buildNumber = buildNumber;
+        this.enterprise = enterprise;
     }
 
     public String getVersion() {
@@ -41,6 +43,10 @@ public class BuildInfo {
 
     public int getBuildNumber() {
         return buildNumber;
+    }
+
+    public boolean isEnterprise() {
+        return enterprise;
     }
 
 }

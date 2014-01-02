@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.UTFUtil;
+import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.Closeable;
 import java.io.DataOutputStream;
@@ -183,7 +183,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     public void writeUTF(String str) throws IOException {
-        UTFUtil.writeUTF(this, str, utfBuffer);
+        UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
     }
 
     public void write(byte[] b) throws IOException {

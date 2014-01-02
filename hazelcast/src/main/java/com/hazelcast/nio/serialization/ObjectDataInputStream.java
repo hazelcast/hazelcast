@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.UTFUtil;
+import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -210,7 +210,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public String readUTF() throws IOException {
-        return UTFUtil.readUTF(this, utfBuffer);
+        return UTFEncoderDecoder.readUTF(this, utfBuffer);
     }
 
     public void close() throws IOException {
