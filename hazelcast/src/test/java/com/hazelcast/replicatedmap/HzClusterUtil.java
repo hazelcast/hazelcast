@@ -32,8 +32,14 @@ public class HzClusterUtil {
     private HzClusterUtil(HazelcastInstance[] cluster, Config[] configs){
         this.cluster = cluster;
         this.configs = configs;
+    }
 
-        HazelcastInstance hz = getRandomNode();
+    public HazelcastInstance[] getCluster(){
+        return cluster;
+    }
+
+    public Config[] getConfigs(){
+        return configs;
     }
 
     public void setup(String groupName, int port, int clusterSZ){

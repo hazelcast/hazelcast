@@ -4,6 +4,7 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.test.AssertTask;
@@ -11,6 +12,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -23,46 +25,151 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class SplitBrainReplicatedMapTest {
 
-    @Test
-    public void play1() throws Exception {
+    @After
+    public void cleanup() throws Exception {
+        Hazelcast.shutdownAll();
+    }
 
-        HzClusterUtil a = new HzClusterUtil("A", 25701, 4);
+
+    @Test
+    public void splitClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Object() throws Exception {
+        splitClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.OBJECT, 0);
+    }
+
+    @Test
+    public void splitClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Binary() throws Exception {
+        splitClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.BINARY, 0);
+    }
+
+    @Test
+    public void splitClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Object_RepDelay() throws Exception {
+        splitClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.OBJECT, 1000);
+    }
+
+    @Test
+    public void splitClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Binary_RepDelay() throws Exception {
+        splitClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.BINARY, 1000);
+    }
+
+
+
+    public void splitClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat inMemoryFormat, int delay) throws Exception {
+
+        final HzClusterUtil a = new HzClusterUtil("A", 25701, 4);
+        for(Config cfg : a.getConfigs()){
+            cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
+            cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(delay);
+        }
         a.initCluster();
 
-        final ReplicatedMap<Object, Object> map = a.getNode(0).getReplicatedMap("default");
-
         for(int i=0; i<100; i++){
-            map.put(i, i);
+            a.getRandomNode().getReplicatedMap("default").put(i,i);
         }
-
-        final ReplicatedMap<Object, Object> mapx = a.getNode(3).getReplicatedMap("default");
-
 
         HzClusterUtil.assertTrueEventually(
             new AssertTask() {
                 public void run() {
-                    assertEquals(100, map.size());
-                    assertEquals(100, mapx.size());
+                    for(HazelcastInstance hz: a.getCluster())
+                        assertEquals(100, hz.getReplicatedMap("default").size());
                 }
             }
         );
 
-        HzClusterUtil b = a.splitCluster();
+        final HzClusterUtil b = a.splitCluster();
 
         a.assertClusterSizeEventually(2);
         b.assertClusterSizeEventually(2);
 
+        HzClusterUtil.assertTrueEventually(
+                new AssertTask() {
+                    public void run() {
+                        for(HazelcastInstance hz: a.getCluster())
+                            assertEquals(100, hz.getReplicatedMap("default").size());
 
-        final ReplicatedMap<Object, Object> map1 = a.getNode(0).getReplicatedMap("default");
+                        for(HazelcastInstance hz: b.getCluster())
+                            assertEquals(100, hz.getReplicatedMap("default").size());
+                    }
+                }
+        );
+    }
 
-        final ReplicatedMap<Object, Object> map2 = b.getNode(0).getReplicatedMap("default");
+
+    @Test
+    public void splitJoinedClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Object() throws Exception {
+        splitJoinedClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.OBJECT, 0);
+    }
+
+    @Test
+    public void splitJoinedClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Binary() throws Exception {
+        splitJoinedClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.BINARY, 0);
+    }
+
+    @Test
+    public void splitJoinedClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Object_RepDealy() throws Exception {
+        splitJoinedClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.OBJECT, 1000);
+    }
+
+    @Test
+    public void splitJoinedClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Binary_RepDealy() throws Exception {
+        splitJoinedClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.BINARY, 1000);
+    }
+
+
+
+    public void splitJoinedClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat inMemoryFormat, int delay) throws Exception {
+
+        final HzClusterUtil a = new HzClusterUtil("A", 25701, 4);
+        for(Config cfg : a.getConfigs()){
+            cfg.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
+            cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(delay);
+        }
+        a.initCluster();
+
+        for(int i=0; i<100; i++){
+            a.getRandomNode().getReplicatedMap("default").put(i,i);
+        }
+
+        HzClusterUtil.assertTrueEventually(
+                new AssertTask() {
+                    public void run() {
+                        for(HazelcastInstance hz: a.getCluster())
+                            assertEquals(100, hz.getReplicatedMap("default").size());
+                    }
+                }
+        );
+
+        final HzClusterUtil b = a.splitCluster();
+
+        a.assertClusterSizeEventually(2);
+        b.assertClusterSizeEventually(2);
+
+        HzClusterUtil.assertTrueEventually(
+                new AssertTask() {
+                    public void run() {
+                        for(HazelcastInstance hz: a.getCluster())
+                            assertEquals(100, hz.getReplicatedMap("default").size());
+
+                        for(HazelcastInstance hz: b.getCluster())
+                            assertEquals(100, hz.getReplicatedMap("default").size());
+                    }
+                }
+        );
+
+
+        for(int i=0; i<100; i++){
+            a.getRandomNode().getReplicatedMap("default").put(i+"A",i);
+            b.getRandomNode().getReplicatedMap("default").put(i+"B",i);
+        }
 
 
         HzClusterUtil.assertTrueEventually(
                 new AssertTask() {
                     public void run() {
-                        assertEquals(100, map1.size());
-                        assertEquals(100, map2.size());
+                        for(HazelcastInstance hz: a.getCluster())
+                            assertEquals(200, hz.getReplicatedMap("default").size());
+
+                        for(HazelcastInstance hz: b.getCluster())
+                            assertEquals(200, hz.getReplicatedMap("default").size());
                     }
                 }
         );
@@ -71,15 +178,15 @@ public class SplitBrainReplicatedMapTest {
         a.mergeCluster(b);
         a.assertClusterSizeEventually(4);
 
-        final ReplicatedMap<Object, Object> map3 = a.getNode(0).getReplicatedMap("default");
         HzClusterUtil.assertTrueEventually(
                 new AssertTask() {
                     public void run() {
-                        assertEquals(100, map3.size());
+                        for(HazelcastInstance hz: a.getCluster())
+                            assertEquals(300, hz.getReplicatedMap("default").size());
                     }
                 }
         );
-
     }
+
 
 }
