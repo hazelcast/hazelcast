@@ -62,10 +62,6 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
-    public void onEnqueue() {
-    }
-
-    @Override
     public boolean shouldReply() {
         return true;
     }

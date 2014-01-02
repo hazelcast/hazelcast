@@ -285,10 +285,6 @@ public class DataAdapter implements SocketWritable, SocketReadable {
         return isStatusSet(stAll);
     }
 
-    @Override
-    public void onEnqueue() {
-    }
-
     public void reset() {
         buffer = null;
         classId = 0;
