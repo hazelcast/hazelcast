@@ -88,7 +88,9 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
         String url = managementCenterConfig.getUrl();
 
-        if(managementCenterConfig.isEnabled() && url==null){
+        boolean hostedManCenterEnabled = instance.node.getGroupProperties().HOSTED_MANAGEMENT_ENABLED.getBoolean();
+
+        if(hostedManCenterEnabled && managementCenterConfig.isEnabled() && url==null){
 
             //if the url is not set, but the management center is enabled, we are going to point him to the hosted management solution.
             //if the url is set, he is running his own management center instance and we are not going to bother him with the
