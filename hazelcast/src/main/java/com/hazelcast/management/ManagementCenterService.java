@@ -56,8 +56,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     public final static AtomicBoolean DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO =  new AtomicBoolean(false);
 
-    public static final String HOSTED_MANCENTER_URL = "http://mancenter-lb-321763326.us-east-1.elb.amazonaws.com:8080/mancenter-3.2-SNAPSHOT";
-
     private final HazelcastInstanceImpl instance;
     private final TaskPoller taskPoller;
     private final StateSender stateSender;
@@ -91,6 +89,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         boolean hostedManCenterEnabled = instance.node.getGroupProperties().HOSTED_MANAGEMENT_ENABLED.getBoolean();
 
         if(hostedManCenterEnabled && managementCenterConfig.isEnabled() && url==null){
+            String hostedManCenterUrl = instance.node.getGroupProperties().HOSTED_MANAGEMENT_URL.getString();
 
             //if the url is not set, but the management center is enabled, we are going to point him to the hosted management solution.
             //if the url is set, he is running his own management center instance and we are not going to bother him with the
@@ -106,11 +105,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 if(DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO.compareAndSet(false,true)){
                     logger.info("======================================================");
                     logger.info("Manage your Hazelcast cluster with the Management Center SaaS Application");
-                    logger.info(HOSTED_MANCENTER_URL+"/register.jsp");
+                    logger.info(hostedManCenterUrl+"/register.jsp");
                     logger.info("======================================================");
                 }
             }else{
-                url = HOSTED_MANCENTER_URL;
+                url = hostedManCenterUrl;
                 //the user has provided a security token.
 
                 if (projectId == null) {

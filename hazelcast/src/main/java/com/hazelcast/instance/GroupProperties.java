@@ -22,6 +22,7 @@ import com.hazelcast.util.HealthMonitorLevel;
 public class GroupProperties {
 
     public static final String PROP_HOSTED_MANAGEMENT_ENABLED = "hazelcast.hosted.management.enabled";
+    public static final String PROP_HOSTED_MANAGEMENT_URL = "hazelcast.hosted.management.url";
     public static final String PROP_HEALTH_MONITORING_LEVEL = "hazelcast.health.monitoring.level";
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = "hazelcast.health.monitoring.delay.seconds";
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
@@ -89,6 +90,7 @@ public class GroupProperties {
      * So it will be disabled by default.
      */
     public final GroupProperty HOSTED_MANAGEMENT_ENABLED;
+    public final GroupProperty HOSTED_MANAGEMENT_URL;
 
     public final GroupProperty OPERATION_THREAD_COUNT;
 
@@ -212,6 +214,8 @@ public class GroupProperties {
 
     public GroupProperties(Config config) {
         HOSTED_MANAGEMENT_ENABLED = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_ENABLED, "false");
+        HOSTED_MANAGEMENT_URL = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_URL, "http://mancenter-lb-321763326.us-east-1.elb.amazonaws.com:8080/mancenter-3.2-SNAPSHOT");
+
         HEALTH_MONITORING_LEVEL = new GroupProperty(config,PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
         HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
