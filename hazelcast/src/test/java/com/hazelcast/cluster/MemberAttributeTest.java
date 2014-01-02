@@ -221,7 +221,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         h2.getCluster().addMembershipListener(listener);
         h1.getCluster().addMembershipListener(listener);
 
-        m1.setAttribute("Test", null);
+        m1.removeAttribute("Test");
 
         // Force sleep to distribute value
         latch.await(2, TimeUnit.SECONDS);

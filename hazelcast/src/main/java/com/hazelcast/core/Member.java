@@ -82,11 +82,19 @@ public interface Member extends DataSerializable, Endpoint {
     /**
      * Defines a key-value pair attribute for this member available
      * to other cluster members.
-     * Null as value removes the value from the attribute map.
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
      */
     void setAttribute(String key, Object value);
+
+    /**
+     * Removes a key-value pair attribute for this member if given key was
+     * previously assigned as an attribute.<br/>
+     * If key wasn't assigned to a value this method does nothing.
+     *
+     * @param key The key to be deleted from the member attributes
+     */
+    void removeAttribute(String key);
 
 }

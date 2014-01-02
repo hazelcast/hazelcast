@@ -178,6 +178,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     public void setAttribute(String key, Object value) {
         if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        if (key == null) throw new IllegalArgumentException("key must not be null");
         if (value == null) throw new IllegalArgumentException("value must not be null");
         if (value != null) {
             Object oldValue = attributes.put(key, value);
@@ -190,23 +191,48 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         if (instance != null) {
             NodeEngineImpl nodeEngine = instance.node.nodeEngine;
             OperationService os = nodeEngine.getOperationService();
-            MemberAttributeChangedOperation operation;
-            if (value != null) {
-                operation = new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
-            } else {
-                operation = new MemberAttributeChangedOperation(MapOperationType.REMOVE, key, null);
-            }
+            MemberAttributeChangedOperation operation =
+                    new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
             String uuid = nodeEngine.getLocalMember().getUuid();
             operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
             try {
                 for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
-                    os.send(operation, member.getAddress());
+                    if (!member.localMember()) {
+                        os.send(operation, member.getAddress());
+                    }
                 }
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
             }
         }
     }
+
+    public void removeAttribute(String key) {
+        if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        if (key == null) throw new IllegalArgumentException("key must not be null");
+        Object value = attributes.remove(key);
+        if (value == null) {
+            return;
+        }
+        if (instance != null) {
+            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+            OperationService os = nodeEngine.getOperationService();
+            MemberAttributeChangedOperation operation =
+                    new MemberAttributeChangedOperation(MapOperationType.REMOVE, key, null);
+            String uuid = nodeEngine.getLocalMember().getUuid();
+            operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
+            try {
+                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
+                    if (!member.localMember()) {
+                        os.send(operation, member.getAddress());
+                    }
+                }
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
+        }
+    }
+
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         if (hazelcastInstance instanceof HazelcastInstanceImpl) {
             instance = (HazelcastInstanceImpl) hazelcastInstance;
