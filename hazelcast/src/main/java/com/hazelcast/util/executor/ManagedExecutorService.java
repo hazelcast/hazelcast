@@ -98,13 +98,13 @@ public final class ManagedExecutorService implements ExecutorService {
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task);
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, getAsyncExecutor());
         execute(rf);
         return rf;
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result);
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result, getAsyncExecutor());
         execute(rf);
         return rf;
     }
@@ -168,6 +168,10 @@ public final class ManagedExecutorService implements ExecutorService {
         throw new UnsupportedOperationException();
     }
 
+    private ExecutorService getAsyncExecutor() {
+        return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+    }
+
     private class Worker implements Runnable {
 
         public void run() {
@@ -198,114 +202,6 @@ public final class ManagedExecutorService implements ExecutorService {
             } finally {
                 lock.unlock();
             }
-        }
-    }
-
-    private class CompletableFutureTask<V> extends FutureTask<V> implements CompletableFuture<V> {
-
-        private final AtomicReferenceFieldUpdater<CompletableFutureTask, ExecutionCallbackNode> callbackUpdater;
-
-        private volatile ExecutionCallbackNode<V> callbackHead;
-
-        public CompletableFutureTask(Callable<V> callable) {
-            super(callable);
-            this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
-                    CompletableFutureTask.class, ExecutionCallbackNode.class, "callbackHead");
-        }
-
-        public CompletableFutureTask(Runnable runnable, V result) {
-            super(runnable, result);
-            this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
-                    CompletableFutureTask.class, ExecutionCallbackNode.class, "callbackHead");
-        }
-
-        @Override
-        public void run() {
-            try {
-                super.run();
-            } finally {
-                fireCallbacks();
-            }
-        }
-
-        @Override
-        public void andThen(ExecutionCallback<V> callback) {
-            andThen(callback, getAsyncExecutor());
-        }
-
-        @Override
-        public void andThen(ExecutionCallback<V> callback, Executor executor) {
-            isNotNull(callback, "callback");
-            isNotNull(executor, "executor");
-
-            if (isDone()) {
-                runAsynchronous(callback, executor);
-                return;
-            }
-            for (;;) {
-                ExecutionCallbackNode oldCallbackHead = callbackHead;
-                ExecutionCallbackNode newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
-                if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
-                    break;
-                }
-            }
-        }
-
-        private Object readResult() {
-            try {
-                return get();
-            } catch (Throwable t) {
-                return t;
-            }
-        }
-
-        private void fireCallbacks() {
-            ExecutionCallbackNode<V> callbackChain;
-            for (;;) {
-                callbackChain = callbackHead;
-                if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
-                    break;
-                }
-            }
-            while (callbackChain != null) {
-                runAsynchronous(callbackChain.callback, callbackChain.executor);
-                callbackChain = callbackChain.next;
-            }
-        }
-
-        private void runAsynchronous(final ExecutionCallback<V> callback, final Executor executor) {
-            final Object result = readResult();
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (result instanceof Throwable) {
-                            callback.onFailure((Throwable) result);
-                        } else {
-                            callback.onResponse((V) result);
-                        }
-                    } catch (Throwable t) {
-                        //todo: improved error message
-                        logger.severe("Failed to async for " + CompletableFutureTask.this, t);
-                    }
-                }
-            });
-        }
-
-        private ExecutorService getAsyncExecutor() {
-            return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
-        }
-    }
-
-    private static class ExecutionCallbackNode<E> {
-        private final ExecutionCallback<E> callback;
-        private final Executor executor;
-        private final ExecutionCallbackNode<E> next;
-
-        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
-            this.callback = callback;
-            this.executor = executor;
-            this.next = next;
         }
     }
 

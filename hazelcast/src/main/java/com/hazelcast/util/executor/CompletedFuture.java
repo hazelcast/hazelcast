@@ -16,24 +16,25 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 /**
  * @author mdogan 1/18/13
  */
-public final class CompletedFuture<V> implements Future<V> {
+public final class CompletedFuture<V> implements CompletableFuture<V> {
 
     private final SerializationService serializationService;
+    private final ExecutorService asyncExecutor;
     private final Object value;
 
-    public CompletedFuture(SerializationService serializationService, Object value) {
+    public CompletedFuture(SerializationService serializationService, Object value, ExecutorService asyncExecutor) {
         this.serializationService = serializationService;
+        this.asyncExecutor = asyncExecutor;
         this.value = value;
     }
 
@@ -68,5 +69,24 @@ public final class CompletedFuture<V> implements Future<V> {
 
     public boolean isDone() {
         return true;
+    }
+
+    @Override
+    public void andThen(ExecutionCallback<V> callback) {
+        andThen(callback, asyncExecutor);
+    }
+
+    @Override
+    public void andThen(final ExecutionCallback<V> callback, final Executor executor) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (value instanceof Throwable) {
+                    callback.onFailure((Throwable) value);
+                } else {
+                    callback.onResponse((V) value);
+                }
+            }
+        });
     }
 }

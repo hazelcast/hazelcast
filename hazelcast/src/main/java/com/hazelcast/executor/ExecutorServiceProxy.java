@@ -20,10 +20,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -36,12 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -122,7 +114,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                 future.get();
             } catch (Exception ignored) {
             }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), result);
+            return new CompletedFuture<T>(nodeEngine.getSerializationService(), result, getAsyncExecutor());
         }
         return new CancellableDelegatingFuture<T>(future, result, nodeEngine, uuid, partitionId);
     }
@@ -151,7 +143,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             } catch (Exception e) {
                 response = e;
             }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response);
+            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response, getAsyncExecutor());
         }
         return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, partitionId);
     }
@@ -206,7 +198,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             } catch (Exception e) {
                 response = e;
             }
-            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response);
+            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response, getAsyncExecutor());
         }
         return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, target);
     }
@@ -325,7 +317,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             } catch (ExecutionException e) {
                 value = e;
             }
-            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value));
+            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
         }
         return result;
     }
@@ -376,12 +368,12 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                             } catch (ExecutionException ex) {
                                 v = ex;
                             }
-                            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v));
+                            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
                         }
                     }
                     break;
                 }
-                result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value));
+                result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
                 timeoutNanos -= System.nanoTime() - start;
             }
         } catch (Throwable t) {
@@ -480,5 +472,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         sb.append("name='").append(name).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    private ExecutorService getAsyncExecutor() {
+        return getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 }
