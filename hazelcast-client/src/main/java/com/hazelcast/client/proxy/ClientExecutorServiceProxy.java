@@ -240,6 +240,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         for (Callable<T> task : tasks) {
             futures.add(submit(task));
         }
+        ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
         for (Future<T> future : futures) {
             Object value;
             try {
@@ -247,7 +248,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             } catch (ExecutionException e) {
                 value = e;
             }
-            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value));
+            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value, asyncExecutor));
         }
         return result;
     }
@@ -281,10 +282,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return new RunnableAdapter<T>(command);
     }
 
-    private <T> Future<T> submitToKeyOwnerInternal(Callable<T> task, Data partitionKey) {
+    private <T> CompletableFuture<T> submitToKeyOwnerInternal(Callable<T> task, Data partitionKey) {
         check(task);
         ClientPartitionService partitionService = getContext().getPartitionService();
-        Future<T> f;
+        CompletableFuture<T> f;
         if (partitionKey == null){
             final LocalTargetCallableRequest request = new LocalTargetCallableRequest(name, task);
             f = getContext().getExecutionService().submit(new Callable<T>() {
@@ -301,10 +302,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return f;
     }
 
-    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address){
+    private <T> CompletableFuture<T> submitToTargetInternal(Callable<T> task, final Address address){
         check(task);
         final TargetCallableRequest request = new TargetCallableRequest(name, task, address);
-        Future<T> f = getContext().getExecutionService().submit(new Callable<T>() {
+        CompletableFuture<T> f = getContext().getExecutionService().submit(new Callable<T>() {
             public T call() throws Exception {
                 return invoke(request, address);
             }
@@ -382,7 +383,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> Future<T> checkSync(Future<T> f) {
+    private <T> CompletableFuture<T> checkSync(CompletableFuture<T> f) {
         boolean sync = false;
         final long last = lastSubmitTime;
         final long now = Clock.currentTimeMillis();
@@ -400,7 +401,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             } catch (Exception e) {
                 response = e;
             }
-            return new CompletedFuture<T>(getContext().getSerializationService(), response);
+            ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
+            return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
         }
         return f;
     }

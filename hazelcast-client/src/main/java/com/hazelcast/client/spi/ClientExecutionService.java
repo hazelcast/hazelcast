@@ -16,8 +16,10 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.core.CompletableFuture;
+
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -28,13 +30,16 @@ public interface ClientExecutionService {
 
     void execute(Runnable command);
 
-    Future<?> submit(Runnable task);
+    CompletableFuture<?> submit(Runnable task);
 
-    <T> Future<T> submit(Callable<T> task);
+    <T> CompletableFuture<T> submit(Callable<T> task);
 
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
     ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
 
     ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    ExecutorService getAsyncExecutor();
+
 }
