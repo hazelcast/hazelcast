@@ -188,55 +188,55 @@ public class QueryEntry implements QueryableEntry {
             }
         }
 
-        class PortableIntegerFieldExtractor implements PortableFieldExtractor {
+        static class PortableIntegerFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readInt(fieldName);
             }
         }
 
-        class PortableByteFieldExtractor implements PortableFieldExtractor {
+        static class PortableByteFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readByte(fieldName);
             }
         }
 
-        class PortableLongFieldExtractor implements PortableFieldExtractor {
+        static class PortableLongFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readLong(fieldName);
             }
         }
 
-        class PortableDoubleFieldExtractor implements PortableFieldExtractor {
+        static class PortableDoubleFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readDouble(fieldName);
             }
         }
 
-        class PortableFloatFieldExtractor implements PortableFieldExtractor {
+        static class PortableFloatFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readFloat(fieldName);
             }
         }
 
-        class PortableShortFieldExtractor implements PortableFieldExtractor {
+        static class PortableShortFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readShort(fieldName);
             }
         }
 
-        class PortableUtfFieldExtractor implements PortableFieldExtractor {
+        static class PortableUtfFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readUTF(fieldName);
             }
         }
 
-        class PortableCharFieldExtractor implements PortableFieldExtractor {
+        static class PortableCharFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readChar(fieldName);
             }
         }
 
-        class PortableBooleanFieldExtractor implements PortableFieldExtractor {
+        static class PortableBooleanFieldExtractor implements PortableFieldExtractor {
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readBoolean(fieldName);
             }

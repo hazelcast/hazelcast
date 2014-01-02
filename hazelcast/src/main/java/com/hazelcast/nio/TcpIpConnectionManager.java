@@ -180,7 +180,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
     }
 
-    class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+    static class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
         public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
             return new DefaultSocketChannelWrapper(socketChannel);
         }

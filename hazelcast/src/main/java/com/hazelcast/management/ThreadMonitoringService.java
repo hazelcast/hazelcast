@@ -36,7 +36,7 @@ public class ThreadMonitoringService {
         this.threadGroup = threadGroup;
     }
 
-    class ThreadCpuInfo {
+    static class ThreadCpuInfo {
         final Thread thread;
         long lastSet = 0;
         long lastValue = 0;

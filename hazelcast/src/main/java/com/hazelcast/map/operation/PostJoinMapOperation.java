@@ -64,10 +64,10 @@ public class PostJoinMapOperation extends AbstractOperation {
         interceptorInfoList.add(interceptorInfo);
     }
 
-    class InterceptorInfo implements DataSerializable {
+    static class InterceptorInfo implements DataSerializable {
 
         String mapName;
-        List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
+        final List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
 
         InterceptorInfo(String mapName) {
             this.mapName = mapName;
@@ -78,7 +78,6 @@ public class PostJoinMapOperation extends AbstractOperation {
 
         void addInterceptor(String id, MapInterceptor interceptor) {
             interceptors.add(new AbstractMap.SimpleImmutableEntry<String, MapInterceptor>(id, interceptor));
-
         }
 
         @Override
@@ -103,7 +102,7 @@ public class PostJoinMapOperation extends AbstractOperation {
         }
     }
 
-    class MapIndexInfo implements DataSerializable {
+    static class MapIndexInfo implements DataSerializable {
         String mapName;
         private List<MapIndexInfo.IndexInfo> lsIndexes = new LinkedList<MapIndexInfo.IndexInfo>();
 

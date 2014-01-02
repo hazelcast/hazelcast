@@ -900,7 +900,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    private class OperationThread extends Thread {
+    private static class OperationThread extends Thread {
 
         final int id;
 
@@ -918,7 +918,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    private class RemoteCallKey {
+    private static class RemoteCallKey {
         private final long time = Clock.currentTimeMillis();
         private final Address callerAddress; // human readable caller
         private final String callerUuid;

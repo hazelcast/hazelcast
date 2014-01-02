@@ -407,7 +407,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return f;
     }
 
-    private class ExecutionCallbackWrapper<T> implements ExecutionCallback<T>{
+    private static class ExecutionCallbackWrapper<T> implements ExecutionCallback<T>{
 
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper;
 
@@ -426,7 +426,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private class MultiExecutionCallbackWrapper implements MultiExecutionCallback {
+    private static class MultiExecutionCallbackWrapper implements MultiExecutionCallback {
 
         private final AtomicInteger members;
         private final MultiExecutionCallback multiExecutionCallback;
