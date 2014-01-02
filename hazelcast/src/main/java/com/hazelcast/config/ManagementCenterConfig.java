@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+/**
+ *
+ */
 public class ManagementCenterConfig {
 
     private boolean enabled = true;
@@ -24,7 +27,7 @@ public class ManagementCenterConfig {
     
     private int updateInterval = 5;
 
-    private String projectId;
+    private String clusterId;
 
     private String securityToken;
 
@@ -63,12 +66,12 @@ public class ManagementCenterConfig {
         return this;
     }
 
-    public String getProjectId() {
-        return projectId;
+    public String getClusterId() {
+        return clusterId;
     }
 
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
     }
 
     public String getSecurityToken() {
@@ -85,7 +88,7 @@ public class ManagementCenterConfig {
         sb.append("ManagementCenterConfig");
         sb.append("{enabled=").append(enabled);
         sb.append(", url='").append(url).append('\'');
-        sb.append(", projectId='").append(projectId).append('\'');
+        sb.append(", clusterId='").append(clusterId).append('\'');
         sb.append(", securityToken='").append(securityToken).append('\'');
         sb.append(", url='").append(url).append('\'');
         sb.append(", updateInterval=").append(updateInterval);

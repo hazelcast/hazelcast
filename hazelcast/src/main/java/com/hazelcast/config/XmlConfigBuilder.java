@@ -1096,8 +1096,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             enabled = true;
         }
 
-        final Node projectIdNode = attrs.getNamedItem("project-id");
-        final String projectId =getTextContent(projectIdNode);
+        final Node clusterIdNode = attrs.getNamedItem("cluster-id");
+        final String clusterId =getTextContent(clusterIdNode);
 
         final String url =getTextContent(node);
 
@@ -1105,7 +1105,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         managementCenterConfig.setEnabled(enabled);
         managementCenterConfig.setUpdateInterval(interval);
         managementCenterConfig.setSecurityToken("".equals(securityToken) ? null : securityToken);
-        managementCenterConfig.setProjectId("".equals(projectId) ? null : projectId);
+        managementCenterConfig.setClusterId("".equals(clusterId) ? null : clusterId);
         managementCenterConfig.setUrl("".equals(url) ? null : url);
     }
 
