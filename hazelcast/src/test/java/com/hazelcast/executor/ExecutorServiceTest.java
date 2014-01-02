@@ -762,6 +762,11 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
             e.put("hazelcast", hazelcastInstance);
             try {
+                // For new JavaScript engine called Nashorn we need the compatibility script
+                if (e.getFactory().getEngineName().toLowerCase().contains("nashorn")) {
+                    e.eval("load('nashorn:mozilla_compat.js');");
+                }
+
                 e.eval("importPackage(java.lang);");
                 e.eval("importPackage(java.util);");
                 e.eval("importPackage(com.hazelcast.core);");
