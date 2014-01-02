@@ -21,8 +21,11 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -34,6 +37,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1155,6 +1159,24 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals("the_last_value", testMapStore.getStore().get("key"));
     }
 
+    @Test
+    public void testReadingConfiguration() throws Exception {
+        String mapName = "mapstore-test";
+        InputStream is = getClass().getResourceAsStream("/com/hazelcast/config/hazelcast-mapstore-config.xml");
+        XmlConfigBuilder builder = new XmlConfigBuilder(is);
+        Config config = builder.build();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        MapProxyImpl map = (MapProxyImpl) hz.getMap(mapName);
+        MapService mapService = (MapService) map.getService();
+        MapContainer mapContainer = mapService.getMapContainer(mapName);
+        MapStoreWrapper mapStoreWrapper = mapContainer.getStore();
+        Set keys = mapStoreWrapper.loadAllKeys();
+        assertEquals(2, keys.size());
+        assertEquals("true", mapStoreWrapper.load("my-prop-1"));
+        assertEquals("foo", mapStoreWrapper.load("my-prop-2"));
+    }
+
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
     }
@@ -1167,6 +1189,49 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return config;
+    }
+
+    public static class BasicMapStoreFactory implements MapStoreFactory<String, String> {
+
+        @Override
+        public MapLoader<String, String> newMapStore(String mapName, final Properties properties) {
+            return new MapStore<String, String>() {
+                @Override
+                public void store(String key, String value) {
+                }
+
+                @Override
+                public void storeAll(Map map) {
+                }
+
+                @Override
+                public void delete(String key) {
+                }
+
+                @Override
+                public void deleteAll(Collection keys) {
+                }
+
+                @Override
+                public String load(String key) {
+                    return properties.getProperty(key.toString());
+                }
+
+                @Override
+                public Map<String, String> loadAll(Collection<String> keys) {
+                    Map<String, String> map = new HashMap<String, String>();
+                    for (String key : keys) {
+                        map.put(key, properties.getProperty(key));
+                    }
+                    return map;
+                }
+
+                @Override
+                public Set<String> loadAllKeys() {
+                    return new HashSet<String>(properties.stringPropertyNames());
+                }
+            };
+        }
     }
 
     public static class MapStoreWithStoreCount extends SimpleMapStore {
