@@ -1081,14 +1081,32 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void handleManagementCenterConfig(final Node node) {
         NamedNodeMap attrs = node.getAttributes();
+
         final Node enabledNode = attrs.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
+        boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
+
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
                 getTextContent(intervalNode), 5) : 5;
-        config.getManagementCenterConfig().setEnabled(enabled);
-        config.getManagementCenterConfig().setUpdateInterval(interval);
-        config.getManagementCenterConfig().setUrl(getTextContent(node));
+
+        final Node securityTokenNode = attrs.getNamedItem("security-token");
+        final String securityToken =getTextContent(securityTokenNode);
+
+        if (securityToken != null && enabledNode == null) {
+            enabled = true;
+        }
+
+        final Node clusterIdNode = attrs.getNamedItem("cluster-id");
+        final String clusterId =getTextContent(clusterIdNode);
+
+        final String url =getTextContent(node);
+
+        ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
+        managementCenterConfig.setEnabled(enabled);
+        managementCenterConfig.setUpdateInterval(interval);
+        managementCenterConfig.setSecurityToken("".equals(securityToken) ? null : securityToken);
+        managementCenterConfig.setClusterId("".equals(clusterId) ? null : clusterId);
+        managementCenterConfig.setUrl("".equals(url) ? null : url);
     }
 
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {

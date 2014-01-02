@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -221,6 +220,38 @@ public class XMLConfigBuilderTest {
         assertTrue(mapConfig.getInMemoryFormat().equals(InMemoryFormat.BINARY));
         assertTrue(mapConfig.getEvictionPolicy().equals(MapConfig.EvictionPolicy.NONE));
         assertTrue(mapConfig.getMaxSizeConfig().getMaxSizePolicy().equals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION));
+    }
+
+
+    @Test
+    public void testManagementCenterConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<management-center enabled=\"true\" security-token=\"someToken\" cluster-id=\"someClusterId\">"+
+                        "someUrl"+
+                        "</management-center>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertTrue(manCenterCfg.isEnabled());
+        assertEquals("someClusterId",manCenterCfg.getClusterId());
+        assertEquals("someToken",manCenterCfg.getSecurityToken());
+        assertEquals("someUrl",manCenterCfg.getUrl());
+    }
+
+    @Test
+    public void testManagementCenterConfig_onlySecurityTokenSet() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<management-center security-token=\"someToken\">"+
+                        "</management-center>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertTrue(manCenterCfg.isEnabled());
+        assertEquals("someToken",manCenterCfg.getSecurityToken());
+        assertNull(manCenterCfg.getClusterId());
+        assertNull(manCenterCfg.getUrl());
     }
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {

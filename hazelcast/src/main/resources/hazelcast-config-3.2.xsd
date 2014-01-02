@@ -598,6 +598,8 @@
             <xs:extension base="xs:string">
                 <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
                 <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional"/>
+                <xs:attribute name="cluster-id" type="xs:string"  use="optional"/>
+                <xs:attribute name="security-token" type="xs:string"  use="optional"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
