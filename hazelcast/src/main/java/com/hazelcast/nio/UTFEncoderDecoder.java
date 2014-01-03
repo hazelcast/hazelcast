@@ -70,11 +70,13 @@ public final class UTFEncoderDecoder {
 
         int length = str.length();
         out.writeInt(length);
-        int chunkSize = (length / STRING_CHUNK_SIZE) + 1;
-        for (int i = 0; i < chunkSize; i++) {
-            int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-            int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-            writeShortUTF(out, str, beginIndex, endIndex, buffer);
+        if (length > 0) {
+            int chunkSize = (length / STRING_CHUNK_SIZE) + 1;
+            for (int i = 0; i < chunkSize; i++) {
+                int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
+                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
+                writeShortUTF(out, str, beginIndex, endIndex, buffer);
+            }
         }
     }
 
@@ -128,11 +130,13 @@ public final class UTFEncoderDecoder {
         if (isNull) return null;
         int length = in.readInt();
         final char[] data = new char[length];
-        int chunkSize = length / STRING_CHUNK_SIZE + 1;
-        for (int i = 0; i < chunkSize; i++) {
-            int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-            int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-            readShortUTF(in, data, beginIndex, endIndex, buffer);
+        if (length > 0) {
+            int chunkSize = length / STRING_CHUNK_SIZE + 1;
+            for (int i = 0; i < chunkSize; i++) {
+                int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
+                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
+                readShortUTF(in, data, beginIndex, endIndex, buffer);
+            }
         }
         return stringCreator.buildString(data);
     }
