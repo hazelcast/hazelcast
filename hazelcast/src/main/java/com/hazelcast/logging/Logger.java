@@ -19,6 +19,9 @@ package com.hazelcast.logging;
 import com.hazelcast.nio.ClassLoaderUtil;
 
 public final class Logger {
+
+    private Logger(){}
+
     private static volatile LoggerFactory loggerFactory = null;
     private static final Object factoryLock = new Object();
 

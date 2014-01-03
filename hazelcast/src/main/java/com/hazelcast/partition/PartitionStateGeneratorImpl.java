@@ -417,7 +417,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         void postProcessPartitionTable(int index);
     }
 
-    private class DefaultNodeGroup implements NodeGroup {
+    private static class DefaultNodeGroup implements NodeGroup {
         final PartitionTable groupPartitionTable = new PartitionTable();
         final Map<Address, PartitionTable> nodePartitionTables = new HashMap<Address, PartitionTable>();
         final Set<Address> nodes = nodePartitionTables.keySet();
@@ -568,7 +568,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
-    private class SingleNodeGroup implements NodeGroup {
+    private static class SingleNodeGroup implements NodeGroup {
         final PartitionTable nodeTable = new PartitionTable();
         Address address = null;
         Set<Address> nodes;

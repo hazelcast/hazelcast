@@ -16,11 +16,11 @@
 
 package com.hazelcast.aws.impl;
 
-public class Constants {
+public interface Constants {
 
-    public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    public static final String DOC_VERSION = "2011-05-15";
-    public static final String SIGNATURE_METHOD = "HmacSHA256";
-    public static final String SIGNATURE_VERSION = "2";
-    public static final String GET = "GET";
+    String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    String DOC_VERSION = "2011-05-15";
+    String SIGNATURE_METHOD = "HmacSHA256";
+    String SIGNATURE_VERSION = "2";
+    String GET = "GET";
 }

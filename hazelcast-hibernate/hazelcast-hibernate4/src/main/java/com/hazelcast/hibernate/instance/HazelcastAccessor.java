@@ -33,6 +33,8 @@ import java.util.logging.Level;
  */
 public final class HazelcastAccessor {
 
+    private HazelcastAccessor(){}
+
     static final ILogger logger = Logger.getLogger(HazelcastAccessor.class);
 
     /**

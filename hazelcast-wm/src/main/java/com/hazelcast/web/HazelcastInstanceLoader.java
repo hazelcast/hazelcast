@@ -121,4 +121,6 @@ final class HazelcastInstanceLoader {
     private static boolean isEmpty(String s) {
         return s == null || s.trim().length() == 0;
     }
+
+    private HazelcastInstanceLoader(){}
 }

@@ -34,6 +34,9 @@ public class SimpleFunctionalMapTest {
     public static final int KB = 10240;
     public static final int STATS_SECONDS = 10;
 
+    private SimpleFunctionalMapTest(){}
+
+
     public static void main(String[] args) {
         int threadCount = 40;
         final Stats stats = new Stats();

@@ -113,7 +113,7 @@ public class PostJoinMapOperation extends AbstractOperation {
         public MapIndexInfo() {
         }
 
-        class IndexInfo implements DataSerializable {
+        static class IndexInfo implements DataSerializable {
             String attributeName;
             boolean ordered;
 

@@ -24,6 +24,9 @@ import com.hazelcast.spi.annotation.PrivateApi;
 @PrivateApi
 public class DistributedObjectAccessor {
 
+    private DistributedObjectAccessor() {
+    }
+
     public static void onNodeShutdown(AbstractDistributedObject distributedObject) {
         distributedObject.invalidate();
     }

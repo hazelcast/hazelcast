@@ -10,6 +10,9 @@ import java.util.Map;
  */
 public final class SortingUtil {
 
+    private SortingUtil() {
+    }
+
     public static int compare(Comparator comparator, IterationType iterationType, Map.Entry entry1, Map.Entry entry2){
         Object comparable1 = entry1;
         Object comparable2 = entry2;

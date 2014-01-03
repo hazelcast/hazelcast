@@ -24,6 +24,9 @@ public final class TestEnvironment {
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
     public static final String HAZELCAST_TEST_USE_CLIENT = "hazelcast.test.use.client";
 
+    private TestEnvironment() {
+    }
+
     public static boolean isMockNetwork() {
         return !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
     }

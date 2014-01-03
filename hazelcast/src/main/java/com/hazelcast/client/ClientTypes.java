@@ -27,4 +27,6 @@ public final class ClientTypes {
     public static final String PYTHON = "PHY";
     public static final String RUBY = "RBY";
 
+    private ClientTypes() {
+    }
 }
