@@ -107,9 +107,6 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
         }
 
     }
-    public void afterRun() throws Exception {
-        super.afterRun();
-    }
 
     @Override
     public boolean returnsResponse() {
@@ -120,8 +117,6 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
     public Object getResponse() {
         return response;
     }
-
-
 
     @Override
     public String toString() {

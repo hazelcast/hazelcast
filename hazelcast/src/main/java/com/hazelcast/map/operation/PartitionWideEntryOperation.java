@@ -121,10 +121,6 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
         }
     }
 
-    public void afterRun() throws Exception {
-        super.afterRun();
-    }
-
     @Override
     public boolean returnsResponse() {
         return true;
