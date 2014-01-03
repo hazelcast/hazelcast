@@ -30,7 +30,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
@@ -326,12 +326,12 @@ final class BasicOperationService implements InternalOperationService {
                 if (partitionId < 0) {
                     throw new IllegalArgumentException("Partition id cannot be negative! -> " + partitionId);
                 }
-                final PartitionView partitionView = nodeEngine.getPartitionService().getPartition(partitionId);
-                if (retryDuringMigration(op) && partitionView.isMigrating()) {
+                final InternalPartition internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
+                if (retryDuringMigration(op) && internalPartition.isMigrating()) {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                         op.getClass().getName(), op.getServiceName());
                 }
-                final Address owner = partitionView.getReplicaAddress(op.getReplicaIndex());
+                final Address owner = internalPartition.getReplicaAddress(op.getReplicaIndex());
                 if (op.validatesTarget() && !node.getThisAddress().equals(owner)) {
                     throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
                             op.getClass().getName(), op.getServiceName());
@@ -454,7 +454,7 @@ final class BasicOperationService implements InternalOperationService {
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
         final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, PartitionView.MAX_BACKUP_COUNT);
+        final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT);
 
         int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
@@ -472,7 +472,7 @@ final class BasicOperationService implements InternalOperationService {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalBackupCount);
-            final PartitionView partition = partitionService.getPartition(partitionId);
+            final InternalPartition partition = partitionService.getPartition(partitionId);
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 final Operation backupOp = backupAwareOp.getBackupOperation();
                 if (backupOp == null) {
@@ -538,7 +538,7 @@ final class BasicOperationService implements InternalOperationService {
 
         public boolean backup() {
             final PartitionService partitionService = nodeEngine.getPartitionService();
-            final PartitionView partition = partitionService.getPartition(partitionId);
+            final InternalPartition partition = partitionService.getPartition(partitionId);
             final Address target = partition.getReplicaAddress(replicaIndex);
             if (target != null && !target.equals(node.getThisAddress())) {
                 send(backup, target);

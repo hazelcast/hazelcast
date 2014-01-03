@@ -41,7 +41,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return arrange(nodeGroups, partitionCount, new EmptyStateInitializer());
     }
 
-    public Address[][] reArrange(final Collection<MemberGroup> memberGroups, final PartitionView[] currentState) {
+    public Address[][] reArrange(final Collection<MemberGroup> memberGroups, final InternalPartition[] currentState) {
         final LinkedList<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
         if (nodeGroups.size() == 0) {
             return null;
@@ -78,7 +78,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private void tryArrange(final Address[][] state, final LinkedList<NodeGroup> groups,
                             final int partitionCount, final boolean aggressive) {
         final int groupSize = groups.size();
-        final int replicaCount = Math.min(groupSize, PartitionView.MAX_REPLICA_COUNT);
+        final int replicaCount = Math.min(groupSize, InternalPartition.MAX_REPLICA_COUNT);
         final int avgPartitionPerGroup = partitionCount / groupSize;
         // clear unused replica owners
         // initialize partition registry for each group
@@ -253,7 +253,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         for(int partitionId=0;partitionId<state.length;partitionId++){
             Address[] replicas = state[partitionId];
 
-            for (int replicaIndex = 0; replicaIndex < PartitionView.MAX_REPLICA_COUNT; replicaIndex++) {
+            for (int replicaIndex = 0; replicaIndex < InternalPartition.MAX_REPLICA_COUNT; replicaIndex++) {
                 if (replicaIndex >= replicaCount) {
                     replicas[replicaIndex]=null;
                 } else {
@@ -310,7 +310,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private TestResult testArrangement(Address[][] state, Collection<NodeGroup> groups, int partitionCount) {
         final float ratio = RANGE_CHECK_RATIO;
         final int avgPartitionPerGroup = partitionCount / groups.size();
-        final int replicaCount = Math.min(groups.size(), PartitionView.MAX_REPLICA_COUNT);
+        final int replicaCount = Math.min(groups.size(), InternalPartition.MAX_REPLICA_COUNT);
         final Set<Address> set = new HashSet<Address>();
         for(int partitionId = 0;partitionId<partitionCount;partitionId++){
             Address[] replicas = state[partitionId];
@@ -359,15 +359,15 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         @Override
         public void initialize(Address[][] state) {
             for (int i = 0; i < state.length; i++) {
-                state[i] = new Address[PartitionView.MAX_REPLICA_COUNT];
+                state[i] = new Address[InternalPartition.MAX_REPLICA_COUNT];
             }
         }
     }
 
     private class CopyStateInitializer implements StateInitializer {
-        private final PartitionView[] currentState;
+        private final InternalPartition[] currentState;
 
-        CopyStateInitializer(PartitionView[] currentState) {
+        CopyStateInitializer(InternalPartition[] currentState) {
             this.currentState = currentState;
         }
 
@@ -377,10 +377,10 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 throw new IllegalArgumentException("Partition counts do not match!");
             }
             for (int partitionId = 0; partitionId < state.length; partitionId++) {
-                final PartitionView p = currentState[partitionId];
-                Address[] replicas = new Address[PartitionView.MAX_REPLICA_COUNT];
+                final InternalPartition p = currentState[partitionId];
+                Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
                 state[partitionId]=replicas;
-                for(int replicaIndex = 0;replicaIndex<PartitionView.MAX_REPLICA_COUNT;replicaIndex++){
+                for(int replicaIndex = 0;replicaIndex< InternalPartition.MAX_REPLICA_COUNT;replicaIndex++){
                     replicas[replicaIndex]=p.getReplicaAddress(replicaIndex);
                 }
             }
@@ -649,7 +649,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     @SuppressWarnings("unchecked")
     private class PartitionTable {
-        final Set<Integer>[] partitions = new Set[PartitionView.MAX_REPLICA_COUNT];
+        final Set<Integer>[] partitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
 
         Set<Integer> getPartitions(int index) {
             check(index);
@@ -695,7 +695,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
 
         private void check(int index) {
-            if (index < 0 || index >= PartitionView.MAX_REPLICA_COUNT) {
+            if (index < 0 || index >= InternalPartition.MAX_REPLICA_COUNT) {
                 throw new ArrayIndexOutOfBoundsException(index);
             }
         }

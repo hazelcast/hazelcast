@@ -20,17 +20,23 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
+ *
+ * todo: can't we get rid of this object? It is a wrapper around a partition that provides a readonly
+ * iterable over the partitions. But why not copy the InternalPartitions in e.g. a List. Then it
+ * doesn't matter what is done with it since it is a copy. Another option is to wrap the list in an
+ * unmodifiable wrapper. But imho this class can't carry its weight.
+ *
  * @author mdogan 6/12/13
  */
-public final class Partitions implements Iterable<PartitionView> {
+public final class InternalPartitions implements Iterable<InternalPartition> {
 
-    private final PartitionView[] partitions;
+    private final InternalPartition[] partitions;
 
-    Partitions(PartitionView[] partitions) {
+    InternalPartitions(InternalPartition[] partitions) {
         this.partitions = partitions;
     }
 
-    public PartitionView get(int partitionId) {
+    public InternalPartition get(int partitionId) {
         if (partitionId < 0 || partitionId >= partitions.length) {
             throw new IllegalArgumentException();
         }
@@ -41,8 +47,8 @@ public final class Partitions implements Iterable<PartitionView> {
         return partitions.length;
     }
 
-    public Iterator<PartitionView> iterator() {
-        return new Iterator<PartitionView>() {
+    public Iterator<InternalPartition> iterator() {
+        return new Iterator<InternalPartition>() {
             final int max = partitions.length - 1; // always greater than zero
             int pos = -1;
 
@@ -50,7 +56,7 @@ public final class Partitions implements Iterable<PartitionView> {
                 return pos < max;
             }
 
-            public PartitionView next() {
+            public InternalPartition next() {
                 if (pos == max) {
                     throw new NoSuchElementException();
                 }

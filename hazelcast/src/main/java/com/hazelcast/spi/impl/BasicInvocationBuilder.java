@@ -17,8 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionView;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;

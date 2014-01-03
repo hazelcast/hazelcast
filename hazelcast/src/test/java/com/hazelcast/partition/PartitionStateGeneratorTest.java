@@ -183,19 +183,19 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private DummyPartitionView[] toPartitionView(Address[][] state){
-        DummyPartitionView[] result = new DummyPartitionView[state.length];
+    private DummyInternalPartition[] toPartitionView(Address[][] state){
+        DummyInternalPartition[] result = new DummyInternalPartition[state.length];
         for(int partitionId=0;partitionId<state.length;partitionId++){
-            DummyPartitionView partitionView = new DummyPartitionView(state[partitionId]);
+            DummyInternalPartition partitionView = new DummyInternalPartition(state[partitionId]);
             result[partitionId]=partitionView;
         }
         return result;
     }
 
-    private class DummyPartitionView implements PartitionView{
+    private class DummyInternalPartition implements InternalPartition {
         private Address[] replicas;
 
-        private DummyPartitionView(Address[] replicas) {
+        private DummyInternalPartition(Address[] replicas) {
             this.replicas = replicas;
         }
 
@@ -234,9 +234,9 @@ public class PartitionStateGeneratorTest {
             Address[] replicas = state[partitionId];
             for (int i = 0; i < replicas.length; i++) {
                 if (replicas[i] != null && !addresses.contains(replicas[i])) {
-                    Address[] validAddresses = new Address[PartitionView.MAX_REPLICA_COUNT - i];
+                    Address[] validAddresses = new Address[InternalPartition.MAX_REPLICA_COUNT - i];
                     int k = 0;
-                    for (int a = i + 1; a < PartitionView.MAX_REPLICA_COUNT; a++) {
+                    for (int a = i + 1; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
                         Address address = replicas[a];
                         if (address != null && addresses.contains(address)) {
                             validAddresses[k++] = address;
@@ -245,7 +245,7 @@ public class PartitionStateGeneratorTest {
                     for (int a = 0; a < k; a++) {
                         replicas[i+a]=validAddresses[a];
                     }
-                    for (int a = i + k; a < PartitionView.MAX_REPLICA_COUNT; a++) {
+                    for (int a = i + k; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
                         replicas[a]=null;
                     }
                     break;
@@ -302,7 +302,7 @@ public class PartitionStateGeneratorTest {
                 iter.remove();
             }
         }
-        final int replicaCount = Math.min(groups.size(), PartitionView.MAX_REPLICA_COUNT);
+        final int replicaCount = Math.min(groups.size(), InternalPartition.MAX_REPLICA_COUNT);
         final Map<MemberGroup, GroupPartitionState> groupPartitionStates = new HashMap<MemberGroup, GroupPartitionState>();
         final Set<Address> set = new HashSet<Address>();
         final int avgPartitionPerGroup = partitionCount / groups.size();
@@ -420,11 +420,11 @@ public class PartitionStateGeneratorTest {
 
     private static class GroupPartitionState {
         MemberGroup group;
-        Set<Integer>[] groupPartitions = new Set[PartitionView.MAX_REPLICA_COUNT];
+        Set<Integer>[] groupPartitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
         Map<Address, Set<Integer>[]> nodePartitionsMap = new HashMap<Address, Set<Integer>[]>();
 
         {
-            for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                 groupPartitions[i] = new HashSet<Integer>();
             }
         }
@@ -432,8 +432,8 @@ public class PartitionStateGeneratorTest {
         Set<Integer>[] getNodePartitions(Address node) {
             Set<Integer>[] nodePartitions = nodePartitionsMap.get(node);
             if (nodePartitions == null) {
-                nodePartitions = new Set[PartitionView.MAX_REPLICA_COUNT];
-                for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
+                nodePartitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
+                for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                     nodePartitions[i] = new HashSet<Integer>();
                 }
                 nodePartitionsMap.put(node, nodePartitions);

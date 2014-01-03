@@ -44,7 +44,7 @@ public class PartitionRuntimeState implements DataSerializable {
     }
 
     public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
-                                 final Partitions partitions,
+                                 final InternalPartitions partitions,
                                  final Collection<MigrationInfo> migrationInfos,
                                  final long masterTime, int version) {
         this.masterTime = masterTime;
@@ -64,10 +64,10 @@ public class PartitionRuntimeState implements DataSerializable {
         addressIndexes.put(memberInfo.getAddress(), memberIndex);
     }
 
-    protected void setPartitions(Partitions partitions, Map<Address, Integer> addressIndexes) {
-        for (PartitionView partition : partitions) {
+    protected void setPartitions(InternalPartitions partitions, Map<Address, Integer> addressIndexes) {
+        for (InternalPartition partition : partitions) {
             ShortPartitionInfo partitionInfo = new ShortPartitionInfo(partition.getPartitionId());
-            for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                 Address address = partition.getReplicaAddress(i);
                 if (address == null) {
                     partitionInfo.addressIndexes[i] = -1;
@@ -84,7 +84,7 @@ public class PartitionRuntimeState implements DataSerializable {
         int size = partitionInfos.size();
         Address[][] addresses = new Address[size][];
         for (ShortPartitionInfo partitionInfo : partitionInfos) {
-            Address[] replicas = new Address[PartitionView.MAX_REPLICA_COUNT];
+            Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
             addresses[partitionInfo.partitionId] = replicas;
             int[] addressIndexes = partitionInfo.addressIndexes;
             for (int c = 0; c < addressIndexes.length; c++) {
@@ -96,6 +96,25 @@ public class PartitionRuntimeState implements DataSerializable {
         }
 
         return addresses;
+    }
+
+    public PartitionInfo[] getPartitions() {
+        int size = partitionInfos.size();
+        PartitionInfo[] result = new PartitionInfo[size];
+        for (ShortPartitionInfo partitionInfo : partitionInfos) {
+            Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
+            int partitionId = partitionInfo.partitionId;
+            result[partitionId] = new PartitionInfo(partitionId,replicas);
+            int[] addressIndexes = partitionInfo.addressIndexes;
+            for (int c = 0; c < addressIndexes.length; c++) {
+                int index = addressIndexes[c];
+                if (index != -1) {
+                    replicas[c] = members.get(index).getAddress();
+                }
+            }
+        }
+
+        return result;
     }
 
     public List<MemberInfo> getMembers() {
@@ -190,7 +209,7 @@ public class PartitionRuntimeState implements DataSerializable {
     private class ShortPartitionInfo implements DataSerializable {
 
         int partitionId;
-        int[] addressIndexes = new int[PartitionView.MAX_REPLICA_COUNT];
+        int[] addressIndexes = new int[InternalPartition.MAX_REPLICA_COUNT];
 
         ShortPartitionInfo(int partitionId) {
             this.partitionId = partitionId;
@@ -201,14 +220,14 @@ public class PartitionRuntimeState implements DataSerializable {
 
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(partitionId);
-            for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                 out.writeInt(addressIndexes[i]);
             }
         }
 
         public void readData(ObjectDataInput in) throws IOException {
             partitionId = in.readInt();
-            for (int i = 0; i < PartitionView.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                 addressIndexes[i] = in.readInt();
             }
         }

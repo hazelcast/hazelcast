@@ -21,8 +21,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.partition.PartitionView;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
@@ -58,7 +58,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     public void beforeRun() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         final int partitionId = getPartitionId();
-        final PartitionView partition = nodeEngine.getPartitionService().getPartition(partitionId);
+        final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
         final Address owner = partition.getReplicaAddress(getReplicaIndex());
         if (!nodeEngine.getThisAddress().equals(owner)) {
             valid = false;

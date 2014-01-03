@@ -37,14 +37,14 @@ public interface PartitionService extends CoreService {
     Address getPartitionOwner(int partitionId);
 
     /**
-     * Returns the PartitionView for a given partitionId.
+     * Returns the InternalPartition for a given partitionId.
      *
-     * The PartitionView for a given partitionId wil never change; so it can be cached safely.
+     * The InternalPartition for a given partitionId wil never change; so it can be cached safely.
      *
      * @param partitionId the partitionId
-     * @return the PartitionView.
+     * @return the InternalPartition.
      */
-    PartitionView getPartition(int partitionId);
+    InternalPartition getPartition(int partitionId);
 
     /**
      * Returns the partition id for a Data key.

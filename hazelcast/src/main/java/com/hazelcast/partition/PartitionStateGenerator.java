@@ -46,5 +46,5 @@ public interface PartitionStateGenerator {
      * @param currentState the current partition state.
      * @return
      */
-    Address[][] reArrange(final Collection<MemberGroup> groups, final PartitionView[] currentState);
+    Address[][] reArrange(final Collection<MemberGroup> groups, final InternalPartition[] currentState);
 }

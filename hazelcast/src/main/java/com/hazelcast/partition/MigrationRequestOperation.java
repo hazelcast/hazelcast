@@ -73,7 +73,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         PartitionServiceImpl partitionService = getService();
-        PartitionView partition = partitionService.getPartition(migrationInfo.getPartitionId());
+        InternalPartition partition = partitionService.getPartition(migrationInfo.getPartitionId());
         final Address owner = partition.getOwner();
         if (owner == null) {
             throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
