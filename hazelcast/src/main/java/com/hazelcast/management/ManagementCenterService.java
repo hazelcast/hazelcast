@@ -579,7 +579,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         private URL createCollectorUrl() throws MalformedURLException {
             String urlString = webServerUrl + "collector.do";
             if (clusterId != null) {
-                urlString += "?clusterId="+clusterId;
+                urlString += "?clusterid="+clusterId;
             }
             if (securityToken != null) {
                 if(clusterId==null){
