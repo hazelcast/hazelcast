@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
+import com.hazelcast.util.ValidationUtil;
 
 import java.util.Properties;
 
@@ -43,9 +44,7 @@ public class QueueStoreConfig {
         storeImplementation = config.getStoreImplementation();
         factoryClassName = config.getFactoryClassName();
         factoryImplementation = config.getFactoryImplementation();
-        if (config.getProperties() != null) {
-            properties.putAll(config.getProperties());
-        }
+        properties.putAll(config.getProperties());
     }
 
     public QueueStore getStoreImplementation() {
@@ -87,6 +86,7 @@ public class QueueStoreConfig {
     }
 
     public QueueStoreConfig setProperties(Properties properties) {
+        ValidationUtil.isNotNull(properties, "properties");
         this.properties = properties;
         return this;
     }

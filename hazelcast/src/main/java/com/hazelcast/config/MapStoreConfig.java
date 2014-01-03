@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.ValidationUtil;
+
 import java.util.Properties;
 
 /**
@@ -44,9 +46,7 @@ public class MapStoreConfig {
         factoryClassName = config.getFactoryClassName();
         factoryImplementation = config.getFactoryImplementation();
         writeDelaySeconds = config.getWriteDelaySeconds();
-        if (config.getProperties() != null) {
-            properties.putAll(config.getProperties());
-        }
+        properties.putAll(config.getProperties());
     }
 
     public MapStoreConfigReadOnly getAsReadOnly() {
@@ -186,6 +186,7 @@ public class MapStoreConfig {
     }
 
     public MapStoreConfig setProperties(Properties properties) {
+        ValidationUtil.isNotNull(properties, "properties");
         this.properties = properties;
         return this;
     }
