@@ -16,9 +16,17 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.monitor.MemberState;
+import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,6 +37,8 @@ import org.junit.runner.RunWith;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -78,6 +88,83 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
         assertEquals("", result1);
         assertEquals("some other value", result2);
+    }
+
+    @Test
+    public void testMultipleTextsInARow_Default() throws Exception {
+        byte[] buffer = new byte[1024];
+
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
+
+        for (int i = 0; i < 100; i++) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+            DataOutputStream dos = new DataOutputStream(baos);
+
+            String[] values = new String[10];
+            for (int o = 0; o < 10; o++) {
+                values[o] = random(i);
+                utfEncoderDecoder.writeUTF0(dos, values[o], buffer);
+            }
+
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            DataInputStream dis = new DataInputStream(bais);
+
+            for (int o = 0; o < 10; o++) {
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
+                assertEquals(values[o], result);
+            }
+        }
+    }
+
+    @Test
+    public void testMultipleTextsInARow_fast() throws Exception {
+        byte[] buffer = new byte[1024];
+
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
+
+        for (int i = 0; i < 100; i++) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+            DataOutputStream dos = new DataOutputStream(baos);
+
+            String[] values = new String[10];
+            for (int o = 0; o < 10; o++) {
+                values[o] = random(i);
+                utfEncoderDecoder.writeUTF0(dos, values[o], buffer);
+            }
+
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            DataInputStream dis = new DataInputStream(bais);
+
+            for (int o = 0; o < 10; o++) {
+                String result = utfEncoderDecoder.readUTF0(dis, buffer);
+                assertEquals(values[o], result);
+            }
+        }
+    }
+
+    @Test
+    public void testComplexObject() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hz = factory.newHazelcastInstance();
+        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
+        original.setAccessible(true);
+
+        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz);
+        ManagementCenterService mcs = impl.node.getManagementCenterService();
+        Method getTimedMemberState = ManagementCenterService.class.getDeclaredMethod("getTimedMemberState");
+        getTimedMemberState.setAccessible(true);
+        TimedMemberState memberState = (TimedMemberState) getTimedMemberState.invoke(mcs);
+
+        SerializationService ss = impl.node.getSerializationService();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
+        ObjectDataOutput out = ss.createObjectDataOutputStream(baos);
+        out.writeObject(memberState);
+
+        ObjectDataInput in = ss.createObjectDataInput(baos.toByteArray());
+        TimedMemberState result = in.readObject();
+
+        assertEquals(memberState, result);
     }
 
     @Test
@@ -217,6 +304,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
             }
         }
     }
+
     @Test
     public void testNullSerialization() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -224,11 +312,11 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         IMap<String, User> map = instance1.getMap("testSerialization");
-        map.put("1", new User("","demirci"));
+        map.put("1", new User("", "demirci"));
 
         User user = map.get("1");
-        assertEquals("",user.getName());
-        assertEquals("demirci",user.getSurname());
+        assertEquals("", user.getName());
+        assertEquals("demirci", user.getSurname());
     }
 
     private static void assertContains(String className, String classType) {
@@ -316,8 +404,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         return new String(buffer);
     }
 
-    public static class User implements DataSerializable
-    {
+    public static class User implements DataSerializable {
 
         private String name;
         private String surname;

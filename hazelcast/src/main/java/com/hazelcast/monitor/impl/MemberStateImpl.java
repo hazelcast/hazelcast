@@ -152,6 +152,29 @@ public class MemberStateImpl implements MemberState {
         return result;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MemberStateImpl that = (MemberStateImpl) o;
+
+        if (address != null ? !address.equals(that.address) : that.address != null) return false;
+        if (executorStats != null ? !executorStats.equals(that.executorStats) : that.executorStats != null)
+            return false;
+        if (mapStats != null ? !mapStats.equals(that.mapStats) : that.mapStats != null) return false;
+        if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null)
+            return false;
+        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) return false;
+        if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) return false;
+        if (replicatedMapStats != null ? !replicatedMapStats.equals(that.replicatedMapStats) : that.replicatedMapStats != null)
+            return false;
+        if (runtimeProps != null ? !runtimeProps.equals(that.runtimeProps) : that.runtimeProps != null) return false;
+        if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) return false;
+
+        return true;
+    }
+
     public Map<String, Long> getRuntimeProps() {
         return runtimeProps;
     }
