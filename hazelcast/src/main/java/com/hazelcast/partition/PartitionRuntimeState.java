@@ -206,7 +206,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return version;
     }
 
-    private class ShortPartitionInfo implements DataSerializable {
+    private static class ShortPartitionInfo implements DataSerializable {
 
         int partitionId;
         int[] addressIndexes = new int[InternalPartition.MAX_REPLICA_COUNT];

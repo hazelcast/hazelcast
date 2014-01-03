@@ -58,7 +58,7 @@ public final class CleanupService {
         }
     }
 
-    private class CleanupThread extends Thread {
+    private static class CleanupThread extends Thread {
 
         private CleanupThread(final Runnable target, final String name) {
             super(target, name);

@@ -51,7 +51,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
         boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception;
     }
 
-    private class DefaultPacketWriter implements PacketWriter {
+    private static class DefaultPacketWriter implements PacketWriter {
         public boolean writePacket(Packet packet, ByteBuffer socketBB) {
             return packet.writeTo(socketBB);
         }

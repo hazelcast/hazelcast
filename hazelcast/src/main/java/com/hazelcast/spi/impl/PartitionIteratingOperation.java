@@ -92,7 +92,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         return true;
     }
 
-    private class ResponseQueue implements ResponseHandler {
+    private static class ResponseQueue implements ResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
         public void sendResponse(Object obj) {

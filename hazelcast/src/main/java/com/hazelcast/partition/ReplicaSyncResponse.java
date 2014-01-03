@@ -87,7 +87,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         }
     }
 
-    private class ErrorLoggingResponseHandler implements ResponseHandler {
+    private static  class ErrorLoggingResponseHandler implements ResponseHandler {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {

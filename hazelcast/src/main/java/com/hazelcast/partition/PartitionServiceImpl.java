@@ -1297,7 +1297,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    private class ReplicaSyncInfo {
+    private static class ReplicaSyncInfo {
         final int partitionId;
         final int replicaIndex;
         final long requestTime = Clock.currentTimeMillis();
@@ -1502,7 +1502,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    private class PartitionReplicaVersions {
+    private static class PartitionReplicaVersions {
         final int partitionId;
         final long versions[] = new long[InternalPartitionImpl.MAX_BACKUP_COUNT]; // read and updated only by operation/partition threads
 

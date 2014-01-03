@@ -25,7 +25,7 @@ public class NoLogFactory implements LoggerFactory {
         return noLogger;
     }
 
-    class NoLogger implements ILogger {
+    static class NoLogger implements ILogger {
         public void finest(String message) {
         }
 

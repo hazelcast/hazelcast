@@ -408,7 +408,7 @@ public class WebFilter implements Filter {
         }
     } // END of RequestWrapper
 
-    private class ResponseWrapper extends HttpServletResponseWrapper {
+    private static class ResponseWrapper extends HttpServletResponseWrapper {
 
         public ResponseWrapper(final HttpServletResponse original) {
             super(original);

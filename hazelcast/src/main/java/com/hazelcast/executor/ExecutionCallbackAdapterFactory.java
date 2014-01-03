@@ -78,7 +78,7 @@ class ExecutionCallbackAdapterFactory {
         return new InnerExecutionCallback<V>(member);
     }
 
-    private class ValueWrapper {
+    private static class ValueWrapper {
         final Object value;
 
         private ValueWrapper(Object value) {
