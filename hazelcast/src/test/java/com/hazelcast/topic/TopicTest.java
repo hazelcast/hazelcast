@@ -28,6 +28,7 @@ import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -100,14 +101,15 @@ public class TopicTest extends HazelcastTestSupport {
             final HazelcastInstance instance = instances[i];
             instance.getTopic(name).publish(instance.getCluster().getLocalMember());
         }
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        Assert.assertEquals(k, count.get());
-        Assert.assertEquals(k * k, count1.get());
-        Assert.assertEquals(k, count2.get());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                Assert.assertEquals(k, count.get());
+                Assert.assertEquals(k * k, count1.get());
+                Assert.assertEquals(k, count2.get());
+            }
+        });
     }
 
     @Test
@@ -388,8 +390,13 @@ public class TopicTest extends HazelcastTestSupport {
             cp.await();
             topic.removeMessageListener(id);
             topic.publish(message + "2");
-            Thread.sleep(50);
-            Assert.assertEquals(1, latch.getCount());
+
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() {
+                    assertEquals(1, latch.getCount());
+                }
+            });
         } finally {
             shutdownNodeFactory();
         }
