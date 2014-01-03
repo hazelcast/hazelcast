@@ -16,16 +16,18 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.util.Random;
 
@@ -33,10 +35,50 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class UTFEncoderDecoderTest {
+public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random(-System.nanoTime());
     private static final int BENCHMARK_ROUNDS = 10; // 100;
+
+    @Test
+    public void testEmptyText_Default() throws Exception {
+        byte[] buffer = new byte[1024];
+
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+        DataOutputStream dos = new DataOutputStream(baos);
+
+        utfEncoderDecoder.writeUTF0(dos, "", buffer);
+        utfEncoderDecoder.writeUTF0(dos, "some other value", buffer);
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        DataInputStream dis = new DataInputStream(bais);
+        String result1 = utfEncoderDecoder.readUTF0(dis, buffer);
+        String result2 = utfEncoderDecoder.readUTF0(dis, buffer);
+
+        assertEquals("", result1);
+        assertEquals("some other value", result2);
+    }
+
+    @Test
+    public void testEmptyText_Fast() throws Exception {
+        byte[] buffer = new byte[1024];
+
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
+        DataOutputStream dos = new DataOutputStream(baos);
+
+        utfEncoderDecoder.writeUTF0(dos, "", buffer);
+        utfEncoderDecoder.writeUTF0(dos, "some other value", buffer);
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        DataInputStream dis = new DataInputStream(bais);
+        String result1 = utfEncoderDecoder.readUTF0(dis, buffer);
+        String result2 = utfEncoderDecoder.readUTF0(dis, buffer);
+
+        assertEquals("", result1);
+        assertEquals("some other value", result2);
+    }
 
     @Test
     public void testShortSizedText_1Chunk_Default() throws Exception {
@@ -175,6 +217,19 @@ public class UTFEncoderDecoderTest {
             }
         }
     }
+    @Test
+    public void testNullSerialization() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
+
+        IMap<String, User> map = instance1.getMap("testSerialization");
+        map.put("1", new User("","demirci"));
+
+        User user = map.get("1");
+        assertEquals("",user.getName());
+        assertEquals("demirci",user.getSurname());
+    }
 
     private static void assertContains(String className, String classType) {
         if (className.contains(classType)) {
@@ -259,6 +314,49 @@ public class UTFEncoderDecoderTest {
             //}
         }
         return new String(buffer);
+    }
+
+    public static class User implements DataSerializable
+    {
+
+        private String name;
+        private String surname;
+
+        public User() {
+        }
+
+        public User(String name, String surname) {
+            this.name = name;
+            this.surname = surname;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getSurname() {
+            return surname;
+        }
+
+        public void setSurname(String surname) {
+            this.surname = surname;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(name);
+            out.writeUTF(surname);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            name = in.readUTF();
+            surname = in.readUTF();
+        }
     }
 
 }
