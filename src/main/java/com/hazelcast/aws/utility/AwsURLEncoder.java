@@ -22,6 +22,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 public class AwsURLEncoder {
+    private AwsURLEncoder() {
+    }
+
     public static String urlEncode(String string) {
         String encoded;
         try {
