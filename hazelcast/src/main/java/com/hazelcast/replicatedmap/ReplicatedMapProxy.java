@@ -165,4 +165,8 @@ public class ReplicatedMapProxy<K, V>
         return replicatedRecordStore.createReplicatedMapStats();
     }
 
+    public void setPreReplicationHook(PreReplicationHook preReplicationHook) {
+        replicatedRecordStore.setPreReplicationHook(preReplicationHook);
+    }
+
 }

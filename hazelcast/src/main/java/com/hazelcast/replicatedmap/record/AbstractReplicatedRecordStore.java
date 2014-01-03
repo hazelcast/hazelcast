@@ -25,9 +25,7 @@ import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.replicatedmap.CleanerRegistrator;
-import com.hazelcast.replicatedmap.ReplicatedMapEvictionProcessor;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
+import com.hazelcast.replicatedmap.*;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapInitChunkOperation;
@@ -50,7 +48,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class AbstractReplicatedRecordStore<K, V>
-        implements ReplicatedRecordStore, InitializingObject {
+        implements ReplicatedRecordStore, InitializingObject, ReplicationChannel {
 
     private static final int MAX_MESSAGE_CACHE_SIZE = 1000; // TODO: this constant may be configurable...
 
@@ -82,6 +80,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     private final ScheduledFuture<?> cleanerFuture;
     private final Object[] mutexes;
 
+    private final boolean allowReplicationHooks;
+    private volatile PreReplicationHook preReplicationHook;
+
     public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine,
                                          CleanerRegistrator cleanerRegistrator,
                                          ReplicatedMapService replicatedMapService) {
@@ -104,6 +105,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         }
 
         this.cleanerFuture = cleanerRegistrator.registerCleaner(this);
+
+        this.allowReplicationHooks = Boolean.parseBoolean(
+                System.getProperty("hazelcast.repmap.hooks.allowed", "false"));
     }
 
     @Override
@@ -328,9 +332,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public void publishReplicatedMessage(ReplicationMessage message) {
         if (replicatedMapConfig.getReplicationDelayMillis() == 0) {
-            Collection<EventRegistration> registrations = filterEventRegistrations(eventService.getRegistrations(
-                    ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME));
-            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
+            distributeReplicationMessage(message, false);
         } else {
             replicationMessageCacheLock.lock();
             try {
@@ -471,6 +473,24 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     public boolean isLoaded() {
         return loaded.get();
+    }
+
+    @Override
+    public void replicate(MultiReplicationMessage message) {
+        distributeReplicationMessage(message, true);
+    }
+
+    @Override
+    public void replicate(ReplicationMessage message) {
+        distributeReplicationMessage(message, true);
+    }
+
+    public void setPreReplicationHook(PreReplicationHook preReplicationHook) {
+        this.preReplicationHook = preReplicationHook;
+    }
+
+    public int getLocalMemberHash() {
+        return localMemberHash;
     }
 
     protected void incrementClock(Vector vector) {
@@ -645,6 +665,53 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         return registrations;
     }
 
+    private PreReplicationHook getPreReplicationHook() {
+        if (!allowReplicationHooks) {
+            return null;
+        }
+        return preReplicationHook;
+    }
+
+    private void distributeReplicationMessage(final Object message, final boolean forceSend) {
+        final PreReplicationHook preReplicationHook = getPreReplicationHook();
+        if (forceSend || preReplicationHook == null) {
+            Collection<EventRegistration> registrations = filterEventRegistrations(eventService.getRegistrations(
+                    ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME));
+            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
+        } else {
+            executionService.execute("hz:replicated-map", new Runnable() {
+                @Override
+                public void run() {
+                    if (message instanceof MultiReplicationMessage) {
+                        preReplicationHook.preReplicateMultiMessage(
+                                (MultiReplicationMessage) message, AbstractReplicatedRecordStore.this);
+                    } else {
+                        preReplicationHook.preReplicateMessage(
+                                (ReplicationMessage) message, AbstractReplicatedRecordStore.this);
+                    }
+                }
+            });
+        }
+    }
+
+    private void processMessageCache() {
+        ReplicationMessage[] replicationMessages = null;
+        replicationMessageCacheLock.lock();
+        try {
+            final int size = replicationMessageCache.size();
+            if (size > 0) {
+                replicationMessages = replicationMessageCache.toArray(new ReplicationMessage[size]);
+                replicationMessageCache.clear();
+            }
+        } finally {
+            replicationMessageCacheLock.unlock();
+        }
+        if (replicationMessages != null) {
+            MultiReplicationMessage message = new MultiReplicationMessage(name, replicationMessages);
+            distributeReplicationMessage(message, false);
+        }
+    }
+
     private class RemoteFillupTask implements Runnable {
 
         private final OperationService operationService = nodeEngine.getOperationService();
@@ -711,26 +778,6 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         @Override
         public void run() {
             processMessageCache();
-        }
-    }
-
-    private void processMessageCache() {
-        ReplicationMessage[] replicationMessages = null;
-        replicationMessageCacheLock.lock();
-        try {
-            final int size = replicationMessageCache.size();
-            if (size > 0) {
-                replicationMessages = replicationMessageCache.toArray(new ReplicationMessage[size]);
-                replicationMessageCache.clear();
-            }
-        } finally {
-            replicationMessageCacheLock.unlock();
-        }
-        if (replicationMessages != null) {
-            MultiReplicationMessage message = new MultiReplicationMessage(name, replicationMessages);
-            Collection<EventRegistration> registrations = filterEventRegistrations(eventService.getRegistrations(
-                    ReplicatedMapService.SERVICE_NAME, ReplicatedMapService.EVENT_TOPIC_NAME));
-            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
         }
     }
 
