@@ -355,7 +355,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         void initialize(Address[][] state);
     }
 
-    private class EmptyStateInitializer implements StateInitializer {
+    private static class EmptyStateInitializer implements StateInitializer {
         @Override
         public void initialize(Address[][] state) {
             for (int i = 0; i < state.length; i++) {
@@ -364,7 +364,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
-    private class CopyStateInitializer implements StateInitializer {
+    private static class CopyStateInitializer implements StateInitializer {
         private final InternalPartition[] currentState;
 
         CopyStateInitializer(InternalPartition[] currentState) {
@@ -648,7 +648,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private class PartitionTable {
+    private static class PartitionTable {
         final Set<Integer>[] partitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
 
         Set<Integer> getPartitions(int index) {
