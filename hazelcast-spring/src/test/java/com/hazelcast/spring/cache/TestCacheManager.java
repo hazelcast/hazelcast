@@ -20,7 +20,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -66,6 +65,20 @@ public class TestCacheManager {
         }
     }
 
+    @Test
+    public void testTTL() throws InterruptedException {
+        final String name = bean.getNameWithTTL();
+        Assert.assertEquals("ali", name);
+        final String nameFromCache = bean.getNameWithTTL();
+        Assert.assertEquals("ali", nameFromCache);
+
+        Thread.sleep(3000);
+
+        final String nameFromCacheAfterTTL = bean.getNameWithTTL();
+        Assert.assertNull(nameFromCacheAfterTTL);
+
+    }
+
 
     public static class DummyBean implements IDummyBean {
 
@@ -89,6 +102,16 @@ public class TestCacheManager {
                 return null;
             }
             Assert.fail("should not call this method!");
+            return null;
+        }
+
+        final AtomicBoolean firstCall = new AtomicBoolean(false);
+
+        @Cacheable("map-with-ttl")
+        public String getNameWithTTL(){
+            if (firstCall.compareAndSet(false, true)) {
+                return "ali";
+            }
             return null;
         }
     }
