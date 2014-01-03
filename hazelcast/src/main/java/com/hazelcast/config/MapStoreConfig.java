@@ -44,7 +44,9 @@ public class MapStoreConfig {
         factoryClassName = config.getFactoryClassName();
         factoryImplementation = config.getFactoryImplementation();
         writeDelaySeconds = config.getWriteDelaySeconds();
-        properties = config.getProperties() != null ? new Properties(config.getProperties()) : null;
+        if (config.getProperties() != null) {
+            properties.putAll(config.getProperties());
+        }
     }
 
     public MapStoreConfigReadOnly getAsReadOnly() {

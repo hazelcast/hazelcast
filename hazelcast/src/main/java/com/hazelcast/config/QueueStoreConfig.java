@@ -43,7 +43,9 @@ public class QueueStoreConfig {
         storeImplementation = config.getStoreImplementation();
         factoryClassName = config.getFactoryClassName();
         factoryImplementation = config.getFactoryImplementation();
-        properties = config.getProperties() != null ? new Properties(config.getProperties()) : null;
+        if (config.getProperties() != null) {
+            properties.putAll(config.getProperties());
+        }
     }
 
     public QueueStore getStoreImplementation() {
