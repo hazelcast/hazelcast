@@ -173,12 +173,15 @@ public class IssuesTest extends HazelcastTestSupport {
                 .setImplementation(new StreamSerializer() {
                     public void write(ObjectDataOutput out, Object object) throws IOException {
                     }
+
                     public Object read(ObjectDataInput in) throws IOException {
                         return new DummyValue();
                     }
+
                     public int getTypeId() {
                         return 123;
                     }
+
                     public void destroy() {
                     }
                 }));
@@ -210,18 +213,18 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
-        IMap<Object,Object> map = hz1.getMap("test");
+        IMap<Object, Object> map = hz1.getMap("test");
 
         InstanceAwareMapInterceptorImpl interceptor = new InstanceAwareMapInterceptorImpl();
         map.addInterceptor(interceptor);
         assertNotNull(interceptor.hazelcastInstance);
         assertEquals(hz1, interceptor.hazelcastInstance);
 
-        for (int i=0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             map.put(i, i);
         }
 
-        for (int i=0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             assertEquals("notNull", map.get(i));
         }
     }
@@ -247,7 +250,7 @@ public class IssuesTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
-            if (hazelcastInstance != null){
+            if (hazelcastInstance != null) {
                 return "notNull";
             }
             return ">null";
