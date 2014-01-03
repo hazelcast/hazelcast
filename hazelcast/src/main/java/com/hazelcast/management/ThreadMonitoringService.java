@@ -95,7 +95,7 @@ public class ThreadMonitoringService {
         }
     }
 
-    private class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
+    private static class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
 
         private Thread thread;
 
