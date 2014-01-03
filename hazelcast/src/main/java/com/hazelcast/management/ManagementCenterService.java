@@ -117,7 +117,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     IAtomicReference<String> clusterIdAtomicLong = instance.getAtomicReference("___clusterIdGenerator");
                     String id = clusterIdAtomicLong.get();
                     if (id == null) {
-                        id = "" + Math.abs(new Random().nextLong());
+                        id = com.hazelcast.util.UuidUtil.buildRandomUuidString();
                         if (!clusterIdAtomicLong.compareAndSet(null, id)) {
                             id = clusterIdAtomicLong.get();
                         }
