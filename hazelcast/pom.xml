@@ -36,7 +36,7 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>com/hazelcast/examples/*</exclude>
+                        <exclude>com.hazelcast.examples.*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
