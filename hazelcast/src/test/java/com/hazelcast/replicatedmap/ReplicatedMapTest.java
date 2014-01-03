@@ -41,6 +41,7 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class ReplicatedMapTest extends HazelcastTestSupport {
 
     private static final Comparator<Entry<Integer, Integer>> ENTRYSET_COMPARATOR = new Comparator<Entry<Integer, Integer>>() {
