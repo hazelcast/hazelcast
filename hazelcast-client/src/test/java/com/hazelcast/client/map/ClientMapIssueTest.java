@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientMapIssueTest {
 
     @After
-    public static void destroy() {
+    public void destroy() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
