@@ -19,6 +19,7 @@ package com.hazelcast.executor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -775,7 +776,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             });
 
             final AtomicReference reference = new AtomicReference();
-            final CompletableFuture completableFuture = es.asCompletableFuture(future);
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
             completableFuture.andThen(new ExecutionCallback() {
                 @Override
                 public void onResponse(Object response) {
@@ -827,7 +828,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
             final AtomicReference reference1 = new AtomicReference();
             final AtomicReference reference2 = new AtomicReference();
-            final CompletableFuture completableFuture = es.asCompletableFuture(future);
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
             completableFuture.andThen(new ExecutionCallback() {
                 @Override
                 public void onResponse(Object response) {
@@ -893,7 +894,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             latch1.await(30, TimeUnit.SECONDS);
 
             final AtomicReference reference = new AtomicReference();
-            final CompletableFuture completableFuture = es.asCompletableFuture(future);
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
             completableFuture.andThen(new ExecutionCallback() {
                 @Override
                 public void onResponse(Object response) {
@@ -945,7 +946,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
             final AtomicReference reference1 = new AtomicReference();
             final AtomicReference reference2 = new AtomicReference();
-            final CompletableFuture completableFuture = es.asCompletableFuture(future);
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
             completableFuture.andThen(new ExecutionCallback() {
                 @Override
                 public void onResponse(Object response) {
@@ -1007,7 +1008,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         });
 
         final AtomicReference reference = new AtomicReference();
-        final CompletableFuture completableFuture = es.asCompletableFuture(future);
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
         completableFuture.andThen(new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {
@@ -1053,7 +1054,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         final AtomicReference reference1 = new AtomicReference();
         final AtomicReference reference2 = new AtomicReference();
-        final CompletableFuture completableFuture = es.asCompletableFuture(future);
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
         completableFuture.andThen(new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {
@@ -1113,7 +1114,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         latch1.await(30, TimeUnit.SECONDS);
 
         final AtomicReference reference = new AtomicReference();
-        final CompletableFuture completableFuture = es.asCompletableFuture(future);
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
         completableFuture.andThen(new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {
@@ -1159,7 +1160,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         final AtomicReference reference1 = new AtomicReference();
         final AtomicReference reference2 = new AtomicReference();
-        final CompletableFuture completableFuture = es.asCompletableFuture(future);
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
         completableFuture.andThen(new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {
