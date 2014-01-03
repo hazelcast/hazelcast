@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 
 public final class Predicates {
 
+    private Predicates(){}
+
     public static class BetweenPredicate extends AbstractPredicate {
         private Comparable to;
         private Comparable from;

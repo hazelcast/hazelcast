@@ -41,4 +41,6 @@ public class ErrorHandler {
     public static boolean isRetryable(Exception e) {
         return e instanceof IOException || e instanceof HazelcastInstanceNotActiveException;
     }
+
+    private ErrorHandler(){}
 }

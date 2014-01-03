@@ -41,6 +41,9 @@ import static java.lang.String.format;
 public class CloudyUtility {
     final static ILogger logger = Logger.getLogger(CloudyUtility.class);
 
+    private CloudyUtility() {
+    }
+
     public static String getQueryString(Map<String, String> attributes) {
         StringBuilder query = new StringBuilder();
         for (Iterator<Map.Entry<String,String>> iterator = attributes.entrySet().iterator(); iterator.hasNext(); ) {

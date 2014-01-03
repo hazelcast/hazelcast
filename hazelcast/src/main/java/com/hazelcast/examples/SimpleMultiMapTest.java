@@ -29,6 +29,8 @@ import java.util.logging.Logger;
 
 public class SimpleMultiMapTest {
 
+    private SimpleMultiMapTest(){}
+
     public static final int STATS_SECONDS = 10;
     public static int THREAD_COUNT = 40;
     public static int ENTRY_COUNT = 10 * 1000;

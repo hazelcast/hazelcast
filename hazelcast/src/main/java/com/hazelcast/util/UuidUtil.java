@@ -64,4 +64,6 @@ public class UuidUtil {
         return new UUID(mostSigBits, leastSigBits);
     }
 
+    private UuidUtil(){}
+
 }

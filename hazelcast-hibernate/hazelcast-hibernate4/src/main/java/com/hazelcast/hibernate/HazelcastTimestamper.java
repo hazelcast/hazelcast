@@ -23,6 +23,8 @@ import com.hazelcast.instance.GroupProperties;
 
 public final class HazelcastTimestamper {
 
+    private HazelcastTimestamper(){}
+
     public static long nextTimestamp(HazelcastInstance instance) {
         return instance.getCluster().getClusterTime(); // System time in ms.
     }

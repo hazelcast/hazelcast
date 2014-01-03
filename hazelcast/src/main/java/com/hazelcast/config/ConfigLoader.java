@@ -23,6 +23,9 @@ import java.net.URL;
 
 public class ConfigLoader {
 
+    private ConfigLoader() {
+    }
+
     public static Config load(final String path) throws IOException {
         final URL url = locateConfig(path);
         if (url == null) {

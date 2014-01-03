@@ -47,6 +47,8 @@ public final class CipherHelper {
         }
     }
 
+    private CipherHelper(){}
+
     @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createSymmetricReaderCipher(SymmetricEncryptionConfig config) throws Exception {
         if (symmetricCipherBuilder == null) {

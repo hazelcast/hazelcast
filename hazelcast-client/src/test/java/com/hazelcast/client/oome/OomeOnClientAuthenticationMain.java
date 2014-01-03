@@ -28,6 +28,9 @@ import com.hazelcast.core.HazelcastInstance;
  */
 public class OomeOnClientAuthenticationMain {
 
+    private OomeOnClientAuthenticationMain() {
+    }
+
     public static void main(String[] args) {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();

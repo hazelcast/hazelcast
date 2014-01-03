@@ -23,6 +23,9 @@ import java.util.Map;
  */
 public class PagingPredicateAccessor {
 
+    private PagingPredicateAccessor() {
+    }
+
     public static void setPagingPredicateAnchor(PagingPredicate predicate, Map.Entry anchor){
         predicate.setAnchor(anchor);
     }

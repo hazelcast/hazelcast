@@ -24,6 +24,8 @@ import java.util.Properties;
 
 public final class CacheEnvironment {
 
+    private CacheEnvironment(){}
+
     public static final String CONFIG_FILE_PATH_LEGACY = Environment.CACHE_PROVIDER_CONFIG;
 
     public static final String CONFIG_FILE_PATH = "hibernate.cache.hazelcast.configuration_file_path";

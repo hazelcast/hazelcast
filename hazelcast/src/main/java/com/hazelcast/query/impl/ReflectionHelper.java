@@ -34,6 +34,8 @@ public class ReflectionHelper {
 
     private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
 
+    private ReflectionHelper(){}
+
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
             return AttributeType.STRING;

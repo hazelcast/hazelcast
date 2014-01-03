@@ -90,6 +90,9 @@ public final class OutOfMemoryErrorDispatcher {
 
     public static final class Helper {
 
+        private Helper() {
+        }
+
         public static void tryCloseConnections(final HazelcastInstance hazelcastInstance) {
             if (hazelcastInstance == null) return;
             final HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;

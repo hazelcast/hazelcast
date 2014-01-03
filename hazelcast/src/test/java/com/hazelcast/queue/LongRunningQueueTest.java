@@ -46,6 +46,9 @@ public class LongRunningQueueTest {
     static final Set<Server> servers = new HashSet<Server>(10);
     static volatile boolean done = false;
 
+    private LongRunningQueueTest() {
+    }
+
 
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");

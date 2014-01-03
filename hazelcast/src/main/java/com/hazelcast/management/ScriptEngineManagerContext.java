@@ -25,6 +25,9 @@ public final class ScriptEngineManagerContext {
 
     private static volatile ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 
+    private ScriptEngineManagerContext() {
+    }
+
     public static ScriptEngineManager getScriptEngineManager() {
         return scriptEngineManager;
     }

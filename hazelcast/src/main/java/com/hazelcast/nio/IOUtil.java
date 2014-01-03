@@ -26,6 +26,8 @@ import java.util.zip.Inflater;
 
 public final class IOUtil {
 
+    private IOUtil(){}
+
     public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
         int size = (value == null) ? 0 : value.length;
         out.writeInt(size);
