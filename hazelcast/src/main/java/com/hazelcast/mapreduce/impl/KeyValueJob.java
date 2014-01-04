@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.impl.operation.TrackedOperationFactory;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExecutionService;
@@ -42,10 +43,9 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
     @Override
     protected <T> CompletableFuture<T> invoke() {
-        OperationService os = nodeEngine.getOperationService();
         ExecutionService es = nodeEngine.getExecutionService();
         ManagedExecutorService mes = es.getExecutor(name);
-        return (CompletableFuture<T>) mes.submit(new TrackedJob<T>());
+        return es.asCompletableFuture(mes.submit(new TrackedJob<T>()));
     }
 
     private class TrackedJob<T>
@@ -77,9 +77,12 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
             SerializationService ss = nodeEngine.getSerializationService();
 
             Map<Integer, List<KeyIn>> mappedKeys = MapReduceUtil.mapKeys(ps, keys);
+            TrackedOperationFactory<KeyIn, ValueIn> factory =
+                    new TrackedOperationFactory<KeyIn, ValueIn>(name, jobId, keyValueSource);
 
-            // TODO
-            return (T) os.invokeOnAllPartitions(MapReduceService.SERVICE_NAME, null);
+
+
+            return (T) os.invokeOnAllPartitions(MapReduceService.SERVICE_NAME, factory);
         }
     }
 

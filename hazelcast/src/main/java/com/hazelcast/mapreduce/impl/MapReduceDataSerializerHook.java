@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.operation.KeyValueMapReduceOperation;
 import com.hazelcast.mapreduce.impl.operation.KeyValueMapReduceOperationFactory;
+import com.hazelcast.mapreduce.impl.operation.TrackedOperationFactory;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -30,7 +31,8 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
     public static final int KEY_VALUE_SOURCE_MULTIMAP = 1;
     public static final int KEY_VALUE_SOURCE_OPERATION = 2;
     public static final int KEY_VALUE_SOURCE_OPERATION_FACTORY = 3;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 4;
+    public static final int TRACKED_OPERATION_FACTORY = 4;
+    public static final int CLIENT_MAP_REDUCE_REQUEST = 5;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
 
@@ -64,6 +66,12 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new KeyValueMapReduceOperationFactory();
+            }
+        };
+        constructors[TRACKED_OPERATION_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TrackedOperationFactory();
             }
         };
         constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
