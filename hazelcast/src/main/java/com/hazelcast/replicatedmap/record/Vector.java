@@ -87,7 +87,7 @@ public class Vector implements IdentifiedDataSerializable {
         return copy;
     }
 
-    static boolean happenedBefore(Vector x, Vector y) {
+    public static boolean happenedBefore(Vector x, Vector y) {
         Set<Member> members = new HashSet<Member>(x.clocks.keySet());
         members.addAll(y.clocks.keySet());
 

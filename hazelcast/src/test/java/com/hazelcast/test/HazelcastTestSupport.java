@@ -31,6 +31,10 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class HazelcastTestSupport {
 
+    static {
+        System.setProperty("hazelcast.repmap.hooks.allowed", "true");
+    }
+
     private TestHazelcastInstanceFactory factory;
 
     public static void sleepSeconds(int seconds) {

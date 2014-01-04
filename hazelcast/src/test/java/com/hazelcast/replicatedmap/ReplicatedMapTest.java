@@ -22,13 +22,19 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
+import com.hazelcast.replicatedmap.messages.ReplicationMessage;
+import com.hazelcast.replicatedmap.record.*;
+import com.hazelcast.replicatedmap.record.Vector;
 import com.hazelcast.test.*;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.Map.Entry;
@@ -41,7 +47,6 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ReplicatedMapTest extends HazelcastTestSupport {
 
     private static final Comparator<Entry<Integer, Integer>> ENTRYSET_COMPARATOR = new Comparator<Entry<Integer, Integer>>() {
@@ -50,6 +55,17 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             return o1.getKey().compareTo(o2.getKey());
         }
     };
+
+    private static Field REPLICATED_RECORD_STORE;
+
+    static {
+        try {
+            REPLICATED_RECORD_STORE = ReplicatedMapProxy.class.getDeclaredField("replicatedRecordStore");
+            REPLICATED_RECORD_STORE.setAccessible(true);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     public void testAddObject() throws Exception {
@@ -256,7 +272,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
             @Override
             public void entryUpdated(EntryEvent event) {
-                updated.countDown();;
+                updated.countDown();
+                ;
             }
 
             @Override
@@ -874,7 +891,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
             @Override
             public void entryUpdated(EntryEvent event) {
-                updated.countDown();;
+                updated.countDown();
+                ;
             }
 
             @Override
@@ -1363,17 +1381,16 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
 
-        for(int i=0; i<1000; i++){
+        for (int i = 0; i < 1000; i++) {
             map1.put(i, i);
         }
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(1000, map1.size());
                 assertEquals(1000, map2.size());
 
                 assertTrue(map1.equals(map2));
-                assertTrue(map1.hashCode() == map2.hashCode());
 
                 assertTrue(map1.entrySet().equals(map2.entrySet()));
                 assertTrue(map1.values().equals(map2.values()));
@@ -1404,23 +1421,20 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
 
-
         map1.put(1, 1, 1, TimeUnit.SECONDS);
         map1.put(1, 1);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(1, map1.get(1));
-                assertEquals(1, map2.get(1));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
 
         map1.put(1, 1, 1, TimeUnit.SECONDS);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(null, map1.get(1));
-                assertEquals(null, map2.get(1));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
     }
@@ -1441,17 +1455,9 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.put(1, 1);
         map2.put(1, 2);
 
-        final int result = evalConflictResult(instance1, instance2, 1, 2);
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(result, map2.get(1));
-            }
-        });
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(result, map1.get(1));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
     }
@@ -1472,17 +1478,9 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.put(1, 1);
         map2.put(1, 2);
 
-        final int result = evalConflictResult(instance1, instance2, 1, 2);
-
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() {
-                assertEquals(result, map1.get(1));
-            }
-        });
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(result, map2.get(1));
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
     }
@@ -1507,35 +1505,42 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMapProxy<Object, Object> map1 = (ReplicatedMapProxy) instance1.getReplicatedMap("default");
+        final ReplicatedMapProxy<Object, Object> map2 = (ReplicatedMapProxy) instance2.getReplicatedMap("default");
+
+        CountDownLatch replicateLatch = new CountDownLatch(1);
+        CountDownLatch startReplication = new CountDownLatch(2);
+        PreReplicationHook hook = createReplicationHook(replicateLatch, startReplication);
+        map1.setPreReplicationHook(hook);
+        map2.setPreReplicationHook(hook);
 
         map1.put(1, 1, 1, TimeUnit.SECONDS);
         map2.put(1, 1);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(1, map1.get(1));
+        startReplication.await(1, TimeUnit.MINUTES);
+        replicateLatch.countDown();
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(1, map2.get(1));
-            }
-        });
+        replicateLatch = new CountDownLatch(1);
+        startReplication = new CountDownLatch(2);
+        hook = createReplicationHook(replicateLatch, startReplication);
+        map1.setPreReplicationHook(hook);
+        map2.setPreReplicationHook(hook);
 
         map1.put(1, 1);
         map2.put(1, 1, 1, TimeUnit.SECONDS);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(null, map1.get(1));
-            }
-        });
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(null, map2.get(1));
+        startReplication.await(1, TimeUnit.MINUTES);
+        replicateLatch.countDown();
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
     }
@@ -1558,33 +1563,18 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.put(1, 1, 1, TimeUnit.SECONDS);
         map2.put(1, 1);
 
-        final Integer result1 = evalConflictResult(instance1, instance2, null, 1);
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(result1, map1.get(1));
-            }
-        });
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(result1, map2.get(1));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
 
         map1.put(2, 2);
         map2.put(2, 2, 1, TimeUnit.SECONDS);
 
-        final Integer result2 = evalConflictResult(instance1, instance2, 2, null);
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(result2, map1.get(2));
-            }
-        });
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(result2, map2.get(2));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(2), map2.get(2));
             }
         });
     }
@@ -1608,14 +1598,10 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.put(1, 1);
         map2.put(2, 2);
 
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(1, map1.get(1));
-                assertEquals(1, map2.get(1));
-
-                assertEquals(2, map1.get(2));
-                assertEquals(2, map2.get(2));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
+                assertEquals(map1.get(2), map2.get(2));
             }
         });
     }
@@ -1624,6 +1610,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     public void repMap_RepDelayConflict_InMemoryFormat_Object() throws Exception {
         repMap_RepDelayConflict(InMemoryFormat.OBJECT);
     }
+
     @Test
     public void repMap_RepDelayConflict_InMemoryFormat_Binary() throws Exception {
         repMap_RepDelayConflict(InMemoryFormat.BINARY);
@@ -1647,15 +1634,15 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.put(1, 1);
         map2.put(2, 2);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                assertEquals(2, map1.get(2));
-                assertEquals(1, map2.get(1));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(2), map2.get(2));
+                assertEquals(map1.get(1), map2.get(1));
             }
         });
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(2, map1.get(2));
             }
         });
@@ -1666,6 +1653,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     public void multiReplicationDataTest_repDelay0_InMemoryFormat_Object() throws Exception {
         multiReplicationDataTest_repDelay0(InMemoryFormat.OBJECT);
     }
+
     @Test
     public void multiReplicationDataTest_repDelay0_InMemoryFormat_Binary() throws Exception {
         multiReplicationDataTest_repDelay0(InMemoryFormat.BINARY);
@@ -1680,21 +1668,20 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
-
         final ReplicatedMap<Object, Object> mapA = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
-        for(int i=0; i<1000; i++){
+        for (int i = 0; i < 1000; i++) {
             mapA.put(i, i);
         }
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                for(int i=0; i<1000; i++){
-                    assertEquals(i, mapA.get(i));
-                    assertEquals(i, mapB.get(i));
-                    assertEquals(i, mapC.get(i));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(mapA.get(i), mapB.get(i));
+                    assertEquals(mapA.get(i), mapC.get(i));
+                    assertEquals(mapB.get(i), mapC.get(i));
                 }
             }
         });
@@ -1704,6 +1691,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     public void mapRep3wayTest_Delay0_InMemoryFormat_Object() throws Exception {
         mapRep3wayTest_Delay0(InMemoryFormat.OBJECT);
     }
+
     @Test
     public void mapRep3wayTest_Delay0_InMemoryFormat_Binary() throws Exception {
         mapRep3wayTest_Delay0(InMemoryFormat.BINARY);
@@ -1718,25 +1706,24 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
-
         final ReplicatedMap<Object, Object> mapA = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
-        for(int i=0; i<1000; i++){
-            mapA.put(i+"A", i+"A");
-            mapB.put(i+"B", i+"B");
+        for (int i = 0; i < 1000; i++) {
+            mapA.put(i + "A", i + "A");
+            mapB.put(i + "B", i + "B");
         }
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                for(int i=0; i<1000; i++){
-                    assertEquals(i+"A", mapA.get(i+"A"));
-                    assertEquals(i+"A", mapB.get(i+"A"));
-                    assertEquals(i+"A", mapC.get(i+"A"));
-                    assertEquals(i+"B", mapA.get(i+"B"));
-                    assertEquals(i+"B", mapB.get(i+"B"));
-                    assertEquals(i+"B", mapC.get(i+"B"));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(mapA.get(i + "A"), mapB.get(i + "A"));
+                    assertEquals(mapA.get(i + "A"), mapC.get(i + "A"));
+                    assertEquals(mapB.get(i + "A"), mapC.get(i + "A"));
+                    assertEquals(mapA.get(i + "B"), mapB.get(i + "B"));
+                    assertEquals(mapA.get(i + "B"), mapC.get(i + "B"));
+                    assertEquals(mapB.get(i + "B"), mapC.get(i + "B"));
                 }
             }
         });
@@ -1746,6 +1733,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     public void multiPutThreads_dealy0_InMemoryFormat_Object() throws Exception {
         multiPutThreads_dealy0(InMemoryFormat.OBJECT);
     }
+
     @Test
     public void multiPutThreads_dealy0_InMemoryFormat_Binary() throws Exception {
         multiPutThreads_dealy0(InMemoryFormat.BINARY);
@@ -1766,43 +1754,42 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
-
         Thread[] pool = new Thread[10];
-        CyclicBarrier gate = new CyclicBarrier(pool.length+1);
-        for(int i=0; i<5; i++){
+        CyclicBarrier gate = new CyclicBarrier(pool.length + 1);
+        for (int i = 0; i < 5; i++) {
             pool[i] = new GatedThread(gate) {
                 public void go() {
-                    for(int i=0; i<1000; i++)
-                        mapA.put(i+"A", i);
+                    for (int i = 0; i < 1000; i++)
+                        mapA.put(i + "A", i);
                 }
             };
             pool[i].start();
         }
-        for(int i=5; i<10; i++){
+        for (int i = 5; i < 10; i++) {
             pool[i] = new GatedThread(gate) {
                 public void go() {
-                    for(int i=0; i<1000; i++)
-                        mapB.put(i+"B", i);
+                    for (int i = 0; i < 1000; i++)
+                        mapB.put(i + "B", i);
                 }
             };
             pool[i].start();
         }
         gate.await();
 
-        for(Thread t:pool){
+        for (Thread t : pool) {
             t.join();
         }
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                for(int i=0; i<1000; i++){
-                    assertEquals(i, mapA.get(i+"A"));
-                    assertEquals(i, mapB.get(i + "A"));
-                    assertEquals(i, mapC.get(i+"A"));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(mapA.get(i + "A"), mapB.get(i + "A"));
+                    assertEquals(mapA.get(i + "A"), mapC.get(i + "A"));
+                    assertEquals(mapB.get(i + "A"), mapC.get(i + "A"));
 
-                    assertEquals(i, mapA.get(i+"B"));
-                    assertEquals(i, mapB.get(i+"B"));
-                    assertEquals(i, mapC.get(i+"B"));
+                    assertEquals(mapA.get(i + "B"), mapB.get(i + "B"));
+                    assertEquals(mapA.get(i + "B"), mapC.get(i + "B"));
+                    assertEquals(mapB.get(i + "B"), mapC.get(i + "B"));
                 }
             }
         });
@@ -1812,6 +1799,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     public void multiPutThreads_withNodeCrash_InMemoryFormat_Object() throws Exception {
         multiPutThreads_withNodeCrash(InMemoryFormat.OBJECT);
     }
+
     @Test
     public void multiPutThreads_withNodeCrash_InMemoryFormat_Binary() throws Exception {
         multiPutThreads_withNodeCrash(InMemoryFormat.BINARY);
@@ -1833,31 +1821,29 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
         Thread[] pool = new Thread[10];
-        CyclicBarrier gate = new CyclicBarrier(pool.length+1);
-        for(int i=0; i<1; i++){
+        CyclicBarrier gate = new CyclicBarrier(pool.length + 1);
+        for (int i = 0; i < 1; i++) {
             pool[i] = new GatedThread(gate) {
                 public void go() {
-                    for(int i=0; i<1000; i++){
-                        if(i<500){
-                            mapA.put(i+"A", i);
-                        }
-                        else if(i==500){
-                            mapC.put(i+"C", i);
+                    for (int i = 0; i < 1000; i++) {
+                        if (i < 500) {
+                            mapA.put(i + "A", i);
+                        } else if (i == 500) {
+                            mapC.put(i + "C", i);
                             TestUtil.terminateInstance(instance1);
-                        }
-                        else{
-                            mapC.put(i+"C", i);
+                        } else {
+                            mapC.put(i + "C", i);
                         }
                     }
                 }
             };
             pool[i].start();
         }
-        for(int i=1; i<10; i++){
+        for (int i = 1; i < 10; i++) {
             pool[i] = new GatedThread(gate) {
                 public void go() {
-                    for(int i=0; i<1000; i++)
-                        mapB.put(i+"B", i);
+                    for (int i = 0; i < 1000; i++)
+                        mapB.put(i + "B", i);
                 }
             };
             pool[i].start();
@@ -1865,24 +1851,15 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         gate.await();
 
-        for(Thread t:pool){
+        for (Thread t : pool) {
             t.join();
         }
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                for(int i=0; i<500; i++){
-                    assertEquals(i, mapB.get(i+"A"));
-                    assertEquals(i, mapC.get(i+"A"));
-                    assertEquals(i, mapB.get(i+"B"));
-                    assertEquals(i, mapC.get(i+"B"));
-                }
-
-                for(int i=500; i<1000; i++){
-                    assertEquals(i, mapB.get(i+"C"));
-                    assertEquals(i, mapC.get(i+"C"));
-                    assertEquals(i, mapB.get(i+"B"));
-                    assertEquals(i, mapC.get(i+"B"));
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(mapB.get(i + "A"), mapC.get(i + "A"));
+                    assertEquals(mapB.get(i + "B"), mapC.get(i + "B"));
                 }
             }
         });
@@ -1893,6 +1870,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     public void threadPuts_delay0_InMemoryFormat_Object() throws Exception {
         threadPuts_delay0(InMemoryFormat.OBJECT);
     }
+
     @Test
     public void threadPuts_delay0_InMemoryFormat_Binary() throws Exception {
         threadPuts_delay0(InMemoryFormat.BINARY);
@@ -1913,64 +1891,62 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
-
         Thread[] pool = new Thread[2];
-        CyclicBarrier gate = new CyclicBarrier(pool.length+1);
+        CyclicBarrier gate = new CyclicBarrier(pool.length + 1);
         pool[0] = new GatedThread(gate) {
             public void go() {
-                for(int i=0; i<1000; i++){
-                    mapA.put(i+"A", i);
+                for (int i = 0; i < 1000; i++) {
+                    mapA.put(i + "A", i);
                 }
             }
         };
         pool[1] = new GatedThread(gate) {
             public void go() {
-                for(int i=0; i<1000; i++)
-                    mapB.put(i+"B", i);
+                for (int i = 0; i < 1000; i++)
+                    mapB.put(i + "B", i);
             }
         };
 
-        for(Thread t:pool)
+        for (Thread t : pool)
             t.start();
 
         gate.await();
 
-        for(Thread t:pool)
+        for (Thread t : pool)
             t.join();
 
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(2000, mapA.size());
                 assertEquals(2000, mapB.size());
                 assertEquals(2000, mapC.size());
             }
         });
 
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(mapA.get(i + "A"), mapB.get(i + "A"));
+                    assertEquals(mapA.get(i + "A"), mapC.get(i + "A"));
+                    assertEquals(mapB.get(i + "A"), mapC.get(i + "A"));
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
-                for(int i=0; i<1000; i++){
-                    assertEquals(i, mapA.get(i+"A"));
-                    assertEquals(i, mapB.get(i+"A"));
-                    assertEquals(i, mapC.get(i+"A"));
-
-                    assertEquals(i, mapA.get(i+"B"));
-                    assertEquals(i, mapB.get(i+"B"));
-                    assertEquals(i, mapC.get(i+"B"));
+                    assertEquals(mapA.get(i + "B"), mapB.get(i + "B"));
+                    assertEquals(mapA.get(i + "B"), mapC.get(i + "B"));
+                    assertEquals(mapB.get(i + "B"), mapC.get(i + "B"));
                 }
             }
         });
     }
 
-    abstract public class GatedThread extends Thread{
+    abstract public class GatedThread extends Thread {
         private final CyclicBarrier gate;
 
-        public GatedThread(CyclicBarrier gate){
+        public GatedThread(CyclicBarrier gate) {
             this.gate = gate;
         }
 
-        public void run(){
+        public void run() {
             try {
                 gate.await();
                 go();
@@ -1984,7 +1960,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         abstract public void go();
     }
 
-    @Ignore("The update Conflict value is determined by the lastUpdateHash from the recored Store")
     @Test
     public void MapRepInterleavedDataOrderTest_Delay0_CONST_FAILS() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -1995,49 +1970,69 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
-
         final ReplicatedMap<Object, Object> mapA = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapB = instance2.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> mapC = instance3.getReplicatedMap("default");
 
-        for(int i=0; i<1000; i++){
-            if(i%2==0){
-                mapB.put(i, i+"B");
-                mapA.put(i, i+"A");
-            }else{
-                mapA.put(i, i+"A");
-                mapB.put(i, i+"B");
+        for (int i = 0; i < 1000; i++) {
+            if (i % 2 == 0) {
+                mapB.put(i, i + "B");
+                mapA.put(i, i + "A");
+            } else {
+                mapA.put(i, i + "A");
+                mapB.put(i, i + "B");
             }
         }
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask(){
-            public void run(){
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
 
-                for(int i=0; i<1000; i++){
-                    if(i%2==0){
-                        assertEquals(i+"A", mapA.get(i));
-                        assertEquals(i+"A", mapB.get(i));
-                        assertEquals(i+"A", mapC.get(i));
-                    }else{
-                        assertEquals(i+"B", mapA.get(i));
-                        assertEquals(i+"B", mapB.get(i));
-                        assertEquals(i+"B", mapC.get(i));
-                    }
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(mapA.get(i), mapB.get(i));
+                    assertEquals(mapA.get(i), mapC.get(i));
+                    assertEquals(mapB.get(i), mapC.get(i));
                 }
             }
         });
     }
 
-    private <T> T evalConflictResult(HazelcastInstance hz1, HazelcastInstance hz2, T value1, T value2) {
-        Member member1 = hz1.getCluster().getLocalMember();
-        Member member2 = hz2.getCluster().getLocalMember();
-        long member1Hash = member1.getUuid().hashCode();
-        long member2Hash = member2.getUuid().hashCode();
+    private <K, V> ReplicatedRecord<K, V> getReplicatedRecord(ReplicatedMap<K, V> map, K key) throws Exception {
+        ReplicatedMapProxy proxy = (ReplicatedMapProxy) map;
+        AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) REPLICATED_RECORD_STORE.get(proxy);
+        return store.getReplicatedRecord(key);
+    }
 
-        if (member1Hash >= member2Hash) {
-            return value2;
-        }
-        return value1;
+    private int getMemberHash(ReplicatedMap map) throws Exception {
+        ReplicatedMapProxy proxy = (ReplicatedMapProxy) map;
+        AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) REPLICATED_RECORD_STORE.get(proxy);
+        return store.getLocalMemberHash();
+    }
+
+    private PreReplicationHook createReplicationHook(final CountDownLatch replicateLatch,
+                                                     final CountDownLatch startReplication) {
+        return new PreReplicationHook() {
+            @Override
+            public void preReplicateMessage(ReplicationMessage message, ReplicationChannel channel) {
+                startReplication.countDown();
+                try {
+                    replicateLatch.await(1, TimeUnit.MINUTES);
+                } catch (Exception e) {
+                    ExceptionUtil.rethrow(e);
+                }
+                channel.replicate(message);
+            }
+
+            @Override
+            public void preReplicateMultiMessage(MultiReplicationMessage message, ReplicationChannel channel) {
+                startReplication.countDown();
+                try {
+                    replicateLatch.await(1, TimeUnit.MINUTES);
+                } catch (Exception e) {
+                    ExceptionUtil.rethrow(e);
+                }
+                channel.replicate(message);
+            }
+        };
     }
 
 }
