@@ -24,7 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.InternalPartitions;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionDataSerializerHook;
 import com.hazelcast.partition.PartitionServiceImpl;
 
@@ -52,10 +52,10 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
             addressMap.put(address, k);
             k++;
         }
-        final InternalPartitions partitions = service.getPartitions();
-        final int[] indexes = new int[partitions.size()];
+        final InternalPartition[] partitions = service.getPartitions();
+        final int[] indexes = new int[partitions.length];
         for (int i = 0; i < indexes.length; i++) {
-            final Address owner = partitions.get(i).getOwner();
+            final Address owner = partitions[i].getOwner();
             int index = -1;
             if (owner != null) {
                 final Integer idx = addressMap.get(owner);

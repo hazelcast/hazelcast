@@ -25,7 +25,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.InternalPartitions;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
 
@@ -51,7 +51,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     public ClusterRuntimeState(final Collection<Member> members, // !!! ordered !!!
-                               final InternalPartitions partitions,
+                               final InternalPartition[] partitions,
                                final Collection<MigrationInfo> activeMigrations,
                                final Map<Address, Connection> connections,
                                final Collection<LockResource> locks) {
