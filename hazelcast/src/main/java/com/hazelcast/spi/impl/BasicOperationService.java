@@ -175,11 +175,13 @@ final class BasicOperationService implements InternalOperationService {
         return size;
     }
 
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
         if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         if (target == null) throw new IllegalArgumentException("Target cannot be null!");
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
@@ -189,7 +191,8 @@ final class BasicOperationService implements InternalOperationService {
     public void handleOperation(final Packet packet) {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                responseExecutor.execute(new RemoteOperationProcessor(packet));
+                responseExecutor.execute(new ResponseProcessor(packet));
+                //responseExecutor.execute(new RemoteOperationProcessor(packet));
             } else {
                 final int partitionId = packet.getPartitionId();
                 final Executor executor = getExecutor(partitionId);
@@ -224,6 +227,7 @@ final class BasicOperationService implements InternalOperationService {
      * Runs operation in calling thread.
      * @param op
      */
+    @Override
     public void runOperation(Operation op) {
         if (isAllowedToRunInCurrentThread(op)) {
             doRunOperation(op);
@@ -267,6 +271,7 @@ final class BasicOperationService implements InternalOperationService {
      *
      * @param op
      */
+    @Override
     public void executeOperation(final Operation op) {
         String executorName = op.getExecutorName();
         if (executorName == null) {
@@ -292,7 +297,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-     @Override
+    @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
          return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
                  InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
@@ -510,6 +515,7 @@ final class BasicOperationService implements InternalOperationService {
 
     private class ScheduledBackupProcessor implements ScheduledEntryProcessor<Object, ScheduledBackup> {
 
+        @Override
         public void process(EntryTaskScheduler<Object, ScheduledBackup> scheduler, Collection<ScheduledEntry<Object, ScheduledBackup>> scheduledEntries) {
             for (ScheduledEntry<Object, ScheduledBackup> entry : scheduledEntries) {
                 final ScheduledBackup backup = entry.getValue();
@@ -577,11 +583,13 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
+    @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
@@ -595,6 +603,7 @@ final class BasicOperationService implements InternalOperationService {
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
+    @Override
     public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
                                                          Address target) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = Collections.singletonMap(target,
@@ -654,6 +663,7 @@ final class BasicOperationService implements InternalOperationService {
         return partitionResults;
     }
 
+    @Override
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
         Address target = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
@@ -663,6 +673,7 @@ final class BasicOperationService implements InternalOperationService {
         return send(op, target);
     }
 
+    @Override
     public boolean send(final Operation op, final Address target) {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
@@ -674,6 +685,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
     public boolean send(final Operation op, final Connection connection) {
         Data data = nodeEngine.toData(op);
         final int partitionId = getPartitionIdForExecution(op);
@@ -681,9 +693,6 @@ final class BasicOperationService implements InternalOperationService {
         packet.setHeader(Packet.HEADER_OP);
         if(op instanceof UrgentSystemOperation){
             packet.setHeader(Packet.HEADER_URGENT);
-        }
-        if (op instanceof ResponseOperation) {
-            packet.setHeader(Packet.HEADER_RESPONSE);
         }
         return nodeEngine.send(packet, connection);
     }
@@ -721,6 +730,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
+    @Override
     public void notifyBackupCall(long callId) {
         final BackupCompletionCallback backupCompletionCallback = backupCalls.get(callId);
         if (backupCompletionCallback != null) {
@@ -842,41 +852,48 @@ final class BasicOperationService implements InternalOperationService {
             try {
                 final Address caller = conn.getEndPoint();
                 final Data data = packet.getData();
-                final Operation op = (Operation) nodeEngine.toObject(data);
+                final Object object = nodeEngine.toObject(data);
+                final Operation op = (Operation) object;
                 op.setNodeEngine(nodeEngine);
                 OperationAccessor.setCallerAddress(op, caller);
                 OperationAccessor.setConnection(op, conn);
-                if (op instanceof ResponseOperation) {
-                    processResponse((ResponseOperation) op);
+
+                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+                if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
+                    final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
+                            op.getClass().getName(), op.getServiceName());
+                    handleOperationError(op, error);
                 } else {
-                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-                    if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
-                        final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
-                                op.getClass().getName(), op.getServiceName());
-                        handleOperationError(op, error);
+                    String executorName = op.getExecutorName();
+                    if (executorName == null) {
+                        doRunOperation(op);
                     } else {
-                        String executorName = op.getExecutorName();
-                        if(executorName == null){
-                            doRunOperation(op);
-                        }else{
-                            ManagedExecutorService executor = executionService.getExecutor(executorName);
-                            if(executor == null){
-                                throw new IllegalStateException("Could not found executor with name: "+executorName);
-                            }
-                            executor.execute(new LocalOperationProcessor(op));
+                        ManagedExecutorService executor = executionService.getExecutor(executorName);
+                        if (executor == null) {
+                            throw new IllegalStateException("Could not found executor with name: " + executorName);
                         }
+                        executor.execute(new LocalOperationProcessor(op));
                     }
                 }
             } catch (Throwable e) {
                 logger.severe(e);
             }
         }
+    }
 
-        void processResponse(ResponseOperation response) {
+    private class ResponseProcessor implements Runnable {
+        final Packet packet;
+
+        public ResponseProcessor(Packet packet) {
+            this.packet = packet;
+        }
+
+        @Override
+        public void run() {
             try {
-                response.beforeRun();
-                response.run();
-                response.afterRun();
+                final Data data = packet.getData();
+                final Response response = (Response)nodeEngine.toObject(data);
+                notifyRemoteCall(response.callId,response);
             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
             }
@@ -895,6 +912,7 @@ final class BasicOperationService implements InternalOperationService {
             this.threadId = threadId;
         }
 
+        @Override
         protected Thread createThread(Runnable r) {
             return new OperationThread(threadGroup, r, threadName, threadId);
         }
@@ -909,6 +927,7 @@ final class BasicOperationService implements InternalOperationService {
             this.id = id;
         }
 
+        @Override
         public void run() {
             try {
                 super.run();

@@ -16,16 +16,26 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
 /**
  * @author mdogan 4/10/13
  */
-class Response {
+class Response implements IdentifiedDataSerializable{
 
-    final Object response;
+    Object response;
 
-    final long callId;
+    long callId;
 
-    final int backupCount;
+    //todo: no need to have a int, byte will do fine.
+    int backupCount;
+
+    Response(){}
 
     Response(Object response, long callId, int backupCount) {
         this.response = response;
@@ -42,5 +52,43 @@ class Response {
         sb.append(", backupCount=").append(backupCount);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.RESPONSE;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(callId);
+        out.writeInt(backupCount);
+
+        final boolean isData = response instanceof Data;
+        out.writeBoolean(isData);
+        if (isData) {
+            ((Data) response).writeData(out);
+        } else {
+            out.writeObject(response);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        callId = in.readLong();
+        backupCount = in.readInt();
+        final boolean isData = in.readBoolean();
+        if (isData) {
+            Data data = new Data();
+            data.readData(in);
+            response = data;
+        } else {
+            response = in.readObject();
+        }
     }
 }
