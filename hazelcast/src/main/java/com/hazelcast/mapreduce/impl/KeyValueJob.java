@@ -16,20 +16,31 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.operation.TrackedOperationFactory;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
@@ -72,6 +83,7 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
         @Override
         public T call() throws Exception {
+            ClusterService cs = nodeEngine.getClusterService();
             OperationService os = nodeEngine.getOperationService();
             PartitionService ps = nodeEngine.getPartitionService();
             SerializationService ss = nodeEngine.getSerializationService();
@@ -80,10 +92,38 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
             TrackedOperationFactory<KeyIn, ValueIn> factory =
                     new TrackedOperationFactory<KeyIn, ValueIn>(name, jobId, keyValueSource);
 
-
+            Map<MemberImpl, InternalCompletableFuture> futures = new HashMap<MemberImpl, InternalCompletableFuture>();
+            for (MemberImpl member : cs.getMemberList()) {
+                os.invokeOnTarget()
+            }
 
             return (T) os.invokeOnAllPartitions(MapReduceService.SERVICE_NAME, factory);
         }
     }
 
+    private static class NonBlockingCompletableFuture<V> extends AbstractCompletableFuture<V> {
+
+        private NonBlockingCompletableFuture(NodeEngine nodeEngine) {
+            super(nodeEngine);
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            long remaining = Clock.currentTimeMillis() + unit.toMillis(timeout);
+            for (;;) {
+
+            }
+            return (V) getResult();
+        }
+    }
 }
