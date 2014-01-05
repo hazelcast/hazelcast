@@ -1378,12 +1378,19 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMapProxy<Object, Integer> map1 = (ReplicatedMapProxy) instance1.getReplicatedMap("default");
+        final ReplicatedMapProxy<Object, Integer> map2 = (ReplicatedMapProxy) instance2.getReplicatedMap("default");
 
         for (int i = 0; i < 1000; i++) {
             map1.put(i, i);
         }
+
+        final Comparator<Integer> comparator = new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                return o1.compareTo(o2);
+            }
+        };
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() {
@@ -1391,9 +1398,10 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
                 assertEquals(1000, map2.size());
 
                 assertTrue(map1.equals(map2));
+                assertTrue(map1.storageEquals(map2));
 
-                assertTrue(map1.entrySet().equals(map2.entrySet()));
-                assertTrue(map1.values().equals(map2.values()));
+                assertEquals(map1.entrySet(), map2.entrySet());
+                assertEquals(map1.values(comparator), map2.values(comparator));
             }
         });
     }

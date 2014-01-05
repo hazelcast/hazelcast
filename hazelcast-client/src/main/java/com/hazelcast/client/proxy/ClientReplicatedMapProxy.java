@@ -29,9 +29,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.client.*;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -161,6 +159,13 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public Collection<V> values() {
         return ((ReplicatedMapValueCollection) invoke(new ClientReplicatedMapValuesRequest(getName()))).getValues();
+    }
+
+    @Override
+    public Collection<V> values(Comparator<V> comparator) {
+        List values = (List) values();
+        Collections.sort(values, comparator);
+        return values;
     }
 
     @Override

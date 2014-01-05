@@ -18,7 +18,10 @@ package com.hazelcast.core;
 
 import com.hazelcast.query.Predicate;
 
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -115,5 +118,43 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * @param key          key to listen
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
+
+    /**
+     * Returns a {@link Collection} view of the values contained in this map.
+     * The collection is <b>NOT</b> backed by the map, so changes to the map are
+     * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
+     * The order of the elements is not guaranteed due to the internal
+     * asynchronous replication behavior. If a specific order is needed use
+     * {@link #values(java.util.Comparator)} to force reordering of the
+     * elements before returning.
+     *
+     * @return a collection view of the values contained in this map
+     */
+    Collection<V> values();
+
+    /**
+     * Returns a {@link Collection} view of the values contained in this map.
+     * The collection is <b>NOT</b> backed by the map, so changes to the map are
+     * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
+     * The order of the elements is guaranteed by executing the given
+     * {@link java.util.Comparator} before returning the elements.
+     *
+     * @param comparator the Comparator to sort the returned elements
+     * @return a collection view of the values contained in this map
+     */
+    Collection<V> values(Comparator<V> comparator);
+
+    /**
+     * Returns a {@link Set} view of the mappings contained in this map.
+     * The set is <b>NOT</b> backed by the map, so changes to the map are
+     * <b>NOT</b> reflected in the set, and vice-versa.<br/>
+     * The order of the elements is not guaranteed due to the internal
+     * asynchronous replication behavior. If a specific order is needed use
+     * {@link #entrySet(java.util.Comparator)} to force reordering of the
+     * elements before returning.
+     *
+     * @return a set view of the mappings contained in this map
+     */
+    Set<Entry<K, V>> entrySet();
 
 }

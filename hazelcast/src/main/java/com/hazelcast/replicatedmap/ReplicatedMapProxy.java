@@ -26,6 +26,7 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -147,8 +148,32 @@ public class ReplicatedMapProxy<K, V>
     }
 
     @Override
+    public Collection<V> values(Comparator<V> comparator) {
+        return replicatedRecordStore.values(comparator);
+    }
+
+    @Override
     public Set<Entry<K, V>> entrySet() {
         return replicatedRecordStore.entrySet();
+    }
+
+    public boolean storageEquals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        ReplicatedMapProxy that = (ReplicatedMapProxy) o;
+
+        if (!replicatedRecordStore.equals(that.replicatedRecordStore)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + replicatedRecordStore.hashCode();
+        return result;
     }
 
     @Override
