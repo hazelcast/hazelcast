@@ -177,33 +177,58 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         doInvoke();
     }
 
+    private static Throwable getError(Object obj){
+        if(obj == null){
+            return null;
+        }
+
+        if(obj instanceof Throwable){
+            return (Throwable)obj;
+        }
+
+        if(!(obj instanceof Response)){
+            return null;
+        }
+
+        Response response = (Response)obj;
+        if(!(response.response instanceof Throwable)){
+            return null;
+        }
+
+        return (Throwable)response.response;
+    }
+
     @Override
     public void notify(Object obj) {
         Object response;
         if (obj == null) {
             response = NULL_RESPONSE;
-        } else if (obj instanceof CallTimeoutException) {
-            response = RETRY_RESPONSE;
-            if (logger.isFinestEnabled()) {
-                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
-            }
-            invokeCount--;
-        } else if (obj instanceof Throwable) {
-            final Throwable error = (Throwable) obj;
-            final ExceptionAction action = onException(error);
-            final int localInvokeCount = invokeCount;
-            if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-                response = RETRY_RESPONSE;
-                if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                    logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+        } else {
+            Throwable error = getError(obj);
+            if (error != null) {
+                if (error instanceof CallTimeoutException) {
+                    response = RETRY_RESPONSE;
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+                    }
+                    invokeCount--;
+                } else{
+                    final ExceptionAction action = onException(error);
+                    final int localInvokeCount = invokeCount;
+                    if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
+                        response = RETRY_RESPONSE;
+                        if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
+                            logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+                        }
+                    } else if (action == ExceptionAction.CONTINUE_WAIT) {
+                        response = WAIT_RESPONSE;
+                    } else {
+                        response = error;
+                    }
                 }
-            } else if (action == ExceptionAction.CONTINUE_WAIT) {
-                response = WAIT_RESPONSE;
             } else {
                 response = obj;
             }
-        } else {
-            response = obj;
         }
 
         if (response == RETRY_RESPONSE) {
