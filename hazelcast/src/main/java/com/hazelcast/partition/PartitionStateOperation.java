@@ -34,7 +34,7 @@ public final class PartitionStateOperation extends AbstractOperation
     private PartitionRuntimeState partitionState;
 
     public PartitionStateOperation(final Collection<MemberImpl> members,
-                                   final InternalPartitions partitions,
+                                   final InternalPartition[] partitions,
                                    final Collection<MigrationInfo> migrationInfos,
                                    final long masterTime, int version) {
         final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());

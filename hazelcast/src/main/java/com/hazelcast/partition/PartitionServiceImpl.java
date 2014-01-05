@@ -601,8 +601,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     @PrivateApi
-    public InternalPartitions getPartitions() {
-        return new InternalPartitions(partitions);
+    public InternalPartition[] getPartitions() {
+        //a defensive copy is made to prevent breaking with the old approach, but imho not needed
+        InternalPartition[] result = new InternalPartition[partitions.length];
+        System.arraycopy(partitions, 0, result, 0, partitions.length);
+        return result;
     }
 
     MemberImpl getMember(Address address) {

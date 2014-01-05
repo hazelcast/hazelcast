@@ -44,7 +44,7 @@ public class PartitionRuntimeState implements DataSerializable {
     }
 
     public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
-                                 final InternalPartitions partitions,
+                                 final InternalPartition[] partitions,
                                  final Collection<MigrationInfo> migrationInfos,
                                  final long masterTime, int version) {
         this.masterTime = masterTime;
@@ -64,7 +64,7 @@ public class PartitionRuntimeState implements DataSerializable {
         addressIndexes.put(memberInfo.getAddress(), memberIndex);
     }
 
-    protected void setPartitions(InternalPartitions partitions, Map<Address, Integer> addressIndexes) {
+    protected void setPartitions(InternalPartition[] partitions, Map<Address, Integer> addressIndexes) {
         for (InternalPartition partition : partitions) {
             ShortPartitionInfo partitionInfo = new ShortPartitionInfo(partition.getPartitionId());
             for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
@@ -78,24 +78,6 @@ public class PartitionRuntimeState implements DataSerializable {
             }
             partitionInfos.add(partitionInfo);
         }
-    }
-
-    public Address[][] getPartitionState() {
-        int size = partitionInfos.size();
-        Address[][] addresses = new Address[size][];
-        for (ShortPartitionInfo partitionInfo : partitionInfos) {
-            Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
-            addresses[partitionInfo.partitionId] = replicas;
-            int[] addressIndexes = partitionInfo.addressIndexes;
-            for (int c = 0; c < addressIndexes.length; c++) {
-                int index = addressIndexes[c];
-                if (index != -1) {
-                    replicas[c] = members.get(index).getAddress();
-                }
-            }
-        }
-
-        return addresses;
     }
 
     public PartitionInfo[] getPartitions() {
