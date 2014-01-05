@@ -171,9 +171,30 @@ public final class SerializationServiceBuilder {
         }
 
         final InputOutputFactory inputOutputFactory = createInputOutputFactory();
-        final SerializationService ss = new SerializationServiceImpl(inputOutputFactory, version, classLoader, dataSerializableFactories,
+        final SerializationServiceImpl ss = new SerializationServiceImpl(inputOutputFactory, version, classLoader, dataSerializableFactories,
                 portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitioningStrategy,
                 initialOutputBufferSize, enableCompression, enableSharedObject);
+
+        SerializerHookLoader serializerHookLoader = new SerializerHookLoader(config, classLoader);
+        Map<Class, Object> serializers = serializerHookLoader.getSerializers();
+        for (Map.Entry<Class, Object> entry : serializers.entrySet()) {
+            Class serializationType = entry.getKey();
+            Object value = entry.getValue();
+            Serializer serializer;
+            if (value instanceof SerializerHook) {
+                serializer = ((SerializerHook) value).createSerializer();
+            } else {
+                serializer = (Serializer) value;
+            }
+            if (value instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware)value).setHazelcastInstance(hazelcastInstance);
+            }
+            if (!ClassLoaderUtil.isInternalType(value.getClass())) {
+                ss.register(serializationType, serializer);
+            } else {
+                ss.safeRegister(serializationType, serializer);
+            }
+        }
 
         if (config != null) {
             if (config.getGlobalSerializerConfig() != null) {
@@ -192,32 +213,6 @@ public final class SerializationServiceBuilder {
                 }
 
                 ss.registerGlobal(serializer);
-            }
-
-            final Collection<SerializerConfig> typeSerializers = config.getSerializerConfigs();
-            for (SerializerConfig serializerConfig : typeSerializers) {
-                Serializer serializer = serializerConfig.getImplementation();
-                if (serializer == null) {
-                    try {
-                        serializer = ClassLoaderUtil.newInstance(classLoader, serializerConfig.getClassName());
-                    } catch (Exception e) {
-                        throw new HazelcastSerializationException(e);
-                    }
-                }
-
-                if(serializer instanceof HazelcastInstanceAware){
-                    ((HazelcastInstanceAware)serializer).setHazelcastInstance(hazelcastInstance);
-                }
-
-                Class typeClass = serializerConfig.getTypeClass();
-                if (typeClass == null) {
-                    try {
-                        typeClass = ClassLoaderUtil.loadClass(classLoader, serializerConfig.getTypeClassName());
-                    } catch (ClassNotFoundException e) {
-                        throw new HazelcastSerializationException(e);
-                    }
-                }
-                ss.register(typeClass, serializer);
             }
         }
         return ss;
