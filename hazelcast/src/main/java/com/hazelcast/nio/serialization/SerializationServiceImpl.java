@@ -439,7 +439,7 @@ public final class SerializationServiceImpl implements SerializationService {
         constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
     }
 
-    private void safeRegister(final Class type, final Serializer serializer) {
+    void safeRegister(final Class type, final Serializer serializer) {
         safeRegister(type, createSerializerAdapter(serializer));
     }
 
