@@ -264,6 +264,13 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
+    public Collection values(Comparator comparator) {
+        List values = (List) values();
+        Collections.sort(values, comparator);
+        return values;
+    }
+
+    @Override
     public Set entrySet() {
         checkState();
         Set entrySet = new HashSet(storage.size());
