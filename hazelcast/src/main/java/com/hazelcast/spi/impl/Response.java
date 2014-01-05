@@ -24,6 +24,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
+ * A Response is send when an Operation needs to return a value.
+ *
+ * The Response contains the actual 'value' but also the callid of that operation
+ * and the backup count. Based on the backup count, the invoker of the operation
+ * knows when all the backups have completed.
+ *
  * @author mdogan 4/10/13
  */
 class Response implements IdentifiedDataSerializable{
@@ -33,6 +39,7 @@ class Response implements IdentifiedDataSerializable{
     long callId;
 
     //todo: no need to have a int, byte will do fine.
+    //the number of synchronous backups; 0 if no backups are needed.
     int backupCount;
 
     Response(){}
