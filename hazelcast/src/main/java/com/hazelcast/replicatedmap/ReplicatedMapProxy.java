@@ -157,8 +157,7 @@ public class ReplicatedMapProxy<K, V>
         return replicatedRecordStore.entrySet();
     }
 
-    @Override
-    public boolean equals(Object o) {
+    public boolean storageEquals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
