@@ -115,23 +115,8 @@ public abstract class AbstractCompletableFuture<V> implements CompletableFuture<
         }
     }
 
-    private Object readResult() {
-        Object result = this.result;
-        if (result == NULL_VALUE) {
-            try {
-                result = readResult();
-            } catch (Throwable t) {
-                result = t;
-            }
-            if (resultUpdater.compareAndSet(this, NULL_VALUE, result)) {
-                return result;
-            }
-        }
-        return this.result;
-    }
-
     private void runAsynchronous(final ExecutionCallback<V> callback, final Executor executor) {
-        final Object result = readResult();
+        final Object result = this.result;
         executor.execute(new Runnable() {
             @Override
             public void run() {

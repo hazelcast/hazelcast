@@ -404,7 +404,12 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         @Override
         public boolean isDone() {
-            return super.isDone() || future.isDone();
+            boolean done = future.isDone();
+            if (done && !super.isDone()) {
+                forceSetResult();
+                return true;
+            }
+            return done || super.isDone();
         }
 
         @Override
@@ -415,6 +420,16 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 setResult(result);
             }
             return result;
+        }
+
+        private void forceSetResult() {
+            Object result;
+            try {
+                result = future.get();
+            } catch (Throwable t) {
+                result = t;
+            }
+            setResult(result);
         }
     }
 }
