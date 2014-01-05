@@ -891,10 +891,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
                 }
             });
 
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
             latch1.await(30, TimeUnit.SECONDS);
 
             final AtomicReference reference = new AtomicReference();
-            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
             completableFuture.andThen(new ExecutionCallback() {
                 @Override
                 public void onResponse(Object response) {
