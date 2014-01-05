@@ -910,6 +910,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             });
 
             latch2.await(30, TimeUnit.SECONDS);
+            if (reference.get() instanceof Throwable) {
+                ((Throwable) reference.get()).printStackTrace();
+            }
+
             assertEquals("success", reference.get());
 
         } finally {
