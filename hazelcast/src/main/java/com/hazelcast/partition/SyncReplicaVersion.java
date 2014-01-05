@@ -27,7 +27,7 @@ import java.io.IOException;
  * @author mdogan 4/11/13
  */
 // runs locally
-final class SyncReplicaVersion extends Operation implements PartitionAwareOperation {
+final class SyncReplicaVersion extends Operation implements PartitionAwareOperation, UrgentSystemOperation {
 
     private final int syncReplicaIndex;
     private final Callback<Object> callback;
