@@ -192,7 +192,6 @@ final class BasicOperationService implements InternalOperationService {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 responseExecutor.execute(new ResponseProcessor(packet));
-                //responseExecutor.execute(new RemoteOperationProcessor(packet));
             } else {
                 final int partitionId = packet.getPartitionId();
                 final Executor executor = getExecutor(partitionId);
