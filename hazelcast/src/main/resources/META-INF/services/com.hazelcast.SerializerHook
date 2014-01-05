@@ -1,1 +1,1 @@
-com.hazelcast.nio.serialization.serializers.ArrayListStreamSerializer
+com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook
