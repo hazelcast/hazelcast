@@ -19,6 +19,10 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.util.HealthMonitorLevel;
 
+/**
+ * The GroupProperties contain the Hazelcast properties. They can be set as an environmental variable, or
+ * directly on the Config using {@link Config#setProperty(String, String)} or from the XML.
+ */
 public class GroupProperties {
 
     public static final String PROP_HOSTED_MANAGEMENT_ENABLED = "hazelcast.hosted.management.enabled";

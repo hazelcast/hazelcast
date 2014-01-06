@@ -16,6 +16,10 @@
 
 package com.hazelcast.core;
 
+/**
+ * A {@link IAtomicLong} that exposes its operations using a {@link com.hazelcast.core.CompletableFuture}
+ * so it can be used in the reactive programming model approach.
+ */
 public interface AsyncAtomicLong extends IAtomicLong {
 
     CompletableFuture<Long> asyncAddAndGet(long delta);

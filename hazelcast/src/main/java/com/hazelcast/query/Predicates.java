@@ -28,9 +28,82 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * A utility class to create {@link com.hazelcast.query.Predicate} instances.
+ */
 public final class Predicates {
 
+    //we don't want instances.
     private Predicates(){}
+
+    public static Predicate instanceOf(final Class klass) {
+        return new InstanceOfPredicate(klass);
+    }
+
+    private static Comparable readAttribute(Map.Entry entry, String attribute) {
+        QueryableEntry queryableEntry = (QueryableEntry) entry;
+        Comparable value = queryableEntry.getAttribute(attribute);
+        if (value == null) {
+            return IndexImpl.NULL;
+        }
+        return value;
+    }
+
+    public static Predicate and(Predicate x, Predicate y) {
+        return new AndPredicate(x, y);
+    }
+
+    public static Predicate not(Predicate predicate) {
+        return new NotPredicate(predicate);
+    }
+
+    public static Predicate or(Predicate x, Predicate y) {
+        return new OrPredicate(x, y);
+    }
+
+    public static Predicate notEqual(String attribute, Comparable y) {
+        return new NotEqualPredicate(attribute, y);
+    }
+
+    public static Predicate equal(String attribute, Comparable y) {
+        return new EqualPredicate(attribute, y);
+    }
+
+    public static Predicate like(String attribute, String pattern) {
+        return new LikePredicate(attribute, pattern);
+    }
+
+    public static Predicate ilike(String attribute, String pattern) {
+        return new ILikePredicate(attribute, pattern);
+    }
+
+    public static Predicate regex(String attribute, String pattern) {
+        return new RegexPredicate(attribute, pattern);
+    }
+
+    public static Predicate greaterThan(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, false, false);
+    }
+
+    public static Predicate greaterEqual(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, true, false);
+    }
+
+    public static Predicate lessThan(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, false, true);
+    }
+
+    public static Predicate lessEqual(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, true, true);
+    }
+
+    public static Predicate between(String attribute, Comparable from, Comparable to) {
+        return new BetweenPredicate(attribute, from, to);
+    }
+
+    public static Predicate in(String attribute, Comparable... values) {
+        return new InPredicate(attribute, values);
+    }
 
     public static class BetweenPredicate extends AbstractPredicate {
         private Comparable to;
@@ -409,11 +482,6 @@ public final class Predicates {
         }
     }
 
-    public static Predicate instanceOf(final Class klass) {
-        return new InstanceOfPredicate(klass);
-    }
-
-
     public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
 
         private Predicate[] predicates;
@@ -685,71 +753,6 @@ public final class Predicates {
         public void readData(ObjectDataInput in) throws IOException {
             attribute = in.readUTF();
         }
-    }
-
-    private static Comparable readAttribute(Map.Entry entry, String attribute) {
-        QueryableEntry queryableEntry = (QueryableEntry) entry;
-        Comparable value = queryableEntry.getAttribute(attribute);
-        if (value == null) {
-            return IndexImpl.NULL;
-        }
-        return value;
-    }
-
-    public static Predicate and(Predicate x, Predicate y) {
-        return new AndPredicate(x, y);
-    }
-
-    public static Predicate not(Predicate predicate) {
-        return new NotPredicate(predicate);
-    }
-
-    public static Predicate or(Predicate x, Predicate y) {
-        return new OrPredicate(x, y);
-    }
-
-    public static Predicate notEqual(String attribute, Comparable y) {
-        return new NotEqualPredicate(attribute, y);
-    }
-
-    public static Predicate equal(String attribute, Comparable y) {
-        return new EqualPredicate(attribute, y);
-    }
-
-    public static Predicate like(String attribute, String pattern) {
-        return new LikePredicate(attribute, pattern);
-    }
-
-    public static Predicate ilike(String attribute, String pattern) {
-        return new ILikePredicate(attribute, pattern);
-    }
-
-    public static Predicate regex(String attribute, String pattern) {
-        return new RegexPredicate(attribute, pattern);
-    }
-
-    public static Predicate greaterThan(String x, Comparable y) {
-        return new GreaterLessPredicate(x, y, false, false);
-    }
-
-    public static Predicate greaterEqual(String x, Comparable y) {
-        return new GreaterLessPredicate(x, y, true, false);
-    }
-
-    public static Predicate lessThan(String x, Comparable y) {
-        return new GreaterLessPredicate(x, y, false, true);
-    }
-
-    public static Predicate lessEqual(String x, Comparable y) {
-        return new GreaterLessPredicate(x, y, true, true);
-    }
-
-    public static Predicate between(String attribute, Comparable from, Comparable to) {
-        return new BetweenPredicate(attribute, from, to);
-    }
-
-    public static Predicate in(String attribute, Comparable... values) {
-        return new InPredicate(attribute, values);
     }
 
     private static class InstanceOfPredicate implements Predicate, DataSerializable {
