@@ -47,7 +47,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-@Ignore//todo:
 public class BackupTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
@@ -213,6 +212,7 @@ public class BackupTest extends HazelcastTestSupport {
      * Fix for the issue 395.
      */
     @Test(timeout = 300 * 1000)
+    @Ignore//broken
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(6, 2, 50000);
     }
