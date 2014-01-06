@@ -48,7 +48,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-@Ignore//todo:
 public class PartitionDistributionTest extends HazelcastTestSupport {
     @BeforeClass
     @AfterClass
