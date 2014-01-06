@@ -587,8 +587,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-        latch.await(10, TimeUnit.SECONDS);
-
+        latch.await(5, TimeUnit.MINUTES);
 
         List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
@@ -647,6 +646,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig1);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        latch1.await(5, TimeUnit.MINUTES);
 
         cfg.getMapConfig("default").getEntryListenerConfigs().clear();
         final CountDownLatch latch2 = new CountDownLatch(100);
@@ -671,6 +671,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig2);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap("default");
+        latch2.await(5, TimeUnit.MINUTES);
 
         List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
@@ -1206,8 +1207,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
-        latch.await(10, TimeUnit.SECONDS);
-
+        latch.await(5, TimeUnit.MINUTES);
 
         List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
@@ -1266,6 +1266,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig1);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+        latch1.await(5, TimeUnit.MINUTES);
 
         cfg.getMapConfig("default").getEntryListenerConfigs().clear();
         final CountDownLatch latch2 = new CountDownLatch(100);
@@ -1290,6 +1291,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig2);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap("default");
+        latch2.await(5, TimeUnit.MINUTES);
 
         List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
