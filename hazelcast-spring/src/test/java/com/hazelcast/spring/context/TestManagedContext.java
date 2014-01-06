@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-@Ignore//todo:
 public class TestManagedContext {
 
     @Resource(name = "instance1")

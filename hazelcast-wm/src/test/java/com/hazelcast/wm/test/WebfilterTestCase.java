@@ -37,7 +37,6 @@ import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 @Category(QuickTest.class)
-@Ignore//todo:
 public class WebfilterTestCase extends AbstractWebfilterTestCase {
 
     @Parameters(name = "Executing: {0}")

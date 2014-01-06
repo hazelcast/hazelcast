@@ -35,7 +35,6 @@ import org.springframework.test.context.ContextConfiguration;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-@Ignore//todo:
 public class TestBeansApplicationContext {
 
     @BeforeClass

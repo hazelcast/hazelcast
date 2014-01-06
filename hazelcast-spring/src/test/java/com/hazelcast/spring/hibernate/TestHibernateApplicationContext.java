@@ -42,7 +42,6 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"hibernate-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-@Ignore//todo:
 public class TestHibernateApplicationContext {
 
     @Resource(name = "instance")

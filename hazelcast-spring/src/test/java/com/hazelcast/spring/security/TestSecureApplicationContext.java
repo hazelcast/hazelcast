@@ -45,7 +45,6 @@ import static org.junit.Assert.*;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"secure-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-@Ignore//todo:
 public class TestSecureApplicationContext {
 
     @Resource

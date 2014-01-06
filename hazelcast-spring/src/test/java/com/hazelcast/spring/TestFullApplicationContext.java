@@ -44,7 +44,6 @@ import static org.junit.Assert.*;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-@Ignore//todo:
 public class TestFullApplicationContext {
 
     private Config config;
