@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
@@ -69,13 +70,25 @@ public class ClientResponse implements IdentifiedDataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(callId);
-        out.writeObject(response);
         out.writeBoolean(event);
+        final boolean isData = response instanceof Data;
+        out.writeBoolean(isData);
+        if (isData) {
+            ((Data)response).writeData(out);
+        } else {
+            out.writeObject(response);
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         callId = in.readInt();
-        response = in.readObject();
         event = in.readBoolean();
+        final boolean isData = in.readBoolean();
+        if (isData) {
+            response = new Data();
+            ((Data)response).readData(in);
+        } else {
+            response = in.readObject();
+        }
     }
 }

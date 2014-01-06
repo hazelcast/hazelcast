@@ -547,7 +547,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         connection.write(ss.toData(request));
         final Data data = connection.read();
         ClientResponse clientResponse = ss.toObject(data);
-        Object response = clientResponse.getResponse();
+        Object response = ss.toObject(clientResponse.getResponse());
         if (response instanceof Throwable) {
             Throwable t = (Throwable) response;
             ExceptionUtil.fixRemoteStackTrace(t, Thread.currentThread().getStackTrace());
@@ -568,11 +568,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return future;
     }
 
-    public void _send(ClientCallFuture future, ClientConnection connection)  {
+    public void _send(ClientCallFuture future, ClientConnection connection) {
         registerCall(future, connection);
         final SerializationService ss = getSerializationService();
         final Data data = ss.toData(future.getRequest());
-        if(!connection.write(new DataAdapter(data))) {
+        if (!connection.write(new DataAdapter(data))) {
             future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
             connectionCallMap.remove(connection);
         }
@@ -676,7 +676,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             if (eventHandlerMap != null) {
                 final ClientCallFuture future = eventHandlerMap.get(callId);
                 if (future != null && future.getHandler() != null) {
-                    future.getHandler().handle(event);
+                    future.getHandler().handle(getSerializationService().toObject(event));
                     return;
                 }
             }

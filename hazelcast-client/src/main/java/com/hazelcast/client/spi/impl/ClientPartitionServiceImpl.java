@@ -103,7 +103,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private PartitionsResponse getPartitionsFrom(Address address) {
         try {
             final Future<PartitionsResponse> future = client.getInvocationService().invokeOnTarget(new GetPartitionsRequest(), address);
-            return future.get();
+            return client.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             logger.severe("Error while fetching cluster partition table!", e);
         }

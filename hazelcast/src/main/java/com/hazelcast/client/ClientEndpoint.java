@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
 
@@ -179,17 +180,20 @@ public final class ClientEndpoint implements Client {
     }
 
     public void sendResponse(Object response, int callId) {
-        if (response instanceof Throwable) {
-            response = ClientExceptionConverters.get(getClientType()).convert((Throwable) response);
-        }
         if (response == null) {
             response = ClientEngineImpl.NULL;
+        } else if (response instanceof Throwable) {
+            response = ClientExceptionConverters.get(getClientType()).convert((Throwable) response);
+        } else {
+            response = clientEngine.toData(response);
         }
+
         clientEngine.sendResponse(this, new ClientResponse(response, callId));
     }
 
     public void sendEvent(Object event, int callId) {
-        clientEngine.sendResponse(this, new ClientResponse(event, callId, true));
+        final Data data = clientEngine.toData(event);
+        clientEngine.sendResponse(this, new ClientResponse(data, callId, true));
     }
 
     public String toString() {
