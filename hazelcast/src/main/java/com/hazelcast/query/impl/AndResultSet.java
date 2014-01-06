@@ -18,9 +18,12 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
 import java.util.*;
+
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final Set<QueryableEntry> setSmallest;
@@ -28,7 +31,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final List<Predicate> lsNoIndexPredicates;
 
     public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults, List<Predicate> lsNoIndexPredicates) {
-        this.setSmallest = setSmallest;
+        this.setSmallest = isNotNull(setSmallest,"setSmallest");
         this.otherIndexedResults = otherIndexedResults;
         this.lsNoIndexPredicates = lsNoIndexPredicates;
     }
@@ -56,15 +59,22 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public boolean contains(Object o) {
-        if (!setSmallest.contains(o)) return false;
+        if (!setSmallest.contains(o)) {
+            return false;
+        }
+
         if (otherIndexedResults != null) {
             for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
-                if (!otherIndexedResult.contains(o)) return false;
+                if (!otherIndexedResult.contains(o)) {
+                    return false;
+                }
             }
         }
         if (lsNoIndexPredicates != null) {
             for (Predicate noIndexPredicate : lsNoIndexPredicates) {
-                if (!noIndexPredicate.apply((Map.Entry) o)) return false;
+                if (!noIndexPredicate.apply((Map.Entry) o)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -80,30 +90,63 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
         QueryableEntry currentEntry = null;
         final Iterator<QueryableEntry> it = setSmallest.iterator();
 
+        @Override
         public boolean hasNext() {
-            if (!it.hasNext()) return false;
-            currentEntry = it.next();
-            if (otherIndexedResults != null) {
-                for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
-                    if (!otherIndexedResult.contains(currentEntry)) {
-                        return hasNext();
-                    }
+            if (currentEntry != null) {
+                return true;
+            }
+
+            for (; it.hasNext(); ) {
+                QueryableEntry entry = it.next();
+
+                if (checkOtherIndexedResults(entry) && checkNoIndexPredicates(entry)) {
+                    currentEntry = entry;
+                    return true;
                 }
             }
-            if (lsNoIndexPredicates != null) {
-                for (Predicate noIndexPredicate : lsNoIndexPredicates) {
-                    if (!noIndexPredicate.apply(currentEntry)) {
-                        return hasNext();
-                    }
+
+            return false;
+        }
+
+        private boolean checkNoIndexPredicates(QueryableEntry currentEntry) {
+            if (lsNoIndexPredicates == null) {
+                return true;
+            }
+
+            for (Predicate noIndexPredicate : lsNoIndexPredicates) {
+                if (!noIndexPredicate.apply(currentEntry)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private boolean checkOtherIndexedResults(QueryableEntry currentEntry) {
+            if (otherIndexedResults == null) {
+                return true;
+            }
+
+            for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
+                if (!otherIndexedResult.contains(currentEntry)) {
+                    return false;
                 }
             }
             return true;
         }
 
+        @Override
         public QueryableEntry next() {
-            return currentEntry;
+            if(!hasNext()){
+                throw new NoSuchElementException();
+            }
+
+            QueryableEntry result = currentEntry;
+            currentEntry = null;
+            return result;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
