@@ -37,12 +37,15 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -55,10 +58,15 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore//todo:
 public class PartitionControlledIdTest extends HazelcastTestSupport {
 
     private HazelcastInstance[] instances;
+
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
+        Hazelcast.shutdownAll();
+    }
 
     @Before
     public void setUp() throws InterruptedException {

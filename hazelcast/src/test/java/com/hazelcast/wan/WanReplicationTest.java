@@ -14,12 +14,14 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.jruby.util.Random;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +39,7 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-@Ignore//todo:
-public class WanReplicationTest {
+public class WanReplicationTest extends HazelcastTestSupport{
 
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
@@ -49,19 +50,6 @@ public class WanReplicationTest {
     private Config configA;
     private Config configB;
     private Config configC;
-
-
-    @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-
-    }
-
-    @After
-    public void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
 
     @Before
     public void setup() throws Exception {
@@ -590,25 +578,5 @@ public class WanReplicationTest {
 
     void startGatedThread(GatedThread t){
         t.start();
-    }
-
-
-    public static void assertTrueEventually(AssertTask task) {
-        AssertionError error = null;
-        for (int k = 0; k < 60; k++) {
-            try {
-                task.run();
-                return;
-            } catch (AssertionError e) {
-                error = e;
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        throw error;
     }
 }

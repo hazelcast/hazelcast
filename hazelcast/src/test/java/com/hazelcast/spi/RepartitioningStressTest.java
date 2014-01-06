@@ -16,17 +16,21 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
@@ -48,6 +52,12 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
     private final static long DURATION_SECONDS = 120;
     private final static int THREAD_COUNT = 10;
+
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
+        Hazelcast.shutdownAll();
+    }
 
     @Before
     public void setUp() {

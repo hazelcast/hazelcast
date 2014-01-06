@@ -25,12 +25,14 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -43,12 +45,8 @@ import static org.junit.Assert.*;
 public class ClusterJoinTest {
 
     @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void cleanup() throws Exception {
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 

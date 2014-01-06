@@ -50,9 +50,9 @@ public class MemcacheTest {
 
     final static Config config = new XmlConfigBuilder().build();
 
-    @After
-    @Before
-    public void shutdownAll() {
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 

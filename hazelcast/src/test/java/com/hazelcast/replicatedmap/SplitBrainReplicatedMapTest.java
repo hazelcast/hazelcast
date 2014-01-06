@@ -13,11 +13,14 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -27,11 +30,11 @@ import static org.junit.Assert.assertEquals;
 @Ignore//todo:
 public class SplitBrainReplicatedMapTest {
 
-    @After
-    public void cleanup() throws Exception {
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
-
 
     @Test
     public void splitClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Object() throws Exception {

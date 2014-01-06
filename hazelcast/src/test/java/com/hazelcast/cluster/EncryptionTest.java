@@ -33,13 +33,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class EncryptionTest {
 
     @BeforeClass
     @AfterClass
-    public static void init() throws Exception {
+    public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 
