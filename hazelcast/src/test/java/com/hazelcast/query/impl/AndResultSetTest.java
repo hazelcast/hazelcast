@@ -1,4 +1,4 @@
-package com.hazelcast.queue.impl;
+package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
