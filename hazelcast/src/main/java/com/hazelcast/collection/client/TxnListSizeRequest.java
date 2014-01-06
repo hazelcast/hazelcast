@@ -36,7 +36,7 @@ public class TxnListSizeRequest extends TxnCollectionRequest {
     }
 
     public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getList(name).size();
+        return getEndpoint().getTransactionContext(txnId).getList(name).size();
     }
 
     public String getServiceName() {

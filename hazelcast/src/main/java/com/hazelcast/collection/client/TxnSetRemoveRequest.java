@@ -37,7 +37,7 @@ public class TxnSetRemoveRequest extends TxnCollectionRequest {
     }
 
     public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getSet(name).remove(value);
+        return getEndpoint().getTransactionContext(txnId).getSet(name).remove(value);
     }
 
     public String getServiceName() {

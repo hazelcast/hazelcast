@@ -176,7 +176,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     private void start(){
         lifecycleService.setStarted();
-
+        connectionManager.start();
         try{
             clusterService.start();
         }catch(IllegalStateException e){
@@ -185,6 +185,7 @@ public final class HazelcastClient implements HazelcastInstance {
             lifecycleService.shutdown();
             throw e;
         }
+
         partitionService.start();
     }
 

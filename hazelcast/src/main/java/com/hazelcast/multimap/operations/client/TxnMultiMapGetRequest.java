@@ -46,7 +46,7 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
 
     public Object call() throws Exception {
 
-        final TransactionContext context = getEndpoint().getTransactionContext();
+        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         final Collection<Object> objects = context.getMultiMap(name).get(key);
         Collection<Data> coll = createCollection(objects.size());
         for (Object object : objects) {

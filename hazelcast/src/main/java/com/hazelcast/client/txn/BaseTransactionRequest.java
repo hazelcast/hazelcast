@@ -14,48 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.operations.client;
+package com.hazelcast.client.txn;
 
-import com.hazelcast.multimap.MultiMapPortableHook;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
 
 /**
- * @author ali 6/10/13
+ * @author ali 02/01/14
  */
-public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
+public abstract class BaseTransactionRequest extends CallableClientRequest implements Portable {
 
-    Data key;
+    protected String txnId;
 
-    public TxnMultiMapValueCountRequest() {
+    public BaseTransactionRequest() {
     }
 
-    public TxnMultiMapValueCountRequest(String name, Data key) {
-        super(name);
-        this.key = key;
-    }
-
-    public Object call() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
-        return context.getMultiMap(name).valueCount(key);
-    }
-
-    public int getClassId() {
-        return MultiMapPortableHook.TXN_MM_VALUE_COUNT;
+    public void setTxnId(String txnId) {
+        this.txnId = txnId;
     }
 
     public void write(PortableWriter writer) throws IOException {
-        super.write(writer);
-        key.writeData(writer.getRawDataOutput());
+        writer.writeUTF("tId", txnId);
     }
 
     public void read(PortableReader reader) throws IOException {
-        super.read(reader);
-        key = new Data();
-        key.readData(reader.getRawDataInput());
+        txnId = reader.readUTF("tId");
     }
 }

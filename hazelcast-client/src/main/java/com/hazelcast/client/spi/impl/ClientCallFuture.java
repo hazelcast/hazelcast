@@ -18,12 +18,14 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
@@ -39,10 +41,15 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
 
     private final ClientClusterServiceImpl clusterService;
 
+    private final ClientExecutionService executionService;
+
     private final EventHandler handler;
 
-    public ClientCallFuture(ClientClusterServiceImpl clusterService, ClientRequest request, EventHandler handler) {
+    private volatile int reSendCount = 0;
+
+    public ClientCallFuture(ClientClusterServiceImpl clusterService, ClientExecutionService executionService, ClientRequest request, EventHandler handler) {
         this.clusterService = clusterService;
+        this.executionService = executionService;
         this.request = request;
         this.handler = handler;
     }
@@ -83,15 +90,17 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
         if (response == null) {
             throw new IllegalArgumentException("response can't be null");
         }
+        if (response instanceof TargetNotMemberException) {
+            if (resend()) {
+                return;
+            }
+        }
 
         if (response instanceof TargetDisconnectedException || response instanceof HazelcastInstanceNotActiveException) {
-            if (request instanceof RetryableRequest || clusterService.isRedoOperation()){
-                try {
-                    clusterService._resend(this);
-                } catch (Exception e) {
-                    setResponse(e);
+            if (request instanceof RetryableRequest || clusterService.isRedoOperation()) {
+                if (resend()) {
+                    return;
                 }
-                return;
             }
         }
         setResponse(response);
@@ -103,8 +112,8 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
                 throw new IllegalArgumentException("The Future.set method can only be called once");
             }
             if (this.response != null && handler != null && response instanceof String) {
-                String uuid = (String)this.response;
-                String alias = (String)response;
+                String uuid = (String) this.response;
+                String alias = (String) response;
                 int callId = request.getCallId();
                 clusterService.reRegisterListener(uuid, alias, callId);
                 return;
@@ -116,7 +125,7 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
 
     private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
         if (response instanceof Throwable) {
-            ExceptionUtil.fixRemoteStackTrace((Throwable)response, Thread.currentThread().getStackTrace());
+            ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
                 throw (ExecutionException) response;
             }
@@ -129,7 +138,7 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
             if (response instanceof InterruptedException) {
                 throw (InterruptedException) response;
             }
-            throw new ExecutionException((Throwable)response);
+            throw new ExecutionException((Throwable) response);
         }
         return (V) response;
     }
@@ -148,5 +157,24 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
 
     public EventHandler getHandler() {
         return handler;
+    }
+
+    private boolean resend() {
+        reSendCount++;
+        if (reSendCount > ClientClusterServiceImpl.RETRY_COUNT) {
+            return false;
+        }
+        executionService.execute(new ResSendTask());
+        return true;
+    }
+
+    class ResSendTask implements Runnable {
+        public void run() {
+            try {
+                clusterService.reSend(ClientCallFuture.this);
+            } catch (Exception e) {
+                setResponse(e);
+            }
+        }
     }
 }

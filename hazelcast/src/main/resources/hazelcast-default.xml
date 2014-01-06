@@ -77,10 +77,6 @@
         </symmetric-encryption>
     </network>
     <partition-group enabled="false"/>
-    <executor-service name="default">
-        <pool-size>16</pool-size>
-        <queue-capacity>100</queue-capacity>
-    </executor-service>
     <queue name="default">
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,

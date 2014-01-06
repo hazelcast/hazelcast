@@ -37,7 +37,7 @@ public class TxnListAddRequest extends TxnCollectionRequest {
     }
 
     public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getList(name).add(value);
+        return getEndpoint().getTransactionContext(txnId).getList(name).add(value);
     }
 
     public String getServiceName() {

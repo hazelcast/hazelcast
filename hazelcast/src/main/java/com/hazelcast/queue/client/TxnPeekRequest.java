@@ -16,8 +16,8 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 10/1/13
  * Time: 10:34 AM
  */
-public class TxnPeekRequest extends CallableClientRequest implements Portable {
+public class TxnPeekRequest extends BaseTransactionRequest implements Portable {
 
     private String name;
 
@@ -51,7 +51,7 @@ public class TxnPeekRequest extends CallableClientRequest implements Portable {
     @Override
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final TransactionContext context = endpoint.getTransactionContext();
+        final TransactionContext context = endpoint.getTransactionContext(txnId);
         final TransactionalQueue queue = context.getQueue(name);
         return queue.peek(timeout, TimeUnit.MILLISECONDS);
     }
@@ -73,12 +73,13 @@ public class TxnPeekRequest extends CallableClientRequest implements Portable {
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n",name);
         writer.writeLong("t",timeout);
     }
 
-    @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
         timeout = reader.readLong("t");
     }

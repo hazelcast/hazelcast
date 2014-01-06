@@ -24,6 +24,7 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.*;
@@ -71,8 +72,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final ThreadGroup threadGroup = new ThreadGroup("IOThreads");
         inSelector = new ClientInSelectorImpl(threadGroup);
         outSelector = new ClientOutSelectorImpl(threadGroup);
-        inSelector.start();
-        outSelector.start();
 
         //init socketInterceptor
         SocketInterceptorConfig sic = config.getSocketInterceptorConfig();
@@ -116,10 +115,25 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return client.getSerializationService();
     }
 
-    public void shutdown() {
+    public synchronized void start(){
+        if (live) {
+            return;
+        }
+        live = true;
+        inSelector.start();
+        outSelector.start();
+    }
+
+    public synchronized void shutdown() {
+        if (!live){
+            return;
+        }
+        live = false;
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }
+        inSelector.shutdown();
+        outSelector.shutdown();
     }
 
     public ClientConnection getRandomConnection() throws IOException {
@@ -154,6 +168,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private ClientConnection connect(Address address, Authenticator authenticator, boolean isBlock) throws IOException {
+        if (!live) {
+            throw new HazelcastException("ConnectionManager is not active!!!");
+        }
         SocketChannel socketChannel = SocketChannel.open();
         Socket socket = socketChannel.socket();
         socket.setKeepAlive(socketOptions.isKeepAlive());

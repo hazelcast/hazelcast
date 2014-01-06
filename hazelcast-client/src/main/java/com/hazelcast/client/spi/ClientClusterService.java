@@ -49,6 +49,8 @@ public interface ClientClusterService {
 
     Future send(ClientRequest request, Address target) throws IOException ;
 
+    Future send(ClientRequest request, ClientConnection connection) throws IOException;
+
     Future sendAndHandle(ClientRequest request, EventHandler handler) throws IOException ;
 
     Future sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException ;

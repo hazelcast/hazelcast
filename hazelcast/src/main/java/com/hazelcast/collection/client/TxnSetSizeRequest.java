@@ -36,7 +36,7 @@ public class TxnSetSizeRequest extends TxnCollectionRequest {
     }
 
     public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getSet(name).size();
+        return getEndpoint().getTransactionContext(txnId).getSet(name).size();
     }
 
     public String getServiceName() {

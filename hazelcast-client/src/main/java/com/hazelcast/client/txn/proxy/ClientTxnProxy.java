@@ -17,10 +17,17 @@
 package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.ClientDestroyRequest;
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.util.ExceptionUtil;
+
+import java.util.concurrent.Future;
 
 /**
  * @author ali 6/10/13
@@ -35,14 +42,18 @@ abstract class ClientTxnProxy implements TransactionalObject {
         this.proxy = proxy;
     }
 
-    final <T> T invoke(Object request){
-        return null;
-//        final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl)proxy.getClient().getClientClusterService();
-//        try {
-//            return clusterService.sendAndReceiveFixedConnection(proxy.getConnection(), request);
-//        } catch (IOException e) {
-//            throw ExceptionUtil.rethrow(new HazelcastException(e));
-//        }
+    final <T> T invoke(ClientRequest request) {
+        if (request instanceof BaseTransactionRequest) {
+            ((BaseTransactionRequest) request).setTxnId(proxy.getTxnId());
+        }
+        final ClientClusterService clusterService = proxy.getClient().getClientClusterService();
+        final SerializationService ss = proxy.getClient().getSerializationService();
+        try {
+            final Future f = clusterService.send(request, proxy.getConnection());
+            return ss.toObject(f.get()) ;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     abstract void onDestroy();

@@ -28,6 +28,8 @@ public interface ClientConnectionManager {
 
     public void shutdown();
 
+    public void start();
+
     public ClientConnection getRandomConnection() throws IOException;
 
     public ClientConnection getOrConnect(Address address) throws IOException ;

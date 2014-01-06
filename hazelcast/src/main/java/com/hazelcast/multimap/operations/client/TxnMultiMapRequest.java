@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
@@ -33,7 +33,7 @@ import java.security.Permission;
 /**
  * @author ali 6/10/13
  */
-public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, SecureRequest {
+public abstract class TxnMultiMapRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -53,10 +53,12 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
     }
 
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n",name);
     }
 
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
     }
 
