@@ -33,7 +33,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-@Ignore//todo:
 public class MemoryLeakTest {
 
     @Before
