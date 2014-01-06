@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-
+@Ignore//todo:
 public class SSLConnectionTest {
 
     @BeforeClass

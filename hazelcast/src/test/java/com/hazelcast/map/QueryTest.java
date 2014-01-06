@@ -53,6 +53,7 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+@Ignore//todo:
 public class QueryTest extends HazelcastTestSupport {
 
     @Test

@@ -24,6 +24,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,6 +34,7 @@ import java.util.Properties;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
+@Ignore//todo:
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 
     protected Properties getCacheProperties() {

@@ -24,7 +24,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
