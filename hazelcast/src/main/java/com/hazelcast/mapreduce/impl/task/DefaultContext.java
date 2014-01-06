@@ -19,7 +19,6 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
-import com.hazelcast.mapreduce.impl.operation.AbstractMapReduceOperation;
 
 import java.util.ArrayList;
 import java.util.HashMap;

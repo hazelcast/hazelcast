@@ -17,33 +17,38 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.config.JobTrackerConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.mapreduce.impl.task.MapCombineTask;
+import com.hazelcast.mapreduce.impl.task.ReducerTask;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
-public abstract class AbstractJobTracker implements JobTracker, InitializingObject {
+public abstract class AbstractJobTracker implements JobTracker {
 
-    protected final Map<String, TrackableJob> trackableJobs = new ConcurrentHashMap<String, TrackableJob>();
-
-    protected final HazelcastInstance hazelcastInstance;
+    protected final ConcurrentMap<String, TrackableJob> trackableJobs = new ConcurrentHashMap<String, TrackableJob>();
+    protected final ConcurrentMap<String, ReducerTask> reducerTasks = new ConcurrentHashMap<String, ReducerTask>();
+    protected final ConcurrentMap<String, MapCombineTask> mapCombineTasks = new ConcurrentHashMap<String, MapCombineTask>();
+    protected final NodeEngine nodeEngine;
+    protected final ExecutorService executorService;
     protected final JobTrackerConfig jobTrackerConfig;
     protected final String name;
 
-    AbstractJobTracker(String name, JobTrackerConfig jobTrackerConfig, HazelcastInstance hazelcastInstance) {
+    AbstractJobTracker(String name, JobTrackerConfig jobTrackerConfig, NodeEngine nodeEngine) {
         this.name = name;
+        this.nodeEngine = nodeEngine;
         this.jobTrackerConfig = jobTrackerConfig;
-        this.hazelcastInstance = hazelcastInstance;
+        this.executorService = nodeEngine.getExecutionService().getExecutor(name);
     }
 
     @Override
     public void destroy() {
-    }
-
-    @Override
-    public void initialize() {
     }
 
     @Override
@@ -66,12 +71,24 @@ public abstract class AbstractJobTracker implements JobTracker, InitializingObje
         return MapReduceService.SERVICE_NAME;
     }
 
-    public <V> void registerTrackableJob(TrackableJob<V> trackableJob) {
-        trackableJobs.put(trackableJob.getJobId(), trackableJob);
+    public <V> boolean registerTrackableJob(TrackableJob<V> trackableJob) {
+        return trackableJobs.putIfAbsent(trackableJob.getJobId(), trackableJob) == trackableJob;
     }
 
     public <V> boolean unregisterTrackableJob(TrackableJob<V> trackableJob) {
         return trackableJobs.remove(trackableJob) != null;
+    }
+
+    public <V> TrackableJob<V> getTrackableJob(String jobId) {
+        return trackableJobs.get(jobId);
+    }
+
+    public void registerReducerTask(ReducerTask reducerTask) {
+        reducerTasks.put(reducerTask.getJobId(), reducerTask);
+    }
+
+    public void registerMapCombineTask(MapCombineTask mapCombineTask) {
+        mapCombineTasks.put(mapCombineTask.getJobId(), mapCombineTask);
     }
 
 }

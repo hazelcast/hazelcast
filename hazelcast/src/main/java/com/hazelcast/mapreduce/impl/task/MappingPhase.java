@@ -17,9 +17,39 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.Context;
+import com.hazelcast.mapreduce.KeyPredicate;
+import com.hazelcast.mapreduce.KeyValueSource;
 
-public interface MappingPhase<K, V> {
+import java.util.List;
 
-    void executeMappingPhase(Context<K, V> context);
+public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
+
+    private final List<KeyIn> keys;
+    private final KeyPredicate<KeyIn> predicate;
+
+    public MappingPhase(List<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
+        this.keys = keys;
+        this.predicate = predicate;
+    }
+
+    protected boolean matches(KeyIn key) {
+        if ((keys == null || keys.size() == 0) && predicate == null) {
+            return true;
+        }
+        if (keys != null && keys.size() > 0) {
+            for (KeyIn matcher : keys) {
+                if (key.equals(matcher)) {
+                    return true;
+                }
+            }
+        }
+        if (predicate != null) {
+            return predicate.evaluate(key);
+        }
+        return false;
+    }
+
+    protected abstract void executeMappingPhase(KeyValueSource<KeyIn, ValueIn> keyValueSource,
+                                                Context<KeyOut, ValueOut> context);
 
 }

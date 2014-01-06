@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionService;
 
 import java.util.*;
@@ -27,7 +28,10 @@ public final class MapReduceUtil {
     private MapReduceUtil() {
     }
 
-    public static <KeyIn> Map<Integer, List<KeyIn>> mapKeys(PartitionService ps, Collection<KeyIn> keys) {
+    public static <KeyIn> Map<Integer, List<KeyIn>> mapKeysToPartition(PartitionService ps, Collection<KeyIn> keys) {
+        if (keys == null) {
+            return Collections.emptyMap();
+        }
         Map<Integer, List<KeyIn>> mappedKeys = new HashMap<Integer, List<KeyIn>>();
         for (KeyIn key : keys) {
             int partitionId = ps.getPartitionId(key);
@@ -39,6 +43,40 @@ public final class MapReduceUtil {
             selectedKeys.add(key);
         }
         return mappedKeys;
+    }
+
+    public static <KeyIn> Map<Address, List<KeyIn>> mapKeysToMember(PartitionService ps, Collection<KeyIn> keys) {
+        if (keys == null) {
+            return Collections.emptyMap();
+        }
+        Map<Address, List<KeyIn>> mappedKeys = new HashMap<Address, List<KeyIn>>();
+        for (KeyIn key : keys) {
+            int partitionId = ps.getPartitionId(key);
+            Address address = ps.getPartitionOwner(partitionId);
+            List<KeyIn> selectedKeys = mappedKeys.get(address);
+            if (selectedKeys == null) {
+                selectedKeys = new ArrayList<KeyIn>();
+                mappedKeys.put(address, selectedKeys);
+            }
+            selectedKeys.add(key);
+        }
+        return mappedKeys;
+    }
+
+    public static <K, V> Map<Address, Map<K, V>> mapResultToMember(MapReduceService mapReduceService,
+                                                                   Map<K, V> result) {
+
+        Map<Address, Map<K, V>> mapping = new HashMap<Address, Map<K, V>>();
+        for (Map.Entry<K, V> entry : result.entrySet()) {
+            Address address = mapReduceService.getKeyMember(entry.getKey());
+            Map<K, V> data = mapping.get(address);
+            if (data == null) {
+                data = new HashMap<K, V>();
+                mapping.put(address, data);
+            }
+            data.put(entry.getKey(), entry.getValue());
+        }
+        return mapping;
     }
 
     public static String buildExecutorName(String name) {

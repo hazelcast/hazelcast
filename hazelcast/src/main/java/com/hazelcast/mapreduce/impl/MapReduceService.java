@@ -16,52 +16,63 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JobTrackerConfig;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.*;
+import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MapReduceService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
+    public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".notification";
 
     private final ConstructorFunction<String, JobTracker> trackerConstructor = new ConstructorFunction<String, JobTracker>() {
         @Override
         public JobTracker createNew(String arg) {
             JobTrackerConfig jobTrackerConfig = config.findJobTrackerConfig(arg);
-            return new NodeJobTracker(arg, jobTrackerConfig.getAsReadOnly(), nodeEngine, hazelcastInstance);
-        }
-    };
-
-    private final ConstructorFunction<JobSupervisorKey, JobSupervisor> supervisorConstructor = new ConstructorFunction<JobSupervisorKey, JobSupervisor>() {
-        @Override
-        public JobSupervisor createNew(JobSupervisorKey arg) {
-            JobTracker jobTracker = (JobTracker) createDistributedObject(arg.name);
-            return new JobSupervisor(arg.name, arg.jobId, jobTracker);
+            return new NodeJobTracker(arg, jobTrackerConfig.getAsReadOnly(), nodeEngine);
         }
     };
 
     private final ConcurrentMap<String, JobTracker> jobTrackers = new ConcurrentHashMap<String, JobTracker>();
     private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
+
+    private final PartitionServiceImpl partitionService;
+    private final InternalPartition[] partitions;
+
     private final HazelcastInstance hazelcastInstance;
+    private final EventService eventService;
     private final NodeEngine nodeEngine;
     private final Config config;
 
     public MapReduceService(NodeEngine nodeEngine) {
         this.config = nodeEngine.getConfig();
         this.nodeEngine = nodeEngine;
+        this.eventService = nodeEngine.getEventService();
         this.hazelcastInstance = nodeEngine.getHazelcastInstance();
+        this.partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        this.partitions = partitionService.getPartitions();
+        this.eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new MapReduceNotificationListener());
     }
 
     public JobTracker getJobTracker(String name) {
@@ -70,7 +81,18 @@ public class MapReduceService implements ManagedService, RemoteService {
 
     public JobSupervisor getJobSupervisor(String name, String jobId) {
         JobSupervisorKey key = new JobSupervisorKey(name, jobId);
-        return ConcurrencyUtil.getOrPutIfAbsent(jobSupervisors, key, supervisorConstructor);
+        return jobSupervisors.get(key);
+    }
+
+    public JobSupervisor createJobSupervisor(JobTaskConfiguration configuration) {
+        JobSupervisorKey key = new JobSupervisorKey(configuration.getName(), configuration.getJobId());
+        JobTracker jobTracker = (JobTracker) createDistributedObject(configuration.getName());
+        JobSupervisor jobSupervisor = new JobSupervisor(configuration, (AbstractJobTracker) jobTracker, this);
+        return jobSupervisors.putIfAbsent(key, jobSupervisor);
+    }
+
+    public ExecutorService getExecutorService(String name) {
+        return nodeEngine.getExecutionService().getExecutor(MapReduceUtil.buildExecutorName(name));
     }
 
     @Override
@@ -102,6 +124,57 @@ public class MapReduceService implements ManagedService, RemoteService {
         }
     }
 
+    public Address getKeyMember(Object key) {
+        int partitionId = partitionService.getPartitionId(key);
+        return partitionService.getPartitionOwner(partitionId);
+    }
+
+    public void sendNotification(Address address, MapReduceNotification notification) {
+        Collection<EventRegistration> registrations = eventService
+                .getRegistrations(SERVICE_NAME, EVENT_TOPIC_NAME);
+
+        for (EventRegistration registration : registrations) {
+            if (registration.getSubscriber().equals(address)) {
+                eventService.publishEvent(SERVICE_NAME, registrations, notification, hashCode());
+                break;
+            }
+        }
+    }
+
+    public void sendNotification(MapReduceNotification notification) {
+        Collection<EventRegistration> registrations = eventService
+                .getRegistrations(SERVICE_NAME, EVENT_TOPIC_NAME);
+
+        eventService.publishEvent(SERVICE_NAME, registrations, notification, hashCode());
+    }
+
+    public final List<Integer> getLocalPartitions() {
+        Address address = nodeEngine.getThisAddress();
+        List<Integer> partitions = new ArrayList<Integer>();
+        for (InternalPartition partition : this.partitions) {
+            if (partition.getReplicaAddress(0).equals(address)) {
+                partitions.add(partition.getPartitionId());
+            }
+        }
+        return partitions;
+    }
+
+    public final Address getLocalAddress() {
+        return nodeEngine.getThisAddress();
+    }
+
+    private class MapReduceNotificationListener implements MessageListener<MapReduceNotification> {
+
+        @Override
+        public void onMessage(Message<MapReduceNotification> message) {
+            MapReduceNotification notification = message.getMessageObject();
+            String name = notification.getName();
+            String jobId = notification.getJobId();
+            JobSupervisor supervisor = getJobSupervisor(name, jobId);
+            supervisor.onNotification(notification);
+        }
+    }
+
     private static class JobSupervisorKey {
         private final String name;
         private final String jobId;
@@ -109,6 +182,26 @@ public class MapReduceService implements ManagedService, RemoteService {
         private JobSupervisorKey(String name, String jobId) {
             this.name = name;
             this.jobId = jobId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            JobSupervisorKey that = (JobSupervisorKey) o;
+
+            if (!jobId.equals(that.jobId)) return false;
+            if (!name.equals(that.name)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name.hashCode();
+            result = 31 * result + jobId.hashCode();
+            return result;
         }
     }
 

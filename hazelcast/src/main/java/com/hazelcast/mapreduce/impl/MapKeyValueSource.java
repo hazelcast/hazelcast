@@ -101,7 +101,9 @@ public class MapKeyValueSource<K, V>
 
     @Override
     public boolean reset() {
-        return false;
+        iterator = null;
+        nextElement = null;
+        return true;
     }
 
     @Override

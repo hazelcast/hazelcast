@@ -118,6 +118,10 @@ public class MultiMapKeyValueSource<K, V>
 
     @Override
     public boolean reset() {
+        key = null;
+        keyIterator = null;
+        valueIterator = null;
+        multiMapRecord = null;
         return false;
     }
 

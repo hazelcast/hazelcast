@@ -14,61 +14,45 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce.impl.operation;
+package com.hazelcast.mapreduce.impl.notification;
 
-import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class TrackedOperationFactory<K, V>
-        implements OperationFactory, IdentifiedDataSerializable {
+public abstract class MapReduceNotification implements IdentifiedDataSerializable {
 
     private String name;
     private String jobId;
-    private KeyValueSource<K, V> keyValueSource;
 
-    public TrackedOperationFactory() {
+    public MapReduceNotification() {
     }
 
-    public TrackedOperationFactory(String name, String jobId,
-                                   KeyValueSource<K, V> keyValueSource) {
+    public MapReduceNotification(String name, String jobId) {
         this.name = name;
         this.jobId = jobId;
-        this.keyValueSource = keyValueSource;
     }
 
-    @Override
-    public Operation createOperation() {
-        return null;
+    public String getName() {
+        return name;
+    }
+
+    public String getJobId() {
+        return jobId;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(jobId);
-        out.writeObject(keyValueSource);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         jobId = in.readUTF();
-        keyValueSource = in.readObject();
     }
 
-    @Override
-    public int getFactoryId() {
-        return MapReduceDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return MapReduceDataSerializerHook.TRACKED_OPERATION_FACTORY;
-    }
 }

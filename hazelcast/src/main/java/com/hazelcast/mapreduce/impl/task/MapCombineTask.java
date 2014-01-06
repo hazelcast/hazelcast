@@ -17,28 +17,52 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.LifecycleMapper;
 import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
+import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
+import com.hazelcast.nio.Address;
 
 import java.util.Map;
+
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.mapResultToMember;
 
 public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> implements Runnable {
 
     private final Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper;
-
     private final CombinerFactory<KeyOut, ValueOut, Chunk> combinerFactory;
-
-    private final MappingPhase<KeyOut, ValueOut> mappingPhase;
-
+    private final MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> mappingPhase;
+    private final KeyValueSource<KeyIn, ValueIn> keyValueSource;
+    private final MapReduceService mapReduceService;
+    private final String name;
+    private final String jobId;
     private final int chunkSize;
 
-    public MapCombineTask(int chunkSize, MappingPhase<KeyOut, ValueOut> mappingPhase,
-                          Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
-                          CombinerFactory<KeyOut, ValueOut, Chunk> combinerFactory) {
-        this.mapper = mapper;
-        this.chunkSize = chunkSize;
+    public MapCombineTask(JobTaskConfiguration configuration, MapReduceService mapReduceService,
+                          MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> mappingPhase) {
+
         this.mappingPhase = mappingPhase;
-        this.combinerFactory = combinerFactory;
+        this.mapReduceService = mapReduceService;
+        this.mapper = configuration.getMapper();
+        this.name = configuration.getName();
+        this.jobId = configuration.getJobId();
+        this.chunkSize = configuration.getChunkSize();
+        this.combinerFactory = configuration.getCombinerFactory();
+        this.keyValueSource = configuration.getKeyValueSource();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getJobId() {
+        return jobId;
+    }
+
+    public int getChunkSize() {
+        return chunkSize;
     }
 
     @Override
@@ -48,14 +72,18 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> implements 
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).initialize(context);
         }
-        mappingPhase.executeMappingPhase(context);
+        mappingPhase.executeMappingPhase(keyValueSource, context);
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).finalized(context);
         }
 
-        Map<KeyOut, Object> chunkMap = context.finish();
-        // TODO Send final chunk from this partition
-        // Wrap into LastChunkResponse object
+        Map<KeyOut, Chunk> chunkMap = context.finish();
+        // Wrap into LastChunkNotification object
+        Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+        for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+            mapReduceService.sendNotification(entry.getKey(),
+                    new LastChunkNotification(entry.getValue(), name, jobId));
+        }
     }
 
     private DefaultContext<KeyOut, ValueOut> createContext() {
@@ -65,8 +93,12 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> implements 
     void onEmit(DefaultContext<KeyOut, ValueOut> context) {
         if (context.getCollected() == chunkSize) {
             Map<KeyOut, Chunk> chunkMap = context.requestChunk();
-            // TODO Send chunkMap to reducers
-            // Wrap into IntermediateChunkResponse object
+            // Wrap into IntermediateChunkNotification object
+            Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+            for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+                mapReduceService.sendNotification(entry.getKey(),
+                        new IntermediateChunkNotification(entry.getValue(), name, jobId));
+            }
         }
     }
 

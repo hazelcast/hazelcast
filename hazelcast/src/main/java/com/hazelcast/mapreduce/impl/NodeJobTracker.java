@@ -20,17 +20,14 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.impl.task.KeyValueJob;
 import com.hazelcast.mapreduce.process.ProcessJob;
 import com.hazelcast.spi.NodeEngine;
 
 class NodeJobTracker extends AbstractJobTracker {
 
-    private final NodeEngine nodeEngine;
-
-    NodeJobTracker(String name, JobTrackerConfig jobTrackerConfig,
-                   NodeEngine nodeEngine, HazelcastInstance hazelcastInstance) {
-        super(name, jobTrackerConfig, hazelcastInstance);
-        this.nodeEngine = nodeEngine;
+    NodeJobTracker(String name, JobTrackerConfig jobTrackerConfig, NodeEngine nodeEngine) {
+        super(name, jobTrackerConfig, nodeEngine);
     }
 
     @Override

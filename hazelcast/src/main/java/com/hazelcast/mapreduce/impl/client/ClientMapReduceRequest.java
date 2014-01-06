@@ -18,15 +18,12 @@ package com.hazelcast.mapreduce.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.mapreduce.*;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
-import com.hazelcast.mapreduce.impl.operation.KeyValueMapReduceOperation;
-import com.hazelcast.mapreduce.impl.operation.MapReduceOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -81,7 +78,7 @@ public class ClientMapReduceRequest
 
     @Override
     protected void invoke() {
-        MapReduceOperationFactory factory = buildFactoryAdapter();
+        // MapReduceOperationFactory factory = buildFactoryAdapter();
 
         ClientEndpoint endpoint = getEndpoint();
         ClientEngine engine = getClientEngine();
@@ -89,9 +86,9 @@ public class ClientMapReduceRequest
         PartitionService ps = engine.getPartitionService();
 
         Map<Integer, CompletableFuture> futures = new HashMap<Integer, CompletableFuture>();
-        Map<Integer, List> mappedKeys = MapReduceUtil.mapKeys(ps, keys);
+        Map<Integer, List> mappedKeys = MapReduceUtil.mapKeysToPartition(ps, keys);
         for (Map.Entry<Integer, List> entry : mappedKeys.entrySet()) {
-            Operation op = factory.createOperation(entry.getKey(), entry.getValue());
+            Operation op = null; // factory.createOperation(entry.getKey(), entry.getValue());
             InvocationBuilder builder = buildInvocationBuilder(getServiceName(), op, entry.getKey());
             futures.put(entry.getKey(), builder.invoke());
         }
@@ -114,7 +111,7 @@ public class ClientMapReduceRequest
 
         for (Integer partitionId : failedPartitions) {
             List keys = mappedKeys.get(partitionId);
-            Operation operation = factory.createOperation(partitionId, keys);
+            Operation operation = null; // factory.createOperation(partitionId, keys);
             InvocationBuilder builder = buildInvocationBuilder(getServiceName(), operation, partitionId);
             results.put(partitionId, builder.invoke());
         }
@@ -189,16 +186,6 @@ public class ClientMapReduceRequest
             return ss.toObject((Data) value);
         }
         return value;
-    }
-
-    private MapReduceOperationFactory buildFactoryAdapter() {
-        return new MapReduceOperationFactory() {
-            @Override
-            public Operation createOperation(int partitionId, List keys) {
-                return new KeyValueMapReduceOperation(name, jobId, chunkSize,
-                        keys, predicate, mapper, keyValueSource, combinerFactory);
-            }
-        };
     }
 
 }

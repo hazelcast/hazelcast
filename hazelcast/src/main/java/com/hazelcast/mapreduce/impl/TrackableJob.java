@@ -16,16 +16,19 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.mapreduce.JobTracker;
 
 import java.util.concurrent.Callable;
 
-public interface TrackableJob<V> extends Callable<V> {
+public interface TrackableJob<V> {
 
     JobTracker getJobTracker();
 
     String getName();
 
     String getJobId();
+
+    CompletableFuture<V> getCompletableFuture();
 
 }

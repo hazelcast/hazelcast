@@ -18,6 +18,7 @@ package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.mapreduce.*;
+import com.hazelcast.util.ValidationUtil;
 
 import java.util.*;
 
@@ -51,8 +52,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     @Override
     public <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper) {
-        if (mapper == null)
-            throw new IllegalStateException("mapper must not be null");
+        ValidationUtil.isNotNull(mapper, "mapper");
         if (this.mapper != null)
             throw new IllegalStateException("mapper already set");
         this.mapper = mapper;
@@ -125,9 +125,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
     }
 
     private void setKeyPredicate(KeyPredicate<KeyIn> predicate) {
-        if (predicate != null) {
-            throw new IllegalStateException("predicate already defined");
-        }
+        ValidationUtil.isNotNull(predicate, "predicate");
         this.predicate = predicate;
     }
 
@@ -164,8 +162,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         @Override
         public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(
                 CombinerFactory<Key, Value, ValueOut> combinerFactory) {
-            if (combinerFactory == null)
-                throw new IllegalStateException("combinerFactory must not be null");
+            ValidationUtil.isNotNull(combinerFactory, "combinerFactory");
             if (AbstractJob.this.combinerFactory != null)
                 throw new IllegalStateException("combinerFactory already set");
             AbstractJob.this.combinerFactory = AbstractJob.this.combinerFactory;
@@ -175,8 +172,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         @Override
         public <ValueOut> SubmittableJob<EntryKey, Map<Key, ValueOut>> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
-            if (reducerFactory == null)
-                throw new IllegalStateException("reducerFactory must not be null");
+            ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
             if (AbstractJob.this.reducerFactory != null)
                 throw new IllegalStateException("reducerFactory already set");
             AbstractJob.this.reducerFactory = reducerFactory;
@@ -206,8 +202,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         @Override
         public <ValueOut> SubmittableJob<EntryKey, Map<Key, ValueOut>> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
-            if (reducerFactory == null)
-                throw new IllegalStateException("reducerFactory must not be null");
+            ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
             if (AbstractJob.this.reducerFactory != null)
                 throw new IllegalStateException("reducerFactory already set");
             AbstractJob.this.reducerFactory = reducerFactory;
