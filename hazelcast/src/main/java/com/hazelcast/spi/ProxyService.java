@@ -22,6 +22,8 @@ import com.hazelcast.core.DistributedObjectListener;
 import java.util.Collection;
 
 /**
+ * A {@link com.hazelcast.spi.CoreService} responsible for managing the DistributedObject proxies.
+ *
  * @author mdogan 1/14/13
  */
 public interface ProxyService extends CoreService {

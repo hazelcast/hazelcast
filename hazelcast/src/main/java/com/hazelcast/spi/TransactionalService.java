@@ -19,6 +19,9 @@ package com.hazelcast.spi;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
+/**
+ * An interface that can be implemented by SPI services that want to deal with transactions.
+ */
 public interface TransactionalService {
 
     <T extends TransactionalObject> T createTransactionalObject(String name, TransactionSupport transaction);

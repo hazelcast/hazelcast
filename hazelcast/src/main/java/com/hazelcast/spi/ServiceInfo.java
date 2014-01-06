@@ -17,6 +17,8 @@
 package com.hazelcast.spi;
 
 /**
+ * Contains the name of the service and the actual service.
+ *
  * @author mdogan 6/8/13
  */
 public final class ServiceInfo {
