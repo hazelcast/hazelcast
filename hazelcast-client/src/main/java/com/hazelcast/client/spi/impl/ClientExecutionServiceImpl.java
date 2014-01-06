@@ -41,6 +41,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
     }
 
+    public ExecutorService getExecutor() {
+        return executor;
+    }
+
     @Override
     public void execute(Runnable command) {
         executor.execute(command);

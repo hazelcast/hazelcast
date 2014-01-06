@@ -17,17 +17,20 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -41,15 +44,20 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
 
     private final ClientClusterServiceImpl clusterService;
 
-    private final ClientExecutionService executionService;
+    private final ClientExecutionServiceImpl executionService;
+
+    private final SerializationService serializationService;
 
     private final EventHandler handler;
 
     private volatile int reSendCount = 0;
 
-    public ClientCallFuture(ClientClusterServiceImpl clusterService, ClientExecutionService executionService, ClientRequest request, EventHandler handler) {
-        this.clusterService = clusterService;
-        this.executionService = executionService;
+    private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
+
+    public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
+        this.clusterService = (ClientClusterServiceImpl)client.getClientClusterService();
+        this.executionService = (ClientExecutionServiceImpl)client.getClientExecutionService();
+        this.serializationService = client.getSerializationService();
         this.request = request;
         this.handler = handler;
     }
@@ -121,6 +129,11 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
             this.response = response;
             this.notifyAll();
         }
+
+        for (ExecutionCallbackNode node : callbackNodeList) {
+            runAsynchronous(node.callback, node.executor);
+        }
+        callbackNodeList.clear();
     }
 
     private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
@@ -144,11 +157,17 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
     }
 
     public void andThen(ExecutionCallback<V> callback) {
-        //TODO
+        andThen(callback, executionService.getExecutor());
     }
 
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
-        //TODO
+        synchronized (this) {
+            if (response != null) {
+                runAsynchronous(callback, executor);
+                return;
+            }
+            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
+        }
     }
 
     public ClientRequest getRequest() {
@@ -168,6 +187,18 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
         return true;
     }
 
+    private void runAsynchronous(final ExecutionCallback callback, Executor executor) {
+        executor.execute(new Runnable() {
+            public void run() {
+                try {
+                    callback.onResponse(serializationService.toObject(resolveResponse()));
+                } catch (Throwable t) {
+                    callback.onFailure(t);
+                }
+            }
+        });
+    }
+
     class ResSendTask implements Runnable {
         public void run() {
             try {
@@ -175,6 +206,17 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
             } catch (Exception e) {
                 setResponse(e);
             }
+        }
+    }
+
+    class ExecutionCallbackNode {
+
+        final ExecutionCallback callback;
+        final Executor executor;
+
+        ExecutionCallbackNode(ExecutionCallback callback, Executor executor) {
+            this.callback = callback;
+            this.executor = executor;
         }
     }
 }

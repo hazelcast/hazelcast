@@ -20,6 +20,7 @@ import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.*;
@@ -28,12 +29,13 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -117,12 +119,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public Future<V> getAsync(final K key) {
-        Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
-            public V call() throws Exception {
-                return get(key);
-            }
-        });
-        return f;
+        final Data keyData = toData(key);
+        final MapGetRequest request = new MapGetRequest(name, keyData);
+        try {
+            final Future future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            return new DelegatingFuture<V>(future, getContext().getSerializationService());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     public Future<V> putAsync(final K key, final V value) {
@@ -130,21 +134,26 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public Future<V> putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
-        Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
-            public V call() throws Exception {
-                return put(key, value, ttl, timeunit);
-            }
-        });
-        return f;
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapPutRequest request = new MapPutRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        try {
+            final Future future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            return new DelegatingFuture<V>(future, getContext().getSerializationService());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     public Future<V> removeAsync(final K key) {
-        Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
-            public V call() throws Exception {
-                return remove(key);
-            }
-        });
-        return f;
+        final Data keyData = toData(key);
+        MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
+        try {
+            final Future future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            return new DelegatingFuture<V>(future, getContext().getSerializationService());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
@@ -433,36 +442,26 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return invoke(request, keyData);
     }
 
-    @Override
     public void submitToKey(K key, EntryProcessor entryProcessor,final ExecutionCallback callback) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
-
-        getContext().getExecutionService().submit(new Callable<V>() {
-            public V call() throws Exception {
-                try {
-                    V result =  invoke(request, keyData);
-                    callback.onResponse(result);
-                    return  result;
-                }catch (Exception e)
-                {
-                    callback.onFailure(e);
-                    throw (e);
-                }
-            }
-        });
+        try {
+            final ClientCallFuture future = (ClientCallFuture)getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            future.andThen(callback);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
-    @Override
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
-
-        return getContext().getExecutionService().submit(new Callable<V>() {
-            public V call() throws Exception {
-                    return invoke(request, keyData); 
-            }
-        });
+        try {
+            final Future future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            return new DelegatingFuture(future, getContext().getSerializationService());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {

@@ -64,6 +64,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     public static int RETRY_COUNT = 20;
 
     private final HazelcastClient client;
+    private final ClientExecutionServiceImpl clientExecutionService;
     private final ClusterListenerThread clusterThread;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
@@ -82,6 +83,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
+        clientExecutionService = (ClientExecutionServiceImpl)client.getClientExecutionService();
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
         final ClientConfig clientConfig = getClientConfig();
         redoOperation = clientConfig.isRedoOperation();
@@ -563,7 +565,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private Future doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
-        final ClientCallFuture future = new ClientCallFuture(this, client.getClientExecutionService(), request, handler);
+        final ClientCallFuture future = new ClientCallFuture(client, request, handler);
         _send(future, connection);
         return future;
     }
