@@ -1,14 +1,10 @@
-package com.hazelcast.queue.impl;
+package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.AndResultSet;
-import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.QueryException;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -21,8 +17,8 @@ import java.util.Set;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.junit.Assert.assertFalse;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class AndResultSetTest extends HazelcastTestSupport {
 
     //https://github.com/hazelcast/hazelcast/issues/1501
