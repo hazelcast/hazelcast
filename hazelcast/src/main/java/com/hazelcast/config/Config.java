@@ -29,6 +29,13 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static java.text.MessageFormat.format;
 
+/**
+ * Contains all the configuration to start a {@link com.hazelcast.core.HazelcastInstance}. A Config
+ * can be created programmatically, but can also be configured using XML, see {@link com.hazelcast.config.XmlConfigBuilder}.
+ *
+ * Config instances can be shared between threads, but should not be modified after they are used to
+ * create HazelcastInstances.
+ */
 public class Config {
 
     private URL configurationUrl;

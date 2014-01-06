@@ -25,6 +25,9 @@ import java.util.*;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
+/**
+ * Contains the serialization configuration a {@link com.hazelcast.core.HazelcastInstance}.
+ */
 public class SerializationConfig {
 
     private int portableVersion = 0;

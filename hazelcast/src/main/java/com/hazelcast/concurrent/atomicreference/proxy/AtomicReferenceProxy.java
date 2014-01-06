@@ -109,7 +109,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public void clear() {
-        set(null);
+        asyncClear().getSafely();
     }
 
     @Override
