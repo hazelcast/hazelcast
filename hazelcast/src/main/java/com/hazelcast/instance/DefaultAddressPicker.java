@@ -69,7 +69,7 @@ class DefaultAddressPicker implements AddressPicker {
              * By default if the OS is Windows then reuseAddress will be false.
              */
             log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
-            InetSocketAddress isa;
+            InetSocketAddress inetSocketAddress;
             ServerSocket serverSocket = null;
             int port = networkConfig.getPort();
 
@@ -88,13 +88,13 @@ class DefaultAddressPicker implements AddressPicker {
                 serverSocket.setSoTimeout(1000);
                 try {
                     if (bindAny) {
-                        isa = new InetSocketAddress(port);
+                        inetSocketAddress = new InetSocketAddress(port);
                     } else {
-                        isa = new InetSocketAddress(bindAddressDef.inetAddress, port);
+                        inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port);
                     }
-                    log(Level.FINEST, "Trying to bind inet socket address:" + isa);
-                    serverSocket.bind(isa, 100);
-                    log(Level.FINEST, "Bind successful to inet socket address:" + isa);
+                    log(Level.FINEST, "Trying to bind inet socket address:" + inetSocketAddress);
+                    serverSocket.bind(inetSocketAddress, 100);
+                    log(Level.FINEST, "Bind successful to inet socket address:" + inetSocketAddress);
                     break;
                 } catch (final Exception e) {
                     serverSocket.close();
@@ -107,7 +107,7 @@ class DefaultAddressPicker implements AddressPicker {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
                         logger.severe(msg, e);
-                        throw e;
+                        throw new HazelcastException(msg,error);
                     }
                 }
             }
