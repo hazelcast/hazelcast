@@ -22,6 +22,10 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.concurrent.*;
 
 /**
+ * A Service responsible for providing access to 'system' executors and customer executors.
+ *
+ * It also has functionality for scheduling tasks.
+ *
  * @author mdogan 12/14/12
  */
 public interface ExecutionService {
@@ -36,15 +40,16 @@ public interface ExecutionService {
 
     ExecutorService register(String name, int poolSize, int queueCapacity);
 
+    ManagedExecutorService getExecutor(String name);
+
+    void shutdownExecutor(String name);
+
+
     void execute(String name, Runnable command);
 
     Future<?> submit(String name, Runnable task);
 
     <T> Future<T> submit(String name, Callable<T> task);
-
-    ManagedExecutorService getExecutor(String name);
-
-    void shutdownExecutor(String name);
 
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
@@ -55,5 +60,4 @@ public interface ExecutionService {
     ScheduledExecutorService getScheduledExecutor();
 
     <V> CompletableFuture<V> asCompletableFuture(Future<V> future);
-
 }

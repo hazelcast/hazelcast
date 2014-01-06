@@ -17,6 +17,10 @@
 package com.hazelcast.spi;
 
 /**
+ * When an {@link com.hazelcast.spi.BackupAwareOperation} makes a change, the backups need to be replicated to other
+ * members (depending on the configuration and if change really happened). The BackupOperation is created by such a
+ * operation.
+ *
  * @author mdogan 12/3/12
  */
 public interface BackupOperation extends PartitionAwareOperation {

@@ -199,15 +199,21 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public Runnable prepareMergeRunnable() {
         Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer, Collection<Record>>(mapContainers.size());
+        PartitionService partitionService = nodeEngine.getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        Address thisAddress = nodeEngine.getClusterService().getThisAddress();
+
         for (MapContainer mapContainer : mapContainers.values()) {
-            for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            for (int i = 0; i < partitionCount; i++) {
                 RecordStore recordStore = getPartitionContainer(i).getRecordStore(mapContainer.getName());
                 // add your owned entries to the map so they will be merged
-                if (nodeEngine.getClusterService().getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(i))) {
-                    if (!recordMap.containsKey(mapContainer)) {
-                        recordMap.put(mapContainer, new ArrayList<Record>());
+                if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
+                    Collection<Record> records = recordMap.get(mapContainer);
+                    if(records == null){
+                        records = new ArrayList<Record>();
+                        recordMap.put(mapContainer, records);
                     }
-                    recordMap.get(mapContainer).addAll(recordStore.getReadonlyRecordMap().values());
+                    records.addAll(recordStore.getReadonlyRecordMap().values());
                 }
                 // clear all records either owned or backup
                 recordStore.reset();
