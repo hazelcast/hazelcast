@@ -29,6 +29,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -49,11 +50,12 @@ import static org.junit.Assert.*;
 @Category(SlowTest.class)
 public class SplitBrainHandlerTest {
 
-    @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    @Before
+    @After
+    public  void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
+
 
     @Test(timeout = 100000)
     public void testSplitBrainMulticast() throws Exception {
