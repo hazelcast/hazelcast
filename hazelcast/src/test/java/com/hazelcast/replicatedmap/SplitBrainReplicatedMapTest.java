@@ -14,6 +14,7 @@ import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -27,12 +28,11 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-@Ignore//todo:
 public class SplitBrainReplicatedMapTest {
 
-    @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    @Before
+    @After
+    public void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 
