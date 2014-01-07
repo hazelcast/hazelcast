@@ -51,15 +51,11 @@ public class ClientCountDownLatchTest {
         l = hz.getCountDownLatch(name);
     }
 
-    @AfterClass
-    public static void destroy() {
-        hz.getLifecycleService().shutdown();
-        Hazelcast.shutdownAll();
-    }
-
     @Before
     @After
     public void clear() throws IOException {
+        hz.getLifecycleService().shutdown();
+        Hazelcast.shutdownAll();
     }
 
     @Test
