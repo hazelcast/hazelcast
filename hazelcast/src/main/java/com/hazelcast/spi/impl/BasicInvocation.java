@@ -186,16 +186,16 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return (Throwable)obj;
         }
 
-        if(!(obj instanceof Response)){
+        if(!(obj instanceof NormalResponse)){
             return null;
         }
 
-        Response response = (Response)obj;
-        if(!(response.response instanceof Throwable)){
+        NormalResponse response = (NormalResponse)obj;
+        if(!(response.getValue() instanceof Throwable)){
             return null;
         }
 
-        return (Throwable)response.response;
+        return (Throwable)response.getValue();
     }
 
     @Override
@@ -256,10 +256,10 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
         //if a regular response came and there are backups, we need to wait for the backs.
         //when the backups complete, the response will be send by the last backup.
-        if (response instanceof Response && op instanceof BackupAwareOperation) {
-            final Response resp = (Response) response;
-            if (resp.backupCount > 0) {
-                waitForBackups(resp.backupCount, 5, TimeUnit.SECONDS, resp);
+        if (response instanceof NormalResponse && op instanceof BackupAwareOperation) {
+            final NormalResponse resp = (NormalResponse) response;
+            if (resp.getBackupCount() > 0) {
+                waitForBackups(resp.getBackupCount(), 5, TimeUnit.SECONDS, resp);
                 return;
             }
         }
@@ -370,7 +370,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     }
 
     private volatile int availableBackups;
-    private volatile Response potentialResponse;
+    private volatile NormalResponse potentialResponse;
     private volatile int expectedBackupCount;
 
     @Override
@@ -392,7 +392,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
     }
 
-    private void waitForBackups(int backupCount, long timeout, TimeUnit unit, Response response) {
+    private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
         synchronized (this) {
             this.expectedBackupCount = backupCount;
 
@@ -536,9 +536,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 @Override
                 public void run() {
                     try {
-                        if (response instanceof Response) {
-                            final Response responseObj = (Response) response;
-                            callback.onResponse((E) responseObj.response);
+                        if (response instanceof NormalResponse) {
+                            final NormalResponse responseObj = (NormalResponse) response;
+                            callback.onResponse((E) responseObj.getValue());
                         } else if (response == NULL_RESPONSE) {
                             callback.onResponse(null);
                         } else if (response instanceof Throwable) {
@@ -559,8 +559,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 throw new IllegalArgumentException("response can't be null");
             }
 
-            if(response instanceof Response){
-                response = ((Response)response).response;
+            if(response instanceof NormalResponse){
+                response = ((NormalResponse)response).getValue();
             }
 
             if(response == null){

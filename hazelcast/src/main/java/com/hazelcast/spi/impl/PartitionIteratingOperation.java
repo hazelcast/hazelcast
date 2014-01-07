@@ -63,8 +63,8 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 final ResponseQueue queue = responseQueueEntry.getValue();
                 final Integer key = responseQueueEntry.getKey();
                 final Object result = queue.get();
-                if (result instanceof Response) {
-                    results.put(key, ((Response) result).response);
+                if (result instanceof NormalResponse) {
+                    results.put(key, ((NormalResponse) result).getValue());
                 } else {
                     results.put(key, result);
                 }
