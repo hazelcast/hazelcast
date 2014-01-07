@@ -341,7 +341,7 @@ public class DistributedMapperMapReduceTest
         }
 
         @Override
-        public void reduce(String key, Integer value) {
+        public void reduce(Integer value) {
             sum += value;
         }
 

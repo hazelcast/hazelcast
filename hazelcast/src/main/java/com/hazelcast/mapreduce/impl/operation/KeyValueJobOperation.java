@@ -75,8 +75,7 @@ public class KeyValueJobOperation<K, V>
                         combinerFactory, reducerFactory, keyValueSource));
 
         MappingPhase mappingPhase = new KeyValueSourceMappingPhase(mapper, keys, predicate);
-
-        //TODO start supervisor
+        supervisor.startTasks(mappingPhase);
     }
 
     @Override

@@ -82,7 +82,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> implements 
         Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
         for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
             mapReduceService.sendNotification(entry.getKey(),
-                    new LastChunkNotification(entry.getValue(), name, jobId));
+                    new LastChunkNotification(entry.getKey(), name, jobId, entry.getValue()));
         }
     }
 
@@ -97,7 +97,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> implements 
             Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
             for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
                 mapReduceService.sendNotification(entry.getKey(),
-                        new IntermediateChunkNotification(entry.getValue(), name, jobId));
+                        new IntermediateChunkNotification(entry.getKey(), name, jobId, entry.getValue()));
             }
         }
     }

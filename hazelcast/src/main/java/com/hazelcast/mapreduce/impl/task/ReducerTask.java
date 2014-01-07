@@ -16,18 +16,24 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ReducerTask<Key, Chunk> {
+public class ReducerTask<Key, Chunk> implements Runnable {
 
     private final JobSupervisor supervisor;
-    private final Queue reducerQueue;
+    private final Queue<Map<Key, Chunk>> reducerQueue;
     private final String name;
     private final String jobId;
+
+    private AtomicBoolean active = new AtomicBoolean();
 
     public ReducerTask(String name, String jobId, JobSupervisor supervisor, Queue reducerQueue) {
         this.name = name;
@@ -45,7 +51,41 @@ public class ReducerTask<Key, Chunk> {
     }
 
     public void processChunk(Map<Key, Chunk> chunk) {
-
+        reducerQueue.offer(chunk);
+        if (!active.get()) {
+            MapReduceService mapReduceService = supervisor.getMapReduceService();
+            ExecutorService es = mapReduceService.getExecutorService(name);
+            if (active.compareAndSet(false, true)) {
+                es.submit(this);
+            }
+        }
     }
 
+    private void reduceChunk(Map<Key, Chunk> chunk) {
+        for (Map.Entry<Key, Chunk> entry : chunk.entrySet()) {
+            Reducer reducer = supervisor.getReducerByKey(entry.getKey());
+            reducer.reduce(entry.getValue());
+        }
+    }
+
+    private <Value> Map getReducedResults() {
+        Map<Key, Value> reducedResults = new HashMap<Key, Value>();
+        Map<Key, Reducer> reducers = supervisor.getReducers();
+        for (Map.Entry<Key, Reducer> entry : reducers.entrySet()) {
+            reducedResults.put(entry.getKey(), (Value) entry.getValue().finalizeReduce());
+        }
+        return reducedResults;
+    }
+
+    @Override
+    public void run() {
+        try {
+            Map<Key, Chunk> chunk;
+            while ((chunk = reducerQueue.poll()) != null) {
+                reduceChunk(chunk);
+            }
+        } finally {
+            active.compareAndSet(true, false);
+        }
+    }
 }

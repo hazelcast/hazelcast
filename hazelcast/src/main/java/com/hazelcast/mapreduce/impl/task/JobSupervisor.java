@@ -23,7 +23,9 @@ import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -37,8 +39,6 @@ public class JobSupervisor {
     private final AbstractJobTracker jobTracker;
     private final JobTaskConfiguration configuration;
     private final MapReduceService mapReduceService;
-
-    private final Queue reducerQueue = new ConcurrentLinkedQueue();
 
     public JobSupervisor(JobTaskConfiguration configuration, AbstractJobTracker jobTracker,
                          MapReduceService mapReduceService) {
@@ -56,36 +56,40 @@ public class JobSupervisor {
     }
 
     public void startTasks(MappingPhase mappingPhase) {
-        int chunkSize = configuration.getChunkSize();
         String name = configuration.getName();
         String jobId = configuration.getJobId();
-        Mapper mapper = configuration.getMapper();
-        KeyValueSource keyValueSource = configuration.getKeyValueSource();
-        CombinerFactory combinerFactory = configuration.getCombinerFactory();
 
         // Start reducer task
-        jobTracker.registerReducerTask(new ReducerTask(name, jobId, this, reducerQueue));
+        jobTracker.registerReducerTask(new ReducerTask(name, jobId, this, new ConcurrentLinkedQueue()));
 
         // Start map-combiner tasks
         jobTracker.registerMapCombineTask(new MapCombineTask(configuration, mapReduceService, mappingPhase));
-
     }
 
     public void onNotification(MapReduceNotification notification) {
         if (notification instanceof IntermediateChunkNotification) {
-            reducerQueue.offer(((IntermediateChunkNotification) notification).getChunk());
+            IntermediateChunkNotification icn = (IntermediateChunkNotification) notification;
+            ReducerTask reducerTask = jobTracker.getReducerTask(icn.getJobId());
+            reducerTask.processChunk(icn.getChunk());
         } else if (notification instanceof LastChunkNotification) {
-            reducerQueue.offer(((LastChunkNotification) notification).getChunk());
+            LastChunkNotification lcn = (LastChunkNotification) notification;
+            ReducerTask reducerTask = jobTracker.getReducerTask(lcn.getJobId());
+            reducerTask.processChunk(lcn.getChunk());
         }
     }
 
-    private <KeyIn, ValueIn, ValueOut> Reducer<KeyIn, ValueIn, ValueOut> getReducerByKey(Object key) {
+    public <KeyIn, ValueIn, ValueOut> Reducer<KeyIn, ValueIn, ValueOut> getReducerByKey(Object key) {
         Reducer reducer = reducers.get(key);
         if (reducer == null) {
             reducer = configuration.getReducerFactory().newReducer(key);
             reducer = reducers.putIfAbsent(key, reducer);
+            reducer.beginReduce(key);
         }
         return reducer;
+    }
+
+    public <Key> Map<Key, Reducer> getReducers() {
+        return (Map<Key, Reducer>) reducers;
     }
 
 }

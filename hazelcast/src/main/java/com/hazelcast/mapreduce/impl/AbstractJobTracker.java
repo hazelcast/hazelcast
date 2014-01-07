@@ -83,12 +83,30 @@ public abstract class AbstractJobTracker implements JobTracker {
         return trackableJobs.get(jobId);
     }
 
-    public void registerReducerTask(ReducerTask reducerTask) {
+    public <Key, Chunk> void registerReducerTask(ReducerTask<Key, Chunk> reducerTask) {
         reducerTasks.put(reducerTask.getJobId(), reducerTask);
     }
 
-    public void registerMapCombineTask(MapCombineTask mapCombineTask) {
+    public void unregisterReducerTask(String jobId) {
+        reducerTasks.remove(jobId);
+    }
+
+    public <Key, Chunk> ReducerTask<Key, Chunk> getReducerTask(String jobId) {
+        return reducerTasks.get(jobId);
+    }
+
+    public <KeyIn, ValueIn, KeyOut, ValueOut, Chunk> void registerMapCombineTask(
+            MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> mapCombineTask) {
         mapCombineTasks.put(mapCombineTask.getJobId(), mapCombineTask);
+    }
+
+    public void unregisterMapCombineTask(String jobId) {
+        mapCombineTasks.remove(jobId);
+    }
+
+    public <KeyIn, ValueIn, KeyOut, ValueOut, Chunk>
+            MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> getMapCombineTask(String jobId) {
+        return mapCombineTasks.get(jobId);
     }
 
 }

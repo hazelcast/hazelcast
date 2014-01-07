@@ -58,8 +58,10 @@ public abstract class Reducer<KeyIn, ValueIn, ValueOut> {
      * This method is called before the first value is submitted to this Reducer instance.
      * It can be used to setup any internal needed state before starting to reduce the
      * actual values.
+     *
+     * @param key   key of the mapped values
      */
-    public void beginReduce() {
+    public void beginReduce(KeyIn key) {
     }
 
     /**
@@ -67,10 +69,9 @@ public abstract class Reducer<KeyIn, ValueIn, ValueOut> {
      * The reduce method might be called multiple times so the eventually reduces value
      * needs to be hold internally in a member state of the Reducer.
      *
-     * @param key   key of the mapped values
      * @param value value to be reduced
      */
-    public abstract void reduce(KeyIn key, ValueIn value);
+    public abstract void reduce(ValueIn value);
 
     /**
      * finalizeReduce is called as last step for a reducing phase per key and retrieved the
