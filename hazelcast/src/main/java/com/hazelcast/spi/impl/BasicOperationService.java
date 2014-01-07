@@ -602,14 +602,6 @@ final class BasicOperationService implements InternalOperationService {
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
-    @Override
-    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
-                                                         Address target) throws Exception {
-        final Map<Address, List<Integer>> memberPartitions = Collections.singletonMap(target,
-                nodeEngine.getPartitionService().getMemberPartitions(target));
-        return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
-    }
-
     private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                     Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Thread currentThread = Thread.currentThread();
@@ -662,15 +654,6 @@ final class BasicOperationService implements InternalOperationService {
         return partitionResults;
     }
 
-    @Override
-    public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
-        Address target = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
-        if (target == null) {
-            logger.warning("No target available for partition: " + partitionId + " and replica: " + replicaIndex);
-            return false;
-        }
-        return send(op, target);
-    }
 
     @Override
     public boolean send(final Operation op, final Address target) {
@@ -684,8 +667,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    @Override
-    public boolean send(final Operation op, final Connection connection) {
+    private boolean send(final Operation op, final Connection connection) {
         Data data = nodeEngine.toData(op);
         final int partitionId = getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
