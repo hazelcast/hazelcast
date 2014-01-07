@@ -189,7 +189,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    public void handleOperation(final Packet packet) {
+    public void receive(final Packet packet) {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 responseExecutor.execute(new ResponseProcessor(packet));
@@ -864,9 +864,9 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void notifyBackupCall(long callId) {
         try {
-            final BackupCompletionCallback backupCompletionCallback = backupCalls.get(callId);
-            if (backupCompletionCallback != null) {
-                backupCompletionCallback.signalOneBackupComplete();
+            final BackupCompletionCallback callback = backupCalls.get(callId);
+            if (callback != null) {
+                callback.signalOneBackupComplete();
             }
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
