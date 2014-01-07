@@ -69,9 +69,13 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
             operation.setServiceName(MapReduceService.SERVICE_NAME);
             operation.setExecutorName(name);
             operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-            if (cs.getThisAddress().equals(member.getAddress())) {
-                os.runOperation(operation);
-            } else {
+            operation.setNodeEngine(nodeEngine);
+
+            // First call the operation locally to set everything up
+            os.runOperation(operation);
+
+            // Then add other members to the operation
+            if (!cs.getThisAddress().equals(member.getAddress())) {
                 os.send(operation, member.getAddress());
             }
         }

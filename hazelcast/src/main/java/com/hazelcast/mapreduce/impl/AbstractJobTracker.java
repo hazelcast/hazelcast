@@ -72,7 +72,7 @@ public abstract class AbstractJobTracker implements JobTracker {
     }
 
     public <V> boolean registerTrackableJob(TrackableJob<V> trackableJob) {
-        return trackableJobs.putIfAbsent(trackableJob.getJobId(), trackableJob) == trackableJob;
+        return trackableJobs.putIfAbsent(trackableJob.getJobId(), trackableJob) == null;
     }
 
     public <V> boolean unregisterTrackableJob(TrackableJob<V> trackableJob) {
@@ -97,7 +97,9 @@ public abstract class AbstractJobTracker implements JobTracker {
 
     public <KeyIn, ValueIn, KeyOut, ValueOut, Chunk> void registerMapCombineTask(
             MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> mapCombineTask) {
-        mapCombineTasks.put(mapCombineTask.getJobId(), mapCombineTask);
+        if (mapCombineTasks.putIfAbsent(mapCombineTask.getJobId(), mapCombineTask) == null) {
+            mapCombineTask.process();
+        }
     }
 
     public void unregisterMapCombineTask(String jobId) {

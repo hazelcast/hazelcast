@@ -17,9 +17,12 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
 
 public class JobTaskConfiguration {
 
+    private final Address jobOwner;
     private final int chunkSize;
     private final String name;
     private final String jobId;
@@ -27,10 +30,12 @@ public class JobTaskConfiguration {
     private final CombinerFactory combinerFactory;
     private final ReducerFactory reducerFactory;
     private final KeyValueSource keyValueSource;
+    private final NodeEngine nodeEngine;
 
-    public JobTaskConfiguration(int chunkSize, String name, String jobId,
+    public JobTaskConfiguration(Address jobOwner, NodeEngine nodeEngine, int chunkSize, String name, String jobId,
                                 Mapper mapper, CombinerFactory combinerFactory,
                                 ReducerFactory reducerFactory, KeyValueSource keyValueSource) {
+        this.jobOwner = jobOwner;
         this.chunkSize = chunkSize;
         this.name = name;
         this.jobId = jobId;
@@ -38,6 +43,11 @@ public class JobTaskConfiguration {
         this.combinerFactory = combinerFactory;
         this.reducerFactory = reducerFactory;
         this.keyValueSource = keyValueSource;
+        this.nodeEngine = nodeEngine;
+    }
+
+    public Address getJobOwner() {
+        return jobOwner;
     }
 
     public int getChunkSize() {
@@ -66,6 +76,10 @@ public class JobTaskConfiguration {
 
     public KeyValueSource getKeyValueSource() {
         return keyValueSource;
+    }
+
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
 }

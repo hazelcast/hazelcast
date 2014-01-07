@@ -25,6 +25,7 @@ import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.MapCombineTask;
 import com.hazelcast.mapreduce.impl.task.MappingPhase;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -68,11 +69,25 @@ public class KeyValueJobOperation<K, V>
     }
 
     @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapReduceService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         MapReduceService mapReduceService = getService();
+        Address jobOwner = getCallerAddress();
+        if (jobOwner == null) {
+            jobOwner = getNodeEngine().getThisAddress();
+        }
         JobSupervisor supervisor = mapReduceService.createJobSupervisor(
-                new JobTaskConfiguration(chunkSize, name, jobId, mapper,
-                        combinerFactory, reducerFactory, keyValueSource));
+                new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name,
+                        jobId, mapper, combinerFactory, reducerFactory, keyValueSource));
 
         MappingPhase mappingPhase = new KeyValueSourceMappingPhase(mapper, keys, predicate);
         supervisor.startTasks(mappingPhase);
@@ -83,9 +98,11 @@ public class KeyValueJobOperation<K, V>
         out.writeUTF(name);
         out.writeUTF(jobId);
         out.writeObject(keyValueSource);
-        out.writeInt(keys.size());
-        for (int i = 0; i < keys.size(); i++) {
-            out.writeObject(keys);
+        out.writeInt(keys == null ? 0 : keys.size());
+        if (keys != null) {
+            for (int i = 0; i < keys.size(); i++) {
+                out.writeObject(keys);
+            }
         }
         out.writeObject(mapper);
         out.writeObject(combinerFactory);

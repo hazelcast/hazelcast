@@ -25,6 +25,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessing;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.Address;
@@ -38,7 +39,9 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MapReduceService implements ManagedService, RemoteService {
@@ -88,7 +91,8 @@ public class MapReduceService implements ManagedService, RemoteService {
         JobSupervisorKey key = new JobSupervisorKey(configuration.getName(), configuration.getJobId());
         JobTracker jobTracker = (JobTracker) createDistributedObject(configuration.getName());
         JobSupervisor jobSupervisor = new JobSupervisor(configuration, (AbstractJobTracker) jobTracker, this);
-        return jobSupervisors.putIfAbsent(key, jobSupervisor);
+        JobSupervisor oldSupervisor = jobSupervisors.putIfAbsent(key, jobSupervisor);
+        return oldSupervisor != null ? oldSupervisor : jobSupervisor;
     }
 
     public ExecutorService getExecutorService(String name) {
@@ -127,6 +131,14 @@ public class MapReduceService implements ManagedService, RemoteService {
     public Address getKeyMember(Object key) {
         int partitionId = partitionService.getPartitionId(key);
         return partitionService.getPartitionOwner(partitionId);
+    }
+
+    public <R> R processRequest(Address address, RequestPartitionProcessing requestPartitionProcessing)
+            throws ExecutionException, InterruptedException {
+        Future<R> future = nodeEngine.getOperationService().invokeOnTarget(
+                MapReduceService.SERVICE_NAME, requestPartitionProcessing, address);
+
+        return future.get();
     }
 
     public void sendNotification(Address address, MapReduceNotification notification) {

@@ -134,7 +134,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         });
     }
 
-    private ExecutorService getAsyncExecutor() {
+    protected ExecutorService getAsyncExecutor() {
         return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 

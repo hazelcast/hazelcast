@@ -36,7 +36,8 @@ public class MapKeyValueSource<K, V>
         extends KeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
 
-    private final MapReduceSimpleEntry<K, V> simpleEntry;
+    // This prevents excessive creation of map entries for a serialized operation
+    private final MapReduceSimpleEntry<K, V> simpleEntry = new MapReduceSimpleEntry<K, V>();
 
     private String mapName;
 
@@ -46,12 +47,9 @@ public class MapKeyValueSource<K, V>
     private transient Map.Entry<Data, Data> nextElement;
 
     MapKeyValueSource() {
-        // This prevents excessive creation of map entries for a serialized operation
-        this.simpleEntry = new MapReduceSimpleEntry<K, V>();
     }
 
     public MapKeyValueSource(String mapName) {
-        this.simpleEntry = null;
         this.mapName = mapName;
     }
 

@@ -19,16 +19,27 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.ResponseHandler;
+import com.hazelcast.client.spi.ResponseStream;
+import com.hazelcast.client.util.ErrorHandler;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.AbstractJob;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.process.ProcessJob;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ValidationUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
 
@@ -55,18 +66,90 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
     private class ClientJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
         public ClientJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
-            super(name, keyValueSource);
+            super(name, ClientMapReduceProxy.this, keyValueSource);
         }
 
         @Override
-        protected void invokeTask() throws Exception {
-            ClientContext context = getContext();
-            ClientInvocationService cis = context.getInvocationService();
-            ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, new ArrayList(keys),
-                    predicate, mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
-            cis.invokeOnRandomTarget(request);
+        protected <T> CompletableFuture<T> invoke() {
+            try {
+                ClientContext context = getContext();
+                ClientInvocationService cis = context.getInvocationService();
+                ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, new ArrayList(keys),
+                        predicate, mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
+
+                final ClientCompletableFuture completableFuture = new ClientCompletableFuture();
+                cis.invokeOnRandomTarget(request, new ResponseHandler() {
+                    @Override
+                    public void handle(ResponseStream stream) throws Exception {
+                        try {
+                            stream.read(); // initial ok response
+                            final Object event = stream.read();
+                            completableFuture.setResult(event);
+                        } catch (Exception e) {
+                            try {
+                                stream.end();
+                            } catch (IOException ignored) {
+                            }
+                            if (ErrorHandler.isRetryable(e)) {
+                                throw e;
+                            }
+                        }
+                    }
+                });
+
+                return completableFuture;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
+    }
+
+    private class ClientCompletableFuture<V> extends AbstractCompletableFuture<V> {
+
+        protected ClientCompletableFuture() {
+            super(null);
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            ValidationUtil.isNotNull(unit, "unit");
+            long deadline = timeout == 0L ? -1 : Clock.currentTimeMillis() + unit.toMillis(timeout);
+            for (; ; ) {
+                try {
+                    Thread.sleep(100);
+                } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        throw (InterruptedException) e;
+                    }
+                }
+
+                if (isDone()) {
+                    break;
+                }
+
+                long delta = deadline - Clock.currentTimeMillis();
+                if (delta <= 0L) {
+                    throw new TimeoutException("timeout reached");
+                }
+            }
+            return (V) getResult();
+        }
+
+        @Override
+        protected ExecutorService getAsyncExecutor() {
+            return getContext().getExecutionService().getAsyncExecutor();
+        }
     }
 
 }

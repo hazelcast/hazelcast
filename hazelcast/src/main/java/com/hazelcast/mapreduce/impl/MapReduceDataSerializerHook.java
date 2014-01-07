@@ -20,6 +20,8 @@ import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessing;
+import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -32,7 +34,9 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
     public static final int REDUCER_CHUNK_MESSAGE = 2;
     public static final int REDUCER_LAST_CHUNK_MESSAGE = 3;
     public static final int TRACKED_JOB_OPERATION = 4;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 5;
+    public static final int REQUEST_PARTITION_PROCESSING = 5;
+    public static final int PARTITION_STATE = 6;
+    public static final int CLIENT_MAP_REDUCE_REQUEST = 7;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
 
@@ -72,6 +76,18 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new KeyValueJobOperation();
+            }
+        };
+        constructors[REQUEST_PARTITION_PROCESSING] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RequestPartitionProcessing();
+            }
+        };
+        constructors[PARTITION_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new JobPartitionStateImpl();
             }
         };
         constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

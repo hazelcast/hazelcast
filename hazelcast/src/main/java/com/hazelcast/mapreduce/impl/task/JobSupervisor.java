@@ -22,6 +22,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.nio.Address;
 
 import java.util.Collection;
 import java.util.List;
@@ -36,15 +37,21 @@ public class JobSupervisor {
 
     private final ConcurrentMap<Object, Reducer> reducers = new ConcurrentHashMap<Object, Reducer>();
 
+    private final Address jobOwner;
     private final AbstractJobTracker jobTracker;
     private final JobTaskConfiguration configuration;
     private final MapReduceService mapReduceService;
+
+    private final JobProcessInformationImpl jobProcessInformation;
 
     public JobSupervisor(JobTaskConfiguration configuration, AbstractJobTracker jobTracker,
                          MapReduceService mapReduceService) {
         this.jobTracker = jobTracker;
         this.configuration = configuration;
         this.mapReduceService = mapReduceService;
+        this.jobOwner = configuration.getJobOwner();
+        this.jobProcessInformation = new JobProcessInformationImpl(
+                configuration.getNodeEngine().getPartitionService().getPartitionCount());
     }
 
     public MapReduceService getMapReduceService() {
@@ -63,7 +70,7 @@ public class JobSupervisor {
         jobTracker.registerReducerTask(new ReducerTask(name, jobId, this, new ConcurrentLinkedQueue()));
 
         // Start map-combiner tasks
-        jobTracker.registerMapCombineTask(new MapCombineTask(configuration, mapReduceService, mappingPhase));
+        jobTracker.registerMapCombineTask(new MapCombineTask(configuration, this, mappingPhase));
     }
 
     public void onNotification(MapReduceNotification notification) {
@@ -90,6 +97,14 @@ public class JobSupervisor {
 
     public <Key> Map<Key, Reducer> getReducers() {
         return (Map<Key, Reducer>) reducers;
+    }
+
+    public JobProcessInformationImpl getJobProcessInformation() {
+        return jobProcessInformation;
+    }
+
+    public Address getJobOwner() {
+        return jobOwner;
     }
 
 }
