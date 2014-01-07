@@ -34,12 +34,12 @@ public interface InternalOperationService extends OperationService{
 
     void onMemberLeft(MemberImpl member);
 
-    void notifyBackupCall(long callId);
-
     boolean isCallTimedOut(Operation op);
 
     /**
      * Shuts down this InternalOperationService.
      */
     void shutdown();
+
+    void notifyBackupCall(long callId);
 }

@@ -60,6 +60,10 @@ public abstract class Operation implements DataSerializable {
     private transient ResponseHandler responseHandler;
     private transient long startTime;
 
+    public boolean isUrgent(){
+        return this instanceof UrgentSystemOperation;
+    }
+
     // runs before wait-support
     public abstract void beforeRun() throws Exception;
 
