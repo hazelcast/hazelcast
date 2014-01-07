@@ -37,7 +37,7 @@
                 <version>0.6.4</version>
                 <configuration>
                     <excludes>
-                        <exclude>com/hazelcast/examples/**</exclude>
+                        <exclude>com/hazelcast/examples/**/*.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
