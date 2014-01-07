@@ -32,19 +32,6 @@ final class BackupResponse extends Response {
         super(callId, urgent);
     }
 
-    /*
-    public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final long callId = getCallId();
-        nodeEngine.operationService.notifyBackupCall(callId);
-    }
-
-    @Override
-    public void logError(Throwable e) {
-        ReplicaErrorLogger.log(e, getLogger());
-    }
-      */
-
     @Override
     public int getId() {
         return SpiDataSerializerHook.BACKUP_RESPONSE;

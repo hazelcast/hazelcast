@@ -191,7 +191,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         NormalResponse response = (NormalResponse)obj;
-        if(!(response.getValue() instanceof Throwable)){
+        if(!(response.getValue()  instanceof Throwable)){
             return null;
         }
 
