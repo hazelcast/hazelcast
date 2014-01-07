@@ -163,7 +163,9 @@ public class ClientMapTest {
         assertEquals(9, map.size());
     }
 
+
     @Test
+    @Ignore("TODO empty Test")
     public void flush() {
         //TODO map store
     }
@@ -309,6 +311,7 @@ public class ClientMapTest {
     }
 
     @Test
+    @Ignore("TODO empty Test")
     public void testPutTransient() throws Exception {
         //TODO mapstore
     }

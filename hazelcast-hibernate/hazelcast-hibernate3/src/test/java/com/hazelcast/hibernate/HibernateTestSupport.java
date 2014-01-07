@@ -39,9 +39,6 @@ public abstract class HibernateTestSupport {
         Hazelcast.shutdownAll();
     }
 
-    @Before
-    public final void start() {
-    }
 
     @After
     public final void cleanup() {
