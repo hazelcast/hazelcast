@@ -67,7 +67,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     public V setValue(V value, int hash, long ttlMillis) {
         access();
-        V oldValue = value;
+        V oldValue = this.value;
         this.value = value;
         this.latestUpdateHash = hash;
         this.updateTime = System.currentTimeMillis();

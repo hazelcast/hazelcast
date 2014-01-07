@@ -42,6 +42,7 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -583,7 +584,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
             }
         });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig);
+        cfg.getReplicatedMapConfig("default").addEntryListenerConfig(listenerConfig);
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
@@ -643,12 +644,12 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
             }
         });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig1);
+        cfg.getReplicatedMapConfig("default").addEntryListenerConfig(listenerConfig1);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
         latch1.await(5, TimeUnit.MINUTES);
 
-        cfg.getMapConfig("default").getEntryListenerConfigs().clear();
+        cfg.getReplicatedMapConfig("default").getListenerConfigs().clear();
         final CountDownLatch latch2 = new CountDownLatch(100);
         EntryListenerConfig listenerConfig2 = new EntryListenerConfig().setImplementation(new EntryListener() {
             @Override
@@ -668,7 +669,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
             }
         });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig2);
+        cfg.getReplicatedMapConfig("default").addEntryListenerConfig(listenerConfig2);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap("default");
         latch2.await(5, TimeUnit.MINUTES);
@@ -1203,7 +1204,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
             }
         });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig);
+        cfg.getReplicatedMapConfig("default").addEntryListenerConfig(listenerConfig);
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
@@ -1263,12 +1264,12 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
             }
         });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig1);
+        cfg.getReplicatedMapConfig("default").addEntryListenerConfig(listenerConfig1);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
         latch1.await(5, TimeUnit.MINUTES);
 
-        cfg.getMapConfig("default").getEntryListenerConfigs().clear();
+        cfg.getReplicatedMapConfig("default").getListenerConfigs().clear();
         final CountDownLatch latch2 = new CountDownLatch(100);
         EntryListenerConfig listenerConfig2 = new EntryListenerConfig().setImplementation(new EntryListener() {
             @Override
@@ -1288,7 +1289,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
             }
         });
-        cfg.getMapConfig("default").addEntryListenerConfig(listenerConfig2);
+        cfg.getReplicatedMapConfig("default").addEntryListenerConfig(listenerConfig2);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
         ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap("default");
         latch2.await(5, TimeUnit.MINUTES);
