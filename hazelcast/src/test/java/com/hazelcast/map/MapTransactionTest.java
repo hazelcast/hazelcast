@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -936,10 +935,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
                     txMap.put(4, employee4);
 
                     keys = txMap.keySet(new SqlPredicate("age <= 10"));
-                    iterator = keys.iterator();
-                    while (iterator.hasNext()) {
-                        System.err.println(((Integer) iterator.next()).intValue());
-                    }
                     assertEquals(3, keys.size());
 
                     // force rollback.
@@ -984,10 +979,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
         assertEquals(1, txMap.keySet(new SqlPredicate("age = 34")).size());
-
-        for (Object o : txMap.keySet()) {
-            System.err.println(o);
-        }
 
         context.commitTransaction();
 

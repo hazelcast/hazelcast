@@ -235,7 +235,6 @@ public class ClientIssueTest {
         final CountDownLatch latch = new CountDownLatch(list.size());
         LifecycleListener listener = new LifecycleListener(){
             public void stateChanged(LifecycleEvent event) {
-                System.err.println("asdf event : " + event);
                 final LifecycleState state = list.poll();
                 if (state != null && state.equals(event.getState())){
                     latch.countDown();

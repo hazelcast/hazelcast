@@ -840,7 +840,6 @@ public class MapStoreTest extends HazelcastTestSupport {
                 failed = true;
                 throw new RuntimeException("duplicate is not allowed");
             }
-            System.err.println("store:" + key);
             super.store(key, value);
         }
 
