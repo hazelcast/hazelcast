@@ -183,7 +183,7 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
         if (reSendCount > ClientClusterServiceImpl.RETRY_COUNT) {
             return false;
         }
-        executionService.execute(new ResSendTask());
+        executionService.execute(new ReSendTask());
         return true;
     }
 
@@ -199,7 +199,7 @@ public class ClientCallFuture<V> implements CompletableFuture<V>, Callback {
         });
     }
 
-    class ResSendTask implements Runnable {
+    class ReSendTask implements Runnable {
         public void run() {
             try {
                 clusterService.reSend(ClientCallFuture.this);

@@ -20,11 +20,12 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +41,6 @@ public class ClientTopicTest {
     static final String name = "test1";
     static HazelcastInstance hz;
     static HazelcastInstance server;
-    static HazelcastInstance second;
     static ITopic t;
 
     @BeforeClass
@@ -50,9 +50,8 @@ public class ClientTopicTest {
         t = hz.getTopic(name);
     }
 
-    @Before
-    @After
-    public void clear() throws IOException {
+    @AfterClass
+    public static void stop(){
         hz.getLifecycleService().shutdown();
         Hazelcast.shutdownAll();
     }
