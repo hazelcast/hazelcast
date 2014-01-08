@@ -205,21 +205,16 @@ abstract class BasicInvocation implements Callback<Object> {
 
         remote = !thisAddress.equals(invTarget);
         if (remote) {
-            final long callId = operationService.registerRemoteCall(this);
-            if (op instanceof BackupAwareOperation) {
-                registerBackups((BackupAwareOperation) op, callId);
-            }
+            long callId = operationService.registerInvocation(this);
             OperationAccessor.setCallId(op, callId);
             boolean sent = operationService.send(op, invTarget);
             if (!sent) {
-                operationService.deregisterRemoteCall(callId);
-                operationService.deregisterBackupCall(callId);
+                operationService.deregisterInvocation(callId);
                 sendResponse(new RetryableIOException("Packet not sent to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
-                final long callId = operationService.newCallId();
-                registerBackups((BackupAwareOperation) op, callId);
+                long callId = operationService.registerInvocation(this);
                 OperationAccessor.setCallId(op, callId);
             }
             ResponseHandlerFactory.setLocalResponseHandler(op, this);
@@ -235,6 +230,10 @@ abstract class BasicInvocation implements Callback<Object> {
         invokeCount = 0;
         potentialResponse = null;
         expectedBackupCount = -1;
+        long callId = op.getCallId();
+        if(callId>-1){
+            operationService.deregisterInvocation(callId);
+        }
         doInvoke();
     }
 
@@ -327,14 +326,6 @@ abstract class BasicInvocation implements Callback<Object> {
 
         //we don't need to wait for a backup, so we can set the response immediately.
         invocationFuture.set(response);
-    }
-
-    private void registerBackups(BackupAwareOperation op, long callId) {
-        final long oldCallId = ((Operation) op).getCallId();
-        if (oldCallId != 0) {
-            operationService.deregisterBackupCall(oldCallId);
-        }
-        operationService.registerBackupCall(callId, this);
     }
 
     @Override
@@ -578,7 +569,9 @@ abstract class BasicInvocation implements Callback<Object> {
             }
 
             //we need to deregister the backup call to make sure that there is no memory leak.
-            operationService.deregisterBackupCall(op.getCallId());
+            if(op.getCallId()>-1){
+                operationService.deregisterInvocation(op.getCallId());
+            }
 
             while (callbackChain != null) {
                 runAsynchronous(callbackChain.callback, callbackChain.executor);

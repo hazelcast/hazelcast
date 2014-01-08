@@ -79,8 +79,7 @@ final class BasicOperationService implements InternalOperationService {
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
-    private final ConcurrentMap<Long, BasicInvocation> backupCalls;
-    private final ConcurrentMap<Long, BasicInvocation> remoteCalls;
+    private final ConcurrentMap<Long, BasicInvocation> invocations;
     private final ExecutorService[] operationExecutors;
     private final BlockingQueue[] operationExecutorQueues;
     private final ExecutorService defaultOperationExecutor;
@@ -102,7 +101,7 @@ final class BasicOperationService implements InternalOperationService {
         final int coreSize = Runtime.getRuntime().availableProcessors();
         final boolean reallyMultiCore = coreSize >= 8;
         final int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
-        remoteCalls = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
+        invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
         operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
         operationExecutors = new ExecutorService[operationThreadCount];
@@ -135,9 +134,13 @@ final class BasicOperationService implements InternalOperationService {
                         node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        backupCalls = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
+    }
+
+    //for testing
+    int getRegisteredInvocationCount(){
+        return invocations.size();
     }
 
     @Override
@@ -157,7 +160,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getRemoteOperationsCount(){
-        return remoteCalls.size();
+        return invocations.size();
     }
 
     @Override
@@ -700,12 +703,13 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    long registerRemoteCall(BasicInvocation invocation) {
+    long registerInvocation(BasicInvocation invocation) {
         final long callId = newCallId();
-        remoteCalls.put(callId, invocation);
+        invocations.put(callId, invocation);
         return callId;
     }
 
+    //todo: simplify, just start counter at one.
     @PrivateApi
     long newCallId() {
         final long callId = callIdGen.incrementAndGet();
@@ -716,21 +720,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    BasicInvocation deregisterRemoteCall(long callId) {
-        return remoteCalls.remove(callId);
-    }
-
-    @PrivateApi
-    void registerBackupCall(long callId, BasicInvocation invocation) {
-        final BasicInvocation current = backupCalls.put(callId, invocation);
-        if (current != null) {
-            logger.warning("Already registered a backup record for call[" + callId + "]!");
-        }
-    }
-
-    @PrivateApi
-    void deregisterBackupCall(long callId) {
-        backupCalls.remove(callId);
+    BasicInvocation deregisterInvocation(long callId) {
+        return invocations.remove(callId);
     }
 
     @PrivateApi
@@ -748,7 +739,7 @@ final class BasicOperationService implements InternalOperationService {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
-                final Iterator<BasicInvocation> it = remoteCalls.values().iterator();
+                final Iterator<BasicInvocation> it = invocations.values().iterator();
                 while (it.hasNext()) {
                     final BasicInvocation invocation = it.next();
                     if (invocation.isCallTarget(member)) {
@@ -768,12 +759,11 @@ final class BasicOperationService implements InternalOperationService {
         }
         responseExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
-        for (BasicInvocation call : remoteCalls.values()) {
+        for (BasicInvocation call : invocations.values()) {
             call.sendResponse(response);
         }
-        remoteCalls.clear();
-        backupCalls.clear();
-        backupScheduler.cancelAll();
+        invocations.clear();
+         backupScheduler.cancelAll();
         for (ExecutorService executor : operationExecutors) {
             try {
                 executor.awaitTermination(3, TimeUnit.SECONDS);
@@ -866,7 +856,7 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void notifyBackupCall(long callId) {
         try {
-            final BasicInvocation invocation = backupCalls.get(callId);
+            final BasicInvocation invocation = invocations.get(callId);
             if (invocation != null) {
                 invocation.signalOneBackupComplete();
             }
@@ -884,14 +874,13 @@ final class BasicOperationService implements InternalOperationService {
 
         // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
         private void notifyRemoteCall(NormalResponse response) {
-            BasicInvocation call = deregisterRemoteCall(response.getCallId());
-            if (call == null) {
+            BasicInvocation invocation = invocations.get(response.getCallId());
+            if (invocation == null) {
                 throw new HazelcastException("No call for response:"+response);
             }
 
-            call.sendResponse(response);
+            invocation.sendResponse(response);
         }
-
 
         @Override
         public void run() {
