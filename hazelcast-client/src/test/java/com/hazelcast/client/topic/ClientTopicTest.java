@@ -44,7 +44,7 @@ public class ClientTopicTest {
     static ITopic t;
 
     @Before
-    public static void init(){
+    public void init(){
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         t = hz.getTopic(name);
