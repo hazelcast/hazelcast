@@ -68,7 +68,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author mdogan 12/14/12
  * @see com.hazelcast.spi.impl.BasicInvocation
- * @see com.hazelcast.spi.impl.BasicInvocationBuilder
+ * @see com.hazelcast.spi.impl.BasicOperationService.BasicInvocationBuilder
  * @see com.hazelcast.spi.impl.BasicPartitionInvocation
  * @see com.hazelcast.spi.impl.BasicTargetInvocation
  */
@@ -76,7 +76,7 @@ final class BasicOperationService implements InternalOperationService {
 
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
-    private final NodeEngineImpl nodeEngine;
+    final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
@@ -89,7 +89,7 @@ final class BasicOperationService implements InternalOperationService {
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-    private final ConcurrentMap<Long, BackupCompletionCallback> backupCalls;
+    private final ConcurrentMap<Long, BasicInvocation> backupCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
@@ -137,7 +137,7 @@ final class BasicOperationService implements InternalOperationService {
                         node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);
+        backupCalls = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
@@ -178,14 +178,18 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
-        if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
-        return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);
+        if (partitionId < 0) {
+            throw new IllegalArgumentException("Partition id cannot be negative!");
+        }
+        return new BasicInvocationBuilder(serviceName, op, partitionId);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        if (target == null) throw new IllegalArgumentException("Target cannot be null!");
-        return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
+        if (target == null) {
+            throw new IllegalArgumentException("Target cannot be null!");
+        }
+        return new BasicInvocationBuilder(serviceName, op, target);
     }
 
     @PrivateApi
@@ -299,14 +303,14 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-         return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
+         return new BasicPartitionInvocation(this, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
                  InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                  InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null,InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return new BasicTargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
+        return new BasicTargetInvocation(this, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
@@ -719,8 +723,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    void registerBackupCall(long callId, BackupCompletionCallback backupCompletionCallback) {
-        final BackupCompletionCallback current = backupCalls.put(callId, backupCompletionCallback);
+    void registerBackupCall(long callId, BasicInvocation invocation) {
+        final BasicInvocation current = backupCalls.put(callId, invocation);
         if (current != null) {
             logger.warning("Already registered a backup record for call[" + callId + "]!");
         }
@@ -864,9 +868,9 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void notifyBackupCall(long callId) {
         try {
-            final BackupCompletionCallback callback = backupCalls.get(callId);
-            if (callback != null) {
-                callback.signalOneBackupComplete();
+            final BasicInvocation invocation = backupCalls.get(callId);
+            if (invocation != null) {
+                invocation.signalOneBackupComplete();
             }
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
@@ -986,6 +990,36 @@ final class BasicOperationService implements InternalOperationService {
             sb.append(", time=").append(time);
             sb.append('}');
             return sb.toString();
+        }
+    }
+
+    /**
+     * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link BasicOperationService}.
+     */
+    public class BasicInvocationBuilder extends InvocationBuilder {
+
+        public BasicInvocationBuilder(String serviceName, Operation op, int partitionId) {
+            this(serviceName, op, partitionId, null);
+        }
+
+        public BasicInvocationBuilder(String serviceName, Operation op, Address target) {
+            this(serviceName, op, -1, target);
+        }
+
+        private BasicInvocationBuilder(String serviceName, Operation op,
+                                       int partitionId, Address target) {
+            super(serviceName,op,partitionId,target);
+        }
+
+        @Override
+        public InternalCompletableFuture invoke() {
+            if (target == null) {
+                return new BasicPartitionInvocation(BasicOperationService.this, serviceName, op, partitionId, replicaIndex,
+                        tryCount, tryPauseMillis, callTimeout, callback, executorName,resultDeserialized).invoke();
+            } else {
+                return new BasicTargetInvocation(BasicOperationService.this, serviceName, op, target, tryCount, tryPauseMillis,
+                        callTimeout, callback, executorName,resultDeserialized).invoke();
+            }
         }
     }
 }
