@@ -152,7 +152,7 @@ abstract class BasicInvocation implements Callback<Object> {
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
-                notify(e);
+                sendResponse(e);
             } else {
                 throw ExceptionUtil.rethrow(e);
             }
@@ -160,10 +160,12 @@ abstract class BasicInvocation implements Callback<Object> {
         return invocationFuture;
     }
 
+    private volatile MemberImpl member;
+
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
-            notify(new HazelcastInstanceNotActiveException());
+            sendResponse(new HazelcastInstanceNotActiveException());
             return;
         }
 
@@ -174,27 +176,27 @@ abstract class BasicInvocation implements Callback<Object> {
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+                sendResponse(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
-                notify(new HazelcastInstanceNotActiveException());
+                sendResponse(new HazelcastInstanceNotActiveException());
             }
             return;
         }
 
-        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
+        member = nodeEngine.getClusterService().getMember(invTarget);
         if (!OperationAccessor.isJoinOperation(op) && member == null) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            sendResponse(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return;
         }
 
         if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+            sendResponse(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
                     " is not equal to the partition id of invocation: " + partitionId));
             return;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+            sendResponse(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
                     " is not equal to the replica index of invocation: " + replicaIndex));
             return;
         }
@@ -203,8 +205,7 @@ abstract class BasicInvocation implements Callback<Object> {
 
         remote = !thisAddress.equals(invTarget);
         if (remote) {
-            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
-            final long callId = operationService.registerRemoteCall(call);
+            final long callId = operationService.registerRemoteCall(this);
             if (op instanceof BackupAwareOperation) {
                 registerBackups((BackupAwareOperation) op, callId);
             }
@@ -213,7 +214,7 @@ abstract class BasicInvocation implements Callback<Object> {
             if (!sent) {
                 operationService.deregisterRemoteCall(callId);
                 operationService.deregisterBackupCall(callId);
-                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
+                sendResponse(new RetryableIOException("Packet not sent to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
@@ -259,7 +260,7 @@ abstract class BasicInvocation implements Callback<Object> {
     }
 
     @Override
-    public void notify(Object obj) {
+    public void sendResponse(Object obj) {
         Object response;
         if (obj == null) {
             response = NULL_RESPONSE;
@@ -411,6 +412,14 @@ abstract class BasicInvocation implements Callback<Object> {
         }), timeout, unit);
     }
 
+    public boolean isCallTarget(MemberImpl member){
+         if (member!=null) {
+             return member.getUuid().equals(member.getUuid());
+         } else {
+             return member.getAddress().equals(target);
+         }
+    }
+
     public static class IsStillExecuting extends AbstractOperation {
 
         private long operationCallId;
@@ -475,12 +484,12 @@ abstract class BasicInvocation implements Callback<Object> {
 
         @Override
         public void onResponse(E response) {
-            callback.notify(response);
+            callback.sendResponse(response);
         }
 
         @Override
         public void onFailure(Throwable t) {
-            callback.notify(t);
+            callback.sendResponse(t);
         }
     }
 
