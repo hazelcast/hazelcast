@@ -40,4 +40,13 @@ public class JobPartitionStateImpl
         return state;
     }
 
+    @Override
+    public String toString() {
+        return "JobPartitionStateImpl{" +
+                "state=" + state +
+//                ", address=" + address +
+                '}';
+    }
+
+
 }

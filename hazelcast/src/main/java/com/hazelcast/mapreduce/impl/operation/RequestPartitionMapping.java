@@ -25,29 +25,26 @@ import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
-public class RequestPartitionProcessing
+public class RequestPartitionMapping
         extends ProcessingOperation {
 
-    private volatile JobPartitionState[] partitionStates = null;
-    private transient int partitionId;
+    private volatile RequestPartitionResult result;
 
-    public RequestPartitionProcessing() {
+    public RequestPartitionMapping() {
     }
 
-    public RequestPartitionProcessing(String name, String jobId, int partitionId) {
+    public RequestPartitionMapping(String name, String jobId) {
         super(name, jobId);
-        this.partitionId = partitionId;
     }
 
     @Override
     public Object getResponse() {
-        return partitionStates;
+        return result;
     }
 
     @Override
@@ -55,62 +52,68 @@ public class RequestPartitionProcessing
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor == null) {
+            result = new RequestPartitionResult(RequestPartitionResult.State.NO_SUPERVISOR, -1);
+            System.out.println("No supervisor found");
             return;
         }
 
+        List<Integer> memberPartitions = mapReduceService.getMemberPartitions(getCallerAddress());
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
-        JobPartitionState newPartitonState = new JobPartitionStateImpl(getCallerAddress(),
-                JobPartitionState.State.PROCESSING);
+        JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(),
+                JobPartitionState.State.MAPPING);
 
-        if (checkState(processInformation)) {
-            for (; ; ) {
-                JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
+        for (; ; ) {
+            JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
+            int selectedPartition = searchMemberPartitionToProcess(processInformation, memberPartitions);
+            if (selectedPartition > -1) {
                 JobPartitionState[] newPartitonStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
 
                 // Set new partition processing information
-                newPartitonStates[partitionId] = newPartitonState;
+                newPartitonStates[selectedPartition] = newPartitionState;
 
                 if (!processInformation.updatePartitionState(oldPartitionStates, newPartitonStates)) {
-                    if (checkState(processInformation)) {
+                    if (checkState(processInformation, selectedPartition)) {
                         // Atomic update failed but partition is still not assigned, try again
                         continue;
                     }
                 } else {
-                    JobPartitionState[] partitionStates = processInformation.getPartitionStates();
-                    JobPartitionState partitionState = partitionStates[partitionId];
-                    if (partitionState.getState() == JobPartitionState.State.PROCESSING
-                            && partitionState.getOwner().equals(getCallerAddress())) {
-                        // We managed to get the new partition processing assigned
-                        this.partitionStates = partitionStates;
-                        return;
-                    }
-
-                    // Since situation may happen on migration, two different members requested
-                    // the same partition to process, we should just return here and wait for
-                    // another request.
-                    this.partitionStates = partitionStates;
+                    result = new RequestPartitionResult(RequestPartitionResult.State.SUCCESSFUL, selectedPartition);
                     return;
                 }
             }
         }
     }
 
-    private boolean checkState(JobProcessInformation processInformation) {
+    private int searchMemberPartitionToProcess(JobProcessInformation processInformation,
+                                               List<Integer> memberPartitions) {
+        for (int partitionId : memberPartitions) {
+            if (checkState(processInformation, partitionId)) {
+                return partitionId;
+            }
+        }
+        return -1;
+    }
+
+    private boolean checkState(JobProcessInformation processInformation, int partitionId) {
         JobPartitionState[] partitionStates = processInformation.getPartitionStates();
         JobPartitionState partitionState = partitionStates[partitionId];
-        return partitionState == null || partitionState.getState() == JobPartitionState.State.WAITING;
+        if (partitionState == null) {
+            return true;
+        }
+        if (partitionState.getState() == JobPartitionState.State.WAITING) {
+            return true;
+        }
+        return false;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(partitionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        partitionId = in.readInt();
     }
 
     @Override

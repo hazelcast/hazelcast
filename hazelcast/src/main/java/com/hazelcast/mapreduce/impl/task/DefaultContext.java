@@ -31,7 +31,7 @@ public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
 
-    private int collected = 0;
+    private volatile int collected = 0;
 
     protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory,
                              MapCombineTask mapCombineTask) {

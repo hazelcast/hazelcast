@@ -18,7 +18,6 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.LifecycleMapper;
 import com.hazelcast.mapreduce.Mapper;
@@ -26,10 +25,11 @@ import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
-import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessing;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.List;
@@ -95,11 +95,22 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
 
         Map<KeyOut, Chunk> chunkMap = context.finish();
-        // Wrap into LastChunkNotification object
-        Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
-        for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
-            mapReduceService.sendNotification(entry.getKey(),
-                    new LastChunkNotification(entry.getKey(), name, jobId, partitionId, entry.getValue()));
+
+        try {
+            RequestPartitionResult result = mapReduceService.processRequest(
+                    supervisor.getJobOwner(), new RequestPartitionReducing(name, jobId, partitionId));
+
+            System.out.println("Event sent: " + partitionId);
+            if (result.getState() == RequestPartitionResult.State.SUCCESSFUL) {
+                // Wrap into LastChunkNotification object
+                Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+                for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+                    mapReduceService.sendNotification(entry.getKey(),
+                            new LastChunkNotification(entry.getKey(), name, jobId, partitionId, entry.getValue()));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -145,7 +156,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     processMapping(partitionId);
                     keyValueSource.close();
                 } catch (IOException ignore) {
-                    // TODO is ignoring the correct thing to do here?
+                    ignore.printStackTrace();
                 }
             }
         }
@@ -159,46 +170,28 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     JobPartitionState partitionState = oldPartitionStates[i];
                     if (partitionState == null || partitionState.getState() == JobPartitionState.State.WAITING) {
                         if (localPartitions.contains(i)) {
-                            JobPartitionState[] result = mapReduceService.processRequest(
-                                    supervisor.getJobOwner(), new RequestPartitionProcessing(name, jobId, i));
+                            RequestPartitionResult result = mapReduceService.processRequest(
+                                    supervisor.getJobOwner(), new RequestPartitionMapping(name, jobId));
 
                             // JobSupervisor doesn't exists anymore on jobOwner, job done?
-                            if (result == null) {
+                            if (result.getState() == RequestPartitionResult.State.NO_SUPERVISOR) {
+                                System.out.println("MapCombineTask::jobDone?");
                                 return null;
+                            } else if (result.getState() == RequestPartitionResult.State.CHECK_STATE_FAILED) {
+                                // retry
+                                return -1;
                             } else {
-                                return processNewPartitionStates(processInformation, result);
+                                return result.getPartitionId();
                             }
                         }
                     }
                 } catch (Exception e) {
-                    //TODO
+                    e.printStackTrace();
                 }
             }
 
             // No further partitions available?
             return null;
-        }
-
-        private int processNewPartitionStates(JobProcessInformationImpl processInformation,
-                                              JobPartitionState[] newPartitionStates) {
-            for (; ; ) {
-                int selectedPartition = -1;
-                JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
-                for (int i = 0; i < newPartitionStates.length; i++) {
-                    JobPartitionState partitionState = newPartitionStates[i];
-                    if (partitionState != null
-                            && partitionState.getState() == JobPartitionState.State.PROCESSING
-                            && partitionState.getOwner().equals(supervisor.getJobOwner())) {
-                        selectedPartition = i;
-                    } else {
-                        newPartitionStates[i] = oldPartitionStates[i];
-                    }
-                }
-
-                if (processInformation.updatePartitionState(oldPartitionStates, newPartitionStates)) {
-                    return selectedPartition;
-                }
-            }
         }
 
     }

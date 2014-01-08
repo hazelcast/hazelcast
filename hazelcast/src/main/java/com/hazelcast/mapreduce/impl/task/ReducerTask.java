@@ -20,8 +20,9 @@ import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.notification.ReducerResultNotification;
+import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,19 +61,19 @@ public class ReducerTask<Key, Chunk> implements Runnable {
 
     public void processChunk(int partitionId, Map<Key, Chunk> chunk) {
         reducerQueue.offer(new ReducerChunk<Key, Chunk>(chunk, partitionId));
-        if (!active.get()) {
+        if (active.compareAndSet(false, true)) {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
             ExecutorService es = mapReduceService.getExecutorService(name);
-            if (active.compareAndSet(false, true)) {
-                es.submit(this);
-            }
+            es.submit(this);
         }
     }
 
     private void reduceChunk(Map<Key, Chunk> chunk) {
         for (Map.Entry<Key, Chunk> entry : chunk.entrySet()) {
             Reducer reducer = supervisor.getReducerByKey(entry.getKey());
-            reducer.reduce(entry.getValue());
+            if (reducer != null) {
+                reducer.reduce(entry.getValue());
+            }
         }
     }
 
@@ -93,6 +94,8 @@ public class ReducerTask<Key, Chunk> implements Runnable {
                 reduceChunk(reducerChunk.chunk);
                 processProcessedState(reducerChunk);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             active.compareAndSet(true, false);
         }
@@ -103,52 +106,32 @@ public class ReducerTask<Key, Chunk> implements Runnable {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
             JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
             try {
-                JobPartitionState[] result = mapReduceService.processRequest(supervisor.getJobOwner(),
+                RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
                         new RequestPartitionProcessed(name, jobId, reducerChunk.partitionId));
-                processNewPartitionStates(processInformation, result);
-
-                if (checkFullyProcessed(processInformation)) {
-                    Map reducedResults = getReducedResults();
-                    ReducerResultNotification notification = new ReducerResultNotification(
-                            supervisor.getJobOwner(), name, jobId, reducerChunk.partitionId, reducedResults);
-                    mapReduceService.sendNotification(supervisor.getJobOwner(), notification);
+                if (result.getState() == RequestPartitionResult.State.SUCCESSFUL) {
+                    if (checkFullyProcessed(processInformation)) {
+                        // TODO Request reduced results
+                    }
                 }
             } catch (Exception ignore) {
-                //TODO
+                ignore.printStackTrace();
             }
         }
     }
 
     private boolean checkFullyProcessed(JobProcessInformation processInformation) {
+        if (!supervisor.isOwnerNode()) {
+            return false;
+        }
         JobPartitionState[] partitionStates = processInformation.getPartitionStates();
+        //System.out.println("Finished: " + MapReduceUtil.printPartitionStates(partitionStates));
         for (JobPartitionState partitionState : partitionStates) {
-            if (partitionState.getState() == JobPartitionState.State.PROCESSED) {
+            if (partitionState == null
+                    || partitionState.getState() == JobPartitionState.State.PROCESSED) {
                 return false;
             }
         }
         return true;
-    }
-
-    private int processNewPartitionStates(JobProcessInformationImpl processInformation,
-                                          JobPartitionState[] newPartitionStates) {
-        for (; ; ) {
-            int selectedPartition = -1;
-            JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
-            for (int i = 0; i < newPartitionStates.length; i++) {
-                JobPartitionState partitionState = newPartitionStates[i];
-                if (partitionState != null
-                        && partitionState.getState() == JobPartitionState.State.PROCESSED
-                        && partitionState.getOwner().equals(supervisor.getJobOwner())) {
-                    selectedPartition = i;
-                } else {
-                    newPartitionStates[i] = oldPartitionStates[i];
-                }
-            }
-
-            if (processInformation.updatePartitionState(oldPartitionStates, newPartitionStates)) {
-                return selectedPartition;
-            }
-        }
     }
 
 }

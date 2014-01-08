@@ -23,11 +23,13 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.*;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
+import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,11 +37,14 @@ import java.util.Map;
 public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
     private final NodeEngine nodeEngine;
+    private final MapReduceService mapReduceService;
 
     public KeyValueJob(String name, JobTracker jobTracker, NodeEngine nodeEngine,
+                       MapReduceService mapReduceService,
                        KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         super(name, jobTracker, keyValueSource);
         this.nodeEngine = nodeEngine;
+        this.mapReduceService = mapReduceService;
     }
 
     @Override
@@ -59,24 +64,50 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
         OperationService os = nodeEngine.getOperationService();
         PartitionService ps = nodeEngine.getPartitionService();
 
-        Map<Address, List<KeyIn>> mappedKeys = MapReduceUtil.mapKeysToMember(ps, keys);
+        Collection<MemberImpl> members = cs.getMemberList();
         Map<MemberImpl, InternalCompletableFuture> futures = new HashMap<MemberImpl, InternalCompletableFuture>();
-        for (MemberImpl member : cs.getMemberList()) {
-            List<KeyIn> keys = mappedKeys.get(member.getAddress());
+        for (MemberImpl member : members) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize,
-                    keys, predicate, keyValueSource, mapper, combinerFactory, reducerFactory);
+                    predicate, keyValueSource, mapper, combinerFactory, reducerFactory);
 
-            operation.setServiceName(MapReduceService.SERVICE_NAME);
-            operation.setExecutorName(name);
-            operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-            operation.setNodeEngine(nodeEngine);
+            try {
+                if (cs.getThisAddress().equals(member.getAddress())) {
+                    // Locally we can call the operation directly
+                    operation.setNodeEngine(nodeEngine);
+                    operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                    operation.setService(mapReduceService);
+                    operation.run();
+                } else {
+                    InvocationBuilder ib = os.createInvocationBuilder(
+                            MapReduceService.SERVICE_NAME, operation, member.getAddress());
+                    ib.invoke().get();
+                }
+            } catch (Exception e) {
+                //TODO kill the job
+                throw new RuntimeException(e);
+            }
+        }
 
-            // First call the operation locally to set everything up
-            os.runOperation(operation);
+        // After we prepared all the remote systems we can now start the processing
+        Map<Address, List<KeyIn>> mappedKeys = MapReduceUtil.mapKeysToMember(ps, keys);
+        for (MemberImpl member : members) {
+            try {
+                List<KeyIn> keys = mappedKeys.get(member.getAddress());
+                Operation operation = new StartProcessingJobOperation<KeyIn, ValueIn>(
+                        name, jobId, keys, predicate, mapper);
 
-            // Then add other members to the operation
-            if (!cs.getThisAddress().equals(member.getAddress())) {
-                os.send(operation, member.getAddress());
+                if (cs.getThisAddress().equals(member.getAddress())) {
+                    // Locally we can call the operation directly
+                    operation.setNodeEngine(nodeEngine);
+                    operation.setServiceName(MapReduceService.SERVICE_NAME);
+                    operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                    os.runOperation(operation);
+                } else {
+                    os.send(operation, member.getAddress());
+                }
+            } catch (Exception e) {
+                //TODO kill the job
+                throw new RuntimeException(e);
             }
         }
         return jobFuture;

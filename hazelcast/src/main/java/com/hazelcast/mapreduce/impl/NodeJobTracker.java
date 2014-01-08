@@ -26,13 +26,14 @@ import com.hazelcast.spi.NodeEngine;
 
 class NodeJobTracker extends AbstractJobTracker {
 
-    NodeJobTracker(String name, JobTrackerConfig jobTrackerConfig, NodeEngine nodeEngine) {
-        super(name, jobTrackerConfig, nodeEngine);
+    NodeJobTracker(String name, JobTrackerConfig jobTrackerConfig,
+                   NodeEngine nodeEngine, MapReduceService mapReduceService) {
+        super(name, jobTrackerConfig, nodeEngine, mapReduceService);
     }
 
     @Override
     public <K, V> Job<K, V> newJob(KeyValueSource<K, V> source) {
-        return new KeyValueJob<K, V>(name, this, nodeEngine, source);
+        return new KeyValueJob<K, V>(name, this, nodeEngine, mapReduceService, source);
     }
 
     @Override

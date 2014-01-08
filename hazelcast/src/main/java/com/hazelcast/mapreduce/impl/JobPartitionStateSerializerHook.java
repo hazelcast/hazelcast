@@ -28,7 +28,7 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-public class PartitionStateSerializerHook implements SerializerHook<JobPartitionStateImpl> {
+public class JobPartitionStateSerializerHook implements SerializerHook<JobPartitionStateImpl> {
 
     @Override
     public Class<JobPartitionStateImpl> getSerializationType() {
@@ -48,16 +48,22 @@ public class PartitionStateSerializerHook implements SerializerHook<JobPartition
     private static class JobPartitionStateSerializer implements StreamSerializer<JobPartitionStateImpl> {
 
         @Override
-        public void write(ObjectDataOutput out, JobPartitionStateImpl object) throws IOException {
-            out.writeObject(object.getOwner());
-            out.writeObject(object.getState());
+        public void write(ObjectDataOutput out, JobPartitionStateImpl partitionState) throws IOException {
+            out.writeBoolean(partitionState != null);
+            if (partitionState != null) {
+                out.writeObject(partitionState.getOwner());
+                out.writeInt(partitionState.getState().ordinal());
+            }
         }
 
         @Override
         public JobPartitionStateImpl read(ObjectDataInput in) throws IOException {
-            Address owner = in.readObject();
-            JobPartitionState.State state = in.readObject();
-            return new JobPartitionStateImpl(owner, state);
+            if (in.readBoolean()) {
+                Address owner = in.readObject();
+                JobPartitionState.State state = JobPartitionState.State.byOrdinal(in.readInt());
+                return new JobPartitionStateImpl(owner, state);
+            }
+            return null;
         }
 
         @Override

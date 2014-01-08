@@ -14,31 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce;
+package com.hazelcast.mapreduce.impl.operation;
 
-import com.hazelcast.nio.Address;
-
-public interface JobPartitionState {
-
-    Address getOwner();
-
-    State getState();
-
-    public static enum State {
-        WAITING,
-        MAPPING,
-        REDUCING,
-        PROCESSED,
-        ;
-
-        public static State byOrdinal(int ordinal) {
-            for (State state : values()) {
-                if (state.ordinal() == ordinal) {
-                    return state;
-                }
-            }
-            return null;
-        }
-    }
-
+public class ReducerResultOperation extends KeyValueJobOperation {
 }

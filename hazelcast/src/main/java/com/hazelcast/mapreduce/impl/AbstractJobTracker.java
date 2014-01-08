@@ -37,13 +37,16 @@ public abstract class AbstractJobTracker implements JobTracker {
     protected final ConcurrentMap<String, MapCombineTask> mapCombineTasks = new ConcurrentHashMap<String, MapCombineTask>();
     protected final NodeEngine nodeEngine;
     protected final ExecutorService executorService;
+    protected final MapReduceService mapReduceService;
     protected final JobTrackerConfig jobTrackerConfig;
     protected final String name;
 
-    AbstractJobTracker(String name, JobTrackerConfig jobTrackerConfig, NodeEngine nodeEngine) {
+    AbstractJobTracker(String name, JobTrackerConfig jobTrackerConfig,
+                       NodeEngine nodeEngine, MapReduceService mapReduceService) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.jobTrackerConfig = jobTrackerConfig;
+        this.mapReduceService = mapReduceService;
         this.executorService = nodeEngine.getExecutionService().getExecutor(name);
     }
 

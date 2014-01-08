@@ -16,51 +16,46 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
-import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.KeyPredicate;
-import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
-import com.hazelcast.nio.Address;
+import com.hazelcast.mapreduce.impl.task.MappingPhase;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class KeyValueJobOperation<K, V>
+public class StartProcessingJobOperation<K, V>
         extends AbstractOperation
         implements IdentifiedDataSerializable {
 
     private String name;
+    private List<K> keys;
     private String jobId;
-    private int chunkSize;
     private KeyPredicate<K> predicate;
-    private KeyValueSource<K, V> keyValueSource;
     private Mapper mapper;
-    private CombinerFactory combinerFactory;
-    private ReducerFactory reducerFactory;
 
-    public KeyValueJobOperation() {
+    public StartProcessingJobOperation() {
     }
 
-    public KeyValueJobOperation(String name, String jobId, int chunkSize,
-                                KeyPredicate<K> predicate, KeyValueSource<K, V> keyValueSource,
-                                Mapper mapper, CombinerFactory combinerFactory,
-                                ReducerFactory reducerFactory) {
+    public StartProcessingJobOperation(String name, String jobId, List<K> keys,
+                                       KeyPredicate<K> predicate, Mapper mapper) {
         this.name = name;
+        this.keys = keys;
         this.jobId = jobId;
-        this.chunkSize = chunkSize;
-        this.keyValueSource = keyValueSource;
         this.mapper = mapper;
         this.predicate = predicate;
-        this.combinerFactory = combinerFactory;
-        this.reducerFactory = reducerFactory;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
@@ -71,36 +66,34 @@ public class KeyValueJobOperation<K, V>
     @Override
     public void run() throws Exception {
         MapReduceService mapReduceService = getService();
-        Address jobOwner = getCallerAddress();
-        if (jobOwner == null) {
-            jobOwner = getNodeEngine().getThisAddress();
-        }
-        JobSupervisor supervisor = mapReduceService.createJobSupervisor(
-                new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name,
-                        jobId, mapper, combinerFactory, reducerFactory, keyValueSource));
-        if (supervisor == null) {
-            throw new IllegalStateException("Supervisor could not be created");
-        }
+        JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
+        MappingPhase mappingPhase = new KeyValueSourceMappingPhase(mapper, keys, predicate);
+        supervisor.startTasks(mappingPhase);
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(jobId);
-        out.writeObject(keyValueSource);
+        out.writeInt(keys == null ? 0 : keys.size());
+        if (keys != null) {
+            for (int i = 0; i < keys.size(); i++) {
+                out.writeObject(keys);
+            }
+        }
         out.writeObject(mapper);
-        out.writeObject(combinerFactory);
-        out.writeObject(reducerFactory);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         jobId = in.readUTF();
-        keyValueSource = in.readObject();
+        int size = in.readInt();
+        keys = new ArrayList<K>();
+        for (int i = 0; i < size; i++) {
+            keys.add((K) in.readObject());
+        }
         mapper = in.readObject();
-        combinerFactory = in.readObject();
-        reducerFactory = in.readObject();
     }
 
     @Override
@@ -110,6 +103,6 @@ public class KeyValueJobOperation<K, V>
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.TRACKED_JOB_OPERATION;
+        return MapReduceDataSerializerHook.START_PROCESSING_OPERATION;
     }
 }

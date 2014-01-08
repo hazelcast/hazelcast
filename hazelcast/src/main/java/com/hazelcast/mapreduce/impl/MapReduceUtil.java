@@ -16,10 +16,16 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionService;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class MapReduceUtil {
 
@@ -77,6 +83,16 @@ public final class MapReduceUtil {
             data.put(entry.getKey(), entry.getValue());
         }
         return mapping;
+    }
+
+    public static String printPartitionStates(JobPartitionState[] partitionStates) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < partitionStates.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append("[").append(i).append("=>");
+            sb.append(partitionStates[i] == null ? "null" : partitionStates[i].getState()).append("]");
+        }
+        return sb.toString();
     }
 
     public static String buildExecutorName(String name) {

@@ -18,7 +18,7 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
-import com.hazelcast.nio.Address;
+import com.hazelcast.util.ValidationUtil;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,12 +28,15 @@ public class JobProcessInformationImpl implements JobProcessInformation {
 
     private final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]> updater;
 
+    private final JobSupervisor supervisor;
+
     private volatile JobPartitionState[] partitionStates;
     private AtomicInteger processedRecords = new AtomicInteger();
 
-    public JobProcessInformationImpl(int partitionCount) {
-        partitionStates = new JobPartitionState[partitionCount];
-        updater = AtomicReferenceFieldUpdater.newUpdater(
+    public JobProcessInformationImpl(int partitionCount, JobSupervisor supervisor) {
+        this.supervisor = supervisor;
+        this.partitionStates = new JobPartitionState[partitionCount];
+        this.updater = AtomicReferenceFieldUpdater.newUpdater(
                 JobProcessInformationImpl.class, JobPartitionState[].class, "partitionStates");
     }
 
@@ -51,20 +54,24 @@ public class JobProcessInformationImpl implements JobProcessInformation {
         processedRecords.addAndGet(records);
     }
 
-    public boolean updatePartitionState(int partitionId, Address owner, JobPartitionState.State state) {
-        JobPartitionState newPartitionState = new JobPartitionStateImpl(owner, state);
-        for (;;) {
-            JobPartitionState[] oldPartitionStates = this.partitionStates;
-            JobPartitionState[] newPartitionStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
-            newPartitionStates[partitionId] = newPartitionState;
-            if (updatePartitionState(oldPartitionStates, newPartitionStates)) {
-                return true;
-            }
+    public boolean updatePartitionState(JobPartitionState[] oldPartitionStates,
+                                        JobPartitionState[] newPartitionStates) {
+        ValidationUtil.isNotNull(newPartitionStates, "newPartitionStates");
+        if (oldPartitionStates.length != newPartitionStates.length) {
+            throw new IllegalArgumentException("partitionStates need to have same length");
         }
+        if (updater.compareAndSet(this, oldPartitionStates, newPartitionStates)) {
+            return true;
+        }
+        return false;
     }
 
-    public boolean updatePartitionState(JobPartitionState[] oldPartitionStates, JobPartitionState[] newPartitionStates) {
-        return updater.compareAndSet(this, oldPartitionStates, newPartitionStates);
+    @Override
+    public String toString() {
+        return "JobProcessInformationImpl{" +
+                "processedRecords=" + processedRecords +
+                ", partitionStates=" + Arrays.toString(partitionStates) +
+                '}';
     }
 
 }

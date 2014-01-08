@@ -28,17 +28,17 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class RequestPartitionProcessed
+public class RequestPartitionReducing
         extends ProcessingOperation {
 
     protected volatile RequestPartitionResult result;
 
     private transient int partitionId;
 
-    public RequestPartitionProcessed() {
+    public RequestPartitionReducing() {
     }
 
-    public RequestPartitionProcessed(String name, String jobId, int partitionId) {
+    public RequestPartitionReducing(String name, String jobId, int partitionId) {
         super(name, jobId);
         this.partitionId = partitionId;
     }
@@ -59,7 +59,7 @@ public class RequestPartitionProcessed
 
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
         JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(),
-                JobPartitionState.State.PROCESSED);
+                JobPartitionState.State.REDUCING);
 
         for (; ; ) {
             JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();

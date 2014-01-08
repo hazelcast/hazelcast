@@ -16,6 +16,7 @@ package com.hazelcast.mapreduce;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,7 +52,7 @@ public class MapReduceTest
         Hazelcast.shutdownAll();
     }
 
-    @Test(timeout = 30000)
+    @Test//(timeout = 30000)
     public void testMapper()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -59,9 +60,16 @@ public class MapReduceTest
         final Config config = new Config();
         config.setManagedContext(context);
 
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(3, h1.getCluster().getMembers().size());
+            }
+        });
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
