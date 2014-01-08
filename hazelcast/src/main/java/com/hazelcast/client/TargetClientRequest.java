@@ -33,7 +33,7 @@ public abstract class TargetClientRequest extends ClientRequest {
         final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getTarget())
                 .setTryCount(100)
                 .setCallback(new Callback<Object>() {
-                    public void notify(Object object) {
+                    public void sendResponse(Object object) {
                         clientEngine.sendResponse(endpoint, filter(object));
                     }
                 });

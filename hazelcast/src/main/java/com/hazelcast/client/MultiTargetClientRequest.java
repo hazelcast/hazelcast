@@ -83,7 +83,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             this.parent = parent;
         }
 
-        public void notify(Object object) {
+        public void sendResponse(Object object) {
             parent.notify(target, object);
         }
     }

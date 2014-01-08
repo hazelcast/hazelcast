@@ -18,5 +18,5 @@ package com.hazelcast.spi;
 
 public interface Callback<T> {
 
-    void notify(T object);
+    void sendResponse(T object);
 }

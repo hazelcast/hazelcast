@@ -19,8 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
@@ -141,7 +139,7 @@ public final class ResponseHandlerFactory {
                 throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
                         + ", current-response: : " + obj);
             }
-            callback.notify(obj);
+            callback.sendResponse(obj);
         }
 
         public boolean isLocal() {
