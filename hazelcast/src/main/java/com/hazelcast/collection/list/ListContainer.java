@@ -40,6 +40,7 @@ public class ListContainer extends CollectionContainer {
         super(name, nodeEngine, service);
     }
 
+    @Override
     public ListConfig getConfig() {
         if (config == null){
             config = nodeEngine.getConfig().findListConfig(name);
@@ -89,11 +90,9 @@ public class ListContainer extends CollectionContainer {
             }
         } else {
             int index = -1;
-            final Iterator<CollectionItem> iterator = list.iterator();
-            while (iterator.hasNext()){
-                final CollectionItem item = iterator.next();
+            for (CollectionItem item : list) {
                 index++;
-                if (value.equals(item.getValue())){
+                if (value.equals(item.getValue())) {
                     return index;
                 }
             }
@@ -129,6 +128,7 @@ public class ListContainer extends CollectionContainer {
         return sub;
     }
 
+    @Override
     protected List<CollectionItem> getCollection(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){
@@ -141,6 +141,7 @@ public class ListContainer extends CollectionContainer {
         return itemList;
     }
 
+    @Override
     protected Map<Long, CollectionItem> getMap(){
         if (itemMap == null){
             if (itemList != null && !itemList.isEmpty()){
@@ -155,6 +156,7 @@ public class ListContainer extends CollectionContainer {
         return itemMap;
     }
 
+    @Override
     protected void onDestroy() {
         if (itemList != null){
             itemList.clear();

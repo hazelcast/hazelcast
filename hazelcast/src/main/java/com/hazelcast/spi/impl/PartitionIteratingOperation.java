@@ -63,8 +63,8 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 final ResponseQueue queue = responseQueueEntry.getValue();
                 final Integer key = responseQueueEntry.getKey();
                 final Object result = queue.get();
-                if (result instanceof Response) {
-                    results.put(key, ((Response) result).response);
+                if (result instanceof NormalResponse) {
+                    results.put(key, ((NormalResponse) result).getValue());
                 } else {
                     results.put(key, result);
                 }
@@ -92,7 +92,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         return true;
     }
 
-    private class ResponseQueue implements ResponseHandler {
+    private static class ResponseQueue implements ResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
         public void sendResponse(Object obj) {
@@ -163,8 +163,8 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         super.writeInternal(out);
         int pCount = partitions.size();
         out.writeInt(pCount);
-        for (int i = 0; i < pCount; i++) {
-            out.writeInt(partitions.get(i));
+        for (Integer partition : partitions) {
+            out.writeInt(partition);
         }
         out.writeObject(operationFactory);
     }

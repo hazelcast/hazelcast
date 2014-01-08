@@ -31,7 +31,7 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     private int flag;
 
     public MemcacheEntry(String key, byte[] value, int flag) {
-        byte[] flagBytes = new String(" " + flag + " ").getBytes();
+        byte[] flagBytes = (" " + flag + " ").getBytes();
         byte[] valueLen = String.valueOf(value.length).getBytes();
         byte[] keyBytes = key.getBytes();
         this.value = value.clone();

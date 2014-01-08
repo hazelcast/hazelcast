@@ -35,18 +35,22 @@ public class TxnSetSizeRequest extends TxnCollectionRequest {
         super(name);
     }
 
+    @Override
     public Object call() throws Exception {
         return getEndpoint().getTransactionContext(txnId).getSet(name).size();
     }
 
+    @Override
     public String getServiceName() {
         return SetService.SERVICE_NAME;
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.TXN_SET_SIZE;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SetPermission(name, ActionConstants.ACTION_READ);
     }

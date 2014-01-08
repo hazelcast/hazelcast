@@ -18,6 +18,12 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.CompletableFuture;
 
+/**
+ * A {@link com.hazelcast.core.CompletableFuture} with more functionality like getting
+ * the result without needing to deal with checked exceptions.
+ *
+ * @param <E>
+ */
 public interface InternalCompletableFuture<E> extends CompletableFuture<E> {
 
     E getSafely();

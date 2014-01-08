@@ -22,22 +22,28 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
-public final class TargetInvocationImpl extends InvocationImpl {
+/**
+ * A {@link BasicInvocation} evaluates a Operation Invocation for a particular target running on top of the
+ * {@link com.hazelcast.spi.impl.BasicOperationService}.
+ */
+public final class BasicTargetInvocation extends BasicInvocation {
 
     private final Address target;
 
-    public TargetInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                                Address target, int tryCount, long tryPauseMillis, long callTimeout,
-                                Callback<Object> callback) {
+    public BasicTargetInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+                                 Address target, int tryCount, long tryPauseMillis, long callTimeout,
+                                 Callback<Object> callback, String executorName, boolean resultDeserialized) {
         super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
-                tryCount, tryPauseMillis, callTimeout, callback);
+                tryCount, tryPauseMillis, callTimeout, callback, executorName,resultDeserialized);
         this.target = target;
     }
 
+    @Override
     public final Address getTarget() {
         return target;
     }
 
+    @Override
     final ExceptionAction onException(Throwable t) {
         return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onException(t);
     }

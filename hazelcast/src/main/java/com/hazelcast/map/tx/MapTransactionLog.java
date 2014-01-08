@@ -21,7 +21,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
@@ -57,9 +56,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         operation.setThreadId(threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -71,9 +68,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         txnOp.setThreadId(threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, op, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -84,9 +79,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         TxnRollbackOperation operation = new TxnRollbackOperation(name, key);
         operation.setThreadId(threadId);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

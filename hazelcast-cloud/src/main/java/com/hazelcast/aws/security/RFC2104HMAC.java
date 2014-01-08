@@ -25,9 +25,11 @@ import static com.hazelcast.util.Base64.encode;
 
 public class RFC2104HMAC {
 
+    private RFC2104HMAC(){}
+
     public static String calculateRFC2104HMAC(String data, String key)
             throws SignatureException {
-        String result = null;
+        String result;
         try {
             SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(),
                     SIGNATURE_METHOD);

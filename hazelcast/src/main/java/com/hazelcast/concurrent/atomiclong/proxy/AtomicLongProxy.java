@@ -43,11 +43,8 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
         try {
-            Invocation inv = getNodeEngine()
-                    .getOperationService()
-                    .createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId)
-                    .build();
-            return (InternalCompletableFuture<E>) inv.invoke();
+            OperationService operationService = getNodeEngine().getOperationService();
+            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(AtomicLongService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
@@ -124,11 +121,11 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long decrementAndGet() {
-        return addAndGet(-1);
+        return asyncDecrementAndGet().getSafely();
     }
 
     @Override
-    public CompletableFuture<Long> asyncDecrementAndGet() {
+    public InternalCompletableFuture<Long> asyncDecrementAndGet() {
         return asyncAddAndGet(-1);
     }
 
@@ -145,21 +142,21 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long incrementAndGet() {
-        return addAndGet(1);
+        return asyncIncrementAndGet().getSafely();
     }
 
     @Override
-    public CompletableFuture<Long> asyncIncrementAndGet() {
+    public InternalCompletableFuture<Long> asyncIncrementAndGet() {
         return asyncAddAndGet(1);
     }
 
     @Override
     public long getAndIncrement() {
-        return getAndAdd(1);
+        return asyncGetAndIncrement().getSafely();
     }
 
     @Override
-    public CompletableFuture<Long> asyncGetAndIncrement() {
+    public InternalCompletableFuture<Long> asyncGetAndIncrement() {
         return asyncGetAndAdd(1);
     }
 

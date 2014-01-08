@@ -17,25 +17,24 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.ClientRequest;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.nio.Address;
-
-import java.util.concurrent.Future;
 
 /**
  * @author mdogan 5/16/13
  */
 public interface ClientInvocationService {
 
-    <T> Future<T> invokeOnRandomTarget(ClientRequest request) throws Exception;
+    <T> CompletableFuture<T> invokeOnRandomTarget(ClientRequest request) throws Exception;
 
-    <T> Future<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
+    <T> CompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
 
-    <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception;
+    <T> CompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception;
 
-    <T> Future<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception;
+    <T> CompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception;
 
-    <T> Future<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception;
+    <T> CompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception;
 
-    <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception;
+    <T> CompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception;
 
 }

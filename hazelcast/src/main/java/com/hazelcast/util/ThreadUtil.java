@@ -18,6 +18,8 @@ package com.hazelcast.util;
 
 public final class ThreadUtil {
 
+    private ThreadUtil(){}
+
     public static int getThreadId() {
         return (int) Thread.currentThread().getId();  // TODO: @mm - thread-id is truncated from native thread id
     }

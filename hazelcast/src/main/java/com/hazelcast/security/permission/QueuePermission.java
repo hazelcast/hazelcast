@@ -31,25 +31,25 @@ public class QueuePermission extends InstancePermission {
 
 	protected int initMask(String[] actions) {
 		int mask = NONE;
-		for (int i = 0; i < actions.length; i++) {
-			if(ActionConstants.ACTION_ALL.equals(actions[i])) {
-				return ALL;
-			}
-			
-			if(ActionConstants.ACTION_CREATE.equals(actions[i])) {
-				mask |= CREATE;
-			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
-				mask |= DESTROY;
-			} else if(ActionConstants.ACTION_ADD.equals(actions[i])) {
-				mask |= ADD;
-			} else if(ActionConstants.ACTION_READ.equals(actions[i])) {
-				mask |= READ;
-			} else if(ActionConstants.ACTION_REMOVE.equals(actions[i])) {
-				mask |= REMOVE;
-			} else if(ActionConstants.ACTION_LISTEN.equals(actions[i])) {
-				mask |= LISTEN;
-			}
-		}
+        for (String action : actions) {
+            if (ActionConstants.ACTION_ALL.equals(action)) {
+                return ALL;
+            }
+
+            if (ActionConstants.ACTION_CREATE.equals(action)) {
+                mask |= CREATE;
+            } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
+                mask |= DESTROY;
+            } else if (ActionConstants.ACTION_ADD.equals(action)) {
+                mask |= ADD;
+            } else if (ActionConstants.ACTION_READ.equals(action)) {
+                mask |= READ;
+            } else if (ActionConstants.ACTION_REMOVE.equals(action)) {
+                mask |= REMOVE;
+            } else if (ActionConstants.ACTION_LISTEN.equals(action)) {
+                mask |= LISTEN;
+            }
+        }
 		return mask;
 	}
 }

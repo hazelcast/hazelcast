@@ -29,7 +29,6 @@ public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation {
     private Data returnValue;
 
     public GetAndSetOperation() {
-        super();
     }
 
     public GetAndSetOperation(String name, Data newValue) {

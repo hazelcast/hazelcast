@@ -282,6 +282,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return result;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         key.writeData(out);
         out.writeUTF(owner);
@@ -315,6 +316,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = new Data();
         key.readData(in);
@@ -353,7 +355,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             }
         }
     }
-
 
     @Override
     public String toString() {

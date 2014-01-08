@@ -472,7 +472,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             mName = "add" + target.getClass().getSimpleName();
             method = getMethod(parent, mName);
         }
-        method.invoke(parent, new Object[]{target});
+        method.invoke(parent, target);
     }
 
     private void invoke(Object target, Method method, String value) {
@@ -484,13 +484,13 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         Class<?> arg = method.getParameterTypes()[0];
         try {
             if (arg == String.class) {
-                method.invoke(target, new Object[]{value});
+                method.invoke(target, value);
             } else if (arg == int.class) {
-                method.invoke(target, new Object[]{Integer.parseInt(value)});
+                method.invoke(target, Integer.parseInt(value));
             } else if (arg == long.class) {
-                method.invoke(target, new Object[]{Long.parseLong(value)});
+                method.invoke(target, Long.parseLong(value));
             } else if (arg == boolean.class) {
-                method.invoke(target, new Object[]{Boolean.parseBoolean(value)});
+                method.invoke(target, Boolean.parseBoolean(value));
             }
         } catch (Exception e) {
             logger.warning(e);
@@ -977,7 +977,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         SSLConfig sslConfig = new SSLConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
@@ -1081,14 +1081,32 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private void handleManagementCenterConfig(final Node node) {
         NamedNodeMap attrs = node.getAttributes();
+
         final Node enabledNode = attrs.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
+        boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
+
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
                 getTextContent(intervalNode), 5) : 5;
-        config.getManagementCenterConfig().setEnabled(enabled);
-        config.getManagementCenterConfig().setUpdateInterval(interval);
-        config.getManagementCenterConfig().setUrl(getTextContent(node));
+
+        final Node securityTokenNode = attrs.getNamedItem("security-token");
+        final String securityToken =getTextContent(securityTokenNode);
+
+        if (securityToken != null && enabledNode == null) {
+            enabled = true;
+        }
+
+        final Node clusterIdNode = attrs.getNamedItem("cluster-id");
+        final String clusterId =getTextContent(clusterIdNode);
+
+        final String url =getTextContent(node);
+
+        ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
+        managementCenterConfig.setEnabled(enabled);
+        managementCenterConfig.setUpdateInterval(interval);
+        managementCenterConfig.setSecurityToken("".equals(securityToken) ? null : securityToken);
+        managementCenterConfig.setClusterId("".equals(clusterId) ? null : clusterId);
+        managementCenterConfig.setUrl("".equals(url) ? null : url);
     }
 
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {

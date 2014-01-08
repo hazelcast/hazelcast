@@ -16,12 +16,16 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.UuidUtil;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
@@ -40,7 +44,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        final String id = UUID.randomUUID().toString();
+        final String id = UuidUtil.buildRandomUuidString();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }

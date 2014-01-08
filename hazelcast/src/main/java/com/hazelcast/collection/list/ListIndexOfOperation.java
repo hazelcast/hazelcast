@@ -42,28 +42,32 @@ public class ListIndexOfOperation extends CollectionOperation {
         this.value = value;
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.LIST_INDEX_OF;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         response = getOrCreateListContainer().indexOf(last, value);
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(last);
         value.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         last = in.readBoolean();

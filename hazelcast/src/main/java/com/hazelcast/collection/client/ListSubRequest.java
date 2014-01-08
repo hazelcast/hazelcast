@@ -42,10 +42,12 @@ public class ListSubRequest extends CollectionRequest {
         this.to = to;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListSubOperation(name, from, to);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_SUB;
     }
@@ -62,6 +64,7 @@ public class ListSubRequest extends CollectionRequest {
         to = reader.readInt("t");
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

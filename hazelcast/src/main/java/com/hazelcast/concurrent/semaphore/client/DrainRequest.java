@@ -36,14 +36,17 @@ public class DrainRequest extends SemaphoreRequest {
         super(name, -1);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new DrainOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return SemaphorePortableHook.DRAIN;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }

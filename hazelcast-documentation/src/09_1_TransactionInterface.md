@@ -1,4 +1,3 @@
-
 ## Transaction Interface
 
 Hazelcast can be used in transactional context. Basically create a `TransactionContext` which can be used to begin, commit, rollback transaction. Obtain transaction aware instances of queues, maps, sets, lists, multimaps via `TransactionContext`, work with them and commit/rollback in one shot. Hazelcast supports LOCAL(One Phase) and TWO\_PHASE transactions. Default behaviour is TWO\_PHASE.
@@ -14,7 +13,7 @@ Config cfg = new Config();
 HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
 
 TransactionOptions options = new TransactionOptions().setTransactionType(TransactionType.LOCAL);
-TransactionContext context = hz.newTransactionContext()
+TransactionContext context = hz.newTransactionContext(options)
 context.beginTransaction();
 
 TransactionalQueue queue = context.getQueue("myqueue");

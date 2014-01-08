@@ -49,6 +49,7 @@ public class CollectionEvent implements IdentifiedDataSerializable {
         this.caller = caller;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(eventType.getType());
@@ -56,6 +57,7 @@ public class CollectionEvent implements IdentifiedDataSerializable {
         IOUtil.writeNullableData(out, data);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         eventType = ItemEventType.getByType(in.readInt());
@@ -64,10 +66,12 @@ public class CollectionEvent implements IdentifiedDataSerializable {
         data = IOUtil.readNullableData(in);
     }
 
+    @Override
     public int getFactoryId() {
         return CollectionDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_EVENT;
     }

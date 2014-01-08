@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.replicatedmap;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
+import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
-/**
- * @author mdogan 6/17/13
- */
-public interface PartitionView {
+public interface ReplicationChannel {
 
-    static final int MAX_REPLICA_COUNT = 7;
-    static final int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;
+    void replicate(ReplicationMessage message);
 
-    int getPartitionId();
+    void replicate(MultiReplicationMessage message);
 
-    Address getOwner();
-
-    Address getReplicaAddress(int index);
-
-    boolean isBackup(Address address);
-
-    boolean isOwnerOrBackup(Address address);
-
-    int getReplicaIndexOf(Address address);
 }

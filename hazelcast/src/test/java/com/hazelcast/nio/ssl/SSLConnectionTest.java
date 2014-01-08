@@ -48,12 +48,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-
 public class SSLConnectionTest {
 
     @BeforeClass
     @AfterClass
-    public static void init() throws IOException {
+    public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 

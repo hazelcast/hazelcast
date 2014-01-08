@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.replicatedmap;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
+import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
-public interface Invocation {
+public interface PreReplicationHook {
 
-    InternalCompletableFuture invoke();
+    void preReplicateMessage(ReplicationMessage message, ReplicationChannel channel);
 
-    Address getTarget();
+    void preReplicateMultiMessage(MultiReplicationMessage message, ReplicationChannel channel);
 
 }

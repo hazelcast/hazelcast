@@ -40,6 +40,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
         this.joinRequest = joinRequest;
     }
 
+    @Override
     public void run() {
         final ClusterServiceImpl service = getService();
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();

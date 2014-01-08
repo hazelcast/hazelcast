@@ -20,7 +20,6 @@ import com.hazelcast.concurrent.lock.AwaitOperation;
 import com.hazelcast.concurrent.lock.BeforeAwaitOperation;
 import com.hazelcast.concurrent.lock.SignalOperation;
 import com.hazelcast.core.ICondition;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.Clock;
@@ -32,6 +31,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 
 /**
  * @author mdogan 2/13/13
@@ -50,10 +51,12 @@ final class ConditionImpl implements ICondition {
         this.namespace = lockProxy.getNamespace();
     }
 
+    @Override
     public void await() throws InterruptedException {
         await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public void awaitUninterruptibly() {
         try {
             await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -63,6 +66,7 @@ final class ConditionImpl implements ICondition {
         }
     }
 
+    @Override
     public long awaitNanos(long nanosTimeout) throws InterruptedException {
         final long start = System.nanoTime();
         await(nanosTimeout, TimeUnit.NANOSECONDS);
@@ -70,49 +74,50 @@ final class ConditionImpl implements ICondition {
         return (end - start);
     }
 
+    @Override
     public boolean await(long time, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
         final int threadId = ThreadUtil.getThreadId();
 
-        final Invocation inv1 = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new BeforeAwaitOperation(namespace, lockProxy.key, threadId, conditionId), partitionId).build();
         try {
-            Future f = inv1.invoke();
+            BeforeAwaitOperation op = new BeforeAwaitOperation(namespace, lockProxy.key, threadId, conditionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, op,partitionId);
             f.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
-        final Invocation inv2 = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new AwaitOperation(namespace, lockProxy.key, threadId, unit.toMillis(time), conditionId), partitionId).build();
         try {
-            Future f = inv2.invoke();
+            AwaitOperation op = new AwaitOperation(namespace, lockProxy.key, threadId, unit.toMillis(time), conditionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, op, partitionId);
             return Boolean.TRUE.equals(f.get());
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrowAllowInterrupted(t);
+            throw rethrowAllowInterrupted(t);
         }
     }
 
+    @Override
     public boolean awaitUntil(Date deadline) throws InterruptedException {
         final long until = deadline.getTime();
         return await(until - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public void signal() {
         signal(false);
     }
 
     private void signal(boolean all) {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
-        final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new SignalOperation(namespace, lockProxy.key, ThreadUtil.getThreadId(), conditionId, all), partitionId).build();
-        Future f = inv.invoke();
+        Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME,
+                new SignalOperation(namespace, lockProxy.key, ThreadUtil.getThreadId(), conditionId, all), partitionId);
         try {
             f.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
+    @Override
     public void signalAll() {
         signal(true);
     }

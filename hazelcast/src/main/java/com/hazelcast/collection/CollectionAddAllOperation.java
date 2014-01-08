@@ -42,22 +42,26 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         this.valueList = valueList;
     }
 
+    @Override
     public boolean shouldBackup() {
         return valueMap != null && !valueMap.isEmpty();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionAddAllBackupOperation(name, valueMap);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_ADD_ALL;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         if (!hasEnoughCapacity(valueList.size())){
             response = false;
@@ -68,6 +72,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         response = !valueMap.isEmpty();
     }
 
+    @Override
     public void afterRun() throws Exception {
         if (valueMap == null){
             return;
@@ -77,6 +82,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(valueList.size());
@@ -85,6 +91,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();

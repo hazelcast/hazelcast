@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
@@ -26,10 +27,14 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.*;
 
@@ -44,6 +49,11 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class PartitionDistributionTest extends HazelcastTestSupport {
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
+        Hazelcast.shutdownAll();
+    }
 
     @Test
     public void testTwoNodesDefault() throws InterruptedException {

@@ -33,14 +33,17 @@ public class CollectionSizeRequest extends CollectionRequest {
         super(name);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionSizeOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_SIZE;
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

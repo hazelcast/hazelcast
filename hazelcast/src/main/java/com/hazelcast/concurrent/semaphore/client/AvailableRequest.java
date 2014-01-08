@@ -37,14 +37,17 @@ public class AvailableRequest extends SemaphoreRequest implements RetryableReque
         super(name, -1);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new AvailableOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return SemaphorePortableHook.AVAILABLE;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_READ);
     }

@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,9 +41,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * User: ahmetmircik
@@ -191,6 +190,38 @@ public class NearCacheTest extends HazelcastTestSupport {
             assertNull(map3.get(i));
         }
     }
+    @Test
+    public void testNearCacheStats() throws Exception
+    {
+        String mapName = "NearCacheStatsTest";
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        IMap<Integer,Integer> map = instances[0].getMap("NearCacheStatsTest");
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i,i);
+        }
+        //populate near cache
+        for (int i = 0; i < 1000; i++) {
+            map.get(i);
+        }
+
+        NearCacheStats stats =  map.getLocalMapStats().getNearCacheStats();
+
+        assertTrue("owned Entries", 400 < stats.getOwnedEntryCount());
+        assertTrue("misses", 1000 == stats.getMisses());
+        //make some hits
+        for (int i = 0; i < 1000; i++) {
+            map.get(i);
+        }
+        NearCacheStats stats2 =   map.getLocalMapStats().getNearCacheStats();
+
+        assertTrue("hits", 400 < stats2.getHits());
+        assertTrue("misses", 400 < stats2.getMisses());
+        assertTrue("hits+misses", 2000 == stats2.getHits() + stats2.getMisses());
+    }
 
     @Test
     public void testNearCacheInvalidationByUsingMapPutAll() {
@@ -225,6 +256,56 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
 
 
+    }
+
+    @Test
+    public void testMapContainsKey_withNearCache() {
+        int n = 3;
+        String mapName = "test";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        HazelcastInstance instance = createHazelcastInstanceFactory(n).newInstances(config)[0];
+
+        IMap<String, String> map = instance.getMap("mapName");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+
+        map.get("key1");
+        map.get("key2");
+        map.get("key3");
+        assertEquals(map.containsKey("key1"), true);
+        assertEquals(map.containsKey("key5"), false);
+        map.remove("key1");
+        assertEquals(map.containsKey("key1"), false);
+        assertEquals(map.containsKey("key2"), true);
+        assertEquals(map.containsKey("key5"), false);
+    }
+
+    @Test
+    public void testCacheLocalEntries() {
+        int n = 2;
+        String mapName = "test";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setCacheLocalEntries(true));
+        HazelcastInstance instance = createHazelcastInstanceFactory(n).newInstances(config)[0];
+
+        IMap<String, String> map = instance.getMap(mapName);
+
+        int noOfEntries = 100;
+        for (int i = 0; i < noOfEntries; i++) {
+            map.put("key"+i, "value"+i);
+        }
+
+        //warm-up cache
+        for (int i = 0; i < noOfEntries; i++) {
+            map.get("key" + i);
+        }
+
+        NearCache nearCache = getNearCache(mapName, instance);
+        assertEquals(noOfEntries, nearCache.size());
     }
 
 }

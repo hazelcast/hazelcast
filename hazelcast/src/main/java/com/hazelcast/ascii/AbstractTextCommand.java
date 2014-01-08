@@ -29,31 +29,39 @@ public abstract class AbstractTextCommand implements TextCommand {
         this.type = type;
     }
 
+    @Override
     public TextCommandType getType() {
         return type;
     }
 
+    @Override
     public SocketTextReader getSocketTextReader() {
         return socketTextReader;
     }
 
+    @Override
     public SocketTextWriter getSocketTextWriter() {
         return socketTextWriter;
     }
 
+    @Override
     public long getRequestId() {
         return requestId;
     }
 
+    @Override
     public void init(SocketTextReader socketTextReader, long requestId) {
         this.socketTextReader = socketTextReader;
         this.requestId = requestId;
         this.socketTextWriter = socketTextReader.getSocketTextWriter();
     }
 
-    public void onEnqueue() {
+    @Override
+    public boolean isUrgent() {
+        return false;
     }
 
+    @Override
     public boolean shouldReply() {
         return true;
     }

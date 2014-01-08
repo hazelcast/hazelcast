@@ -254,5 +254,12 @@ public class ClientNearCache<K> {
 
             return 0;
         }
+
+        public boolean equals(Object o){
+            if(o instanceof CacheRecord){
+                return this.compareTo((CacheRecord)o)==0;
+            }
+            return false;
+        }
     }
 }

@@ -131,15 +131,9 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        return hash(host.getBytes()) * 29 + port;
-    }
-
-    private int hash(byte[] bytes) {
-        int hash = 0;
-        for (byte b : bytes) {
-            hash = (hash * 29) + b;
-        }
-        return hash;
+        int result = port;
+        result = 31 * result + host.hashCode();
+        return result;
     }
 
     public boolean isIPv4() {

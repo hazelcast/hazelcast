@@ -34,7 +34,8 @@ import java.io.IOException;
 /**
  * @author mdogan 5/3/13
  */
-public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
+        implements Portable, SecureRequest {
 
     protected Data key;
 
@@ -56,37 +57,35 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implem
         this.force = force;
     }
 
+    @Override
     protected final Object getKey() {
         return key;
     }
 
+    @Override
     protected final Operation prepareOperation() {
         return new UnlockOperation(getNamespace(), key, threadId, force);
     }
 
     protected abstract ObjectNamespace getNamespace();
 
+    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
     public void write(PortableWriter writer) throws IOException {
-
         writer.writeInt("tid", threadId);
         writer.writeBoolean("force", force);
-
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
-
         threadId = reader.readInt("tid");
         force = reader.readBoolean("force");
-
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
     }
-
 }

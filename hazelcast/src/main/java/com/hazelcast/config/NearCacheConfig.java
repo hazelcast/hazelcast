@@ -39,6 +39,8 @@ public class NearCacheConfig {
 
     private NearCacheConfigReadOnly readOnly;
 
+    private boolean cacheLocalEntries = false;
+
     public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
@@ -56,6 +58,7 @@ public class NearCacheConfig {
         maxIdleSeconds = config.getMaxIdleSeconds();
         maxSize = config.getMaxSize();
         timeToLiveSeconds = config.getTimeToLiveSeconds();
+        cacheLocalEntries = config.isCacheLocalEntries();
     }
 
     public NearCacheConfigReadOnly getAsReadOnly() {
@@ -130,6 +133,15 @@ public class NearCacheConfig {
         return this;
     }
 
+    public boolean isCacheLocalEntries() {
+        return cacheLocalEntries;
+    }
+
+    public NearCacheConfig setCacheLocalEntries(boolean cacheLocalEntries) {
+        this.cacheLocalEntries = cacheLocalEntries;
+        return this;
+    }
+
     // this setter is for reflection based configuration building
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
         this.inMemoryFormat = InMemoryFormat.valueOf(inMemoryFormat);
@@ -145,6 +157,7 @@ public class NearCacheConfig {
         sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
         sb.append(", invalidateOnChange=").append(invalidateOnChange);
         sb.append(", inMemoryFormat=").append(inMemoryFormat);
+        sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
         sb.append('}');
         return sb.toString();
     }

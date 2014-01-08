@@ -22,10 +22,15 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.IOException;
 
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.fail;
@@ -34,9 +39,9 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class MemoryLeakTest {
 
-    @Before
-    @After
-    public void shutdownAll() {
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 

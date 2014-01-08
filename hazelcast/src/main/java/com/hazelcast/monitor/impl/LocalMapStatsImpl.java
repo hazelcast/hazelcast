@@ -52,6 +52,8 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     private long dirtyEntryCount;
     private int backupCount;
 
+    private NearCacheStatsImpl nearCacheStats;
+
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
@@ -80,6 +82,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(maxPutLatency.get());
         out.writeLong(maxRemoveLatency.get());
         out.writeLong(heapCost);
+        boolean hasNearCache = nearCacheStats != null;
+        out.writeBoolean(hasNearCache);
+        if(hasNearCache)
+        {
+            nearCacheStats.writeData(out);
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -106,6 +114,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxPutLatency.set(in.readLong());
         maxRemoveLatency.set(in.readLong());
         heapCost = in.readLong();
+        boolean hasNearCache = in.readBoolean();
+        if(hasNearCache)
+        {
+            nearCacheStats = new NearCacheStatsImpl();
+            nearCacheStats.readData(in);
+        }
     }
 
     public long getOwnedEntryCount() {
@@ -272,6 +286,14 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     public long getHeapCost() {
         return heapCost;
+    }
+
+    public NearCacheStatsImpl getNearCacheStats() {
+        return nearCacheStats;
+    }
+
+    public void setNearCacheStats(NearCacheStatsImpl nearCacheStats) {
+        this.nearCacheStats = nearCacheStats;
     }
 
     public String toString() {

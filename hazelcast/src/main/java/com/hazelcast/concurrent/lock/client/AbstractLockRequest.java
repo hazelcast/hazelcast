@@ -34,7 +34,8 @@ import java.io.IOException;
 /**
  * @author mdogan 5/3/13
  */
-public abstract class AbstractLockRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public abstract class AbstractLockRequest extends KeyBasedClientRequest
+        implements Portable, SecureRequest {
 
     protected Data key;
 
@@ -59,16 +60,19 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         this.timeout = timeout;
     }
 
+    @Override
     protected final Operation prepareOperation() {
         return new LockOperation(getNamespace(), key, threadId, ttl, timeout);
     }
 
+    @Override
     protected final Object getKey() {
         return key;
     }
 
     protected abstract ObjectNamespace getNamespace();
 
+    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
@@ -91,5 +95,4 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         key = new Data();
         key.readData(in);
     }
-
 }

@@ -27,7 +27,7 @@ import java.util.Arrays;
 /**
  * @author mdogan 12/24/12
  */
-public class PostJoinOperation extends AbstractOperation {
+public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation {
 
     private transient Operation[] operations;
 
@@ -61,6 +61,7 @@ public class PostJoinOperation extends AbstractOperation {
         }
     }
 
+    @Override
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
             final OperationService operationService = getNodeEngine().getOperationService();

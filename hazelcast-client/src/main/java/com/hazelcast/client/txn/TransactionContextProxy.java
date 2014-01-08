@@ -137,7 +137,7 @@ public class TransactionContextProxy implements TransactionContext {
         throw new HazelcastException("Could not obtain Connection!!!", lastError);
     }
 
-    private class TransactionalObjectKey {
+    private static class TransactionalObjectKey {
 
         private final String serviceName;
         private final String name;

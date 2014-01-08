@@ -16,10 +16,11 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -37,7 +38,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     private final Address target;
     private volatile boolean cancelled;
 
-    CancellableDelegatingFuture(Future future, NodeEngine nodeEngine, String uuid, int partitionId) {
+    CancellableDelegatingFuture(CompletableFuture future, NodeEngine nodeEngine, String uuid, int partitionId) {
         super(future, nodeEngine.getSerializationService());
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
@@ -45,7 +46,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         this.target = null;
     }
 
-    CancellableDelegatingFuture(Future future, NodeEngine nodeEngine, String uuid, Address target) {
+    CancellableDelegatingFuture(CompletableFuture future, NodeEngine nodeEngine, String uuid, Address target) {
         super(future, nodeEngine.getSerializationService());
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
@@ -53,7 +54,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         this.partitionId = -1;
     }
 
-    CancellableDelegatingFuture(Future future, V defaultValue, NodeEngine nodeEngine, String uuid, int partitionId) {
+    CancellableDelegatingFuture(CompletableFuture future, V defaultValue, NodeEngine nodeEngine, String uuid, int partitionId) {
         super(future, nodeEngine.getSerializationService(), defaultValue);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
@@ -68,17 +69,15 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         }
         final CancellationOperation op = new CancellationOperation(uuid, mayInterruptIfRunning);
         final InvocationBuilder builder;
+        OperationService operationService = nodeEngine.getOperationService();
         if (partitionId > -1) {
-            builder = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                    op, partitionId);
+            builder = operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId);
         } else {
-            builder = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                    op, target);
+            builder = operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, target);
         }
         builder.setTryCount(50).setTryPauseMillis(250);
 
-        final Invocation inv = builder.build();
-        final Future f = inv.invoke();
+        final Future f =  builder.invoke();
         try {
             final Boolean b = (Boolean) f.get();
             if (b != null && b) {

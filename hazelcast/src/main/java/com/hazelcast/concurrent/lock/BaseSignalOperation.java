@@ -41,6 +41,7 @@ abstract class BaseSignalOperation extends BaseLockOperation {
         this.all = all;
     }
 
+    @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         awaitCount = lockStore.getAwaitCount(key, conditionId);

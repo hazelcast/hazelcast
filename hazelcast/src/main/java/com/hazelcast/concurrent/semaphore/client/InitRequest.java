@@ -36,14 +36,17 @@ public class InitRequest extends SemaphoreRequest {
         super(name, permitCount);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new InitOperation(name, permitCount);
     }
 
+    @Override
     public int getClassId() {
         return SemaphorePortableHook.INIT;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_RELEASE);
     }

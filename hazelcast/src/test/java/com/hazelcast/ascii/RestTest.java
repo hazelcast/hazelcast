@@ -37,14 +37,13 @@ import java.net.URL;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-
 public class RestTest {
 
     final static Config config = new XmlConfigBuilder().build();
 
-    @After
-    @Before
-    public void shutdownAll() {
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 

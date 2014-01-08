@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,15 +51,11 @@ public class ClientCountDownLatchTest {
         l = hz.getCountDownLatch(name);
     }
 
-    @AfterClass
-    public static void destroy() {
-        hz.getLifecycleService().shutdown();
-        Hazelcast.shutdownAll();
-    }
-
     @Before
     @After
     public void clear() throws IOException {
+        hz.getLifecycleService().shutdown();
+        Hazelcast.shutdownAll();
     }
 
     @Test

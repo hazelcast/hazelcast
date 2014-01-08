@@ -33,6 +33,7 @@ public class SignalOperation extends BaseSignalOperation implements BackupAwareO
         super(namespace, key, threadId, conditionId, all);
     }
 
+    @Override
     public void beforeRun() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         boolean isLockOwner = lockStore.isLockedBy(key, getCallerUuid(), threadId);
@@ -41,10 +42,12 @@ public class SignalOperation extends BaseSignalOperation implements BackupAwareO
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return awaitCount > 0;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new SignalBackupOperation(namespace, key, threadId, conditionId, all);
     }

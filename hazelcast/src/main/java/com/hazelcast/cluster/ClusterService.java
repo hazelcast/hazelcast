@@ -45,5 +45,4 @@ public interface ClusterService extends CoreService {
     int getSize();
 
     long getClusterTime();
-
 }

@@ -46,6 +46,7 @@ public class LockReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     public void run() {
         LockServiceImpl lockService = getService();
         LockStoreContainer container = lockService.getLockContainer(getPartitionId());
@@ -54,10 +55,12 @@ public class LockReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     public String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         int len = locks.size();
@@ -69,6 +72,7 @@ public class LockReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int len = in.readInt();
@@ -80,7 +84,6 @@ public class LockReplicationOperation extends AbstractOperation {
             }
         }
     }
-
 
     public boolean isEmpty() {
         return locks.isEmpty();

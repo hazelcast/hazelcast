@@ -17,25 +17,27 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.ManagedExecutorService;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
-import com.hazelcast.util.executor.ScheduledTaskRunner;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.util.executor.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
+
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * @author mdogan 12/14/12
@@ -47,6 +49,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ScheduledExecutorService scheduledExecutorService;
     private final ExecutorService scheduledManagedExecutor;
     private final ILogger logger;
+    private final CompletableFutureTask completableFutureTask;
 
     private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<String, ManagedExecutorService>();
 
@@ -77,6 +80,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE);
         scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000);
+
+        // Register CompletableFuture task
+        completableFutureTask = new CompletableFutureTask();
+        scheduleWithFixedDelay(completableFutureTask, 100, 100, TimeUnit.MILLISECONDS);
     }
 
     public Set<String> getExecutorNames(){
@@ -102,7 +109,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 logger.info("Overriding ExecutorService['" + name + "'] pool-size and queue-capacity using " + cfg);
             }
         }
-        final ManagedExecutorService executor = new ManagedExecutorService(name, cachedExecutorService,
+        final ManagedExecutorService executor = new ManagedExecutorService(nodeEngine, name, cachedExecutorService,
                 poolSize, queueCapacity);
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
@@ -115,12 +122,23 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
-                    return new ManagedExecutorService(name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
+                    return new ManagedExecutorService(nodeEngine, name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
                 }
             };
 
     public ManagedExecutorService getExecutor(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);
+    }
+
+    @Override
+    public <V> CompletableFuture<V> asCompletableFuture(Future<V> future) {
+        if (future == null) {
+            throw new IllegalArgumentException("future must not be null");
+        }
+        if (future instanceof CompletableFuture) {
+            return (CompletableFuture<V>) future;
+        }
+        return registerCompletableFuture(future);
     }
 
     public void execute(String name, Runnable command) {
@@ -183,6 +201,94 @@ public final class ExecutionServiceImpl implements ExecutionService {
         final ExecutorService ex = executors.remove(name);
         if (ex != null) {
             ex.shutdown();
+        }
+    }
+
+    private <V> CompletableFuture<V> registerCompletableFuture(Future<V> future) {
+        CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine, completableFutureTask);
+        completableFutureTask.registerCompletableFutureEntry(entry);
+        return entry.completableFuture;
+    }
+
+    private static class CompletableFutureTask implements Runnable {
+        private final List<CompletableFutureEntry> entries = new ArrayList<CompletableFutureEntry>();
+        private final Lock entriesLock = new ReentrantLock();
+
+        private <V> void registerCompletableFutureEntry(CompletableFutureEntry<V> entry) {
+            entriesLock.lock();
+            try {
+                entries.add(entry);
+            } finally {
+                entriesLock.unlock();
+            }
+        }
+
+        private <V> boolean cancelCompletableFutureEntry(CompletableFutureEntry<V> entry) {
+            entriesLock.lock();
+            try {
+                return entries.remove(entry);
+            } finally {
+                entriesLock.unlock();
+            }
+        }
+
+        @Override
+        public void run() {
+            if (entries.size() > 0) {
+                CompletableFutureEntry[] copy;
+                entriesLock.lock();
+                try {
+                    copy = new CompletableFutureEntry[entries.size()];
+                    copy = this.entries.toArray(copy);
+                } finally {
+                    entriesLock.unlock();
+                }
+                List<CompletableFutureEntry> removes = null;
+                for (CompletableFutureEntry entry : copy) {
+                    if (entry.processState()) {
+                        if (removes == null) {
+                            removes = new ArrayList<CompletableFutureEntry>(copy.length / 2);
+                        }
+                        removes.add(entry);
+                    }
+                }
+                // Remove processed elements
+                if (removes != null && !removes.isEmpty()) {
+                    entriesLock.lock();
+                    try {
+                        for (int i = 0; i < removes.size(); i++) {
+                            entries.remove(removes.get(i));
+                        }
+                    } finally {
+                        entriesLock.unlock();
+                    }
+                }
+            }
+        }
+    }
+
+    static class CompletableFutureEntry<V> {
+        private final BasicCompletableFuture<V> completableFuture;
+        private final CompletableFutureTask completableFutureTask;
+
+        private CompletableFutureEntry(Future<V> future, NodeEngine nodeEngine,
+                                       CompletableFutureTask completableFutureTask) {
+            this.completableFutureTask = completableFutureTask;
+            this.completableFuture  = new BasicCompletableFuture<V>(future, nodeEngine);
+        }
+
+        private boolean processState() {
+            if (completableFuture.isDone()) {
+                Object result;
+                try {
+                    result = completableFuture.future.get();
+                } catch (Throwable t) {
+                    result = t;
+                }
+                completableFuture.setResult(result);
+                return true;
+            }
+            return false;
         }
     }
 
@@ -277,5 +383,53 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
+    static class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
 
+        private final Future<V> future;
+
+        BasicCompletableFuture(Future<V> future, NodeEngine nodeEngine) {
+            super(nodeEngine);
+            this.future = future;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return future.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return future.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            boolean done = future.isDone();
+            if (done && !super.isDone()) {
+                forceSetResult();
+                return true;
+            }
+            return done || super.isDone();
+        }
+
+        @Override
+        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            V result = future.get(timeout, unit);
+            // If not yet set by CompletableFuture task runner, we can go for it!
+            if (!super.isDone()) {
+                setResult(result);
+            }
+            return result;
+        }
+
+        private void forceSetResult() {
+            Object result;
+            try {
+                result = future.get();
+            } catch (Throwable t) {
+                result = t;
+            }
+            setResult(result);
+        }
+    }
 }

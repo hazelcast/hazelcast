@@ -19,7 +19,12 @@ package com.hazelcast.executor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,9 +37,11 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
@@ -607,6 +614,58 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
         }
     }
+    @Test
+    public void testInvokeAllTimeoutCancelled() throws Exception {
+        ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
+        assertFalse(executor.isShutdown());
+        // Only one task
+        ArrayList<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
+        tasks.add(new CancellationAwareTask(0));
+        List<Future<Boolean>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), Boolean.TRUE);
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new CancellationAwareTask(i < 2 ? 0 : 20000));
+        }
+        futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+            if (i < 2) {
+                assertEquals(futures.get(i).get(), Boolean.TRUE);
+            } else {
+                boolean excepted = false;
+                try {
+                    futures.get(i).get();
+                } catch (CancellationException e) {
+                    excepted = true;
+                }
+                assertTrue(excepted);
+            }
+        }
+    }
+    @Test
+    public void testInvokeAllTimeoutSuccess() throws Exception {
+        ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
+        assertFalse(executor.isShutdown());
+        // Only one task
+        ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
+        tasks.add(new BasicTestTask());
+        List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), 1);
+        assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
+        // More tasks
+        tasks.clear();
+        for (int i = 0; i < COUNT; i++) {
+            tasks.add(new BasicTestTask());
+        }
+        futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        assertEquals(futures.size(), COUNT);
+        for (int i = 0; i < COUNT; i++) {
+            assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+        }
+    }
 
     /**
      * Shutdown-related method behaviour when the cluster is running
@@ -690,6 +749,454 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         Assert.assertEquals(1, stats.getCancelledTaskCount());
     }
 
+    @Test
+    public void testPreregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Future future = executorService.submit(new Callable<String>() {
+                @Override
+                public String call() {
+                    try {
+                        latch1.await(30, TimeUnit.SECONDS);
+                        return "success";
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            final AtomicReference reference = new AtomicReference();
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+            completableFuture.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    reference.set(response);
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    reference.set(t);
+                    latch2.countDown();
+                }
+            });
+
+            latch1.countDown();
+            latch2.await(30, TimeUnit.SECONDS);
+            assertEquals("success", reference.get());
+
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    @Test
+    public void testMultiPreregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Future future = executorService.submit(new Callable<String>() {
+                @Override
+                public String call() {
+                    try {
+                        latch1.await(30, TimeUnit.SECONDS);
+                        return "success";
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            final AtomicReference reference1 = new AtomicReference();
+            final AtomicReference reference2 = new AtomicReference();
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+            completableFuture.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    reference1.set(response);
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    reference1.set(t);
+                    latch2.countDown();
+                }
+            });
+            completableFuture.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    reference2.set(response);
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    reference2.set(t);
+                    latch2.countDown();
+                }
+            });
+
+            latch1.countDown();
+            latch2.await(30, TimeUnit.SECONDS);
+            assertEquals("success", reference1.get());
+            assertEquals("success", reference2.get());
+
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    @Test
+    public void testPostregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Future future = executorService.submit(new Callable<String>() {
+                @Override
+                public String call() {
+                    try {
+                        return "success";
+                    } finally {
+                        latch1.countDown();
+                    }
+                }
+            });
+
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+            latch1.await(30, TimeUnit.SECONDS);
+
+            final AtomicReference reference = new AtomicReference();
+            completableFuture.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    reference.set(response);
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    reference.set(t);
+                    latch2.countDown();
+                }
+            });
+
+            latch2.await(30, TimeUnit.SECONDS);
+            if (reference.get() instanceof Throwable) {
+                ((Throwable) reference.get()).printStackTrace();
+            }
+
+            assertEquals("success", reference.get());
+
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    @Test
+    public void testMultiPostregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Future future = executorService.submit(new Callable<String>() {
+                @Override
+                public String call() {
+                    try {
+                        return "success";
+                    } finally {
+                        latch1.countDown();
+                    }
+                }
+            });
+
+            latch1.await(30, TimeUnit.SECONDS);
+
+            final AtomicReference reference1 = new AtomicReference();
+            final AtomicReference reference2 = new AtomicReference();
+            final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+            completableFuture.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    reference1.set(response);
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    reference1.set(t);
+                    latch2.countDown();
+                }
+            });
+            completableFuture.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    reference2.set(response);
+                    latch2.countDown();
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    reference2.set(t);
+                    latch2.countDown();
+                }
+            });
+
+            latch2.await(30, TimeUnit.SECONDS);
+            assertEquals("success", reference1.get());
+            assertEquals("success", reference2.get());
+
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    @Test
+    public void testManagedPreregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        Future future = es.submit("default", new Callable<String>() {
+            @Override
+            public String call() {
+                try {
+                    latch1.await(30, TimeUnit.SECONDS);
+                    return "success";
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        final AtomicReference reference = new AtomicReference();
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+        completableFuture.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                reference.set(response);
+                latch2.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference.set(t);
+                latch2.countDown();
+            }
+        });
+
+        latch1.countDown();
+        latch2.await(30, TimeUnit.SECONDS);
+        assertEquals("success", reference.get());
+    }
+
+    @Test
+    public void testManagedMultiPreregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        Future future = es.submit("default", new Callable<String>() {
+            @Override
+            public String call() {
+                try {
+                    latch1.await(30, TimeUnit.SECONDS);
+                    return "success";
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        final AtomicReference reference1 = new AtomicReference();
+        final AtomicReference reference2 = new AtomicReference();
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+        completableFuture.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                reference1.set(response);
+                latch2.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference1.set(t);
+                latch2.countDown();
+            }
+        });
+        completableFuture.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                reference2.set(response);
+                latch2.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference2.set(t);
+                latch2.countDown();
+            }
+        });
+
+        latch1.countDown();
+        latch2.await(30, TimeUnit.SECONDS);
+        assertEquals("success", reference1.get());
+        assertEquals("success", reference2.get());
+    }
+
+    @Test
+    public void testManagedPostregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        Future future = es.submit("default", new Callable<String>() {
+            @Override
+            public String call() {
+                try {
+                    return "success";
+                } finally {
+                    latch1.countDown();
+                }
+            }
+        });
+
+        latch1.await(30, TimeUnit.SECONDS);
+
+        final AtomicReference reference = new AtomicReference();
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+        completableFuture.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                reference.set(response);
+                latch2.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference.set(t);
+                latch2.countDown();
+            }
+        });
+
+        latch2.await(30, TimeUnit.SECONDS);
+        assertEquals("success", reference.get());
+    }
+
+    @Test
+    public void testManagedMultiPostregisteredExecutionCallbackCompletableFuture() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
+        originalField.setAccessible(true);
+        HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
+        NodeEngine nodeEngine = hz.node.nodeEngine;
+        ExecutionService es = nodeEngine.getExecutionService();
+
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(2);
+        Future future = es.submit("default", new Callable<String>() {
+            @Override
+            public String call() {
+                try {
+                    return "success";
+                } finally {
+                    latch1.countDown();
+                }
+            }
+        });
+
+        latch1.await(30, TimeUnit.SECONDS);
+
+        final AtomicReference reference1 = new AtomicReference();
+        final AtomicReference reference2 = new AtomicReference();
+        final com.hazelcast.core.CompletableFuture completableFuture = es.asCompletableFuture(future);
+        completableFuture.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                reference1.set(response);
+                latch2.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference1.set(t);
+                latch2.countDown();
+            }
+        });
+        completableFuture.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                reference2.set(response);
+                latch2.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                reference2.set(t);
+                latch2.countDown();
+            }
+        });
+
+        latch2.await(30, TimeUnit.SECONDS);
+        assertEquals("success", reference1.get());
+        assertEquals("success", reference2.get());
+    }
+
     private static class ScriptRunnable implements Runnable, Serializable, HazelcastInstanceAware {
         private final String script;
         private final Map<String, Object> map;
@@ -710,6 +1217,11 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
             e.put("hazelcast", hazelcastInstance);
             try {
+                // For new JavaScript engine called Nashorn we need the compatibility script
+                if (e.getFactory().getEngineName().toLowerCase().contains("nashorn")) {
+                    e.eval("load('nashorn:mozilla_compat.js');");
+                }
+
                 e.eval("importPackage(java.lang);");
                 e.eval("importPackage(java.util);");
                 e.eval("importPackage(com.hazelcast.core);");
@@ -748,6 +1260,11 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
             e.put("hazelcast", hazelcastInstance);
             try {
+                // For new JavaScript engine called Nashorn we need the compatibility script
+                if (e.getFactory().getEngineName().toLowerCase().contains("nashorn")) {
+                    e.eval("load('nashorn:mozilla_compat.js');");
+                }
+
                 e.eval("importPackage(java.lang);");
                 e.eval("importPackage(java.util);");
                 e.eval("importPackage(com.hazelcast.core);");

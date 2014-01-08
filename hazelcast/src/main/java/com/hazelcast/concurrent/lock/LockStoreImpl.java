@@ -58,16 +58,19 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return lock(key, caller, threadId, Long.MAX_VALUE);
     }
 
+    @Override
     public boolean lock(Data key, String caller, int threadId, long leaseTime) {
         final LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, leaseTime);
     }
 
+    @Override
     public boolean txnLock(Data key, String caller, int threadId, long leaseTime) {
         final LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, leaseTime, true);
     }
 
+    @Override
     public boolean extendLeaseTime(Data key, String caller, int threadId, long leaseTime) {
         final LockResourceImpl lock = locks.get(key);
         return lock != null && lock.extendLeaseTime(caller, threadId, leaseTime);
@@ -77,31 +80,37 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
     }
 
+    @Override
     public boolean isLocked(Data key) {
         final LockResource lock = locks.get(key);
         return lock != null && lock.isLocked();
     }
 
+    @Override
     public boolean isLockedBy(Data key, String caller, int threadId) {
         LockResource lock = locks.get(key);
         return lock != null && lock.isLockedBy(caller, threadId);
     }
 
+    @Override
     public int getLockCount(Data key) {
         LockResource lock = locks.get(key);
         return lock != null ? lock.getLockCount() : 0;
     }
 
+    @Override
     public long getRemainingLeaseTime(Data key) {
         LockResource lock = locks.get(key);
         return lock != null ? lock.getRemainingLeaseTime() : -1L;
     }
 
+    @Override
     public boolean canAcquireLock(Data key, String caller, int threadId) {
         final LockResourceImpl lock = locks.get(key);
         return lock == null || lock.canAcquireLock(caller, threadId);
     }
 
+    @Override
     public boolean unlock(Data key, String caller, int threadId) {
         final LockResourceImpl lock = locks.get(key);
         boolean result = false;
@@ -118,6 +127,7 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return result;
     }
 
+    @Override
     public boolean forceUnlock(Data key) {
         final LockResourceImpl lock = locks.get(key);
         if (lock == null)
@@ -136,6 +146,7 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return Collections.<LockResource>unmodifiableCollection(locks.values());
     }
 
+    @Override
     public Set<Data> getLockedKeys() {
         Set<Data> keySet = new HashSet<Data>(locks.size());
         for (Map.Entry<Data, LockResourceImpl> entry : locks.entrySet()) {
@@ -222,12 +233,14 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return lock != null ? lock.pollExpiredAwaitOp() : null;
     }
 
+    @Override
     public String getOwnerInfo(Data key) {
         final LockResource lock = locks.get(key);
         return lock != null ? "Owner: " + lock.getOwner() + ", thread-id: " + lock.getThreadId()
                 : "<not-locked>";
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(namespace);
         out.writeInt(backupCount);
@@ -241,6 +254,7 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         namespace = in.readObject();
         backupCount = in.readInt();

@@ -21,12 +21,17 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
-public final class PartitionInvocationImpl extends InvocationImpl {
+/**
+ * A {@link BasicInvocation} evaluates a Operation Invocation for a particular partition running on top of the
+ * {@link com.hazelcast.spi.impl.BasicOperationService}.
+ */
+public final class BasicPartitionInvocation extends BasicInvocation {
 
-    public PartitionInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                                   Callback<Object> callback) {
-        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout, callback);
+    public BasicPartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+                                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
+                                    Callback<Object> callback, String executorName, boolean resultDeserialized) {
+        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
+                callTimeout, callback, executorName,resultDeserialized);
     }
 
     public final Address getTarget() {

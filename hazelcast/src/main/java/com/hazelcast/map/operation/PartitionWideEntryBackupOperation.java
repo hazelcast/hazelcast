@@ -35,7 +35,6 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
 
     EntryBackupProcessor entryProcessor;
 
-
     public PartitionWideEntryBackupOperation(String name, EntryBackupProcessor entryProcessor) {
         super(name);
         this.entryProcessor = entryProcessor;
@@ -63,10 +62,6 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
             entryProcessor.processBackup(entry);
             recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
         }
-    }
-
-    public void afterRun() throws Exception {
-        super.afterRun();
     }
 
     @Override
@@ -99,6 +94,4 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     public String toString() {
         return "PartitionWideEntryBackupOperation{}";
     }
-
-
 }

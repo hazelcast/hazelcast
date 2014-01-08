@@ -29,6 +29,9 @@ public final class TestUtil {
 
     static final private SerializationService serializationService = new SerializationServiceBuilder().build();
 
+    private TestUtil() {
+    }
+
     public static Data toData(Object obj) {
         return serializationService.toData(obj);
     }

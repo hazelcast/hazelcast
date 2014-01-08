@@ -17,8 +17,11 @@
 package com.hazelcast.spi;
 
 /**
-* @author mdogan 9/5/12
-*/
+ * An interface that can be implemented by a SPI service that needs to be notified members joining and leaving
+ * the cluster.
+ *
+ * @author mdogan 9/5/12
+ */
 public interface MembershipAwareService {
 
     /**

@@ -40,15 +40,18 @@ public class IsShutdownRequest extends CallableClientRequest implements Portable
         this.name = name;
     }
 
+    @Override
     public Object call() throws Exception {
         final DistributedExecutorService service = getService();
         return service.isShutdown(name);
     }
 
+    @Override
     public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ExecutorPortableHook.F_ID;
     }

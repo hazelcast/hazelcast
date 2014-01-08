@@ -23,7 +23,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 
 import java.util.*;
-import java.util.logging.Level;
 
 final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
@@ -34,8 +33,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private static final int AGGRESSIVE_INDEX_THRESHOLD = 3;
     private static final int MIN_AVG_OWNER_DIFF = 3;
 
-
-    public PartitionImpl[] initialize(Collection<MemberGroup> memberGroups, int partitionCount) {
+    public Address[][] initialize(Collection<MemberGroup> memberGroups, int partitionCount) {
         final LinkedList<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
         if (nodeGroups.size() == 0) {
             return null;
@@ -43,7 +41,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return arrange(nodeGroups, partitionCount, new EmptyStateInitializer());
     }
 
-    public PartitionImpl[] reArrange(final Collection<MemberGroup> memberGroups, final PartitionView[] currentState) {
+    public Address[][] reArrange(final Collection<MemberGroup> memberGroups, final InternalPartition[] currentState) {
         final LinkedList<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
         if (nodeGroups.size() == 0) {
             return null;
@@ -51,9 +49,9 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return arrange(nodeGroups, currentState.length, new CopyStateInitializer(currentState));
     }
 
-    private PartitionImpl[] arrange(final LinkedList<NodeGroup> groups, final int partitionCount,
+    private Address[][] arrange(final LinkedList<NodeGroup> groups, final int partitionCount,
                                     final StateInitializer stateInitializer) {
-        final PartitionImpl[] state = new PartitionImpl[partitionCount];
+        final Address[][] state = new Address[partitionCount][];
         stateInitializer.initialize(state);
         TestResult result = null;
         int tryCount = 0;
@@ -77,10 +75,10 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return state;
     }
 
-    private void tryArrange(final PartitionImpl[] state, final LinkedList<NodeGroup> groups,
+    private void tryArrange(final Address[][] state, final LinkedList<NodeGroup> groups,
                             final int partitionCount, final boolean aggressive) {
         final int groupSize = groups.size();
-        final int replicaCount = Math.min(groupSize, PartitionImpl.MAX_REPLICA_COUNT);
+        final int replicaCount = Math.min(groupSize, InternalPartition.MAX_REPLICA_COUNT);
         final int avgPartitionPerGroup = partitionCount / groupSize;
         // clear unused replica owners
         // initialize partition registry for each group
@@ -168,14 +166,14 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
-    private void updatePartitionState(final PartitionImpl[] state, final Collection<NodeGroup> groups, final int index) {
+    private void updatePartitionState(final Address[][] state, final Collection<NodeGroup> groups, final int index) {
         for (NodeGroup group : groups) {
             group.postProcessPartitionTable(index);
             for (Address address : group.getNodes()) {
                 PartitionTable table = group.getPartitionTable(address);
                 Set<Integer> set = table.getPartitions(index);
                 for (Integer partitionId : set) {
-                    state[partitionId].setReplicaAddress(index, address);
+                    state[partitionId][index]=address;
                 }
             }
         }
@@ -233,35 +231,38 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return plusOneGroupCount;
     }
 
-    private LinkedList<Integer> getUnownedPartitions(final PartitionImpl[] state, final int index) {
+    private LinkedList<Integer> getUnownedPartitions(final Address[][] state, final int replicaIndex) {
         final LinkedList<Integer> freePartitions = new LinkedList<Integer>();
         // if owner of a partition can not be found then add partition to free partitions queue.
-        for (PartitionImpl partition : state) {
-            if (partition.getReplicaAddress(index) == null) {
-                freePartitions.add(partition.getPartitionId());
+        for(int partitionId=0;partitionId<state.length;partitionId++){
+            Address[] replicas = state[partitionId];
+            if (replicas[replicaIndex] == null) {
+                freePartitions.add(partitionId);
             }
         }
         Collections.shuffle(freePartitions);
         return freePartitions;
     }
 
-    private void initializeGroupPartitions(final PartitionImpl[] state, final LinkedList<NodeGroup> groups,
+    private void initializeGroupPartitions(final Address[][] state, final LinkedList<NodeGroup> groups,
                                            final int replicaCount, final boolean aggressive) {
         // reset partition before reuse
         for (NodeGroup nodeGroup : groups) {
             nodeGroup.resetPartitions();
         }
-        for (PartitionImpl partition : state) {
-            for (int index = 0; index < PartitionImpl.MAX_REPLICA_COUNT; index++) {
-                if (index >= replicaCount) {
-                    partition.setReplicaAddress(index, null);
+        for(int partitionId=0;partitionId<state.length;partitionId++){
+            Address[] replicas = state[partitionId];
+
+            for (int replicaIndex = 0; replicaIndex < InternalPartition.MAX_REPLICA_COUNT; replicaIndex++) {
+                if (replicaIndex >= replicaCount) {
+                    replicas[replicaIndex]=null;
                 } else {
-                    final Address owner = partition.getReplicaAddress(index);
+                    final Address owner = replicas[replicaIndex];
                     boolean valid = false;
                     if (owner != null) {
                         for (NodeGroup nodeGroup : groups) {
                             if (nodeGroup.hasNode(owner)) {
-                                if (nodeGroup.ownPartition(owner, index, partition.getPartitionId())) {
+                                if (nodeGroup.ownPartition(owner, replicaIndex, partitionId)) {
                                     valid = true;
                                 }
                                 break;
@@ -269,10 +270,10 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         }
                     }
                     if (!valid) {
-                        partition.setReplicaAddress(index, null);
-                    } else if (aggressive && index < AGGRESSIVE_INDEX_THRESHOLD) {
+                       replicas[replicaIndex]=null;
+                    } else if (aggressive && replicaIndex < AGGRESSIVE_INDEX_THRESHOLD) {
                         for (int i = AGGRESSIVE_INDEX_THRESHOLD; i < replicaCount; i++) {
-                            partition.setReplicaAddress(i, null);
+                            replicas[i]=null;
                         }
                     }
                 }
@@ -306,23 +307,24 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return nodeGroups;
     }
 
-    private TestResult testArrangement(PartitionImpl[] state, Collection<NodeGroup> groups, int partitionCount) {
+    private TestResult testArrangement(Address[][] state, Collection<NodeGroup> groups, int partitionCount) {
         final float ratio = RANGE_CHECK_RATIO;
         final int avgPartitionPerGroup = partitionCount / groups.size();
-        final int replicaCount = Math.min(groups.size(), PartitionImpl.MAX_REPLICA_COUNT);
+        final int replicaCount = Math.min(groups.size(), InternalPartition.MAX_REPLICA_COUNT);
         final Set<Address> set = new HashSet<Address>();
-        for (PartitionImpl p : state) {
+        for(int partitionId = 0;partitionId<partitionCount;partitionId++){
+            Address[] replicas = state[partitionId];
             for (int i = 0; i < replicaCount; i++) {
-                Address owner = p.getReplicaAddress(i);
+                Address owner = replicas[i];
                 if (owner == null) {
                     logger.warning("Partition-Arrangement-Test: Owner is null !!! => partition: "
-                            + p.getPartitionId() + " replica: " + i);
+                            + partitionId + " replica: " + i);
                     return TestResult.FAIL;
                 }
                 if (set.contains(owner)) {
                     // Should not happen!
                     logger.warning("Partition-Arrangement-Test: " +
-                            owner + " has owned multiple replicas of partition: " + p.getPartitionId() + " replica: " + i);
+                            owner + " has owned multiple replicas of partition: " + partitionId + " replica: " + i);
                     return TestResult.FAIL;
                 }
                 set.add(owner);
@@ -350,32 +352,37 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     // ----- INNER CLASSES -----
 
     private interface StateInitializer {
-        void initialize(PartitionImpl[] state);
+        void initialize(Address[][] state);
     }
 
-    private class EmptyStateInitializer implements StateInitializer {
-        public void initialize(PartitionImpl[] state) {
+    private static class EmptyStateInitializer implements StateInitializer {
+        @Override
+        public void initialize(Address[][] state) {
             for (int i = 0; i < state.length; i++) {
-                state[i] = new PartitionImpl(i);
+                state[i] = new Address[InternalPartition.MAX_REPLICA_COUNT];
             }
         }
     }
 
-    private class CopyStateInitializer implements StateInitializer {
-        private final PartitionView[] currentState;
+    private static class CopyStateInitializer implements StateInitializer {
+        private final InternalPartition[] currentState;
 
-        CopyStateInitializer(PartitionView[] currentState) {
+        CopyStateInitializer(InternalPartition[] currentState) {
             this.currentState = currentState;
         }
 
-        public void initialize(PartitionImpl[] state) {
+        @Override
+        public void initialize(Address[][] state) {
             if (state.length != currentState.length) {
                 throw new IllegalArgumentException("Partition counts do not match!");
             }
-            for (int i = 0; i < state.length; i++) {
-                final PartitionView p = currentState[i];
-                state[i] = new PartitionImpl(i);
-                state[i].setPartitionInfo(p);
+            for (int partitionId = 0; partitionId < state.length; partitionId++) {
+                final InternalPartition p = currentState[partitionId];
+                Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
+                state[partitionId]=replicas;
+                for(int replicaIndex = 0;replicaIndex< InternalPartition.MAX_REPLICA_COUNT;replicaIndex++){
+                    replicas[replicaIndex]=p.getReplicaAddress(replicaIndex);
+                }
             }
         }
     }
@@ -410,7 +417,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         void postProcessPartitionTable(int index);
     }
 
-    private class DefaultNodeGroup implements NodeGroup {
+    private static class DefaultNodeGroup implements NodeGroup {
         final PartitionTable groupPartitionTable = new PartitionTable();
         final Map<Address, PartitionTable> nodePartitionTables = new HashMap<Address, PartitionTable>();
         final Set<Address> nodes = nodePartitionTables.keySet();
@@ -561,7 +568,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
-    private class SingleNodeGroup implements NodeGroup {
+    private static class SingleNodeGroup implements NodeGroup {
         final PartitionTable nodeTable = new PartitionTable();
         Address address = null;
         Set<Address> nodes;
@@ -641,8 +648,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private class PartitionTable {
-        final Set<Integer>[] partitions = new Set[PartitionImpl.MAX_REPLICA_COUNT];
+    private static class PartitionTable {
+        final Set<Integer>[] partitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
 
         Set<Integer> getPartitions(int index) {
             check(index);
@@ -663,8 +670,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
 
         boolean contains(Integer partitionId) {
-            for (int i = 0; i < partitions.length; i++) {
-                Set<Integer> set = partitions[i];
+            for (Set<Integer> set : partitions) {
                 if (set != null && set.contains(partitionId)) {
                     return true;
                 }
@@ -681,8 +687,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
 
         void reset() {
-            for (int i = 0; i < partitions.length; i++) {
-                Set<Integer> set = partitions[i];
+            for (Set<Integer> set : partitions) {
                 if (set != null) {
                     set.clear();
                 }
@@ -690,7 +695,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
 
         private void check(int index) {
-            if (index < 0 || index >= PartitionImpl.MAX_REPLICA_COUNT) {
+            if (index < 0 || index >= InternalPartition.MAX_REPLICA_COUNT) {
                 throw new ArrayIndexOutOfBoundsException(index);
             }
         }

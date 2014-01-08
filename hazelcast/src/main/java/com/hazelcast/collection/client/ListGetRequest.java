@@ -40,10 +40,12 @@ public class ListGetRequest extends CollectionRequest{
         this.index = index;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListGetOperation(name, index);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_GET ;
     }
@@ -58,6 +60,7 @@ public class ListGetRequest extends CollectionRequest{
         index = reader.readInt("i");
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

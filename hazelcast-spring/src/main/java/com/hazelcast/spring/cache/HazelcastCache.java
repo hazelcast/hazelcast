@@ -24,7 +24,6 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 4/3/12
@@ -57,7 +56,7 @@ public class HazelcastCache implements Cache {
 
     public void put(final Object key, final Object value) {
         if (key != null) {
-            map.set(key, toStoreValue(value), 0, TimeUnit.SECONDS);
+            map.set(key, toStoreValue(value));
         }
     }
 

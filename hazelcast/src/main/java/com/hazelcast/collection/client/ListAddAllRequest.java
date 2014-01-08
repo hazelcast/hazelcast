@@ -41,10 +41,12 @@ public class ListAddAllRequest extends CollectionAddAllRequest {
         this.index = index;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListAddAllOperation(name, index, valueList);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_ADD_ALL;
     }
@@ -52,7 +54,6 @@ public class ListAddAllRequest extends CollectionAddAllRequest {
     public void write(PortableWriter writer) throws IOException {
         writer.writeInt("i", index);
         super.write(writer);
-
     }
 
     public void read(PortableReader reader) throws IOException {

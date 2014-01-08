@@ -65,6 +65,7 @@ final class ConditionInfo implements DataSerializable {
         return !waiter.started && (waiter.started = true);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(conditionId);
         int len = waiters.size();
@@ -77,6 +78,7 @@ final class ConditionInfo implements DataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         conditionId = in.readUTF();
         int len = in.readInt();
@@ -94,6 +96,7 @@ final class ConditionInfo implements DataSerializable {
 
         transient boolean started = false;
 
+        //todo: is this needed?
         ConditionWaiter() {
         }
 

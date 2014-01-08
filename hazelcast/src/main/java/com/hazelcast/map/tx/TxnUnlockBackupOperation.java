@@ -44,14 +44,4 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
     public Object getResponse() {
         return Boolean.TRUE;
     }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-    }
 }

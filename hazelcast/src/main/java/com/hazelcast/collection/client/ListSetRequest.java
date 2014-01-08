@@ -44,10 +44,12 @@ public class ListSetRequest extends CollectionRequest {
         this.value = value;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListSetOperation(name, index, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_SET;
     }
@@ -65,6 +67,7 @@ public class ListSetRequest extends CollectionRequest {
         value.readData(reader.getRawDataInput());
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

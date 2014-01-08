@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -26,7 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
@@ -38,42 +37,20 @@ import java.util.concurrent.*;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-abstract class InvocationImpl implements Invocation, Callback<Object>,BackupCompletionCallback {
+/**
+ * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
+ */
+abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback {
 
-    private static final Object NULL_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::NULL_RESPONSE";
-        }
-    };
+    private static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
-    private static final Object RETRY_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::RETRY_RESPONSE";
-        }
-    };
+    private static final Object RETRY_RESPONSE = new InternalResponse("Invocation::RETRY_RESPONSE");
 
-    private static final Object WAIT_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::WAIT_RESPONSE";
-        }
-    };
+    private static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
 
-    private static final Object TIMEOUT_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::TIMEOUT_RESPONSE";
-        }
-    };
+    private static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
-    private static final Object INTERRUPTED_RESPONSE = new Object() {
-        @Override
-        public String toString() {
-            return "Invocation::INTERRUPTED_RESPONSE";
-        }
-    };
+    private static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
@@ -81,6 +58,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
         return timeout;
     }
+
+    private static final long PLUS_TIMEOUT = 10000;
 
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
@@ -91,16 +70,19 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
     protected final int tryCount;
     protected final long tryPauseMillis;
     protected final ILogger logger;
-    //todo: in the future we could get rid of this object, just let the InvocationImpl implement the Future interface.
+    //todo: in the future we could get rid of this object, just let the BasicInvocation implement the Future interface.
     private final InvocationFuture invocationFuture;
 
     private volatile int invokeCount = 0;
     private volatile Address target;
     private boolean remote = false;
+    private final String executorName;
+    private final boolean resultDeserialized;
 
-    InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback) {
-        this.logger = nodeEngine.getLogger(Invocation.class.getName());
+    BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
+                    String executorName, boolean resultDeserialized) {
+        this.logger = nodeEngine.getLogger(BasicInvocation.class);
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -110,6 +92,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
         this.invocationFuture = new InvocationFuture(callback);
+        this.executorName = executorName;
+        this.resultDeserialized = resultDeserialized;
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -118,7 +102,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         return serviceName;
     }
 
-    PartitionView getPartition() {
+    InternalPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 
@@ -139,17 +123,17 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             return callTimeout;
         }
 
-        final long defaultCallTimeout = nodeEngine.operationService.getDefaultCallTimeout();
+        BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
+        final long defaultCallTimeout = operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
-            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 10000) {
-                return waitTimeoutMillis + 10000;
+            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
+                return waitTimeoutMillis + (defaultCallTimeout > PLUS_TIMEOUT ? PLUS_TIMEOUT : defaultCallTimeout) ;
             }
         }
         return defaultCallTimeout;
     }
 
-    @Override
     public final InvocationFuture invoke() {
         if (invokeCount > 0) {   // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
@@ -162,12 +146,16 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         try {
             OperationAccessor.setCallTimeout(op, callTimeout);
             OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
-            op.setNodeEngine(nodeEngine).setServiceName(serviceName)
-                    .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+            op.setNodeEngine(nodeEngine)
+                    .setServiceName(serviceName)
+                    .setPartitionId(partitionId)
+                    .setReplicaIndex(replicaIndex)
+                    .setExecutorName(executorName);
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            if (!nodeEngine.operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
+            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
+            if (!operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
@@ -189,39 +177,65 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         doInvoke();
     }
 
+    private static Throwable getError(Object obj){
+        if(obj == null){
+            return null;
+        }
+
+        if(obj instanceof Throwable){
+            return (Throwable)obj;
+        }
+
+        if(!(obj instanceof NormalResponse)){
+            return null;
+        }
+
+        NormalResponse response = (NormalResponse)obj;
+        if(!(response.getValue()  instanceof Throwable)){
+            return null;
+        }
+
+        return (Throwable)response.getValue();
+    }
+
     @Override
     public void notify(Object obj) {
         Object response;
         if (obj == null) {
             response = NULL_RESPONSE;
-        } else if (obj instanceof CallTimeoutException) {
-            response = RETRY_RESPONSE;
-            if (logger.isFinestEnabled()) {
-                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
-            }
-            invokeCount--;
-        } else if (obj instanceof Throwable) {
-            final Throwable error = (Throwable) obj;
-            final ExceptionAction action = onException(error);
-            final int localInvokeCount = invokeCount;
-            if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-                response = RETRY_RESPONSE;
-                if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                    logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+        } else {
+            Throwable error = getError(obj);
+            if (error != null) {
+                if (error instanceof CallTimeoutException) {
+                    response = RETRY_RESPONSE;
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+                    }
+                    invokeCount--;
+                } else{
+                    final ExceptionAction action = onException(error);
+                    final int localInvokeCount = invokeCount;
+                    if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
+                        response = RETRY_RESPONSE;
+                        if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
+                            logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+                        }
+                    } else if (action == ExceptionAction.CONTINUE_WAIT) {
+                        response = WAIT_RESPONSE;
+                    } else {
+                        response = error;
+                    }
                 }
-            } else if (action == ExceptionAction.CONTINUE_WAIT) {
-                response = WAIT_RESPONSE;
             } else {
                 response = obj;
             }
-        } else {
-            response = obj;
         }
 
         if (response == RETRY_RESPONSE) {
             if (invocationFuture.interrupted) {
                 invocationFuture.set(INTERRUPTED_RESPONSE);
             } else {
+                invocationFuture.set(WAIT_RESPONSE);
                 final ExecutionService ex = nodeEngine.getExecutionService();
                 final ExecutorService asyncExecutor = ex.getExecutor(ExecutionService.ASYNC_EXECUTOR);
                 // fast retry for the first few invocations
@@ -232,20 +246,20 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                             tryPauseMillis, TimeUnit.MILLISECONDS);
                 }
             }
-           return;
+            return;
         }
 
         if (response == WAIT_RESPONSE) {
-            //no-op for the time being.
+            invocationFuture.set(WAIT_RESPONSE);
             return;
         }
 
         //if a regular response came and there are backups, we need to wait for the backs.
         //when the backups complete, the response will be send by the last backup.
-        if (response instanceof Response && op instanceof BackupAwareOperation) {
-            final Response resp = (Response) response;
-            if (resp.backupCount > 0) {
-                waitForBackups(resp.backupCount, 5, TimeUnit.SECONDS, resp);
+        if (response instanceof NormalResponse && op instanceof BackupAwareOperation) {
+            final NormalResponse resp = (NormalResponse) response;
+            if (resp.getBackupCount() > 0) {
+                waitForBackups(resp.getBackupCount(), 5, TimeUnit.SECONDS, resp);
                 return;
             }
         }
@@ -268,7 +282,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, invTarget, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
@@ -293,7 +307,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             return;
         }
 
-        final OperationServiceImpl operationService = nodeEngine.operationService;
+        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
 
         remote = !thisAddress.equals(invTarget);
@@ -317,7 +331,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 OperationAccessor.setCallId(op, callId);
             }
             ResponseHandlerFactory.setLocalResponseHandler(op, this);
-            if (!nodeEngine.operationService.isAllowedToRunInCurrentThread(op)) {
+            if (!operationService.isAllowedToRunInCurrentThread(op)) {
                 operationService.executeOperation(op);
             } else {
                 operationService.runOperation(op);
@@ -325,9 +339,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
+    protected abstract Address getTarget();
+
+
     private void registerBackups(BackupAwareOperation op, long callId) {
         final long oldCallId = ((Operation) op).getCallId();
-        final OperationServiceImpl operationService = nodeEngine.operationService;
+        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         if (oldCallId != 0) {
             operationService.deregisterBackupCall(oldCallId);
         }
@@ -338,7 +355,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("InvocationImpl");
+        sb.append("BasicInvocation");
         sb.append("{ serviceName='").append(serviceName).append('\'');
         sb.append(", op=").append(op);
         sb.append(", partitionId=").append(partitionId);
@@ -353,7 +370,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
     }
 
     private volatile int availableBackups;
-    private volatile Response potentialResponse;
+    private volatile NormalResponse potentialResponse;
     private volatile int expectedBackupCount;
 
     @Override
@@ -375,7 +392,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
-    private void waitForBackups(int backupCount, long timeout, TimeUnit unit, Response response) {
+    private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
         synchronized (this) {
             this.expectedBackupCount = backupCount;
 
@@ -390,17 +407,17 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         nodeEngine.getExecutionService().schedule(new ScheduledTaskRunner(getAsyncExecutor(), new Runnable() {
             @Override
             public void run() {
-                synchronized (InvocationImpl.this) {
+                synchronized (BasicInvocation.this) {
                     if (expectedBackupCount == availableBackups) {
                         return;
                     }
                 }
 
                 if (nodeEngine.getClusterService().getMember(target) != null) {
-                    synchronized (InvocationImpl.this) {
-                        if (InvocationImpl.this.potentialResponse != null) {
-                            invocationFuture.set(InvocationImpl.this.potentialResponse);
-                            InvocationImpl.this.potentialResponse = null;
+                    synchronized (BasicInvocation.this) {
+                        if (BasicInvocation.this.potentialResponse != null) {
+                            invocationFuture.set(BasicInvocation.this.potentialResponse);
+                            BasicInvocation.this.potentialResponse = null;
                         }
                     }
                     return;
@@ -425,7 +442,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         @Override
         public void run() throws Exception {
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            OperationServiceImpl operationService = nodeEngine.operationService;
+            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
             boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(), operationCallId);
             getResponseHandler().sendResponse(executing);
         }
@@ -454,7 +471,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
-     private static class ExecutionCallbackNode<E>{
+    private static class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;
         private final Executor executor;
         private final ExecutionCallbackNode<E> next;
@@ -466,8 +483,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
     }
 
-    private static class ExecutorCallbackAdapter<E> implements ExecutionCallback<E>{
-        private final Callback  callback;
+    private static class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
+        private final Callback callback;
 
         private ExecutorCallbackAdapter(Callback callback) {
             this.callback = callback;
@@ -488,11 +505,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
 
         volatile ExecutionCallbackNode<E> callbackHead;
         volatile Object response;
-        volatile boolean interrupted=false;
+        volatile boolean interrupted = false;
 
         private InvocationFuture(final Callback<E> callback) {
-            if(callback != null){
-                callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback),getAsyncExecutor(),null);
+            if (callback != null) {
+                callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback), getAsyncExecutor(), null);
             }
         }
 
@@ -519,19 +536,19 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 @Override
                 public void run() {
                     try {
-                        if (response instanceof Response) {
-                            final Response responseObj = (Response) response;
-                            callback.onResponse((E) responseObj.response);
+                        if (response instanceof NormalResponse) {
+                            final NormalResponse responseObj = (NormalResponse) response;
+                            callback.onResponse((E) responseObj.getValue());
                         } else if (response == NULL_RESPONSE) {
                             callback.onResponse(null);
-                        } else if(response instanceof Throwable){
+                        } else if (response instanceof Throwable) {
                             callback.onFailure((Throwable) response);
-                        } else{
-                            callback.onResponse((E)response);
+                        } else {
+                            callback.onResponse((E) response);
                         }
                     } catch (Throwable t) {
                         //todo: improved error message
-                        logger.severe("Failed to async for "+InvocationImpl.this,t);
+                        logger.severe("Failed to async for " + BasicInvocation.this, t);
                     }
                 }
             });
@@ -542,22 +559,38 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 throw new IllegalArgumentException("response can't be null");
             }
 
+            if(response instanceof NormalResponse){
+                response = ((NormalResponse)response).getValue();
+            }
+
+            if(response == null){
+                response = NULL_RESPONSE;
+            }
+
+            if(resultDeserialized && response instanceof Data){
+                response = nodeEngine.toObject(response);
+            }
+
             ExecutionCallbackNode<E> callbackChain;
             synchronized (this) {
-                if (this.response != null) {
+                if (this.response != null && !(this.response instanceof InternalResponse)) {
                     throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
                 }
                 this.response = response;
+                if (response == WAIT_RESPONSE) {
+                    return;
+                }
                 callbackChain = callbackHead;
                 callbackHead = null;
                 this.notifyAll();
             }
 
             //we need to deregister the backup call to make sure that there is no memory leak.
-            nodeEngine.operationService.deregisterBackupCall(op.getCallId());
+            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
+            operationService.deregisterBackupCall(op.getCallId());
 
-            while(callbackChain!=null){
-                runAsynchronous(callbackChain.callback,callbackChain.executor);
+            while (callbackChain != null) {
+                runAsynchronous(callbackChain.callback, callbackChain.executor);
                 callbackChain = callbackChain.next;
             }
         }
@@ -587,10 +620,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
-            if (response != null) {
+            if (response != null && response != WAIT_RESPONSE) {
                 return response;
             }
-
             long timeoutMs = unit.toMillis(time);
             if (timeoutMs < 0) timeoutMs = 0;
 
@@ -603,17 +635,23 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 final long startMs = Clock.currentTimeMillis();
 
                 long lastPollTime = 0;
+                pollCount++;
                 try {
                     //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
                     if (pollTimeoutMs > 0) {
                         synchronized (this) {
-                            if (response == null) {
+                            if (response == null || response == WAIT_RESPONSE) {
                                 this.wait(pollTimeoutMs);
                             }
                         }
                     }
+                    lastPollTime = Clock.currentTimeMillis() - startMs;
+                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
                     if (response != null) {
+                        if (response == WAIT_RESPONSE) {
+                            continue;
+                        }
                         //if the thread is interrupted, but the response was not an interrupted-response,
                         //we need to restore the interrupt flag.
                         if (response != INTERRUPTED_RESPONSE && interrupted) {
@@ -621,13 +659,10 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                         }
                         return response;
                     }
-
-                    lastPollTime = Clock.currentTimeMillis() - startMs;
-                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
                 } catch (InterruptedException e) {
                     interrupted = true;
                 }
-                pollCount++;
+
 
                 if (!interrupted && /* response == null && */ longPolling) {
                     // no response!
@@ -672,17 +707,14 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
                 }
                 throw new ExecutionException((Throwable) response);
             }
-            if (response instanceof Response) {
-                return ((Response) response).response;
-            }
             if (response == NULL_RESPONSE) {
                 return null;
             }
             if (response == TIMEOUT_RESPONSE) {
                 throw new TimeoutException();
             }
-            if(response == INTERRUPTED_RESPONSE){
-                throw new InterruptedException("Call " + InvocationImpl.this + " was interrupted");
+            if (response == INTERRUPTED_RESPONSE) {
+                throw new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
             }
             return response;
         }
@@ -705,7 +737,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder("InvocationFuture{");
-            sb.append("invocation=").append(InvocationImpl.this.toString());
+            sb.append("invocation=").append(BasicInvocation.this.toString());
             sb.append(", done=").append(isDone());
             sb.append('}');
             return sb.toString();
@@ -715,8 +747,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             // ask if op is still being executed?
             Boolean executing = Boolean.FALSE;
             try {
-                final Invocation inv = new TargetInvocationImpl(nodeEngine, serviceName,
-                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null);
+                final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName,
+                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null, null,true);
                 Future f = inv.invoke();
                 // TODO: @mm - improve logging (see SystemLogService)
                 logger.warning("Asking if operation execution has been started: " + toString());
@@ -728,5 +760,19 @@ abstract class InvocationImpl implements Invocation, Callback<Object>,BackupComp
             logger.warning("'is-executing': " + executing + " -> " + toString());
             return executing;
         }
+    }
+
+    private static class InternalResponse {
+
+        String toString;
+
+        private InternalResponse(String toString) {
+            this.toString = toString;
+        }
+
+        public String toString() {
+            return toString;
+        }
+
     }
 }

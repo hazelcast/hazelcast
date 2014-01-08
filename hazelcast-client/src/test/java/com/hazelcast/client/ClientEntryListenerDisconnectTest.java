@@ -29,6 +29,9 @@ public class ClientEntryListenerDisconnectTest {
     private static int adds = 0;
     private static int evictionsNull = 0;
 
+    private ClientEntryListenerDisconnectTest() {
+    }
+
     public static void main(String[] args) throws InterruptedException {
 
         Config config = new Config();

@@ -24,7 +24,8 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class AwaitBackupOperation extends BaseLockOperation implements BackupOperation {
+public class AwaitBackupOperation extends BaseLockOperation
+        implements BackupOperation {
 
     private String originalCaller;
     private String conditionId;
@@ -39,6 +40,7 @@ public class AwaitBackupOperation extends BaseLockOperation implements BackupOpe
         this.originalCaller = originalCaller;
     }
 
+    @Override
     public void run() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         lockStore.lock(key, originalCaller, threadId);

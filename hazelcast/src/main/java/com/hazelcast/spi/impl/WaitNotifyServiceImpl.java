@@ -302,6 +302,13 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
         }
 
+        public boolean equals(Object o){
+            if(o!=null && o instanceof Delayed){
+                return this.compareTo((Delayed)o)==0;
+            }
+            return false;
+        }
+
         @Override
         public void run() throws Exception {
             if (valid) {

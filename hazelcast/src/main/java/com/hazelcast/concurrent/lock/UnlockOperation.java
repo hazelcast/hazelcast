@@ -40,6 +40,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         this.force = force;
     }
 
+    @Override
     public void run() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         if (force) {
@@ -53,6 +54,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
         final AwaitOperation awaitResponse = getLockStore().pollExpiredAwaitOp(key);
         if (awaitResponse != null) {
@@ -61,18 +63,22 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         shouldNotify = awaitResponse == null;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new UnlockBackupOperation(namespace, key, threadId, getCallerUuid(), force);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public boolean shouldNotify() {
         return shouldNotify;
     }
 
+    @Override
     public final WaitNotifyKey getNotifiedKey() {
         final ConditionKey conditionKey = getLockStore().getSignalKey(key);
         return conditionKey != null ? conditionKey : new LockWaitNotifyKey(namespace, key);

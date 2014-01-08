@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -101,8 +102,13 @@ public class LockTest extends HazelcastTestSupport {
 
         Thread thread4 = new Thread(lockRunnable);
         thread4.start();
-        Thread.sleep(1000);
-        Assert.assertEquals(true, lock.isLocked());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                Assert.assertEquals(true, lock.isLocked());
+            }
+        });
+
         lock.forceUnlock();
         thread4.join();
     }
@@ -652,6 +658,7 @@ public class LockTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");

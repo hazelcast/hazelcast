@@ -25,9 +25,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
-import com.hazelcast.partition.Partitions;
 
 import java.io.IOException;
 import java.util.*;
@@ -35,6 +35,8 @@ import java.util.*;
 /**
  * @author mdogan 5/8/12
  */
+//todo: cluster runtime should not extend PartitionRuntime but should compose it;
+//favor composition over inheritance.
 public class ClusterRuntimeState extends PartitionRuntimeState implements DataSerializable {
 
     private static final int LOCK_MAX_SIZE = 100;
@@ -49,7 +51,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     public ClusterRuntimeState(final Collection<Member> members, // !!! ordered !!!
-                               final Partitions partitions,
+                               final InternalPartition[] partitions,
                                final Collection<MigrationInfo> activeMigrations,
                                final Map<Address, Connection> connections,
                                final Collection<LockResource> locks) {

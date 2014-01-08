@@ -44,10 +44,12 @@ public class ListIndexOfRequest extends CollectionRequest {
         this.last = last;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListIndexOfOperation(name, last, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_INDEX_OF;
     }
@@ -65,6 +67,7 @@ public class ListIndexOfRequest extends CollectionRequest {
         value.readData(reader.getRawDataInput());
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

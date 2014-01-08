@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.proxy;
+package com.hazelcast.query;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.IMap;
+import java.util.Map;
 
 /**
- * @author mdogan 11/5/12
+ * @ali 08/12/13
  */
-public interface MapProxy<K, V> extends IMap<K, V>, DistributedObject {
+public class PagingPredicateAccessor {
 
+    private PagingPredicateAccessor() {
+    }
+
+    public static void setPagingPredicateAnchor(PagingPredicate predicate, Map.Entry anchor){
+        predicate.setAnchor(anchor);
+    }
 }

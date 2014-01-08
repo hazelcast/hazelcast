@@ -38,6 +38,9 @@ package com.hazelcast.util;
  */
 @SuppressWarnings({"SynchronizedMethod", "CallToNativeMethodWhileLocked"})
 public final class Base64 {
+
+    private Base64(){}
+
     static private final int BASELENGTH = 255;
     static private final int LOOKUPLENGTH = 64;
     static private final int TWENTYFOURBITGROUP = 24;

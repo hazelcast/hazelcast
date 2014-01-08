@@ -19,28 +19,105 @@ package com.hazelcast.nio;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+/**
+ * Represents a 'connection' between two machines. The most important implementation is the
+ * {@link com.hazelcast.nio.TcpIpConnection}.
+ */
 public interface Connection {
 
+    /**
+     * Writes a SocketWritable packet to the other side.
+     * <p/>
+     * The packet could be stored in an internal queue before it actually is written, so this call
+     * doesn't need to be a synchronous call.
+     *
+     * @param packet the packet to write.
+     * @return false if the packet was not accepted to be written, e.g. because the Connection was
+     * not alive.
+     * @throws NullPointerException if packet is null.
+     */
     boolean write(SocketWritable packet);
 
-    Address getEndPoint();
-
+    /**
+     * Checks if the Connection is still alive.
+     *
+     * todo: rename to isAlive?
+     *
+     * @return true if alive, false otherwise.
+     */
     boolean live();
 
+    /**
+     * Returns the clock time of the most recent read using this connection.
+     *
+     * @return the clock time of the most recent read
+     */
     long lastReadTime();
 
+    /**
+     * Returns the clock time of the most recent write using this connection.
+     *
+     * @return the clock time of the most recent write.
+     */
     long lastWriteTime();
 
+    /**
+     * Closes this connection.
+     * <p/>
+     * todo: what happens with all pending SocketWritables? Are they flushed, discarded or undefined behavior?
+     * <p/>
+     * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
+     */
     void close();
 
+    /**
+     * Returns the {@link ConnectionType} of this Connection.
+     *
+     * @return the ConnectionType. It could be that <code>null</code> is returned.
+     */
     ConnectionType getType();
 
+    /**
+     * Checks if it is a client connection.
+     *
+     * @return true if client connection, false otherwise.
+     */
     boolean isClient();
 
+    /**
+     * Returns remote address of this Connection.
+     *
+     * @return the remote address. The returned value could be <code>null</code> if the connection is not alive.
+     */
     InetAddress getInetAddress();
 
+    /**
+     * Returns the address of the endpoint this Connection is connected to, or
+     * <code>null</code> if it is unconnected.
+     *
+     * @return address of the endpoint.
+     * <p/>
+     * todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
+     */
     InetSocketAddress getRemoteSocketAddress();
 
-    int getPort();
+    /**
+     * Gets the {@ink Address} of the other side of this Connection.
+     * <p/>
+     * todo: rename to get remoteAddress?
+     *
+     * @return the Address.
+     */
+    Address getEndPoint();
 
+    /**
+     * The remote port.
+     * <p/>
+     * todo: rename to getRemotePort?  And do we need it because we already have getEndPoint which returns an address
+     * which includes port. It is only used in testing
+     *
+     * @return the remote port number to which this Connection is connected, or
+     * 0 if the socket is not connected yet.
+     */
+    int getPort();
 }

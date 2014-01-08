@@ -92,4 +92,7 @@ public final class UnsafeHelper {
             throw new HazelcastException(e);
         }
     }
+
+    private UnsafeHelper() {
+    }
 }

@@ -608,7 +608,7 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, -1);
             records.put(dataKey, record);
             // increase size.
@@ -637,7 +637,7 @@ public class DefaultRecordStore implements RecordStore {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -663,7 +663,7 @@ public class DefaultRecordStore implements RecordStore {
         boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -707,7 +707,7 @@ public class DefaultRecordStore implements RecordStore {
         Object newValue = null;
         if (record == null) {
             newValue = mergingEntry.getValue();
-            newValue = writeMapStore(dataKey, newValue, record);
+            newValue = writeMapStore(dataKey, newValue, null);
             record = mapService.createRecord(name, dataKey, newValue, -1);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -816,7 +816,7 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));

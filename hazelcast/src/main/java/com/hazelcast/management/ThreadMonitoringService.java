@@ -36,7 +36,7 @@ public class ThreadMonitoringService {
         this.threadGroup = threadGroup;
     }
 
-    class ThreadCpuInfo {
+    static class ThreadCpuInfo {
         final Thread thread;
         long lastSet = 0;
         long lastValue = 0;
@@ -58,8 +58,7 @@ public class ThreadMonitoringService {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ThreadCpuInfo that = (ThreadCpuInfo) o;
-            if (thread.getId() != that.thread.getId()) return false;
-            return true;
+            return thread.getId() == that.thread.getId();
         }
 
         @Override
@@ -96,7 +95,7 @@ public class ThreadMonitoringService {
         }
     }
 
-    private class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
+    private static class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
 
         private Thread thread;
 

@@ -31,7 +31,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Level;
 
 public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
@@ -134,7 +133,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         Operation authorizationCall = new AuthorizationOperation(groupName, groupPassword);
         Future<Boolean> future = node.nodeEngine.getOperationService().createInvocationBuilder(WanReplicationService.SERVICE_NAME,
-                authorizationCall, target).setTryCount(1).build().invoke();
+                authorizationCall, target).setTryCount(1).invoke();
         try {
             return future.get();
         } catch (Exception ignored) {

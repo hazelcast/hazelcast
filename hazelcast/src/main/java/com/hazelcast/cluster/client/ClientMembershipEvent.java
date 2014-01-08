@@ -65,11 +65,13 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
         return member;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         member.writeData(out);
         out.writeInt(eventType);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         member = new MemberImpl();
         member.readData(in);

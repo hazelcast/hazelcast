@@ -274,10 +274,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 
         SqlPredicate that = (SqlPredicate) o;
 
-        if (!sql.equals(that.sql)) {
-            return false;
-        }
-        return true;
+        return sql.equals(that.sql);
     }
 
     @Override

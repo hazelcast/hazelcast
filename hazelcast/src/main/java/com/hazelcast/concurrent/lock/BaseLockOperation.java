@@ -67,6 +67,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         this.timeout = timeout;
     }
 
+    @Override
     public final Object getResponse() {
         return response;
     }
@@ -99,6 +100,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         return key;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(namespace);
@@ -108,6 +110,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         out.writeLong(timeout);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         namespace = in.readObject();

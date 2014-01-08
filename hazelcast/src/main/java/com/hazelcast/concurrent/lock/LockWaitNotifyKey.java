@@ -33,10 +33,12 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
         this.key = key;
     }
 
+    @Override
     public String getServiceName() {
         return namespace.getServiceName();
     }
 
+    @Override
     public String getObjectName() {
         return namespace.getObjectName();
     }

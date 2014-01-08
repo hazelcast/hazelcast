@@ -20,7 +20,6 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,16 +50,11 @@ public class ClientTopicTest {
         t = hz.getTopic(name);
     }
 
-    @AfterClass
-    public static void destroy() {
-        hz.getLifecycleService().shutdown();
-        Hazelcast.shutdownAll();
-    }
-
     @Before
     @After
     public void clear() throws IOException {
-
+        hz.getLifecycleService().shutdown();
+        Hazelcast.shutdownAll();
     }
 
     @Test

@@ -60,6 +60,7 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         return creationTime;
     }
 
+    @Override
     public int compareTo(CollectionItem o) {
         long otherItemId = o.getItemId();
         if (itemId > otherItemId){
@@ -70,6 +71,7 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         return 0;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CollectionItem)) return false;
@@ -81,23 +83,28 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         return true;
     }
 
+    @Override
     public int hashCode() {
         return value != null ? value.hashCode() : 0;
     }
 
+    @Override
     public int getFactoryId() {
         return CollectionDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_ITEM;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
         out.writeObject(value);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
         value = in.readObject();

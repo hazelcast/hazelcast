@@ -24,7 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -50,6 +50,7 @@ public abstract class Operation implements DataSerializable {
     // not used anymore, keeping just for serialization compatibility
     @Deprecated
     private boolean async = false;
+    private String executorName;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -58,6 +59,10 @@ public abstract class Operation implements DataSerializable {
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
     private transient long startTime;
+
+    public boolean isUrgent(){
+        return this instanceof UrgentSystemOperation;
+    }
 
     // runs before wait-support
     public abstract void beforeRun() throws Exception;
@@ -95,12 +100,20 @@ public abstract class Operation implements DataSerializable {
     }
 
     public final Operation setReplicaIndex(int replicaIndex) {
-        if (replicaIndex < 0 || replicaIndex >= PartitionView.MAX_REPLICA_COUNT) {
+        if (replicaIndex < 0 || replicaIndex >= InternalPartition.MAX_REPLICA_COUNT) {
             throw new IllegalArgumentException("Replica index is out of range [0-"
-                    + (PartitionView.MAX_REPLICA_COUNT - 1) + "]");
+                    + (InternalPartition.MAX_REPLICA_COUNT - 1) + "]");
         }
         this.replicaIndex = replicaIndex;
         return this;
+    }
+
+    public String getExecutorName() {
+        return executorName;
+    }
+
+    public void setExecutorName(String executorName) {
+        this.executorName = executorName;
     }
 
     public final long getCallId() {
@@ -261,6 +274,7 @@ public abstract class Operation implements DataSerializable {
         out.writeLong(callTimeout);
         out.writeUTF(callerUuid);
         out.writeBoolean(async);  // not used anymore
+        out.writeUTF(executorName);
         writeInternal(out);
     }
 
@@ -274,6 +288,7 @@ public abstract class Operation implements DataSerializable {
         callTimeout = in.readLong();
         callerUuid = in.readUTF();
         async = in.readBoolean();  // not used anymore
+        executorName = in.readUTF();
         readInternal(in);
     }
 

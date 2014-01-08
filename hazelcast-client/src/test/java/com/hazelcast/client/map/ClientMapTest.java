@@ -163,7 +163,9 @@ public class ClientMapTest {
         assertEquals(9, map.size());
     }
 
+
     @Test
+    @Ignore("TODO empty Test")
     public void flush() {
         //TODO map store
     }
@@ -309,6 +311,7 @@ public class ClientMapTest {
     }
 
     @Test
+    @Ignore("TODO empty Test")
     public void testPutTransient() throws Exception {
         //TODO mapstore
     }
@@ -611,6 +614,37 @@ public class ClientMapTest {
         }
     }
 
+    @Test
+    public void testExecuteOnKeys() throws Exception {
+
+        IMap<Integer, Integer> map = client.getMap("testMapMultipleEntryProcessor");
+        IMap<Integer, Integer> map2 = client.getMap("testMapMultipleEntryProcessor");
+
+        for (int i = 0; i < 10; i++) {
+            map.put(i,0);
+        }
+        Set keys = new HashSet();
+        keys.add(1);
+        keys.add(4);
+        keys.add(7);
+        keys.add(9);
+        final Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
+        assertEquals(1,resultMap.get(1));
+        assertEquals(1,resultMap.get(4));
+        assertEquals(1,resultMap.get(7));
+        assertEquals(1,resultMap.get(9));
+        assertEquals(1, (int) map.get(1));
+        assertEquals(0, (int) map.get(2));
+        assertEquals(0, (int) map.get(3));
+        assertEquals(1, (int) map.get(4));
+        assertEquals(0, (int) map.get(5));
+        assertEquals(0, (int) map.get(6));
+        assertEquals(1, (int) map.get(7));
+        assertEquals(0, (int) map.get(8));
+        assertEquals(1, (int) map.get(9));
+
+
+    }
 
     /**
      * Issue #996

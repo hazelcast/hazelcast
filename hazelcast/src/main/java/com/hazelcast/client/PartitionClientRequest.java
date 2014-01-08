@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.spi.Callback;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -37,8 +36,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
                         endpoint.sendResponse(filter(object), getCallId());
                     }
                 });
-        Invocation inv = builder.build();
-        inv.invoke();
+        builder.invoke();
     }
 
     protected abstract Operation prepareOperation();

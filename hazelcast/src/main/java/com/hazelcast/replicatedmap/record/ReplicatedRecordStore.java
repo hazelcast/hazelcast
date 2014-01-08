@@ -22,6 +22,7 @@ import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -46,6 +47,8 @@ public interface ReplicatedRecordStore {
     Set keySet();
 
     Collection values();
+
+    Collection values(Comparator comparator);
 
     Set entrySet();
 

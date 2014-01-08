@@ -38,6 +38,7 @@ public final class ExecutorPortableHook implements PortableHook {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
@@ -54,6 +55,7 @@ public final class ExecutorPortableHook implements PortableHook {
         };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

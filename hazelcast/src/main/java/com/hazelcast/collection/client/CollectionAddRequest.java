@@ -41,10 +41,12 @@ public class CollectionAddRequest extends CollectionRequest {
         this.value = value;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionAddOperation(name, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_ADD;
     }
@@ -60,6 +62,7 @@ public class CollectionAddRequest extends CollectionRequest {
         value.readData(reader.getRawDataInput());
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_ADD;
     }

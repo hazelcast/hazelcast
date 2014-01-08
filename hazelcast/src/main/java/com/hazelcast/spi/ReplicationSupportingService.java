@@ -18,6 +18,10 @@ package com.hazelcast.spi;
 
 import com.hazelcast.wan.WanReplicationEvent;
 
+/**
+ * An interface that can be implemented by SPI services to give them the ability to listen to
+ * Replication Events.
+ */
 public interface ReplicationSupportingService {
 
     void onReplicationEvent(WanReplicationEvent replicationEvent);

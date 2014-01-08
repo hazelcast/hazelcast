@@ -40,10 +40,12 @@ public class ListAddRequest extends CollectionAddRequest {
         this.index = index;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListAddOperation(name, index, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_ADD;
     }

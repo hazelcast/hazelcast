@@ -27,7 +27,7 @@ import java.io.IOException;
  * @author mdogan 4/11/13
  */
 // runs locally
-final class SyncReplicaVersion extends Operation implements PartitionAwareOperation {
+final class SyncReplicaVersion extends Operation implements PartitionAwareOperation, UrgentSystemOperation {
 
     private final int syncReplicaIndex;
     private final Callback<Object> callback;
@@ -46,7 +46,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
         final PartitionServiceImpl partitionService = getService();
         final int partitionId = getPartitionId();
         final int replicaIndex = syncReplicaIndex;
-        final PartitionImpl partition = partitionService.getPartition(partitionId);
+        final InternalPartition partition = partitionService.getPartition(partitionId);
         final Address target = partition.getReplicaAddress(replicaIndex);
         if (target != null) {
             final long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
@@ -56,7 +56,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
             OperationService operationService = nodeEngine.getOperationService();
             if (sync) {
                 operationService.createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME, op, target)
-                        .setCallback(callback).setTryCount(10).setTryPauseMillis(250).build().invoke();
+                        .setCallback(callback).setTryCount(10).setTryPauseMillis(250).invoke();
             } else {
                 operationService.send(op, target);
             }

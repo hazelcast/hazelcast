@@ -22,5 +22,4 @@ package com.hazelcast.spi;
 public interface EventPublishingService<E, T> {
 
     void dispatchEvent(E event, T listener);
-
 }

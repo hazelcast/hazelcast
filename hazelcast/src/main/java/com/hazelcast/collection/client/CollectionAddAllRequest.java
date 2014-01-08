@@ -45,10 +45,12 @@ public class CollectionAddAllRequest extends CollectionRequest {
         this.valueList = valueList;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionAddAllOperation(name, valueList);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_ADD_ALL;
     }
@@ -74,6 +76,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
         }
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_ADD;
     }

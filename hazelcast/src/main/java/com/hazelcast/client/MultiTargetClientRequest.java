@@ -43,8 +43,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, target)
                     .setTryCount(100)
                     .setCallback(new SingleTargetCallback(target, callback));
-            Invocation inv = builder.build();
-            inv.invoke();
+            builder.invoke();
         }
     }
 
@@ -74,7 +73,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         }
     }
 
-    private class SingleTargetCallback implements Callback<Object> {
+    private static class SingleTargetCallback implements Callback<Object> {
 
         final Address target;
         final MultiTargetCallback parent;

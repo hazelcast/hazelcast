@@ -39,22 +39,25 @@ public class CollectionClearBackupOperation extends CollectionOperation implemen
         this.itemIdSet = itemIdSet;
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_CLEAR_BACKUP;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().clearBackup(itemIdSet);
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(itemIdSet.size());
@@ -63,6 +66,7 @@ public class CollectionClearBackupOperation extends CollectionOperation implemen
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();

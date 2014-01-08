@@ -152,6 +152,7 @@ public class Permit implements DataSerializable {
         this.initialized = initialized;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(available);
         out.writeInt(partitionId);
@@ -164,6 +165,7 @@ public class Permit implements DataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         available = in.readInt();
         partitionId = in.readInt();
@@ -178,6 +180,7 @@ public class Permit implements DataSerializable {
         }
     }
 
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("Permit");

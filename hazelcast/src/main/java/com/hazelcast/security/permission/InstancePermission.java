@@ -44,9 +44,9 @@ public abstract class InstancePermission extends ClusterPermission {
 		mask = initMask(actions);
 		
 		final StringBuilder s = new StringBuilder();
-		for (int i = 0; i < actions.length; i++) {
-			s.append(actions[i]).append(" ");
-		}
+        for (String action : actions) {
+            s.append(action).append(" ");
+        }
 		this.actions = s.toString();
 	}
 	

@@ -30,6 +30,7 @@ public final class ExecutionCallbackAdapter implements Callback<Object> {
         this.executionCallback = executionCallback;
     }
 
+    @Override
     public void notify(Object response) {
         if (response instanceof Throwable) {
             executionCallback.onFailure((Throwable) response);

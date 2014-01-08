@@ -19,19 +19,23 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.query.*;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,6 +53,7 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+@Ignore//
 public class QueryTest extends HazelcastTestSupport {
 
     @Test
@@ -1194,10 +1199,10 @@ public class QueryTest extends HazelcastTestSupport {
         IMap map = instance.getMap("testPredicateCustomAttribute");
 
         final CustomAttribute attribute = new CustomAttribute(78, 145);
-        final CustomObject object = new CustomObject("name1", UUID.randomUUID(), attribute);
+        final CustomObject object = new CustomObject("name1", UuidUtil.buildRandomUUID(), attribute);
         map.put(1, object);
 
-        final CustomObject object2 = new CustomObject("name2", UUID.randomUUID(), attribute);
+        final CustomObject object2 = new CustomObject("name2", UuidUtil.buildRandomUUID(), attribute);
         map.put(2, object2);
 
         assertEquals(object, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(object.uuid)).iterator().next());
@@ -1440,7 +1445,7 @@ public class QueryTest extends HazelcastTestSupport {
             ex.execute(new Runnable() {
                 public void run() {
                     final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-                    final String name = UUID.randomUUID().toString();
+                    final String name = UuidUtil.buildRandomUuidString();
                     final IMap<Object, Value> map = hz.getMap(mapName);
                     map.put(name, new Value(name, 0));
                     map.size();  // helper call on nodes to sync partitions.. see issue github.com/hazelcast/hazelcast/issues/1282
@@ -1530,6 +1535,44 @@ public class QueryTest extends HazelcastTestSupport {
         }
         Arrays.sort(indexes);
         assertArrayEquals(indexes, expectedValues);
+    }
+
+    // issue 1404
+    @Test
+    @Ignore("to be fixed by issue 1404")
+    public void testQueryAfterInitialLoad() {
+        String name = "testQueryAfterInitialLoad";
+        Config cfg = new Config();
+        final int size = 100;
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapStoreAdapter() {
+            @Override
+            public Map loadAll(Collection keys) {
+                Map map = new HashMap();
+                for (Object key : keys) {
+                    Employee emp = new Employee();
+                    emp.setActive(true);
+                    map.put(key, emp);
+                }
+                return map;
+            }
+
+            @Override
+            public Set loadAllKeys() {
+                Set set = new HashSet();
+                for (int i = 0; i < size; i++) {
+                    set.add(i);
+                }
+                return set;
+            }
+        });
+        cfg.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance.getMap(name);
+        Collection values = map.values(new SqlPredicate("active = true"));
+        assertEquals(size, values.size());
     }
 
     @Test
@@ -1626,7 +1669,7 @@ public class QueryTest extends HazelcastTestSupport {
                     IMap<Object, Object> map = hz.getMap(name);
 
                     for (int i = 0; i < entryPerNode; i++) {
-                        String id = UUID.randomUUID().toString();
+                        String id = UuidUtil.buildRandomUuidString();
                         String name;
                         if (i % modulo == 0) {
                             name = FIND_ME;

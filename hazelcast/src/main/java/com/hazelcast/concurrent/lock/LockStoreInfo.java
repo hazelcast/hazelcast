@@ -23,6 +23,7 @@ import com.hazelcast.spi.ObjectNamespace;
  */
 public interface LockStoreInfo {
 
+    //todo: remove since unsed??
     ObjectNamespace getObjectNamespace();
 
     int getBackupCount();

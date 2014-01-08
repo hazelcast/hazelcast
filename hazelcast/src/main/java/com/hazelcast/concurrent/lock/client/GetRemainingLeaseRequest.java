@@ -34,7 +34,8 @@ import java.security.Permission;
 /**
  * @author mdogan 5/3/13
  */
-public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implements Portable {
+public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
+        implements Portable {
 
     private Data key;
 
@@ -45,15 +46,18 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implem
         this.key = key;
     }
 
+    @Override
     protected final Operation prepareOperation() {
         String name = (String) getClientEngine().toObject(key);
         return new GetRemainingLeaseTimeOperation(new InternalLockNamespace(name), key);
     }
 
+    @Override
     protected final Object getKey() {
         return key;
     }
 
+    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
@@ -83,5 +87,4 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implem
         String name = (String) getClientEngine().toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_READ);
     }
-
 }

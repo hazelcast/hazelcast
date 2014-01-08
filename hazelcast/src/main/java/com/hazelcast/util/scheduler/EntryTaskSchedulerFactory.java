@@ -23,6 +23,9 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public final class EntryTaskSchedulerFactory {
 
+    private EntryTaskSchedulerFactory() {
+    }
+
     /**
      * Creates a new EntryTaskScheduler that will run all second operations in bulk.
      * Imagine a write-behind map where dirty entries will be stored in bulk.

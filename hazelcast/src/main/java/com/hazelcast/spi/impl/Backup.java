@@ -21,15 +21,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.partition.PartitionView;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 4/5/13
@@ -56,10 +55,11 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         }
     }
 
+    @Override
     public void beforeRun() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         final int partitionId = getPartitionId();
-        final PartitionView partition = nodeEngine.getPartitionService().getPartition(partitionId);
+        final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
         final Address owner = partition.getReplicaAddress(getReplicaIndex());
         if (!nodeEngine.getThisAddress().equals(owner)) {
             valid = false;
@@ -70,34 +70,36 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         }
     }
 
+    @Override
     public void run() throws Exception {
-        if (valid) {
-            final NodeEngine nodeEngine = getNodeEngine();
-            final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-            partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
+        if (!valid) {
+            return;
+        }
+        final NodeEngine nodeEngine = getNodeEngine();
+        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
 
-            if (backupOp != null) {
-                backupOp.setNodeEngine(nodeEngine);
-                backupOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                backupOp.setCallerUuid(getCallerUuid());
-                OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
-                OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
+        if (backupOp != null) {
+            backupOp.setNodeEngine(nodeEngine);
+            backupOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+            backupOp.setCallerUuid(getCallerUuid());
+            OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
+            OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
 
-                final OperationService operationService = nodeEngine.getOperationService();
-                operationService.runOperation(backupOp);
-            }
+            final OperationService operationService = nodeEngine.getOperationService();
+            operationService.runOperation(backupOp);
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
         if (sync && getCallId() != 0 && originalCaller != null) {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             final long callId = getCallId();
-            final OperationServiceImpl operationService = nodeEngine.operationService;
+            final InternalOperationService operationService = nodeEngine.operationService;
 
             if (!nodeEngine.getThisAddress().equals(originalCaller)) {
-                BackupResponse backupResponse = new BackupResponse();
-                OperationAccessor.setCallId(backupResponse, callId);
+                BackupResponse backupResponse = new BackupResponse(callId, backupOp.isUrgent());
                 operationService.send(backupResponse, originalCaller);
             } else {
                 operationService.notifyBackupCall(callId);
@@ -105,18 +107,22 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         }
     }
 
+    @Override
     public final boolean returnsResponse() {
         return false;
     }
 
+    @Override
     public Object getResponse() {
         return null;
     }
 
+    @Override
     public boolean validatesTarget() {
         return false;
     }
 
+    @Override
     public void logError(Throwable e) {
         ReplicaErrorLogger.log(e, getLogger());
     }
@@ -145,10 +151,12 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         sync = in.readBoolean();
     }
 
+    @Override
     public int getFactoryId() {
         return SpiDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return SpiDataSerializerHook.BACKUP;
     }

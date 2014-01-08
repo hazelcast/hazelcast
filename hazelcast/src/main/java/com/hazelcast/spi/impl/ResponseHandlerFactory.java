@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
@@ -50,7 +52,7 @@ public final class ResponseHandlerFactory {
             }
             return NO_RESPONSE_HANDLER;
         }
-        return new RemoteInvocationResponseHandler(nodeEngine, op.getConnection(), op.getCallId());
+        return new RemoteInvocationResponseHandler(nodeEngine, op);
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
@@ -92,24 +94,30 @@ public final class ResponseHandlerFactory {
     private static class RemoteInvocationResponseHandler implements ResponseHandler {
 
         private final NodeEngine nodeEngine;
-        private final Connection conn;
-        private final long callId;
+        private final Operation op;
         private final AtomicBoolean sent = new AtomicBoolean(false);
 
-        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Connection conn, long callId) {
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation op) {
             this.nodeEngine = nodeEngine;
-            this.conn = conn;
-            this.callId = callId;
+            this.op = op;
         }
 
         public void sendResponse(Object obj) {
+            long callId = op.getCallId();
+            Connection conn = op.getConnection();
             if (!sent.compareAndSet(false, true)) {
-                throw new ResponseAlreadySentException("Response already sent for call: " + callId
+                throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                                                 + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
-            final ResponseOperation responseOp = new ResponseOperation(obj);
-            OperationAccessor.setCallId(responseOp, callId);
-            nodeEngine.getOperationService().send(responseOp, conn);
+
+            NormalResponse response;
+            if(!(obj instanceof NormalResponse)){
+                response = new NormalResponse(obj, op.getCallId(),0, op.isUrgent());
+            }else{
+                response = (NormalResponse)obj;
+            }
+
+            nodeEngine.getOperationService().send(response, op.getCallerAddress());
         }
 
         public boolean isLocal() {
@@ -130,7 +138,7 @@ public final class ResponseHandlerFactory {
 
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
-                throw new ResponseAlreadySentException("Response already sent for callback: " + callback
+                throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
                         + ", current-response: : " + obj);
             }
             callback.notify(obj);

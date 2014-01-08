@@ -30,14 +30,17 @@ public class DrainOperation extends SemaphoreBackupAwareOperation {
         super(name, -1);
     }
 
+    @Override
     public void run() throws Exception {
         response = getPermit().drain(getCallerUuid());
     }
 
+    @Override
     public boolean shouldBackup() {
         return !response.equals(0);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new DrainBackupOperation(name, permitCount, getCallerUuid());
     }

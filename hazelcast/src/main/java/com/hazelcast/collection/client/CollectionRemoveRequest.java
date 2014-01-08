@@ -41,10 +41,12 @@ public class CollectionRemoveRequest extends CollectionRequest {
         this.value = value;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionRemoveOperation(name, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_REMOVE;
     }
@@ -60,6 +62,7 @@ public class CollectionRemoveRequest extends CollectionRequest {
         value.readData(reader.getRawDataInput());
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
     }

@@ -38,16 +38,6 @@ public class MapFlushOperation extends AbstractMapOperation implements Partition
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-    }
-
-    @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-    }
-
-    @Override
     public Object getResponse() {
         return true;
     }

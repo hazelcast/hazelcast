@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -25,9 +27,9 @@ import java.util.concurrent.*;
 /**
  * @author mdogan 1/18/13
  */
-public class DelegatingFuture<V> implements Future<V> {
+public class DelegatingFuture<V> implements CompletableFuture<V> {
 
-    private final Future future;
+    private final CompletableFuture future;
     private final SerializationService serializationService;
     private final V defaultValue;
     private final boolean hasDefaultValue;
@@ -35,14 +37,14 @@ public class DelegatingFuture<V> implements Future<V> {
     private Throwable error;
     private volatile boolean done = false;
 
-    public DelegatingFuture(Future future, SerializationService serializationService) {
+    public DelegatingFuture(CompletableFuture future, SerializationService serializationService) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = null;
         this.hasDefaultValue = false;
     }
 
-    public DelegatingFuture(Future future, SerializationService serializationService, V defaultValue) {
+    public DelegatingFuture(CompletableFuture future, SerializationService serializationService, V defaultValue) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = defaultValue;
@@ -109,7 +111,7 @@ public class DelegatingFuture<V> implements Future<V> {
     }
 
     public final boolean isDone() {
-        return done;
+        return done ? done : future.isDone();
     }
 
     protected void setError(Throwable error) {
@@ -118,5 +120,15 @@ public class DelegatingFuture<V> implements Future<V> {
 
     protected void setDone() {
         this.done = true;
+    }
+
+    @Override
+    public void andThen(ExecutionCallback<V> callback) {
+        future.andThen(callback);
+    }
+
+    @Override
+    public void andThen(ExecutionCallback<V> callback, Executor executor) {
+        future.andThen(callback, executor);
     }
 }

@@ -30,14 +30,17 @@ public class ReduceOperation extends SemaphoreBackupAwareOperation {
         super(name, permitCount);
     }
 
+    @Override
     public void run() throws Exception {
         response = getPermit().reduce(permitCount);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new ReduceBackupOperation(name, permitCount);
     }

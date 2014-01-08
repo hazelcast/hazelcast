@@ -51,10 +51,12 @@ public class CollectionContainsRequest extends CollectionRequest {
         valueSet.add(value);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionContainsOperation(name, valueSet);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_CONTAINS;
     }
@@ -80,6 +82,7 @@ public class CollectionContainsRequest extends CollectionRequest {
         }
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

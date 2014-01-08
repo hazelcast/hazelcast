@@ -19,7 +19,6 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
@@ -54,9 +53,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
         boolean pollOperation = op instanceof TxnPollOperation;
         TxnPrepareOperation operation = new TxnPrepareOperation(name, itemId, pollOperation, transactionId);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -64,9 +61,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
 
     public Future commit(NodeEngine nodeEngine) {
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(QueueService.SERVICE_NAME, op, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -76,9 +71,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
         boolean pollOperation = op instanceof TxnPollOperation;
         TxnRollbackOperation operation = new TxnRollbackOperation(name, itemId, pollOperation);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

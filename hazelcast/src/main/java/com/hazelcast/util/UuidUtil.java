@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.nio.Address;
 
+import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -25,11 +26,44 @@ import java.util.UUID;
  */
 public class UuidUtil {
 
+    private static final ThreadLocal<Random> randomizers = new ThreadLocal<Random>() {
+        @Override
+        protected Random initialValue()
+        {
+            return new Random( -System.nanoTime() );
+        }
+    };
+
     public static String createMemberUuid(Address endpoint) {
-        return UUID.randomUUID().toString();
+        return buildRandomUUID().toString();
     }
 
     public static String createClientUuid(Address endpoint) {
-        return UUID.randomUUID().toString();
+        return buildRandomUUID().toString();
     }
+
+    public static String buildRandomUuidString() {
+        return buildRandomUUID().toString();
+    }
+
+    public static UUID buildRandomUUID() {
+        byte[] data = new byte[16];
+        randomizers.get().nextBytes(data);
+        data[6]  &= 0x0f;  /* clear version        */
+        data[6]  |= 0x40;  /* set to version 4     */
+        data[8]  &= 0x3f;  /* clear variant        */
+        data[8]  |= 0x80;  /* set to IETF variant  */
+
+        long mostSigBits = 0;
+        long leastSigBits = 0;
+        assert data.length == 16 : "data must be 16 bytes in length";
+        for (int i=0; i<8; i++)
+            mostSigBits = (mostSigBits << 8) | (data[i] & 0xff);
+        for (int i=8; i<16; i++)
+            leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
+        return new UUID(mostSigBits, leastSigBits);
+    }
+
+    private UuidUtil(){}
+
 }

@@ -73,10 +73,12 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int LIST_REPLICATION = increment++;
     public static final int SET_REPLICATION = increment++;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[increment];
 

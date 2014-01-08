@@ -31,4 +31,7 @@ public interface IDummyBean {
 
     @Cacheable("temp")
     Object getNull();
+
+    @Cacheable("map-with-ttl")
+    String getNameWithTTL();
 }

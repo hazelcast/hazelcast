@@ -42,6 +42,7 @@ public class IdGeneratorProxy implements IdGenerator {
         local = new AtomicLong(-1);
     }
 
+    @Override
     public boolean init(long id) {
         if (id <= 0) {
             return false;
@@ -59,6 +60,7 @@ public class IdGeneratorProxy implements IdGenerator {
 
     }
 
+    @Override
     public long newId() {
         int value = residue.getAndIncrement();
         if (value >= BLOCK_SIZE) {
@@ -74,10 +76,12 @@ public class IdGeneratorProxy implements IdGenerator {
         return local.get() * BLOCK_SIZE + value;
     }
 
+    @Override
     public Object getId() {
         return name;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -92,6 +96,7 @@ public class IdGeneratorProxy implements IdGenerator {
         return IdGeneratorService.SERVICE_NAME;
     }
 
+    @Override
     public void destroy() {
         atomicLong.destroy();
         residue = null;
@@ -107,16 +112,12 @@ public class IdGeneratorProxy implements IdGenerator {
         Object id = getId();
         if (id != null ? !id.equals(that.getId()) : that.getId() != null) return false;
 
-        String serviceName = getServiceName();
-        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) return false;
-
-        return true;
+        return  getServiceName().equals(that.getServiceName());
     }
+
 
     @Override
     public int hashCode() {
-        int result = getServiceName() != null ? getServiceName().hashCode() : 0;
-        result = 31 * result + (getId() != null ? getId().hashCode() : 0);
-        return result;
+        return  31 * getServiceName().hashCode() + (getId() != null ? getId().hashCode() : 0);
     }
 }

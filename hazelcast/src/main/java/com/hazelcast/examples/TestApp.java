@@ -164,7 +164,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         this.lineReader = lineReader;
     }
 
-    class DefaultLineReader implements LineReader {
+    static class DefaultLineReader implements LineReader {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
@@ -941,8 +941,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             println(getMultiMap().getLocalMultiMapStats());
         } else if (iteratorStr.startsWith("q.")) {
             println(getQueue().getLocalQueueStats());
-        } else if (iteratorStr.startsWith("l.")) {
         }
+        //if l then ??
+        //else if (iteratorStr.startsWith("l.")) {
+        //}
     }
 
     @SuppressWarnings("LockAcquiredButNotSafelyReleased")

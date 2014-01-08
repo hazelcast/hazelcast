@@ -27,6 +27,9 @@ public final class NodeInitializerFactory {
     private static final ILogger logger = Logger.getLogger(NodeInitializerFactory.class);
     private static final String FACTORY_ID = "com.hazelcast.NodeInitializer";
 
+    private NodeInitializerFactory() {
+    }
+
     public static NodeInitializer create(ClassLoader classLoader) {
         try {
             Iterator<NodeInitializer> iter = ServiceLoader.iterator(NodeInitializer.class, FACTORY_ID, classLoader);

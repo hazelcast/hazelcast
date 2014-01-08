@@ -22,6 +22,8 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 class TypeConverters {
+    private TypeConverters(){}
+
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
     public static final TypeConverter BIG_DECIMAL_CONVERTER = new BigDecimalConverter();
     public static final TypeConverter DOUBLE_CONVERTER = new DoubleConverter();

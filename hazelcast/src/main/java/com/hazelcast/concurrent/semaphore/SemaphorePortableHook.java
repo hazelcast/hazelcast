@@ -40,10 +40,12 @@ public class SemaphorePortableHook implements PortableHook {
 
     public static final int RELEASE = 6;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return new PortableFactory(){
 
@@ -67,6 +69,7 @@ public class SemaphorePortableHook implements PortableHook {
         };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

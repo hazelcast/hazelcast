@@ -37,11 +37,13 @@ public abstract class SemaphoreBackupOperation extends SemaphoreOperation implem
         this.firstCaller = firstCaller;
     }
 
+    @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(firstCaller);
     }
 
+    @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         firstCaller = in.readUTF();

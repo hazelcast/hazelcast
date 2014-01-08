@@ -21,6 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.Future;
@@ -36,17 +37,17 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         this.client = client;
     }
 
-    public <T> Future<T> invokeOnRandomTarget(ClientRequest request) throws Exception {
+    public <T> CompletableFuture<T> invokeOnRandomTarget(ClientRequest request) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
         return clusterService.send(request);
     }
 
-    public <T> Future<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
+    public <T> CompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
         return clusterService.send(request, target);
     }
 
-    public <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception {
+    public <T> CompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception {
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
         if (owner != null) {
@@ -55,17 +56,17 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return invokeOnRandomTarget(request);
     }
 
-    public <T> Future<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
+    public <T> CompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
         return clusterService.sendAndHandle(request, handler);
     }
 
-    public <T> Future<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception {
+    public <T> CompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception {
         ClientClusterService clusterService = client.getClientClusterService();
         return clusterService.sendAndHandle(request, target, handler);
     }
 
-    public <T> Future<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception {
+    public <T> CompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception {
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
         if (owner != null) {

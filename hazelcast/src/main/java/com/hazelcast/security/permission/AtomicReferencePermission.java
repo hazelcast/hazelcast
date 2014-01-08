@@ -29,18 +29,18 @@ public class AtomicReferencePermission extends InstancePermission {
 
     protected int initMask(String[] actions) {
         int mask = NONE;
-        for (int i = 0; i < actions.length; i++) {
-            if (ActionConstants.ACTION_ALL.equals(actions[i])) {
+        for (String action : actions) {
+            if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
             }
 
-            if (ActionConstants.ACTION_CREATE.equals(actions[i])) {
+            if (ActionConstants.ACTION_CREATE.equals(action)) {
                 mask |= CREATE;
-            } else if (ActionConstants.ACTION_READ.equals(actions[i])) {
+            } else if (ActionConstants.ACTION_READ.equals(action)) {
                 mask |= READ;
-            } else if (ActionConstants.ACTION_MODIFY.equals(actions[i])) {
+            } else if (ActionConstants.ACTION_MODIFY.equals(action)) {
                 mask |= MODIFY;
-            } else if (ActionConstants.ACTION_DESTROY.equals(actions[i])) {
+            } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
                 mask |= DESTROY;
             }
         }

@@ -18,13 +18,13 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClientPacket;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.concurrent.Future;
 
 /**
  * @author mdogan 5/16/13
@@ -45,15 +45,15 @@ public interface ClientClusterService {
 
     void handlePacket(ClientPacket packet);
 
-    Future send(ClientRequest request) throws IOException;
+    CompletableFuture send(ClientRequest request) throws IOException;
 
-    Future send(ClientRequest request, Address target) throws IOException ;
+    CompletableFuture send(ClientRequest request, Address target) throws IOException ;
 
-    Future send(ClientRequest request, ClientConnection connection) throws IOException;
+    CompletableFuture send(ClientRequest request, ClientConnection connection) throws IOException;
 
-    Future sendAndHandle(ClientRequest request, EventHandler handler) throws IOException ;
+    CompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws IOException ;
 
-    Future sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException ;
+    CompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException ;
 
     void registerListener(String uuid, int callId);
 

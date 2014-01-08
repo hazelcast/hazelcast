@@ -48,6 +48,7 @@ public abstract class TxnCollectionRequest extends BaseTransactionRequest implem
         this.value = value;
     }
 
+    @Override
     public int getFactoryId() {
         return CollectionPortableHook.F_ID;
     }

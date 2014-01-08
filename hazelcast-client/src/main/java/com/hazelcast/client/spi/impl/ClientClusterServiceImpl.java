@@ -42,9 +42,11 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -64,7 +66,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     public static int RETRY_COUNT = 20;
 
     private final HazelcastClient client;
-    private final ClientExecutionServiceImpl clientExecutionService;
     private final ClusterListenerThread clusterThread;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
@@ -83,7 +84,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
-        clientExecutionService = (ClientExecutionServiceImpl)client.getClientExecutionService();
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
         final ClientConfig clientConfig = getClientConfig();
         redoOperation = clientConfig.isRedoOperation();
@@ -162,7 +162,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public String addMembershipListener(MembershipListener listener) {
-        final String id = UUID.randomUUID().toString();
+        final String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, listener);
         return id;
     }
@@ -474,26 +474,26 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     //NIO
 
-    public Future send(ClientRequest request) throws IOException {
+    public CompletableFuture send(ClientRequest request) throws IOException {
         final ClientConnection connection = getOrConnect(null);
         return doSend(request, connection, null);
     }
 
-    public Future send(ClientRequest request, Address target) throws IOException {
+    public CompletableFuture send(ClientRequest request, Address target) throws IOException {
         final ClientConnection connection = getOrConnect(target);
         return doSend(request, connection, null);
     }
 
-    public Future send(ClientRequest request, ClientConnection connection) throws IOException {
+    public CompletableFuture send(ClientRequest request, ClientConnection connection) throws IOException {
         return doSend(request, connection, null);
     }
 
-    public Future sendAndHandle(ClientRequest request, EventHandler handler) throws IOException {
+    public CompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws IOException {
         final ClientConnection connection = getOrConnect(null);
         return doSend(request, connection, handler);
     }
 
-    public Future sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException {
+    public CompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException {
         final ClientConnection connection = getOrConnect(target);
         return doSend(request, connection, handler);
     }
@@ -564,7 +564,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return future;
     }
 
-    private Future doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
+    private CompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
         final ClientCallFuture future = new ClientCallFuture(client, request, handler);
         _send(future, connection);
         return future;

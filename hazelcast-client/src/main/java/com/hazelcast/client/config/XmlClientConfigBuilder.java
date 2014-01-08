@@ -193,6 +193,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(getTextContent(child)));
             } else if ("invalidate-on-change".equals(nodeName)){
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
+            } else if ("cache-local-entries".equals(nodeName)){
+                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
             }
         }
         clientConfig.addNearCacheConfig(name, nearCacheConfig);

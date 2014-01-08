@@ -49,22 +49,26 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
         this.value = value;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new ListSetBackupOperation(name, oldItemId, itemId, value);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.LIST_SET;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         final ListContainer container = getOrCreateListContainer();
         itemId = container.nextId();
@@ -73,17 +77,20 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
         response = item.getValue();
     }
 
+    @Override
     public void afterRun() throws Exception {
         publishEvent(ItemEventType.REMOVED, (Data)response);
         publishEvent(ItemEventType.ADDED, value);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
         value.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
