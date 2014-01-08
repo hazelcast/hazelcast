@@ -30,7 +30,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
 
-    static final int RESPONSE = 0;
+    static final int NORMAL_RESPONSE = 0;
     static final int BACKUP = 1;
     static final int BACKUP_RESPONSE = 2;
     static final int PARTITION_ITERATOR = 3;
@@ -45,8 +45,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case RESPONSE:
-                        return new Response();
+                    case NORMAL_RESPONSE:
+                        return new NormalResponse();
                     case BACKUP:
                         return new Backup();
                     case BACKUP_RESPONSE:

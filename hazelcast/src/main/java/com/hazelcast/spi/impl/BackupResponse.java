@@ -16,59 +16,34 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.ReplicaErrorLogger;
-import com.hazelcast.spi.AbstractOperation;
-
-import java.io.IOException;
-
-final class BackupResponse extends AbstractOperation implements IdentifiedDataSerializable {
+/**
+ * The {Response} for a {@link com.hazelcast.spi.BackupOperation}. So when a operation like
+ * Map.put is done, backup operations are send to the backup partitions. For the initial
+ * Map.put to complete, the {@link com.hazelcast.spi.impl.NormalResponse} needs to return,
+ * but also the {@link com.hazelcast.spi.impl.BackupResponse} to make sure that the change
+ * is written to the expected number of backups.
+ */
+final class BackupResponse extends Response {
 
     public BackupResponse() {
     }
 
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final long callId = getCallId();
-        nodeEngine.operationService.notifyBackupCall(callId);
+    public BackupResponse(long callId, boolean urgent) {
+        super(callId, urgent);
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
-    public void logError(Throwable e) {
-        ReplicaErrorLogger.log(e, getLogger());
-    }
-
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    public int getId() {
+        return SpiDataSerializerHook.BACKUP_RESPONSE;
     }
 
     @Override
     public String toString() {
-        return "BackupResponse";
-    }
-
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return SpiDataSerializerHook.BACKUP_RESPONSE;
+        final StringBuilder sb = new StringBuilder();
+        sb.append("BackupResponse");
+        sb.append("{callId=").append(callId);
+        sb.append(", urgent=").append(urgent);
+        sb.append('}');
+        return sb.toString();
     }
 }
