@@ -34,7 +34,6 @@ public abstract class InvocationBuilder {
     public final static long DEFAULT_TRY_PAUSE_MILLIS = 500;
     public final static boolean DEFAULT_DESERIALIZE_RESULT = true;
 
-    protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
@@ -48,9 +47,8 @@ public abstract class InvocationBuilder {
     protected String executorName = null;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
 
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+    public InvocationBuilder(String serviceName, Operation op,
                                    int partitionId, Address target) {
-        this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
