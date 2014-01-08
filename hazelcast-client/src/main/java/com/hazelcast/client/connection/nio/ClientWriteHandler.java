@@ -99,7 +99,6 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
     }
 
     public void enqueueSocketWritable(SocketWritable socketWritable) {
-        socketWritable.onEnqueue();
         writeQueue.offer(socketWritable);
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
