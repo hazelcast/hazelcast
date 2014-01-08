@@ -45,7 +45,7 @@ public class ClientCountDownLatchTest {
     static ICountDownLatch l;
 
     @Before
-    public static void init() {
+    public void init() {
         Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         l = hz.getCountDownLatch(name);
