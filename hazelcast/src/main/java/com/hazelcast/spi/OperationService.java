@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.impl.Response;
 
 import java.util.Collection;
 import java.util.Map;
@@ -101,4 +102,6 @@ public interface OperationService {
      * @return
      */
     boolean send(Operation op, Address target);
+
+    boolean send(Response response, Address target);
 }

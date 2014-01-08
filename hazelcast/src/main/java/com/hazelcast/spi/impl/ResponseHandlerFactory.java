@@ -106,23 +106,18 @@ public final class ResponseHandlerFactory {
             long callId = op.getCallId();
             Connection conn = op.getConnection();
             if (!sent.compareAndSet(false, true)) {
-                throw new ResponseAlreadySentException("Response already sent for call: " + callId
+                throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                                                 + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
-            if(!(obj instanceof Response)){
-                obj = new Response(obj, op.getCallId(),0);
+            NormalResponse response;
+            if(!(obj instanceof NormalResponse)){
+                response = new NormalResponse(obj, op.getCallId(),0, op.isUrgent());
+            }else{
+                response = (NormalResponse)obj;
             }
 
-            NodeEngineImpl impl = (NodeEngineImpl) nodeEngine;
-            Data data = impl.toData(obj);
-            Packet packet = new Packet(data, impl.getSerializationContext());
-            packet.setHeader(Packet.HEADER_OP);
-            packet.setHeader(Packet.HEADER_RESPONSE);
-            if (op instanceof UrgentSystemOperation) {
-                packet.setHeader(Packet.HEADER_URGENT);
-            }
-            impl.send(packet, op.getConnection());
+            nodeEngine.getOperationService().send(response, op.getCallerAddress());
         }
 
         public boolean isLocal() {
@@ -143,7 +138,7 @@ public final class ResponseHandlerFactory {
 
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
-                throw new ResponseAlreadySentException("Response already sent for callback: " + callback
+                throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
                         + ", current-response: : " + obj);
             }
             callback.notify(obj);

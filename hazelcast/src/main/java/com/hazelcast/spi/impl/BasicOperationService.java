@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
@@ -188,7 +189,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    public void handleOperation(final Packet packet) {
+    public void receive(final Packet packet) {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 responseExecutor.execute(new ResponseProcessor(packet));
@@ -362,7 +363,7 @@ final class BasicOperationService implements InternalOperationService {
                     syncBackupCount = sendBackups(backupAwareOp);
                 }
                 if (returnsResponse) {
-                    response = new Response(op.getResponse(), op.getCallId(), syncBackupCount);
+                    response = new NormalResponse(op.getResponse(), op.getCallId(), syncBackupCount,op.isUrgent());
                 }
             }
             if (returnsResponse) {
@@ -667,6 +668,24 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
+    public boolean send(Response response, Address target) {
+        if (target == null) {
+            throw new IllegalArgumentException("Target is required!");
+        }
+        if (nodeEngine.getThisAddress().equals(target)) {
+            throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
+        }
+        Data data = nodeEngine.toData(response);
+        Packet packet = new Packet(data, nodeEngine.getSerializationContext());
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        if (response.isUrgent()) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        return nodeEngine.send(packet, node.getConnectionManager().getOrConnect(target));
+    }
+
     private boolean send(final Operation op, final Connection connection) {
         Data data = nodeEngine.toData(op);
         final int partitionId = getPartitionIdForExecution(op);
@@ -694,36 +713,16 @@ final class BasicOperationService implements InternalOperationService {
         return callId;
     }
 
-    // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
-    @PrivateApi
-    public void notifyRemoteCall(long callId, Object response) {
-        RemoteCall call = deregisterRemoteCall(callId);
-        if (call != null) {
-            call.offerResponse(response);
-        } else {
-            throw new HazelcastException("No call with id: " + callId + ", Response: " + response);
-        }
-    }
-
     @PrivateApi
     RemoteCall deregisterRemoteCall(long callId) {
         return remoteCalls.remove(callId);
     }
 
     @PrivateApi
-    @Override
-    public void notifyBackupCall(long callId) {
-        final BackupCompletionCallback backupCompletionCallback = backupCalls.get(callId);
-        if (backupCompletionCallback != null) {
-            backupCompletionCallback.signalOneBackupComplete();
-        }
-    }
-
-    @PrivateApi
     void registerBackupCall(long callId, BackupCompletionCallback backupCompletionCallback) {
         final BackupCompletionCallback current = backupCalls.put(callId, backupCompletionCallback);
         if (current != null) {
-            logger.warning( "Already registered a backup record for call[" + callId + "]!");
+            logger.warning("Already registered a backup record for call[" + callId + "]!");
         }
     }
 
@@ -862,6 +861,18 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
+    public void notifyBackupCall(long callId) {
+        try {
+            final BackupCompletionCallback callback = backupCalls.get(callId);
+            if (callback != null) {
+                callback.signalOneBackupComplete();
+            }
+        } catch (Exception e) {
+            ReplicaErrorLogger.log(e, logger);
+        }
+    }
+
     private class ResponseProcessor implements Runnable {
         final Packet packet;
 
@@ -869,12 +880,30 @@ final class BasicOperationService implements InternalOperationService {
             this.packet = packet;
         }
 
+        // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
+        private void notifyRemoteCall(NormalResponse response) {
+            RemoteCall call = deregisterRemoteCall(response.getCallId());
+            if (call == null) {
+                throw new HazelcastException("No call for response:"+response);
+            }
+
+            call.offerResponse(response);
+        }
+
+
         @Override
         public void run() {
             try {
                 final Data data = packet.getData();
                 final Response response = (Response)nodeEngine.toObject(data);
-                notifyRemoteCall(response.callId,response);
+
+                if(response instanceof NormalResponse){
+                    notifyRemoteCall((NormalResponse)response);
+                }else if(response instanceof BackupResponse){
+                    notifyBackupCall(response.getCallId());
+                }else{
+                    throw new IllegalStateException("Unrecognized response type: "+response);
+                }
             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
             }
