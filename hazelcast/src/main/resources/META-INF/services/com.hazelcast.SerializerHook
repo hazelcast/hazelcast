@@ -1,1 +1,2 @@
 com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook
+com.hazelcast.mapreduce.impl.PartitionStateSerializerHook

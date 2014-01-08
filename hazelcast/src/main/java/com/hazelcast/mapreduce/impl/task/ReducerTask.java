@@ -20,6 +20,7 @@ import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.mapreduce.impl.notification.ReducerResultNotification;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 
 import java.util.HashMap;
@@ -108,7 +109,9 @@ public class ReducerTask<Key, Chunk> implements Runnable {
 
                 if (checkFullyProcessed(processInformation)) {
                     Map reducedResults = getReducedResults();
-                    // TODO send reduced results
+                    ReducerResultNotification notification = new ReducerResultNotification(
+                            supervisor.getJobOwner(), name, jobId, reducerChunk.partitionId, reducedResults);
+                    mapReduceService.sendNotification(supervisor.getJobOwner(), notification);
                 }
             } catch (Exception ignore) {
                 //TODO

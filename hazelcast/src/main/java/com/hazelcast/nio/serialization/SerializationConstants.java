@@ -85,6 +85,8 @@ public final class SerializationConstants {
 
     public static final int AUTO_TYPE_ARRAY_LIST = -100;
 
+    public static final int AUTO_TYPE_JOB_PARTITION_STATE = -101;
+
     // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS
 

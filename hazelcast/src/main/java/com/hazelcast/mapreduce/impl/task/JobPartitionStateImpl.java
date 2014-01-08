@@ -17,22 +17,13 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
 
 public class JobPartitionStateImpl
-        implements JobPartitionState, IdentifiedDataSerializable {
+        implements JobPartitionState {
 
-    private Address address;
-    private State state;
-
-    public JobPartitionStateImpl() {
-    }
+    private final Address address;
+    private final State state;
 
     public JobPartitionStateImpl(Address address, State state) {
         this.address = address;
@@ -47,28 +38,6 @@ public class JobPartitionStateImpl
     @Override
     public State getState() {
         return state;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(address);
-        out.writeObject(state);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        address = in.readObject();
-        state = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapReduceDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return MapReduceDataSerializerHook.PARTITION_STATE;
     }
 
 }

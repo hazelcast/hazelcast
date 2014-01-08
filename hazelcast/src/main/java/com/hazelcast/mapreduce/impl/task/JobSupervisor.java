@@ -22,6 +22,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.mapreduce.impl.notification.ReducerResultNotification;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
@@ -82,6 +83,8 @@ public class JobSupervisor {
             LastChunkNotification lcn = (LastChunkNotification) notification;
             ReducerTask reducerTask = jobTracker.getReducerTask(lcn.getJobId());
             reducerTask.processChunk(lcn.getPartitionId(), lcn.getChunk());
+        } else if (notification instanceof ReducerResultNotification) {
+            System.out.println(notification);
         }
     }
 

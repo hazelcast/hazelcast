@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
+import com.hazelcast.mapreduce.impl.notification.ReducerResultNotification;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessing;
@@ -37,7 +38,7 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
     public static final int TRACKED_JOB_OPERATION = 4;
     public static final int REQUEST_PARTITION_PROCESSING = 5;
     public static final int REQUEST_PARTITION_PROCESSED = 6;
-    public static final int PARTITION_STATE = 7;
+    public static final int REDUCER_RESULT_MESSAGE = 7;
     public static final int CLIENT_MAP_REDUCE_REQUEST = 8;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
@@ -92,10 +93,10 @@ public class MapReduceDataSerializerHook implements DataSerializerHook {
                 return new RequestPartitionProcessed();
             }
         };
-        constructors[PARTITION_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[REDUCER_RESULT_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new JobPartitionStateImpl();
+                return new ReducerResultNotification();
             }
         };
         constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
