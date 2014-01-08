@@ -25,22 +25,21 @@ import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-public class RequestPartitionProcessing
+public class RequestPartitionProcessed
         extends ProcessingOperation {
 
-    private volatile JobPartitionState[] partitionStates = null;
+    protected volatile JobPartitionState[] partitionStates = null;
+
     private transient int partitionId;
 
-    public RequestPartitionProcessing() {
+    public RequestPartitionProcessed() {
     }
 
-    public RequestPartitionProcessing(String name, String jobId, int partitionId) {
+    public RequestPartitionProcessed(String name, String jobId, int partitionId) {
         super(name, jobId);
         this.partitionId = partitionId;
     }
@@ -59,35 +58,19 @@ public class RequestPartitionProcessing
         }
 
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
-        JobPartitionState newPartitonState = new JobPartitionStateImpl(getCallerAddress(),
-                JobPartitionState.State.PROCESSING);
+        JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(),
+                JobPartitionState.State.PROCESSED);
 
         if (checkState(processInformation)) {
             for (; ; ) {
                 JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
-                JobPartitionState[] newPartitonStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
+                JobPartitionState[] newPartitionStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
 
                 // Set new partition processing information
-                newPartitonStates[partitionId] = newPartitonState;
+                newPartitionStates[partitionId] = newPartitionState;
 
-                if (!processInformation.updatePartitionState(oldPartitionStates, newPartitonStates)) {
-                    if (checkState(processInformation)) {
-                        // Atomic update failed but partition is still not assigned, try again
-                        continue;
-                    }
-                } else {
+                if (!processInformation.updatePartitionState(oldPartitionStates, newPartitionStates)) {
                     JobPartitionState[] partitionStates = processInformation.getPartitionStates();
-                    JobPartitionState partitionState = partitionStates[partitionId];
-                    if (partitionState.getState() == JobPartitionState.State.PROCESSING
-                            && partitionState.getOwner().equals(getCallerAddress())) {
-                        // We managed to get the new partition processing assigned
-                        this.partitionStates = partitionStates;
-                        return;
-                    }
-
-                    // Since situation may happen on migration, two different members requested
-                    // the same partition to process, we should just return here and wait for
-                    // another request.
                     this.partitionStates = partitionStates;
                     return;
                 }

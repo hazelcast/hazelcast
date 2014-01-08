@@ -67,7 +67,7 @@ public class JobSupervisor {
         String jobId = configuration.getJobId();
 
         // Start reducer task
-        jobTracker.registerReducerTask(new ReducerTask(name, jobId, this, new ConcurrentLinkedQueue()));
+        jobTracker.registerReducerTask(new ReducerTask(name, jobId, this));
 
         // Start map-combiner tasks
         jobTracker.registerMapCombineTask(new MapCombineTask(configuration, this, mappingPhase));
@@ -81,7 +81,7 @@ public class JobSupervisor {
         } else if (notification instanceof LastChunkNotification) {
             LastChunkNotification lcn = (LastChunkNotification) notification;
             ReducerTask reducerTask = jobTracker.getReducerTask(lcn.getJobId());
-            reducerTask.processChunk(lcn.getChunk());
+            reducerTask.processChunk(lcn.getPartitionId(), lcn.getChunk());
         }
     }
 

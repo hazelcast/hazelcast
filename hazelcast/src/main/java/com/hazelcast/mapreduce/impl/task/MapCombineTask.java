@@ -83,7 +83,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         es.submit(new PartitionProcessor());
     }
 
-    public final void processMapping() {
+    public final void processMapping(int partitionId) {
         DefaultContext<KeyOut, ValueOut> context = createContext();
 
         if (mapper instanceof LifecycleMapper) {
@@ -99,7 +99,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
         for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
             mapReduceService.sendNotification(entry.getKey(),
-                    new LastChunkNotification(entry.getKey(), name, jobId, entry.getValue()));
+                    new LastChunkNotification(entry.getKey(), name, jobId, partitionId, entry.getValue()));
         }
     }
 
@@ -142,7 +142,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
                     keyValueSource.reset();
                     keyValueSource.open(nodeEngine);
-                    processMapping();
+                    processMapping(partitionId);
                     keyValueSource.close();
                 } catch (IOException ignore) {
                     // TODO is ignoring the correct thing to do here?
@@ -182,17 +182,21 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         private int processNewPartitionStates(JobProcessInformationImpl processInformation,
                                               JobPartitionState[] newPartitionStates) {
             for (; ; ) {
+                int selectedPartition = -1;
                 JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
-                if (processInformation.updatePartitionState(oldPartitionStates, newPartitionStates)) {
-                    for (int i = 0; i < newPartitionStates.length; i++) {
-                        JobPartitionState partitionState = newPartitionStates[i];
-                        if (partitionState != null
-                                && partitionState.getState() == JobPartitionState.State.PROCESSING
-                                && partitionState.getOwner().equals(supervisor.getJobOwner())) {
-                            return i;
-                        }
+                for (int i = 0; i < newPartitionStates.length; i++) {
+                    JobPartitionState partitionState = newPartitionStates[i];
+                    if (partitionState != null
+                            && partitionState.getState() == JobPartitionState.State.PROCESSING
+                            && partitionState.getOwner().equals(supervisor.getJobOwner())) {
+                        selectedPartition = i;
+                    } else {
+                        newPartitionStates[i] = oldPartitionStates[i];
                     }
-                    return -1;
+                }
+
+                if (processInformation.updatePartitionState(oldPartitionStates, newPartitionStates)) {
+                    return selectedPartition;
                 }
             }
         }

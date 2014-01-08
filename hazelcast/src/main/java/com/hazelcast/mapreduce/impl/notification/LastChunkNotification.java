@@ -29,18 +29,24 @@ public class LastChunkNotification<KeyOut, Value>
         extends MemberAwareMapReduceNotification {
 
     private Map<KeyOut, Value> chunk;
+    private int partitionId;
 
     public LastChunkNotification() {
     }
 
     public LastChunkNotification(Address address, String name, String jobId,
-                                 Map<KeyOut, Value> chunk) {
+                                 int partitionId, Map<KeyOut, Value> chunk) {
         super(address, name, jobId);
+        this.partitionId = partitionId;
         this.chunk = chunk;
     }
 
     public Map<KeyOut, Value> getChunk() {
         return chunk;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
@@ -51,6 +57,7 @@ public class LastChunkNotification<KeyOut, Value>
             out.writeObject(entry.getKey());
             out.writeObject(entry.getValue());
         }
+        out.writeInt(partitionId);
     }
 
     @Override
@@ -63,6 +70,7 @@ public class LastChunkNotification<KeyOut, Value>
             Value value = in.readObject();
             chunk.put(key, value);
         }
+        partitionId = in.readInt();
     }
 
     @Override

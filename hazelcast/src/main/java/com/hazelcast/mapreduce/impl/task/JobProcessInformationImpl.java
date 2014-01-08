@@ -18,7 +18,9 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
+import com.hazelcast.nio.Address;
 
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -47,6 +49,18 @@ public class JobProcessInformationImpl implements JobProcessInformation {
 
     public void addProcessRecords(int records) {
         processedRecords.addAndGet(records);
+    }
+
+    public boolean updatePartitionState(int partitionId, Address owner, JobPartitionState.State state) {
+        JobPartitionState newPartitionState = new JobPartitionStateImpl(owner, state);
+        for (;;) {
+            JobPartitionState[] oldPartitionStates = this.partitionStates;
+            JobPartitionState[] newPartitionStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
+            newPartitionStates[partitionId] = newPartitionState;
+            if (updatePartitionState(oldPartitionStates, newPartitionStates)) {
+                return true;
+            }
+        }
     }
 
     public boolean updatePartitionState(JobPartitionState[] oldPartitionStates, JobPartitionState[] newPartitionStates) {

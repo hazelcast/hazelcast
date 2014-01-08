@@ -25,6 +25,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.mapreduce.impl.operation.ProcessingOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessing;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
@@ -133,10 +134,10 @@ public class MapReduceService implements ManagedService, RemoteService {
         return partitionService.getPartitionOwner(partitionId);
     }
 
-    public <R> R processRequest(Address address, RequestPartitionProcessing requestPartitionProcessing)
+    public <R> R processRequest(Address address, ProcessingOperation processingOperation)
             throws ExecutionException, InterruptedException {
         Future<R> future = nodeEngine.getOperationService().invokeOnTarget(
-                MapReduceService.SERVICE_NAME, requestPartitionProcessing, address);
+                MapReduceService.SERVICE_NAME, processingOperation, address);
 
         return future.get();
     }
