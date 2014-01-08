@@ -47,6 +47,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testConfigAttributes() throws Exception {
         Config c = new Config();
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
         MemberAttributeConfig memberAttributeConfig = c.getMemberAttributeConfig();
         memberAttributeConfig.setAttribute("Test", Integer.valueOf(123));
 
@@ -86,6 +87,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testPresharedAttributes() throws Exception {
         Config c = new Config();
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
@@ -127,6 +129,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testAddAttributes() throws Exception {
         Config c = new Config();
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
@@ -182,6 +185,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testChangeAttributes() throws Exception {
         Config c = new Config();
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
@@ -237,6 +241,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testRemoveAttributes() throws Exception {
         Config c = new Config();
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
@@ -265,7 +270,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         h1.getCluster().addMembershipListener(listener);
         client.getCluster().addMembershipListener(listener);
 
-        m1.setAttribute("Test", null);
+        m1.removeAttribute("Test");
 
         // Force sleep to distribute value
         latch.await(2, TimeUnit.SECONDS);
