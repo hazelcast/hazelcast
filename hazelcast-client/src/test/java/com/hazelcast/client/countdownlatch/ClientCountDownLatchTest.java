@@ -44,14 +44,13 @@ public class ClientCountDownLatchTest {
     static HazelcastInstance hz;
     static ICountDownLatch l;
 
-    @BeforeClass
+    @Before
     public static void init() {
         Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         l = hz.getCountDownLatch(name);
     }
 
-    @Before
     @After
     public void clear() throws IOException {
         hz.getLifecycleService().shutdown();
