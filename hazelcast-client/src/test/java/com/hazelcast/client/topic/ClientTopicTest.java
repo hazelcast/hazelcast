@@ -20,9 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -43,15 +41,15 @@ public class ClientTopicTest {
     static HazelcastInstance server;
     static ITopic t;
 
-    @BeforeClass
-    public static void init(){
+    @Before
+    public void init(){
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         t = hz.getTopic(name);
     }
 
-    @AfterClass
-    public static void stop(){
+    @After
+    public void stop(){
         hz.getLifecycleService().shutdown();
         Hazelcast.shutdownAll();
     }
