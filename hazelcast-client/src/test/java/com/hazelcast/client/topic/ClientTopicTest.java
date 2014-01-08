@@ -43,14 +43,14 @@ public class ClientTopicTest {
     static HazelcastInstance second;
     static ITopic t;
 
-    @BeforeClass
+    @Before
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         t = hz.getTopic(name);
     }
 
-    @Before
+
     @After
     public void clear() throws IOException {
         hz.getLifecycleService().shutdown();
