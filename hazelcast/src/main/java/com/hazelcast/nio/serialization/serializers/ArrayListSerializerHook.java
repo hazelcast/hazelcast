@@ -47,21 +47,27 @@ public class ArrayListSerializerHook implements SerializerHook<ArrayList> {
 
         @Override
         public void write(ObjectDataOutput out, ArrayList object) throws IOException {
-            int size = object.size();
-            out.writeInt(size);
-            for (int i = 0; i < size; i++) {
-                out.writeObject(object.get(i));
+            out.writeBoolean(object != null);
+            if (object != null) {
+                int size = object.size();
+                out.writeInt(size);
+                for (int i = 0; i < size; i++) {
+                    out.writeObject(object.get(i));
+                }
             }
         }
 
         @Override
         public ArrayList read(ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            ArrayList result = new ArrayList(size);
-            for (int i = 0; i < size; i++) {
-                result.set(i, in.readObject());
+            if (in.readBoolean()) {
+                int size = in.readInt();
+                ArrayList result = new ArrayList(size);
+                for (int i = 0; i < size; i++) {
+                    result.add(i, in.readObject());
+                }
+                return result;
             }
-            return result;
+            return null;
         }
 
         @Override
