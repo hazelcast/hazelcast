@@ -189,10 +189,10 @@ public final class SerializationServiceBuilder {
             if (value instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware)value).setHazelcastInstance(hazelcastInstance);
             }
-            if (!ClassLoaderUtil.isInternalType(value.getClass())) {
-                ss.register(serializationType, serializer);
-            } else {
+            if (ClassLoaderUtil.isInternalType(value.getClass())) {
                 ss.safeRegister(serializationType, serializer);
+            } else {
+                ss.register(serializationType, serializer);
             }
         }
 
