@@ -73,13 +73,15 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 final class BasicOperationService implements InternalOperationService {
 
+    private final static AtomicLong x = new AtomicLong();
+
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
     final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
-    private final AtomicLong callIdGen = new AtomicLong(0);
-    private final ConcurrentMap<Long, BasicInvocation> invocations;
+    private final AtomicLong callIdGen = new AtomicLong((x.incrementAndGet()*1000000));
+     final ConcurrentMap<Long, BasicInvocation> localInvocations;
     private final ExecutorService[] operationExecutors;
     private final BlockingQueue[] operationExecutorQueues;
     private final ExecutorService defaultOperationExecutor;
@@ -101,7 +103,7 @@ final class BasicOperationService implements InternalOperationService {
         final int coreSize = Runtime.getRuntime().availableProcessors();
         final boolean reallyMultiCore = coreSize >= 8;
         final int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
-        invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
+        localInvocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
         operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
         operationExecutors = new ExecutorService[operationThreadCount];
@@ -140,7 +142,7 @@ final class BasicOperationService implements InternalOperationService {
 
     //for testing
     int getRegisteredInvocationCount(){
-        return invocations.size();
+        return localInvocations.size();
     }
 
     @Override
@@ -160,7 +162,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getRemoteOperationsCount(){
-        return invocations.size();
+        return localInvocations.size();
     }
 
     @Override
@@ -704,8 +706,8 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     long registerInvocation(BasicInvocation invocation) {
-        final long callId = newCallId();
-        invocations.put(callId, invocation);
+        long callId = newCallId();
+        localInvocations.put(callId, invocation);
         return callId;
     }
 
@@ -721,7 +723,12 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     BasicInvocation deregisterInvocation(long callId) {
-        return invocations.remove(callId);
+        BasicInvocation invocation = localInvocations.remove(callId);
+        //todo: remove logging from severe
+        if(invocation == null){
+            logger.severe("Deregistering non existing invocation");
+        }
+        return invocation;
     }
 
     @PrivateApi
@@ -739,12 +746,12 @@ final class BasicOperationService implements InternalOperationService {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
-                final Iterator<BasicInvocation> it = invocations.values().iterator();
+                final Iterator<BasicInvocation> it = localInvocations.values().iterator();
                 while (it.hasNext()) {
                     final BasicInvocation invocation = it.next();
                     if (invocation.isCallTarget(member)) {
                         it.remove();
-                        invocation.sendResponse(new MemberLeftException(member));
+                        invocation.invoke(new MemberLeftException(member));
                     }
                 }
             }
@@ -758,11 +765,10 @@ final class BasicOperationService implements InternalOperationService {
             executor.shutdown();
         }
         responseExecutor.shutdown();
-        final Object response = new HazelcastInstanceNotActiveException();
-        for (BasicInvocation call : invocations.values()) {
-            call.sendResponse(response);
+        for (BasicInvocation invocation : localInvocations.values()) {
+            invocation.invoke(new HazelcastInstanceNotActiveException());
         }
-        invocations.clear();
+        localInvocations.clear();
          backupScheduler.cancelAll();
         for (ExecutorService executor : operationExecutors) {
             try {
@@ -856,7 +862,7 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void notifyBackupCall(long callId) {
         try {
-            final BasicInvocation invocation = invocations.get(callId);
+            final BasicInvocation invocation = localInvocations.get(callId);
             if (invocation != null) {
                 invocation.signalOneBackupComplete();
             }
@@ -874,12 +880,12 @@ final class BasicOperationService implements InternalOperationService {
 
         // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
         private void notifyRemoteCall(NormalResponse response) {
-            BasicInvocation invocation = invocations.get(response.getCallId());
+            BasicInvocation invocation = localInvocations.get(response.getCallId());
             if (invocation == null) {
                 throw new HazelcastException("No call for response:"+response);
             }
 
-            invocation.sendResponse(response);
+            invocation.invoke(response);
         }
 
         @Override

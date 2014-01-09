@@ -139,7 +139,7 @@ public final class ResponseHandlerFactory {
                 throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
                         + ", current-response: : " + obj);
             }
-            callback.sendResponse(obj);
+            callback.invoke(obj);
         }
 
         public boolean isLocal() {

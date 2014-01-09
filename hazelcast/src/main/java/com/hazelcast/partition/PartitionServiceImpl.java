@@ -711,7 +711,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (thisAddress.equals(partition.getOwner()) && partition.getReplicaAddress(1) != null) {
                 Callback<Object> callback = new Callback<Object>() {
                     @Override
-                    public void sendResponse(Object object) {
+                    public void invoke(Object object) {
                         if (Boolean.FALSE.equals(object)) {
                             ok.compareAndSet(true, false);
                         }

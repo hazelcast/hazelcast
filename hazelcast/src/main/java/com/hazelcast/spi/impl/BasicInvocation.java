@@ -152,7 +152,7 @@ abstract class BasicInvocation implements Callback<Object> {
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
-                sendResponse(e);
+                invoke(e);
             } else {
                 throw ExceptionUtil.rethrow(e);
             }
@@ -165,8 +165,13 @@ abstract class BasicInvocation implements Callback<Object> {
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
-            sendResponse(new HazelcastInstanceNotActiveException());
+            invoke(new HazelcastInstanceNotActiveException());
             return;
+        }
+
+        long cid = op.getCallId();
+        if (cid > 0) {
+            BasicInvocation in = operationService.deregisterInvocation(cid);
         }
 
         final Address invTarget = getTarget();
@@ -176,27 +181,27 @@ abstract class BasicInvocation implements Callback<Object> {
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                sendResponse(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+                invoke(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
-                sendResponse(new HazelcastInstanceNotActiveException());
+                invoke(new HazelcastInstanceNotActiveException());
             }
             return;
         }
 
         member = nodeEngine.getClusterService().getMember(invTarget);
         if (!OperationAccessor.isJoinOperation(op) && member == null) {
-            sendResponse(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            invoke(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return;
         }
 
         if (op.getPartitionId() != partitionId) {
-            sendResponse(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+            invoke(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
                     " is not equal to the partition id of invocation: " + partitionId));
             return;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
-            sendResponse(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+            invoke(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
                     " is not equal to the replica index of invocation: " + replicaIndex));
             return;
         }
@@ -210,7 +215,7 @@ abstract class BasicInvocation implements Callback<Object> {
             boolean sent = operationService.send(op, invTarget);
             if (!sent) {
                 operationService.deregisterInvocation(callId);
-                sendResponse(new RetryableIOException("Packet not sent to -> " + invTarget));
+                invoke(new RetryableIOException("Packet not sent to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
@@ -230,10 +235,7 @@ abstract class BasicInvocation implements Callback<Object> {
         invokeCount = 0;
         potentialResponse = null;
         expectedBackupCount = -1;
-        long callId = op.getCallId();
-        if(callId>-1){
-            operationService.deregisterInvocation(callId);
-        }
+
         doInvoke();
     }
 
@@ -259,7 +261,7 @@ abstract class BasicInvocation implements Callback<Object> {
     }
 
     @Override
-    public void sendResponse(Object obj) {
+    public void invoke(Object obj) {
         Object response;
         if (obj == null) {
             response = NULL_RESPONSE;
@@ -450,6 +452,7 @@ abstract class BasicInvocation implements Callback<Object> {
 
     private class ReInvocationTask implements Runnable {
         public void run() {
+            //todo: why is the reinvoke method not called?
             doInvoke();
         }
     }
@@ -475,12 +478,12 @@ abstract class BasicInvocation implements Callback<Object> {
 
         @Override
         public void onResponse(E response) {
-            callback.sendResponse(response);
+            callback.invoke(response);
         }
 
         @Override
         public void onFailure(Throwable t) {
-            callback.sendResponse(t);
+            callback.invoke(t);
         }
     }
 
@@ -538,6 +541,40 @@ abstract class BasicInvocation implements Callback<Object> {
         }
 
         public void set(Object response) {
+            response = toResponse(response);
+
+            ExecutionCallbackNode<E> callbackChain;
+            synchronized (this) {
+                if (this.response != null && !(this.response instanceof InternalResponse)) {
+                    throw new IllegalArgumentException("The InvocationFuture.set method can only be called once for operation:"+
+                            op+" response:"+response+" this.response:"+this.response);
+                }
+                this.response = response;
+                if (response == WAIT_RESPONSE) {
+                    return;
+                }
+                callbackChain = callbackHead;
+                callbackHead = null;
+                this.notifyAll();
+            }
+
+            //we need to deregister the invocation to make sure that there is no memory leak.
+            final long callId = op.getCallId();
+            if (callId > 0) {
+                operationService.deregisterInvocation(callId);
+            }
+
+            notifyCallbacks(callbackChain);
+        }
+
+        private void notifyCallbacks(ExecutionCallbackNode<E> callbackChain) {
+            while (callbackChain != null) {
+                runAsynchronous(callbackChain.callback, callbackChain.executor);
+                callbackChain = callbackChain.next;
+            }
+        }
+
+        private Object toResponse(Object response) {
             if (response == null) {
                 throw new IllegalArgumentException("response can't be null");
             }
@@ -553,30 +590,7 @@ abstract class BasicInvocation implements Callback<Object> {
             if(resultDeserialized && response instanceof Data){
                 response = nodeEngine.toObject(response);
             }
-
-            ExecutionCallbackNode<E> callbackChain;
-            synchronized (this) {
-                if (this.response != null && !(this.response instanceof InternalResponse)) {
-                    throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
-                }
-                this.response = response;
-                if (response == WAIT_RESPONSE) {
-                    return;
-                }
-                callbackChain = callbackHead;
-                callbackHead = null;
-                this.notifyAll();
-            }
-
-            //we need to deregister the backup call to make sure that there is no memory leak.
-            if(op.getCallId()>-1){
-                operationService.deregisterInvocation(op.getCallId());
-            }
-
-            while (callbackChain != null) {
-                runAsynchronous(callbackChain.callback, callbackChain.executor);
-                callbackChain = callbackChain.next;
-            }
+            return response;
         }
 
         @Override
