@@ -75,6 +75,17 @@ public interface Job<KeyIn, ValueIn> {
     Job<KeyIn, ValueIn> onKeys(KeyIn... keys);
 
     /**
+     * Defines the number of elements per chunk. Whenever the chunk size is reached and a
+     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined the chunk will be send to the nodes that
+     * is responsible for the emitted keys.<br/>
+     * <b>Please note, that chunks are deactivated when no ReducerFactory is defined</b>
+     *
+     * @param chunkSize the number of elements per chunk
+     * @return instance of this Job with generics changed on usage
+     */
+    Job<KeyIn, ValueIn> chunkSize(int chunkSize);
+
+    /**
      * Defines the {@link KeyPredicate} implementation to preselect keys the MapReduce task will be executed on.
      * Preselecting keys can speed up the job massively.<br>
      * This method can be used in conjunction with {@link #onKeys(Iterable)} or {@link #onKeys(Object...)} to define a

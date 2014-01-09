@@ -190,6 +190,42 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
+    public void testMapperReducerChunked()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 10000; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        Job<Integer, Integer> task = tracker.newJob(KeyValueSource.fromMap(m1));
+        CompletableFuture<Map<String, Integer>> future =
+                task.chunkSize(10)
+                        .mapper(new GroupingTestMapper())
+                        .reducer(new TestReducerFactory())
+                        .submit();
+
+        Map<String, Integer> result = future.get();
+
+        // Precalculate results
+        int[] expectedResults = new int[4];
+        for (int i = 0; i < 10000; i++) {
+            int index = i % 4;
+            expectedResults[index] += i;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            assertEquals(expectedResults[i], (int) result.get(String.valueOf(i)));
+        }
+    }
+
+    @Test(timeout = 30000)
     public void testMapperCollator()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);

@@ -20,7 +20,6 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.AbstractJob;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
@@ -38,7 +37,7 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
     private final NodeEngine nodeEngine;
     private final MapReduceService mapReduceService;
 
-    public KeyValueJob(String name, JobTracker jobTracker, NodeEngine nodeEngine,
+    public KeyValueJob(String name, AbstractJobTracker jobTracker, NodeEngine nodeEngine,
                        MapReduceService mapReduceService,
                        KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         super(name, jobTracker, keyValueSource);
@@ -51,12 +50,18 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
         AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
         TrackableJobFuture<T> jobFuture = new TrackableJobFuture<T>(name, jobId, jobTracker, nodeEngine, collator);
         if (jobTracker.registerTrackableJob(jobFuture)) {
-            return startSupervisionTask(jobFuture);
+            return startSupervisionTask(jobFuture, jobTracker);
         }
         throw new IllegalStateException("Could not register map reduce job");
     }
 
-    private <T> CompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture) {
+    private <T> CompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
+                                                          AbstractJobTracker jobTracker) {
+
+        if (chunkSize == -1) {
+            chunkSize = jobTracker.getJobTrackerConfig().getChunkSize();
+        }
+
         ClusterService cs = nodeEngine.getClusterService();
         Collection<MemberImpl> members = cs.getMemberList();
         for (MemberImpl member : members) {

@@ -36,10 +36,12 @@ class NodeJobTracker extends AbstractJobTracker {
         return new KeyValueJob<K, V>(name, this, nodeEngine, mapReduceService, source);
     }
 
+    /*
+     * Deactivated for now since feature moved to Hazelcast 3.3
     @Override
     public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
         // TODO Implementation of process missing
         throw new UnsupportedOperationException("mapreduce process system not yet implemented");
-    }
+    }*/
 
 }

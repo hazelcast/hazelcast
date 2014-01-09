@@ -88,6 +88,7 @@ public class KeyValueJobOperation<K, V>
         out.writeObject(mapper);
         out.writeObject(combinerFactory);
         out.writeObject(reducerFactory);
+        out.writeInt(chunkSize);
     }
 
     @Override
@@ -98,6 +99,7 @@ public class KeyValueJobOperation<K, V>
         mapper = in.readObject();
         combinerFactory = in.readObject();
         reducerFactory = in.readObject();
+        chunkSize = in.readInt();
     }
 
     @Override

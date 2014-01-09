@@ -37,17 +37,13 @@ import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
 import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class ClientMapReduceRequest<KeyIn, ValueIn>
         extends InvocationClientRequest
@@ -99,7 +95,7 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
             AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.createDistributedObject(name);
             TrackableJobFuture jobFuture = new TrackableJobFuture(name, jobId, jobTracker, nodeEngine, null);
             if (jobTracker.registerTrackableJob(jobFuture)) {
-                CompletableFuture future = startSupervisionTask(jobFuture, mapReduceService, nodeEngine);
+                CompletableFuture future = startSupervisionTask(jobFuture, mapReduceService, nodeEngine, jobTracker);
                 future.andThen(new ExecutionCallback() {
                     @Override
                     public void onResponse(Object response) {
@@ -119,7 +115,13 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
 
     private <T> CompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
                                                           MapReduceService mapReduceService,
-                                                          NodeEngine nodeEngine) {
+                                                          NodeEngine nodeEngine,
+                                                          AbstractJobTracker jobTracker) {
+
+        if (chunkSize == -1) {
+            chunkSize = jobTracker.getJobTrackerConfig().getChunkSize();
+        }
+
         ClusterService cs = nodeEngine.getClusterService();
         Collection<MemberImpl> members = cs.getMemberList();
         for (MemberImpl member : members) {
@@ -188,17 +190,6 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
     @Override
     public int getId() {
         return MapReduceDataSerializerHook.CLIENT_MAP_REDUCE_REQUEST;
-    }
-
-    private InvocationBuilder buildInvocationBuilder(String serviceName, Operation operation, int partitionId) {
-        return createInvocationBuilder(serviceName, operation, partitionId).setExecutorName(MapReduceUtil.buildExecutorName(name));
-    }
-
-    private Object toObject(SerializationService ss, Object value) {
-        if (value instanceof Data) {
-            return ss.toObject((Data) value);
-        }
-        return value;
     }
 
 }

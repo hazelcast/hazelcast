@@ -71,6 +71,10 @@ public abstract class AbstractJobTracker implements JobTracker {
         return MapReduceService.SERVICE_NAME;
     }
 
+    public JobTrackerConfig getJobTrackerConfig() {
+        return jobTrackerConfig;
+    }
+
     public <V> boolean registerTrackableJob(TrackableJobFuture<V> trackableJob) {
         return trackableJobs.putIfAbsent(trackableJob.getJobId(), trackableJob) == null;
     }

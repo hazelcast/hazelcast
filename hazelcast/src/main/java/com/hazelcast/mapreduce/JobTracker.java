@@ -67,6 +67,7 @@ public interface JobTracker
      * @param source data source the created Job should work on
      * @return instance of the ProcessJob bound to the given KeyValueSource
      */
-    <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source);
+    // This feature is moved to Hazelcast 3.3
+    //<K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source);
 
 }

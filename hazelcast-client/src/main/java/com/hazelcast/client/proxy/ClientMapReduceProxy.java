@@ -30,14 +30,11 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.AbstractJob;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
-import com.hazelcast.mapreduce.process.ProcessJob;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -60,11 +57,13 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
         return new ClientJob<K, V>(getName(), source);
     }
 
+    /*
+     * Removed for now since it is moved to Hazelcast 3.3
     @Override
     public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
         // TODO
         return null;
-    }
+    }*/
 
     private class ClientJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 

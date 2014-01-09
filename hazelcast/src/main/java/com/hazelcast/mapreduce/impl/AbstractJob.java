@@ -102,6 +102,12 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         return this;
     }
 
+    @Override
+    public Job<KeyIn, ValueIn> chunkSize(int chunkSize) {
+        this.chunkSize = chunkSize;
+        return this;
+    }
+
     protected <T> CompletableFuture<T> submit(Collator collator) {
         prepareKeyPredicate();
         return invoke(collator);
@@ -180,6 +186,12 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         }
 
         @Override
+        public MappingJob<EntryKey, Key, Value> chunkSize(int chunkSize) {
+            AbstractJob.this.chunkSize = chunkSize;
+            return this;
+        }
+
+        @Override
         public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(
                 CombinerFactory<Key, Value, ValueOut> combinerFactory) {
             ValidationUtil.isNotNull(combinerFactory, "combinerFactory");
@@ -248,6 +260,12 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         }
 
         @Override
+        public ReducingJob<EntryKey, Key, Value> chunkSize(int chunkSize) {
+            AbstractJob.this.chunkSize = chunkSize;
+            return this;
+        }
+
+        @Override
         public CompletableFuture<Map<Key, List<Value>>> submit() {
             return AbstractJob.this.submit();
         }
@@ -282,6 +300,12 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         @Override
         public ReducingSubmittableJob<EntryKey, Key, Value> keyPredicate(KeyPredicate<EntryKey> predicate) {
             setKeyPredicate((KeyPredicate<KeyIn>) predicate);
+            return this;
+        }
+
+        @Override
+        public ReducingSubmittableJob<EntryKey, Key, Value> chunkSize(int chunkSize) {
+            AbstractJob.this.chunkSize = chunkSize;
             return this;
         }
 

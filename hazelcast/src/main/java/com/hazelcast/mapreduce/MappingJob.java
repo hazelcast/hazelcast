@@ -72,6 +72,17 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
     MappingJob<EntryKey, KeyIn, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
 
     /**
+     * Defines the number of elements per chunk. Whenever the chunk size is reached and a
+     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined the chunk will be send to the nodes that
+     * is responsible for the emitted keys.<br/>
+     * <b>Please note, that chunks are deactivated when no ReducerFactory is defined</b>
+     *
+     * @param chunkSize the number of elements per chunk
+     * @return instance of this Job with generics changed on usage
+     */
+    MappingJob<EntryKey, KeyIn, ValueIn> chunkSize(int chunkSize);
+
+    /**
      * Defines the {@link CombinerFactory} for this task. This method is not idempotent and is callable only one time. Further
      * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
      *
