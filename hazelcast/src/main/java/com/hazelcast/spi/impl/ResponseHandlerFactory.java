@@ -16,15 +16,44 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author mdogan 8/2/12
  */
 public final class ResponseHandlerFactory {
 
-   public static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
+    private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
+
+    public static void setLocalResponseHandler(Operation op, Callback<Object> callback) {
+        op.setResponseHandler(createLocalResponseHandler(op, callback));
+    }
+
+    public static ResponseHandler createLocalResponseHandler(Operation op, Callback<Object> callback) {
+        return new LocalInvocationResponseHandler(callback, op.getCallId());
+    }
+
+    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
+        op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
+    }
+
+    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
+        if (op.getCallId() == 0) {
+            if (op.returnsResponse()) {
+                throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
+            }
+            return NO_RESPONSE_HANDLER;
+        }
+        return new RemoteInvocationResponseHandler(nodeEngine, op);
+    }
 
     public static ResponseHandler createEmptyResponseHandler() {
         return NO_RESPONSE_HANDLER;
@@ -55,6 +84,64 @@ public final class ResponseHandlerFactory {
                 Throwable t = (Throwable) obj;
                 logger.severe(t);
             }
+        }
+
+        public boolean isLocal() {
+            return true;
+        }
+    }
+
+    private static class RemoteInvocationResponseHandler implements ResponseHandler {
+
+        private final NodeEngine nodeEngine;
+        private final Operation op;
+        private final AtomicBoolean sent = new AtomicBoolean(false);
+
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation op) {
+            this.nodeEngine = nodeEngine;
+            this.op = op;
+        }
+
+        public void sendResponse(Object obj) {
+            long callId = op.getCallId();
+            Connection conn = op.getConnection();
+            if (!sent.compareAndSet(false, true)) {
+                throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
+                                                + " to " + conn.getEndPoint() + ", current-response: " + obj);
+            }
+
+            NormalResponse response;
+            if(!(obj instanceof NormalResponse)){
+                response = new NormalResponse(obj, op.getCallId(),0, op.isUrgent());
+            }else{
+                response = (NormalResponse)obj;
+            }
+
+            nodeEngine.getOperationService().send(response, op.getCallerAddress());
+        }
+
+        public boolean isLocal() {
+            return false;
+        }
+    }
+
+    private static class LocalInvocationResponseHandler implements ResponseHandler {
+
+        private final Callback<Object> callback;
+        private final long callId;
+        private final AtomicBoolean sent = new AtomicBoolean(false);
+
+        private LocalInvocationResponseHandler(Callback<Object> callback, long callId) {
+            this.callback = callback;
+            this.callId = callId;
+        }
+
+        public void sendResponse(Object obj) {
+            if (!sent.compareAndSet(false, true)) {
+                throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
+                        + ", current-response: : " + obj);
+            }
+            callback.notify(obj);
         }
 
         public boolean isLocal() {

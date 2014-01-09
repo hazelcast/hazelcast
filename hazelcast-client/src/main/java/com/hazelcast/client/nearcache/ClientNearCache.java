@@ -103,7 +103,7 @@ public class ClientNearCache<K> {
             }
             listenerSupport = new ListenerSupport(context, request, handler, null);
             listenerSupport.listen(new Callback<Exception>() {
-                public void invoke(Exception ignored) {
+                public void notify(Exception ignored) {
                     cache.clear();
                 }
             });
