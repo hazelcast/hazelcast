@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-public interface Callback<T> {
+public interface BackupCompletionCallback {
 
-    void notify(T object);
+    void signalOneBackupComplete();
 }

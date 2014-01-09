@@ -66,7 +66,7 @@ public final class ListenerSupport  {
                         }
                     } catch (Exception e) {
                         if (callback != null) {
-                            callback.invoke(e);
+                            callback.notify(e);
                         }
                         if (e instanceof HazelcastInstanceNotActiveException){
                             try {
