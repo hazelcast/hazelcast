@@ -738,17 +738,20 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public RecordInfo createRecordInfo(MapContainer mapContainer, Record record, Data key) {
+        // this info is created to be used in backups.
+        // we added following latency (10 seconds) to be sure the ongoing migration is completed if the owner of the record could not complete task before migrating
+        int backupDelay = 10000;
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(record.getKey());
-        long idleDelay = idleScheduledEntry == null ? -1 : findDelayMillis(idleScheduledEntry);
+        long idleDelay = idleScheduledEntry == null ? -1 : backupDelay + findDelayMillis(idleScheduledEntry);
 
         ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
-        long ttlDelay = ttlScheduledEntry == null ? -1 : findDelayMillis(ttlScheduledEntry);
+        long ttlDelay = ttlScheduledEntry == null ? -1 : backupDelay + findDelayMillis(ttlScheduledEntry);
 
         ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
-        long writeDelay = writeScheduledEntry == null ? -1 : findDelayMillis(writeScheduledEntry);
+        long writeDelay = writeScheduledEntry == null ? -1 : backupDelay + findDelayMillis(writeScheduledEntry);
 
         ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
-        long deleteDelay = deleteScheduledEntry == null ? -1 : findDelayMillis(deleteScheduledEntry);
+        long deleteDelay = deleteScheduledEntry == null ? -1 : backupDelay + findDelayMillis(deleteScheduledEntry);
 
         return new RecordInfo(record.getStatistics(),
                 idleDelay, ttlDelay, writeDelay, deleteDelay);
