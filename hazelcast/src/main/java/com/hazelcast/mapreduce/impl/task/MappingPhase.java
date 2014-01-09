@@ -33,7 +33,6 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
     }
 
     protected boolean matches(KeyIn key) {
-        System.out.println(key);
         if ((keys == null || keys.size() == 0) && predicate == null) {
             return true;
         }

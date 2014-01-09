@@ -18,14 +18,20 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.mapreduce.AbstractMapReduceJobTest;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 
-public class AbstractClientMapReduceJobTest extends AbstractMapReduceJobTest {
+public abstract class AbstractClientMapReduceJobTest {
 
     protected ClientConfig buildClientConfig()
     {
         ClientConfig config = new XmlClientConfigBuilder().build();
-        config.setManagedContext( new CountingManagedContext() );
+        return config;
+    }
+
+    protected Config buildConfig() {
+        Config config = new XmlConfigBuilder().build();
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
         return config;
     }
 

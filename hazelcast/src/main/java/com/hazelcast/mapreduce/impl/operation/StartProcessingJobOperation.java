@@ -77,8 +77,8 @@ public class StartProcessingJobOperation<K, V>
         out.writeUTF(jobId);
         out.writeInt(keys == null ? 0 : keys.size());
         if (keys != null) {
-            for (int i = 0; i < keys.size(); i++) {
-                out.writeObject(keys);
+            for (Object key : keys) {
+                out.writeObject(key);
             }
         }
         out.writeObject(mapper);
