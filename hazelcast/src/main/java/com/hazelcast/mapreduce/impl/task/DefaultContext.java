@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
 
@@ -51,7 +52,8 @@ public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {
         Map<KeyIn, Chunk> chunkMap = new HashMap<KeyIn, Chunk>(combiners.size());
         for (Map.Entry<KeyIn, Combiner<KeyIn, ValueIn, ?>> entry : combiners.entrySet()) {
-            chunkMap.put(entry.getKey(), (Chunk) entry.getValue().finalizeChunk());
+            Chunk chunk = (Chunk) entry.getValue().finalizeChunk();
+            chunkMap.put(entry.getKey(), chunk);
         }
         collected = 0;
         return chunkMap;
@@ -85,7 +87,7 @@ public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
         public Combiner<KeyIn, ValueIn, List<ValueIn>> newCombiner(KeyIn key) {
             return new Combiner<KeyIn, ValueIn, List<ValueIn>>() {
 
-                private final List<ValueIn> values = new ArrayList<ValueIn>();
+                private final List<ValueIn> values = new CopyOnWriteArrayList<ValueIn>();
 
                 @Override
                 public void combine(KeyIn key, ValueIn value) {

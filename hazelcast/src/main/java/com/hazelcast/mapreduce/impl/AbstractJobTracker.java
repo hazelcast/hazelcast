@@ -20,19 +20,16 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.task.MapCombineTask;
 import com.hazelcast.mapreduce.impl.task.ReducerTask;
+import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public abstract class AbstractJobTracker implements JobTracker {
 
-    protected final ConcurrentMap<String, TrackableJob> trackableJobs = new ConcurrentHashMap<String, TrackableJob>();
+    protected final ConcurrentMap<String, TrackableJobFuture> trackableJobs = new ConcurrentHashMap<String, TrackableJobFuture>();
     protected final ConcurrentMap<String, ReducerTask> reducerTasks = new ConcurrentHashMap<String, ReducerTask>();
     protected final ConcurrentMap<String, MapCombineTask> mapCombineTasks = new ConcurrentHashMap<String, MapCombineTask>();
     protected final NodeEngine nodeEngine;
@@ -74,15 +71,15 @@ public abstract class AbstractJobTracker implements JobTracker {
         return MapReduceService.SERVICE_NAME;
     }
 
-    public <V> boolean registerTrackableJob(TrackableJob<V> trackableJob) {
+    public <V> boolean registerTrackableJob(TrackableJobFuture<V> trackableJob) {
         return trackableJobs.putIfAbsent(trackableJob.getJobId(), trackableJob) == null;
     }
 
-    public <V> boolean unregisterTrackableJob(TrackableJob<V> trackableJob) {
+    public <V> boolean unregisterTrackableJob(TrackableJobFuture<V> trackableJob) {
         return trackableJobs.remove(trackableJob) != null;
     }
 
-    public <V> TrackableJob<V> getTrackableJob(String jobId) {
+    public <V> TrackableJobFuture<V> getTrackableJob(String jobId) {
         return trackableJobs.get(jobId);
     }
 
@@ -110,7 +107,7 @@ public abstract class AbstractJobTracker implements JobTracker {
     }
 
     public <KeyIn, ValueIn, KeyOut, ValueOut, Chunk>
-            MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> getMapCombineTask(String jobId) {
+    MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> getMapCombineTask(String jobId) {
         return mapCombineTasks.get(jobId);
     }
 

@@ -25,19 +25,19 @@ import java.io.IOException;
 
 public class RequestPartitionResult implements IdentifiedDataSerializable {
 
-    private State state;
+    private ResultState resultState;
     private int partitionId;
 
     public RequestPartitionResult() {
     }
 
-    public RequestPartitionResult(State state, int partitionId) {
-        this.state = state;
+    public RequestPartitionResult(ResultState resultState, int partitionId) {
+        this.resultState = resultState;
         this.partitionId = partitionId;
     }
 
-    public State getState() {
-        return state;
+    public ResultState getResultState() {
+        return resultState;
     }
 
     public int getPartitionId() {
@@ -46,13 +46,13 @@ public class RequestPartitionResult implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(state.ordinal());
+        out.writeInt(resultState.ordinal());
         out.writeInt(partitionId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        state = State.byOrdinal(in.readInt());
+        resultState = ResultState.byOrdinal(in.readInt());
         partitionId = in.readInt();
     }
 
@@ -69,20 +69,21 @@ public class RequestPartitionResult implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         return "RequestPartitionResult{" +
-                "state=" + state +
+                "resultState=" + resultState +
                 ", partitionId=" + partitionId +
                 '}';
     }
 
-    public static enum State {
+    public static enum ResultState {
         SUCCESSFUL,
         NO_SUPERVISOR,
-        CHECK_STATE_FAILED,;
+        CHECK_STATE_FAILED,
+        NO_MORE_PARTITIONS,;
 
-        public static State byOrdinal(int ordinal) {
-            for (State state : values()) {
-                if (ordinal == state.ordinal()) {
-                    return state;
+        public static ResultState byOrdinal(int ordinal) {
+            for (ResultState resultState : values()) {
+                if (ordinal == resultState.ordinal()) {
+                    return resultState;
                 }
             }
             return null;

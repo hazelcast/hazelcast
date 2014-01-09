@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.LifecycleMapper;
 import com.hazelcast.mapreduce.Mapper;
@@ -32,16 +30,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.mapResultToMember;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
     private final Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper;
-    private final CombinerFactory<KeyOut, ValueOut, Chunk> combinerFactory;
     private final MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> mappingPhase;
     private final KeyValueSource<KeyIn, ValueIn> keyValueSource;
     private final MapReduceService mapReduceService;
@@ -62,7 +62,6 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         this.chunkSize = configuration.getChunkSize();
         this.nodeEngine = configuration.getNodeEngine();
         this.mapReduceService = supervisor.getMapReduceService();
-        this.combinerFactory = configuration.getCombinerFactory();
         this.keyValueSource = configuration.getKeyValueSource();
     }
 
@@ -84,7 +83,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     }
 
     public final void processMapping(int partitionId) {
-        DefaultContext<KeyOut, ValueOut> context = createContext();
+        DefaultContext<KeyOut, ValueOut> context = supervisor.createContext(this);
 
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).initialize(context);
@@ -94,17 +93,21 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             ((LifecycleMapper) mapper).finalized(context);
         }
 
-        Map<KeyOut, Chunk> chunkMap = context.finish();
         try {
             RequestPartitionResult result = mapReduceService.processRequest(
                     supervisor.getJobOwner(), new RequestPartitionReducing(name, jobId, partitionId));
 
-            if (result.getState() == RequestPartitionResult.State.SUCCESSFUL) {
-                // Wrap into LastChunkNotification object
-                Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
-                for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
-                    mapReduceService.sendNotification(entry.getKey(),
-                            new LastChunkNotification(entry.getKey(), name, jobId, partitionId, entry.getValue()));
+            if (result.getResultState() == SUCCESSFUL) {
+                // If we have a reducer defined just send it over
+                if (supervisor.getConfiguration().getReducerFactory() != null) {
+                    Map<KeyOut, Chunk> chunkMap = context.finish();
+
+                    // Wrap into LastChunkNotification object
+                    Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+                    for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+                        mapReduceService.sendNotification(entry.getKey(),
+                                new LastChunkNotification(entry.getKey(), name, jobId, partitionId, entry.getValue()));
+                    }
                 }
             } else {
                 System.out.println(result);
@@ -114,18 +117,18 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
-    private DefaultContext<KeyOut, ValueOut> createContext() {
-        return new DefaultContext<KeyOut, ValueOut>(combinerFactory, this);
-    }
-
     void onEmit(DefaultContext<KeyOut, ValueOut> context) {
-        if (context.getCollected() == chunkSize) {
-            Map<KeyOut, Chunk> chunkMap = context.requestChunk();
-            // Wrap into IntermediateChunkNotification object
-            Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
-            for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
-                mapReduceService.sendNotification(entry.getKey(),
-                        new IntermediateChunkNotification(entry.getKey(), name, jobId, entry.getValue()));
+        // If we have a reducer let's test for chunk size otherwise
+        // we need to collect all values locally and wait for final request
+        if (supervisor.getConfiguration().getReducerFactory() != null) {
+            if (context.getCollected() == chunkSize) {
+                Map<KeyOut, Chunk> chunkMap = context.requestChunk();
+                // Wrap into IntermediateChunkNotification object
+                Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+                for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+                    mapReduceService.sendNotification(entry.getKey(),
+                            new IntermediateChunkNotification(entry.getKey(), name, jobId, entry.getValue()));
+                }
             }
         }
     }
@@ -141,7 +144,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     return;
                 }
 
-                // Migration event occured, just retry
+                // Migration event occurred, just retry
                 if (partitionId == -1) {
                     continue;
                 }
@@ -162,36 +165,26 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
 
         private Integer findNewPartitionProcessing() {
-            List<Integer> localPartitions = mapReduceService.getLocalPartitions();
-            JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
-            JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
-            for (int i = 0; i < oldPartitionStates.length; i++) {
-                try {
-                    JobPartitionState partitionState = oldPartitionStates[i];
-                    if (partitionState == null || partitionState.getState() == JobPartitionState.State.WAITING) {
-                        if (localPartitions.contains(i)) {
-                            RequestPartitionResult result = mapReduceService.processRequest(
-                                    supervisor.getJobOwner(), new RequestPartitionMapping(name, jobId));
+            try {
+                RequestPartitionResult result = mapReduceService.processRequest(
+                        supervisor.getJobOwner(), new RequestPartitionMapping(name, jobId));
 
-                            // JobSupervisor doesn't exists anymore on jobOwner, job done?
-                            if (result.getState() == RequestPartitionResult.State.NO_SUPERVISOR) {
-                                System.out.println("MapCombineTask::jobDone?");
-                                return null;
-                            } else if (result.getState() == RequestPartitionResult.State.CHECK_STATE_FAILED) {
-                                // retry
-                                return -1;
-                            } else {
-                                return result.getPartitionId();
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                // JobSupervisor doesn't exists anymore on jobOwner, job done?
+                if (result.getResultState() == NO_SUPERVISOR) {
+                    System.out.println("MapCombineTask::jobDone?");
+                    return null;
+                } else if (result.getResultState() == CHECK_STATE_FAILED) {
+                    // retry
+                    return -1;
+                } else if (result.getResultState() == NO_MORE_PARTITIONS) {
+                    return null;
+                } else {
+                    return result.getPartitionId();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-
-            // No further partitions available?
-            return null;
         }
 
     }

@@ -72,7 +72,7 @@ public class MapReduceTest
         });
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 100; i++) {
             m1.put(i, i);
         }
 

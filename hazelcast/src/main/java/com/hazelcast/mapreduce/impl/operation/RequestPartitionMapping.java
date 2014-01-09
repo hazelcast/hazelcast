@@ -20,15 +20,20 @@ import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
+
+import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
+import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class RequestPartitionMapping
         extends ProcessingOperation {
@@ -52,34 +57,27 @@ public class RequestPartitionMapping
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor == null) {
-            result = new RequestPartitionResult(RequestPartitionResult.State.NO_SUPERVISOR, -1);
-            System.out.println("No supervisor found");
+            result = new RequestPartitionResult(NO_SUPERVISOR, -1);
             return;
         }
 
         List<Integer> memberPartitions = mapReduceService.getMemberPartitions(getCallerAddress());
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
-        JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(),
-                JobPartitionState.State.MAPPING);
 
         for (; ; ) {
-            JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
             int selectedPartition = searchMemberPartitionToProcess(processInformation, memberPartitions);
-            if (selectedPartition > -1) {
-                JobPartitionState[] newPartitonStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
+            if (selectedPartition == -1) {
+                // All partitions seem to be assigned so give up
+                result = new RequestPartitionResult(NO_MORE_PARTITIONS, -1);
+                return;
+            }
 
-                // Set new partition processing information
-                newPartitonStates[selectedPartition] = newPartitionState;
+            JobPartitionState.State nextState = stateChange(getCallerAddress(), selectedPartition, WAITING,
+                    processInformation, supervisor.getConfiguration());
 
-                if (!processInformation.updatePartitionState(oldPartitionStates, newPartitonStates)) {
-                    if (checkState(processInformation, selectedPartition)) {
-                        // Atomic update failed but partition is still not assigned, try again
-                        continue;
-                    }
-                } else {
-                    result = new RequestPartitionResult(RequestPartitionResult.State.SUCCESSFUL, selectedPartition);
-                    return;
-                }
+            if (nextState == MAPPING) {
+                result = new RequestPartitionResult(SUCCESSFUL, selectedPartition);
+                return;
             }
         }
     }

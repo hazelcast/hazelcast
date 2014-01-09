@@ -54,6 +54,24 @@ public class JobProcessInformationImpl implements JobProcessInformation {
         processedRecords.addAndGet(records);
     }
 
+    public boolean updatePartitionState(int partitionId, JobPartitionState oldPartitionState,
+                                        JobPartitionState newPartitionState) {
+
+        ValidationUtil.isNotNull(newPartitionState, "newPartitionState");
+        for (;; ) {
+            JobPartitionState[] oldPartitionStates = getPartitionStates();
+            if (oldPartitionStates[partitionId] != oldPartitionState) {
+                return false;
+            }
+
+            JobPartitionState[] newPartitionStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
+            newPartitionStates[partitionId] = newPartitionState;
+            if (updatePartitionState(oldPartitionStates, newPartitionStates)) {
+                return true;
+            }
+        }
+    }
+
     public boolean updatePartitionState(JobPartitionState[] oldPartitionStates,
                                         JobPartitionState[] newPartitionStates) {
         ValidationUtil.isNotNull(newPartitionStates, "newPartitionStates");

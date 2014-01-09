@@ -26,15 +26,22 @@ import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.mapreduce.impl.operation.GetResultOperationFactory;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class JobSupervisor {
 
     private final ConcurrentMap<Object, Reducer> reducers = new ConcurrentHashMap<Object, Reducer>();
+    private final AtomicReference<DefaultContext> context = new AtomicReference<DefaultContext>();
 
     private final Address jobOwner;
     private final boolean ownerNode;
@@ -86,6 +93,20 @@ public class JobSupervisor {
         }
     }
 
+    public Map<Object, Object> getJobResults() {
+        Map<Object, Object> result = null;
+        if (configuration.getReducerFactory() != null) {
+            result = new HashMap<Object, Object>();
+            for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {
+                result.put(entry.getKey(), entry.getValue().finalizeReduce());
+            }
+        } else {
+            DefaultContext context = this.context.get();
+            result = context.finish();
+        }
+        return result;
+    }
+
     public <KeyIn, ValueIn, ValueOut> Reducer<KeyIn, ValueIn, ValueOut> getReducerByKey(Object key) {
         Reducer reducer = reducers.get(key);
         if (reducer == null && configuration.getReducerFactory() != null) {
@@ -99,20 +120,59 @@ public class JobSupervisor {
     public void checkFullyProcessed(JobProcessInformation processInformation) {
         if (isOwnerNode()) {
             JobPartitionState[] partitionStates = processInformation.getPartitionStates();
-            System.out.println("Finished: " + MapReduceUtil.printPartitionStates(partitionStates));
             for (JobPartitionState partitionState : partitionStates) {
                 if (partitionState == null
-                        || partitionState.getState() == JobPartitionState.State.PROCESSED) {
+                        || partitionState.getState() != JobPartitionState.State.PROCESSED) {
                     return;
                 }
             }
-            System.out.println("Finished processing...");
-            // TODO Request reduced results
+            System.out.println("Finished: " + MapReduceUtil.printPartitionStates(partitionStates));
+            System.out.println("Requesting results...");
+
+            String name = configuration.getName();
+            String jobId = configuration.getJobId();
+            NodeEngine nodeEngine = configuration.getNodeEngine();
+            List<Map> results = MapReduceUtil.executeOperation(new GetResultOperationFactory(name, jobId),
+                    mapReduceService, nodeEngine, true);
+
+            boolean reducedResult = configuration.getReducerFactory() != null;
+
+            if (results != null) {
+                Map<Object, Object> mergedResults = new HashMap<Object, Object>();
+                for (Map<?, ?> map : results) {
+                    for (Map.Entry entry : map.entrySet()) {
+                        if (reducedResult) {
+                            mergedResults.put(entry.getKey(), entry.getValue());
+
+                        } else {
+                            List<Object> list = (List) mergedResults.get(entry.getKey());
+                            if (list == null) {
+                                list = new ArrayList<Object>();
+                                mergedResults.put(entry.getKey(), list);
+                            }
+                            for (Object value : (List) entry.getValue()) {
+                                list.add(value);
+                            }
+                        }
+                    }
+
+                    // Set the result and finish the request
+                    // TODO Feature Collator
+                    TrackableJobFuture future = jobTracker.getTrackableJob(jobId);
+                    future.setResult(mergedResults);
+                }
+            }
         }
     }
 
-    public <Key> Map<Key, Reducer> getReducers() {
-        return (Map<Key, Reducer>) reducers;
+    public <K, V> DefaultContext<K, V> createContext(MapCombineTask mapCombineTask) {
+        DefaultContext<K, V> context = new DefaultContext<K, V>(
+                configuration.getCombinerFactory(), mapCombineTask);
+
+        if (this.context.compareAndSet(null, context)) {
+            return context;
+        }
+        return this.context.get();
     }
 
     public JobProcessInformationImpl getJobProcessInformation() {

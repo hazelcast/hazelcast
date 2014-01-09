@@ -19,14 +19,18 @@ package com.hazelcast.mapreduce.impl.operation;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Arrays;
+
+import static com.hazelcast.mapreduce.JobPartitionState.State.PROCESSED;
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class RequestPartitionProcessed
         extends ProcessingOperation {
@@ -34,13 +38,16 @@ public class RequestPartitionProcessed
     protected volatile RequestPartitionResult result;
 
     private transient int partitionId;
+    private transient JobPartitionState.State currentState;
 
     public RequestPartitionProcessed() {
     }
 
-    public RequestPartitionProcessed(String name, String jobId, int partitionId) {
+    public RequestPartitionProcessed(String name, String jobId, int partitionId,
+                                     JobPartitionState.State currentState) {
         super(name, jobId);
         this.partitionId = partitionId;
+        this.currentState = currentState;
     }
 
     @Override
@@ -53,38 +60,34 @@ public class RequestPartitionProcessed
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor == null) {
-            result = new RequestPartitionResult(RequestPartitionResult.State.NO_SUPERVISOR, -1);
+            result = new RequestPartitionResult(NO_SUPERVISOR, -1);
             return;
         }
 
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
-        JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(),
-                JobPartitionState.State.PROCESSED);
+        JobPartitionState.State nextState = stateChange(getCallerAddress(), partitionId, currentState,
+                processInformation, supervisor.getConfiguration());
 
-        for (; ; ) {
-            JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
-            JobPartitionState[] newPartitionStates = Arrays.copyOf(oldPartitionStates, oldPartitionStates.length);
-
-            // Set new partition processing information
-            newPartitionStates[partitionId] = newPartitionState;
-
-            if (processInformation.updatePartitionState(oldPartitionStates, newPartitionStates)) {
-                result = new RequestPartitionResult(RequestPartitionResult.State.SUCCESSFUL, partitionId);
+        if (nextState == PROCESSED) {
+                result = new RequestPartitionResult(SUCCESSFUL, partitionId);
                 return;
-            }
         }
+
+        result = new RequestPartitionResult(CHECK_STATE_FAILED, -1);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(partitionId);
+        out.writeInt(currentState.ordinal());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         partitionId = in.readInt();
+        currentState = JobPartitionState.State.byOrdinal(in.readInt());
     }
 
     @Override

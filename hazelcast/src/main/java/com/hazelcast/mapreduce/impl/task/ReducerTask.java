@@ -16,20 +16,19 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class ReducerTask<Key, Chunk> implements Runnable {
 
@@ -68,24 +67,6 @@ public class ReducerTask<Key, Chunk> implements Runnable {
         }
     }
 
-    private void reduceChunk(Map<Key, Chunk> chunk) {
-        for (Map.Entry<Key, Chunk> entry : chunk.entrySet()) {
-            Reducer reducer = supervisor.getReducerByKey(entry.getKey());
-            if (reducer != null) {
-                reducer.reduce(entry.getValue());
-            }
-        }
-    }
-
-    private <Value> Map<Key, Value> getReducedResults() {
-        Map<Key, Value> reducedResults = new HashMap<Key, Value>();
-        Map<Key, Reducer> reducers = supervisor.getReducers();
-        for (Map.Entry<Key, Reducer> entry : reducers.entrySet()) {
-            reducedResults.put(entry.getKey(), (Value) entry.getValue().finalizeReduce());
-        }
-        return reducedResults;
-    }
-
     @Override
     public void run() {
         try {
@@ -101,14 +82,25 @@ public class ReducerTask<Key, Chunk> implements Runnable {
         }
     }
 
+    private void reduceChunk(Map<Key, Chunk> chunk) {
+        for (Map.Entry<Key, Chunk> entry : chunk.entrySet()) {
+            Reducer reducer = supervisor.getReducerByKey(entry.getKey());
+            if (reducer != null) {
+                reducer.reduce(entry.getValue());
+            }
+        }
+    }
+
     private void processProcessedState(ReducerChunk<Key, Chunk> reducerChunk) {
+        // If partitionId is set this was the last chunk for this partition
         if (reducerChunk.partitionId != -1) {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
             try {
                 RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                        new RequestPartitionProcessed(name, jobId, reducerChunk.partitionId));
-                if (result.getState() != RequestPartitionResult.State.SUCCESSFUL) {
-                    throw new RuntimeException("Could not finalize processing "+
+                        new RequestPartitionProcessed(name, jobId, reducerChunk.partitionId, REDUCING));
+
+                if (result.getResultState() != SUCCESSFUL) {
+                    throw new RuntimeException("Could not finalize processing " +
                             "for partitionId " + reducerChunk.partitionId);
                 }
             } catch (Exception ignore) {
