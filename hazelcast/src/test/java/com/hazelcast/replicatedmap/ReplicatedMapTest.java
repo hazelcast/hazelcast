@@ -1482,7 +1482,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
                     assertEquals(map1.get(1), map2.get(1));
                 }
             });
-        }catch(Exception e){
+        }catch(AssertionError e){
             HazelcastTestSupport.printAllStackTraces();
             throw e;
         }
