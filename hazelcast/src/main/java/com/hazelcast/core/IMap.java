@@ -492,7 +492,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     V replace(K key, V value);
 
     /**
-     * Puts an entry into this map with a given ttl (time to live) value.
+     * Puts an entry into this map.
      * Similar to put operation except that set
      * doesn't return the old value which is more efficient.
      * <p/>
