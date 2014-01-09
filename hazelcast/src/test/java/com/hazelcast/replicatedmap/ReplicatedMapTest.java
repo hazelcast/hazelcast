@@ -683,9 +683,14 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         Collections.sort(entrySet3, ENTRYSET_COMPARATOR);
         Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
 
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
-        assertEquals(entrySetTestValues, entrySet3);
+        try{
+            assertEquals(entrySetTestValues, entrySet1);
+            assertEquals(entrySetTestValues, entrySet2);
+            assertEquals(entrySetTestValues, entrySet3);
+        }catch(AssertionError e){
+            HazelcastTestSupport.printAllStackTraces();
+            throw e;
+        }
     }
 
     @Test
@@ -1217,8 +1222,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         Collections.sort(entrySet2, ENTRYSET_COMPARATOR);
         Collections.sort(entrySetTestValues, ENTRYSET_COMPARATOR);
 
-        assertEquals(entrySetTestValues, entrySet1);
-        assertEquals(entrySetTestValues, entrySet2);
+        try{
+            assertEquals(entrySetTestValues, entrySet1);
+            assertEquals(entrySetTestValues, entrySet2);
+        }catch(AssertionError e){
+            HazelcastTestSupport.printAllStackTraces();
+            throw e;
+        }
     }
 
     @Test
