@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -335,26 +336,6 @@ public class HzClusterUtil {
                     assertEquals(sz, i.getCluster().getMembers().size());
             }
         });
-    }
-
-
-    public static void assertTrueEventually(AssertTask task) {
-        AssertionError error = null;
-        for (int k = 0; k < 60; k++) {
-            try {
-                task.run();
-                return;
-            } catch (AssertionError e) {
-                error = e;
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        throw error;
     }
 
 }
