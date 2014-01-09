@@ -90,7 +90,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     }
                 }
                 if (listener instanceof MembershipListener) {
-                    addMembershipListener((MembershipListener) listener);
+                    _addMembershipListener((MembershipListener) listener);
                 }
             }
         }
@@ -314,6 +314,17 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public String addMembershipListener(MembershipListener listener) {
+        final String id = UUID.randomUUID().toString();
+        listeners.put(id, listener);
+        if (listener instanceof InitialMembershipListener) {
+            // TODO: needs sync with membership events...
+            final Cluster cluster = client.getCluster();
+            ((InitialMembershipListener) listener).init(new InitialMembershipEvent(cluster, cluster.getMembers()));
+        }
+        return id;
+    }
+
+    public String _addMembershipListener(MembershipListener listener) {
         final String id = UUID.randomUUID().toString();
         listeners.put(id, listener);
         return id;
