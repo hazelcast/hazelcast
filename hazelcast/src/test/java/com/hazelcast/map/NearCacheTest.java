@@ -27,6 +27,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -245,7 +246,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        NearCache nearCache = getNearCache(mapName, instances[0]);
+        final NearCache nearCache = getNearCache(mapName, instances[0]);
         assertTrue(nearCache.size() > (count / n - count*0.1)); //more-or-less (count / no_of_nodes) should be in the near cache now
 
         Map<Object, Object> invalidationMap = new HashMap<Object, Object>(count);
@@ -253,9 +254,15 @@ public class NearCacheTest extends HazelcastTestSupport {
             invalidationMap.put(i, i);
         }
         map.putAll(invalidationMap); //this should invalidate the near cache
-        assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
 
-
+        assertTrueEventually(
+            new AssertTask() {
+                @Override
+                public void run() {
+                    assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
+                }
+            }
+        );
     }
 
     @Test
