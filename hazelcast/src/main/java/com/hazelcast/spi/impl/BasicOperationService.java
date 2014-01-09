@@ -689,6 +689,18 @@ final class BasicOperationService implements InternalOperationService {
         return invocation;
     }
 
+    @Override
+    public void notifyBackupCall(long callId) {
+        try {
+            final BasicInvocation invocation = localInvocations.get(callId);
+            if (invocation != null) {
+                invocation.signalOneBackupComplete();
+            }
+        } catch (Exception e) {
+            ReplicaErrorLogger.log(e, logger);
+        }
+    }
+
     @PrivateApi
     long getDefaultCallTimeout() {
         return defaultCallTimeout;
@@ -736,6 +748,8 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+
+
     /**
      * Processes the System Operations. Normally they are going to be processed before normal execution of operations,
      * but if there is no work triggering a worker thread, then the system operation put in a urgent queue
@@ -779,8 +793,10 @@ final class BasicOperationService implements InternalOperationService {
      * interpret this response, e.g. success, retry etc.
      */
     private class RemoteOperationProcessor implements Runnable, ResponseHandler  {
-        final Packet packet;
         private Operation op;
+        private final Packet packet;
+
+        //todo: get rid of this sent field
         private final AtomicBoolean sent = new AtomicBoolean(false);
 
         public RemoteOperationProcessor(Packet packet) {
@@ -794,13 +810,12 @@ final class BasicOperationService implements InternalOperationService {
                 //initialize the operation by deserializing it and setting the appropriate fields.
                 final Address caller = conn.getEndPoint();
                 final Data data = packet.getData();
-                final Object object = nodeEngine.toObject(data);
-                op = (Operation) object;
+                op = (Operation)nodeEngine.toObject(data);
                 op.setNodeEngine(nodeEngine);
                 OperationAccessor.setCallerAddress(op, caller);
                 OperationAccessor.setConnection(op, conn);
 
-                //sets up the response handler.
+                //initializes the response handler.
                 if (op.getCallId() == 0) {
                     if (op.returnsResponse()) {
                         throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
@@ -844,7 +859,7 @@ final class BasicOperationService implements InternalOperationService {
 
             NormalResponse response;
             if(!(obj instanceof NormalResponse)){
-                response = new NormalResponse(obj, op.getCallId(),0, op.isUrgent());
+                response = new NormalResponse(obj, op.getCallId(), 0, op.isUrgent());
             }else{
                 response = (NormalResponse)obj;
             }
@@ -858,18 +873,9 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    @Override
-    public void notifyBackupCall(long callId) {
-        try {
-            final BasicInvocation invocation = localInvocations.get(callId);
-            if (invocation != null) {
-                invocation.signalOneBackupComplete();
-            }
-        } catch (Exception e) {
-            ReplicaErrorLogger.log(e, logger);
-        }
-    }
-
+    /**
+     * Responsible for processing a {@link com.hazelcast.spi.impl.Response}.
+     */
     private class ResponseProcessor implements Runnable {
         final Packet packet;
 
@@ -881,7 +887,7 @@ final class BasicOperationService implements InternalOperationService {
         private void notifyRemoteCall(NormalResponse response) {
             BasicInvocation invocation = localInvocations.get(response.getCallId());
             if (invocation == null) {
-                throw new HazelcastException("No call for response:"+response);
+                throw new HazelcastException("No invocation for response:"+response);
             }
 
             invocation.sendResponse(response);
@@ -1011,7 +1017,6 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
     }
-
 
     private class ScheduledBackup {
         final Backup backup;
