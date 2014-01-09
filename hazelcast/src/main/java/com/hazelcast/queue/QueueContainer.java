@@ -200,7 +200,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         else{
             getBackupMap().put(itemId, item);
         }
-        if (store.isEnabled()) {
+        if (store.isEnabled() && !backup) {
             try {
                 store.store(item.getItemId(), data);
             } catch (Exception e) {
