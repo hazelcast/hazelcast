@@ -32,7 +32,7 @@ public class AllTest {
     private final int nThreads;
     private final List<Runnable> operations = new ArrayList<Runnable>();
     private final ExecutorService ex;
-    private final Random random = new Random(System.nanoTime());
+    private final Random random = new Random();
     private final AtomicInteger messagesReceived = new AtomicInteger(0);
     private final AtomicInteger messagesSend = new AtomicInteger(0);
 

@@ -40,7 +40,7 @@ public class LongRunningQueueTest {
     static final String name = "defQueue";
     static final int threadCount = 5;
     static final int limit = 50000;
-    static final Random rnd = new Random(System.currentTimeMillis());
+    static final Random rnd = new Random();
     static final AtomicLong totalOffer = new AtomicLong();
     static final AtomicLong totalPoll = new AtomicLong();
     static final Set<Server> servers = new HashSet<Server>(10);

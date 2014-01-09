@@ -59,7 +59,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     private final AtomicBoolean loaded = new AtomicBoolean(false);
     private final Lock waitForLoadedLock = new ReentrantLock();
     private final Condition waitForLoadedCondition = waitForLoadedLock.newCondition();
-    private final Random memberRandomizer = new Random(-System.currentTimeMillis());
+    private final Random memberRandomizer = new Random();
 
     private final List<ReplicationMessage> replicationMessageCache = new ArrayList<ReplicationMessage>();
     private final Lock replicationMessageCacheLock = new ReentrantLock();

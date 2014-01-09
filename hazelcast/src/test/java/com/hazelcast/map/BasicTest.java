@@ -47,7 +47,7 @@ import static org.junit.Assert.*;
 public class BasicTest extends HazelcastTestSupport {
 
     private static final int instanceCount = 3;
-    private static final Random rand = new Random(Clock.currentTimeMillis());
+    private static final Random rand = new Random();
 
     private HazelcastInstance[] instances;
 

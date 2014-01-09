@@ -168,7 +168,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
         final String name = "defQueue";
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
 
         for (int i = 0; i < count; i++) {
             int index = rnd.nextInt(insCount);
@@ -199,7 +199,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final IQueue<String> q = instances[0].getQueue(name);
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
 
         for (int i = 0; i < count; i++) {
             int index = rnd.nextInt(insCount);
@@ -425,7 +425,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
     }
 
     private IQueue getQueue(HazelcastInstance[] instances, String name) {
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getQueue(name);
     }
 

@@ -27,7 +27,7 @@ import java.util.Random;
  */
 public class RandomLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
 
-    private final Random random = new Random(System.currentTimeMillis());
+    private final Random random = new Random();
 
     @Override
     public Member next() {

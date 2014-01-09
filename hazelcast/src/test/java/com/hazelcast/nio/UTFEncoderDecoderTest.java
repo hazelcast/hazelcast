@@ -47,7 +47,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
-    private static final Random RANDOM = new Random(-System.nanoTime());
+    private static final Random RANDOM = new Random();
     private static final int BENCHMARK_ROUNDS = 10; // 100;
 
     @Test

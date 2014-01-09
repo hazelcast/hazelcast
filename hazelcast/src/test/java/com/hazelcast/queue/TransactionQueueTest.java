@@ -286,7 +286,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     private IQueue getQueue(HazelcastInstance[] instances, String name) {
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getQueue(name);
     }
 
