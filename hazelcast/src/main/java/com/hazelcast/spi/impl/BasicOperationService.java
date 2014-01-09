@@ -37,6 +37,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
@@ -47,6 +48,7 @@ import com.hazelcast.util.scheduler.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -74,19 +76,18 @@ import java.util.concurrent.atomic.AtomicLong;
 final class BasicOperationService implements InternalOperationService {
 
     private final AtomicLong executedOperationsCount = new AtomicLong();
-
     final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(1);
     private final ConcurrentMap<Long, BasicInvocation> localInvocations;
+    private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
     private final ExecutorService[] operationExecutors;
     private final BlockingQueue[] operationExecutorQueues;
     private final ExecutorService defaultOperationExecutor;
     private final ConcurrentLinkedQueue defaultOperationUrgentQueue;
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
-    private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
@@ -137,6 +138,7 @@ final class BasicOperationService implements InternalOperationService {
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
+
 
     //for testing
     int getRegisteredInvocationCount(){
@@ -518,6 +520,7 @@ final class BasicOperationService implements InternalOperationService {
         backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
     }
 
+
     private class ScheduledBackupProcessor implements ScheduledEntryProcessor<Object, ScheduledBackup> {
 
         @Override
@@ -535,39 +538,6 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    private class ScheduledBackup {
-        final Backup backup;
-        final int partitionId;
-        final int replicaIndex;
-        volatile int retries = 0;
-
-        private ScheduledBackup(Backup backup, int partitionId, int replicaIndex) {
-            this.backup = backup;
-            this.partitionId = partitionId;
-            this.replicaIndex = replicaIndex;
-        }
-
-        public boolean backup() {
-            final PartitionService partitionService = nodeEngine.getPartitionService();
-            final InternalPartition partition = partitionService.getPartition(partitionId);
-            final Address target = partition.getReplicaAddress(replicaIndex);
-            if (target != null && !target.equals(node.getThisAddress())) {
-                send(backup, target);
-                return true;
-            }
-            return ++retries >= 10; // if retried 10 times, give-up!
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("ScheduledBackup{");
-            sb.append("backup=").append(backup);
-            sb.append(", partitionId=").append(partitionId);
-            sb.append(", replicaIndex=").append(replicaIndex);
-            sb.append('}');
-            return sb.toString();
-        }
-    }
 
     private void handleOperationError(Operation op, Throwable e) {
         if (e instanceof OutOfMemoryError) {
@@ -803,10 +773,15 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     /**
-     * Process an operation that has been send to this OperationService by a remote OperationService.
+     * When a operation needs to be executed on a remote machine, on the local machine a BasicInvocation is created.
+     * On the remote machine a RemoteOperationProcessor is created that wraps the operation, executes it, and when a result
+     * is calculated, the RemoteOperationProcessor is notified and sends back a Response to the BasicInvocation which will
+     * interpret this response, e.g. success, retry etc.
      */
-    private class RemoteOperationProcessor implements Runnable {
+    private class RemoteOperationProcessor implements Runnable, ResponseHandler  {
         final Packet packet;
+        private Operation op;
+        private final AtomicBoolean sent = new AtomicBoolean(false);
 
         public RemoteOperationProcessor(Packet packet) {
             this.packet = packet;
@@ -816,34 +791,70 @@ final class BasicOperationService implements InternalOperationService {
         public void run() {
             final Connection conn = packet.getConn();
             try {
+                //initialize the operation by deserializing it and setting the appropriate fields.
                 final Address caller = conn.getEndPoint();
                 final Data data = packet.getData();
                 final Object object = nodeEngine.toObject(data);
-                final Operation op = (Operation) object;
+                op = (Operation) object;
                 op.setNodeEngine(nodeEngine);
                 OperationAccessor.setCallerAddress(op, caller);
                 OperationAccessor.setConnection(op, conn);
 
-                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+                //sets up the response handler.
+                if (op.getCallId() == 0) {
+                    if (op.returnsResponse()) {
+                        throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
+                    }
+                }else{
+                    op.setResponseHandler(this);
+                }
+
+                //verify that the member still exists
                 if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
                     final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
                             op.getClass().getName(), op.getServiceName());
                     handleOperationError(op, error);
+                    return;
+                }
+
+                //execute the operation.
+                String executorName = op.getExecutorName();
+                if (executorName == null) {
+                    doRunOperation(op);
                 } else {
-                    String executorName = op.getExecutorName();
-                    if (executorName == null) {
-                        doRunOperation(op);
-                    } else {
-                        ManagedExecutorService executor = executionService.getExecutor(executorName);
-                        if (executor == null) {
-                            throw new IllegalStateException("Could not found executor with name: " + executorName);
-                        }
-                        executor.execute(new LocalOperationProcessor(op));
+                    ManagedExecutorService executor = executionService.getExecutor(executorName);
+                    if (executor == null) {
+                        throw new IllegalStateException("Could not found executor with name: " + executorName);
                     }
+                    executor.execute(new LocalOperationProcessor(op));
                 }
             } catch (Throwable e) {
                 logger.severe(e);
             }
+        }
+
+        @Override
+        public void sendResponse(Object obj) {
+            long callId = op.getCallId();
+            Connection conn = op.getConnection();
+            if (!sent.compareAndSet(false, true)) {
+                throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
+                        + " to " + conn.getEndPoint() + ", current-response: " + obj);
+            }
+
+            NormalResponse response;
+            if(!(obj instanceof NormalResponse)){
+                response = new NormalResponse(obj, op.getCallId(),0, op.isUrgent());
+            }else{
+                response = (NormalResponse)obj;
+            }
+
+            send(response, op.getCallerAddress());
+        }
+
+        @Override
+        public boolean isLocal() {
+            return false;
         }
     }
 
@@ -998,6 +1009,41 @@ final class BasicOperationService implements InternalOperationService {
                 return new BasicTargetInvocation(BasicOperationService.this, serviceName, op, target, tryCount, tryPauseMillis,
                         callTimeout, callback, executorName,resultDeserialized).invoke();
             }
+        }
+    }
+
+
+    private class ScheduledBackup {
+        final Backup backup;
+        final int partitionId;
+        final int replicaIndex;
+        volatile int retries = 0;
+
+        private ScheduledBackup(Backup backup, int partitionId, int replicaIndex) {
+            this.backup = backup;
+            this.partitionId = partitionId;
+            this.replicaIndex = replicaIndex;
+        }
+
+        public boolean backup() {
+            final PartitionService partitionService = nodeEngine.getPartitionService();
+            final InternalPartition partition = partitionService.getPartition(partitionId);
+            final Address target = partition.getReplicaAddress(replicaIndex);
+            if (target != null && !target.equals(node.getThisAddress())) {
+                send(backup, target);
+                return true;
+            }
+            return ++retries >= 10; // if retried 10 times, give-up!
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("ScheduledBackup{");
+            sb.append("backup=").append(backup);
+            sb.append(", partitionId=").append(partitionId);
+            sb.append(", replicaIndex=").append(replicaIndex);
+            sb.append('}');
+            return sb.toString();
         }
     }
 }
