@@ -97,7 +97,7 @@ public class RequestPartitionProcessed
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.REQUEST_PARTITION_MAPPING;
+        return MapReduceDataSerializerHook.REQUEST_PARTITION_PROCESSED;
     }
 
 }

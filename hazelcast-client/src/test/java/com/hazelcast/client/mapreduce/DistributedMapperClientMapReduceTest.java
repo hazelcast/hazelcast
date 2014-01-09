@@ -16,8 +16,20 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-import com.hazelcast.mapreduce.*;
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.mapreduce.AbstractMapReduceJobTest;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.Context;
+import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.Reducer;
+import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -161,8 +173,11 @@ public class DistributedMapperClientMapReduceTest
         future.andThen(new ExecutionCallback<Map<String, Integer>>() {
             @Override
             public void onResponse(Map<String, Integer> response) {
-                listenerResults.putAll(response);
-                semaphore.release();
+                try {
+                    listenerResults.putAll(response);
+                } finally {
+                    semaphore.release();
+                }
             }
 
             @Override
@@ -218,8 +233,11 @@ public class DistributedMapperClientMapReduceTest
         future.andThen(new ExecutionCallback<Integer>() {
             @Override
             public void onResponse(Integer response) {
-                result[0] = response.intValue();
-                semaphore.release();
+                try {
+                    result[0] = response.intValue();
+                } finally {
+                    semaphore.release();
+                }
             }
 
             @Override
@@ -310,15 +328,13 @@ public class DistributedMapperClientMapReduceTest
     }
 
     public static class TestCollator
-            implements Collator<Map<String, Integer>, Integer> {
+            implements Collator<Map.Entry<String, Integer>, Integer> {
 
         @Override
-        public Integer collate(Iterable<Map<String, Integer>> values) {
+        public Integer collate(Iterable<Map.Entry<String, Integer>> values) {
             int sum = 0;
-            for (Map<String, Integer> reducedResults : values) {
-                for (Integer value : reducedResults.values()) {
-                    sum += value;
-                }
+            for (Map.Entry<String, Integer> entry : values) {
+                sum += entry.getValue();
             }
             return sum;
         }

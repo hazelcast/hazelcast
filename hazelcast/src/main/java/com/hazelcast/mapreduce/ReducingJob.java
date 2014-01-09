@@ -78,7 +78,7 @@ public interface ReducingJob<EntryKey, KeyIn, ValueIn> {
      * @param reducerFactory ReducerFactory to build Reducers
      * @return instance of this Job with generics changed on usage
      */
-    <ValueOut> SubmittableJob<EntryKey, Map<KeyIn, ValueOut>> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
+    <ValueOut> ReducingSubmittableJob<EntryKey, KeyIn, ValueOut> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
 
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes
@@ -94,6 +94,6 @@ public interface ReducingJob<EntryKey, KeyIn, ValueIn> {
      * @param collator collator to use after map and reduce
      * @return CompletableFuture to wait for mapped and possibly reduced result
      */
-    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map<KeyIn, List<ValueIn>>, ValueOut> collator);
+    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map.Entry<KeyIn, List<ValueIn>>, ValueOut> collator);
 
 }

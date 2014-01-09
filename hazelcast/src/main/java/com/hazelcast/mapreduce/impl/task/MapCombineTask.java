@@ -24,15 +24,20 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.mapResultToMember;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
@@ -83,7 +88,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     }
 
     public final void processMapping(int partitionId) {
-        DefaultContext<KeyOut, ValueOut> context = supervisor.createContext(this);
+        DefaultContext<KeyOut, ValueOut> context = supervisor.createContext(this, partitionId);
 
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).initialize(context);
@@ -101,12 +106,47 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 // If we have a reducer defined just send it over
                 if (supervisor.getConfiguration().getReducerFactory() != null) {
                     Map<KeyOut, Chunk> chunkMap = context.finish();
+                    if (chunkMap.size() > 0) {
+                        Address sender = mapReduceService.getLocalAddress();
 
-                    // Wrap into LastChunkNotification object
-                    Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
-                    for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
-                        mapReduceService.sendNotification(entry.getKey(),
-                                new LastChunkNotification(entry.getKey(), name, jobId, partitionId, entry.getValue()));
+                        // Wrap into LastChunkNotification object
+                        Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+
+                        // Register remote addresses and partitionId for receiving reducer events
+                        supervisor.registerReducerEventInterests(partitionId, mapping.keySet());
+
+                        // Send LastChunk notifications
+                        for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+                            Address receiver = entry.getKey();
+                            Map<KeyOut, Chunk> chunk = entry.getValue();
+                            mapReduceService.sendNotification(receiver, new LastChunkNotification(
+                                    receiver, name, jobId, sender, partitionId, chunk));
+                        }
+
+                        // Send LastChunk notification to notify reducers that received at least one chunk
+                        Set<Address> addresses = mapping.keySet();
+                        Collection<Address> reducerInterests = supervisor.getReducerEventInterests(partitionId);
+                        if (reducerInterests != null) {
+                            for (Address address : reducerInterests) {
+                                if (!addresses.contains(address)) {
+                                    mapReduceService.sendNotification(address, new LastChunkNotification(
+                                            address, name, jobId, sender, partitionId, Collections.emptyMap()));
+                                }
+                            }
+                        }
+
+                    } else {
+                        // If nothing to reduce we just set partition to processed
+                        try {
+                            result = mapReduceService.processRequest(supervisor.getJobOwner(),
+                                    new RequestPartitionProcessed(name, jobId, partitionId, REDUCING));
+
+                            if (result.getResultState() != SUCCESSFUL) {
+                                throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
+                            }
+                        } catch (Exception ignore) {
+                            ignore.printStackTrace();
+                        }
                     }
                 }
             } else {
@@ -117,14 +157,19 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
-    void onEmit(DefaultContext<KeyOut, ValueOut> context) {
+    void onEmit(DefaultContext<KeyOut, ValueOut> context, int partitionId) {
         // If we have a reducer let's test for chunk size otherwise
         // we need to collect all values locally and wait for final request
         if (supervisor.getConfiguration().getReducerFactory() != null) {
             if (context.getCollected() == chunkSize) {
                 Map<KeyOut, Chunk> chunkMap = context.requestChunk();
+
                 // Wrap into IntermediateChunkNotification object
                 Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+
+                // Register remote addresses and partitionId for receiving reducer events
+                supervisor.registerReducerEventInterests(partitionId, mapping.keySet());
+
                 for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
                     mapReduceService.sendNotification(entry.getKey(),
                             new IntermediateChunkNotification(entry.getKey(), name, jobId, entry.getValue()));

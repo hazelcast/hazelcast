@@ -22,63 +22,33 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
-public class LastChunkNotification<KeyOut, Value>
-        extends MemberAwareMapReduceNotification {
+public class ReducingFinishedNotification extends MemberAwareMapReduceNotification {
 
-    private Map<KeyOut, Value> chunk;
     private int partitionId;
-    private Address sender;
 
-    public LastChunkNotification() {
+    public ReducingFinishedNotification() {
     }
 
-    public LastChunkNotification(Address address, String name, String jobId, Address sender,
-                                 int partitionId, Map<KeyOut, Value> chunk) {
+    public ReducingFinishedNotification(Address address, String name, String jobId, int partitionId) {
         super(address, name, jobId);
         this.partitionId = partitionId;
-        this.sender = sender;
-        this.chunk = chunk;
-    }
-
-    public Map<KeyOut, Value> getChunk() {
-        return chunk;
     }
 
     public int getPartitionId() {
         return partitionId;
     }
 
-    public Address getSender() {
-        return sender;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeInt(chunk.size());
-        for (Map.Entry<KeyOut, Value> entry : chunk.entrySet()) {
-            out.writeObject(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
         out.writeInt(partitionId);
-        out.writeObject(sender);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        int size = in.readInt();
-        chunk = new HashMap<KeyOut, Value>();
-        for (int i = 0; i < size; i++) {
-            KeyOut key = in.readObject();
-            Value value = in.readObject();
-            chunk.put(key, value);
-        }
         partitionId = in.readInt();
-        sender = in.readObject();
     }
 
     @Override
@@ -88,7 +58,6 @@ public class LastChunkNotification<KeyOut, Value>
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.REDUCER_LAST_CHUNK_MESSAGE;
+        return MapReduceDataSerializerHook.REDUCING_FINISHED_MESSAGE;
     }
-
 }

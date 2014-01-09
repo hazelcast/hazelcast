@@ -15,9 +15,13 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -34,7 +38,7 @@ import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 @SuppressWarnings("unused")
 public class MapReduceTest
@@ -52,7 +56,7 @@ public class MapReduceTest
         Hazelcast.shutdownAll();
     }
 
-    @Test//(timeout = 30000)
+    @Test(timeout = 30000)
     public void testMapper()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -145,12 +149,7 @@ public class MapReduceTest
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         CompletableFuture<Integer> future =
-                job.keyPredicate(new KeyPredicate<Integer>() {
-                    @Override
-                    public boolean evaluate(Integer key) {
-                        return key == 50;
-                    }
-                }).mapper(new TestMapper())
+                job.keyPredicate(new TestKeyPredicate()).mapper(new TestMapper())
                         .submit(new GroupingTestCollator());
 
         int result = future.get();
@@ -231,7 +230,7 @@ public class MapReduceTest
         }
 
         Set<String> hazelcastNames = context.getHazelcastNames();
-        assertEquals(1, hazelcastNames.size());
+        assertEquals(3, hazelcastNames.size());
     }
 
     @Test(timeout = 30000)
@@ -310,7 +309,7 @@ public class MapReduceTest
         }
 
         Set<String> hazelcastNames = context.getHazelcastNames();
-        assertEquals(1, hazelcastNames.size());
+        assertEquals(3, hazelcastNames.size());
     }
 
     @Test(timeout = 30000)
@@ -343,7 +342,11 @@ public class MapReduceTest
         future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
             @Override
             public void onResponse(Map<String, List<Integer>> response) {
-                listenerResults.putAll(response);
+                try {
+                    listenerResults.putAll(response);
+                } finally {
+                    semaphore.release();
+                }
             }
 
             @Override
@@ -394,8 +397,11 @@ public class MapReduceTest
         future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
             @Override
             public void onResponse(Map<String, List<Integer>> response) {
-                listenerResults.putAll(response);
-                semaphore.release();
+                try {
+                    listenerResults.putAll(response);
+                } finally {
+                    semaphore.release();
+                }
             }
 
             @Override
@@ -446,8 +452,11 @@ public class MapReduceTest
         future.andThen(new ExecutionCallback<Map<String, Integer>>() {
             @Override
             public void onResponse(Map<String, Integer> response) {
-                listenerResults.putAll(response);
-                semaphore.release();
+                try {
+                    listenerResults.putAll(response);
+                } finally {
+                    semaphore.release();
+                }
             }
 
             @Override
@@ -470,7 +479,7 @@ public class MapReduceTest
         }
 
         Set<String> hazelcastNames = context.getHazelcastNames();
-        assertEquals(1, hazelcastNames.size());
+        assertEquals(3, hazelcastNames.size());
     }
 
     @Test(timeout = 30000)
@@ -503,8 +512,11 @@ public class MapReduceTest
         future.andThen(new ExecutionCallback<Integer>() {
             @Override
             public void onResponse(Integer response) {
-                result[0] = response.intValue();
-                semaphore.release();
+                try {
+                    result[0] = response.intValue();
+                } finally {
+                    semaphore.release();
+                }
             }
 
             @Override
@@ -560,8 +572,11 @@ public class MapReduceTest
         future.andThen(new ExecutionCallback<Integer>() {
             @Override
             public void onResponse(Integer response) {
-                result[0] = response.intValue();
-                semaphore.release();
+                try {
+                    result[0] = response.intValue();
+                } finally {
+                    semaphore.release();
+                }
             }
 
             @Override
@@ -583,7 +598,16 @@ public class MapReduceTest
         }
 
         Set<String> hazelcastNames = context.getHazelcastNames();
-        assertEquals(1, hazelcastNames.size());
+        assertEquals(3, hazelcastNames.size());
+    }
+
+    public static class TestKeyPredicate
+            implements KeyPredicate<Integer> {
+
+        @Override
+        public boolean evaluate(Integer key) {
+            return key == 50;
+        }
     }
 
     public static class TestMapper
@@ -683,31 +707,28 @@ public class MapReduceTest
     }
 
     public static class GroupingTestCollator
-            implements Collator<Map<String, List<Integer>>, Integer> {
+            implements Collator<Map.Entry<String, List<Integer>>, Integer> {
 
         @Override
-        public Integer collate(Iterable<Map<String, List<Integer>>> values) {
+        public Integer collate(Iterable<Map.Entry<String, List<Integer>>> values) {
             int sum = 0;
-            for (Map<String, List<Integer>> group : values) {
-                for (List<Integer> entries : group.values())
-                    for (Integer value : entries) {
-                        sum += value;
-                    }
+            for (Map.Entry<String, List<Integer>> entry : values) {
+                for (Integer value : entry.getValue()) {
+                    sum += value;
+                }
             }
             return sum;
         }
     }
 
     public static class TestCollator
-            implements Collator<Map<String, Integer>, Integer> {
+            implements Collator<Map.Entry<String, Integer>, Integer> {
 
         @Override
-        public Integer collate(Iterable<Map<String, Integer>> values) {
+        public Integer collate(Iterable<Map.Entry<String, Integer>> values) {
             int sum = 0;
-            for (Map<String, Integer> map : values) {
-                for (Integer value : map.values()) {
-                    sum += value;
-                }
+            for (Map.Entry<String, Integer> entry : values) {
+                sum += entry.getValue();
             }
             return sum;
         }

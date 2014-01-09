@@ -17,10 +17,25 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.core.CompletableFuture;
-import com.hazelcast.mapreduce.*;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyPredicate;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.MappingJob;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.ReducingJob;
+import com.hazelcast.mapreduce.ReducingSubmittableJob;
 import com.hazelcast.util.ValidationUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn> {
 
@@ -84,10 +99,10 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected <T> CompletableFuture<T> submit(Collator collator) {
         prepareKeyPredicate();
-        return invoke();
+        return invoke(collator);
     }
 
-    protected abstract <T> CompletableFuture<T> invoke();
+    protected abstract <T> CompletableFuture<T> invoke(Collator collator);
 
     protected void prepareKeyPredicate() {
         if (predicate == null) {
@@ -170,13 +185,13 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> SubmittableJob<EntryKey, Map<Key, ValueOut>> reducer(
+        public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
             ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
             if (AbstractJob.this.reducerFactory != null)
                 throw new IllegalStateException("reducerFactory already set");
             AbstractJob.this.reducerFactory = reducerFactory;
-            return new SubmittableJobImpl<EntryKey, Map<Key, ValueOut>>();
+            return new ReducingSubmittableJobImpl<EntryKey, Key, ValueOut>();
         }
 
         @Override
@@ -186,7 +201,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
         @Override
         public <ValueOut> CompletableFuture<ValueOut> submit(
-                Collator<Map<Key, List<Value>>, ValueOut> collator) {
+                Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }
@@ -200,13 +215,13 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> SubmittableJob<EntryKey, Map<Key, ValueOut>> reducer(
+        public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
             ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
             if (AbstractJob.this.reducerFactory != null)
                 throw new IllegalStateException("reducerFactory already set");
             AbstractJob.this.reducerFactory = reducerFactory;
-            return new SubmittableJobImpl<EntryKey, Map<Key, ValueOut>>();
+            return new ReducingSubmittableJobImpl<EntryKey, Key, ValueOut>();
         }
 
         @Override
@@ -234,13 +249,13 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
         @Override
         public <ValueOut> CompletableFuture<ValueOut> submit(
-                Collator<Map<Key, List<Value>>, ValueOut> collator) {
+                Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }
 
-    protected class SubmittableJobImpl<EntryKey, Value>
-            implements SubmittableJob<EntryKey, Value> {
+    protected class ReducingSubmittableJobImpl<EntryKey, Key, Value>
+            implements ReducingSubmittableJob<EntryKey, Key, Value> {
 
         @Override
         public String getJobId() {
@@ -248,31 +263,30 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
         }
 
         @Override
-        public SubmittableJob<EntryKey, Value> onKeys(Iterable<EntryKey> keys) {
+        public ReducingSubmittableJob<EntryKey, Key, Value> onKeys(Iterable<EntryKey> keys) {
             addKeys((Iterable<KeyIn>) keys);
             return this;
         }
 
         @Override
-        public SubmittableJob<EntryKey, Value> onKeys(EntryKey... keys) {
+        public ReducingSubmittableJob<EntryKey, Key, Value> onKeys(EntryKey... keys) {
             addKeys((KeyIn[]) keys);
             return this;
         }
 
         @Override
-        public SubmittableJob<EntryKey, Value> keyPredicate(KeyPredicate<EntryKey> predicate) {
+        public ReducingSubmittableJob<EntryKey, Key, Value> keyPredicate(KeyPredicate<EntryKey> predicate) {
             setKeyPredicate((KeyPredicate<KeyIn>) predicate);
             return this;
         }
 
         @Override
-        public CompletableFuture<Value> submit() {
+        public CompletableFuture<Map<Key, Value>> submit() {
             return AbstractJob.this.submit();
         }
 
         @Override
-        public <ValueOut> CompletableFuture<ValueOut> submit(
-                Collator<Value, ValueOut> collator) {
+        public <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, Value>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }

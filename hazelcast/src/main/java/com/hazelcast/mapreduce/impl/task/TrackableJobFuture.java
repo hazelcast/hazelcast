@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.TrackableJob;
 import com.hazelcast.spi.NodeEngine;
@@ -24,6 +25,7 @@ import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,12 +37,24 @@ public class TrackableJobFuture<V>
     private final String name;
     private final String jobId;
     private final JobTracker jobTracker;
+    private final Collator collator;
 
-    public TrackableJobFuture(String name, String jobId, JobTracker jobTracker, NodeEngine nodeEngine) {
+    public TrackableJobFuture(String name, String jobId, JobTracker jobTracker,
+                              NodeEngine nodeEngine, Collator collator) {
         super(nodeEngine);
         this.name = name;
         this.jobId = jobId;
         this.jobTracker = jobTracker;
+        this.collator = collator;
+    }
+
+    @Override
+    public void setResult(Object result) {
+        // If collator is available we need to execute it now
+        if (collator != null) {
+            result = collator.collate(((Map) result).entrySet());
+        }
+        super.setResult(result);
     }
 
     @Override

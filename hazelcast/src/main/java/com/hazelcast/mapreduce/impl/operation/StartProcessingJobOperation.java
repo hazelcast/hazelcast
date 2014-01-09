@@ -29,14 +29,14 @@ import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 public class StartProcessingJobOperation<K, V>
         extends AbstractOperation
         implements IdentifiedDataSerializable {
 
     private String name;
-    private List<K> keys;
+    private Collection<K> keys;
     private String jobId;
     private KeyPredicate<K> predicate;
     private Mapper mapper;
@@ -44,7 +44,7 @@ public class StartProcessingJobOperation<K, V>
     public StartProcessingJobOperation() {
     }
 
-    public StartProcessingJobOperation(String name, String jobId, List<K> keys,
+    public StartProcessingJobOperation(String name, String jobId, Collection<K> keys,
                                        KeyPredicate<K> predicate, Mapper mapper) {
         this.name = name;
         this.keys = keys;
@@ -82,6 +82,7 @@ public class StartProcessingJobOperation<K, V>
             }
         }
         out.writeObject(mapper);
+        out.writeObject(predicate);
     }
 
     @Override
@@ -94,6 +95,7 @@ public class StartProcessingJobOperation<K, V>
             keys.add((K) in.readObject());
         }
         mapper = in.readObject();
+        predicate = in.readObject();
     }
 
     @Override

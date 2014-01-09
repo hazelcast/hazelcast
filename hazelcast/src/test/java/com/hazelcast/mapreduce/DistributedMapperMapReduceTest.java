@@ -384,15 +384,13 @@ public class DistributedMapperMapReduceTest
     }
 
     public static class TestCollator
-            implements Collator<Map<String, Integer>, Integer> {
+            implements Collator<Map.Entry<String, Integer>, Integer> {
 
         @Override
-        public Integer collate(Iterable<Map<String, Integer>> values) {
+        public Integer collate(Iterable<Map.Entry<String, Integer>> values) {
             int sum = 0;
-            for (Map<String, Integer> entry : values) {
-                for (Integer value : entry.values()) {
-                    sum += value;
-                }
+            for (Map.Entry<String, Integer> entry : values) {
+                sum += entry.getValue();
             }
             return sum;
         }

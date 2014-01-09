@@ -18,17 +18,19 @@ package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.CompletableFuture;
 
+import java.util.Map;
+
 /**
  * <p>
  * This interface describes a submittable mapreduce Job.<br>
- * For further information {@link Job}.
+ * For further information {@link com.hazelcast.mapreduce.Job}.
  * </p>
  *
  * @param <EntryKey> type of the original input key
  * @param <ValueIn>  type of value used as input value type
- * @see com.hazelcast.mapreduce.Job
+ * @see Job
  */
-public interface SubmittableJob<EntryKey, ValueIn> {
+public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Returns the unique identifier for this mapreduce job. This jobId is used to identify the same
@@ -45,7 +47,7 @@ public interface SubmittableJob<EntryKey, ValueIn> {
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
      */
-    SubmittableJob<EntryKey, ValueIn> onKeys(Iterable<EntryKey> keys);
+    ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> onKeys(Iterable<EntryKey> keys);
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
@@ -54,10 +56,10 @@ public interface SubmittableJob<EntryKey, ValueIn> {
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
      */
-    SubmittableJob<EntryKey, ValueIn> onKeys(EntryKey... keys);
+    ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> onKeys(EntryKey... keys);
 
     /**
-     * Defines the {@link KeyPredicate} implementation to preselect keys the MapReduce task will be executed on.
+     * Defines the {@link com.hazelcast.mapreduce.KeyPredicate} implementation to preselect keys the MapReduce task will be executed on.
      * Preselecting keys can speed up the job massively.<br>
      * This method can be used in conjunction with {@link #onKeys(Iterable)} or {@link #onKeys(Object...)} to define a
      * range of known and evaluated keys.
@@ -65,14 +67,14 @@ public interface SubmittableJob<EntryKey, ValueIn> {
      * @param predicate predicate implementation to be used to evaluate keys
      * @return instance of this Job with generics changed on usage
      */
-    SubmittableJob<EntryKey, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
+    ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
 
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes
      *
      * @return CompletableFuture to wait for mapped and possibly reduced result
      */
-    CompletableFuture<ValueIn> submit();
+    CompletableFuture<Map<KeyIn, ValueIn>> submit();
 
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes and executes the
@@ -81,6 +83,6 @@ public interface SubmittableJob<EntryKey, ValueIn> {
      * @param collator collator to use after map and reduce
      * @return CompletableFuture to wait for mapped and possibly reduced result
      */
-    <ValueOut> CompletableFuture<ValueOut> submit(Collator<ValueIn, ValueOut> collator);
+    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map.Entry<KeyIn,ValueIn>, ValueOut> collator);
 
 }

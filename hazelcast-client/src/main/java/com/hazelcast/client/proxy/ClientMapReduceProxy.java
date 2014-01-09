@@ -23,6 +23,7 @@ import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
@@ -36,6 +37,7 @@ import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -70,7 +72,7 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
         }
 
         @Override
-        protected <T> CompletableFuture<T> invoke() {
+        protected <T> CompletableFuture<T> invoke(final Collator collator) {
             try {
                 ClientContext context = getContext();
                 ClientInvocationService cis = context.getInvocationService();
@@ -83,7 +85,10 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
                     public void handle(ResponseStream stream) throws Exception {
                         try {
                             stream.read(); // initial ok response
-                            final Object event = stream.read();
+                            Object event = stream.read();
+                            if (collator != null) {
+                                event = collator.collate(((Map) event).entrySet());
+                            }
                             completableFuture.setResult(event);
                         } catch (Exception e) {
                             try {

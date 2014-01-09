@@ -22,7 +22,7 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.impl.task.MappingPhase;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 public class KeyValueSourceMappingPhase<KeyIn, ValueIn, KeyOut, ValueOut>
@@ -31,7 +31,7 @@ public class KeyValueSourceMappingPhase<KeyIn, ValueIn, KeyOut, ValueOut>
     private final Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper;
 
     public KeyValueSourceMappingPhase(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
-                                      List<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
+                                      Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
         super(keys, predicate);
         this.mapper = mapper;
     }

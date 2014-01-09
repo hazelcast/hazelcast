@@ -50,7 +50,7 @@ public class JobProcessInformationImpl implements JobProcessInformation {
         return processedRecords.get();
     }
 
-    public void addProcessRecords(int records) {
+    public void addProcessedRecords(int records) {
         processedRecords.addAndGet(records);
     }
 

@@ -26,21 +26,32 @@ import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
 import com.hazelcast.mapreduce.impl.operation.GetResultOperationFactory;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class JobSupervisor {
 
     private final ConcurrentMap<Object, Reducer> reducers = new ConcurrentHashMap<Object, Reducer>();
+    private final ConcurrentMap<Integer, Set<Address>> remoteReducers = new ConcurrentHashMap<Integer, Set<Address>>();
     private final AtomicReference<DefaultContext> context = new AtomicReference<DefaultContext>();
 
     private final Address jobOwner;
@@ -48,6 +59,7 @@ public class JobSupervisor {
     private final AbstractJobTracker jobTracker;
     private final JobTaskConfiguration configuration;
     private final MapReduceService mapReduceService;
+    private final ExecutorService executorService;
 
     private final JobProcessInformationImpl jobProcessInformation;
 
@@ -58,6 +70,7 @@ public class JobSupervisor {
         this.configuration = configuration;
         this.mapReduceService = mapReduceService;
         this.jobOwner = configuration.getJobOwner();
+        this.executorService = mapReduceService.getExecutorService(configuration.getName());
         this.jobProcessInformation = new JobProcessInformationImpl(
                 configuration.getNodeEngine().getPartitionService().getPartitionCount(), this);
 
@@ -88,8 +101,10 @@ public class JobSupervisor {
         } else if (event instanceof LastChunkNotification) {
             LastChunkNotification lcn = (LastChunkNotification) event;
             ReducerTask reducerTask = jobTracker.getReducerTask(lcn.getJobId());
-            System.out.println("Event received: " + lcn.getPartitionId());
-            reducerTask.processChunk(lcn.getPartitionId(), lcn.getChunk());
+            reducerTask.processChunk(lcn.getPartitionId(), lcn.getSender(), lcn.getChunk());
+        } else if (event instanceof ReducingFinishedNotification) {
+            ReducingFinishedNotification rfn = (ReducingFinishedNotification) event;
+            processReducerFinished(rfn);
         }
     }
 
@@ -111,8 +126,12 @@ public class JobSupervisor {
         Reducer reducer = reducers.get(key);
         if (reducer == null && configuration.getReducerFactory() != null) {
             reducer = configuration.getReducerFactory().newReducer(key);
-            reducer = reducers.putIfAbsent(key, reducer);
-            reducer.beginReduce(key);
+            Reducer oldReducer = reducers.putIfAbsent(key, reducer);
+            if (oldReducer != null) {
+                reducer = oldReducer;
+            } else {
+                reducer.beginReduce(key);
+            }
         }
         return reducer;
     }
@@ -126,8 +145,6 @@ public class JobSupervisor {
                     return;
                 }
             }
-            System.out.println("Finished: " + MapReduceUtil.printPartitionStates(partitionStates));
-            System.out.println("Requesting results...");
 
             String name = configuration.getName();
             String jobId = configuration.getJobId();
@@ -155,24 +172,39 @@ public class JobSupervisor {
                             }
                         }
                     }
-
-                    // Set the result and finish the request
-                    // TODO Feature Collator
-                    TrackableJobFuture future = jobTracker.getTrackableJob(jobId);
-                    future.setResult(mergedResults);
                 }
+
+                // Get the initial future object to eventually set the result
+                TrackableJobFuture future = jobTracker.getTrackableJob(jobId);
+                future.setResult(mergedResults);
             }
         }
     }
 
-    public <K, V> DefaultContext<K, V> createContext(MapCombineTask mapCombineTask) {
+    public <K, V> DefaultContext<K, V> createContext(MapCombineTask mapCombineTask, int partitionId) {
         DefaultContext<K, V> context = new DefaultContext<K, V>(
-                configuration.getCombinerFactory(), mapCombineTask);
+                configuration.getCombinerFactory(), partitionId, mapCombineTask);
 
         if (this.context.compareAndSet(null, context)) {
             return context;
         }
         return this.context.get();
+    }
+
+    public void registerReducerEventInterests(int partitionId, Set<Address> remoteReducers) {
+        Set<Address> addresses = this.remoteReducers.get(partitionId);
+        if (addresses == null) {
+            addresses = new CopyOnWriteArraySet<Address>();
+            Set<Address> oldSet = this.remoteReducers.putIfAbsent(partitionId, addresses);
+            if (oldSet != null) {
+                addresses = oldSet;
+            }
+        }
+        addresses.addAll(remoteReducers);
+    }
+
+    public Collection<Address> getReducerEventInterests(int partitionId) {
+        return this.remoteReducers.get(partitionId);
     }
 
     public JobProcessInformationImpl getJobProcessInformation() {
@@ -189,6 +221,51 @@ public class JobSupervisor {
 
     public JobTaskConfiguration getConfiguration() {
         return configuration;
+    }
+
+    private void processReducerFinished(final ReducingFinishedNotification notification) {
+        // Just offload it to free the event queue
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                processReducerFinished0(notification);
+            }
+        });
+    }
+
+    private void processReducerFinished0(ReducingFinishedNotification notification) {
+        String name = configuration.getName();
+        String jobId = configuration.getJobId();
+        int partitionId = notification.getPartitionId();
+        Address reducerAddress = notification.getAddress();
+
+        if (checkPartitionReductionCompleted(partitionId, reducerAddress)) {
+            try {
+                RequestPartitionResult result = mapReduceService.processRequest(jobOwner,
+                        new RequestPartitionProcessed(name, jobId, partitionId, REDUCING));
+
+                if (result.getResultState() != SUCCESSFUL) {
+                    throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
+                }
+            } catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+        }
+    }
+
+    private boolean checkPartitionReductionCompleted(int partitionId, Address reducerAddress) {
+        Set<Address> remoteAddresses = this.remoteReducers.get(partitionId);
+        if (remoteAddresses == null) {
+            throw new RuntimeException("Reducer for partition " + partitionId + " not registered");
+        }
+
+        remoteAddresses.remove(reducerAddress);
+        if (remoteAddresses.size() == 0) {
+            if (this.remoteReducers.remove(partitionId) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

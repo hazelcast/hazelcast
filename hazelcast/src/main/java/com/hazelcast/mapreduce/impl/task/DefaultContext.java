@@ -31,11 +31,13 @@ public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
     private final Map<KeyIn, Combiner<KeyIn, ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<KeyIn, ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
+    private final int partitionId;
 
     private volatile int collected = 0;
 
     protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory,
-                             MapCombineTask mapCombineTask) {
+                             int partitionId, MapCombineTask mapCombineTask) {
+        this.partitionId = partitionId;
         this.mapCombineTask = mapCombineTask;
         this.combinerFactory = combinerFactory != null ?
                 combinerFactory : new CollectingCombinerFactory<KeyIn, ValueIn>();
@@ -46,7 +48,7 @@ public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
         Combiner<KeyIn, ValueIn, ?> combiner = getOrCreateCombiner(key);
         combiner.combine(key, value);
         collected++;
-        mapCombineTask.onEmit(this);
+        mapCombineTask.onEmit(this, partitionId);
     }
 
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {

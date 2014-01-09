@@ -16,8 +16,21 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-import com.hazelcast.mapreduce.*;
+import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.mapreduce.AbstractMapReduceJobTest;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.Context;
+import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyPredicate;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.Reducer;
+import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -610,16 +623,14 @@ public class ClientMapReduceTest
     }
 
     public static class GroupingTestCollator
-            implements Collator<Map<String, List<Integer>>, Integer> {
+            implements Collator<Map.Entry<String, List<Integer>>, Integer> {
 
         @Override
-        public Integer collate(Iterable<Map<String, List<Integer>>> values) {
+        public Integer collate(Iterable<Map.Entry<String, List<Integer>>> values) {
             int sum = 0;
-            for (Map<String, List<Integer>> reducedResults : values) {
-                for (List<Integer> entries : reducedResults.values()) {
-                    for (Integer value : entries) {
-                        sum += value;
-                    }
+            for (Map.Entry<String, List<Integer>> entry : values) {
+                for (Integer value : entry.getValue()) {
+                    sum += value;
                 }
             }
             return sum;
@@ -627,15 +638,13 @@ public class ClientMapReduceTest
     }
 
     public static class TestCollator
-            implements Collator<Map<String, Integer>, Integer> {
+            implements Collator<Map.Entry<String, Integer>, Integer> {
 
         @Override
-        public Integer collate(Iterable<Map<String, Integer>> values) {
+        public Integer collate(Iterable<Map.Entry<String, Integer>> values) {
             int sum = 0;
-            for (Map<String, Integer> reducedResults : values) {
-                for (Integer value : reducedResults.values()) {
-                    sum += value;
-                }
+            for (Map.Entry<String, Integer> entry : values) {
+                sum += entry.getValue();
             }
             return sum;
         }

@@ -20,19 +20,20 @@ import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 
-import java.util.List;
+import java.util.Collection;
 
 public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
-    private final List<KeyIn> keys;
+    private final Collection<KeyIn> keys;
     private final KeyPredicate<KeyIn> predicate;
 
-    public MappingPhase(List<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
+    public MappingPhase(Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
         this.keys = keys;
         this.predicate = predicate;
     }
 
     protected boolean matches(KeyIn key) {
+        System.out.println(key);
         if ((keys == null || keys.size() == 0) && predicate == null) {
             return true;
         }

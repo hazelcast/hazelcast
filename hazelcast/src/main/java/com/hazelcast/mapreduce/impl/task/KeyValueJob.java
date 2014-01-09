@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.AbstractJob;
@@ -27,19 +28,11 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
@@ -55,11 +48,10 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
     }
 
     @Override
-    protected <T> CompletableFuture<T> invoke() {
+    protected <T> CompletableFuture<T> invoke(Collator collator) {
         ExecutionService es = nodeEngine.getExecutionService();
-        ManagedExecutorService mes = es.getExecutor(name);
         AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
-        TrackableJobFuture<T> jobFuture = new TrackableJobFuture<T>(name, jobId, jobTracker, nodeEngine);
+        TrackableJobFuture<T> jobFuture = new TrackableJobFuture<T>(name, jobId, jobTracker, nodeEngine, collator);
         if (jobTracker.registerTrackableJob(jobFuture)) {
             return startSupervisionTask(jobFuture);
         }
@@ -68,22 +60,16 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
     private <T> CompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture) {
         ClusterService cs = nodeEngine.getClusterService();
-        OperationService os = nodeEngine.getOperationService();
-        PartitionService ps = nodeEngine.getPartitionService();
-
         Collection<MemberImpl> members = cs.getMemberList();
-        Map<MemberImpl, InternalCompletableFuture> futures = new HashMap<MemberImpl, InternalCompletableFuture>();
         for (MemberImpl member : members) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize,
-                    predicate, keyValueSource, mapper, combinerFactory, reducerFactory);
+                    keyValueSource, mapper, combinerFactory, reducerFactory);
 
             MapReduceUtil.executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
 
         // After we prepared all the remote systems we can now start the processing
-        Map<Address, List<KeyIn>> mappedKeys = MapReduceUtil.mapKeysToMember(ps, keys);
         for (MemberImpl member : members) {
-            List<KeyIn> keys = mappedKeys.get(member.getAddress());
             Operation operation = new StartProcessingJobOperation<KeyIn, ValueIn>(
                     name, jobId, keys, predicate, mapper);
 

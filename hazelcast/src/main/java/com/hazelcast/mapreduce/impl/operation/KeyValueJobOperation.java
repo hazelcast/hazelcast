@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce.impl.operation;
 
 import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
@@ -40,7 +39,6 @@ public class KeyValueJobOperation<K, V>
     private String name;
     private String jobId;
     private int chunkSize;
-    private KeyPredicate<K> predicate;
     private KeyValueSource<K, V> keyValueSource;
     private Mapper mapper;
     private CombinerFactory combinerFactory;
@@ -50,7 +48,7 @@ public class KeyValueJobOperation<K, V>
     }
 
     public KeyValueJobOperation(String name, String jobId, int chunkSize,
-                                KeyPredicate<K> predicate, KeyValueSource<K, V> keyValueSource,
+                                KeyValueSource<K, V> keyValueSource,
                                 Mapper mapper, CombinerFactory combinerFactory,
                                 ReducerFactory reducerFactory) {
         this.name = name;
@@ -58,7 +56,6 @@ public class KeyValueJobOperation<K, V>
         this.chunkSize = chunkSize;
         this.keyValueSource = keyValueSource;
         this.mapper = mapper;
-        this.predicate = predicate;
         this.combinerFactory = combinerFactory;
         this.reducerFactory = reducerFactory;
     }

@@ -18,17 +18,15 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
-import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
+import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
+import com.hazelcast.nio.Address;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class ReducerTask<Key, Chunk> implements Runnable {
 
@@ -55,11 +53,11 @@ public class ReducerTask<Key, Chunk> implements Runnable {
     }
 
     public void processChunk(Map<Key, Chunk> chunk) {
-        processChunk(-1, chunk);
+        processChunk(-1, null, chunk);
     }
 
-    public void processChunk(int partitionId, Map<Key, Chunk> chunk) {
-        reducerQueue.offer(new ReducerChunk<Key, Chunk>(chunk, partitionId));
+    public void processChunk(int partitionId, Address sender, Map<Key, Chunk> chunk) {
+        reducerQueue.offer(new ReducerChunk<Key, Chunk>(chunk, partitionId, sender));
         if (active.compareAndSet(false, true)) {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
             ExecutorService es = mapReduceService.getExecutorService(name);
@@ -86,7 +84,14 @@ public class ReducerTask<Key, Chunk> implements Runnable {
         for (Map.Entry<Key, Chunk> entry : chunk.entrySet()) {
             Reducer reducer = supervisor.getReducerByKey(entry.getKey());
             if (reducer != null) {
-                reducer.reduce(entry.getValue());
+                Chunk chunkValue = entry.getValue();
+                if (chunkValue instanceof List) {
+                    for (Object value : (List) chunkValue) {
+                        reducer.reduce(value);
+                    }
+                } else {
+                    reducer.reduce(chunkValue);
+                }
             }
         }
     }
@@ -95,17 +100,10 @@ public class ReducerTask<Key, Chunk> implements Runnable {
         // If partitionId is set this was the last chunk for this partition
         if (reducerChunk.partitionId != -1) {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
-            try {
-                RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                        new RequestPartitionProcessed(name, jobId, reducerChunk.partitionId, REDUCING));
+            ReducingFinishedNotification notification = new ReducingFinishedNotification(
+                    mapReduceService.getLocalAddress(), name, jobId, reducerChunk.partitionId);
 
-                if (result.getResultState() != SUCCESSFUL) {
-                    throw new RuntimeException("Could not finalize processing " +
-                            "for partitionId " + reducerChunk.partitionId);
-                }
-            } catch (Exception ignore) {
-                ignore.printStackTrace();
-            }
+            mapReduceService.sendNotification(reducerChunk.sender, notification);
         }
     }
 
