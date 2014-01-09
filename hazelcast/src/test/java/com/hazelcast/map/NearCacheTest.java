@@ -255,14 +255,19 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
         map.putAll(invalidationMap); //this should invalidate the near cache
 
-        assertTrueEventually(
-            new AssertTask() {
-                @Override
-                public void run() {
-                    assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
+        try{
+            assertTrueEventually(
+                new AssertTask() {
+                    @Override
+                    public void run() {
+                        assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
+                    }
                 }
-            }
-        );
+            );
+        }catch(AssertionError e){
+            HazelcastTestSupport.printAllStackTraces();
+            throw e;
+        }
     }
 
     @Test
