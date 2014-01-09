@@ -40,7 +40,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
  */
-abstract class BasicInvocation implements Callback<Object> {
+abstract class BasicInvocation implements ResponseHandler{
 
     private static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
@@ -152,7 +152,7 @@ abstract class BasicInvocation implements Callback<Object> {
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
-                invoke(e);
+                sendResponse(e);
             } else {
                 throw ExceptionUtil.rethrow(e);
             }
@@ -165,7 +165,7 @@ abstract class BasicInvocation implements Callback<Object> {
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
-            invoke(new HazelcastInstanceNotActiveException());
+            sendResponse(new HazelcastInstanceNotActiveException());
             return;
         }
 
@@ -181,27 +181,27 @@ abstract class BasicInvocation implements Callback<Object> {
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                invoke(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+                sendResponse(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
-                invoke(new HazelcastInstanceNotActiveException());
+                sendResponse(new HazelcastInstanceNotActiveException());
             }
             return;
         }
 
         member = nodeEngine.getClusterService().getMember(invTarget);
         if (!OperationAccessor.isJoinOperation(op) && member == null) {
-            invoke(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            sendResponse(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return;
         }
 
         if (op.getPartitionId() != partitionId) {
-            invoke(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+            sendResponse(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
                     " is not equal to the partition id of invocation: " + partitionId));
             return;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
-            invoke(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+            sendResponse(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
                     " is not equal to the replica index of invocation: " + replicaIndex));
             return;
         }
@@ -215,14 +215,15 @@ abstract class BasicInvocation implements Callback<Object> {
             boolean sent = operationService.send(op, invTarget);
             if (!sent) {
                 operationService.deregisterInvocation(callId);
-                invoke(new RetryableIOException("Packet not sent to -> " + invTarget));
+                sendResponse(new RetryableIOException("Packet not sent to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
                 long callId = operationService.registerInvocation(this);
                 OperationAccessor.setCallId(op, callId);
             }
-            ResponseHandlerFactory.setLocalResponseHandler(op, this);
+            //ResponseHandlerFactory.setLocalResponseHandler(op, this);
+            op.setResponseHandler(this);
             if (!operationService.isAllowedToRunInCurrentThread(op)) {
                 operationService.executeOperation(op);
             } else {
@@ -261,7 +262,12 @@ abstract class BasicInvocation implements Callback<Object> {
     }
 
     @Override
-    public void invoke(Object obj) {
+    public boolean isLocal() {
+        return true;
+    }
+
+    @Override
+    public void sendResponse(Object obj) {
         Object response;
         if (obj == null) {
             response = NULL_RESPONSE;

@@ -29,19 +29,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ResponseHandlerFactory {
 
-    private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
+   private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
 
-    public static void setLocalResponseHandler(Operation op, Callback<Object> callback) {
-        op.setResponseHandler(createLocalResponseHandler(op, callback));
-    }
-
-    public static ResponseHandler createLocalResponseHandler(Operation op, Callback<Object> callback) {
-        return new LocalInvocationResponseHandler(callback, op.getCallId());
-    }
-
-    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
-        op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
-    }
+   public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
+      op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
+   }
 
     public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
         if (op.getCallId() == 0) {
@@ -120,30 +112,6 @@ public final class ResponseHandlerFactory {
 
         public boolean isLocal() {
             return false;
-        }
-    }
-
-    private static class LocalInvocationResponseHandler implements ResponseHandler {
-
-        private final Callback<Object> callback;
-        private final long callId;
-        private final AtomicBoolean sent = new AtomicBoolean(false);
-
-        private LocalInvocationResponseHandler(Callback<Object> callback, long callId) {
-            this.callback = callback;
-            this.callId = callId;
-        }
-
-        public void sendResponse(Object obj) {
-            if (!sent.compareAndSet(false, true)) {
-                throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
-                        + ", current-response: : " + obj);
-            }
-            callback.invoke(obj);
-        }
-
-        public boolean isLocal() {
-            return true;
         }
     }
 
