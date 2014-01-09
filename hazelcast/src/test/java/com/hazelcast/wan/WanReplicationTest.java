@@ -354,7 +354,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    @Ignore("Issue #1373  this test passes when run in isolation")
+    @Ignore("Issue #1373  this test passes when run in isolation")//TODO
     @Test
     public void VTopo_1passiveReplicar_2producers_Test_HigherHitsMapMergePolicy(){
 
@@ -497,7 +497,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
         assertDataInFrom(clusterA, "map", 0, 500, clusterB);
     }
 
-    @Ignore("Issue #1372  is a chain of replicars a valid topology")
+    @Ignore("Issue #1372  is a chain of replicars a valid topology")//TODO
     @Test
     public void chainTopo_2passiveReplicars_1producer(){
 
@@ -516,7 +516,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    @Ignore("Issue #1372 is a ring topology valid")
+    @Ignore("Issue #1372 is a ring topology valid")//TODO
     @Test
     public void replicationRing(){
 

@@ -52,7 +52,7 @@ public class HazelcastClientReconnectTest {
     }
 
     @Test(timeout = 180000)
-    @Ignore
+    @Ignore//TODO
     public void testClientReconnectOnClusterDown() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -85,7 +85,7 @@ public class HazelcastClientReconnectTest {
     }
 
     @Test(timeout = 180000)
-    @Ignore
+    @Ignore//TODO
     public void testClientReconnectOnClusterDownWithEntryListeners() throws Exception {
         Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
