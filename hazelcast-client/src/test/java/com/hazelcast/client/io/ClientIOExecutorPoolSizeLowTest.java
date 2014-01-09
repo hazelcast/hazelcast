@@ -4,6 +4,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
@@ -14,6 +15,7 @@ import java.io.Serializable;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -71,7 +73,7 @@ public class ClientIOExecutorPoolSizeLowTest {
             }
         }
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 assertEquals(1000, map.size());
             }
@@ -94,7 +96,7 @@ public class ClientIOExecutorPoolSizeLowTest {
             map.putAsync(i, i);
         }
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 assertEquals(1000, map.size());
             }
@@ -114,7 +116,7 @@ public class ClientIOExecutorPoolSizeLowTest {
             map.putAsync(i,i);
         }
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 assertEquals(1000, map.size());
             }
@@ -129,7 +131,7 @@ public class ClientIOExecutorPoolSizeLowTest {
             map.removeAsync(i);
         }
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 assertEquals(0, map.size());
             }
@@ -151,7 +153,7 @@ public class ClientIOExecutorPoolSizeLowTest {
             q.offer(i);
         }
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 assertEquals(1000, q.size());
             }
@@ -166,7 +168,7 @@ public class ClientIOExecutorPoolSizeLowTest {
             q.remove(o);
         }
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 assertEquals(0, q.size());
             }
@@ -189,7 +191,7 @@ public class ClientIOExecutorPoolSizeLowTest {
         for(int i=0; i<1000; i++)
             t.publish(i);
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 assertEquals(1000, counter.count.get());
             }
@@ -211,7 +213,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
         final Future<String> f = executor.submit(new BasicTestTask());
 
-        assertTrueEventually(new Runnable(){
+        assertTrueEventually(new AssertTask(){
             public void run(){
                 try {
                     assertEquals(BasicTestTask.RESULT, f.get());
@@ -276,23 +278,5 @@ public class ClientIOExecutorPoolSizeLowTest {
         public void entryEvicted(EntryEvent event) {
         }
 
-    }
-
-    public static void assertTrueEventually(Runnable task) {
-        AssertionError error = null;
-        for (int k = 0; k < 60; k++) {
-            try {
-                task.run();
-                return;
-            } catch (AssertionError e) {
-                error = e;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        throw error;
     }
 }
