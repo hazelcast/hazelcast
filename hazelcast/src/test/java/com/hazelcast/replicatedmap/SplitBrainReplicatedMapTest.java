@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -71,13 +72,13 @@ public class SplitBrainReplicatedMapTest {
             a.getRandomNode().getReplicatedMap("default").put(i,i);
         }
 
-        HzClusterUtil.assertTrueEventually(
-            new AssertTask() {
-                public void run() {
-                    for(HazelcastInstance hz: a.getCluster())
-                        assertEquals(100, hz.getReplicatedMap("default").size());
+        assertTrueEventually(
+                new AssertTask() {
+                    public void run() {
+                        for (HazelcastInstance hz : a.getCluster())
+                            assertEquals(100, hz.getReplicatedMap("default").size());
+                    }
                 }
-            }
         );
 
         final HzClusterUtil b = a.splitCluster();
@@ -85,13 +86,13 @@ public class SplitBrainReplicatedMapTest {
         a.assertClusterSizeEventually(2);
         b.assertClusterSizeEventually(2);
 
-        HzClusterUtil.assertTrueEventually(
+        assertTrueEventually(
                 new AssertTask() {
                     public void run() {
-                        for(HazelcastInstance hz: a.getCluster())
+                        for (HazelcastInstance hz : a.getCluster())
                             assertEquals(100, hz.getReplicatedMap("default").size());
 
-                        for(HazelcastInstance hz: b.getCluster())
+                        for (HazelcastInstance hz : b.getCluster())
                             assertEquals(100, hz.getReplicatedMap("default").size());
                     }
                 }
@@ -134,10 +135,10 @@ public class SplitBrainReplicatedMapTest {
             a.getRandomNode().getReplicatedMap("default").put(i,i);
         }
 
-        HzClusterUtil.assertTrueEventually(
+        assertTrueEventually(
                 new AssertTask() {
                     public void run() {
-                        for(HazelcastInstance hz: a.getCluster())
+                        for (HazelcastInstance hz : a.getCluster())
                             assertEquals(100, hz.getReplicatedMap("default").size());
                     }
                 }
@@ -148,13 +149,13 @@ public class SplitBrainReplicatedMapTest {
         a.assertClusterSizeEventually(2);
         b.assertClusterSizeEventually(2);
 
-        HzClusterUtil.assertTrueEventually(
+        assertTrueEventually(
                 new AssertTask() {
                     public void run() {
-                        for(HazelcastInstance hz: a.getCluster())
+                        for (HazelcastInstance hz : a.getCluster())
                             assertEquals(100, hz.getReplicatedMap("default").size());
 
-                        for(HazelcastInstance hz: b.getCluster())
+                        for (HazelcastInstance hz : b.getCluster())
                             assertEquals(100, hz.getReplicatedMap("default").size());
                     }
                 }
@@ -167,13 +168,13 @@ public class SplitBrainReplicatedMapTest {
         }
 
 
-        HzClusterUtil.assertTrueEventually(
+        assertTrueEventually(
                 new AssertTask() {
                     public void run() {
-                        for(HazelcastInstance hz: a.getCluster())
+                        for (HazelcastInstance hz : a.getCluster())
                             assertEquals(200, hz.getReplicatedMap("default").size());
 
-                        for(HazelcastInstance hz: b.getCluster())
+                        for (HazelcastInstance hz : b.getCluster())
                             assertEquals(200, hz.getReplicatedMap("default").size());
                     }
                 }
@@ -183,10 +184,10 @@ public class SplitBrainReplicatedMapTest {
         a.mergeCluster(b);
         a.assertClusterSizeEventually(4);
 
-        HzClusterUtil.assertTrueEventually(
+        assertTrueEventually(
                 new AssertTask() {
                     public void run() {
-                        for(HazelcastInstance hz: a.getCluster())
+                        for (HazelcastInstance hz : a.getCluster())
                             assertEquals(300, hz.getReplicatedMap("default").size());
                     }
                 }
