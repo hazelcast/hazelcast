@@ -73,15 +73,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 final class BasicOperationService implements InternalOperationService {
 
-    private final static AtomicLong x = new AtomicLong();
-
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
     final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
-    private final AtomicLong callIdGen = new AtomicLong((x.incrementAndGet()*1000000));
-     final ConcurrentMap<Long, BasicInvocation> localInvocations;
+    private final AtomicLong callIdGen = new AtomicLong(1);
+    private final ConcurrentMap<Long, BasicInvocation> localInvocations;
     private final ExecutorService[] operationExecutors;
     private final BlockingQueue[] operationExecutorQueues;
     private final ExecutorService defaultOperationExecutor;
@@ -706,18 +704,8 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     long registerInvocation(BasicInvocation invocation) {
-        long callId = newCallId();
-        localInvocations.put(callId, invocation);
-        return callId;
-    }
-
-    //todo: simplify, just start counter at one.
-    @PrivateApi
-    long newCallId() {
         final long callId = callIdGen.incrementAndGet();
-        if (callId == 0) {
-            return newCallId();
-        }
+        localInvocations.put(callId, invocation);
         return callId;
     }
 
@@ -751,7 +739,7 @@ final class BasicOperationService implements InternalOperationService {
                     final BasicInvocation invocation = it.next();
                     if (invocation.isCallTarget(member)) {
                         it.remove();
-                        invocation.invoke(new MemberLeftException(member));
+                        invocation.sendResponse(new MemberLeftException(member));
                     }
                 }
             }
@@ -766,7 +754,7 @@ final class BasicOperationService implements InternalOperationService {
         }
         responseExecutor.shutdown();
         for (BasicInvocation invocation : localInvocations.values()) {
-            invocation.invoke(new HazelcastInstanceNotActiveException());
+            invocation.sendResponse(new HazelcastInstanceNotActiveException());
         }
         localInvocations.clear();
          backupScheduler.cancelAll();
@@ -885,7 +873,7 @@ final class BasicOperationService implements InternalOperationService {
                 throw new HazelcastException("No call for response:"+response);
             }
 
-            invocation.invoke(response);
+            invocation.sendResponse(response);
         }
 
         @Override
