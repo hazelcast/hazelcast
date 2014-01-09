@@ -52,7 +52,7 @@ public class EnumTest {
     }
 
     @Test
-    @Ignore
+    @Ignore//TODO
     // TimeUnit.SECONDS.getClass().isEnum() returns false!
     public void test4() throws IOException {
         test(TimeUnit.SECONDS);
