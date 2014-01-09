@@ -91,8 +91,7 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("name LIKE 'abc-%'").apply(createEntry("1", new Employee("abc-123", 34, true, 10D))));
         assertTrue(new SqlPredicate("name REGEX '^\\w{3}-\\d{3}-\\w{3}$'").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("name REGEX '^[^\\w]{3}-\\d{3}-\\w{3}$'").apply(createEntry("1", value)));
-        assertTrue(new SqlPredicate(" (name ILIKE 'ABC-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
-    }
+     }
 
     @Test
     public void testEqual() {
@@ -255,7 +254,6 @@ public class PredicatesTest {
         assertEquals("(active=true OR age BETWEEN 10 AND 15)", sql("active or (age between 10 and 15)"));
         assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
         assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
-        assertEquals("name ILIKE 'J%'", sql("name ilike 'J%'"));
         //issue #594
         assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
     }
