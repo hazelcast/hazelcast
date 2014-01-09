@@ -31,8 +31,12 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class HazelcastTestSupport {
 
+    private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+
     static {
         System.setProperty("hazelcast.repmap.hooks.allowed", "true");
+        ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout","120"));
+        System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = "+ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     private TestHazelcastInstanceFactory factory;
@@ -46,7 +50,7 @@ public abstract class HazelcastTestSupport {
 
     public static void assertTrueEventually(AssertTask task) {
         AssertionError error = null;
-        for (int k = 0; k < 120; k++) {
+        for (int k = 0; k < ASSERT_TRUE_EVENTUALLY_TIMEOUT; k++) {
             try {
                 task.run();
                 return;
