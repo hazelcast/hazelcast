@@ -43,6 +43,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
+/**
+ * A test that verifies how well Hazelcast is able to deal with a cluster where
+ * members are joining an leaving all the time, so partitions are moving. On this
+ * cluster, partitioned calls are made and therefor it happens frequently that calls
+ * are send to the wrong machine.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class RepartitioningStressTest extends HazelcastTestSupport {
@@ -188,7 +194,6 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             }
         }
     }
-
 
     public class RestartThread extends Thread {
 
