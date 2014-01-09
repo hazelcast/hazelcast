@@ -61,6 +61,7 @@ public class JobProcessInformationImpl implements JobProcessInformation {
             throw new IllegalArgumentException("partitionStates need to have same length");
         }
         if (updater.compareAndSet(this, oldPartitionStates, newPartitionStates)) {
+            supervisor.checkFullyProcessed(this);
             return true;
         }
         return false;

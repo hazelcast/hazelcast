@@ -95,12 +95,10 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
 
         Map<KeyOut, Chunk> chunkMap = context.finish();
-
         try {
             RequestPartitionResult result = mapReduceService.processRequest(
                     supervisor.getJobOwner(), new RequestPartitionReducing(name, jobId, partitionId));
 
-            System.out.println("Event sent: " + partitionId);
             if (result.getState() == RequestPartitionResult.State.SUCCESSFUL) {
                 // Wrap into LastChunkNotification object
                 Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
@@ -108,6 +106,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     mapReduceService.sendNotification(entry.getKey(),
                             new LastChunkNotification(entry.getKey(), name, jobId, partitionId, entry.getValue()));
                 }
+            } else {
+                System.out.println(result);
             }
         } catch (Exception e) {
             e.printStackTrace();

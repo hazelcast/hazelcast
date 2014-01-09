@@ -104,34 +104,17 @@ public class ReducerTask<Key, Chunk> implements Runnable {
     private void processProcessedState(ReducerChunk<Key, Chunk> reducerChunk) {
         if (reducerChunk.partitionId != -1) {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
-            JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
             try {
                 RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
                         new RequestPartitionProcessed(name, jobId, reducerChunk.partitionId));
-                if (result.getState() == RequestPartitionResult.State.SUCCESSFUL) {
-                    if (checkFullyProcessed(processInformation)) {
-                        // TODO Request reduced results
-                    }
+                if (result.getState() != RequestPartitionResult.State.SUCCESSFUL) {
+                    throw new RuntimeException("Could not finalize processing "+
+                            "for partitionId " + reducerChunk.partitionId);
                 }
             } catch (Exception ignore) {
                 ignore.printStackTrace();
             }
         }
-    }
-
-    private boolean checkFullyProcessed(JobProcessInformation processInformation) {
-        if (!supervisor.isOwnerNode()) {
-            return false;
-        }
-        JobPartitionState[] partitionStates = processInformation.getPartitionStates();
-        //System.out.println("Finished: " + MapReduceUtil.printPartitionStates(partitionStates));
-        for (JobPartitionState partitionState : partitionStates) {
-            if (partitionState == null
-                    || partitionState.getState() == JobPartitionState.State.PROCESSED) {
-                return false;
-            }
-        }
-        return true;
     }
 
 }

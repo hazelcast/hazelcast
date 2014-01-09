@@ -22,6 +22,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
+import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -57,9 +58,14 @@ public class RequestPartitionReducing
             return;
         }
 
+        JobPartitionState.State nextState = JobPartitionState.State.REDUCING;
+        JobTaskConfiguration configuration = supervisor.getConfiguration();
+        if (configuration.getReducerFactory() == null) {
+            nextState = JobPartitionState.State.PROCESSED;
+        }
+
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
-        JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(),
-                JobPartitionState.State.REDUCING);
+        JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(), nextState);
 
         for (; ; ) {
             JobPartitionState[] oldPartitionStates = processInformation.getPartitionStates();
@@ -94,7 +100,7 @@ public class RequestPartitionReducing
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.REQUEST_PARTITION_PROCESSING;
+        return MapReduceDataSerializerHook.REQUEST_PARTITION_REDUCING;
     }
 
 }

@@ -16,10 +16,13 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
@@ -93,6 +96,21 @@ public class JobSupervisor {
         return reducer;
     }
 
+    public void checkFullyProcessed(JobProcessInformation processInformation) {
+        if (isOwnerNode()) {
+            JobPartitionState[] partitionStates = processInformation.getPartitionStates();
+            System.out.println("Finished: " + MapReduceUtil.printPartitionStates(partitionStates));
+            for (JobPartitionState partitionState : partitionStates) {
+                if (partitionState == null
+                        || partitionState.getState() == JobPartitionState.State.PROCESSED) {
+                    return;
+                }
+            }
+            System.out.println("Finished processing...");
+            // TODO Request reduced results
+        }
+    }
+
     public <Key> Map<Key, Reducer> getReducers() {
         return (Map<Key, Reducer>) reducers;
     }
@@ -108,4 +126,9 @@ public class JobSupervisor {
     public boolean isOwnerNode() {
         return ownerNode;
     }
+
+    public JobTaskConfiguration getConfiguration() {
+        return configuration;
+    }
+
 }
