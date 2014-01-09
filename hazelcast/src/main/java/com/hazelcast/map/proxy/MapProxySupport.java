@@ -960,7 +960,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
 
         @Override
-        public void notify(Object response) {
+        public void invoke(Object response) {
             if (response instanceof Throwable) {
                 executionCallback.onFailure((Throwable) response);
             } else {

@@ -32,7 +32,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
         final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getPartition())
                 .setReplicaIndex(getReplicaIndex()).setTryCount(100)
                 .setCallback(new Callback<Object>() {
-                    public void notify(Object object) {
+                    public void invoke(Object object) {
                         clientEngine.sendResponse(endpoint, filter(object));
                     }
                 });

@@ -40,7 +40,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
  */
-abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback {
+abstract class BasicInvocation implements ResponseHandler{
 
     private static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
@@ -51,6 +51,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     private static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
     private static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
+    private final BasicOperationService operationService;
 
     private static long decrementTimeout(long timeout, long diff) {
         if (timeout != Long.MAX_VALUE) {
@@ -79,11 +80,13 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     private final String executorName;
     private final boolean resultDeserialized;
 
-    BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+    BasicInvocation(BasicOperationService basicOperationService, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
                     String executorName, boolean resultDeserialized) {
+        this.operationService = basicOperationService;
+        this.nodeEngine = operationService.nodeEngine;
         this.logger = nodeEngine.getLogger(BasicInvocation.class);
-        this.nodeEngine = nodeEngine;
+
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
@@ -98,20 +101,10 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
     abstract ExceptionAction onException(Throwable t);
 
-    public String getServiceName() {
-        return serviceName;
-    }
+    protected abstract Address getTarget();
 
     InternalPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
-    }
-
-    public int getReplicaIndex() {
-        return replicaIndex;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
     }
 
     private ExecutorService getAsyncExecutor() {
@@ -123,7 +116,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return callTimeout;
         }
 
-        BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         final long defaultCallTimeout = operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
@@ -154,14 +146,13 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
             if (!operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
-                notify(e);
+                sendResponse(e);
             } else {
                 throw ExceptionUtil.rethrow(e);
             }
@@ -169,11 +160,82 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return invocationFuture;
     }
 
+    private volatile MemberImpl member;
+
+    private void doInvoke() {
+        if (!nodeEngine.isActive()) {
+            remote = false;
+            sendResponse(new HazelcastInstanceNotActiveException());
+            return;
+        }
+
+        long cid = op.getCallId();
+        if (cid > 0) {
+            operationService.deregisterInvocation(cid);
+        }
+
+        final Address invTarget = getTarget();
+        target = invTarget;
+        invokeCount++;
+        final Address thisAddress = nodeEngine.getThisAddress();
+        if (invTarget == null) {
+            remote = false;
+            if (nodeEngine.isActive()) {
+                sendResponse(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+            } else {
+                sendResponse(new HazelcastInstanceNotActiveException());
+            }
+            return;
+        }
+
+        member = nodeEngine.getClusterService().getMember(invTarget);
+        if (!OperationAccessor.isJoinOperation(op) && member == null) {
+            sendResponse(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            return;
+        }
+
+        if (op.getPartitionId() != partitionId) {
+            sendResponse(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+                    " is not equal to the partition id of invocation: " + partitionId));
+            return;
+        }
+
+        if (op.getReplicaIndex() != replicaIndex) {
+            sendResponse(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+                    " is not equal to the replica index of invocation: " + replicaIndex));
+            return;
+        }
+
+        OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
+
+        remote = !thisAddress.equals(invTarget);
+        if (remote) {
+            long callId = operationService.registerInvocation(this);
+            OperationAccessor.setCallId(op, callId);
+            boolean sent = operationService.send(op, invTarget);
+            if (!sent) {
+                operationService.deregisterInvocation(callId);
+                sendResponse(new RetryableIOException("Packet not sent to -> " + invTarget));
+            }
+        } else {
+            if (op instanceof BackupAwareOperation) {
+                long callId = operationService.registerInvocation(this);
+                OperationAccessor.setCallId(op, callId);
+            }
+            op.setResponseHandler(this);
+            if (!operationService.isAllowedToRunInCurrentThread(op)) {
+                operationService.executeOperation(op);
+            } else {
+                operationService.runOperation(op);
+            }
+        }
+    }
 
     private void resetAndReInvoke() {
         invokeCount = 0;
         potentialResponse = null;
         expectedBackupCount = -1;
+
         doInvoke();
     }
 
@@ -199,7 +261,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     }
 
     @Override
-    public void notify(Object obj) {
+    public boolean isLocal() {
+        return true;
+    }
+
+    @Override
+    public void sendResponse(Object obj) {
         Object response;
         if (obj == null) {
             response = NULL_RESPONSE;
@@ -268,90 +335,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         invocationFuture.set(response);
     }
 
-    private void doInvoke() {
-        if (!nodeEngine.isActive()) {
-            remote = false;
-            notify(new HazelcastInstanceNotActiveException());
-            return;
-        }
-
-        final Address invTarget = getTarget();
-        target = invTarget;
-        invokeCount++;
-        final Address thisAddress = nodeEngine.getThisAddress();
-        if (invTarget == null) {
-            remote = false;
-            if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
-            } else {
-                notify(new HazelcastInstanceNotActiveException());
-            }
-            return;
-        }
-
-        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
-        if (!OperationAccessor.isJoinOperation(op) && member == null) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
-            return;
-        }
-
-        if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
-                    " is not equal to the partition id of invocation: " + partitionId));
-            return;
-        }
-
-        if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
-                    " is not equal to the replica index of invocation: " + replicaIndex));
-            return;
-        }
-
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
-
-        remote = !thisAddress.equals(invTarget);
-        if (remote) {
-            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
-            final long callId = operationService.registerRemoteCall(call);
-            if (op instanceof BackupAwareOperation) {
-                registerBackups((BackupAwareOperation) op, callId);
-            }
-            OperationAccessor.setCallId(op, callId);
-            boolean sent = operationService.send(op, invTarget);
-            if (!sent) {
-                operationService.deregisterRemoteCall(callId);
-                operationService.deregisterBackupCall(callId);
-                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
-            }
-        } else {
-            if (op instanceof BackupAwareOperation) {
-                final long callId = operationService.newCallId();
-                registerBackups((BackupAwareOperation) op, callId);
-                OperationAccessor.setCallId(op, callId);
-            }
-            ResponseHandlerFactory.setLocalResponseHandler(op, this);
-            if (!operationService.isAllowedToRunInCurrentThread(op)) {
-                operationService.executeOperation(op);
-            } else {
-                operationService.runOperation(op);
-            }
-        }
-    }
-
-    protected abstract Address getTarget();
-
-
-    private void registerBackups(BackupAwareOperation op, long callId) {
-        final long oldCallId = ((Operation) op).getCallId();
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        if (oldCallId != 0) {
-            operationService.deregisterBackupCall(oldCallId);
-        }
-        operationService.registerBackupCall(callId, this);
-    }
-
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -373,7 +356,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     private volatile NormalResponse potentialResponse;
     private volatile int expectedBackupCount;
 
-    @Override
     public void signalOneBackupComplete() {
         synchronized (this) {
             availableBackups++;
@@ -428,6 +410,14 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }), timeout, unit);
     }
 
+    public boolean isCallTarget(MemberImpl member){
+         if (member!=null) {
+             return member.getUuid().equals(member.getUuid());
+         } else {
+             return member.getAddress().equals(target);
+         }
+    }
+
     public static class IsStillExecuting extends AbstractOperation {
 
         private long operationCallId;
@@ -467,6 +457,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
     private class ReInvocationTask implements Runnable {
         public void run() {
+            //todo: why is the reinvoke method not called?
             doInvoke();
         }
     }
@@ -492,12 +483,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
         @Override
         public void onResponse(E response) {
-            callback.notify(response);
+            callback.invoke(response);
         }
 
         @Override
         public void onFailure(Throwable t) {
-            callback.notify(t);
+            callback.invoke(t);
         }
     }
 
@@ -555,6 +546,40 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         public void set(Object response) {
+            response = toResponse(response);
+
+            ExecutionCallbackNode<E> callbackChain;
+            synchronized (this) {
+                if (this.response != null && !(this.response instanceof InternalResponse)) {
+                    throw new IllegalArgumentException("The InvocationFuture.set method can only be called once for operation:"+
+                            op+" response:"+response+" this.response:"+this.response);
+                }
+                this.response = response;
+                if (response == WAIT_RESPONSE) {
+                    return;
+                }
+                callbackChain = callbackHead;
+                callbackHead = null;
+                this.notifyAll();
+            }
+
+            //we need to deregister the invocation to make sure that there is no memory leak.
+            final long callId = op.getCallId();
+            if (callId > 0) {
+                operationService.deregisterInvocation(callId);
+            }
+
+            notifyCallbacks(callbackChain);
+        }
+
+        private void notifyCallbacks(ExecutionCallbackNode<E> callbackChain) {
+            while (callbackChain != null) {
+                runAsynchronous(callbackChain.callback, callbackChain.executor);
+                callbackChain = callbackChain.next;
+            }
+        }
+
+        private Object toResponse(Object response) {
             if (response == null) {
                 throw new IllegalArgumentException("response can't be null");
             }
@@ -570,29 +595,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             if(resultDeserialized && response instanceof Data){
                 response = nodeEngine.toObject(response);
             }
-
-            ExecutionCallbackNode<E> callbackChain;
-            synchronized (this) {
-                if (this.response != null && !(this.response instanceof InternalResponse)) {
-                    throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
-                }
-                this.response = response;
-                if (response == WAIT_RESPONSE) {
-                    return;
-                }
-                callbackChain = callbackHead;
-                callbackHead = null;
-                this.notifyAll();
-            }
-
-            //we need to deregister the backup call to make sure that there is no memory leak.
-            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            operationService.deregisterBackupCall(op.getCallId());
-
-            while (callbackChain != null) {
-                runAsynchronous(callbackChain.callback, callbackChain.executor);
-                callbackChain = callbackChain.next;
-            }
+            return response;
         }
 
         @Override
@@ -747,7 +750,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             // ask if op is still being executed?
             Boolean executing = Boolean.FALSE;
             try {
-                final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName,
+                final BasicInvocation inv = new BasicTargetInvocation(operationService, serviceName,
                         new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null, null,true);
                 Future f = inv.invoke();
                 // TODO: @mm - improve logging (see SystemLogService)
