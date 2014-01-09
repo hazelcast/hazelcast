@@ -972,6 +972,7 @@
         <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="eviction-policy" use="optional" type="eviction-policy" default="LRU"/>
         <xs:attribute name="invalidate-on-change" use="optional" type="xs:string" default="true"/>
+        <xs:attribute name="cache-local-entries" use="optional" type="xs:string" default="false"/>
         <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="BINARY"/>
     </xs:complexType>
 
