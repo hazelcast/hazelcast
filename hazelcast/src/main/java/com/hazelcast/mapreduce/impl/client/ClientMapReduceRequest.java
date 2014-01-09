@@ -19,25 +19,37 @@ package com.hazelcast.mapreduce.impl.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.CompletableFuture;
-import com.hazelcast.mapreduce.*;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.KeyPredicate;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
+import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
+import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
+import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.Future;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
-public class ClientMapReduceRequest
+public class ClientMapReduceRequest<KeyIn, ValueIn>
         extends InvocationClientRequest
         implements IdentifiedDataSerializable {
 
@@ -45,7 +57,7 @@ public class ClientMapReduceRequest
 
     protected String jobId;
 
-    protected List keys;
+    protected Collection keys;
 
     protected KeyPredicate predicate;
 
@@ -62,7 +74,7 @@ public class ClientMapReduceRequest
     public ClientMapReduceRequest() {
     }
 
-    public ClientMapReduceRequest(String name, String jobId, List keys, KeyPredicate predicate, Mapper mapper,
+    public ClientMapReduceRequest(String name, String jobId, Collection keys, KeyPredicate predicate, Mapper mapper,
                                   CombinerFactory combinerFactory, ReducerFactory reducerFactory,
                                   KeyValueSource keyValueSource, int chunkSize) {
         this.name = name;
@@ -78,56 +90,55 @@ public class ClientMapReduceRequest
 
     @Override
     protected void invoke() {
-        // MapReduceOperationFactory factory = buildFactoryAdapter();
+        try {
+            final ClientEndpoint endpoint = getEndpoint();
+            final ClientEngine engine = getClientEngine();
 
-        ClientEndpoint endpoint = getEndpoint();
-        ClientEngine engine = getClientEngine();
-        SerializationService ss = engine.getSerializationService();
-        PartitionService ps = engine.getPartitionService();
+            MapReduceService mapReduceService = getService();
+            NodeEngine nodeEngine = mapReduceService.getNodeEngine();
+            AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.createDistributedObject(name);
+            TrackableJobFuture jobFuture = new TrackableJobFuture(name, jobId, jobTracker, nodeEngine, null);
+            if (jobTracker.registerTrackableJob(jobFuture)) {
+                CompletableFuture future = startSupervisionTask(jobFuture, mapReduceService, nodeEngine);
+                future.andThen(new ExecutionCallback() {
+                    @Override
+                    public void onResponse(Object response) {
+                        engine.sendResponse(endpoint, response);
+                    }
 
-        Map<Integer, CompletableFuture> futures = new HashMap<Integer, CompletableFuture>();
-        Map<Integer, List> mappedKeys = MapReduceUtil.mapKeysToPartition(ps, keys);
-        for (Map.Entry<Integer, List> entry : mappedKeys.entrySet()) {
-            Operation op = null; // factory.createOperation(entry.getKey(), entry.getValue());
-            InvocationBuilder builder = buildInvocationBuilder(getServiceName(), op, entry.getKey());
-            futures.put(entry.getKey(), builder.invoke());
-        }
-
-        Map<Integer, Object> results = new HashMap<Integer, Object>();
-        for (Map.Entry<Integer, CompletableFuture> entry : futures.entrySet()) {
-            try {
-                results.put(entry.getKey(), toObject(ss, entry.getValue().get()));
-            } catch (Throwable t) {
-                results.put(entry.getKey(), t);
+                    @Override
+                    public void onFailure(Throwable t) {
+                        engine.sendResponse(endpoint, t);
+                    }
+                });
             }
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not register map reduce job", e);
         }
-
-        List<Integer> failedPartitions = new LinkedList<Integer>();
-        for (Map.Entry<Integer, Object> entry : results.entrySet()) {
-            if (entry.getValue() instanceof Throwable) {
-                failedPartitions.add(entry.getKey());
-            }
-        }
-
-        for (Integer partitionId : failedPartitions) {
-            List keys = mappedKeys.get(partitionId);
-            Operation operation = null; // factory.createOperation(partitionId, keys);
-            InvocationBuilder builder = buildInvocationBuilder(getServiceName(), operation, partitionId);
-            results.put(partitionId, builder.invoke());
-        }
-
-        for (Integer failedPartition : failedPartitions) {
-            try {
-                Future<?> future = (Future<?>) results.get(failedPartition);
-                Object result = future.get();
-                results.put(failedPartition, result);
-            } catch (Throwable t) {
-                results.put(failedPartition, t);
-            }
-        }
-
-        engine.sendResponse(endpoint, results);
     }
+
+    private <T> CompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
+                                                          MapReduceService mapReduceService,
+                                                          NodeEngine nodeEngine) {
+        ClusterService cs = nodeEngine.getClusterService();
+        Collection<MemberImpl> members = cs.getMemberList();
+        for (MemberImpl member : members) {
+            Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize,
+                    keyValueSource, mapper, combinerFactory, reducerFactory);
+
+            MapReduceUtil.executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
+        }
+
+        // After we prepared all the remote systems we can now start the processing
+        for (MemberImpl member : members) {
+            Operation operation = new StartProcessingJobOperation<KeyIn, ValueIn>(
+                    name, jobId, keys, predicate, mapper);
+
+            MapReduceUtil.executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
+        }
+        return jobFuture;
+    }
+
 
     @Override
     public String getServiceName() {
@@ -145,8 +156,10 @@ public class ClientMapReduceRequest
         out.writeObject(keyValueSource);
         out.writeInt(chunkSize);
         out.writeInt(keys == null ? 0 : keys.size());
-        for (Object key : keys) {
-            out.writeObject(key);
+        if (keys != null) {
+            for (Object key : keys) {
+                out.writeObject(key);
+            }
         }
     }
 

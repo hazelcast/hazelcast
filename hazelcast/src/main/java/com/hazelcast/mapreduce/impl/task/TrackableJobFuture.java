@@ -41,7 +41,7 @@ public class TrackableJobFuture<V>
 
     public TrackableJobFuture(String name, String jobId, JobTracker jobTracker,
                               NodeEngine nodeEngine, Collator collator) {
-        super(nodeEngine);
+        super(nodeEngine, nodeEngine.getLogger(TrackableJobFuture.class));
         this.name = name;
         this.jobId = jobId;
         this.jobTracker = jobTracker;

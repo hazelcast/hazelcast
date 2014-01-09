@@ -192,6 +192,10 @@ public class MapReduceService
         return nodeEngine.getThisAddress();
     }
 
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
+
     @Override
     public void dispatchEvent(MapReduceNotification event, MapReduceService listener) {
         String name = event.getName();

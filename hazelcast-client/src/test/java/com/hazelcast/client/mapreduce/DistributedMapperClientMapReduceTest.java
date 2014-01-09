@@ -22,6 +22,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.Combiner;
+import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
@@ -29,8 +31,9 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,12 +44,18 @@ import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 @SuppressWarnings("unused")
 public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
     private static final String MAP_NAME = "default";
+
+    @After
+    public void shutdown() {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
 
     @Test(timeout = 30000)
     public void testMapperReducer()
@@ -67,6 +76,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         CompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
+                        .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
                         .submit();
 
@@ -103,6 +113,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         CompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
+                        .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
                         .submit(new TestCollator());
 
@@ -142,6 +153,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         CompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
+                        .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
                         .submit();
 
@@ -198,6 +210,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         CompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
+                        .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
                         .submit(new TestCollator());
 
@@ -227,6 +240,36 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         for (int i = 0; i < 4; i++) {
             assertEquals(expectedResult, result[0]);
+        }
+    }
+
+    public static class TestCombiner
+            extends Combiner<String, Integer, Integer> {
+
+        private transient int sum;
+
+        @Override
+        public void combine(String key, Integer value) {
+            sum += value;
+        }
+
+        @Override
+        public Integer finalizeChunk() {
+            int v = sum;
+            sum = 0;
+            return v;
+        }
+    }
+
+    public static class TestCombinerFactory
+            implements CombinerFactory<String, Integer, Integer> {
+
+        public TestCombinerFactory() {
+        }
+
+        @Override
+        public Combiner<String, Integer, Integer> newCombiner(String key) {
+            return new TestCombiner();
         }
     }
 

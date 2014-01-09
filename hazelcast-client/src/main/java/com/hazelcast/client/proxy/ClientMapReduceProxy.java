@@ -23,6 +23,7 @@ import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
@@ -32,11 +33,11 @@ import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.process.ProcessJob;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -76,7 +77,7 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
             try {
                 ClientContext context = getContext();
                 ClientInvocationService cis = context.getInvocationService();
-                ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, new ArrayList(keys),
+                ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
                         predicate, mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture();
@@ -84,7 +85,6 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
                     @Override
                     public void handle(ResponseStream stream) throws Exception {
                         try {
-                            stream.read(); // initial ok response
                             Object event = stream.read();
                             if (collator != null) {
                                 event = collator.collate(((Map) event).entrySet());
@@ -113,7 +113,7 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
     private class ClientCompletableFuture<V> extends AbstractCompletableFuture<V> {
 
         protected ClientCompletableFuture() {
-            super(null);
+            super(null, Logger.getLogger(ClientCompletableFuture.class));
         }
 
         @Override

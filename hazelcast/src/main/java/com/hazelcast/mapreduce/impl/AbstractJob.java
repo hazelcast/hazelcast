@@ -28,6 +28,7 @@ import com.hazelcast.mapreduce.MappingJob;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.ReducingJob;
 import com.hazelcast.mapreduce.ReducingSubmittableJob;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.ArrayList;
@@ -35,7 +36,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn> {
 
@@ -43,7 +43,7 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
 
     protected final JobTracker jobTracker;
 
-    protected final String jobId = UUID.randomUUID().toString();
+    protected final String jobId;
 
     protected final KeyValueSource<KeyIn, ValueIn> keyValueSource;
 
@@ -60,7 +60,12 @@ public abstract class AbstractJob<KeyIn, ValueIn> implements Job<KeyIn, ValueIn>
     protected int chunkSize = -1;
 
     public AbstractJob(String name, JobTracker jobTracker, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+        this(name, UuidUtil.buildRandomUuidString(), jobTracker, keyValueSource);
+    }
+
+    public AbstractJob(String name, String jobId, JobTracker jobTracker, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         this.name = name;
+        this.jobId = jobId;
         this.jobTracker = jobTracker;
         this.keyValueSource = keyValueSource;
     }

@@ -28,7 +28,6 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
@@ -49,7 +48,6 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
     @Override
     protected <T> CompletableFuture<T> invoke(Collator collator) {
-        ExecutionService es = nodeEngine.getExecutionService();
         AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
         TrackableJobFuture<T> jobFuture = new TrackableJobFuture<T>(name, jobId, jobTracker, nodeEngine, collator);
         if (jobTracker.registerTrackableJob(jobFuture)) {

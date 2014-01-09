@@ -384,7 +384,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         private final Future<V> future;
 
         BasicCompletableFuture(Future<V> future, NodeEngine nodeEngine) {
-            super(nodeEngine);
+            super(nodeEngine, nodeEngine.getLogger(BasicCompletableFuture.class));
             this.future = future;
         }
 
