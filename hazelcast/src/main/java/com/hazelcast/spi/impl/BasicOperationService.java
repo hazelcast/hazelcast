@@ -739,7 +739,7 @@ final class BasicOperationService implements InternalOperationService {
             invocation.sendResponse(new HazelcastInstanceNotActiveException());
         }
         localInvocations.clear();
-         backupScheduler.cancelAll();
+        backupScheduler.cancelAll();
         for (ExecutorService executor : operationExecutors) {
             try {
                 executor.awaitTermination(3, TimeUnit.SECONDS);
