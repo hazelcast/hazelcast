@@ -120,7 +120,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
         final String name = "testLockEviction2";
         final IMap map = instance1.getMap(name);
-        Random rand = new Random(System.currentTimeMillis());
+        Random rand = new Random();
         for (int i = 0; i < 5; i++) {
             map.lock(i, rand.nextInt(5), TimeUnit.SECONDS);
         }

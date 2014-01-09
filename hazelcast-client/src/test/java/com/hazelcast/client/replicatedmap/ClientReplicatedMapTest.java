@@ -1198,7 +1198,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     private SimpleEntry<Integer, Integer>[] buildTestValues() {
-        Random random = new Random(-System.currentTimeMillis());
+        Random random = new Random();
         SimpleEntry<Integer, Integer>[] testValues = new SimpleEntry[100];
         for (int i = 0; i < testValues.length; i++) {
             testValues[i] = new SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());

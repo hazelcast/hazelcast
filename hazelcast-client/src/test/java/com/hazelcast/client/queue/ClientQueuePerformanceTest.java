@@ -55,7 +55,7 @@ public class ClientQueuePerformanceTest {
     }
 
     public static void test1() throws Exception {
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
         for (int i = 0; i < THREAD_COUNT; i++) {
             new Thread() {
                 public void run() {

@@ -48,7 +48,7 @@ public class JoinStressTest {
         final int count = 20;
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(Clock.currentTimeMillis());
+        final Random random = new Random();
         final ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
         for (int i = 0; i < count; i++) {
             final int seed = i;
@@ -93,7 +93,7 @@ public class JoinStressTest {
         final int groupCount = 3;
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random(Clock.currentTimeMillis());
+        final Random random = new Random();
         final Map<String, AtomicInteger> groups = new ConcurrentHashMap<String, AtomicInteger>();
         for (int i = 0; i < groupCount; i++) {
             groups.put("group" + i, new AtomicInteger(0));

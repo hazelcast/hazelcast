@@ -342,7 +342,7 @@ public class BackupTest extends HazelcastTestSupport {
         final String name = MAP_NAME;
         config.getMapConfig(name).setBackupCount(1).setStatisticsEnabled(true);
 
-        final Random rand = new Random(System.currentTimeMillis());
+        final Random rand = new Random();
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
         final int count = 10000;
         final int totalCount = count * (instances.length() - 1);

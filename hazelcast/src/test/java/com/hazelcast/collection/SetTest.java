@@ -194,7 +194,7 @@ public class SetTest extends HazelcastTestSupport {
     }
 
     private ISet getSet(HazelcastInstance[] instances, String name){
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getSet(name);
     }
 }
