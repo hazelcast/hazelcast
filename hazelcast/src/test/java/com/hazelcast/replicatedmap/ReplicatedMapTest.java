@@ -1452,33 +1452,20 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void putOrderTest_repDelay0() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(0);
-
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
-        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
-
-        map1.put(1, 1);
-        map2.put(1, 2);
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals(map1.get(1), map2.get(1));
-            }
-        });
+        putOrderTest(0);
     }
 
     @Test
     public void putOrderTest_repDelay1000() throws Exception {
+        putOrderTest(1000);
+    }
+
+
+    public void putOrderTest(int delay) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(1000);
+        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(delay);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -1489,12 +1476,18 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         map1.put(1, 1);
         map2.put(1, 2);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals(map1.get(1), map2.get(1));
-            }
-        });
+        try{
+            HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+                public void run() {
+                    assertEquals(map1.get(1), map2.get(1));
+                }
+            });
+        }catch(Exception e){
+            HazelcastTestSupport.printAllStackTraces();
+            throw e;
+        }
     }
+
 
     @Test
     public void putTTL_Vs_put_repDelay0_InMemoryFormat_Object() throws Exception {
