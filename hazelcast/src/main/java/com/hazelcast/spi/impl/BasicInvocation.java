@@ -171,7 +171,7 @@ abstract class BasicInvocation implements ResponseHandler{
 
         long cid = op.getCallId();
         if (cid > 0) {
-            BasicInvocation in = operationService.deregisterInvocation(cid);
+            operationService.deregisterInvocation(cid);
         }
 
         final Address invTarget = getTarget();
@@ -222,7 +222,6 @@ abstract class BasicInvocation implements ResponseHandler{
                 long callId = operationService.registerInvocation(this);
                 OperationAccessor.setCallId(op, callId);
             }
-            //ResponseHandlerFactory.setLocalResponseHandler(op, this);
             op.setResponseHandler(this);
             if (!operationService.isAllowedToRunInCurrentThread(op)) {
                 operationService.executeOperation(op);
