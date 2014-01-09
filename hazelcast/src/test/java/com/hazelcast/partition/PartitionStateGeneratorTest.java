@@ -58,7 +58,7 @@ public class PartitionStateGeneratorTest {
         test(memberGroupFactory);
     }
 
-//    @Ignore("random host groups may cause non-uniform distribution of partitions when node size go down significantly!")
+    //"random host groups may cause non-uniform distribution of partitions when node size go down significantly!")
     @Test
     public void testHostAwarePartitionStateGenerator() throws Exception {
         final HostAwareMemberGroupFactory memberGroupFactory = new HostAwareMemberGroupFactory();

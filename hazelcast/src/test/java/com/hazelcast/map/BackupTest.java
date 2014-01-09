@@ -223,7 +223,7 @@ public class BackupTest extends HazelcastTestSupport {
      * Fix for the issue 395.
      */
     @Test(timeout = 300 * 1000)
-    @Ignore//broken
+    @Ignore//TODO
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(6, 2, 50000);
     }

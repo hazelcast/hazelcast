@@ -28,7 +28,7 @@ import org.junit.runners.Suite;
  * @author mdogan 5/28/13
  */
 
-@Ignore
+@Ignore//TODO
 @RunWith(Categories.class)
 @Categories.IncludeCategory(ClientCompatibleTest.class)
 @Suite.SuiteClasses({})
