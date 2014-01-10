@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,7 +27,7 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest {
+public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest implements RetryableRequest {
 
     private Predicate predicate;
 
@@ -56,7 +57,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
         return predicate;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
 
@@ -79,7 +80,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
 
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
 

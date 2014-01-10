@@ -71,13 +71,13 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
         return MapPortableHook.CONTAINS_KEY;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

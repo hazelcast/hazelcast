@@ -58,12 +58,12 @@ public class ClientCreateRequest extends CallableClientRequest implements Portab
         return ClientPortableHook.CREATE_PROXY;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         writer.writeUTF("s",serviceName);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         serviceName = reader.readUTF("s");
     }

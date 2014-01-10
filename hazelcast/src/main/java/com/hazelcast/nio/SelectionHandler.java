@@ -16,6 +16,6 @@
 
 package com.hazelcast.nio;
 
-interface SelectionHandler {
+public interface SelectionHandler {
     void handle();
 }

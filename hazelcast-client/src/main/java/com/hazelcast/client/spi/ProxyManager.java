@@ -19,9 +19,11 @@ package com.hazelcast.client.spi;
 import com.hazelcast.client.ClientCreateRequest;
 import com.hazelcast.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.*;
+import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -63,7 +65,6 @@ public final class ProxyManager {
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxy> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxy>();
-    private final ConcurrentMap<String, ListenerSupport> listeners = new ConcurrentHashMap<String, ListenerSupport>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
@@ -213,7 +214,6 @@ public final class ProxyManager {
 
     public void destroy() {
         proxies.clear();
-        listeners.clear();
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
@@ -236,18 +236,14 @@ public final class ProxyManager {
                 }
             }
         };
-        ListenerSupport listenerSupport = new ListenerSupport(context, request, eventHandler, null);
-        final String registrationId = listenerSupport.listen();
-        listeners.put(registrationId, listenerSupport);
-        return registrationId;
+
+        return ListenerUtil.listen(context, request, null, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {
-        final ListenerSupport listenerSupport = listeners.remove(id);
-        if (listenerSupport != null){
-            listenerSupport.stop();
-            return true;
-        }
-        return false;
+        final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
+        ClientContext context = new ClientContext(client.getSerializationService(), client.getClientClusterService(),
+                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig());
+        return ListenerUtil.stopListening(context, request, id);
     }
 }

@@ -34,7 +34,7 @@ import java.security.Permission;
 /**
  * @author ali 5/24/13
  */
-public class AddMessageListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class AddMessageListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
 
@@ -54,13 +54,13 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
                 if (endpoint.live()){
                     Data messageData = clientEngine.toData(message.getMessageObject());
                     PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), message.getPublishingMember().getUuid());
-                    clientEngine.sendResponse(endpoint,portableMessage);
+                    endpoint.sendEvent(portableMessage, getCallId());
                 }
             }
         };
         String registrationId = service.addMessageListener(name, listener);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
-        return null;
+        return registrationId;
     }
 
     public String getServiceName() {
@@ -75,11 +75,11 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
         return TopicPortableHook.ADD_LISTENER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
 

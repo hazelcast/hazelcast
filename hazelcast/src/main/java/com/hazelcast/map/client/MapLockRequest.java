@@ -60,14 +60,14 @@ public class MapLockRequest extends AbstractLockRequest implements SecureRequest
         return MapPortableHook.LOCK;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        super.writePortable(writer);
+        super.write(writer);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        super.readPortable(reader);
+        super.read(reader);
     }
 
     public Permission getRequiredPermission() {

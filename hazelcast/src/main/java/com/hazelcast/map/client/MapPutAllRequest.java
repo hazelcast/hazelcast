@@ -78,13 +78,13 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
         return MapService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         ObjectDataOutput output = writer.getRawDataOutput();
         entrySet.writeData(output);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         ObjectDataInput input = reader.getRawDataInput();
         entrySet = new MapEntrySet();

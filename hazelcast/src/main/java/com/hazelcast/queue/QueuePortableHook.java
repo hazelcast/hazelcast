@@ -47,6 +47,7 @@ public class QueuePortableHook implements PortableHook {
     public static final int TXN_POLL = 15;
     public static final int TXN_SIZE = 16;
     public static final int TXN_PEEK = 17;
+    public static final int REMOVE_LISTENER = 18;
 
 
     public int getFactoryId() {
@@ -56,7 +57,7 @@ public class QueuePortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
 
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_PEEK+1];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[REMOVE_LISTENER+1];
 
         constructors[OFFER] = new ConstructorFunction<Integer, Portable>() {
             @Override
@@ -158,6 +159,12 @@ public class QueuePortableHook implements PortableHook {
             @Override
             public Portable createNew(Integer arg) {
                 return new TxnPeekRequest();
+            }
+        };
+        constructors[REMOVE_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new RemoveListenerRequest();
             }
         };
 

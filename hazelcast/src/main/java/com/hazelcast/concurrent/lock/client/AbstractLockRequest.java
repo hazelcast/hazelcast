@@ -77,8 +77,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
         return LockService.SERVICE_NAME;
     }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeInt("tid", threadId);
         writer.writeLong("ttl", ttl);
         writer.writeLong("timeout", timeout);
@@ -87,8 +86,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
         key.writeData(out);
     }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         threadId = reader.readInt("tid");
         ttl = reader.readLong("ttl");
         timeout = reader.readLong("timeout");

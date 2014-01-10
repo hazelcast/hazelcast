@@ -16,8 +16,11 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.cluster.client.AddMembershipListenerRequest;
+import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.partition.client.GetPartitionsRequest;
 
 /**
  * @author mdogan 3/11/13
@@ -40,12 +43,27 @@ public class ClientPortableFactory implements PortableFactory {
 
             case ClientPortableHook.DISTRIBUTED_OBJECT_INFO:
                 return new DistributedObjectInfo();
+
             case ClientPortableHook.CREATE_PROXY:
                 return new ClientCreateRequest();
+
             case ClientPortableHook.DESTROY_PROXY:
                 return new ClientDestroyRequest();
+
             case ClientPortableHook.LISTENER:
                 return new DistributedObjectListenerRequest();
+
+            case ClientPortableHook.MEMBERSHIP_LISTENER:
+                return new AddMembershipListenerRequest();
+
+            case ClientPortableHook.CLIENT_PING:
+                return new ClientPingRequest();
+
+            case ClientPortableHook.GET_PARTITIONS:
+                return new GetPartitionsRequest();
+
+            case ClientPortableHook.REMOVE_LISTENER:
+                return new RemoveDistributedObjectListenerRequest();
         }
         return null;
     }

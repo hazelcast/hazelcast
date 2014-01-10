@@ -54,16 +54,14 @@ public class ListSetRequest extends CollectionRequest {
         return CollectionPortableHook.LIST_SET;
     }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeInt("i", index);
         value.writeData(writer.getRawDataOutput());
     }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         index = reader.readInt("i");
         value = new Data();
         value.readData(reader.getRawDataInput());

@@ -44,15 +44,15 @@ public class ClientReplicatedMapContainsValueRequest extends AbstractReplicatedM
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(value);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
         value = in.readObject();
     }

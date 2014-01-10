@@ -74,13 +74,13 @@ public final class AwaitRequest extends KeyBasedClientRequest implements Portabl
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
         writer.writeLong("timeout", timeout);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         timeout = reader.readLong("timeout");
     }

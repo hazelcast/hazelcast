@@ -65,7 +65,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
         return MapPortableHook.ADD_ENTRY_LISTENER_SQL;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         final boolean hasKey = key != null;
         writer.writeBoolean("key", hasKey);
         if (predicate == null) {
@@ -85,7 +85,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
 
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
         boolean hasKey = reader.readBoolean("key");

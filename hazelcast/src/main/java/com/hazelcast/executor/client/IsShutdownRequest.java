@@ -19,18 +19,17 @@ package com.hazelcast.executor.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.executor.ExecutorDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.executor.ExecutorPortableHook;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
 /**
  * @author ali 5/27/13
  */
-public class IsShutdownRequest extends CallableClientRequest
-        implements IdentifiedDataSerializable, RetryableRequest {
+public class IsShutdownRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     String name;
 
@@ -54,21 +53,18 @@ public class IsShutdownRequest extends CallableClientRequest
 
     @Override
     public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
+        return ExecutorPortableHook.F_ID;
     }
 
-    @Override
-    public int getId() {
-        return ExecutorDataSerializerHook.IS_SHUTDOWN_REQUEST;
+    public int getClassId() {
+        return ExecutorPortableHook.IS_SHUTDOWN_REQUEST;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
     }
 
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
     }
 }

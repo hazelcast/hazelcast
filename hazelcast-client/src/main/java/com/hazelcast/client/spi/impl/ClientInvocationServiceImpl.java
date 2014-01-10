@@ -16,10 +16,15 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientInvocationService;
-import com.hazelcast.client.spi.ResponseHandler;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.nio.Address;
+
+import java.util.concurrent.Future;
 
 /**
  * @author mdogan 5/16/13
@@ -32,21 +37,17 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         this.client = client;
     }
 
-    public Object invokeOnRandomTarget(Object request) throws Exception {
-        ClientClusterServiceImpl clusterService = getClusterService();
-        return clusterService.sendAndReceive(request);
+    public <T> CompletableFuture<T> invokeOnRandomTarget(ClientRequest request) throws Exception {
+        ClientClusterService clusterService = client.getClientClusterService();
+        return clusterService.send(request);
     }
 
-    public Object invokeOnTarget(Object request, Address target) throws Exception {
-        ClientClusterServiceImpl clusterService = getClusterService();
-        return clusterService.sendAndReceive(target, request);
+    public <T> CompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
+        ClientClusterService clusterService = client.getClientClusterService();
+        return clusterService.send(request, target);
     }
 
-    private ClientClusterServiceImpl getClusterService() {
-        return (ClientClusterServiceImpl) client.getClientClusterService();
-    }
-
-    public Object invokeOnKeyOwner(Object request, Object key) throws Exception {
+    public <T> CompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception {
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
         if (owner != null) {
@@ -55,23 +56,24 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return invokeOnRandomTarget(request);
     }
 
-    public void invokeOnRandomTarget(Object request, ResponseHandler handler) throws Exception {
-        ClientClusterServiceImpl clusterService = getClusterService();
-        clusterService.sendAndHandle(request, handler);
+    public <T> CompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
+        ClientClusterService clusterService = client.getClientClusterService();
+        return clusterService.sendAndHandle(request, handler);
     }
 
-    public void invokeOnTarget(Object request, Address target, ResponseHandler handler) throws Exception {
-        ClientClusterServiceImpl clusterService = getClusterService();
-        clusterService.sendAndHandle(target, request, handler);
+    public <T> CompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception {
+        ClientClusterService clusterService = client.getClientClusterService();
+        return clusterService.sendAndHandle(request, target, handler);
     }
 
-    public void invokeOnKeyOwner(Object request, Object key, ResponseHandler handler) throws Exception {
+    public <T> CompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception {
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
         if (owner != null) {
-            invokeOnTarget(request, owner, handler);
+            return invokeOnTarget(request, owner, handler);
         }
-        invokeOnRandomTarget(request, handler);
+        return invokeOnRandomTarget(request, handler);
     }
+
 
 }

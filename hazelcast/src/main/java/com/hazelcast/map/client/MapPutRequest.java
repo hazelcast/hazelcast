@@ -81,7 +81,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         return MapService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("t", threadId);
         writer.writeLong("ttl", ttl);
@@ -90,7 +90,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         threadId = reader.readInt("t");
         ttl = reader.readLong("ttl");

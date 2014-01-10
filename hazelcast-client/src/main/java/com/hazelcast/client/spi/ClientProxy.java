@@ -17,13 +17,16 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.ClientDestroyRequest;
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 
 /**
  * @author mdogan 5/16/13
@@ -36,31 +39,21 @@ public abstract class ClientProxy implements DistributedObject {
 
     private volatile ClientContext context;
 
-    private final Map<String, ListenerSupport> listenerSupportMap = new ConcurrentHashMap<String, ListenerSupport>();
-
     protected ClientProxy(String serviceName, String objectName) {
         this.serviceName = serviceName;
         this.objectName = objectName;
     }
 
-    protected final String listen(Object registrationRequest, Object partitionKey, EventHandler handler){
-        ListenerSupport listenerSupport = new ListenerSupport(context, registrationRequest, handler, partitionKey);
-        String registrationId = listenerSupport.listen();
-        listenerSupportMap.put(registrationId, listenerSupport);
-        return registrationId;
+    protected final String listen(ClientRequest registrationRequest, Object partitionKey, EventHandler handler){
+        return ListenerUtil.listen(context, registrationRequest, partitionKey, handler);
     }
 
-    protected final  String listen(Object registrationRequest, EventHandler handler){
-        return listen(registrationRequest, null, handler);
+    protected final String listen(ClientRequest registrationRequest, EventHandler handler){
+        return ListenerUtil.listen(context, registrationRequest, null, handler);
     }
 
-    protected final  boolean stopListening(String registrationId){
-        final ListenerSupport listenerSupport = listenerSupportMap.remove(registrationId);
-        if (listenerSupport != null){
-            listenerSupport.stop();
-            return true;
-        }
-        return false;
+    protected final boolean stopListening(ClientRequest request, String registrationId){
+        return ListenerUtil.stopListening(context, request, registrationId);
     }
 
     protected final ClientContext getContext() {
@@ -105,4 +98,45 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected abstract void onDestroy();
+
+    protected <T> T invoke(ClientRequest req, Object key) {
+        try {
+            final Future future = getContext().getInvocationService().invokeOnKeyOwner(req, key);
+            return context.getSerializationService().toObject(future.get());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    protected <T> T invoke(ClientRequest req) {
+        try {
+            final Future future = getContext().getInvocationService().invokeOnRandomTarget(req);
+            return context.getSerializationService().toObject(future.get());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    protected <T> T invoke(ClientRequest req, Address address) {
+        try {
+            final Future future = getContext().getInvocationService().invokeOnTarget(req, address);
+            return context.getSerializationService().toObject(future.get());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    protected Data toData(Object o) {
+        return getContext().getSerializationService().toData(o);
+    }
+
+    protected <T> T toObject(Object data) {
+        return getContext().getSerializationService().toObject(data);
+    }
+
+    protected void throwExceptionIfNull(Object o) {
+        if (o == null) {
+            throw new NullPointerException("Object is null");
+        }
+    }
 }

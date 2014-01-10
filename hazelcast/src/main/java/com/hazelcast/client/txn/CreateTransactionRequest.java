@@ -67,11 +67,11 @@ public class CreateTransactionRequest extends CallableClientRequest implements P
         return ClientTxnPortableHook.CREATE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         options.writeData(writer.getRawDataOutput());
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         options = new TransactionOptions();
         options.readData(reader.getRawDataInput());
     }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author ali 6/7/13
  */
-public class TxnPollRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class TxnPollRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;
     long timeout;
@@ -51,7 +51,7 @@ public class TxnPollRequest extends CallableClientRequest implements Portable, S
 
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final TransactionContext context = endpoint.getTransactionContext();
+        final TransactionContext context = endpoint.getTransactionContext(txnId);
         final TransactionalQueue queue = context.getQueue(name);
         return queue.poll(timeout, TimeUnit.MILLISECONDS);
     }
@@ -68,12 +68,14 @@ public class TxnPollRequest extends CallableClientRequest implements Portable, S
         return QueuePortableHook.TXN_POLL;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n",name);
         writer.writeLong("t",timeout);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
         timeout = reader.readLong("t");
     }

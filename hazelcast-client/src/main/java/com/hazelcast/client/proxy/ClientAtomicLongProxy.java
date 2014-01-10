@@ -16,19 +16,12 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.atomiclong.client.*;
-import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
-import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
-import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.SetRequest;
 import com.hazelcast.core.Function;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -127,12 +120,8 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     protected void onDestroy() {
     }
 
-    private <T> T invoke(Object req){
-        try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected  <T> T invoke(ClientRequest req){
+        return super.invoke(req, getKey());
     }
 
     private Data getKey(){
@@ -142,7 +131,4 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
         return key;
     }
 
-    private Data toData(Object object) {
-        return getContext().getSerializationService().toData(object);
-    }
 }

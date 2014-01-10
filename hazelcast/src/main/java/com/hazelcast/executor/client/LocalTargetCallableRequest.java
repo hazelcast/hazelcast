@@ -19,11 +19,11 @@ package com.hazelcast.executor.client;
 import com.hazelcast.client.TargetClientRequest;
 import com.hazelcast.executor.CallableTaskOperation;
 import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.executor.ExecutorDataSerializerHook;
+import com.hazelcast.executor.ExecutorPortableHook;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.Callable;
 /**
  * @author ali 5/26/13
  */
-public final class LocalTargetCallableRequest extends TargetClientRequest implements IdentifiedDataSerializable {
+public final class LocalTargetCallableRequest extends TargetClientRequest implements Portable {
 
     private String name;
     private Callable callable;
@@ -67,24 +67,21 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
 
     @Override
     public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
+        return ExecutorPortableHook.F_ID;
     }
 
-    @Override
-    public int getId() {
-        return ExecutorDataSerializerHook.LOCAL_TARGET_CALLABLE_REQUEST;
+    public int getClassId() {
+        return ExecutorPortableHook.LOCAL_TARGET_CALLABLE_REQUEST;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeObject(callable);
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
+        writer.getRawDataOutput().writeObject(callable);
     }
 
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        callable = in.readObject();
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
+        callable = reader.getRawDataInput().readObject();
     }
 
 }

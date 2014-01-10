@@ -58,8 +58,8 @@ public class CompareAndRemoveRequest extends QueueRequest {
         return QueuePortableHook.COMPARE_AND_REMOVE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeBoolean("r",retain);
         writer.writeInt("s",dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -68,8 +68,8 @@ public class CompareAndRemoveRequest extends QueueRequest {
         }
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         retain = reader.readBoolean("r");
         int size = reader.readInt("s");
         final ObjectDataInput in = reader.getRawDataInput();

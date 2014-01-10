@@ -38,7 +38,7 @@ public class TxnSetAddRequest extends TxnCollectionRequest {
 
     @Override
     public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getSet(name).add(value);
+        return getEndpoint().getTransactionContext(txnId).getSet(name).add(value);
     }
 
     @Override

@@ -19,8 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.DummyClientConnectionManager;
-import com.hazelcast.client.connection.SmartClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.*;
@@ -32,21 +31,21 @@ import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.lock.proxy.LockProxy;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.proxy.LockProxy;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -66,6 +65,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -124,9 +124,9 @@ public final class HazelcastClient implements HazelcastInstance {
             loadBalancer = new RoundRobinLB();
         }
         if (config.isSmartRouting()) {
-            connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+            connectionManager = new ClientConnectionManagerImpl(this, clusterService.getAuthenticator(), loadBalancer);
         } else {
-            connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+            connectionManager = new ClientConnectionManagerImpl(this, clusterService.getAuthenticator(), loadBalancer);
         }
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
@@ -176,7 +176,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     private void start(){
         lifecycleService.setStarted();
-
+        connectionManager.start();
         try{
             clusterService.start();
         }catch(IllegalStateException e){
@@ -185,6 +185,7 @@ public final class HazelcastClient implements HazelcastInstance {
             lifecycleService.shutdown();
             throw e;
         }
+
         partitionService.start();
     }
 
@@ -326,7 +327,8 @@ public final class HazelcastClient implements HazelcastInstance {
     public Collection<DistributedObject> getDistributedObjects() {
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
-            final SerializableCollection serializableCollection = (SerializableCollection) invocationService.invokeOnRandomTarget(request);
+            final Future<SerializableCollection> future = invocationService.invokeOnRandomTarget(request);
+            final SerializableCollection serializableCollection = serializationService.toObject(future.get());
             for (Data data : serializableCollection) {
                 final DistributedObjectInfo o = (DistributedObjectInfo) serializationService.toObject(data);
                 getDistributedObject(o.getServiceName(), o.getName());

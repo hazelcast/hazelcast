@@ -74,7 +74,6 @@ public class MapStoreTest extends HazelcastTestSupport {
 
             public String load(String key) {
                 loadCalled.set(true);
-                System.err.println("fatal key: " + key);
                 return _map.get(key);
             }
 
@@ -845,7 +844,6 @@ public class MapStoreTest extends HazelcastTestSupport {
                 failed = true;
                 throw new RuntimeException("duplicate is not allowed");
             }
-            System.err.println("store:" + key);
             super.store(key, value);
         }
 

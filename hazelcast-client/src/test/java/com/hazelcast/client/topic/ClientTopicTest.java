@@ -24,7 +24,6 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +39,6 @@ public class ClientTopicTest {
     static final String name = "test1";
     static HazelcastInstance hz;
     static HazelcastInstance server;
-    static HazelcastInstance second;
     static ITopic t;
 
     @Before
@@ -50,9 +48,8 @@ public class ClientTopicTest {
         t = hz.getTopic(name);
     }
 
-
     @After
-    public void clear() throws IOException {
+    public void stop(){
         hz.getLifecycleService().shutdown();
         Hazelcast.shutdownAll();
     }

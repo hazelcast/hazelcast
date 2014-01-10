@@ -219,7 +219,6 @@ public class SemaphoreTest extends HazelcastTestSupport {
                         try {
                             semaphore.acquire();
                         } catch (InterruptedException e) {
-                            System.err.println("Acquire : " + e.getMessage());
                             return;
                         }
                         try {

@@ -71,14 +71,14 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         return MapService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("t", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         threadId = reader.readInt("t");
         final ObjectDataInput in = reader.getRawDataInput();

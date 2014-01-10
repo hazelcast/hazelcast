@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ITopic;
@@ -27,7 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.topic.client.RemoveMessageListenerRequest;
 
 /**
  * @author ali 5/24/13
@@ -62,7 +63,8 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     }
 
     public boolean removeMessageListener(String registrationId) {
-        return stopListening(registrationId);
+        final RemoveMessageListenerRequest request = new RemoveMessageListenerRequest(name, registrationId);
+        return stopListening(request, registrationId);
     }
 
     public LocalTopicStats getLocalTopicStats() {
@@ -79,11 +81,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return key;
     }
 
-    private <T> T invoke(Object req) {
-        try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected  <T> T invoke(ClientRequest req) {
+        return super.invoke(req, getKey());
     }
 }

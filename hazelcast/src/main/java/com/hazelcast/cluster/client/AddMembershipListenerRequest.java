@@ -18,40 +18,39 @@ package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.cluster.ClusterDataSerializerHook;
+import com.hazelcast.client.ClientPortableHook;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * @author mdogan 5/13/13
  */
-public final class AddMembershipListenerRequest extends CallableClientRequest implements IdentifiedDataSerializable {
+public final class AddMembershipListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
+
+    public AddMembershipListenerRequest() {
+    }
 
     @Override
     public Object call() throws Exception {
         final ClusterServiceImpl service = getService();
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
 
-        final String registration = service.addMembershipListener(new MembershipListener() {
+        final String registrationId = service.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED));
+                    endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
                 }
             }
 
@@ -59,13 +58,13 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             public void memberRemoved(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                    clientEngine.sendResponse(endpoint, new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED));
+                    endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
                 }
             }
         });
 
         final String name = ClusterServiceImpl.SERVICE_NAME;
-        endpoint.setListenerRegistration(name, name, registration);
+        endpoint.setListenerRegistration(name, name, registrationId);
 
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
@@ -76,26 +75,16 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         return new SerializableCollection(response);
     }
 
-    @Override
     public String getServiceName() {
         return ClusterServiceImpl.SERVICE_NAME;
     }
 
-    @Override
     public int getFactoryId() {
-        return ClusterDataSerializerHook.F_ID;
+        return ClientPortableHook.ID;
     }
 
-    @Override
-    public int getId() {
-        return ClusterDataSerializerHook.ADD_MS_LISTENER;
+    public int getClassId() {
+        return ClientPortableHook.MEMBERSHIP_LISTENER;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-    }
 }
