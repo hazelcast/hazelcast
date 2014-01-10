@@ -23,6 +23,7 @@ import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
+import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
@@ -84,7 +85,11 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
     public void process() {
         ExecutorService es = mapReduceService.getExecutorService(name);
-        es.submit(new PartitionProcessor());
+        if (keyValueSource instanceof PartitionIdAware) {
+            es.submit(new PartitionProcessor());
+        } else {
+            es.submit(new SingleExecutionProcessor());
+        }
     }
 
     public final void processMapping(int partitionId) {
@@ -179,12 +184,11 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
-    private class PartitionProcessor implements Runnable {
+    private class PartitionProcessor
+            implements Runnable {
 
         @Override
         public void run() {
-            // TODO Test KeyValueSource for implementing PartitionIdAware otherwise
-            // TODO just execute it once (maybe an external datasource)
             for (; ; ) {
                 Integer partitionId = findNewPartitionProcessing();
                 if (partitionId == null) {
@@ -198,10 +202,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 }
 
                 try {
-                    if (keyValueSource instanceof PartitionIdAware) {
-                        ((PartitionIdAware) keyValueSource).setPartitionId(partitionId);
-                    }
-
+                    ((PartitionIdAware) keyValueSource).setPartitionId(partitionId);
                     keyValueSource.reset();
                     keyValueSource.open(nodeEngine);
                     processMapping(partitionId);
@@ -233,7 +234,32 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 throw new RuntimeException(e);
             }
         }
+    }
 
+    private class SingleExecutionProcessor
+            implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
+                        new RequestMemberIdAssignment(name, jobId), name);
+
+                // JobSupervisor doesn't exists anymore on jobOwner, job done?
+                if (result.getResultState() == NO_SUPERVISOR) {
+                    return;
+                } else if (result.getResultState() == NO_MORE_PARTITIONS) {
+                    return;
+                }
+
+                keyValueSource.reset();
+                keyValueSource.open(nodeEngine);
+                processMapping(result.getPartitionId());
+                keyValueSource.close();
+            } catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+        }
     }
 
 }

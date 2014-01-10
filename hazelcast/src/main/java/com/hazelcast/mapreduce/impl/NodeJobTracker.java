@@ -43,7 +43,13 @@ class NodeJobTracker extends AbstractJobTracker {
             queueSize = ps.getPartitionCount() * 2;
         }
 
-        es.register(name, maxThreadSize, queueSize);
+        try {
+            String executorName = MapReduceUtil.buildExecutorName(name);
+            es.register(executorName, maxThreadSize, queueSize);
+        } catch (Exception ignore) {
+            // After destroying the proxy and recreating it the executor
+            // might already be registered, so we can ignore this exception.
+        }
     }
 
     @Override

@@ -38,7 +38,8 @@ public class MultiMapKeyValueSource<K, V>
         extends KeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
 
-    private final MapReduceSimpleEntry<K, V> simpleEntry;
+    // This prevents excessive creation of map entries for a serialized operation
+    private final MapReduceSimpleEntry<K, V> simpleEntry = new MapReduceSimpleEntry<K, V>();
 
     private String multiMapName;
 
@@ -53,12 +54,9 @@ public class MultiMapKeyValueSource<K, V>
     private transient MultiMapRecord multiMapRecord;
 
     MultiMapKeyValueSource() {
-        // This prevents excessive creation of map entries for a serialized operation
-        this.simpleEntry = new MapReduceSimpleEntry<K, V>();
     }
 
     public MultiMapKeyValueSource(String multiMapName) {
-        this.simpleEntry = null;
         this.multiMapName = multiMapName;
     }
 

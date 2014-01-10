@@ -189,7 +189,7 @@ public class MapReduceTest
         }
     }
 
-    @Test//(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperReducerChunked()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);

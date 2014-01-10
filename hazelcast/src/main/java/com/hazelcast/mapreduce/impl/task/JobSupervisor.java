@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
@@ -71,8 +72,16 @@ public class JobSupervisor {
         this.mapReduceService = mapReduceService;
         this.jobOwner = configuration.getJobOwner();
         this.executorService = mapReduceService.getExecutorService(configuration.getName());
-        this.jobProcessInformation = new JobProcessInformationImpl(
-                configuration.getNodeEngine().getPartitionService().getPartitionCount(), this);
+
+        // Calculate partition count
+        NodeEngine nodeEngine = configuration.getNodeEngine();
+        if (configuration.getKeyValueSource() instanceof PartitionIdAware) {
+            int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+            this.jobProcessInformation = new JobProcessInformationImpl(partitionCount, this);
+        } else {
+            int partitionCount = nodeEngine.getClusterService().getMemberList().size();
+            this.jobProcessInformation = new MemberAssigningJobProcessInformationImpl(partitionCount, this);
+        }
 
         // Preregister reducer task to handle immediate reducing events
         String name = configuration.getName();
