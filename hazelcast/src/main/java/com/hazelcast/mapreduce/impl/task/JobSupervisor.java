@@ -28,15 +28,18 @@ import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
 import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
+import com.hazelcast.mapreduce.impl.operation.CancelJobSupervisorOperation;
 import com.hazelcast.mapreduce.impl.operation.GetResultOperationFactory;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +50,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class JobSupervisor {
@@ -115,6 +119,47 @@ public class JobSupervisor {
             ReducingFinishedNotification rfn = (ReducingFinishedNotification) notification;
             processReducerFinished(rfn);
         }
+    }
+    
+    public void notifyRemoteException(Address remoteAddress, Exception exception) {
+        Set<Address> addresses = new HashSet<Address>();
+        for (Set<Address> remoteReducers : this.remoteReducers.values()) {
+            addresses.addAll(remoteReducers);
+        }
+        for (JobPartitionState partitionState : jobProcessInformation.getPartitionStates()) {
+            if (partitionState != null) {
+                addresses.add(partitionState.getOwner());
+            }
+        }
+
+        // Now notify all involved members to cancel the job
+        String name = getConfiguration().getName();
+        String jobId = getConfiguration().getJobId();
+        for (Address address : addresses) {
+            try {
+                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
+                mapReduceService.processRequest(address, operation, name);
+            } catch (Exception ignore) {
+                // We can ignore this exception since we just want to cancel the job
+                // and the member may be crashed or unreachable in some way
+            }
+        }
+
+        TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+        jobTracker.unregisterMapCombineTask(jobId);
+        jobTracker.unregisterReducerTask(jobId);
+        mapReduceService.destroyJobSupervisor(this);
+
+        ExceptionUtil.fixRemoteStackTrace(exception, Thread.currentThread().getStackTrace());
+        future.setResult(exception);
+    }
+
+    public void cancel() {
+        String jobId = getConfiguration().getJobId();
+        jobTracker.unregisterTrackableJob(jobId);
+        jobTracker.unregisterMapCombineTask(jobId);
+        jobTracker.unregisterReducerTask(jobId);
+        mapReduceService.destroyJobSupervisor(this);
     }
 
     public Map<Object, Object> getJobResults() {
@@ -261,7 +306,7 @@ public class JobSupervisor {
                     throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                MapReduceUtil.notifyRemoteException(this, e);
             }
         }
     }

@@ -19,8 +19,10 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
 import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
+import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
@@ -46,6 +48,19 @@ public final class MapReduceUtil {
     private static final String SERVICE_NAME = MapReduceService.SERVICE_NAME;
 
     private MapReduceUtil() {
+    }
+
+    public static void notifyRemoteException(JobSupervisor supervisor, Exception exception) {
+        String name = supervisor.getConfiguration().getName();
+        String jobId = supervisor.getConfiguration().getJobId();
+        NotifyRemoteExceptionOperation operation = new NotifyRemoteExceptionOperation(name, jobId, exception);
+        MapReduceService mapReduceService = supervisor.getMapReduceService();
+        NodeEngine nodeEngine = mapReduceService.getNodeEngine();
+        ClusterService cs = nodeEngine.getClusterService();
+        OperationService os = nodeEngine.getOperationService();
+        for (MemberImpl member : cs.getMemberList()) {
+            os.send(operation, member.getAddress());
+        }
     }
 
     public static JobPartitionState.State stateChange(Address owner, int partitionId,

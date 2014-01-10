@@ -138,6 +138,7 @@ public class MapReduceService
             try {
                 Thread.sleep(100);
             } catch (Exception ignore) {
+                // Partitions might not assigned yet so we need to retry
             }
         }
         return owner;

@@ -52,7 +52,6 @@ public class JobProcessInformationImpl
     }
 
     public void addProcessedRecords(int records) {
-        // TODO calling this for record counting
         processedRecords.addAndGet(records);
     }
 

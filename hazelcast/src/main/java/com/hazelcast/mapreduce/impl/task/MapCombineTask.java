@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
-import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
@@ -35,13 +34,13 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.mapResultToMember;
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
@@ -152,16 +151,14 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                             if (result.getResultState() != SUCCESSFUL) {
                                 throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
                             }
-                        } catch (Exception ignore) {
-                            ignore.printStackTrace();
+                        } catch (Exception e) {
+                            notifyRemoteException(supervisor, e);
                         }
                     }
                 }
-            } else {
-                System.out.println(result);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            notifyRemoteException(supervisor, e);
         }
     }
 
@@ -215,8 +212,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     delegate.open(nodeEngine);
                     processMapping(partitionId, delegate);
                     delegate.close();
-                } catch (IOException ignore) {
-                    ignore.printStackTrace();
+                } catch (IOException e) {
+                    notifyRemoteException(supervisor, e);
                 }
             }
         }
@@ -238,7 +235,6 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     return result.getPartitionId();
                 }
             } catch (Exception e) {
-                e.printStackTrace();
                 throw new RuntimeException(e);
             }
         }
@@ -269,8 +265,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 delegate.open(nodeEngine);
                 processMapping(result.getPartitionId(), delegate);
                 delegate.close();
-            } catch (Exception ignore) {
-                ignore.printStackTrace();
+            } catch (Exception e) {
+                notifyRemoteException(supervisor, e);
             }
         }
     }
