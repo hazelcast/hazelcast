@@ -32,6 +32,7 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 public class ReflectionHelper {
 
+    private final static ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
     private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
 
     public static AttributeType getAttributeType(Class klass) {
@@ -142,7 +143,7 @@ public class ReflectionHelper {
                 parent = localGetter;
             }
             getter = parent;
-            if (!(getter instanceof ThisGetter)) {
+            if (getter.isCacheable()) {
                 getterCache.putIfAbsent(cacheKey, getter);
             }
             return getter;
@@ -165,6 +166,8 @@ public class ReflectionHelper {
         abstract Object getValue(Object obj) throws Exception;
 
         abstract Class getReturnType();
+
+        abstract boolean isCacheable();
     }
 
     static class MethodGetter extends Getter {
@@ -182,6 +185,11 @@ public class ReflectionHelper {
 
         Class getReturnType() {
             return this.method.getReturnType();
+        }
+
+        @Override
+        boolean isCacheable() {
+            return THIS_CL.equals(method.getDeclaringClass().getClassLoader());
         }
 
         @Override
@@ -208,6 +216,11 @@ public class ReflectionHelper {
         }
 
         @Override
+        boolean isCacheable() {
+            return THIS_CL.equals(field.getDeclaringClass().getClassLoader());
+        }
+
+        @Override
         public String toString() {
             return "FieldGetter [parent=" + parent + ", field=" + field + "]";
         }
@@ -229,6 +242,11 @@ public class ReflectionHelper {
         @Override
         Class getReturnType() {
             return this.object.getClass();
+        }
+
+        @Override
+        boolean isCacheable() {
+            return false;
         }
     }
 }
