@@ -16,48 +16,53 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
-import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.task.JobSupervisor;
+import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.util.Map;
+import java.io.IOException;
 
-public class GetResultOperation
+public class FireNotificationOperation
         extends ProcessingOperation {
 
-    private volatile Map result;
+    private MapReduceNotification notification;
 
-    public GetResultOperation() {
+    public FireNotificationOperation() {
     }
 
-    public GetResultOperation(String name, String jobId) {
-        super(name, jobId);
+    public FireNotificationOperation(MapReduceNotification notification) {
+        super(notification.getName(), notification.getJobId());
+        this.notification = notification;
     }
 
-    public Map getResult() {
-        return result;
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
     }
 
     @Override
     public void run() throws Exception {
         MapReduceService mapReduceService = getService();
-        JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
-        result = supervisor.getJobResults();
-
-        // This is the final call so cleanup on all nodes that are not job owners
-        if (!supervisor.isOwnerNode()) {
-            mapReduceService.destroyJobSupervisor(supervisor);
-            AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.getJobTracker(getName());
-            jobTracker.unregisterTrackableJob(getJobId());
-            jobTracker.unregisterMapCombineTask(getJobId());
-            jobTracker.unregisterReducerTask(getJobId());
-        }
+        mapReduceService.dispatchEvent(notification);
     }
 
     @Override
-    public Object getResponse() {
-        return result;
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(notification);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        notification = in.readObject();
     }
 
     @Override
@@ -67,6 +72,7 @@ public class GetResultOperation
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.GET_RESULT_OPERATION;
+        return MapReduceDataSerializerHook.FIRE_NOTIFICATION_OPERATION;
     }
+
 }

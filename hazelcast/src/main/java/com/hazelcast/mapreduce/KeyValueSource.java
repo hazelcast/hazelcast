@@ -72,8 +72,12 @@ public abstract class KeyValueSource<K, V>
     public abstract Map.Entry<K, V> element();
 
     /**
-     * Resets the position and maybe internal state of the KeyValueStore to start over
-     * again at the first available value.
+     * This method need to reset all internal state as it would be a new instance at all.
+     * The same instance of the KeyValueSource may be used multiple times in a row depending
+     * on the internal implementation, especially when the KeyValueSource implements
+     * {@link com.hazelcast.mapreduce.PartitionIdAware}.<br/>
+     * If the instance is reused a sequence of {@link #reset()}, {@link #open(com.hazelcast.spi.NodeEngine)}
+     * and {@link #close()} is called multiple times with the other methods between open(...) and close().
      *
      * @return true if reset was successful otherwise false
      */

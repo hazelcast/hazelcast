@@ -20,6 +20,7 @@ import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
+import com.hazelcast.mapreduce.impl.operation.FireNotificationOperation;
 import com.hazelcast.mapreduce.impl.operation.GetResultOperation;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
@@ -51,7 +52,8 @@ public class MapReduceDataSerializerHook
     public static final int START_PROCESSING_OPERATION = 9;
     public static final int REQUEST_PARTITION_RESULT = 10;
     public static final int REDUCING_FINISHED_MESSAGE = 11;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 12;
+    public static final int FIRE_NOTIFICATION_OPERATION = 12;
+    public static final int CLIENT_MAP_REDUCE_REQUEST = 13;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
 
@@ -133,6 +135,12 @@ public class MapReduceDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReducingFinishedNotification();
+            }
+        };
+        constructors[FIRE_NOTIFICATION_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new FireNotificationOperation();
             }
         };
         constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

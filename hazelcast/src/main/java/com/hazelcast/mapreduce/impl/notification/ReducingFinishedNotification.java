@@ -61,4 +61,12 @@ public class ReducingFinishedNotification
     public int getId() {
         return MapReduceDataSerializerHook.REDUCING_FINISHED_MESSAGE;
     }
+
+    @Override
+    public String toString() {
+        return "ReducingFinishedNotification{" +
+                "partitionId=" + partitionId +
+                '}';
+    }
+
 }

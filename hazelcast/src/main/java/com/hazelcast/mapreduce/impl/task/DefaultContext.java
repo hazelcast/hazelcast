@@ -32,16 +32,19 @@ public class DefaultContext<KeyIn, ValueIn>
     private final Map<KeyIn, Combiner<KeyIn, ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<KeyIn, ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
-    private final int partitionId;
 
+    private volatile int partitionId;
     private volatile int collected = 0;
 
     protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory,
-                             int partitionId, MapCombineTask mapCombineTask) {
-        this.partitionId = partitionId;
+                             MapCombineTask mapCombineTask) {
         this.mapCombineTask = mapCombineTask;
         this.combinerFactory = combinerFactory != null ?
                 combinerFactory : new CollectingCombinerFactory<KeyIn, ValueIn>();
+    }
+
+    public void setPartitionId(int partitionId) {
+        this.partitionId = partitionId;
     }
 
     @Override

@@ -21,23 +21,23 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.mapreduce.impl.operation.FireNotificationOperation;
 import com.hazelcast.mapreduce.impl.operation.ProcessingOperation;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.BasicTargetInvocation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,11 +47,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 public class MapReduceService
-        implements ManagedService, RemoteService,
-        EventPublishingService<MapReduceNotification, MapReduceService> {
+        implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
-    public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".notification";
 
     private final ConstructorFunction<String, JobTracker> trackerConstructor = new ConstructorFunction<String, JobTracker>() {
         @Override
@@ -68,17 +66,14 @@ public class MapReduceService
     private final PartitionServiceImpl partitionService;
     private final InternalPartition[] partitions;
 
-    private final EventService eventService;
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final Config config;
 
     public MapReduceService(NodeEngine nodeEngine) {
         this.config = nodeEngine.getConfig();
-        this.nodeEngine = nodeEngine;
-        this.eventService = nodeEngine.getEventService();
+        this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
         this.partitions = partitionService.getPartitions();
-        this.eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, this);
     }
 
     public JobTracker getJobTracker(String name) {
@@ -97,6 +92,11 @@ public class MapReduceService
         JobSupervisor jobSupervisor = new JobSupervisor(configuration, jobTracker, ownerNode, this);
         JobSupervisor oldSupervisor = jobSupervisors.putIfAbsent(key, jobSupervisor);
         return oldSupervisor != null ? oldSupervisor : jobSupervisor;
+    }
+
+    public boolean destroyJobSupervisor(JobSupervisor supervisor) {
+        JobSupervisorKey key = new JobSupervisorKey(supervisor);
+        return jobSupervisors.remove(key) == supervisor;
     }
 
     public ExecutorService getExecutorService(String name) {
@@ -137,24 +137,28 @@ public class MapReduceService
         return partitionService.getPartitionOwner(partitionId);
     }
 
-    public <R> R processRequest(Address address, ProcessingOperation processingOperation)
+    public <R> R processRequest(Address address, ProcessingOperation processingOperation, String name)
             throws ExecutionException, InterruptedException {
-        Future<R> future = nodeEngine.getOperationService().invokeOnTarget(
-                MapReduceService.SERVICE_NAME, processingOperation, address);
 
+        String executorName = MapReduceUtil.buildExecutorName(name);
+        BasicTargetInvocation invocation = new BasicTargetInvocation(nodeEngine,
+                MapReduceService.SERVICE_NAME, processingOperation, address,
+                InvocationBuilder.DEFAULT_TRY_COUNT,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
+                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, executorName,
+                InvocationBuilder.DEFAULT_DESERIALIZE_RESULT);
+
+        Future<R> future = invocation.invoke();
         return future.get();
     }
 
     public void sendNotification(Address address, MapReduceNotification notification) {
-        // TODO Wrap this into a call instead of an event to guarantee ordering
-        Collection<EventRegistration> registrations = eventService
-                .getRegistrations(SERVICE_NAME, EVENT_TOPIC_NAME);
-
-        for (EventRegistration registration : registrations) {
-            if (registration.getSubscriber().equals(address)) {
-                eventService.publishEvent(SERVICE_NAME, registration, notification, hashCode());
-                return;
-            }
+        try {
+            String name = MapReduceUtil.buildExecutorName(notification.getName());
+            ProcessingOperation operation = new FireNotificationOperation(notification);
+            processRequest(address, operation, name);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -187,15 +191,14 @@ public class MapReduceService
         return nodeEngine;
     }
 
-    @Override
-    public void dispatchEvent(MapReduceNotification event, MapReduceService listener) {
-        String name = event.getName();
-        String jobId = event.getJobId();
+    public void dispatchEvent(MapReduceNotification notification) {
+        String name = notification.getName();
+        String jobId = notification.getJobId();
         JobSupervisor supervisor = getJobSupervisor(name, jobId);
         if (supervisor == null) {
             throw new NullPointerException("JobSupervisor name=" + name + ", jobId=" + jobId + " not found");
         }
-        supervisor.onNotification(event);
+        supervisor.onNotification(notification);
     }
 
     private static class JobSupervisorKey {
@@ -205,6 +208,11 @@ public class MapReduceService
         private JobSupervisorKey(String name, String jobId) {
             this.name = name;
             this.jobId = jobId;
+        }
+
+        private JobSupervisorKey(JobSupervisor supervisor) {
+            this.name = supervisor.getConfiguration().getName();
+            this.jobId = supervisor.getConfiguration().getJobId();
         }
 
         @Override

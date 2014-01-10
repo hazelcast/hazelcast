@@ -93,17 +93,17 @@ public class JobSupervisor {
         jobTracker.registerMapCombineTask(new MapCombineTask(configuration, this, mappingPhase));
     }
 
-    public void onNotification(MapReduceNotification event) {
-        if (event instanceof IntermediateChunkNotification) {
-            IntermediateChunkNotification icn = (IntermediateChunkNotification) event;
+    public void onNotification(MapReduceNotification notification) {
+        if (notification instanceof IntermediateChunkNotification) {
+            IntermediateChunkNotification icn = (IntermediateChunkNotification) notification;
             ReducerTask reducerTask = jobTracker.getReducerTask(icn.getJobId());
             reducerTask.processChunk(icn.getChunk());
-        } else if (event instanceof LastChunkNotification) {
-            LastChunkNotification lcn = (LastChunkNotification) event;
+        } else if (notification instanceof LastChunkNotification) {
+            LastChunkNotification lcn = (LastChunkNotification) notification;
             ReducerTask reducerTask = jobTracker.getReducerTask(lcn.getJobId());
             reducerTask.processChunk(lcn.getPartitionId(), lcn.getSender(), lcn.getChunk());
-        } else if (event instanceof ReducingFinishedNotification) {
-            ReducingFinishedNotification rfn = (ReducingFinishedNotification) event;
+        } else if (notification instanceof ReducingFinishedNotification) {
+            ReducingFinishedNotification rfn = (ReducingFinishedNotification) notification;
             processReducerFinished(rfn);
         }
     }
@@ -174,16 +174,20 @@ public class JobSupervisor {
                     }
                 }
 
-                // Get the initial future object to eventually set the result
-                TrackableJobFuture future = jobTracker.getTrackableJob(jobId);
+                // Get the initial future object to eventually set the result and cleanup
+                TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+                jobTracker.unregisterMapCombineTask(jobId);
+                jobTracker.unregisterReducerTask(jobId);
+                mapReduceService.destroyJobSupervisor(this);
+
                 future.setResult(mergedResults);
             }
         }
     }
 
-    public <K, V> DefaultContext<K, V> createContext(MapCombineTask mapCombineTask, int partitionId) {
+    public <K, V> DefaultContext<K, V> createContext(MapCombineTask mapCombineTask) {
         DefaultContext<K, V> context = new DefaultContext<K, V>(
-                configuration.getCombinerFactory(), partitionId, mapCombineTask);
+                configuration.getCombinerFactory(), mapCombineTask);
 
         if (this.context.compareAndSet(null, context)) {
             return context;
@@ -242,7 +246,7 @@ public class JobSupervisor {
         if (checkPartitionReductionCompleted(partitionId, reducerAddress)) {
             try {
                 RequestPartitionResult result = mapReduceService.processRequest(jobOwner,
-                        new RequestPartitionProcessed(name, jobId, partitionId, REDUCING));
+                        new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
 
                 if (result.getResultState() != SUCCESSFUL) {
                     throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);

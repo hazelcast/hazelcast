@@ -56,4 +56,12 @@ public abstract class MapReduceNotification
         jobId = in.readUTF();
     }
 
+    @Override
+    public String toString() {
+        return "MapReduceNotification{" +
+                "name='" + name + '\'' +
+                ", jobId='" + jobId + '\'' +
+                '}';
+    }
+
 }

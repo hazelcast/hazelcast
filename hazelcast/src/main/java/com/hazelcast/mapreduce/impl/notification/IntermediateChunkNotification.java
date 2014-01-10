@@ -29,18 +29,24 @@ public class IntermediateChunkNotification<KeyOut, Value>
         extends MemberAwareMapReduceNotification {
 
     private Map<KeyOut, Value> chunk;
+    private int partitionId;
 
     public IntermediateChunkNotification() {
     }
 
     public IntermediateChunkNotification(Address address, String name, String jobId,
-                                         Map<KeyOut, Value> chunk) {
+                                         Map<KeyOut, Value> chunk, int partitionId) {
         super(address, name, jobId);
         this.chunk = chunk;
+        this.partitionId = partitionId;
     }
 
     public Map<KeyOut, Value> getChunk() {
         return chunk;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
@@ -51,6 +57,7 @@ public class IntermediateChunkNotification<KeyOut, Value>
             out.writeObject(entry.getKey());
             out.writeObject(entry.getValue());
         }
+        out.writeInt(partitionId);
     }
 
     @Override
@@ -63,6 +70,7 @@ public class IntermediateChunkNotification<KeyOut, Value>
             Value value = in.readObject();
             chunk.put(key, value);
         }
+        partitionId = in.readInt();
     }
 
     @Override
@@ -73,6 +81,13 @@ public class IntermediateChunkNotification<KeyOut, Value>
     @Override
     public int getId() {
         return MapReduceDataSerializerHook.REDUCER_CHUNK_MESSAGE;
+    }
+
+    @Override
+    public String toString() {
+        return "IntermediateChunkNotification{" +
+                "chunk=" + chunk +
+                '}';
     }
 
 }

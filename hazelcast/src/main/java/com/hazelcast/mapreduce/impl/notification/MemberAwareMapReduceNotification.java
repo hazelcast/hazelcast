@@ -52,4 +52,11 @@ public abstract class MemberAwareMapReduceNotification
         address.readData(in);
     }
 
+    @Override
+    public String toString() {
+        return "MemberAwareMapReduceNotification{" +
+                "address=" + address +
+                '}';
+    }
+
 }

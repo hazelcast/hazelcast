@@ -80,8 +80,8 @@ public abstract class AbstractJobTracker
         return trackableJobs.putIfAbsent(trackableJob.getJobId(), trackableJob) == null;
     }
 
-    public <V> boolean unregisterTrackableJob(TrackableJobFuture<V> trackableJob) {
-        return trackableJobs.remove(trackableJob) != null;
+    public <V> TrackableJobFuture<V> unregisterTrackableJob(String jobId) {
+        return trackableJobs.remove(jobId);
     }
 
     public <V> TrackableJobFuture<V> getTrackableJob(String jobId) {
@@ -92,8 +92,8 @@ public abstract class AbstractJobTracker
         reducerTasks.put(reducerTask.getJobId(), reducerTask);
     }
 
-    public void unregisterReducerTask(String jobId) {
-        reducerTasks.remove(jobId);
+    public ReducerTask unregisterReducerTask(String jobId) {
+        return reducerTasks.remove(jobId);
     }
 
     public <Key, Chunk> ReducerTask<Key, Chunk> getReducerTask(String jobId) {
@@ -107,8 +107,8 @@ public abstract class AbstractJobTracker
         }
     }
 
-    public void unregisterMapCombineTask(String jobId) {
-        mapCombineTasks.remove(jobId);
+    public MapCombineTask unregisterMapCombineTask(String jobId) {
+        return mapCombineTasks.remove(jobId);
     }
 
     public <KeyIn, ValueIn, KeyOut, ValueOut, Chunk>

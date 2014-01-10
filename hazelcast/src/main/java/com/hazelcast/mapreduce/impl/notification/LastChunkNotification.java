@@ -91,4 +91,13 @@ public class LastChunkNotification<KeyOut, Value>
         return MapReduceDataSerializerHook.REDUCER_LAST_CHUNK_MESSAGE;
     }
 
+    @Override
+    public String toString() {
+        return "LastChunkNotification{" +
+                "chunk=" + chunk +
+                ", partitionId=" + partitionId +
+                ", sender=" + sender +
+                '}';
+    }
+
 }
