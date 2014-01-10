@@ -39,6 +39,7 @@
                 <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="jobtracker" type="jobtracker" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
@@ -343,6 +344,19 @@
             </xs:element>
         </xs:sequence>
         <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="jobtracker">
+        <xs:sequence>
+            <xs:element name="max-thread-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="queue-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="retry-count" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="chunk-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="1000"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>

@@ -29,11 +29,6 @@ public class JobTrackerConfigReadOnly
     }
 
     @Override
-    public void setMinThreadSize(int minThreadSize) {
-        throw new UnsupportedOperationException("This config is read-only");
-    }
-
-    @Override
     public void setMaxThreadSize(int maxThreadSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
@@ -45,6 +40,11 @@ public class JobTrackerConfigReadOnly
 
     @Override
     public void setChunkSize(int chunkSize) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public void setQueueSize(int queueSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

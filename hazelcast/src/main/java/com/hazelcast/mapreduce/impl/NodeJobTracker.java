@@ -20,13 +20,30 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.task.KeyValueJob;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 
 class NodeJobTracker extends AbstractJobTracker {
 
     NodeJobTracker(String name, JobTrackerConfig jobTrackerConfig,
                    NodeEngine nodeEngine, MapReduceService mapReduceService) {
+
         super(name, jobTrackerConfig, nodeEngine, mapReduceService);
+
+        ExecutionService es = nodeEngine.getExecutionService();
+        PartitionService ps = nodeEngine.getPartitionService();
+        int maxThreadSize = jobTrackerConfig.getMaxThreadSize();
+        if (maxThreadSize <= 0) {
+            maxThreadSize = Runtime.getRuntime().availableProcessors();
+        }
+        int retryCount = jobTrackerConfig.getRetryCount();
+        int queueSize = jobTrackerConfig.getQueueSize();
+        if (queueSize <= 0) {
+            queueSize = ps.getPartitionCount() * 2;
+        }
+
+        es.register(name, maxThreadSize, queueSize);
     }
 
     @Override

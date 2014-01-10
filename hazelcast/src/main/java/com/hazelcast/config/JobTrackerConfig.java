@@ -18,11 +18,17 @@ package com.hazelcast.config;
 
 // TODO retry count needed?
 public class JobTrackerConfig {
+
+    public static final int DEFAULT_MAX_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
+    public static final int DEFAULT_RETRY_COUNT = 0;
+    public static final int DEFAULT_CHUNK_SIZE = 1000;
+    public static final int DEFAULT_QUEUE_SIZE = 0;
+
     private String name;
-    private int minThreadSize;
     private int maxThreadSize;
     private int retryCount;
     private int chunkSize;
+    private int queueSize;
 
     public JobTrackerConfig() {
     }
@@ -38,14 +44,6 @@ public class JobTrackerConfig {
 
     public String getName() {
         return name;
-    }
-
-    public int getMinThreadSize() {
-        return minThreadSize;
-    }
-
-    public void setMinThreadSize(int minThreadSize) {
-        this.minThreadSize = minThreadSize;
     }
 
     public int getMaxThreadSize() {
@@ -74,6 +72,14 @@ public class JobTrackerConfig {
 
     public JobTrackerConfig getAsReadOnly() {
         return new JobTrackerConfigReadOnly(this);
+    }
+
+    public int getQueueSize() {
+        return queueSize;
+    }
+
+    public void setQueueSize(int queueSize) {
+        this.queueSize = queueSize;
     }
 
 }
