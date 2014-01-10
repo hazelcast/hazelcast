@@ -32,7 +32,6 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.impl.BasicTargetInvocation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -134,21 +133,24 @@ public class MapReduceService
 
     public Address getKeyMember(Object key) {
         int partitionId = partitionService.getPartitionId(key);
-        return partitionService.getPartitionOwner(partitionId);
+        Address owner;
+        while ((owner = partitionService.getPartitionOwner(partitionId)) == null) {
+            try {
+                Thread.sleep(100);
+            } catch (Exception ignore) {
+            }
+        }
+        return owner;
     }
 
     public <R> R processRequest(Address address, ProcessingOperation processingOperation, String name)
             throws ExecutionException, InterruptedException {
 
         String executorName = MapReduceUtil.buildExecutorName(name);
-        BasicTargetInvocation invocation = new BasicTargetInvocation(nodeEngine,
-                MapReduceService.SERVICE_NAME, processingOperation, address,
-                InvocationBuilder.DEFAULT_TRY_COUNT,
-                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
-                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, executorName,
-                InvocationBuilder.DEFAULT_DESERIALIZE_RESULT);
+        InvocationBuilder invocation = nodeEngine.getOperationService().createInvocationBuilder(
+                SERVICE_NAME, processingOperation, address);
 
-        Future<R> future = invocation.invoke();
+        Future<R> future = invocation.setExecutorName(executorName).invoke();
         return future.get();
     }
 

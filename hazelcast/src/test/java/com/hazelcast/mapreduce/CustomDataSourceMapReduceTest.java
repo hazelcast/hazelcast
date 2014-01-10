@@ -18,7 +18,7 @@ package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -28,9 +28,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 @SuppressWarnings("unused")
-public class MultiMapMapReduceTest
+public class CustomDataSourceMapReduceTest
         extends HazelcastTestSupport {
 
     private static final Comparator<Map.Entry<String, Integer>> ENTRYSET_COMPARATOR = new Comparator<Map.Entry<String, Integer>>() {
@@ -52,7 +55,7 @@ public class MultiMapMapReduceTest
     };
 
     @Test(timeout = 60000)
-    public void testMapReduceWithMultiMap()
+    public void testMapReduceWithCustomKeyValueSource()
             throws Exception {
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -68,25 +71,13 @@ public class MultiMapMapReduceTest
             }
         });
 
-        MultiMap<Integer, Integer> multiMap = h1.getMultiMap("default");
-        for (int i = 0; i < 1000; i++) {
-            for (int o = 0; o < 100; o++) {
-                multiMap.put(i, o);
-            }
-        }
-
-        int expectedResult = 0;
-        for (int o = 0; o < 100; o++) {
-            expectedResult += o;
-        }
-
         JobTracker jobTracker = h1.getJobTracker("default");
-        Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMultiMap(multiMap));
+        Job<String, Integer> job = jobTracker.newJob(new CustomKeyValueSource());
         CompletableFuture<Map<String, Integer>> completableFuture =
                 job.chunkSize(10)
-                        .mapper(new MultiMapMapper())
-                        .combiner(new MultiMapCombinerFactory())
-                        .reducer(new MultiMapReducerFactory())
+                        .mapper(new CustomMapper())
+                        .combiner(new CustomCombinerFactory())
+                        .reducer(new CustomReducerFactory())
                         .submit();
 
         Map<String, Integer> result = completableFuture.get();
@@ -98,21 +89,78 @@ public class MultiMapMapReduceTest
 
         int count = 0;
         for (Map.Entry<String, Integer> entry : entrySet) {
-            assertEquals(String.valueOf(count++), entry.getKey());
-            assertEquals(expectedResult, (int) entry.getValue());
+            assertEquals(String.valueOf(count), entry.getKey());
+            assertEquals(count++ * 6, (int) entry.getValue());
         }
     }
 
-    public static class MultiMapMapper
-            implements Mapper<Integer, Integer, String, Integer> {
+    public static class CustomKeyValueSource
+            extends KeyValueSource<String, Integer> {
+
+        private transient List<Map.Entry<String, Integer>> entries;
+
+        private transient Iterator<Map.Entry<String, Integer>> iterator;
+        private transient Map.Entry<String, Integer> nextElement;
 
         @Override
-        public void map(Integer key, Integer value, Context<String, Integer> context) {
-            context.emit(String.valueOf(key), value);
+        public void open(NodeEngine nodeEngine) {
+            entries = new ArrayList<Map.Entry<String, Integer>>();
+            for (int i = 0; i < 1000; i++) {
+                entries.add(new AbstractMap.SimpleEntry<String, Integer>(String.valueOf(i), i));
+            }
+            iterator = entries.iterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (iterator == null) {
+                return false;
+            }
+            boolean hasNext = iterator.hasNext();
+            nextElement = hasNext ? iterator.next() : null;
+            return hasNext;
+        }
+
+        @Override
+        public String key() {
+            if (nextElement == null) {
+                throw new IllegalStateException("no more elements");
+            }
+            return nextElement.getKey();
+        }
+
+        @Override
+        public Map.Entry<String, Integer> element() {
+            if (nextElement == null) {
+                throw new IllegalStateException("no more elements");
+            }
+            return nextElement;
+        }
+
+        @Override
+        public boolean reset() {
+            iterator = null;
+            nextElement = null;
+            entries = new ArrayList<Map.Entry<String, Integer>>();
+            return true;
+        }
+
+        @Override
+        public void close() throws IOException {
         }
     }
 
-    public static class MultiMapCombiner
+    public static class CustomMapper
+            implements Mapper<String, Integer, String, Integer> {
+
+        @Override
+        public void map(String key, Integer value, Context<String, Integer> context) {
+            context.emit(key, value);
+            context.emit(key, value);
+        }
+    }
+
+    public static class CustomCombiner
             extends Combiner<String, Integer, Integer> {
 
         private int value;
@@ -130,16 +178,16 @@ public class MultiMapMapReduceTest
         }
     }
 
-    public static class MultiMapCombinerFactory
+    public static class CustomCombinerFactory
             implements CombinerFactory<String, Integer, Integer> {
 
         @Override
         public Combiner<String, Integer, Integer> newCombiner(String key) {
-            return new MultiMapCombiner();
+            return new CustomCombiner();
         }
     }
 
-    public static class MultiMapReducer extends Reducer<String, Integer, Integer> {
+    public static class CustomReducer extends Reducer<String, Integer, Integer> {
 
         private int value;
 
@@ -154,12 +202,12 @@ public class MultiMapMapReduceTest
         }
     }
 
-    public static class MultiMapReducerFactory
+    public static class CustomReducerFactory
             implements ReducerFactory<String, Integer, Integer> {
 
         @Override
         public Reducer<String, Integer, Integer> newReducer(String key) {
-            return new MultiMapReducer();
+            return new CustomReducer();
         }
     }
 
