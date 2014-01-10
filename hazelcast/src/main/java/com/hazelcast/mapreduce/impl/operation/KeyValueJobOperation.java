@@ -43,6 +43,7 @@ public class KeyValueJobOperation<K, V>
     private Mapper mapper;
     private CombinerFactory combinerFactory;
     private ReducerFactory reducerFactory;
+    private boolean communicateStats;
 
     public KeyValueJobOperation() {
     }
@@ -50,7 +51,8 @@ public class KeyValueJobOperation<K, V>
     public KeyValueJobOperation(String name, String jobId, int chunkSize,
                                 KeyValueSource<K, V> keyValueSource,
                                 Mapper mapper, CombinerFactory combinerFactory,
-                                ReducerFactory reducerFactory) {
+                                ReducerFactory reducerFactory,
+                                boolean communicateStats) {
         this.name = name;
         this.jobId = jobId;
         this.chunkSize = chunkSize;
@@ -58,6 +60,7 @@ public class KeyValueJobOperation<K, V>
         this.mapper = mapper;
         this.combinerFactory = combinerFactory;
         this.reducerFactory = reducerFactory;
+        this.communicateStats = communicateStats;
     }
 
     @Override
@@ -73,8 +76,8 @@ public class KeyValueJobOperation<K, V>
             jobOwner = getNodeEngine().getThisAddress();
         }
         JobSupervisor supervisor = mapReduceService.createJobSupervisor(
-                new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name,
-                        jobId, mapper, combinerFactory, reducerFactory, keyValueSource));
+                new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name,jobId, mapper,
+                        combinerFactory, reducerFactory, keyValueSource, communicateStats));
         if (supervisor == null) {
             throw new IllegalStateException("Supervisor could not be created");
         }
@@ -89,6 +92,7 @@ public class KeyValueJobOperation<K, V>
         out.writeObject(combinerFactory);
         out.writeObject(reducerFactory);
         out.writeInt(chunkSize);
+        out.writeBoolean(communicateStats);
     }
 
     @Override
@@ -100,6 +104,7 @@ public class KeyValueJobOperation<K, V>
         combinerFactory = in.readObject();
         reducerFactory = in.readObject();
         chunkSize = in.readInt();
+        communicateStats = in.readBoolean();
     }
 
     @Override

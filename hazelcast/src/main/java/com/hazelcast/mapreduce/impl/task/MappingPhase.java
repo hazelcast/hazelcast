@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
 
 import java.util.Collection;
 
@@ -47,6 +48,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
     }
 
     protected abstract void executeMappingPhase(KeyValueSource<KeyIn, ValueIn> keyValueSource,
+                                                Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
                                                 Context<KeyOut, ValueOut> context);
 
 }

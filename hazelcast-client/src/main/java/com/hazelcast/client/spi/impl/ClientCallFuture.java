@@ -19,6 +19,7 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -43,6 +44,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final ClientRequest request;
 
+    private final ClientConnection connection;
+
     private final ClientClusterServiceImpl clusterService;
 
     private final ClientExecutionServiceImpl executionService;
@@ -55,12 +58,13 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
-    public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
+    public ClientCallFuture(HazelcastClient client, ClientConnection connection, ClientRequest request, EventHandler handler) {
         this.clusterService = (ClientClusterServiceImpl)client.getClientClusterService();
         this.executionService = (ClientExecutionServiceImpl)client.getClientExecutionService();
         this.serializationService = client.getSerializationService();
         this.request = request;
         this.handler = handler;
+        this.connection = connection;
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -182,6 +186,10 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     public EventHandler getHandler() {
         return handler;
+    }
+
+    public ClientConnection getConnection() {
+        return connection;
     }
 
     private boolean resend() {

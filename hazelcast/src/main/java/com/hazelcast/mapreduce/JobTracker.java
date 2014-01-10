@@ -70,4 +70,16 @@ public interface JobTracker
     // This feature is moved to Hazelcast 3.3
     //<K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source);
 
+    /**
+     * Returns an instance of {@link com.hazelcast.mapreduce.JobProcessInformation} to find out the state and
+     * statistics of a running task or null if given job id is not available because job is already finished or
+     * not yet submitted.<br/>
+     * It even returns null if not requested on the job issuing cluster member or client since those values are
+     * not distributed to all clusters for traffic reasons.
+     *
+     * @param jobId the job id of the requested job
+     * @return instance of the jobs process information or null if job id is not available
+     */
+    JobProcessInformation getJobProcessInformation(String jobId);
+
 }

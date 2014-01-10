@@ -16,10 +16,35 @@
 
 package com.hazelcast.mapreduce;
 
+/**
+ * This interface holds basic information about a running map reduce job like
+ * state of the different partitions and the number of currently processed
+ * records.<br/>
+ * The number of processed records is not a real time value but updated
+ * on regular base (after 1000 processed elements per node).
+ */
 public interface JobProcessInformation {
 
+    /**
+     * Returns an array of {@link com.hazelcast.mapreduce.JobPartitionState}s holding
+     * information about the processing state ({@link com.hazelcast.mapreduce.JobPartitionState.State})
+     * and the processing owner of this partition.<br/>
+     * The index of the {@link com.hazelcast.mapreduce.JobPartitionState} inside of the
+     * array is the number of the processed partition if the {@link com.hazelcast.mapreduce.KeyValueSource}
+     * is {@link com.hazelcast.mapreduce.PartitionIdAware} or a randomly assigned id for
+     * the different members of the cluster.
+     *
+     * @return partition state array with actual state information
+     */
     JobPartitionState[] getPartitionStates();
 
+    /**
+     * Returns the number of processed records.<br/>
+     * The number of processed records is not a real time value but updated
+     * on regular base (after 1000 processed elements per node).
+     *
+     * @return number of processed records
+     */
     int getProcessedRecords();
 
 }

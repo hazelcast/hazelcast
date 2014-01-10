@@ -23,18 +23,25 @@ public class JobTrackerConfig {
     public static final int DEFAULT_RETRY_COUNT = 0;
     public static final int DEFAULT_CHUNK_SIZE = 1000;
     public static final int DEFAULT_QUEUE_SIZE = 0;
+    public static final boolean DEFAULT_COMMUNICATE_STATS = true;
 
     private String name;
-    private int maxThreadSize;
-    private int retryCount;
-    private int chunkSize;
-    private int queueSize;
+    private int maxThreadSize = DEFAULT_MAX_THREAD_SIZE;
+    private int retryCount = DEFAULT_RETRY_COUNT;
+    private int chunkSize = DEFAULT_CHUNK_SIZE;
+    private int queueSize = DEFAULT_QUEUE_SIZE;
+    private boolean communicateStats = DEFAULT_COMMUNICATE_STATS;
 
     public JobTrackerConfig() {
     }
 
     public JobTrackerConfig(JobTrackerConfig source) {
         this.name = source.name;
+        this.maxThreadSize = source.maxThreadSize;
+        this.retryCount = source.retryCount;
+        this.chunkSize = source.chunkSize;
+        this.queueSize = source.queueSize;
+        this.communicateStats = source.communicateStats;
     }
 
     public JobTrackerConfig setName(String name) {
@@ -80,6 +87,14 @@ public class JobTrackerConfig {
 
     public void setQueueSize(int queueSize) {
         this.queueSize = queueSize;
+    }
+
+    public boolean isCommunicateStats() {
+        return communicateStats;
+    }
+
+    public void setCommunicateStats(boolean communicateStats) {
+        this.communicateStats = communicateStats;
     }
 
 }

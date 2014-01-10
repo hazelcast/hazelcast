@@ -355,6 +355,7 @@
             <xs:element name="queue-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="retry-count" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="chunk-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="communicate-stats" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>

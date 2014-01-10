@@ -260,8 +260,8 @@ public class JobSupervisor {
                 if (result.getResultState() != SUCCESSFUL) {
                     throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
                 }
-            } catch (Exception ignore) {
-                ignore.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

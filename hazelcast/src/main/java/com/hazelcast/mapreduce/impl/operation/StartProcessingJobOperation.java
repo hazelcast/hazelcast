@@ -39,17 +39,15 @@ public class StartProcessingJobOperation<K>
     private Collection<K> keys;
     private String jobId;
     private KeyPredicate<K> predicate;
-    private Mapper mapper;
 
     public StartProcessingJobOperation() {
     }
 
     public StartProcessingJobOperation(String name, String jobId, Collection<K> keys,
-                                       KeyPredicate<K> predicate, Mapper mapper) {
+                                       KeyPredicate<K> predicate) {
         this.name = name;
         this.keys = keys;
         this.jobId = jobId;
-        this.mapper = mapper;
         this.predicate = predicate;
     }
 
@@ -67,7 +65,7 @@ public class StartProcessingJobOperation<K>
     public void run() throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
-        MappingPhase mappingPhase = new KeyValueSourceMappingPhase(mapper, keys, predicate);
+        MappingPhase mappingPhase = new KeyValueSourceMappingPhase(keys, predicate);
         supervisor.startTasks(mappingPhase);
     }
 
@@ -81,7 +79,6 @@ public class StartProcessingJobOperation<K>
                 out.writeObject(key);
             }
         }
-        out.writeObject(mapper);
         out.writeObject(predicate);
     }
 
@@ -94,7 +91,6 @@ public class StartProcessingJobOperation<K>
         for (int i = 0; i < size; i++) {
             keys.add((K) in.readObject());
         }
-        mapper = in.readObject();
         predicate = in.readObject();
     }
 

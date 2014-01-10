@@ -1036,6 +1036,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 jConfig.setRetryCount(getIntegerValue("retry-count", value, JobTrackerConfig.DEFAULT_RETRY_COUNT));
             } else if ("chunk-size".equals(nodeName)) {
                 jConfig.setChunkSize(getIntegerValue("chunk-size", value, JobTrackerConfig.DEFAULT_CHUNK_SIZE));
+            } else if ("communicate-stats".equals(nodeName)) {
+                jConfig.setCommunicateStats(value == null || value.length() == 0 ?
+                        JobTrackerConfig.DEFAULT_COMMUNICATE_STATS : Boolean.parseBoolean(value));
             }
         }
         config.addJobTrackerConfig(jConfig);

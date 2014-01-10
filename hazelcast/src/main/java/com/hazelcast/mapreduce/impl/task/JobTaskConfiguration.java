@@ -34,11 +34,12 @@ public class JobTaskConfiguration {
     private final ReducerFactory reducerFactory;
     private final KeyValueSource keyValueSource;
     private final NodeEngine nodeEngine;
+    private final boolean communicateStats;
 
     public JobTaskConfiguration(Address jobOwner, NodeEngine nodeEngine, int chunkSize,
                                 String name, String jobId, Mapper mapper,
                                 CombinerFactory combinerFactory, ReducerFactory reducerFactory,
-                                KeyValueSource keyValueSource) {
+                                KeyValueSource keyValueSource, boolean communicateStats) {
         this.jobOwner = jobOwner;
         this.chunkSize = chunkSize;
         this.name = name;
@@ -48,6 +49,7 @@ public class JobTaskConfiguration {
         this.reducerFactory = reducerFactory;
         this.keyValueSource = keyValueSource;
         this.nodeEngine = nodeEngine;
+        this.communicateStats = communicateStats;
     }
 
     public Address getJobOwner() {
@@ -84,6 +86,10 @@ public class JobTaskConfiguration {
 
     public NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    public boolean isCommunicateStats() {
+        return communicateStats;
     }
 
 }

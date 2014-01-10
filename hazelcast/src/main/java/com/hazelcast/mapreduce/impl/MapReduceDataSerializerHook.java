@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
@@ -23,12 +24,14 @@ import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
 import com.hazelcast.mapreduce.impl.operation.FireNotificationOperation;
 import com.hazelcast.mapreduce.impl.operation.GetResultOperation;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
+import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
+import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
@@ -55,7 +58,10 @@ public class MapReduceDataSerializerHook
     public static final int REDUCING_FINISHED_MESSAGE = 11;
     public static final int FIRE_NOTIFICATION_OPERATION = 12;
     public static final int REQUEST_MEMBERID_ASSIGNMENT = 13;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 14;
+    public static final int PROCESS_STATS_UPDATE_OPERATION = 14;
+    public static final int TRANSFERABLE_PROCESS_INFORMATION = 15;
+    public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 16;
+    public static final int CLIENT_MAP_REDUCE_REQUEST = 17;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
 
@@ -149,6 +155,24 @@ public class MapReduceDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new RequestMemberIdAssignment();
+            }
+        };
+        constructors[PROCESS_STATS_UPDATE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ProcessStatsUpdateOperation();
+            }
+        };
+        constructors[TRANSFERABLE_PROCESS_INFORMATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TransferableJobProcessInformation();
+            }
+        };
+        constructors[CLIENT_JOB_PROCESS_INFO_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClientJobProcessInformationRequest();
             }
         };
         constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

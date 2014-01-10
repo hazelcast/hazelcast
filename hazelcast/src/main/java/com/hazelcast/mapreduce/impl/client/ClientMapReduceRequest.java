@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
@@ -31,7 +32,6 @@ import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
 import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
@@ -44,6 +44,8 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
 public class ClientMapReduceRequest<KeyIn, ValueIn>
         extends InvocationClientRequest
@@ -118,25 +120,25 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
                                                           NodeEngine nodeEngine,
                                                           AbstractJobTracker jobTracker) {
 
+        JobTrackerConfig config = jobTracker.getJobTrackerConfig();
+        boolean communicateStats = config.isCommunicateStats();
         if (chunkSize == -1) {
-            chunkSize = jobTracker.getJobTrackerConfig().getChunkSize();
+            chunkSize = config.getChunkSize();
         }
 
         ClusterService cs = nodeEngine.getClusterService();
         Collection<MemberImpl> members = cs.getMemberList();
         for (MemberImpl member : members) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize,
-                    keyValueSource, mapper, combinerFactory, reducerFactory);
+                    keyValueSource, mapper, combinerFactory, reducerFactory, communicateStats);
 
-            MapReduceUtil.executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
+            executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
 
         // After we prepared all the remote systems we can now start the processing
         for (MemberImpl member : members) {
-            Operation operation = new StartProcessingJobOperation<KeyIn>(
-                    name, jobId, keys, predicate, mapper);
-
-            MapReduceUtil.executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
+            Operation operation = new StartProcessingJobOperation<KeyIn>(name, jobId, keys, predicate);
+            executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
         return jobFuture;
     }

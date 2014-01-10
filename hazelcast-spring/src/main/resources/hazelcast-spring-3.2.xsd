@@ -228,6 +228,7 @@
                                 <xs:attribute name="queue-size" use="optional" type="xs:positiveInteger" default="0"/>
                                 <xs:attribute name="retry-count" use="optional" type="xs:positiveInteger" default="0"/>
                                 <xs:attribute name="chunk-size" use="optional" type="xs:positiveInteger" default="1000"/>
+                                <xs:attribute name="communicate-stats" use="optional" type="xs:boolean" default="true"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>

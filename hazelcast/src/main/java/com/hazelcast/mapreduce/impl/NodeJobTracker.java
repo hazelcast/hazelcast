@@ -18,7 +18,9 @@ package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.KeyValueJob;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExecutionService;
@@ -55,6 +57,15 @@ class NodeJobTracker extends AbstractJobTracker {
     @Override
     public <K, V> Job<K, V> newJob(KeyValueSource<K, V> source) {
         return new KeyValueJob<K, V>(name, this, nodeEngine, mapReduceService, source);
+    }
+
+    @Override
+    public JobProcessInformation getJobProcessInformation(String jobId) {
+        JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
+        if (supervisor == null || !supervisor.isOwnerNode()) {
+            return null;
+        }
+        return supervisor.getJobProcessInformation();
     }
 
     /*

@@ -28,16 +28,13 @@ import java.util.Map;
 public class KeyValueSourceMappingPhase<KeyIn, ValueIn, KeyOut, ValueOut>
         extends MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
-    private final Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper;
-
-    public KeyValueSourceMappingPhase(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
-                                      Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
+    public KeyValueSourceMappingPhase(Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
         super(keys, predicate);
-        this.mapper = mapper;
     }
 
     @Override
     public void executeMappingPhase(KeyValueSource<KeyIn, ValueIn> keyValueSource,
+                                    Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
                                     Context<KeyOut, ValueOut> context) {
 
         while (keyValueSource.hasNext()) {

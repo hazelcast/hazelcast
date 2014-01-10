@@ -23,6 +23,7 @@ import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
+import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -92,14 +94,14 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
-    public final void processMapping(int partitionId) {
+    public final void processMapping(int partitionId, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         DefaultContext<KeyOut, ValueOut> context = supervisor.createContext(this);
         context.setPartitionId(partitionId);
 
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).initialize(context);
         }
-        mappingPhase.executeMappingPhase(keyValueSource, context);
+        mappingPhase.executeMappingPhase(keyValueSource, mapper, context);
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).finalized(context);
         }
@@ -189,6 +191,11 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
         @Override
         public void run() {
+            KeyValueSource<KeyIn, ValueIn> delegate = keyValueSource;
+            if (supervisor.getConfiguration().isCommunicateStats()) {
+                delegate = new KeyValueSourceFacade<KeyIn, ValueIn>(keyValueSource, supervisor);
+            }
+
             for (; ; ) {
                 Integer partitionId = findNewPartitionProcessing();
                 if (partitionId == null) {
@@ -202,11 +209,12 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 }
 
                 try {
+                    // This call cannot be delegated
                     ((PartitionIdAware) keyValueSource).setPartitionId(partitionId);
-                    keyValueSource.reset();
-                    keyValueSource.open(nodeEngine);
-                    processMapping(partitionId);
-                    keyValueSource.close();
+                    delegate.reset();
+                    delegate.open(nodeEngine);
+                    processMapping(partitionId, delegate);
+                    delegate.close();
                 } catch (IOException ignore) {
                     ignore.printStackTrace();
                 }
@@ -252,10 +260,15 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     return;
                 }
 
-                keyValueSource.reset();
-                keyValueSource.open(nodeEngine);
-                processMapping(result.getPartitionId());
-                keyValueSource.close();
+                KeyValueSource<KeyIn, ValueIn> delegate = keyValueSource;
+                if (supervisor.getConfiguration().isCommunicateStats()) {
+                    delegate = new KeyValueSourceFacade<KeyIn, ValueIn>(keyValueSource, supervisor);
+                }
+
+                delegate.reset();
+                delegate.open(nodeEngine);
+                processMapping(result.getPartitionId(), delegate);
+                delegate.close();
             } catch (Exception ignore) {
                 ignore.printStackTrace();
             }

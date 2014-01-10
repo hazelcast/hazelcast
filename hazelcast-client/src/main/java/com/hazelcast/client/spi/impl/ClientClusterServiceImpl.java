@@ -16,7 +16,14 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.ClientImpl;
+import com.hazelcast.client.ClientPrincipal;
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.ClientResponse;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -28,14 +35,24 @@ import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMemberAttributeChangedEvent;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.*;
 import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
@@ -51,7 +68,18 @@ import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EventListener;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -595,7 +623,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private ICompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
-        final ClientCallFuture future = new ClientCallFuture(client, request, handler);
+        final ClientCallFuture future = new ClientCallFuture(client, connection, request, handler);
         _send(future, connection);
         return future;
     }

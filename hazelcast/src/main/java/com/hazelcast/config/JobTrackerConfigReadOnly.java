@@ -48,4 +48,9 @@ public class JobTrackerConfigReadOnly
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
+    public void setCommunicateStats(boolean communicateStats) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
 }

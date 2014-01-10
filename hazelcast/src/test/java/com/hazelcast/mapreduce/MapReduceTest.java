@@ -169,9 +169,9 @@ public class MapReduceTest
         }
 
         JobTracker tracker = h1.getJobTracker("default");
-        Job<Integer, Integer> task = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         CompletableFuture<Map<String, Integer>> future =
-                task.mapper(new GroupingTestMapper())
+                job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit();
 
@@ -204,13 +204,14 @@ public class MapReduceTest
         }
 
         JobTracker tracker = h1.getJobTracker("default");
-        Job<Integer, Integer> task = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         CompletableFuture<Map<String, Integer>> future =
-                task.chunkSize(10)
+                job.chunkSize(10)
                         .mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit();
 
+        final JobProcessInformation processInformation = tracker.getJobProcessInformation(job.getJobId());
         Map<String, Integer> result = future.get();
 
         // Precalculate results
@@ -223,6 +224,13 @@ public class MapReduceTest
         for (int i = 0; i < 4; i++) {
             assertEquals(expectedResults[i], (int) result.get(String.valueOf(i)));
         }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(10000, processInformation.getProcessedRecords());
+            }
+        });
     }
 
     @Test(timeout = 30000)

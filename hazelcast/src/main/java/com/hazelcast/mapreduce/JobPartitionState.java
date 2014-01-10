@@ -18,19 +18,59 @@ package com.hazelcast.mapreduce;
 
 import com.hazelcast.nio.Address;
 
+/**
+ * An implementation of this interface contains current information about
+ * the status of an process piece while operation is executing.
+ */
 public interface JobPartitionState {
 
+    /**
+     * Returns the owner of this partition
+     *
+     * @return owner of the partition
+     */
     Address getOwner();
 
+    /**
+     * Returns the current processing state of this partition
+     *
+     * @return processing state of the partition
+     */
     State getState();
 
+    /**
+     * Definition of the processing states
+     */
     public static enum State {
+        /**
+         * Partition waits for being calculated
+         */
         WAITING,
+
+        /**
+         * Partition is in mapping phase
+         */
         MAPPING,
+
+        /**
+         * Partition is in reducing phase (mapping may still
+         * not finished when this state is reached since there
+         * is a chunked based operation underlying)
+         */
         REDUCING,
+
+        /**
+         * Partition is fully processed
+         */
         PROCESSED,
         ;
 
+        /**
+         * Returns an processing state by its given ordinal
+         *
+         * @param ordinal ordinal to search for
+         * @return the processing state for the given ordinal
+         */
         public static State byOrdinal(int ordinal) {
             for (State state : values()) {
                 if (state.ordinal() == ordinal) {
