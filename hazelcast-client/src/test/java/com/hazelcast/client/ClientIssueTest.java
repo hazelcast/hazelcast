@@ -54,6 +54,43 @@ public class ClientIssueTest {
     }
 
     @Test
+    public void testInitialMemberListener() throws InterruptedException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new StaticMemberListener(latch1)));
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        assertTrue("Before starting", latch1.await(5, TimeUnit.SECONDS));
+
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        client.getCluster().addMembershipListener(new StaticMemberListener(latch2));
+
+        assertTrue("After starting", latch2.await(5, TimeUnit.SECONDS));
+    }
+
+    static class StaticMemberListener implements MembershipListener, InitialMembershipListener {
+
+        final CountDownLatch latch;
+
+        StaticMemberListener(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        public void init(InitialMembershipEvent event) {
+            latch.countDown();
+        }
+
+        public void memberAdded(MembershipEvent membershipEvent) {
+        }
+
+        public void memberRemoved(MembershipEvent membershipEvent) {
+        }
+    }
+
+    @Test
     public void testClientPortConnection() {
         final Config config1 = new Config();
         config1.getGroupConfig().setName("foo");
