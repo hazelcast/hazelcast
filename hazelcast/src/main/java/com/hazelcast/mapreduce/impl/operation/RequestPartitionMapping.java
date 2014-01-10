@@ -95,13 +95,8 @@ public class RequestPartitionMapping
     private boolean checkState(JobProcessInformation processInformation, int partitionId) {
         JobPartitionState[] partitionStates = processInformation.getPartitionStates();
         JobPartitionState partitionState = partitionStates[partitionId];
-        if (partitionState == null) {
-            return true;
-        }
-        if (partitionState.getState() == JobPartitionState.State.WAITING) {
-            return true;
-        }
-        return false;
+        return partitionState == null
+                || partitionState.getState() == JobPartitionState.State.WAITING;
     }
 
     @Override

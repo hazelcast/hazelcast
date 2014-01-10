@@ -16,15 +16,14 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
-import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class GetResultOperation extends ProcessingOperation {
+public class GetResultOperation
+        extends ProcessingOperation {
 
     private volatile Map result;
 

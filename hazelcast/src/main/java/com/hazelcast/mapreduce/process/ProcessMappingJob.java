@@ -17,7 +17,9 @@
 package com.hazelcast.mapreduce.process;
 
 import com.hazelcast.core.CompletableFuture;
-import com.hazelcast.mapreduce.*;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.ReducerFactory;
 
 import java.util.Map;
 

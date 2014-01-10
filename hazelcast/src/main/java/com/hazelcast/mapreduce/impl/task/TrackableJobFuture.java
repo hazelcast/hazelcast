@@ -89,7 +89,7 @@ public class TrackableJobFuture<V>
                 throw new TimeoutException("timeout reached");
             }
         }
-        return (V) getResult();
+        return getResult();
     }
 
     @Override

@@ -41,7 +41,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
+public class ClientMapReduceProxy
+        extends ClientProxy
+        implements JobTracker {
 
     public ClientMapReduceProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -109,7 +111,8 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
 
     }
 
-    private class ClientCompletableFuture<V> extends AbstractCompletableFuture<V> {
+    private class ClientCompletableFuture<V>
+            extends AbstractCompletableFuture<V> {
 
         protected ClientCompletableFuture() {
             super(null, Logger.getLogger(ClientCompletableFuture.class));
@@ -147,7 +150,7 @@ public class ClientMapReduceProxy extends ClientProxy implements JobTracker {
                     throw new TimeoutException("timeout reached");
                 }
             }
-            return (V) getResult();
+            return getResult();
         }
 
         @Override

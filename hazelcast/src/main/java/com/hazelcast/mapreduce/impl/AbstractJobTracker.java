@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
-public abstract class AbstractJobTracker implements JobTracker {
+public abstract class AbstractJobTracker
+        implements JobTracker {
 
     protected final ConcurrentMap<String, TrackableJobFuture> trackableJobs = new ConcurrentHashMap<String, TrackableJobFuture>();
     protected final ConcurrentMap<String, ReducerTask> reducerTasks = new ConcurrentHashMap<String, ReducerTask>();

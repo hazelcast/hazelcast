@@ -24,7 +24,8 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class JobProcessInformationImpl implements JobProcessInformation {
+public class JobProcessInformationImpl
+        implements JobProcessInformation {
 
     private final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]> updater;
 
@@ -51,6 +52,7 @@ public class JobProcessInformationImpl implements JobProcessInformation {
     }
 
     public void addProcessedRecords(int records) {
+        // TODO calling this for record counting
         processedRecords.addAndGet(records);
     }
 

@@ -17,11 +17,9 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.config.JobTrackerConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.task.KeyValueJob;
-import com.hazelcast.mapreduce.process.ProcessJob;
 import com.hazelcast.spi.NodeEngine;
 
 class NodeJobTracker extends AbstractJobTracker {

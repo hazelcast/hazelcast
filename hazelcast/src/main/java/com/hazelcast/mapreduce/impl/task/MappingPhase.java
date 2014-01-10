@@ -43,10 +43,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
                 }
             }
         }
-        if (predicate != null) {
-            return predicate.evaluate(key);
-        }
-        return false;
+        return predicate != null && predicate.evaluate(key);
     }
 
     protected abstract void executeMappingPhase(KeyValueSource<KeyIn, ValueIn> keyValueSource,

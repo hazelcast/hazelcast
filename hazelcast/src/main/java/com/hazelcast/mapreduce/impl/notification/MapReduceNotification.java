@@ -22,7 +22,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public abstract class MapReduceNotification implements IdentifiedDataSerializable {
+public abstract class MapReduceNotification
+        implements IdentifiedDataSerializable {
 
     private String name;
     private String jobId;

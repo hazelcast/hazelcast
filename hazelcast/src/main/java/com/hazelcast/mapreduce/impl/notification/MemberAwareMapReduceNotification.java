@@ -22,7 +22,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public abstract class MemberAwareMapReduceNotification extends MapReduceNotification {
+public abstract class MemberAwareMapReduceNotification
+        extends MapReduceNotification {
 
     private Address address;
 

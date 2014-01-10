@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+// TODO retry count needed?
 public class JobTrackerConfig {
     private String name;
     private int minThreadSize;

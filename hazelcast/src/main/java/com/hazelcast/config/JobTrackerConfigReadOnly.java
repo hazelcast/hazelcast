@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-public class JobTrackerConfigReadOnly extends JobTrackerConfig {
+public class JobTrackerConfigReadOnly
+        extends JobTrackerConfig {
 
     JobTrackerConfigReadOnly(JobTrackerConfig jobTrackerConfig) {
         super(jobTrackerConfig);

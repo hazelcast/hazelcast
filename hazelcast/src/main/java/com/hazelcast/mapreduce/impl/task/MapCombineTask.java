@@ -182,6 +182,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
         @Override
         public void run() {
+            // TODO Test KeyValueSource for implementing PartitionIdAware otherwise
+            // TODO just execute it once (maybe an external datasource)
             for (; ; ) {
                 Integer partitionId = findNewPartitionProcessing();
                 if (partitionId == null) {

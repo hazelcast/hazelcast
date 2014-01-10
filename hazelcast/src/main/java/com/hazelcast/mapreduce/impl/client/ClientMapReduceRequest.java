@@ -95,8 +95,8 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
             AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.createDistributedObject(name);
             TrackableJobFuture jobFuture = new TrackableJobFuture(name, jobId, jobTracker, nodeEngine, null);
             if (jobTracker.registerTrackableJob(jobFuture)) {
-                CompletableFuture future = startSupervisionTask(jobFuture, mapReduceService, nodeEngine, jobTracker);
-                future.andThen(new ExecutionCallback() {
+                CompletableFuture<Object> future = startSupervisionTask(jobFuture, mapReduceService, nodeEngine, jobTracker);
+                future.andThen(new ExecutionCallback<Object>() {
                     @Override
                     public void onResponse(Object response) {
                         engine.sendResponse(endpoint, response);
@@ -133,7 +133,7 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
 
         // After we prepared all the remote systems we can now start the processing
         for (MemberImpl member : members) {
-            Operation operation = new StartProcessingJobOperation<KeyIn, ValueIn>(
+            Operation operation = new StartProcessingJobOperation<KeyIn>(
                     name, jobId, keys, predicate, mapper);
 
             MapReduceUtil.executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);

@@ -20,7 +20,8 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
 
-public class MapReduceSimpleEntry<K, V> implements Map.Entry<K, V> {
+public class MapReduceSimpleEntry<K, V>
+        implements Map.Entry<K, V> {
 
     private Data keyData;
     private K key;

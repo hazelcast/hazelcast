@@ -19,7 +19,6 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
 import com.hazelcast.mapreduce.impl.operation.ProcessingOperation;
@@ -69,7 +68,6 @@ public class MapReduceService
     private final PartitionServiceImpl partitionService;
     private final InternalPartition[] partitions;
 
-    private final HazelcastInstance hazelcastInstance;
     private final EventService eventService;
     private final NodeEngine nodeEngine;
     private final Config config;
@@ -78,7 +76,6 @@ public class MapReduceService
         this.config = nodeEngine.getConfig();
         this.nodeEngine = nodeEngine;
         this.eventService = nodeEngine.getEventService();
-        this.hazelcastInstance = nodeEngine.getHazelcastInstance();
         this.partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
         this.partitions = partitionService.getPartitions();
         this.eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, this);
@@ -149,6 +146,7 @@ public class MapReduceService
     }
 
     public void sendNotification(Address address, MapReduceNotification notification) {
+        // TODO Wrap this into a call instead of an event to guarantee ordering
         Collection<EventRegistration> registrations = eventService
                 .getRegistrations(SERVICE_NAME, EVENT_TOPIC_NAME);
 
@@ -158,13 +156,6 @@ public class MapReduceService
                 return;
             }
         }
-    }
-
-    public void sendNotification(MapReduceNotification notification) {
-        Collection<EventRegistration> registrations = eventService
-                .getRegistrations(SERVICE_NAME, EVENT_TOPIC_NAME);
-
-        eventService.publishEvent(SERVICE_NAME, registrations, notification, hashCode());
     }
 
     public final List<Integer> getLocalPartitions() {
@@ -224,9 +215,8 @@ public class MapReduceService
             JobSupervisorKey that = (JobSupervisorKey) o;
 
             if (!jobId.equals(that.jobId)) return false;
-            if (!name.equals(that.name)) return false;
+            return name.equals(that.name);
 
-            return true;
         }
 
         @Override

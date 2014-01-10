@@ -18,7 +18,6 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.nio.Address;
 
-import java.util.List;
 import java.util.Map;
 
 class ReducerChunk<Key, Chunk> {
@@ -32,4 +31,5 @@ class ReducerChunk<Key, Chunk> {
         this.sender = sender;
         this.partitionId = partitionId;
     }
+
 }

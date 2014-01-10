@@ -26,7 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class DefaultContext<KeyIn, ValueIn> implements Context<KeyIn, ValueIn> {
+public class DefaultContext<KeyIn, ValueIn>
+        implements Context<KeyIn, ValueIn> {
 
     private final Map<KeyIn, Combiner<KeyIn, ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<KeyIn, ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;

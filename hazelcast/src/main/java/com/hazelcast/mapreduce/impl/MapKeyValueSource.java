@@ -16,10 +16,10 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

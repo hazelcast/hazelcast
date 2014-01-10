@@ -32,7 +32,8 @@ import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 
-public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
+public class KeyValueJob<KeyIn, ValueIn>
+        extends AbstractJob<KeyIn, ValueIn> {
 
     private final NodeEngine nodeEngine;
     private final MapReduceService mapReduceService;
@@ -73,9 +74,7 @@ public class KeyValueJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
         // After we prepared all the remote systems we can now start the processing
         for (MemberImpl member : members) {
-            Operation operation = new StartProcessingJobOperation<KeyIn, ValueIn>(
-                    name, jobId, keys, predicate, mapper);
-
+            Operation operation = new StartProcessingJobOperation<KeyIn>(name, jobId, keys, predicate, mapper);
             MapReduceUtil.executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
         return jobFuture;

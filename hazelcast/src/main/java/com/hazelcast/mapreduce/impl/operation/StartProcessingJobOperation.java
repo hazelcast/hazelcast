@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class StartProcessingJobOperation<K, V>
+public class StartProcessingJobOperation<K>
         extends AbstractOperation
         implements IdentifiedDataSerializable {
 

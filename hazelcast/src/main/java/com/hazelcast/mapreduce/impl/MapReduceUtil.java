@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -32,7 +31,6 @@ import com.hazelcast.spi.OperationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,44 +92,10 @@ public final class MapReduceUtil {
         return null;
     }
 
-    public static <KeyIn> Map<Integer, List<KeyIn>> mapKeysToPartition(PartitionService ps, Collection<KeyIn> keys) {
-        if (keys == null) {
-            return Collections.emptyMap();
-        }
-        Map<Integer, List<KeyIn>> mappedKeys = new HashMap<Integer, List<KeyIn>>();
-        for (KeyIn key : keys) {
-            int partitionId = ps.getPartitionId(key);
-            List<KeyIn> selectedKeys = mappedKeys.get(partitionId);
-            if (selectedKeys == null) {
-                selectedKeys = new ArrayList<KeyIn>();
-                mappedKeys.put(partitionId, selectedKeys);
-            }
-            selectedKeys.add(key);
-        }
-        return mappedKeys;
-    }
-
-    public static <KeyIn> Map<Address, List<KeyIn>> mapKeysToMember(PartitionService ps, Collection<KeyIn> keys) {
-        if (keys == null) {
-            return Collections.emptyMap();
-        }
-        Map<Address, List<KeyIn>> mappedKeys = new HashMap<Address, List<KeyIn>>();
-        for (KeyIn key : keys) {
-            int partitionId = ps.getPartitionId(key);
-            Address address = ps.getPartitionOwner(partitionId);
-            List<KeyIn> selectedKeys = mappedKeys.get(address);
-            if (selectedKeys == null) {
-                selectedKeys = new ArrayList<KeyIn>();
-                mappedKeys.put(address, selectedKeys);
-            }
-            selectedKeys.add(key);
-        }
-        return mappedKeys;
-    }
-
     public static <K, V> Map<Address, Map<K, V>> mapResultToMember(MapReduceService mapReduceService,
                                                                    Map<K, V> result) {
-
+        // TODO delegate this to job owner for new keys to make sure always selecting
+        // TODO the same host on all nodes after migrations
         Map<Address, Map<K, V>> mapping = new HashMap<Address, Map<K, V>>();
         for (Map.Entry<K, V> entry : result.entrySet()) {
             Address address = mapReduceService.getKeyMember(entry.getKey());
@@ -198,6 +162,7 @@ public final class MapReduceUtil {
     public static <V> V executeOperation(Operation operation, Address address,
                                          MapReduceService mapReduceService,
                                          NodeEngine nodeEngine) {
+
         ClusterService cs = nodeEngine.getClusterService();
         OperationService os = nodeEngine.getOperationService();
         boolean returnsResponse = operation.returnsResponse();

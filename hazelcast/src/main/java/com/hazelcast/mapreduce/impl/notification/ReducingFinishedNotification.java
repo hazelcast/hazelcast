@@ -23,7 +23,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class ReducingFinishedNotification extends MemberAwareMapReduceNotification {
+public class ReducingFinishedNotification
+        extends MemberAwareMapReduceNotification {
 
     private int partitionId;
 

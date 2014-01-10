@@ -28,7 +28,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ReducerTask<Key, Chunk> implements Runnable {
+public class ReducerTask<Key, Chunk>
+        implements Runnable {
 
     private final JobSupervisor supervisor;
     private final Queue<ReducerChunk<Key, Chunk>> reducerQueue;

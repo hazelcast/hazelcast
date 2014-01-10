@@ -44,7 +44,7 @@ public class JobPartitionStateImpl
     public String toString() {
         return "JobPartitionStateImpl{" +
                 "state=" + state +
-//                ", address=" + address +
+                ", address=" + address +
                 '}';
     }
 

@@ -109,7 +109,7 @@ public class JobSupervisor {
     }
 
     public Map<Object, Object> getJobResults() {
-        Map<Object, Object> result = null;
+        Map<Object, Object> result;
         if (configuration.getReducerFactory() != null) {
             result = new HashMap<Object, Object>();
             for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {

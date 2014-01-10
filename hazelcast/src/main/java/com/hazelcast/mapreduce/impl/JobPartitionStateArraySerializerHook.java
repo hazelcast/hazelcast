@@ -28,7 +28,8 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-public class JobPartitionStateArraySerializerHook implements SerializerHook<JobPartitionState[]> {
+public class JobPartitionStateArraySerializerHook
+        implements SerializerHook<JobPartitionState[]> {
 
     @Override
     public Class<JobPartitionState[]> getSerializationType() {
@@ -45,7 +46,8 @@ public class JobPartitionStateArraySerializerHook implements SerializerHook<JobP
         return false;
     }
 
-    private static class JobPartitionStateArraySerializer implements StreamSerializer<JobPartitionState[]> {
+    private static class JobPartitionStateArraySerializer
+            implements StreamSerializer<JobPartitionState[]> {
 
         @Override
         public void write(ObjectDataOutput out, JobPartitionState[] partitionStates) throws IOException {

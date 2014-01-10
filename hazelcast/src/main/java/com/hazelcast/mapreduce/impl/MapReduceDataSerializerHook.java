@@ -34,7 +34,8 @@ import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
-public class MapReduceDataSerializerHook implements DataSerializerHook {
+public class MapReduceDataSerializerHook
+        implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_REDUCE_DS_FACTORY, -23);
 

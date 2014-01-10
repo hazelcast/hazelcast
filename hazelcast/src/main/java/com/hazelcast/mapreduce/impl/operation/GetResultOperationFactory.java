@@ -23,7 +23,8 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class GetResultOperationFactory implements OperationFactory {
+public class GetResultOperationFactory
+        implements OperationFactory {
 
     private final String name;
     private final String jobId;
