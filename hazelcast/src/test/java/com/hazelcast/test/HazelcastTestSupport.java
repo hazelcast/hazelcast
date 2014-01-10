@@ -24,6 +24,9 @@ import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * @author mdogan 5/24/13
  */
@@ -52,7 +55,9 @@ public abstract class HazelcastTestSupport {
             sleepSeconds(1);
         }
 
+        printAllStackTraces();
         throw error;
+
     }
 
     public static void assertTrueDelayed5sec(AssertTask task) {
@@ -113,5 +118,17 @@ public abstract class HazelcastTestSupport {
 
     public final class DummyUncheckedHazelcastTestException extends RuntimeException{
 
+    }
+
+    public static void printAllStackTraces() {
+        Map liveThreads = Thread.getAllStackTraces();
+        for (Iterator i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+            Thread key = (Thread)i.next();
+            System.err.println("Thread " + key.getName());
+            StackTraceElement[] trace = (StackTraceElement[])liveThreads.get(key);
+            for (int j = 0; j < trace.length; j++) {
+                System.err.println("\tat " + trace[j]);
+            }
+        }
     }
 }
