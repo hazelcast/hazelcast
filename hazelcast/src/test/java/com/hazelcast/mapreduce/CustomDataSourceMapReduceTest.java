@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
@@ -73,7 +73,7 @@ public class CustomDataSourceMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(new CustomKeyValueSource());
-        CompletableFuture<Map<String, Integer>> completableFuture =
+        ICompletableFuture<Map<String, Integer>> completableFuture =
                 job.chunkSize(10)
                         .mapper(new CustomMapper())
                         .combiner(new CustomCombinerFactory())

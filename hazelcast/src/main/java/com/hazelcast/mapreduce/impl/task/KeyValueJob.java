@@ -18,7 +18,7 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.KeyValueSource;
@@ -49,7 +49,7 @@ public class KeyValueJob<KeyIn, ValueIn>
     }
 
     @Override
-    protected <T> CompletableFuture<T> invoke(Collator collator) {
+    protected <T> ICompletableFuture<T> invoke(Collator collator) {
         AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
         TrackableJobFuture<T> jobFuture = new TrackableJobFuture<T>(name, jobId, jobTracker, nodeEngine, collator);
         if (jobTracker.registerTrackableJob(jobFuture)) {
@@ -58,7 +58,7 @@ public class KeyValueJob<KeyIn, ValueIn>
         throw new IllegalStateException("Could not register map reduce job");
     }
 
-    private <T> CompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
+    private <T> ICompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
                                                           AbstractJobTracker jobTracker) {
 
         JobTrackerConfig config = jobTracker.getJobTrackerConfig();

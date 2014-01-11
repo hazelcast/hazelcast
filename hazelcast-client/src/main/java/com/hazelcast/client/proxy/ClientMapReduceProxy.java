@@ -105,14 +105,14 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        protected <T> CompletableFuture<T> invoke(final Collator collator) {
+        protected <T> ICompletableFuture<T> invoke(final Collator collator) {
             try {
                 ClientContext context = getContext();
                 ClientInvocationService cis = context.getInvocationService();
                 ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
                         predicate, mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
 
-                final ClientCompletableFuture completableFuture = new ClientCompletableFuture();
+                final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
                 ClientCallFuture future = (ClientCallFuture) cis.invokeOnRandomTarget(request, new EventHandler() {
                     @Override
                     public void handle(Object event) {
@@ -220,7 +220,7 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public CompletableFuture<V> getCompletableFuture() {
+        public ICompletableFuture<V> getCompletableFuture() {
             return completableFuture;
         }
     }

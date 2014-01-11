@@ -21,7 +21,7 @@ import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.CombinerFactory;
@@ -97,7 +97,7 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
             AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.createDistributedObject(name);
             TrackableJobFuture jobFuture = new TrackableJobFuture(name, jobId, jobTracker, nodeEngine, null);
             if (jobTracker.registerTrackableJob(jobFuture)) {
-                CompletableFuture<Object> future = startSupervisionTask(jobFuture, mapReduceService, nodeEngine, jobTracker);
+                ICompletableFuture<Object> future = startSupervisionTask(jobFuture, mapReduceService, nodeEngine, jobTracker);
                 future.andThen(new ExecutionCallback<Object>() {
                     @Override
                     public void onResponse(Object response) {
@@ -115,7 +115,7 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
         }
     }
 
-    private <T> CompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
+    private <T> ICompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
                                                           MapReduceService mapReduceService,
                                                           NodeEngine nodeEngine,
                                                           AbstractJobTracker jobTracker) {

@@ -15,7 +15,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -58,7 +58,7 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
@@ -95,7 +95,7 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
@@ -135,7 +135,7 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
@@ -189,7 +189,7 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())

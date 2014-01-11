@@ -16,7 +16,7 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -74,7 +74,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
@@ -111,7 +111,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
@@ -151,7 +151,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())
@@ -208,7 +208,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .combiner(new TestCombinerFactory())
                         .reducer(new TestReducerFactory())

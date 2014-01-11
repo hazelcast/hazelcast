@@ -16,7 +16,7 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -74,7 +74,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new TestMapper())
                         .submit();
 
@@ -103,7 +103,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit();
@@ -139,7 +139,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .submit(new GroupingTestCollator());
 
@@ -169,7 +169,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.onKeys(50)
                         .mapper(new TestMapper())
                         .submit(new GroupingTestCollator());
@@ -196,7 +196,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.keyPredicate(new TestKeyPredicate())
                         .mapper(new TestMapper())
                         .submit(new GroupingTestCollator());
@@ -223,7 +223,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit(new TestCollator());
@@ -262,7 +262,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new TestMapper()).submit();
 
         future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
@@ -307,7 +307,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.onKeys(50)
                         .mapper(new TestMapper())
                         .submit();
@@ -354,7 +354,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit();
@@ -407,7 +407,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())//
                         .submit(new GroupingTestCollator());
 
@@ -458,7 +458,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit(new TestCollator());

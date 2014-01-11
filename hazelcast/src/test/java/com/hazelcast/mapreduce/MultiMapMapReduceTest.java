@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.AssertTask;
@@ -82,14 +82,14 @@ public class MultiMapMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMultiMap(multiMap));
-        CompletableFuture<Map<String, Integer>> completableFuture =
+        ICompletableFuture<Map<String, Integer>> ICompletableFuture =
                 job.chunkSize(10)
                         .mapper(new MultiMapMapper())
                         .combiner(new MultiMapCombinerFactory())
                         .reducer(new MultiMapReducerFactory())
                         .submit();
 
-        Map<String, Integer> result = completableFuture.get();
+        Map<String, Integer> result = ICompletableFuture.get();
 
         assertEquals(1000, result.size());
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.JobTracker;
 
 public interface TrackableJob<V> {
@@ -27,6 +27,6 @@ public interface TrackableJob<V> {
 
     String getJobId();
 
-    CompletableFuture<V> getCompletableFuture();
+    ICompletableFuture<V> getCompletableFuture();
 
 }

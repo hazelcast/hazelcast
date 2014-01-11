@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -110,12 +110,12 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         return this;
     }
 
-    protected <T> CompletableFuture<T> submit(Collator collator) {
+    protected <T> ICompletableFuture<T> submit(Collator collator) {
         prepareKeyPredicate();
         return invoke(collator);
     }
 
-    protected abstract <T> CompletableFuture<T> invoke(Collator collator);
+    protected abstract <T> ICompletableFuture<T> invoke(Collator collator);
 
     protected void prepareKeyPredicate() {
         if (predicate == null) {
@@ -155,7 +155,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         this.predicate = predicate;
     }
 
-    private <T> CompletableFuture<T> submit() {
+    private <T> ICompletableFuture<T> submit() {
         return submit(null);
     }
 
@@ -212,12 +212,12 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public CompletableFuture<Map<Key, List<Value>>> submit() {
+        public ICompletableFuture<Map<Key, List<Value>>> submit() {
             return AbstractJob.this.submit();
         }
 
         @Override
-        public <ValueOut> CompletableFuture<ValueOut> submit(
+        public <ValueOut> ICompletableFuture<ValueOut> submit(
                 Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
@@ -266,12 +266,12 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public CompletableFuture<Map<Key, List<Value>>> submit() {
+        public ICompletableFuture<Map<Key, List<Value>>> submit() {
             return AbstractJob.this.submit();
         }
 
         @Override
-        public <ValueOut> CompletableFuture<ValueOut> submit(
+        public <ValueOut> ICompletableFuture<ValueOut> submit(
                 Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
@@ -310,12 +310,12 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public CompletableFuture<Map<Key, Value>> submit() {
+        public ICompletableFuture<Map<Key, Value>> submit() {
             return AbstractJob.this.submit();
         }
 
         @Override
-        public <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, Value>, ValueOut> collator) {
+        public <ValueOut> ICompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, Value>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }

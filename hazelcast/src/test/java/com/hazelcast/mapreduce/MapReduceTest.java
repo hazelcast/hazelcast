@@ -14,7 +14,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -65,7 +65,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new ExceptionThrowingMapper())
                         .submit();
 
@@ -100,7 +100,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new TestMapper())
                         .submit();
 
@@ -128,7 +128,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.onKeys(50)
                         .mapper(new TestMapper())
                         .submit(new GroupingTestCollator());
@@ -154,7 +154,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.keyPredicate(new TestKeyPredicate()).mapper(new TestMapper())
                         .submit(new GroupingTestCollator());
 
@@ -179,7 +179,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new GroupingTestMapper(2))
                         .submit();
 
@@ -205,7 +205,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit();
@@ -240,7 +240,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.chunkSize(10)
                         .mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
@@ -284,7 +284,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .submit(new GroupingTestCollator());
 
@@ -317,7 +317,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit(new TestCollator());
@@ -355,7 +355,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new TestMapper())
                         .submit();
 
@@ -403,7 +403,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, List<Integer>>> future =
+        ICompletableFuture<Map<String, List<Integer>>> future =
                 job.onKeys(50)
                         .mapper(new TestMapper())
                         .submit();
@@ -452,7 +452,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Map<String, Integer>> future =
+        ICompletableFuture<Map<String, Integer>> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())//
                         .submit();
@@ -507,7 +507,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .submit(new GroupingTestCollator());
 
@@ -560,7 +560,7 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        CompletableFuture<Integer> future =
+        ICompletableFuture<Integer> future =
                 job.mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit(new TestCollator());

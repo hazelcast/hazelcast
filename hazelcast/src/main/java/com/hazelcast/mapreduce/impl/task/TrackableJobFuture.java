@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
@@ -119,7 +119,7 @@ public class TrackableJobFuture<V>
     }
 
     @Override
-    public CompletableFuture<V> getCompletableFuture() {
+    public ICompletableFuture<V> getCompletableFuture() {
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
         if (supervisor == null || !supervisor.isOwnerNode()) {
             return null;

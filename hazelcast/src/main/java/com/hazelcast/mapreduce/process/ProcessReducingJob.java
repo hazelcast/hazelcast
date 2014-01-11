@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.process;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 
 import java.util.Map;
@@ -29,7 +29,7 @@ public interface ProcessReducingJob<KeyIn, ValueIn>
      *
      * @return CompletableFuture to wait for mapped and possibly reduced result
      */
-    CompletableFuture<Map<KeyIn, ValueIn>> submit();
+    ICompletableFuture<Map<KeyIn, ValueIn>> submit();
 
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes and executes the
@@ -38,6 +38,6 @@ public interface ProcessReducingJob<KeyIn, ValueIn>
      * @param collator collator to use after map and reduce
      * @return CompletableFuture to wait for mapped and possibly reduced result
      */
-    <ValueOut> CompletableFuture<ValueOut> submit(Collator<Map<KeyIn, ValueIn>, ValueOut> collator);
+    <ValueOut> ICompletableFuture<ValueOut> submit(Collator<Map<KeyIn, ValueIn>, ValueOut> collator);
 
 }

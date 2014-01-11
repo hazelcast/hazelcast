@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ISet;
@@ -65,14 +65,14 @@ public class ListSetMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromList(list));
-        CompletableFuture<Map<String, Integer>> completableFuture =
+        ICompletableFuture<Map<String, Integer>> ICompletableFuture =
                 job.chunkSize(10)
                         .mapper(new ListSetMapper())
                         .combiner(new ListSetCombinerFactory())
                         .reducer(new ListSetReducerFactory())
                         .submit();
 
-        Map<String, Integer> result = completableFuture.get();
+        Map<String, Integer> result = ICompletableFuture.get();
 
         assertEquals(1, result.size());
 
@@ -110,14 +110,14 @@ public class ListSetMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromSet(set));
-        CompletableFuture<Map<String, Integer>> completableFuture =
+        ICompletableFuture<Map<String, Integer>> ICompletableFuture =
                 job.chunkSize(10)
                         .mapper(new ListSetMapper())
                         .combiner(new ListSetCombinerFactory())
                         .reducer(new ListSetReducerFactory())
                         .submit();
 
-        Map<String, Integer> result = completableFuture.get();
+        Map<String, Integer> result = ICompletableFuture.get();
 
         assertEquals(1, result.size());
 
