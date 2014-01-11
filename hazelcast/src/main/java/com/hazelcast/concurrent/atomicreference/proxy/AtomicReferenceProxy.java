@@ -18,14 +18,8 @@ package com.hazelcast.concurrent.atomicreference.proxy;
 
 import com.hazelcast.concurrent.atomicreference.*;
 import com.hazelcast.core.AsyncAtomicReference;
-import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.Function;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
-import com.hazelcast.util.ExceptionUtil;
-
-import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ValidationUtil.isNotNull;

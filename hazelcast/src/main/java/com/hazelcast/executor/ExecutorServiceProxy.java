@@ -17,7 +17,7 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.core.*;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
@@ -109,7 +109,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
         // Make sure this variable is declared as com.hazelcast.core.CompletableFuture
         // because Java8 has a CompletableFuture, too.
-        final com.hazelcast.core.CompletableFuture future = nodeEngine.getOperationService().invokeOnPartition(
+        final ICompletableFuture future = nodeEngine.getOperationService().invokeOnPartition(
                 DistributedExecutorService.SERVICE_NAME, new CallableTaskOperation(name, uuid, callable), partitionId);
         final boolean sync = checkSync();
         if (sync) {
@@ -137,7 +137,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final String uuid = UuidUtil.buildRandomUuidString();
 
         final boolean sync = !preventSync && checkSync();
-        final CompletableFuture future = nodeEngine.getOperationService().invokeOnPartition(
+        final ICompletableFuture future = nodeEngine.getOperationService().invokeOnPartition(
                 DistributedExecutorService.SERVICE_NAME, new CallableTaskOperation(name, uuid, task), partitionId);
         if (sync) {
             Object response;

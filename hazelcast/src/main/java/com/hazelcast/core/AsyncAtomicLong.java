@@ -17,34 +17,34 @@
 package com.hazelcast.core;
 
 /**
- * A {@link IAtomicLong} that exposes its operations using a {@link com.hazelcast.core.CompletableFuture}
+ * A {@link IAtomicLong} that exposes its operations using a {@link ICompletableFuture}
  * so it can be used in the reactive programming model approach.
  */
 public interface AsyncAtomicLong extends IAtomicLong {
 
-    CompletableFuture<Long> asyncAddAndGet(long delta);
+    ICompletableFuture<Long> asyncAddAndGet(long delta);
 
-    CompletableFuture<Boolean> asyncCompareAndSet(long expect, long update);
+    ICompletableFuture<Boolean> asyncCompareAndSet(long expect, long update);
 
-    CompletableFuture<Long> asyncDecrementAndGet();
+    ICompletableFuture<Long> asyncDecrementAndGet();
 
-    CompletableFuture<Long> asyncGet();
+    ICompletableFuture<Long> asyncGet();
 
-    CompletableFuture<Long> asyncGetAndAdd(long delta);
+    ICompletableFuture<Long> asyncGetAndAdd(long delta);
 
-    CompletableFuture<Long> asyncGetAndSet(long newValue);
+    ICompletableFuture<Long> asyncGetAndSet(long newValue);
 
-    CompletableFuture<Long> asyncIncrementAndGet();
+    ICompletableFuture<Long> asyncIncrementAndGet();
 
-    CompletableFuture<Long> asyncGetAndIncrement();
+    ICompletableFuture<Long> asyncGetAndIncrement();
 
-    CompletableFuture<Void> asyncSet(long newValue);
+    ICompletableFuture<Void> asyncSet(long newValue);
 
-    CompletableFuture<Void> asyncAlter(Function<Long, Long> function);
+    ICompletableFuture<Void> asyncAlter(Function<Long, Long> function);
 
-    CompletableFuture<Long> asyncAlterAndGet(Function<Long, Long> function);
+    ICompletableFuture<Long> asyncAlterAndGet(Function<Long, Long> function);
 
-    CompletableFuture<Long> asyncGetAndAlter(Function<Long, Long> function);
+    ICompletableFuture<Long> asyncGetAndAlter(Function<Long, Long> function);
 
-    <R> CompletableFuture<R> asyncApply(Function<Long, R> function);
+    <R> ICompletableFuture<R> asyncApply(Function<Long, R> function);
 }

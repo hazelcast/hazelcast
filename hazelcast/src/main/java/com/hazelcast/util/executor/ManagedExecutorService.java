@@ -16,8 +16,6 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.core.CompletableFuture;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -26,11 +24,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * @author mdogan 2/18/13

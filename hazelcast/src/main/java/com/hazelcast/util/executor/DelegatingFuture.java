@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -27,9 +27,9 @@ import java.util.concurrent.*;
 /**
  * @author mdogan 1/18/13
  */
-public class DelegatingFuture<V> implements CompletableFuture<V> {
+public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
-    private final CompletableFuture future;
+    private final ICompletableFuture future;
     private final SerializationService serializationService;
     private final V defaultValue;
     private final boolean hasDefaultValue;
@@ -37,14 +37,14 @@ public class DelegatingFuture<V> implements CompletableFuture<V> {
     private Throwable error;
     private volatile boolean done = false;
 
-    public DelegatingFuture(CompletableFuture future, SerializationService serializationService) {
+    public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = null;
         this.hasDefaultValue = false;
     }
 
-    public DelegatingFuture(CompletableFuture future, SerializationService serializationService, V defaultValue) {
+    public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = defaultValue;

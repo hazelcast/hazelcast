@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
@@ -49,14 +49,14 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     @Override
-    public CompletableFuture<?> submit(Runnable task) {
+    public ICompletableFuture<?> submit(Runnable task) {
         CompletableFutureTask futureTask = new CompletableFutureTask(task, null, getAsyncExecutor());
         executor.submit(futureTask);
         return futureTask;
     }
 
     @Override
-    public <T> CompletableFuture<T> submit(Callable<T> task) {
+    public <T> ICompletableFuture<T> submit(Callable<T> task) {
         CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(task, getAsyncExecutor());
         executor.submit(futureTask);
         return futureTask;

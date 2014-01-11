@@ -16,15 +16,15 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 
 /**
- * A {@link com.hazelcast.core.CompletableFuture} with more functionality like getting
+ * A {@link com.hazelcast.core.ICompletableFuture} with more functionality like getting
  * the result without needing to deal with checked exceptions.
  *
  * @param <E>
  */
-public interface InternalCompletableFuture<E> extends CompletableFuture<E> {
+public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
 
     E getSafely();
 }

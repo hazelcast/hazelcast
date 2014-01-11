@@ -16,12 +16,10 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -31,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-public class CompletableFutureTask<V> extends FutureTask<V> implements CompletableFuture<V> {
+public class CompletableFutureTask<V> extends FutureTask<V> implements ICompletableFuture<V> {
 
     private final AtomicReferenceFieldUpdater<CompletableFutureTask, ExecutionCallbackNode> callbackUpdater;
     private final ILogger logger = Logger.getLogger(CompletableFutureTask.class);
