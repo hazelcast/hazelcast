@@ -84,6 +84,16 @@ public class KeyValueJobOperation<K, V>
     }
 
     @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
+    }
+
+    @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(jobId);

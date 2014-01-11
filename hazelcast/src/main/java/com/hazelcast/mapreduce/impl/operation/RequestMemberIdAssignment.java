@@ -38,11 +38,6 @@ public class RequestMemberIdAssignment
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return result;
     }

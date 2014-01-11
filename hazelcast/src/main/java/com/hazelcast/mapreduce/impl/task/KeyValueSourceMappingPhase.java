@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce.impl.operation;
+package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.KeyPredicate;

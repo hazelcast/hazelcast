@@ -47,11 +47,6 @@ public class KeysAssignmentOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return result;
     }

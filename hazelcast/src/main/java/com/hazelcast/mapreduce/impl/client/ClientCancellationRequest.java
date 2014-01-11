@@ -19,31 +19,30 @@ package com.hazelcast.mapreduce.impl.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InvocationClientRequest;
-import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class ClientJobProcessInformationRequest
+public class ClientCancellationRequest
         extends InvocationClientRequest
         implements IdentifiedDataSerializable {
 
     private String name;
     private String jobId;
 
-    public ClientJobProcessInformationRequest() {
+    public ClientCancellationRequest() {
     }
 
-    public ClientJobProcessInformationRequest(String name, String jobId) {
+    public ClientCancellationRequest(String name, String jobId) {
         this.name = name;
         this.jobId = jobId;
     }
+
 
     @Override
     public String getServiceName() {
@@ -58,13 +57,10 @@ public class ClientJobProcessInformationRequest
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
 
-        JobProcessInformation processInformation = null;
-        if (supervisor != null && supervisor.getJobProcessInformation() != null) {
-            JobProcessInformation current = supervisor.getJobProcessInformation();
-            processInformation = new TransferableJobProcessInformation(
-                    current.getPartitionStates(), current.getProcessedRecords());
+        if (supervisor == null || !supervisor.isOwnerNode()) {
+            engine.sendResponse(endpoint, Boolean.FALSE);
         }
-        engine.sendResponse(endpoint, processInformation);
+        engine.sendResponse(endpoint, supervisor.cancelAndNotify());
     }
 
     @Override
@@ -86,7 +82,7 @@ public class ClientJobProcessInformationRequest
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.CLIENT_JOB_PROCESS_INFO_REQUEST;
+        return MapReduceDataSerializerHook.CLIENT_CANCELLATION_REQUEST;
     }
 
 }

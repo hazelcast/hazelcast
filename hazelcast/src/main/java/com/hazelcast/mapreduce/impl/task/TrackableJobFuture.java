@@ -19,9 +19,11 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.TrackableJob;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
@@ -38,6 +40,9 @@ public class TrackableJobFuture<V>
     private final String jobId;
     private final JobTracker jobTracker;
     private final Collator collator;
+    private final MapReduceService mapReduceService;
+
+    private volatile boolean cancelled;
 
     public TrackableJobFuture(String name, String jobId, JobTracker jobTracker,
                               NodeEngine nodeEngine, Collator collator) {
@@ -46,6 +51,7 @@ public class TrackableJobFuture<V>
         this.jobId = jobId;
         this.jobTracker = jobTracker;
         this.collator = collator;
+        this.mapReduceService = ((NodeEngineImpl) nodeEngine).getService(MapReduceService.SERVICE_NAME);
     }
 
     @Override
@@ -59,12 +65,17 @@ public class TrackableJobFuture<V>
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
+        JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
+        if (supervisor == null || !supervisor.isOwnerNode()) {
+            return false;
+        }
+        cancelled = supervisor.cancelAndNotify();
+        return cancelled;
     }
 
     @Override
     public boolean isCancelled() {
-        return false;
+        return cancelled;
     }
 
     @Override
@@ -109,6 +120,10 @@ public class TrackableJobFuture<V>
 
     @Override
     public CompletableFuture<V> getCompletableFuture() {
+        JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
+        if (supervisor == null || !supervisor.isOwnerNode()) {
+            return null;
+        }
         return this;
     }
 

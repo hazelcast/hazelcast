@@ -17,10 +17,10 @@
 package com.hazelcast.mapreduce.impl.operation;
 
 import com.hazelcast.mapreduce.KeyPredicate;
-import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
+import com.hazelcast.mapreduce.impl.task.KeyValueSourceMappingPhase;
 import com.hazelcast.mapreduce.impl.task.MappingPhase;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

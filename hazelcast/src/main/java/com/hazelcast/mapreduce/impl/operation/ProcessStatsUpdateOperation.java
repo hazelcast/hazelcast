@@ -50,6 +50,11 @@ public class ProcessStatsUpdateOperation
     }
 
     @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(processedRecords);

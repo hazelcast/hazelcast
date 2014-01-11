@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.mapreduce.impl.client.ClientCancellationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
@@ -71,7 +72,8 @@ public class MapReduceDataSerializerHook
     public static final int KEYS_ASSIGNMENT_RESULT = 20;
     public static final int KEYS_ASSIGNMENT_OPERATION = 21;
     public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 22;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 23;
+    public static final int CLIENT_CANCELLATION_REQUEST = 23;
+    public static final int CLIENT_MAP_REDUCE_REQUEST = 24;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
 
@@ -219,6 +221,12 @@ public class MapReduceDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClientJobProcessInformationRequest();
+            }
+        };
+        constructors[CLIENT_CANCELLATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClientCancellationRequest();
             }
         };
         constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -162,6 +163,49 @@ public class JobSupervisor {
                     Thread.currentThread().getStackTrace(), "Operation failed on node: " + remoteAddress);
             future.setResult(throwable);
         }
+    }
+
+    public boolean cancelAndNotify() {
+        // Cancel all partition states
+        jobProcessInformation.cancelPartitionState();
+
+        // Notify all other nodes about cancellation
+        Set<Address> addresses = new HashSet<Address>();
+        for (Set<Address> remoteReducers : this.remoteReducers.values()) {
+            addAllFilterJobOwner(addresses, remoteReducers);
+        }
+        for (JobPartitionState partitionState : jobProcessInformation.getPartitionStates()) {
+            if (partitionState != null && partitionState.getOwner() != null) {
+                if (!partitionState.getOwner().equals(jobOwner)) {
+                    addresses.add(partitionState.getOwner());
+                }
+            }
+        }
+
+        // Now notify all involved members to cancel the job
+        String name = getConfiguration().getName();
+        String jobId = getConfiguration().getJobId();
+        for (Address address : addresses) {
+            try {
+                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
+                mapReduceService.processRequest(address, operation, name);
+            } catch (Exception ignore) {
+                // We can ignore this exception since we just want to cancel the job
+                // and the member may be crashed or unreachable in some way
+            }
+        }
+
+        TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+        jobTracker.unregisterMapCombineTask(jobId);
+        jobTracker.unregisterReducerTask(jobId);
+        mapReduceService.destroyJobSupervisor(this);
+
+        if (future != null) {
+            // Might be already cancelled by another members exception
+            future.setResult(new CancellationException("Operation was cancelled by the user"));
+        }
+
+        return true;
     }
 
     public void cancel() {
