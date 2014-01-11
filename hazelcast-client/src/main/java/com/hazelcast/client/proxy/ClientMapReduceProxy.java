@@ -29,8 +29,8 @@ import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.TrackableJob;
 import com.hazelcast.mapreduce.impl.AbstractJob;
-import com.hazelcast.mapreduce.impl.TrackableJob;
 import com.hazelcast.mapreduce.impl.client.ClientCancellationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
@@ -70,12 +70,8 @@ public class ClientMapReduceProxy
     }
 
     @Override
-    public JobProcessInformation getJobProcessInformation(String jobId) {
-        try {
-            return invoke(new ClientJobProcessInformationRequest(getName(), jobId), jobId);
-        } catch (Exception ignore) {
-        }
-        return null;
+    public <V> TrackableJob<V> getTrackableJob(String jobId) {
+        return trackableJobs.get(jobId);
     }
 
     /*
@@ -223,6 +219,16 @@ public class ClientMapReduceProxy
         public ICompletableFuture<V> getCompletableFuture() {
             return completableFuture;
         }
+
+        @Override
+        public JobProcessInformation getJobProcessInformation() {
+            try {
+                return invoke(new ClientJobProcessInformationRequest(getName(), jobId), jobId);
+            } catch (Exception ignore) {
+            }
+            return null;
+        }
+
     }
 
 }

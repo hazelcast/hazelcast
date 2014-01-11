@@ -14,9 +14,9 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -246,7 +246,8 @@ public class MapReduceTest
                         .reducer(new TestReducerFactory())
                         .submit();
 
-        final JobProcessInformation processInformation = tracker.getJobProcessInformation(job.getJobId());
+        final TrackableJob trackableJob = tracker.getTrackableJob(job.getJobId());
+        final JobProcessInformation processInformation = trackableJob.getJobProcessInformation();
         Map<String, Integer> result = future.get();
 
         // Precalculate results

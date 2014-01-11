@@ -16,10 +16,10 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.Context;
@@ -55,6 +55,36 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
     public void shutdown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+
+    @Test(timeout = 30000, expected = NullPointerException.class)
+    public void testExceptionDistribution()
+            throws Exception {
+        Config config = buildConfig();
+
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
+        IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        ICompletableFuture<Map<String, List<Integer>>> future =
+                job.mapper(new ExceptionThrowingMapper())
+                        .submit();
+
+        try {
+            Map<String, List<Integer>> result = future.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Test(timeout = 30000)
@@ -486,6 +516,15 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
 
         for (int i = 0; i < 4; i++) {
             assertEquals(expectedResult, result[0]);
+        }
+    }
+
+    public static class ExceptionThrowingMapper
+            implements Mapper<Integer, Integer, String, Integer> {
+
+        @Override
+        public void map(Integer key, Integer value, Context<String, Integer> context) {
+            throw new NullPointerException("BUMM!");
         }
     }
 
