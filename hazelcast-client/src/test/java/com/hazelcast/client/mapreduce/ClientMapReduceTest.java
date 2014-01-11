@@ -30,7 +30,9 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
@@ -40,6 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
@@ -78,6 +81,37 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new ExceptionThrowingMapper())
                         .submit();
+
+        try {
+            Map<String, List<Integer>> result = future.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test(timeout = 30000, expected = CancellationException.class)
+    public void testInProcessCancellation()
+            throws Exception {
+        Config config = buildConfig();
+
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
+        IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        ICompletableFuture<Map<String, List<Integer>>> future =
+                job.mapper(new TimeConsumingMapper())
+                        .submit();
+
+        future.cancel(true);
 
         try {
             Map<String, List<Integer>> result = future.get();
@@ -525,6 +559,19 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         @Override
         public void map(Integer key, Integer value, Context<String, Integer> context) {
             throw new NullPointerException("BUMM!");
+        }
+    }
+
+    public static class TimeConsumingMapper
+            implements Mapper<Integer, Integer, String, Integer> {
+
+        @Override
+        public void map(Integer key, Integer value, Context<String, Integer> collector) {
+            try {
+                Thread.sleep(1000);
+            } catch(Exception ignore) {
+            }
+            collector.emit(String.valueOf(key), value);
         }
     }
 

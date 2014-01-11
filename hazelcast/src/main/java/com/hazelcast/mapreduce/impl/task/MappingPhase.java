@@ -22,8 +22,11 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
+
+    private final AtomicBoolean cancelled = new AtomicBoolean();
 
     private final Collection<KeyIn> keys;
     private final KeyPredicate<KeyIn> predicate;
@@ -31,6 +34,14 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
     public MappingPhase(Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
         this.keys = keys;
         this.predicate = predicate;
+    }
+
+    public void cancel() {
+        cancelled.set(true);
+    }
+
+    protected boolean isCancelled() {
+        return cancelled.get();
     }
 
     protected boolean matches(KeyIn key) {

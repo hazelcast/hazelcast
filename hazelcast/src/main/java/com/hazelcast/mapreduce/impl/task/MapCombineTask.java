@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.mapResultToMember;
@@ -46,6 +47,8 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
+
+    private final AtomicBoolean cancelled = new AtomicBoolean();
 
     private final Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper;
     private final MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> mappingPhase;
@@ -83,6 +86,11 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         return chunkSize;
     }
 
+    public void cancel() {
+        cancelled.set(true);
+        mappingPhase.cancel();
+    }
+
     public void process() {
         ExecutorService es = mapReduceService.getExecutorService(name);
         if (keyValueSource instanceof PartitionIdAware) {
@@ -104,6 +112,10 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         mappingPhase.executeMappingPhase(keyValueSource, mapper, context);
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).finalized(context);
+        }
+
+        if (cancelled.get()) {
+            return;
         }
 
         RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
@@ -187,6 +199,10 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             }
 
             for (; ; ) {
+                if (cancelled.get()) {
+                    return;
+                }
+
                 Integer partitionId = findNewPartitionProcessing();
                 if (partitionId == null) {
                     // Job's done

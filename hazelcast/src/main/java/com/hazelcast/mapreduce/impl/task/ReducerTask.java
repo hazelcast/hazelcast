@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ReducerTask<Key, Chunk>
         implements Runnable {
 
+    private final AtomicBoolean cancelled = new AtomicBoolean();
+
     private final JobSupervisor supervisor;
     private final Queue<ReducerChunk<Key, Chunk>> reducerQueue;
     private final String name;
@@ -53,11 +55,18 @@ public class ReducerTask<Key, Chunk>
         return jobId;
     }
 
+    public void cancel() {
+        cancelled.set(true);
+    }
+
     public void processChunk(Map<Key, Chunk> chunk) {
         processChunk(-1, null, chunk);
     }
 
     public void processChunk(int partitionId, Address sender, Map<Key, Chunk> chunk) {
+        if (cancelled.get()) {
+            return;
+        }
         reducerQueue.offer(new ReducerChunk<Key, Chunk>(chunk, partitionId, sender));
         if (active.compareAndSet(false, true)) {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
@@ -71,6 +80,10 @@ public class ReducerTask<Key, Chunk>
         try {
             ReducerChunk<Key, Chunk> reducerChunk;
             while ((reducerChunk = reducerQueue.poll()) != null) {
+                if (cancelled.get()) {
+                    return;
+                }
+
                 reduceChunk(reducerChunk.chunk);
                 processProcessedState(reducerChunk);
             }

@@ -42,6 +42,9 @@ public class KeyValueSourceMappingPhase<KeyIn, ValueIn, KeyOut, ValueOut>
                 Map.Entry<KeyIn, ValueIn> entry = keyValueSource.element();
                 mapper.map(entry.getKey(), entry.getValue(), context);
             }
+            if (isCancelled()) {
+                return;
+            }
         }
     }
 }

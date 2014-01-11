@@ -153,8 +153,14 @@ public class JobSupervisor {
         }
 
         TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
-        jobTracker.unregisterMapCombineTask(jobId);
-        jobTracker.unregisterReducerTask(jobId);
+        MapCombineTask mapCombineTask = jobTracker.unregisterMapCombineTask(jobId);
+        if (mapCombineTask != null) {
+            mapCombineTask.cancel();
+        }
+        ReducerTask reducerTask = jobTracker.unregisterReducerTask(jobId);
+        if (reducerTask != null) {
+            reducerTask.cancel();
+        }
         mapReduceService.destroyJobSupervisor(this);
 
         if (future != null) {
@@ -196,8 +202,14 @@ public class JobSupervisor {
         }
 
         TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
-        jobTracker.unregisterMapCombineTask(jobId);
-        jobTracker.unregisterReducerTask(jobId);
+        MapCombineTask mapCombineTask = jobTracker.unregisterMapCombineTask(jobId);
+        if (mapCombineTask != null) {
+            mapCombineTask.cancel();
+        }
+        ReducerTask reducerTask = jobTracker.unregisterReducerTask(jobId);
+        if (reducerTask != null) {
+            reducerTask.cancel();
+        }
         mapReduceService.destroyJobSupervisor(this);
 
         if (future != null) {
@@ -211,8 +223,14 @@ public class JobSupervisor {
     public void cancel() {
         String jobId = getConfiguration().getJobId();
         jobTracker.unregisterTrackableJob(jobId);
-        jobTracker.unregisterMapCombineTask(jobId);
-        jobTracker.unregisterReducerTask(jobId);
+        MapCombineTask mapCombineTask = jobTracker.unregisterMapCombineTask(jobId);
+        if (mapCombineTask != null) {
+            mapCombineTask.cancel();
+        }
+        ReducerTask reducerTask = jobTracker.unregisterReducerTask(jobId);
+        if (reducerTask != null) {
+            reducerTask.cancel();
+        }
         mapReduceService.destroyJobSupervisor(this);
     }
 
