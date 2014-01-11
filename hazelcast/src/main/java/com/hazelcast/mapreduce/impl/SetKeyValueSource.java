@@ -17,15 +17,17 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.collection.CollectionItem;
-import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetContainer;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -59,6 +61,15 @@ public class SetKeyValueSource<V>
     public void open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         ss = nei.getSerializationService();
+
+        Address thisAddress = nei.getThisAddress();
+        PartitionService ps = nei.getPartitionService();
+        Data data = ss.toData(setName, new StringAndPartitionAwarePartitioningStrategy());
+        int partitionId = ps.getPartitionId(data);
+        if (!ps.getPartitionOwner(partitionId).equals(thisAddress)) {
+            return;
+        }
+
         SetService setService = nei.getService(SetService.SERVICE_NAME);
         SetContainer setContainer = setService.getOrCreateContainer(setName, false);
         List<CollectionItem> items = new ArrayList<CollectionItem>(setContainer.getCollection());
@@ -67,7 +78,7 @@ public class SetKeyValueSource<V>
 
     @Override
     public boolean hasNext() {
-        boolean hasNext = iterator.hasNext();
+        boolean hasNext = iterator == null ? false : iterator.hasNext();
         nextElement = hasNext ? iterator.next() : null;
         return hasNext;
     }
@@ -83,6 +94,7 @@ public class SetKeyValueSource<V>
         if (value instanceof Data) {
             value = ss.toObject((Data) value);
         }
+        System.out.println(value);
         simpleEntry.setKey(setName);
         simpleEntry.setValue((V) value);
         return simpleEntry;

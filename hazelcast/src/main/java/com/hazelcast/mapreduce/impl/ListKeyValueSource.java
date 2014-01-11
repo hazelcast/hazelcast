@@ -20,11 +20,14 @@ import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.list.ListContainer;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -58,6 +61,15 @@ public class ListKeyValueSource<V>
     public void open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         ss = nei.getSerializationService();
+
+        Address thisAddress = nei.getThisAddress();
+        PartitionService ps = nei.getPartitionService();
+        Data data = ss.toData(listName, new StringAndPartitionAwarePartitioningStrategy());
+        int partitionId = ps.getPartitionId(data);
+        if (!ps.getPartitionOwner(partitionId).equals(thisAddress)) {
+            return;
+        }
+
         ListService listService = nei.getService(ListService.SERVICE_NAME);
         ListContainer listContainer = listService.getOrCreateContainer(listName, false);
         List<CollectionItem> items = new ArrayList<CollectionItem>(listContainer.getCollection());
@@ -66,7 +78,7 @@ public class ListKeyValueSource<V>
 
     @Override
     public boolean hasNext() {
-        boolean hasNext = iterator.hasNext();
+        boolean hasNext = iterator == null ? false : iterator.hasNext();
         nextElement = hasNext ? iterator.next() : null;
         return hasNext;
     }

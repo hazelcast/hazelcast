@@ -117,7 +117,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     Address sender = mapReduceService.getLocalAddress();
 
                     // Wrap into LastChunkNotification object
-                    Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+                    Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(supervisor, chunkMap);
 
                     // Register remote addresses and partitionId for receiving reducer events
                     supervisor.registerReducerEventInterests(partitionId, mapping.keySet());
@@ -163,7 +163,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 Map<KeyOut, Chunk> chunkMap = context.requestChunk();
 
                 // Wrap into IntermediateChunkNotification object
-                Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+                Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(supervisor, chunkMap);
 
                 // Register remote addresses and partitionId for receiving reducer events
                 supervisor.registerReducerEventInterests(partitionId, mapping.keySet());

@@ -25,6 +25,8 @@ import com.hazelcast.mapreduce.impl.operation.CancelJobSupervisorOperation;
 import com.hazelcast.mapreduce.impl.operation.FireNotificationOperation;
 import com.hazelcast.mapreduce.impl.operation.GetResultOperation;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
+import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
+import com.hazelcast.mapreduce.impl.operation.KeysAssignmentResult;
 import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
 import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
@@ -66,8 +68,10 @@ public class MapReduceDataSerializerHook
     public static final int CANCEL_JOB_SUPERVISOR_OPERATION = 17;
     public static final int KEY_VALUE_SOURCE_LIST = 18;
     public static final int KEY_VALUE_SOURCE_SET = 19;
-    public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 20;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 21;
+    public static final int KEYS_ASSIGNMENT_RESULT = 20;
+    public static final int KEYS_ASSIGNMENT_OPERATION = 21;
+    public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 22;
+    public static final int CLIENT_MAP_REDUCE_REQUEST = 23;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
 
@@ -197,6 +201,18 @@ public class MapReduceDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SetKeyValueSource();
+            }
+        };
+        constructors[KEYS_ASSIGNMENT_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new KeysAssignmentResult();
+            }
+        };
+        constructors[KEYS_ASSIGNMENT_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new KeysAssignmentOperation();
             }
         };
         constructors[CLIENT_JOB_PROCESS_INFO_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

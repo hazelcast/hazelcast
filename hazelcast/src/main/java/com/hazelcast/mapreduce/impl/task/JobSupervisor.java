@@ -57,6 +57,7 @@ public class JobSupervisor {
     private final ConcurrentMap<Object, Reducer> reducers = new ConcurrentHashMap<Object, Reducer>();
     private final ConcurrentMap<Integer, Set<Address>> remoteReducers = new ConcurrentHashMap<Integer, Set<Address>>();
     private final AtomicReference<DefaultContext> context = new AtomicReference<DefaultContext>();
+    private final ConcurrentMap<Object, Address> keyAssignment = new ConcurrentHashMap<Object, Address>();
 
     private final Address jobOwner;
     private final boolean ownerNode;
@@ -197,6 +198,31 @@ public class JobSupervisor {
             }
         }
         return reducer;
+    }
+
+    public Address getReducerAddressByKey(Object key) {
+        Address address = keyAssignment.get(key);
+        if (address != null) {
+            return address;
+        }
+        return null;
+    }
+
+    public Address assignKeyReducerAddress(Object key) {
+        Address address = keyAssignment.get(key);
+        if (address == null) {
+            address = mapReduceService.getKeyMember(key);
+            Address oldAddress = keyAssignment.putIfAbsent(key, address);
+            if (oldAddress != null) {
+                address = oldAddress;
+            }
+        }
+        return address;
+    }
+
+    public boolean assignKeyReducerAddress(Object key, Address address) {
+        Address oldAssignment = keyAssignment.putIfAbsent(key, address);
+        return oldAssignment == null || oldAssignment.equals(address);
     }
 
     public void checkFullyProcessed(JobProcessInformation processInformation) {

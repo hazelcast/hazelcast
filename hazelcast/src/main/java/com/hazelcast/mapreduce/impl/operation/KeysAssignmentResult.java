@@ -17,44 +17,62 @@
 package com.hazelcast.mapreduce.impl.operation;
 
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
+import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-public class RequestPartitionResult
+public class KeysAssignmentResult
         implements IdentifiedDataSerializable {
 
     private ResultState resultState;
-    private int partitionId;
+    private Map<Object, Address> assignment;
 
-    public RequestPartitionResult() {
+    public KeysAssignmentResult() {
     }
 
-    public RequestPartitionResult(ResultState resultState, int partitionId) {
+    public KeysAssignmentResult(ResultState resultState,
+                                Map<Object, Address> assignment) {
         this.resultState = resultState;
-        this.partitionId = partitionId;
+        this.assignment = assignment;
     }
 
     public ResultState getResultState() {
         return resultState;
     }
 
-    public int getPartitionId() {
-        return partitionId;
+    public Map<Object, Address> getAssignment() {
+        return assignment;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(assignment != null);
+        if (assignment != null) {
+            out.writeInt(assignment.size());
+            for (Map.Entry<Object, Address> entry : assignment.entrySet()) {
+                out.writeObject(entry.getKey());
+                out.writeObject(entry.getValue());
+            }
+        }
         out.writeInt(resultState.ordinal());
-        out.writeInt(partitionId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        if (in.readBoolean()) {
+            int size = in.readInt();
+            assignment = new HashMap<Object, Address>(size);
+            for (int i = 0; i < size; i++) {
+                assignment.put(in.readObject(), (Address) in.readObject());
+            }
+        }
         resultState = ResultState.byOrdinal(in.readInt());
-        partitionId = in.readInt();
     }
 
     @Override
@@ -64,31 +82,7 @@ public class RequestPartitionResult
 
     @Override
     public int getId() {
-        return MapReduceDataSerializerHook.REQUEST_PARTITION_RESULT;
-    }
-
-    @Override
-    public String toString() {
-        return "RequestPartitionResult{" +
-                "resultState=" + resultState +
-                ", partitionId=" + partitionId +
-                '}';
-    }
-
-    public static enum ResultState {
-        SUCCESSFUL,
-        NO_SUPERVISOR,
-        CHECK_STATE_FAILED,
-        NO_MORE_PARTITIONS,;
-
-        public static ResultState byOrdinal(int ordinal) {
-            for (ResultState resultState : values()) {
-                if (ordinal == resultState.ordinal()) {
-                    return resultState;
-                }
-            }
-            return null;
-        }
+        return MapReduceDataSerializerHook.KEYS_ASSIGNMENT_RESULT;
     }
 
 }
