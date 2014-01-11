@@ -25,6 +25,7 @@ import com.hazelcast.mapreduce.impl.operation.CancelJobSupervisorOperation;
 import com.hazelcast.mapreduce.impl.operation.FireNotificationOperation;
 import com.hazelcast.mapreduce.impl.operation.GetResultOperation;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
+import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
 import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
@@ -63,8 +64,10 @@ public class MapReduceDataSerializerHook
     public static final int TRANSFERABLE_PROCESS_INFORMATION = 15;
     public static final int NOTIFY_REMOTE_EXCEPTION_OPERATION = 16;
     public static final int CANCEL_JOB_SUPERVISOR_OPERATION = 17;
-    public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 18;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 19;
+    public static final int KEY_VALUE_SOURCE_LIST = 18;
+    public static final int KEY_VALUE_SOURCE_SET = 19;
+    public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 20;
+    public static final int CLIENT_MAP_REDUCE_REQUEST = 21;
 
     public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
 
@@ -172,10 +175,28 @@ public class MapReduceDataSerializerHook
                 return new TransferableJobProcessInformation();
             }
         };
+        constructors[NOTIFY_REMOTE_EXCEPTION_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new NotifyRemoteExceptionOperation();
+            }
+        };
         constructors[CANCEL_JOB_SUPERVISOR_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CancelJobSupervisorOperation();
+            }
+        };
+        constructors[KEY_VALUE_SOURCE_LIST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ListKeyValueSource();
+            }
+        };
+        constructors[KEY_VALUE_SOURCE_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetKeyValueSource();
             }
         };
         constructors[CLIENT_JOB_PROCESS_INFO_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

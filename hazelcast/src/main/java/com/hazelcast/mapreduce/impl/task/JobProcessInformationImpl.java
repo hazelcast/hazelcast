@@ -18,11 +18,14 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
+import com.hazelcast.nio.Address;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
+import static com.hazelcast.mapreduce.JobPartitionState.State.CANCELLED;
 
 public class JobProcessInformationImpl
         implements JobProcessInformation {
@@ -55,11 +58,22 @@ public class JobProcessInformationImpl
         processedRecords.addAndGet(records);
     }
 
+    public void cancelPartitionState() {
+        JobPartitionState[] oldPartitionStates = this.partitionStates;
+        JobPartitionState[] newPartitionStates = new JobPartitionState[oldPartitionStates.length];
+        for (int i = 0; i < newPartitionStates.length; i++) {
+            Address owner = oldPartitionStates[i] != null ? oldPartitionStates[i].getOwner() : null;
+            newPartitionStates[i] = new JobPartitionStateImpl(owner, CANCELLED);
+        }
+
+        this.partitionStates = newPartitionStates;
+    }
+
     public boolean updatePartitionState(int partitionId, JobPartitionState oldPartitionState,
                                         JobPartitionState newPartitionState) {
 
         ValidationUtil.isNotNull(newPartitionState, "newPartitionState");
-        for (;; ) {
+        for (; ; ) {
             JobPartitionState[] oldPartitionStates = getPartitionStates();
             if (oldPartitionStates[partitionId] != oldPartitionState) {
                 return false;

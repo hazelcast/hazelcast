@@ -63,6 +63,11 @@ public interface JobPartitionState {
          * Partition is fully processed
          */
         PROCESSED,
+
+        /**
+         * Partition calculation cancelled due to an internal exception
+         */
+        CANCELLED,
         ;
 
         /**

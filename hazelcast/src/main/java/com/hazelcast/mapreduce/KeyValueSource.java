@@ -16,10 +16,14 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ISet;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.mapreduce.impl.ListKeyValueSource;
 import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
+import com.hazelcast.mapreduce.impl.SetKeyValueSource;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.Closeable;
@@ -123,7 +127,7 @@ public abstract class KeyValueSource<K, V>
      * preselection of the interesting partitions / nodes is not available and the
      * overall processing speed my be degraded.
      * </p>
-
+     *
      * @return true if collecting clusterwide keys is available otherwide false
      */
     public boolean isAllKeysSupported() {
@@ -156,12 +160,40 @@ public abstract class KeyValueSource<K, V>
      * A helper method to build a KeyValueSource implementation based on the specified {@link MultiMap}
      *
      * @param multiMap multiMap to build a KeyValueSource implementation with
-     * @param <K> key type of the multiMap
-     * @param <V> value type of the multiMap
+     * @param <K>      key type of the multiMap
+     * @param <V>      value type of the multiMap
      * @return KeyValueSource implementation based on the specified multiMap
      */
     public static <K, V> KeyValueSource<K, V> fromMultiMap(MultiMap<K, V> multiMap) {
         return new MultiMapKeyValueSource<K, V>(multiMap.getName());
+    }
+
+    /**
+     * A helper method to build a KeyValueSource implementation based on the specified {@link IList}.<br/>
+     * The key returned by this KeyValueSource implementation is <b>ALWAYS</b> the name of the list itself,
+     * whereas the value are the entries of list one by one. So this implementation behaves like a MultiMap
+     * with a single key but multiple values.
+     *
+     * @param list list to build a KeyValueSource implementation with
+     * @param <V>  value type of the list
+     * @return KeyValueSource implementation based on the specified list
+     */
+    public static <V> KeyValueSource<String, V> fromList(IList<V> list) {
+        return new ListKeyValueSource<V>(list.getName());
+    }
+
+    /**
+     * A helper method to build a KeyValueSource implementation based on the specified {@link ISet}.<br/>
+     * The key returned by this KeyValueSource implementation is <b>ALWAYS</b> the name of the set itself,
+     * whereas the value are the entries of set one by one. So this implementation behaves like a MultiMap
+     * with a single key but multiple values.
+     *
+     * @param set set to build a KeyValueSource implementation with
+     * @param <V> value type of the set
+     * @return KeyValueSource implementation based on the specified set
+     */
+    public static <V> KeyValueSource<String, V> fromSet(ISet<V> set) {
+        return new SetKeyValueSource<V>(set.getName());
     }
 
 }

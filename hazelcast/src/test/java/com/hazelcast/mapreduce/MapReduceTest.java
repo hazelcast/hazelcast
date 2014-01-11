@@ -42,6 +42,41 @@ public class MapReduceTest
 
     private static final String MAP_NAME = "default";
 
+    @Test(timeout = 30000, expected = NullPointerException.class)
+    public void testExceptionDistribution()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(3, h1.getCluster().getMembers().size());
+            }
+        });
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        CompletableFuture<Map<String, List<Integer>>> future =
+                job.mapper(new ExceptionThrowingMapper())
+                        .submit();
+
+        try {
+            Map<String, List<Integer>> result = future.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
     @Test(timeout = 30000)
     public void testMapper()
             throws Exception {
@@ -556,6 +591,15 @@ public class MapReduceTest
 
         for (int i = 0; i < 4; i++) {
             assertEquals(expectedResult, result[0]);
+        }
+    }
+
+    public static class ExceptionThrowingMapper
+            implements Mapper<Integer, Integer, String, Integer> {
+
+        @Override
+        public void map(Integer key, Integer value, Context<String, Integer> context) {
+            throw new NullPointerException("BUMM!");
         }
     }
 

@@ -50,10 +50,10 @@ public final class MapReduceUtil {
     private MapReduceUtil() {
     }
 
-    public static void notifyRemoteException(JobSupervisor supervisor, Exception exception) {
+    public static void notifyRemoteException(JobSupervisor supervisor, Throwable throwable) {
         String name = supervisor.getConfiguration().getName();
         String jobId = supervisor.getConfiguration().getJobId();
-        NotifyRemoteExceptionOperation operation = new NotifyRemoteExceptionOperation(name, jobId, exception);
+        NotifyRemoteExceptionOperation operation = new NotifyRemoteExceptionOperation(name, jobId, throwable);
         MapReduceService mapReduceService = supervisor.getMapReduceService();
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
         ClusterService cs = nodeEngine.getClusterService();

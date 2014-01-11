@@ -19,18 +19,22 @@ package com.hazelcast.mapreduce.impl.operation;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 public class NotifyRemoteExceptionOperation
         extends ProcessingOperation {
 
-    private Exception exception;
+    private Throwable throwable;
 
     public NotifyRemoteExceptionOperation() {
     }
 
-    public NotifyRemoteExceptionOperation(String name, String jobId, Exception exception) {
+    public NotifyRemoteExceptionOperation(String name, String jobId, Throwable throwable) {
         super(name, jobId);
-        this.exception = exception;
+        this.throwable = throwable;
     }
 
     @Override
@@ -43,8 +47,20 @@ public class NotifyRemoteExceptionOperation
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor != null) {
-            supervisor.notifyRemoteException(getCallerAddress(), exception);
+            supervisor.notifyRemoteException(getCallerAddress(), throwable);
         }
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(throwable);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        throwable = in.readObject();
     }
 
     @Override

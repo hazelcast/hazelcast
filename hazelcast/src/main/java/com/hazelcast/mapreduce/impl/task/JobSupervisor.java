@@ -50,7 +50,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
-import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 public class JobSupervisor {
@@ -120,15 +119,21 @@ public class JobSupervisor {
             processReducerFinished(rfn);
         }
     }
-    
-    public void notifyRemoteException(Address remoteAddress, Exception exception) {
+
+    public void notifyRemoteException(Address remoteAddress, Throwable throwable) {
+        // Cancel all partition states
+        jobProcessInformation.cancelPartitionState();
+
+        // Notify all other nodes about cancellation
         Set<Address> addresses = new HashSet<Address>();
         for (Set<Address> remoteReducers : this.remoteReducers.values()) {
-            addresses.addAll(remoteReducers);
+            addAllFilterJobOwner(addresses, remoteReducers);
         }
         for (JobPartitionState partitionState : jobProcessInformation.getPartitionStates()) {
-            if (partitionState != null) {
-                addresses.add(partitionState.getOwner());
+            if (partitionState != null && partitionState.getOwner() != null) {
+                if (!partitionState.getOwner().equals(jobOwner)) {
+                    addresses.add(partitionState.getOwner());
+                }
             }
         }
 
@@ -150,8 +155,12 @@ public class JobSupervisor {
         jobTracker.unregisterReducerTask(jobId);
         mapReduceService.destroyJobSupervisor(this);
 
-        ExceptionUtil.fixRemoteStackTrace(exception, Thread.currentThread().getStackTrace());
-        future.setResult(exception);
+        if (future != null) {
+            // Might be already cancelled by another members exception
+            ExceptionUtil.fixRemoteStackTrace(throwable,
+                    Thread.currentThread().getStackTrace(), "Operation failed on node: " + remoteAddress);
+            future.setResult(throwable);
+        }
     }
 
     public void cancel() {
@@ -291,6 +300,15 @@ public class JobSupervisor {
         });
     }
 
+    private void addAllFilterJobOwner(Set<Address> target, Set<Address> source) {
+        for (Address address : source) {
+            if (jobOwner.equals(address)) {
+                continue;
+            }
+            target.add(address);
+        }
+    }
+
     private void processReducerFinished0(ReducingFinishedNotification notification) {
         String name = configuration.getName();
         String jobId = configuration.getJobId();
@@ -305,8 +323,8 @@ public class JobSupervisor {
                 if (result.getResultState() != SUCCESSFUL) {
                     throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
                 }
-            } catch (Exception e) {
-                MapReduceUtil.notifyRemoteException(this, e);
+            } catch (Throwable t) {
+                MapReduceUtil.notifyRemoteException(this, t);
             }
         }
     }

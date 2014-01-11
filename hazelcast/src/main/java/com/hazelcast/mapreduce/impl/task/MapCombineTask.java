@@ -31,7 +31,6 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -93,7 +92,9 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
-    public final void processMapping(int partitionId, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+    public final void processMapping(int partitionId, KeyValueSource<KeyIn, ValueIn> keyValueSource)
+            throws Exception {
+
         DefaultContext<KeyOut, ValueOut> context = supervisor.createContext(this);
         context.setPartitionId(partitionId);
 
@@ -105,60 +106,52 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             ((LifecycleMapper) mapper).finalized(context);
         }
 
-        try {
-            RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                    new RequestPartitionReducing(name, jobId, partitionId), name);
+        RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
+                new RequestPartitionReducing(name, jobId, partitionId), name);
 
-            if (result.getResultState() == SUCCESSFUL) {
-                // If we have a reducer defined just send it over
-                if (supervisor.getConfiguration().getReducerFactory() != null) {
-                    Map<KeyOut, Chunk> chunkMap = context.finish();
-                    if (chunkMap.size() > 0) {
-                        Address sender = mapReduceService.getLocalAddress();
+        if (result.getResultState() == SUCCESSFUL) {
+            // If we have a reducer defined just send it over
+            if (supervisor.getConfiguration().getReducerFactory() != null) {
+                Map<KeyOut, Chunk> chunkMap = context.finish();
+                if (chunkMap.size() > 0) {
+                    Address sender = mapReduceService.getLocalAddress();
 
-                        // Wrap into LastChunkNotification object
-                        Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
+                    // Wrap into LastChunkNotification object
+                    Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(mapReduceService, chunkMap);
 
-                        // Register remote addresses and partitionId for receiving reducer events
-                        supervisor.registerReducerEventInterests(partitionId, mapping.keySet());
+                    // Register remote addresses and partitionId for receiving reducer events
+                    supervisor.registerReducerEventInterests(partitionId, mapping.keySet());
 
-                        // Send LastChunk notifications
-                        for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
-                            Address receiver = entry.getKey();
-                            Map<KeyOut, Chunk> chunk = entry.getValue();
-                            mapReduceService.sendNotification(receiver, new LastChunkNotification(
-                                    receiver, name, jobId, sender, partitionId, chunk));
-                        }
+                    // Send LastChunk notifications
+                    for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+                        Address receiver = entry.getKey();
+                        Map<KeyOut, Chunk> chunk = entry.getValue();
+                        mapReduceService.sendNotification(receiver, new LastChunkNotification(
+                                receiver, name, jobId, sender, partitionId, chunk));
+                    }
 
-                        // Send LastChunk notification to notify reducers that received at least one chunk
-                        Set<Address> addresses = mapping.keySet();
-                        Collection<Address> reducerInterests = supervisor.getReducerEventInterests(partitionId);
-                        if (reducerInterests != null) {
-                            for (Address address : reducerInterests) {
-                                if (!addresses.contains(address)) {
-                                    mapReduceService.sendNotification(address, new LastChunkNotification(
-                                            address, name, jobId, sender, partitionId, Collections.emptyMap()));
-                                }
+                    // Send LastChunk notification to notify reducers that received at least one chunk
+                    Set<Address> addresses = mapping.keySet();
+                    Collection<Address> reducerInterests = supervisor.getReducerEventInterests(partitionId);
+                    if (reducerInterests != null) {
+                        for (Address address : reducerInterests) {
+                            if (!addresses.contains(address)) {
+                                mapReduceService.sendNotification(address, new LastChunkNotification(
+                                        address, name, jobId, sender, partitionId, Collections.emptyMap()));
                             }
                         }
+                    }
 
-                    } else {
-                        // If nothing to reduce we just set partition to processed
-                        try {
-                            result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                                    new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
+                } else {
+                    // If nothing to reduce we just set partition to processed
+                    result = mapReduceService.processRequest(supervisor.getJobOwner(),
+                            new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
 
-                            if (result.getResultState() != SUCCESSFUL) {
-                                throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
-                            }
-                        } catch (Exception e) {
-                            notifyRemoteException(supervisor, e);
-                        }
+                    if (result.getResultState() != SUCCESSFUL) {
+                        throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
                     }
                 }
             }
-        } catch (Exception e) {
-            notifyRemoteException(supervisor, e);
         }
     }
 
@@ -212,8 +205,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     delegate.open(nodeEngine);
                     processMapping(partitionId, delegate);
                     delegate.close();
-                } catch (IOException e) {
-                    notifyRemoteException(supervisor, e);
+                } catch (Throwable t) {
+                    notifyRemoteException(supervisor, t);
                 }
             }
         }
@@ -265,8 +258,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 delegate.open(nodeEngine);
                 processMapping(result.getPartitionId(), delegate);
                 delegate.close();
-            } catch (Exception e) {
-                notifyRemoteException(supervisor, e);
+            } catch (Throwable t) {
+                notifyRemoteException(supervisor, t);
             }
         }
     }

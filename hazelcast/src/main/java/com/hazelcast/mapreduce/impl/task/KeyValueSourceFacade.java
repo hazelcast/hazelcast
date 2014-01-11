@@ -26,16 +26,14 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-public class KeyValueSourceFacade<K, V> extends KeyValueSource<K, V> {
+class KeyValueSourceFacade<K, V> extends KeyValueSource<K, V> {
 
     private final KeyValueSource<K, V> keyValueSource;
     private final JobSupervisor supervisor;
 
     private int processedRecords = 0;
 
-    public KeyValueSourceFacade(KeyValueSource<K, V> keyValueSource,
-                                JobSupervisor supervisor) {
-
+    KeyValueSourceFacade(KeyValueSource<K, V> keyValueSource, JobSupervisor supervisor) {
         this.keyValueSource = keyValueSource;
         this.supervisor = supervisor;
     }
