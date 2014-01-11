@@ -287,7 +287,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public CompletableFuture putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+    public ICompletableFuture putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -302,7 +302,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public CompletableFuture removeAsync(final K key) {
+    public ICompletableFuture removeAsync(final K key) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -580,13 +580,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         executeOnKeyInternal(keyData,entryProcessor,callback);
     }
     @Override
-    public CompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
+    public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        CompletableFuture f = executeOnKeyInternal(keyData,entryProcessor,null);
+        ICompletableFuture f = executeOnKeyInternal(keyData,entryProcessor,null);
         return new DelegatingFuture(f,service.getSerializationService());
     }
 

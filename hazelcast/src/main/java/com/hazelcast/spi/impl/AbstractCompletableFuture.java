@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-public abstract class AbstractCompletableFuture<V> implements CompletableFuture<V> {
+public abstract class AbstractCompletableFuture<V> implements ICompletableFuture<V> {
 
     protected static final Object NULL_VALUE = new Object();
 

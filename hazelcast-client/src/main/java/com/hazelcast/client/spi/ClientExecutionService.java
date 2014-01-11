@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -30,9 +30,9 @@ public interface ClientExecutionService {
 
     void execute(Runnable command);
 
-    CompletableFuture<?> submit(Runnable task);
+    ICompletableFuture<?> submit(Runnable task);
 
-    <T> CompletableFuture<T> submit(Callable<T> task);
+    <T> ICompletableFuture<T> submit(Callable<T> task);
 
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 

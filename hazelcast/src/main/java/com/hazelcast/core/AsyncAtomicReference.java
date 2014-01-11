@@ -1,32 +1,32 @@
 package com.hazelcast.core;
 
 /**
- * A {@link IAtomicReference} that exposes its operations using a {@link com.hazelcast.core.CompletableFuture}
+ * A {@link IAtomicReference} that exposes its operations using a {@link ICompletableFuture}
  * so it can be used in the reactive programming model approach.
  */
 public interface AsyncAtomicReference<E> extends IAtomicReference<E> {
 
-    CompletableFuture<Boolean> asyncCompareAndSet(E expect, E update);
+    ICompletableFuture<Boolean> asyncCompareAndSet(E expect, E update);
 
-    CompletableFuture<E> asyncGet();
+    ICompletableFuture<E> asyncGet();
 
-    CompletableFuture<Void> asyncSet(E newValue);
+    ICompletableFuture<Void> asyncSet(E newValue);
 
-    CompletableFuture<E> asyncGetAndSet(E newValue);
+    ICompletableFuture<E> asyncGetAndSet(E newValue);
 
-    CompletableFuture<E> asyncSetAndGet(E update);
+    ICompletableFuture<E> asyncSetAndGet(E update);
 
-    CompletableFuture<Boolean> asyncIsNull();
+    ICompletableFuture<Boolean> asyncIsNull();
 
-    CompletableFuture<Void> asyncClear();
+    ICompletableFuture<Void> asyncClear();
 
-    CompletableFuture<Boolean> asyncContains(E value);
+    ICompletableFuture<Boolean> asyncContains(E value);
 
-    CompletableFuture<Void> asyncAlter(Function<E, E> function);
+    ICompletableFuture<Void> asyncAlter(Function<E, E> function);
 
-    CompletableFuture<E> asyncAlterAndGet(Function<E, E> function);
+    ICompletableFuture<E> asyncAlterAndGet(Function<E, E> function);
 
-    CompletableFuture<E> asyncGetAndAlter(Function<E, E> function);
+    ICompletableFuture<E> asyncGetAndAlter(Function<E, E> function);
 
-    <R> CompletableFuture<R> asyncApply(Function<E, R> function);
+    <R> ICompletableFuture<R> asyncApply(Function<E, R> function);
 }

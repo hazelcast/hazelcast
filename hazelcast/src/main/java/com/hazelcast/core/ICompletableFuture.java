@@ -31,7 +31,7 @@ import java.util.concurrent.Future;
  *
  * @param <V>
  */
-public interface CompletableFuture<V> extends Future<V> {
+public interface ICompletableFuture<V> extends Future<V> {
 
     void andThen(ExecutionCallback<V> callback);
 

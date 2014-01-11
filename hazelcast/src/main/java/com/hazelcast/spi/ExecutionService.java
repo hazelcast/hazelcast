@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.concurrent.*;
@@ -59,5 +59,5 @@ public interface ExecutionService {
 
     ScheduledExecutorService getScheduledExecutor();
 
-    <V> CompletableFuture<V> asCompletableFuture(Future<V> future);
+    <V> ICompletableFuture<V> asCompletableFuture(Future<V> future);
 }

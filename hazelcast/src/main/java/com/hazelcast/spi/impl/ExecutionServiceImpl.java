@@ -17,8 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.core.CompletableFuture;
-import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -32,12 +31,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
-
-import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * @author mdogan 12/14/12
@@ -131,12 +127,12 @@ public final class ExecutionServiceImpl implements ExecutionService {
     }
 
     @Override
-    public <V> CompletableFuture<V> asCompletableFuture(Future<V> future) {
+    public <V> ICompletableFuture<V> asCompletableFuture(Future<V> future) {
         if (future == null) {
             throw new IllegalArgumentException("future must not be null");
         }
-        if (future instanceof CompletableFuture) {
-            return (CompletableFuture<V>) future;
+        if (future instanceof ICompletableFuture) {
+            return (ICompletableFuture<V>) future;
         }
         return registerCompletableFuture(future);
     }
@@ -204,7 +200,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-    private <V> CompletableFuture<V> registerCompletableFuture(Future<V> future) {
+    private <V> ICompletableFuture<V> registerCompletableFuture(Future<V> future) {
         CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine, completableFutureTask);
         completableFutureTask.registerCompletableFutureEntry(entry);
         return entry.completableFuture;

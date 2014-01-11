@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.atomiclong.proxy;
 
 import com.hazelcast.concurrent.atomiclong.*;
 import com.hazelcast.core.AsyncAtomicLong;
-import com.hazelcast.core.CompletableFuture;
 import com.hazelcast.core.Function;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;

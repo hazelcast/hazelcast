@@ -18,7 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.core.CompletableFuture;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -299,10 +299,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return new RunnableAdapter<T>(command);
     }
 
-    private <T> CompletableFuture<T> submitToKeyOwnerInternal(Callable<T> task, Data partitionKey) {
+    private <T> ICompletableFuture<T> submitToKeyOwnerInternal(Callable<T> task, Data partitionKey) {
         check(task);
         ClientPartitionService partitionService = getContext().getPartitionService();
-        CompletableFuture<T> f;
+        ICompletableFuture<T> f;
         if (partitionKey == null) {
             final LocalTargetCallableRequest request = new LocalTargetCallableRequest(name, task);
             f = getContext().getExecutionService().submit(new Callable<T>() {
@@ -319,10 +319,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return f;
     }
 
-    private <T> CompletableFuture<T> submitToTargetInternal(Callable<T> task, final Address address) {
+    private <T> ICompletableFuture<T> submitToTargetInternal(Callable<T> task, final Address address) {
         check(task);
         final TargetCallableRequest request = new TargetCallableRequest(name, task, address);
-        CompletableFuture<T> f = getContext().getExecutionService().submit(new Callable<T>() {
+        ICompletableFuture<T> f = getContext().getExecutionService().submit(new Callable<T>() {
             public T call() throws Exception {
                 return invoke(request, address);
             }
@@ -400,7 +400,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> CompletableFuture<T> checkSync(CompletableFuture<T> f) {
+    private <T> ICompletableFuture<T> checkSync(ICompletableFuture<T> f) {
         boolean sync = false;
         final long last = lastSubmitTime;
         final long now = Clock.currentTimeMillis();
