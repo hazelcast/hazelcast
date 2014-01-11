@@ -16,12 +16,11 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.ResponseHandler;
-import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
@@ -31,6 +30,8 @@ import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.AbstractJob;
+import com.hazelcast.mapreduce.impl.TrackableJob;
+import com.hazelcast.mapreduce.impl.client.ClientCancellationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.nio.Address;
@@ -38,7 +39,6 @@ import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -51,7 +51,7 @@ public class ClientMapReduceProxy
         extends ClientProxy
         implements JobTracker {
 
-    private ConcurrentMap<String, Address> runningJobs = new ConcurrentHashMap<String, Address>();
+    private final ConcurrentMap<String, ClientTrackableJob> trackableJobs = new ConcurrentHashMap<String, ClientTrackableJob>();
 
     public ClientMapReduceProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -59,7 +59,9 @@ public class ClientMapReduceProxy
 
     @Override
     protected void onDestroy() {
-
+        for (ClientTrackableJob trackableJob : trackableJobs.values()) {
+            trackableJob.completableFuture.cancel(false);
+        }
     }
 
     @Override
@@ -70,12 +72,7 @@ public class ClientMapReduceProxy
     @Override
     public JobProcessInformation getJobProcessInformation(String jobId) {
         try {
-            ClientContext context = getContext();
-            ClientInvocationService cis = context.getInvocationService();
-            Address runningMember = runningJobs.get(jobId);
-            ICompletableFuture<JobProcessInformation> future = cis.invokeOnTarget(
-                    new ClientJobProcessInformationRequest(getName(), jobId), runningMember);
-            return future.get();
+            return invoke(new ClientJobProcessInformationRequest(getName(), jobId), jobId);
         } catch (Exception ignore) {
         }
         return null;
@@ -88,6 +85,18 @@ public class ClientMapReduceProxy
         // TODO
         return null;
     }*/
+
+    private <T> T invoke(InvocationClientRequest request, String jobId) throws Exception {
+        ClientContext context = getContext();
+        ClientInvocationService cis = context.getInvocationService();
+        ClientTrackableJob trackableJob = trackableJobs.get(jobId);
+        if (trackableJob != null) {
+            Address runningMember = trackableJob.jobOwner;
+            ICompletableFuture<T> future = cis.invokeOnTarget(request, runningMember);
+            return future.get();
+        }
+        return null;
+    }
 
     private class ClientJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
 
@@ -115,7 +124,7 @@ public class ClientMapReduceProxy
                 });
 
                 Address runningMember = future.getConnection().getRemoteEndpoint();
-                runningJobs.put(getJobId(), runningMember);
+                trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, runningMember, completableFuture));
                 return completableFuture;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -127,18 +136,27 @@ public class ClientMapReduceProxy
     private class ClientCompletableFuture<V>
             extends AbstractCompletableFuture<V> {
 
-        protected ClientCompletableFuture() {
+        private final String jobId;
+
+        private volatile boolean cancelled;
+
+        protected ClientCompletableFuture(String jobId) {
             super(null, Logger.getLogger(ClientCompletableFuture.class));
+            this.jobId = jobId;
         }
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
+            try {
+                cancelled = invoke(new ClientCancellationRequest(getName(), jobId), jobId);
+            } catch (Exception ignore) {
+            }
+            return cancelled;
         }
 
         @Override
         public boolean isCancelled() {
-            return false;
+            return cancelled;
         }
 
         @Override
@@ -169,6 +187,41 @@ public class ClientMapReduceProxy
         @Override
         protected ExecutorService getAsyncExecutor() {
             return getContext().getExecutionService().getAsyncExecutor();
+        }
+    }
+
+    private class ClientTrackableJob<V>
+            implements TrackableJob<V> {
+
+        private final String jobId;
+        private final Address jobOwner;
+        private final AbstractCompletableFuture<V> completableFuture;
+
+        private ClientTrackableJob(String jobId, Address jobOwner,
+                                   AbstractCompletableFuture<V> completableFuture) {
+            this.jobId = jobId;
+            this.jobOwner = jobOwner;
+            this.completableFuture = completableFuture;
+        }
+
+        @Override
+        public JobTracker getJobTracker() {
+            return ClientMapReduceProxy.this;
+        }
+
+        @Override
+        public String getName() {
+            return getName();
+        }
+
+        @Override
+        public String getJobId() {
+            return jobId;
+        }
+
+        @Override
+        public CompletableFuture<V> getCompletableFuture() {
+            return completableFuture;
         }
     }
 
