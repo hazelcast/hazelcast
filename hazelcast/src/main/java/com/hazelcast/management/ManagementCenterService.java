@@ -45,6 +45,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.*;
 import java.lang.reflect.Method;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -547,8 +548,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         Thread.sleep(1000 * 60);
                         versionMismatch = false;
                     }
+                    URL url = createCollectorUrl();
                     try {
-                        URL url = createCollectorUrl();
                         System.out.println(url);
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setDoOutput(true);
@@ -562,6 +563,12 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         ts.writeData(out);
                         out.flush();
                         connection.getInputStream();
+                    }catch (ConnectException e){
+                        if(logger.isFinestEnabled()){
+                            logger.finest(e);
+                        } else{
+                            logger.info("Failed to connect to:"+url);
+                        }
                     } catch (Exception e) {
                         logger.warning(e);
                     }
