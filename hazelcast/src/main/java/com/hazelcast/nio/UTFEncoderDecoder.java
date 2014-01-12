@@ -274,7 +274,7 @@ public final class UTFEncoderDecoder {
 
         public FastStringCreator(Constructor<String> constructor) {
             this.constructor = constructor;
-            this.useOldStringConstructor = constructor.getTypeParameters().length == 3;
+            this.useOldStringConstructor = constructor.getParameterTypes().length == 3;
         }
 
         @Override
