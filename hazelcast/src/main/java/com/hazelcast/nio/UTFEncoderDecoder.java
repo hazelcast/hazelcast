@@ -270,15 +270,17 @@ public final class UTFEncoderDecoder {
     private static class FastStringCreator implements UTFEncoderDecoder.StringCreator {
 
         private final Constructor<String> constructor;
+        private final boolean useOldStringConstructor;
 
         public FastStringCreator(Constructor<String> constructor) {
             this.constructor = constructor;
+            this.useOldStringConstructor = constructor.getTypeParameters().length == 3;
         }
 
         @Override
         public String buildString(char[] chars) {
             try {
-                if (UTFEncoderDecoder.useOldStringConstructor()) {
+                if (useOldStringConstructor) {
                     return constructor.newInstance(0, chars.length, chars);
                 } else {
                     return constructor.newInstance(chars, Boolean.TRUE);
