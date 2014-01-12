@@ -17,15 +17,14 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.mapreduce.process.ProcessJob;
 
 /**
  * <p>
- * The JobTracker interface is used to create instances of {@link Job}s or {@link ProcessJob}s depending
+ * The JobTracker interface is used to create instances of {@link Job}s depending
  * on the given data structure / data source.
  * </p>
  * <p>
- * The underlying created instance of the {@link Job} / {@link ProcessJob} depends on whether it is used for a
+ * The underlying created instance of the {@link Job} depends on whether it is used for a
  * {@link com.hazelcast.client.HazelcastClient} or a {@link com.hazelcast.core.Hazelcast} member node.
  * </p>
  * <p>
