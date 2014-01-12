@@ -155,13 +155,14 @@ final class ServiceManager {
     @SuppressWarnings("unchecked")
     private Object createServiceObject(String className) {
         try {
-            Class serviceClass = ClassLoaderUtil.loadClass(nodeEngine.getConfigClassLoader(), className);
+            ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+            Class serviceClass = ClassLoaderUtil.loadClass(classLoader, className);
             try {
                 Constructor constructor = serviceClass.getConstructor(NodeEngine.class);
                 return constructor.newInstance(nodeEngine);
             } catch (NoSuchMethodException ignored) {
             }
-            return ClassLoaderUtil.newInstance(serviceClass);
+            return ClassLoaderUtil.newInstance(serviceClass, classLoader, className);
         } catch (Exception e) {
             logger.severe(e);
         }

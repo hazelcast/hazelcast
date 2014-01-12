@@ -16,10 +16,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.ConcurrentReferenceHashMap;
+
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author mdogan 4/12/12
@@ -31,6 +36,8 @@ public final class ClassLoaderUtil {
 
     private static final Map<String, Class> PRIMITIVE_CLASSES;
     private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
+
+    private static final ConstructorCache CONSTRCUTOR_CACHE = new ConstructorCache();
 
     static {
         final Map<String, Class> primitives = new HashMap<String, Class>(10, 1.0f);
@@ -47,14 +54,21 @@ public final class ClassLoaderUtil {
     }
 
     public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
-        return (T) newInstance(loadClass(classLoader, className));
+        classLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
+        Constructor<T> constructor = CONSTRCUTOR_CACHE.get(classLoader, className);
+        if (constructor != null) {
+            return constructor.newInstance();
+        }
+        Class<T> klass = (Class<T>) loadClass(classLoader, className);
+        return (T) newInstance(klass, classLoader, className);
     }
 
-    public static <T> T newInstance(final Class<T> klass) throws Exception {
+    public static <T> T newInstance(Class<T> klass, ClassLoader classLoader, String className) throws Exception {
         final Constructor<T> constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }
+        CONSTRCUTOR_CACHE.put(classLoader, className, constructor);
         return constructor.newInstance();
     }
 
@@ -101,6 +115,42 @@ public final class ClassLoaderUtil {
     public static boolean isInternalType(Class type) {
         return type.getClassLoader() == ClassLoaderUtil.class.getClassLoader()
             && type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
+    }
+
+    private static class ConstructorCache {
+        private final ConcurrentMap<ClassLoader, ConcurrentMap<String, WeakReference<Constructor>>> cache;
+
+        private ConstructorCache() {
+            // Guess 16 classloaders to not waste to much memory (16 is default concurrency level)
+            cache = new ConcurrentReferenceHashMap<ClassLoader, ConcurrentMap<String, WeakReference<Constructor>>>(16);
+        }
+
+        private <T> Constructor put(ClassLoader classLoader, String className, Constructor<T> constructor) {
+            ConcurrentMap<String, WeakReference<Constructor>> innerCache = cache.get(classLoader);
+            if (innerCache == null) {
+                // Let's guess a start of 100 classes per classloader
+                innerCache = new ConcurrentHashMap<String, WeakReference<Constructor>>(100);
+                ConcurrentMap<String, WeakReference<Constructor>> old = cache.putIfAbsent(classLoader, innerCache);
+                if (old != null) {
+                    innerCache = old;
+                }
+            }
+            innerCache.put(className, new WeakReference<Constructor>(constructor));
+            return constructor;
+        }
+
+        public <T> Constructor<T> get(ClassLoader classLoader, String className) {
+            ConcurrentMap<String, WeakReference<Constructor>> innerCache = cache.get(classLoader);
+            if (innerCache == null) {
+                return null;
+            }
+            WeakReference<Constructor> reference = innerCache.get(className);
+            Constructor constructor = reference == null ? null : reference.get();
+            if (reference != null && constructor == null) {
+                innerCache.remove(className);
+            }
+            return (Constructor<T>) constructor;
+        }
     }
 
     private ClassLoaderUtil() {}
