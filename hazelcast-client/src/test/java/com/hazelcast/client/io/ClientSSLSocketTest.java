@@ -18,7 +18,6 @@ package com.hazelcast.client.io;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.SSLSocketFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.Hazelcast;
@@ -51,6 +50,7 @@ public class ClientSSLSocketTest {
 
     @Test
     @Ignore
+    // TODO: implement client ssl support!
     public void test() throws IOException {
         Properties props = TestKeyStoreUtil.createSslProperties();
         Config cfg = new Config();
@@ -63,7 +63,6 @@ public class ClientSSLSocketTest {
         ClientConfig config = new ClientConfig();
         config.addAddress("127.0.0.1");
         config.setRedoOperation(true);
-        config.getSocketOptions().setSocketFactory(new SSLSocketFactory(props));
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
         IMap<Object, Object> clientMap = client.getMap("test");
