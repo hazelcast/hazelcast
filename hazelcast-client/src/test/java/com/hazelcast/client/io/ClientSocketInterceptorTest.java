@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +45,6 @@ public class ClientSocketInterceptorTest {
     }
 
     @Test(timeout = 120000)
-    @Ignore
     public void testSuccessfulSocketInterceptor() {
         Config config = new Config();
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
@@ -78,7 +76,6 @@ public class ClientSocketInterceptorTest {
     }
 
     @Test(timeout = 120000)
-    @Ignore
     public void testFailingSocketInterceptor() {
         Config config = new Config();
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();

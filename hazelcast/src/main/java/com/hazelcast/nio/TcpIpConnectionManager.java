@@ -119,9 +119,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
         } else {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
+
+        SocketInterceptor implementation = null;
         SocketInterceptorConfig sic = ioService.getSocketInterceptorConfig();
         if (sic != null && sic.isEnabled()) {
-            SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
+            implementation = (SocketInterceptor) sic.getImplementation();
             if (implementation == null && sic.getClassName() != null) {
                 try {
                     implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
@@ -133,18 +135,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 if (!(implementation instanceof MemberSocketInterceptor)) {
                     logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
-                } else {
-                    logger.info("SocketInterceptor is enabled");
                 }
             }
-            if (implementation != null) {
-                memberSocketInterceptor = (MemberSocketInterceptor) implementation;
-                memberSocketInterceptor.init(sic.getProperties());
-            } else {
-                memberSocketInterceptor = null;
-            }
-        } else {
-            memberSocketInterceptor = null;
+        }
+
+        memberSocketInterceptor = (MemberSocketInterceptor) implementation;
+        if (memberSocketInterceptor != null) {
+            logger.info("SocketInterceptor is enabled");
+            memberSocketInterceptor.init(sic.getProperties());
         }
         serializationContext = ioService.getSerializationContext();
     }

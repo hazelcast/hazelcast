@@ -69,14 +69,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.authenticator = authenticator;
         ClientConfig config = client.getClientConfig();
         router = new Router(loadBalancer);
-        final ThreadGroup threadGroup = new ThreadGroup("IOThreads");
-        inSelector = new ClientInSelectorImpl(threadGroup);
-        outSelector = new ClientOutSelectorImpl(threadGroup);
+        inSelector = new ClientInSelectorImpl(client.getThreadGroup());
+        outSelector = new ClientOutSelectorImpl(client.getThreadGroup());
 
         //init socketInterceptor
         SocketInterceptorConfig sic = config.getSocketInterceptorConfig();
+        SocketInterceptor implementation = null;
         if (sic != null && sic.isEnabled()) {
-            SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
+            implementation = (SocketInterceptor) sic.getImplementation();
             if (implementation == null && sic.getClassName() != null) {
                 try {
                     implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
@@ -84,22 +84,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
                 }
             }
-            if (implementation != null) {
-                if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.severe("SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
-                    implementation = null;
-                } else {
-                    logger.info("SocketInterceptor is enabled");
-                }
-            }
-            if (implementation != null) {
-                socketInterceptor = implementation;
-                socketInterceptor.init(sic.getProperties());
-            } else {
-                socketInterceptor = null;
-            }
-        } else {
-            socketInterceptor = null;
+        }
+
+        socketInterceptor = implementation;
+        if (socketInterceptor != null) {
+            logger.info("SocketInterceptor is enabled");
+            socketInterceptor.init(sic.getProperties());
         }
 
 //        int connectionTimeout = config.getConnectionTimeout(); //TODO
@@ -152,7 +142,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private ClientConnection getOrConnect(Address address, Authenticator authenticator) throws IOException {
         if (address == null) {
-            throw new Error("TODO");
+            throw new NullPointerException("Address is required!");
         }
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
@@ -187,16 +177,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         socket.setSendBufferSize(bufferSize);
         socket.setReceiveBufferSize(bufferSize);
         socketChannel.connect(address.getInetSocketAddress());
-        final ClientConnection clientConnection = new ClientConnection(this, inSelector, outSelector, connectionIdGen.incrementAndGet(), socketChannel);
+        final ClientConnection clientConnection = new ClientConnection(this, inSelector, outSelector,
+                                                                       connectionIdGen.incrementAndGet(), socketChannel);
         socketChannel.configureBlocking(true);
+        if (socketInterceptor != null) {
+            socketInterceptor.onConnect(socket);
+        }
         authenticator.auth(clientConnection);
         socketChannel.configureBlocking(isBlock);
         socket.setSoTimeout(0);
         if (!isBlock) {
             clientConnection.getReadHandler().register();
-        }
-        if (socketInterceptor != null) {
-            socketInterceptor.onConnect(socket);
         }
         return clientConnection;
     }
