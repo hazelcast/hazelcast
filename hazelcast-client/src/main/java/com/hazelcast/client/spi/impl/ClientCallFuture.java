@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.LinkedList;
@@ -85,9 +86,14 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (response == null) {
-            synchronized (this) {
-                if (response == null) {
-                    this.wait(unit.toMillis(timeout));
+            long waitMillis = unit.toMillis(timeout);
+            if (waitMillis > 0) {
+                synchronized (this) {
+                    while (waitMillis > 0 && response == null) {
+                        long start = Clock.currentTimeMillis();
+                        this.wait(waitMillis);
+                        waitMillis -= (Clock.currentTimeMillis() - start);
+                    }
                 }
             }
         }
@@ -119,7 +125,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             if (this.response != null && handler == null) {
                 throw new IllegalArgumentException("The Future.set method can only be called once");
             }
-            if (this.response != null && handler != null && response instanceof String) {
+            if (this.response != null && response instanceof String) {
                 String uuid = (String) this.response;
                 String alias = (String) response;
                 int callId = request.getCallId();
