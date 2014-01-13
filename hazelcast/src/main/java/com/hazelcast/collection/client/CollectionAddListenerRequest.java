@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.*;
 import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
@@ -43,7 +40,7 @@ import java.security.Permission;
 /**
  * @ali 9/4/13
  */
-public class CollectionAddListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class CollectionAddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
 
@@ -79,7 +76,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
                 if (endpoint.live()){
                     Data item = clientEngine.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
-                    clientEngine.sendResponse(endpoint, portableItemEvent);
+                    endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }
         };
@@ -109,15 +106,13 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
         return CollectionPortableHook.COLLECTION_ADD_LISTENER;
     }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeBoolean("i", includeValue);
         writer.writeUTF("s", serviceName);
     }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         includeValue = reader.readBoolean("i");
         serviceName = reader.readUTF("s");

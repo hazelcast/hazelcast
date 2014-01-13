@@ -33,7 +33,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         OperationFactory operationFactory = createOperationFactory();
         Collection<Address> targets = getTargets();
         if (targets.isEmpty()) {
-            clientEngine.sendResponse(getEndpoint(), reduce(new HashMap<Address, Object>()));
+            endpoint.sendResponse(reduce(new HashMap<Address, Object>()), getCallId());
             return;
         }
         MultiTargetCallback callback = new MultiTargetCallback(targets);
@@ -68,7 +68,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             }
             if (targets.isEmpty()) {
                 final Object response = reduce(results);
-                clientEngine.sendResponse(getEndpoint(), response);
+                endpoint.sendResponse(response, getCallId());
             }
         }
     }

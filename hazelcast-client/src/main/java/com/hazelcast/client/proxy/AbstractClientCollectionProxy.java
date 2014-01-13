@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.client.*;
@@ -23,7 +24,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 
@@ -150,36 +150,20 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public boolean removeItemListener(String registrationId) {
-        return stopListening(registrationId);
+        final CollectionRemoveListenerRequest request = new CollectionRemoveListenerRequest(getName(), registrationId, getServiceName());
+        return stopListening(request, registrationId);
     }
 
     protected void onDestroy() {
     }
 
-    protected  <T> T invoke(Object req) {
+    protected  <T> T invoke(ClientRequest req) {
         if (req instanceof CollectionRequest){
             CollectionRequest request = (CollectionRequest)req;
             request.setServiceName(getServiceName());
         }
-        try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
 
-    protected Data toData(Object o){
-        return getContext().getSerializationService().toData(o);
-    }
-
-    protected Object toObject(Data data){
-        return getContext().getSerializationService().toObject(data);
-    }
-
-    protected void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
+        return super.invoke(req, getPartitionKey());
     }
 
     private Collection<E> getAll(){

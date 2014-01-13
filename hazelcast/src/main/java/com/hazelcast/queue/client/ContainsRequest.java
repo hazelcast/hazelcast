@@ -53,8 +53,8 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         return QueuePortableHook.CONTAINS;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeInt("s",dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
         for (Data data: dataList){
@@ -62,8 +62,8 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         }
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         int size = reader.readInt("s");
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);

@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.nio.ObjectDataInput;
@@ -48,7 +47,6 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
     @Override
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
 
         EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
@@ -61,7 +59,7 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
                     ReplicatedMapPortableEntryEvent portableEntryEvent =
                             new ReplicatedMapPortableEntryEvent(key, value, oldValue,
                                     event.getEventType(), event.getMember().getUuid());
-                    clientEngine.sendResponse(endpoint, portableEntryEvent);
+                    endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
 
@@ -89,20 +87,20 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
             registrationId = replicatedRecordStore.addEntryListener(listener, predicate, key);
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getMapName(), registrationId);
-        return true;
+        return registrationId;
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(key);
         out.writeObject(predicate);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
         key = in.readObject();
         predicate = in.readObject();

@@ -50,6 +50,7 @@ public class ClientSSLSocketTest {
     }
 
     @Test
+    @Ignore
     public void test() throws IOException {
         Properties props = TestKeyStoreUtil.createSslProperties();
         Config cfg = new Config();

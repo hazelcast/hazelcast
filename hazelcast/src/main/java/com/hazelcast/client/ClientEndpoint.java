@@ -22,9 +22,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionException;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -34,10 +34,12 @@ import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public final class ClientEndpoint implements Client {
 
-    private final ClientEngine clientEngine;
+    private final ClientEngineImpl clientEngine;
     private final Connection conn;
     private String uuid;
     private LoginContext loginContext = null;
@@ -46,11 +48,11 @@ public final class ClientEndpoint implements Client {
     private final SocketAddress socketAddress;
 
     private volatile boolean authenticated = false;
-    private volatile TransactionContext transactionContext;
+    private ConcurrentMap<String, TransactionContext> transactionContextMap = new ConcurrentHashMap<String, TransactionContext>();
     private List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
 
 
-    ClientEndpoint(ClientEngine clientEngine, Connection conn, String uuid) {
+    ClientEndpoint(ClientEngineImpl clientEngine, Connection conn, String uuid) {
         this.clientEngine = clientEngine;
         this.conn = conn;
         socketAddress = conn instanceof TcpIpConnection ?
@@ -120,16 +122,16 @@ public final class ClientEndpoint implements Client {
         }
     }
 
-    public TransactionContext getTransactionContext() {
-        final TransactionContext context = transactionContext;
-        if (context == null) {
-            throw new TransactionException("No transaction context!");
-        }
-        return context;
+    public TransactionContext getTransactionContext(String txnId) {
+        return transactionContextMap.get(txnId);
     }
 
     public void setTransactionContext(TransactionContext transactionContext) {
-        this.transactionContext = transactionContext;
+        transactionContextMap.put(transactionContext.getTxnId(), transactionContext);
+    }
+
+    public void removeTransactionContext(String txnId) {
+        transactionContextMap.remove(txnId);
     }
 
     public void setListenerRegistration(final String service, final String topic, final String id) {
@@ -141,7 +143,7 @@ public final class ClientEndpoint implements Client {
         });
     }
 
-    public void setDistributedObjectListener(final String id){
+    public void setDistributedObjectListener(final String id) {
         destroyActions.add(new Runnable() {
             public void run() {
                 clientEngine.getProxyService().removeProxyListener(id);
@@ -162,21 +164,36 @@ public final class ClientEndpoint implements Client {
         if (lc != null) {
             lc.logout();
         }
-        final TransactionContext context = transactionContext;
-        if (context != null) {
+        for (TransactionContext context : transactionContextMap.values()) {
             try {
                 context.rollbackTransaction();
             } catch (HazelcastInstanceNotActiveException ignored) {
             } catch (Exception e) {
                 getLogger().warning(e);
             }
-            transactionContext = null;
         }
         authenticated = false;
     }
 
     private ILogger getLogger() {
         return clientEngine.getLogger(getClass());
+    }
+
+    public void sendResponse(Object response, int callId) {
+        if (response == null) {
+            response = ClientEngineImpl.NULL;
+        } else if (response instanceof Throwable) {
+            response = ClientExceptionConverters.get(getClientType()).convert((Throwable) response);
+        } else {
+            response = clientEngine.toData(response);
+        }
+
+        clientEngine.sendResponse(this, new ClientResponse(response, callId));
+    }
+
+    public void sendEvent(Object event, int callId) {
+        final Data data = clientEngine.toData(event);
+        clientEngine.sendResponse(this, new ClientResponse(data, callId, true));
     }
 
     public String toString() {

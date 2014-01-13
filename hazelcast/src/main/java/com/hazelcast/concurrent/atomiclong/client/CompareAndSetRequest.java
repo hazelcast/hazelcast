@@ -47,13 +47,13 @@ public class CompareAndSetRequest extends AtomicLongRequest {
         return AtomicLongPortableHook.COMPARE_AND_SET;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeLong("e",expect);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         expect = reader.readLong("e");
     }
 

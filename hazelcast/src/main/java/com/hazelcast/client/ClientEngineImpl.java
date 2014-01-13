@@ -53,6 +53,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         ManagedService, MembershipAwareService, EventPublishingService<ClientEndpoint, ClientListener> {
 
     public static final String SERVICE_NAME = "hz:core:clientEngine";
+    static final Data NULL = new Data();
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -130,13 +131,8 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return nodeEngine.getOperationService().invokeOnPartitions(serviceName, operationFactory, partitions);
     }
 
-    private static final Data NULL = new Data();
-
-    public void sendResponse(ClientEndpoint endpoint, Object response) {
-        if (response instanceof Throwable) {
-            response = ClientExceptionConverters.get(endpoint.getClientType()).convert((Throwable) response);
-        }
-        final Data resultData = response != null ? serializationService.toData(response) : NULL;
+    void sendResponse(ClientEndpoint endpoint, ClientResponse response) {
+        final Data resultData = serializationService.toData(response);
         Connection conn = endpoint.getConnection();
         conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
     }
@@ -379,7 +375,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                     } else {
                         exception = new HazelcastInstanceNotActiveException();
                     }
-                    sendResponse(endpoint, exception);
+                    endpoint.sendResponse(exception, request.getCallId());
 
                     removeEndpoint(conn);
                 }
@@ -391,7 +387,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                             : e.getMessage();
                     logger.log(level, message, e);
                 }
-                sendResponse(endpoint, e);
+                endpoint.sendResponse(e, request.getCallId());
             }
         }
     }

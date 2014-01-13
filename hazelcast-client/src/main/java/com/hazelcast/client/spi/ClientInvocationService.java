@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
 
 /**
@@ -23,16 +25,16 @@ import com.hazelcast.nio.Address;
  */
 public interface ClientInvocationService {
 
-    <T> T invokeOnRandomTarget(Object request) throws Exception;
+    <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request) throws Exception;
 
-    <T> T invokeOnTarget(Object request, Address target) throws Exception;
+    <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
 
-    <T> T invokeOnKeyOwner(Object request, Object key) throws Exception;
+    <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception;
 
-    void invokeOnRandomTarget(Object request, ResponseHandler handler) throws Exception;
+    <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception;
 
-    void invokeOnTarget(Object request, Address target, ResponseHandler handler) throws Exception;
+    <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception;
 
-    void invokeOnKeyOwner(Object request, Object key, ResponseHandler handler) throws Exception;
+    <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception;
 
 }

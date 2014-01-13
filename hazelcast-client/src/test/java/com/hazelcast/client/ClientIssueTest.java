@@ -96,6 +96,7 @@ public class ClientIssueTest {
         config1.getGroupConfig().setName("foo");
         config1.getNetworkConfig().setPort(5701);
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
+        instance1.getMap("map").put("key", "value");
 
         final Config config2 = new Config();
         config2.getGroupConfig().setName("bar");
@@ -252,7 +253,7 @@ public class ClientIssueTest {
         try {
             map.get("key1");
             fail();
-        } catch (HazelcastInstanceNotActiveException ignored){
+        } catch (HazelcastException ignored){
         }
         assertFalse(instance.getLifecycleService().isRunning());
     }

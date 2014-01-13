@@ -61,9 +61,8 @@ public class CollectionContainsRequest extends CollectionRequest {
         return CollectionPortableHook.COLLECTION_CONTAINS;
     }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeInt(valueSet.size());
         for (Data value : valueSet) {
@@ -71,9 +70,8 @@ public class CollectionContainsRequest extends CollectionRequest {
         }
     }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);

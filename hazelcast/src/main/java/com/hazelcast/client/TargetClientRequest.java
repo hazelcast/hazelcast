@@ -34,7 +34,7 @@ public abstract class TargetClientRequest extends ClientRequest {
                 .setTryCount(100)
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
-                        clientEngine.sendResponse(endpoint, filter(object));
+                        endpoint.sendResponse(filter(object), getCallId());
                     }
                 });
         builder.invoke();

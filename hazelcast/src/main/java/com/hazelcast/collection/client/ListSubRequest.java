@@ -52,16 +52,14 @@ public class ListSubRequest extends CollectionRequest {
         return CollectionPortableHook.LIST_SUB;
     }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeInt("f", from);
         writer.writeInt("t", to);
     }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         from = reader.readInt("f");
         to = reader.readInt("t");
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -27,6 +26,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -60,7 +60,6 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         ClientEngineImpl clientEngine = getService();
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        clientEngine.sendResponse(endpoint, clientEngine.getThisAddress());
         boolean authenticated;
         if (credentials == null) {
             authenticated = false;
@@ -95,34 +94,21 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
                 + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
         if (authenticated) {
-            if (principal != null) {
-                final ClusterService clusterService = clientEngine.getClusterService();
-                if (reAuth) {
-                    //TODO @ali check reAuth
-
-//                    if (clusterService.getMember(principal.getOwnerUuid()) != null) {
-//                        return new AuthenticationException("Owner member is already member of this cluster, cannot re-auth!");
-//                    } else {
-                        principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
-                        final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
-                        for (MemberImpl member : members) {
-                            if (!member.localMember()) {
-                                clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid(), firstConnection), member.getAddress());
-                            }
-                        }
-//                    }
+            if (principal != null && reAuth) {
+                principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
+                final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
+                for (MemberImpl member : members) {
+                    if (!member.localMember()) {
+                        clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid(), firstConnection), member.getAddress());
+                    }
                 }
-//                else if (clusterService.getMember(principal.getOwnerUuid()) == null) {
-//                    clientEngine.removeEndpoint(connection);
-//                    return new AuthenticationException("Owner member is not member of this cluster!");
-//                }
             }
             if (principal == null) {
                 principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
             }
             endpoint.authenticated(principal, firstConnection);
             clientEngine.bind(endpoint);
-            return principal;
+            return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
         } else {
             clientEngine.removeEndpoint(connection);
             return new AuthenticationException("Invalid credentials!");
@@ -156,7 +142,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writePortable("credentials", (Portable) credentials);
         if (principal != null) {
             writer.writePortable("principal", principal);
@@ -168,7 +154,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         credentials = (Credentials) reader.readPortable("credentials");
         principal = reader.readPortable("principal");
         reAuth = reader.readBoolean("reAuth");

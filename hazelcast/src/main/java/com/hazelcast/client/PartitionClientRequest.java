@@ -33,7 +33,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
                 .setReplicaIndex(getReplicaIndex()).setTryCount(100)
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
-                        clientEngine.sendResponse(endpoint, filter(object));
+                        endpoint.sendResponse(filter(object), getCallId());
                     }
                 });
         builder.invoke();

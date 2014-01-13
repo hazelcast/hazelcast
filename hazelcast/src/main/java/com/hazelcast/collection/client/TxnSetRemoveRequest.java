@@ -38,7 +38,7 @@ public class TxnSetRemoveRequest extends TxnCollectionRequest {
 
     @Override
     public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getSet(name).remove(value);
+        return getEndpoint().getTransactionContext(txnId).getSet(name).remove(value);
     }
 
     @Override

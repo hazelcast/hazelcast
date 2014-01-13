@@ -54,6 +54,7 @@ public class CollectionPortableHook implements PortableHook {
     public static final int TXN_SET_ADD = 20;
     public static final int TXN_SET_REMOVE = 21;
     public static final int TXN_SET_SIZE = 22;
+    public static final int COLLECTION_REMOVE_LISTENER = 23;
 
     public int getFactoryId() {
         return F_ID;
@@ -61,7 +62,7 @@ public class CollectionPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_SET_SIZE+1];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[COLLECTION_REMOVE_LISTENER+1];
 
         constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
@@ -174,6 +175,11 @@ public class CollectionPortableHook implements PortableHook {
         constructors[TXN_SET_SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new TxnSetSizeRequest();
+            }
+        };
+        constructors[COLLECTION_REMOVE_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new CollectionRemoveListenerRequest();
             }
         };
 

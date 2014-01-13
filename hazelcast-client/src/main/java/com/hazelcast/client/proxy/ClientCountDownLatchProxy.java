@@ -16,11 +16,14 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.countdownlatch.client.*;
+import com.hazelcast.concurrent.countdownlatch.client.AwaitRequest;
+import com.hazelcast.concurrent.countdownlatch.client.CountDownRequest;
+import com.hazelcast.concurrent.countdownlatch.client.GetCountRequest;
+import com.hazelcast.concurrent.countdownlatch.client.SetCountRequest;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.TimeUnit;
 
@@ -61,10 +64,6 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
     protected void onDestroy() {
     }
 
-    private Data toData(Object o){
-        return getContext().getSerializationService().toData(o);
-    }
-
     private Data getKey(){
         if (key == null){
             key = toData(getName());
@@ -76,11 +75,7 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private <T> T invoke(Object req) {
-        try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected  <T> T invoke(ClientRequest req) {
+        return super.invoke(req, getKey());
     }
 }

@@ -51,15 +51,13 @@ public class ListAddAllRequest extends CollectionAddAllRequest {
         return CollectionPortableHook.LIST_ADD_ALL;
     }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeInt("i", index);
-        super.writePortable(writer);
+        super.write(writer);
     }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         index = reader.readInt("i");
-        super.readPortable(reader);
+        super.read(reader);
     }
 }

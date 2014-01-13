@@ -38,7 +38,7 @@ import java.security.Permission;
 /**
  * @author ali 5/10/13
  */
-public class AddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class AddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     String name;
     Data key;
@@ -81,13 +81,13 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
                     Data value = clientEngine.toData(event.getValue());
                     Data oldValue = clientEngine.toData(event.getOldValue());
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
-                    clientEngine.sendResponse(endpoint, portableEntryEvent);
+                    endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
         };
         String registrationId = service.addListener(name, listener, key, includeValue, false);
         endpoint.setListenerRegistration(MultiMapService.SERVICE_NAME, name, registrationId);
-        return null;
+        return registrationId;
     }
 
     public String getServiceName() {
@@ -102,14 +102,14 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
         return MultiMapPortableHook.ADD_ENTRY_LISTENER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeBoolean("i", includeValue);
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         IOUtil.writeNullableData(out, key);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         includeValue = reader.readBoolean("i");
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

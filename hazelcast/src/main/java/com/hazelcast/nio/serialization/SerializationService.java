@@ -36,7 +36,7 @@ public interface SerializationService {
 
     Data toData(Object obj, PartitioningStrategy strategy);
 
-    Object toObject(Data data);
+    <T> T toObject(Object data);
 
     void writeObject(ObjectDataOutput out, Object obj);
 

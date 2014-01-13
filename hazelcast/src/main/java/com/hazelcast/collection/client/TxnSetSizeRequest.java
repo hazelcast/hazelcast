@@ -37,7 +37,7 @@ public class TxnSetSizeRequest extends TxnCollectionRequest {
 
     @Override
     public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getSet(name).size();
+        return getEndpoint().getTransactionContext(txnId).getSet(name).size();
     }
 
     @Override

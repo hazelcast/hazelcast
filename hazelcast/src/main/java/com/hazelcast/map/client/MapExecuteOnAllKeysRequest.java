@@ -85,13 +85,13 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
         return MapPortableHook.EXECUTE_ON_ALL_KEYS;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(processor);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         processor = in.readObject();

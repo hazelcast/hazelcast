@@ -30,7 +30,7 @@ public abstract class AllPartitionsClientRequest extends ClientRequest {
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         Map<Integer, Object> map = clientEngine.invokeOnAllPartitions(getServiceName(), operationFactory);
         Object result = reduce(map);
-        clientEngine.sendResponse(endpoint, result);
+        endpoint.sendResponse(result, getCallId());
     }
 
     protected abstract OperationFactory createOperationFactory();

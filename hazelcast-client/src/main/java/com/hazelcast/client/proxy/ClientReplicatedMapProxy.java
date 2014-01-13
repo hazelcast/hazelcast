@@ -27,7 +27,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.client.*;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -116,7 +115,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public boolean removeEntryListener(String id) {
-        return stopListening(id);
+        final ClientReplicatedMapRemoveEntryListenerRequest request = new ClientReplicatedMapRemoveEntryListenerRequest(getName(), id);
+        return stopListening(request, id);
     }
 
     @Override
@@ -171,14 +171,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public Set<Entry<K, V>> entrySet() {
         return ((ReplicatedMapEntrySet) invoke(new ClientReplicatedMapEntrySetRequest(getName()))).getEntrySet();
-    }
-
-    private <T> T invoke(Object request) {
-        try {
-            return getContext().getInvocationService().invokeOnRandomTarget(request);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
     }
 
     private EventHandler<ReplicatedMapPortableEntryEvent> createHandler(final EntryListener<K, V> listener) {

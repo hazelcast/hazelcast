@@ -48,14 +48,14 @@ public class ClientReplicatedMapPutAllRequest extends AbstractReplicatedMapClien
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         entrySet.writePortable(writer);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         entrySet = new ReplicatedMapEntrySet();
         entrySet.readPortable(reader);
     }
