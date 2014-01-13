@@ -29,6 +29,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -113,34 +114,37 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeFirstRunDelay = mergeFirstRunDelay <= 0 ? 100 : mergeFirstRunDelay; // milliseconds
 
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        Executor executor = executionService.register("hz:cluster", 8, 100000);
+
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
-        nodeEngine.getExecutionService().scheduleWithFixedDelay(new SplitBrainHandler(node),
-                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
+        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new SplitBrainHandler(node)),
+                                                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
         long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
-        nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
+        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new Runnable() {
             public void run() {
                 heartBeater();
             }
-        }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
+        }), heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
 
         long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
         masterConfirmationInterval = masterConfirmationInterval <= 0 ? 1 : masterConfirmationInterval;
-        nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
+        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
-        }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
+        }), masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
 
         long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
         memberListPublishInterval = memberListPublishInterval <= 0 ? 1 : memberListPublishInterval;
-        nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
+        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }
-        }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
+        }), memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
     }
 
     public boolean isJoinInProgress() {
