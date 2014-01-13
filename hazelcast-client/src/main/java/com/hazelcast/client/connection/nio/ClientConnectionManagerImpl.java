@@ -59,19 +59,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final SocketOptions socketOptions;
     private final IOSelector inSelector;
     private final IOSelector outSelector;
+    private final boolean smartRouting;
+    private volatile Address ownerConnectionAddress = null;
+
 
     private final ConcurrentMap<Address, ClientConnection> connections = new ConcurrentHashMap<Address, ClientConnection>();
 
     private volatile boolean live = false;
 
-    public ClientConnectionManagerImpl(HazelcastClient client, Authenticator authenticator, LoadBalancer loadBalancer) {
+    public ClientConnectionManagerImpl(HazelcastClient client, Authenticator authenticator, LoadBalancer loadBalancer, boolean smartRouting) {
         this.client = client;
         this.authenticator = authenticator;
+        this.smartRouting = smartRouting;
         ClientConfig config = client.getClientConfig();
         router = new Router(loadBalancer);
         inSelector = new ClientInSelectorImpl(client.getThreadGroup());
         outSelector = new ClientOutSelectorImpl(client.getThreadGroup());
-
         //init socketInterceptor
         SocketInterceptorConfig sic = config.getSocketInterceptorConfig();
         SocketInterceptor implementation = null;
@@ -137,12 +140,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     public ClientConnection ownerConnection(Address address, Authenticator authenticator) throws IOException {
         ClientConnection clientConnection = connect(address, authenticator, true);
+        ownerConnectionAddress = clientConnection.getRemoteEndpoint();
         return clientConnection;
     }
 
     private ClientConnection getOrConnect(Address address, Authenticator authenticator) throws IOException {
         if (address == null) {
             throw new NullPointerException("Address is required!");
+        }
+        if (!smartRouting) {
+            address = ownerConnectionAddress;
         }
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
