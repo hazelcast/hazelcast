@@ -88,10 +88,8 @@ public class TrackableJobFuture<V>
         for (; ; ) {
             try {
                 Thread.sleep(100);
-            } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    throw (InterruptedException) e;
-                }
+            } catch (InterruptedException e) {
+                throw e;
             }
 
             if (isDone()) {

@@ -32,10 +32,10 @@ public class JobProcessInformationImpl
 
     private final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]> updater;
 
+    private final AtomicInteger processedRecords = new AtomicInteger();
     private final JobSupervisor supervisor;
 
     private volatile JobPartitionState[] partitionStates;
-    private AtomicInteger processedRecords = new AtomicInteger();
 
     public JobProcessInformationImpl(int partitionCount, JobSupervisor supervisor) {
         this.supervisor = supervisor;
