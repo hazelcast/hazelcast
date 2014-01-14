@@ -126,33 +126,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             if (supervisor.getConfiguration().getReducerFactory() != null) {
                 Map<KeyOut, Chunk> chunkMap = context.finish();
                 if (chunkMap.size() > 0) {
-                    Address sender = mapReduceService.getLocalAddress();
-
-                    // Wrap into LastChunkNotification object
-                    Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(supervisor, chunkMap);
-
-                    // Register remote addresses and partitionId for receiving reducer events
-                    supervisor.registerReducerEventInterests(partitionId, mapping.keySet());
-
-                    // Send LastChunk notifications
-                    for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
-                        Address receiver = entry.getKey();
-                        Map<KeyOut, Chunk> chunk = entry.getValue();
-                        mapReduceService.sendNotification(receiver, new LastChunkNotification(
-                                receiver, name, jobId, sender, partitionId, chunk));
-                    }
-
-                    // Send LastChunk notification to notify reducers that received at least one chunk
-                    Set<Address> addresses = mapping.keySet();
-                    Collection<Address> reducerInterests = supervisor.getReducerEventInterests(partitionId);
-                    if (reducerInterests != null) {
-                        for (Address address : reducerInterests) {
-                            if (!addresses.contains(address)) {
-                                mapReduceService.sendNotification(address, new LastChunkNotification(
-                                        address, name, jobId, sender, partitionId, Collections.emptyMap()));
-                            }
-                        }
-                    }
+                    sendLastChunkToAssignedReducers(partitionId, chunkMap);
 
                 } else {
                     // If nothing to reduce we just set partition to processed
@@ -183,6 +157,36 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
                     mapReduceService.sendNotification(entry.getKey(),
                             new IntermediateChunkNotification(entry.getKey(), name, jobId, entry.getValue(), partitionId));
+                }
+            }
+        }
+    }
+
+    private void sendLastChunkToAssignedReducers(int partitionId, Map<KeyOut, Chunk> chunkMap) {
+        Address sender = mapReduceService.getLocalAddress();
+
+        // Wrap into LastChunkNotification object
+        Map<Address, Map<KeyOut, Chunk>> mapping = mapResultToMember(supervisor, chunkMap);
+
+        // Register remote addresses and partitionId for receiving reducer events
+        supervisor.registerReducerEventInterests(partitionId, mapping.keySet());
+
+        // Send LastChunk notifications
+        for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
+            Address receiver = entry.getKey();
+            Map<KeyOut, Chunk> chunk = entry.getValue();
+            mapReduceService.sendNotification(receiver, new LastChunkNotification(
+                    receiver, name, jobId, sender, partitionId, chunk));
+        }
+
+        // Send LastChunk notification to notify reducers that received at least one chunk
+        Set<Address> addresses = mapping.keySet();
+        Collection<Address> reducerInterests = supervisor.getReducerEventInterests(partitionId);
+        if (reducerInterests != null) {
+            for (Address address : reducerInterests) {
+                if (!addresses.contains(address)) {
+                    mapReduceService.sendNotification(address, new LastChunkNotification(
+                            address, name, jobId, sender, partitionId, Collections.emptyMap()));
                 }
             }
         }
