@@ -43,7 +43,7 @@ public interface InternalPartition {
     /**
      * Returns the Address of the owner of this partition.
      *
-     * If no owner has been set yet, null is returned.
+     * If no owner has been set yet, null is returned. So be careful with assuming that a non null value is returned.
      *
      * The value could be stale when returned.
      *
