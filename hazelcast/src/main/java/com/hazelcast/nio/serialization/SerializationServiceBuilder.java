@@ -161,7 +161,7 @@ public final class SerializationServiceBuilder {
     }
 
     public SerializationService build() {
-        if (version < 0) {
+            if (version < 0) {
             version = 0;
         }
         if (config != null) {

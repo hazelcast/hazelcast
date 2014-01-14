@@ -110,7 +110,7 @@ public class ServiceLoader {
                         if (name.length() == 0) {
                             continue;
                         }
-                        names.add(new ServiceDefinition(name, classLoader));
+                        names.add(new ServiceDefinition(name, cl));
                     }
                 } finally {
                     IOUtil.closeResource(r);
