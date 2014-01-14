@@ -212,7 +212,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-    private class ClusterListenerThread extends Thread implements EventHandler<ClientMembershipEvent> {
+    private class ClusterListenerThread extends Thread  {
 
         private ClusterListenerThread(ThreadGroup group, String name) {
             super(group, name);
@@ -319,20 +319,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
                         Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
             }
-        }
-
-        public void handle(ClientMembershipEvent event) {
-            final MemberImpl member = (MemberImpl) event.getMember();
-            if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                members.add(member);
-            } else {
-                members.remove(member);
-//                    getConnectionManager().removeConnectionPool(member.getAddress());// TODO
-            }
-            updateMembersRef();
-            logger.info(membersString());
-            fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                    Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
         }
 
         private void fireMembershipEvent(final MembershipEvent event) {
