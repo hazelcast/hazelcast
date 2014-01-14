@@ -20,7 +20,6 @@ import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.impl.task.MappingPhase;
 
 import java.util.Collection;
 import java.util.Map;

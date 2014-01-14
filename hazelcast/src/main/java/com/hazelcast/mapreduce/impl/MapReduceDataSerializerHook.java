@@ -16,9 +16,6 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.mapreduce.impl.client.ClientCancellationRequest;
-import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
-import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
@@ -36,7 +33,6 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
-import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
@@ -64,18 +60,14 @@ public class MapReduceDataSerializerHook
     public static final int FIRE_NOTIFICATION_OPERATION = 12;
     public static final int REQUEST_MEMBERID_ASSIGNMENT = 13;
     public static final int PROCESS_STATS_UPDATE_OPERATION = 14;
-    public static final int TRANSFERABLE_PROCESS_INFORMATION = 15;
-    public static final int NOTIFY_REMOTE_EXCEPTION_OPERATION = 16;
-    public static final int CANCEL_JOB_SUPERVISOR_OPERATION = 17;
-    public static final int KEY_VALUE_SOURCE_LIST = 18;
-    public static final int KEY_VALUE_SOURCE_SET = 19;
-    public static final int KEYS_ASSIGNMENT_RESULT = 20;
-    public static final int KEYS_ASSIGNMENT_OPERATION = 21;
-    public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 22;
-    public static final int CLIENT_CANCELLATION_REQUEST = 23;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 24;
+    public static final int NOTIFY_REMOTE_EXCEPTION_OPERATION = 15;
+    public static final int CANCEL_JOB_SUPERVISOR_OPERATION = 16;
+    public static final int KEY_VALUE_SOURCE_LIST = 17;
+    public static final int KEY_VALUE_SOURCE_SET = 18;
+    public static final int KEYS_ASSIGNMENT_RESULT = 19;
+    public static final int KEYS_ASSIGNMENT_OPERATION = 20;
 
-    public static final int LEN = CLIENT_MAP_REDUCE_REQUEST + 1;
+    public static final int LEN = KEYS_ASSIGNMENT_OPERATION + 1;
 
     @Override
     public int getFactoryId() {
@@ -175,12 +167,6 @@ public class MapReduceDataSerializerHook
                 return new ProcessStatsUpdateOperation();
             }
         };
-        constructors[TRANSFERABLE_PROCESS_INFORMATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TransferableJobProcessInformation();
-            }
-        };
         constructors[NOTIFY_REMOTE_EXCEPTION_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -215,24 +201,6 @@ public class MapReduceDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new KeysAssignmentOperation();
-            }
-        };
-        constructors[CLIENT_JOB_PROCESS_INFO_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClientJobProcessInformationRequest();
-            }
-        };
-        constructors[CLIENT_CANCELLATION_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClientCancellationRequest();
-            }
-        };
-        constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClientMapReduceRequest();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

@@ -17,21 +17,19 @@
 package com.hazelcast.mapreduce.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InvocationClientRequest;
-import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
+import com.hazelcast.mapreduce.impl.MapReducePortableHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
 public class ClientCancellationRequest
-        extends InvocationClientRequest
-        implements IdentifiedDataSerializable {
+        extends InvocationClientRequest {
 
     private String name;
     private String jobId;
@@ -44,7 +42,6 @@ public class ClientCancellationRequest
         this.jobId = jobId;
     }
 
-
     @Override
     public String getServiceName() {
         return MapReduceService.SERVICE_NAME;
@@ -53,38 +50,41 @@ public class ClientCancellationRequest
     @Override
     protected void invoke() {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine engine = getClientEngine();
 
         MapReduceService mapReduceService = getService();
+        Address jobOwner = mapReduceService.getLocalAddress();
+        mapReduceService.registerJobSupervisorCancellation(name, jobId, jobOwner);
+
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
-
-        if (supervisor == null || !supervisor.isOwnerNode()) {
-            engine.sendResponse(endpoint, Boolean.FALSE);
+        if (supervisor != null && supervisor.isOwnerNode()) {
+            Exception exception = new CancellationException("Operation was cancelled by the user");
+            supervisor.cancelAndNotify(exception);
         }
-        Exception exception = new CancellationException("Operation was cancelled by the user");
-        engine.sendResponse(endpoint, supervisor.cancelAndNotify(exception));
+        endpoint.sendResponse(Boolean.TRUE, getCallId());
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(jobId);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
+        writer.writeUTF("name", name);
+        writer.writeUTF("jobId", jobId);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        jobId = in.readUTF();
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
+        name = reader.readUTF("name");
+        jobId = reader.readUTF("jobId");
     }
 
     @Override
     public int getFactoryId() {
-        return MapReduceDataSerializerHook.F_ID;
+        return MapReducePortableHook.F_ID;
     }
 
     @Override
-    public int getId() {
-        return MapReduceDataSerializerHook.CLIENT_CANCELLATION_REQUEST;
+    public int getClassId() {
+        return MapReducePortableHook.CLIENT_CANCELLATION_REQUEST;
     }
 
 }

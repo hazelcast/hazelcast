@@ -17,11 +17,13 @@
 package com.hazelcast.mapreduce.impl.operation;
 
 import com.hazelcast.mapreduce.KeyPredicate;
+import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.KeyValueSourceMappingPhase;
 import com.hazelcast.mapreduce.impl.task.MappingPhase;
+import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -30,6 +32,7 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.CancellationException;
 
 public class StartProcessingJobOperation<K>
         extends AbstractOperation
@@ -65,6 +68,19 @@ public class StartProcessingJobOperation<K>
     public void run() throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
+        if (supervisor == null) {
+            if (mapReduceService.unregisterJobSupervisorCancellation(name, jobId)) {
+                // Supervisor was cancelled prior to creation
+                AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.getJobTracker(name);
+                TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+                if (future != null) {
+                    Exception exception = new CancellationException("Operation was cancelled by the user");
+                    future.setResult(exception);
+                }
+            }
+            return;
+        }
+
         MappingPhase mappingPhase = new KeyValueSourceMappingPhase(keys, predicate);
         supervisor.startTasks(mappingPhase);
     }

@@ -17,22 +17,19 @@
 package com.hazelcast.mapreduce.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.mapreduce.JobProcessInformation;
-import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
+import com.hazelcast.mapreduce.impl.MapReducePortableHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
 public class ClientJobProcessInformationRequest
-        extends InvocationClientRequest
-        implements IdentifiedDataSerializable {
+        extends InvocationClientRequest {
 
     private String name;
     private String jobId;
@@ -53,7 +50,6 @@ public class ClientJobProcessInformationRequest
     @Override
     protected void invoke() {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine engine = getClientEngine();
 
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
@@ -64,29 +60,31 @@ public class ClientJobProcessInformationRequest
             processInformation = new TransferableJobProcessInformation(
                     current.getPartitionStates(), current.getProcessedRecords());
         }
-        engine.sendResponse(endpoint, processInformation);
+        endpoint.sendResponse(processInformation, getCallId());
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(jobId);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
+        writer.writeUTF("name", name);
+        writer.writeUTF("jobId", jobId);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        jobId = in.readUTF();
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
+        name = reader.readUTF("name");
+        jobId = reader.readUTF("jobId");
     }
 
     @Override
     public int getFactoryId() {
-        return MapReduceDataSerializerHook.F_ID;
+        return MapReducePortableHook.F_ID;
     }
 
     @Override
-    public int getId() {
-        return MapReduceDataSerializerHook.CLIENT_JOB_PROCESS_INFO_REQUEST;
+    public int getClassId() {
+        return MapReducePortableHook.CLIENT_JOB_PROCESS_INFO_REQUEST;
     }
 
 }

@@ -18,16 +18,18 @@ package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.mapreduce.Job;
-import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.KeyValueSource;
-import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.KeyValueJob;
-import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 class NodeJobTracker extends AbstractJobTracker {
+
+    private final CopyOnWriteArrayList<String> cancelledJobs = new CopyOnWriteArrayList<String>();
 
     NodeJobTracker(String name, JobTrackerConfig jobTrackerConfig,
                    NodeEngine nodeEngine, MapReduceService mapReduceService) {
@@ -67,5 +69,13 @@ class NodeJobTracker extends AbstractJobTracker {
         // TODO Implementation of process missing
         throw new UnsupportedOperationException("mapreduce process system not yet implemented");
     }*/
+
+    public boolean registerJobSupervisorCancellation(String jobId) {
+        return cancelledJobs.addIfAbsent(jobId);
+    }
+
+    public boolean unregisterJobSupervisorCancellation(String jobId) {
+        return cancelledJobs.remove(jobId);
+    }
 
 }

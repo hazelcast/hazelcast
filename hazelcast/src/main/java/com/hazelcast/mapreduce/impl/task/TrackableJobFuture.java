@@ -18,10 +18,12 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.JobCompletableFuture;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.TrackableJob;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -36,7 +38,7 @@ import java.util.concurrent.TimeoutException;
 
 public class TrackableJobFuture<V>
         extends AbstractCompletableFuture<V>
-        implements TrackableJob<V> {
+        implements TrackableJob<V>, JobCompletableFuture<V> {
 
     private final String name;
     private final String jobId;
@@ -62,11 +64,18 @@ public class TrackableJobFuture<V>
         if (collator != null) {
             result = collator.collate(((Map) result).entrySet());
         }
+        if (result instanceof Throwable && !(result instanceof CancellationException)) {
+            result = new ExecutionException((Throwable) result);
+        }
         super.setResult(result);
     }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
+        Address jobOwner = mapReduceService.getLocalAddress();
+        if (!mapReduceService.registerJobSupervisorCancellation(name, jobId, jobOwner)) {
+            return false;
+        }
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
         if (supervisor == null || !supervisor.isOwnerNode()) {
             return false;

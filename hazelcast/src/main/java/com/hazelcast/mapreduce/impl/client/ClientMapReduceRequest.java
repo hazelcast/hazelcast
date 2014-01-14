@@ -17,39 +17,40 @@
 package com.hazelcast.mapreduce.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
-import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
+import com.hazelcast.mapreduce.impl.MapReducePortableHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
 import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
 public class ClientMapReduceRequest<KeyIn, ValueIn>
-        extends InvocationClientRequest
-        implements IdentifiedDataSerializable {
+        extends InvocationClientRequest {
 
     protected String name;
 
@@ -69,12 +70,15 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
 
     protected int chunkSize;
 
+    protected TopologyChangedStrategy topologyChangedStrategy;
+
     public ClientMapReduceRequest() {
     }
 
     public ClientMapReduceRequest(String name, String jobId, Collection keys, KeyPredicate predicate, Mapper mapper,
                                   CombinerFactory combinerFactory, ReducerFactory reducerFactory,
-                                  KeyValueSource keyValueSource, int chunkSize) {
+                                  KeyValueSource keyValueSource, int chunkSize,
+                                  TopologyChangedStrategy topologyChangedStrategy) {
         this.name = name;
         this.jobId = jobId;
         this.keys = keys;
@@ -84,13 +88,13 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
         this.reducerFactory = reducerFactory;
         this.keyValueSource = keyValueSource;
         this.chunkSize = chunkSize;
+        this.topologyChangedStrategy = topologyChangedStrategy;
     }
 
     @Override
     protected void invoke() {
         try {
             final ClientEndpoint endpoint = getEndpoint();
-            final ClientEngine engine = getClientEngine();
 
             MapReduceService mapReduceService = getService();
             NodeEngine nodeEngine = mapReduceService.getNodeEngine();
@@ -101,12 +105,15 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
                 future.andThen(new ExecutionCallback<Object>() {
                     @Override
                     public void onResponse(Object response) {
-                        engine.sendResponse(endpoint, response);
+                        endpoint.sendResponse(response, getCallId());
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        engine.sendResponse(endpoint, t);
+                        if (t instanceof ExecutionException) {
+                            t = t.getCause();
+                        }
+                        endpoint.sendResponse(t, getCallId());
                     }
                 });
             }
@@ -125,12 +132,16 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
         if (chunkSize == -1) {
             chunkSize = config.getChunkSize();
         }
+        if (topologyChangedStrategy == null) {
+            topologyChangedStrategy = config.getTopologyChangedStrategy();
+        }
 
         ClusterService cs = nodeEngine.getClusterService();
         Collection<MemberImpl> members = cs.getMemberList();
         for (MemberImpl member : members) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize,
-                    keyValueSource, mapper, combinerFactory, reducerFactory, communicateStats);
+                    keyValueSource, mapper, combinerFactory, reducerFactory,
+                    communicateStats, topologyChangedStrategy);
 
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
@@ -143,6 +154,19 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
         return jobFuture;
     }
 
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        writeData(out);
+    }
+
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
+        ObjectDataInput in = reader.getRawDataInput();
+        readData(in);
+    }
 
     @Override
     public String getServiceName() {
@@ -150,7 +174,16 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public int getFactoryId() {
+        return MapReducePortableHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return MapReducePortableHook.CLIENT_MAP_REDUCE_REQUEST;
+    }
+
+    private void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(jobId);
         out.writeObject(predicate);
@@ -165,10 +198,13 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
                 out.writeObject(key);
             }
         }
+        out.writeBoolean(topologyChangedStrategy != null);
+        if (topologyChangedStrategy != null) {
+            out.writeInt(topologyChangedStrategy.ordinal());
+        }
     }
 
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    private void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         jobId = in.readUTF();
         predicate = in.readObject();
@@ -182,16 +218,18 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
         for (int i = 0; i < size; i++) {
             keys.add(in.readObject());
         }
+        if (in.readBoolean()) {
+            topologyChangedStrategy = topologyChangedStrategyByOrdinal(in.readInt());
+        }
     }
 
-    @Override
-    public int getFactoryId() {
-        return MapReduceDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return MapReduceDataSerializerHook.CLIENT_MAP_REDUCE_REQUEST;
+    private TopologyChangedStrategy topologyChangedStrategyByOrdinal(int ordinal) {
+        for (TopologyChangedStrategy temp : TopologyChangedStrategy.values()) {
+            if (ordinal == temp.ordinal()) {
+                return temp;
+            }
+        }
+        throw new IllegalArgumentException("TopologyChangedStrategy with ordinal " + ordinal + " is unknown");
     }
 
 }

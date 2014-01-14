@@ -16,10 +16,10 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobCompletableFuture;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
@@ -28,7 +28,7 @@ import com.hazelcast.mapreduce.MappingJob;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.ReducingJob;
 import com.hazelcast.mapreduce.ReducingSubmittableJob;
-import com.hazelcast.util.UuidUtil;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.ArrayList;
@@ -45,8 +45,6 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
     protected final JobTracker jobTracker;
 
-    protected final String jobId;
-
     protected final KeyValueSource<KeyIn, ValueIn> keyValueSource;
 
     protected Mapper<KeyIn, ValueIn, ?, ?> mapper;
@@ -61,13 +59,10 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
     protected int chunkSize = -1;
 
-    public AbstractJob(String name, JobTracker jobTracker, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
-        this(name, UuidUtil.buildRandomUuidString(), jobTracker, keyValueSource);
-    }
+    protected TopologyChangedStrategy topologyChangedStrategy;
 
-    public AbstractJob(String name, String jobId, JobTracker jobTracker, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
+    public AbstractJob(String name, JobTracker jobTracker, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         this.name = name;
-        this.jobId = jobId;
         this.jobTracker = jobTracker;
         this.keyValueSource = keyValueSource;
     }
@@ -79,11 +74,6 @@ public abstract class AbstractJob<KeyIn, ValueIn>
             throw new IllegalStateException("mapper already set");
         this.mapper = mapper;
         return new MappingJobImpl<KeyIn, KeyOut, ValueOut>();
-    }
-
-    @Override
-    public String getJobId() {
-        return jobId;
     }
 
     @Override
@@ -110,12 +100,18 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         return this;
     }
 
-    protected <T> ICompletableFuture<T> submit(Collator collator) {
+    @Override
+    public Job<KeyIn, ValueIn> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+        this.topologyChangedStrategy = topologyChangedStrategy;
+        return this;
+    }
+
+    protected <T> JobCompletableFuture<T> submit(Collator collator) {
         prepareKeyPredicate();
         return invoke(collator);
     }
 
-    protected abstract <T> ICompletableFuture<T> invoke(Collator collator);
+    protected abstract <T> JobCompletableFuture<T> invoke(Collator collator);
 
     protected void prepareKeyPredicate() {
         if (predicate == null) {
@@ -155,17 +151,12 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         this.predicate = predicate;
     }
 
-    private <T> ICompletableFuture<T> submit() {
+    private <T> JobCompletableFuture<T> submit() {
         return submit(null);
     }
 
     protected class MappingJobImpl<EntryKey, Key, Value>
             implements MappingJob<EntryKey, Key, Value> {
-
-        @Override
-        public String getJobId() {
-            return jobId;
-        }
 
         @Override
         public MappingJob<EntryKey, Key, Value> onKeys(Iterable<EntryKey> keys) {
@@ -192,6 +183,12 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
+        public MappingJob<EntryKey, Key, Value> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+            AbstractJob.this.topologyChangedStrategy = topologyChangedStrategy;
+            return this;
+        }
+
+        @Override
         public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(
                 CombinerFactory<Key, Value, ValueOut> combinerFactory) {
             ValidationUtil.isNotNull(combinerFactory, "combinerFactory");
@@ -212,12 +209,12 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public ICompletableFuture<Map<Key, List<Value>>> submit() {
+        public JobCompletableFuture<Map<Key, List<Value>>> submit() {
             return AbstractJob.this.submit();
         }
 
         @Override
-        public <ValueOut> ICompletableFuture<ValueOut> submit(
+        public <ValueOut> JobCompletableFuture<ValueOut> submit(
                 Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
@@ -225,11 +222,6 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
     protected class ReducingJobImpl<EntryKey, Key, Value>
             implements ReducingJob<EntryKey, Key, Value> {
-
-        @Override
-        public String getJobId() {
-            return jobId;
-        }
 
         @Override
         public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
@@ -266,12 +258,18 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public ICompletableFuture<Map<Key, List<Value>>> submit() {
+        public ReducingJob<EntryKey, Key, Value> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+            AbstractJob.this.topologyChangedStrategy = topologyChangedStrategy;
+            return this;
+        }
+
+        @Override
+        public JobCompletableFuture<Map<Key, List<Value>>> submit() {
             return AbstractJob.this.submit();
         }
 
         @Override
-        public <ValueOut> ICompletableFuture<ValueOut> submit(
+        public <ValueOut> JobCompletableFuture<ValueOut> submit(
                 Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
@@ -279,11 +277,6 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
     protected class ReducingSubmittableJobImpl<EntryKey, Key, Value>
             implements ReducingSubmittableJob<EntryKey, Key, Value> {
-
-        @Override
-        public String getJobId() {
-            return jobId;
-        }
 
         @Override
         public ReducingSubmittableJob<EntryKey, Key, Value> onKeys(Iterable<EntryKey> keys) {
@@ -310,12 +303,18 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public ICompletableFuture<Map<Key, Value>> submit() {
+        public ReducingSubmittableJob<EntryKey, Key, Value> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+            AbstractJob.this.topologyChangedStrategy = topologyChangedStrategy;
+            return this;
+        }
+
+        @Override
+        public JobCompletableFuture<Map<Key, Value>> submit() {
             return AbstractJob.this.submit();
         }
 
         @Override
-        public <ValueOut> ICompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, Value>, ValueOut> collator) {
+        public <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, Value>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }

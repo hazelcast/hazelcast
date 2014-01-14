@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
+import com.hazelcast.mapreduce.impl.operation.CancelJobSupervisorOperation;
 import com.hazelcast.mapreduce.impl.operation.FireNotificationOperation;
 import com.hazelcast.mapreduce.impl.operation.ProcessingOperation;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
@@ -53,16 +54,16 @@ public class MapReduceService
 
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
 
-    private final ConstructorFunction<String, JobTracker> trackerConstructor = new ConstructorFunction<String, JobTracker>() {
+    private final ConstructorFunction<String, NodeJobTracker> trackerConstructor = new ConstructorFunction<String, NodeJobTracker>() {
         @Override
-        public JobTracker createNew(String arg) {
+        public NodeJobTracker createNew(String arg) {
             JobTrackerConfig jobTrackerConfig = config.findJobTrackerConfig(arg);
             return new NodeJobTracker(arg, jobTrackerConfig.getAsReadOnly(),
                     nodeEngine, MapReduceService.this);
         }
     };
 
-    private final ConcurrentMap<String, JobTracker> jobTrackers = new ConcurrentHashMap<String, JobTracker>();
+    private final ConcurrentMap<String, NodeJobTracker> jobTrackers = new ConcurrentHashMap<String, NodeJobTracker>();
     private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
 
     private final PartitionServiceImpl partitionService;
@@ -89,9 +90,43 @@ public class MapReduceService
         return jobSupervisors.get(key);
     }
 
+    public boolean registerJobSupervisorCancellation(String name, String jobId, Address jobOwner) {
+        NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(name);
+        if (jobTracker != null) {
+            if (jobTracker.registerJobSupervisorCancellation(jobId) && getLocalAddress().equals(jobOwner)) {
+                for (MemberImpl member : clusterService.getMemberList()) {
+                    if (!member.getAddress().equals(jobOwner)) {
+                        try {
+                            ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId, jobOwner);
+                            processRequest(member.getAddress(), operation, name);
+                        } catch (Exception ignore) {
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean unregisterJobSupervisorCancellation(String name, String jobId) {
+        NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(name);
+        if (jobTracker != null) {
+            return jobTracker.unregisterJobSupervisorCancellation(jobId);
+        }
+        return false;
+    }
+
     public JobSupervisor createJobSupervisor(JobTaskConfiguration configuration) {
+        // Job might already be cancelled (due to async processing)
+        NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(configuration.getName());
+        if (jobTracker != null) {
+            if (jobTracker.unregisterJobSupervisorCancellation(configuration.getJobId())) {
+                return null;
+            }
+        }
+
         JobSupervisorKey key = new JobSupervisorKey(configuration.getName(), configuration.getJobId());
-        AbstractJobTracker jobTracker = (AbstractJobTracker) createDistributedObject(configuration.getName());
         boolean ownerNode = nodeEngine.getThisAddress().equals(configuration.getJobOwner());
         JobSupervisor jobSupervisor = new JobSupervisor(configuration, jobTracker, ownerNode, this);
         JobSupervisor oldSupervisor = jobSupervisors.putIfAbsent(key, jobSupervisor);
@@ -99,6 +134,13 @@ public class MapReduceService
     }
 
     public boolean destroyJobSupervisor(JobSupervisor supervisor) {
+        String name = supervisor.getConfiguration().getName();
+        String jobId = supervisor.getConfiguration().getJobId();
+        NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(name);
+        if (jobTracker != null) {
+            jobTracker.unregisterJobSupervisorCancellation(jobId);
+        }
+
         JobSupervisorKey key = new JobSupervisorKey(supervisor);
         return jobSupervisors.remove(key) == supervisor;
     }

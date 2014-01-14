@@ -16,7 +16,6 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
-import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;

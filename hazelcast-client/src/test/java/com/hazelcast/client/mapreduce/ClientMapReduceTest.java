@@ -30,9 +30,7 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
@@ -43,9 +41,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -61,7 +61,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
     }
 
 
-    @Test(timeout = 30000, expected = NullPointerException.class)
+    @Test(timeout = 60000, expected = ExecutionException.class)
     public void testExceptionDistribution()
             throws Exception {
         Config config = buildConfig();
@@ -76,7 +76,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
             m1.put(i, i);
         }
 
-        JobTracker tracker = h1.getJobTracker("default");
+        JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new ExceptionThrowingMapper())
@@ -86,11 +86,12 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
             Map<String, List<Integer>> result = future.get();
         } catch (Exception e) {
             e.printStackTrace();
+            assertTrue(e.getCause() instanceof NullPointerException);
             throw e;
         }
     }
 
-    @Test(timeout = 30000, expected = CancellationException.class)
+    @Test(timeout = 60000, expected = CancellationException.class)
     public void testInProcessCancellation()
             throws Exception {
         Config config = buildConfig();
@@ -105,7 +106,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
             m1.put(i, i);
         }
 
-        JobTracker tracker = h1.getJobTracker("default");
+        JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Map<String, List<Integer>>> future =
                 job.mapper(new TimeConsumingMapper())
@@ -121,7 +122,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapper()
             throws Exception {
         Config config = buildConfig();
@@ -150,7 +151,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperReducer()
             throws Exception {
         Config config = buildConfig();
@@ -186,7 +187,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperCollator()
             throws Exception {
         Config config = buildConfig();
@@ -216,7 +217,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testKeyedMapperCollator()
             throws Exception {
         Config config = buildConfig();
@@ -243,7 +244,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         assertEquals(50, result);
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testKeyPredicateMapperCollator()
             throws Exception {
         Config config = buildConfig();
@@ -270,7 +271,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         assertEquals(50, result);
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperReducerCollator()
             throws Exception {
         Config config = buildConfig();
@@ -305,7 +306,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapper()
             throws Exception {
         Config config = buildConfig();
@@ -350,7 +351,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testKeyedAsyncMapper()
             throws Exception {
         Config config = buildConfig();
@@ -397,7 +398,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapperReducer()
             throws Exception {
         Config config = buildConfig();
@@ -450,7 +451,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapperCollator()
             throws Exception {
         Config config = buildConfig();
@@ -501,7 +502,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapperReducerCollator()
             throws Exception {
         Config config = buildConfig();

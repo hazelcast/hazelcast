@@ -20,12 +20,13 @@ import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobCompletableFuture;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
@@ -37,9 +38,11 @@ import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -101,22 +104,42 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        protected <T> ICompletableFuture<T> invoke(final Collator collator) {
+        protected <T> JobCompletableFuture<T> invoke(final Collator collator) {
             try {
+                final String jobId = UuidUtil.buildRandomUuidString();
+
                 ClientContext context = getContext();
                 ClientInvocationService cis = context.getInvocationService();
                 ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
-                        predicate, mapper, combinerFactory, reducerFactory, keyValueSource, chunkSize);
+                        predicate, mapper, combinerFactory, reducerFactory, keyValueSource,
+                        chunkSize, topologyChangedStrategy);
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
-                ClientCallFuture future = (ClientCallFuture) cis.invokeOnRandomTarget(request, new EventHandler() {
+                ClientCallFuture future = (ClientCallFuture) cis.invokeOnRandomTarget(request, null);
+                future.andThen(new ExecutionCallback() {
                     @Override
-                    public void handle(Object event) {
-                        if (collator != null) {
-                            event = collator.collate(((Map) event).entrySet());
+                    public void onResponse(Object response) {
+                        try {
+                            if (collator != null) {
+                                response = collator.collate(((Map) response).entrySet());
+                            }
+                        } finally {
+                            completableFuture.setResult(response);
+                            trackableJobs.remove(jobId);
                         }
-                        completableFuture.setResult(event);
-                        trackableJobs.remove(getJobId());
+                    }
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        try {
+                            if (t instanceof ExecutionException
+                                    && t.getCause() instanceof CancellationException) {
+                                t = t.getCause();
+                            }
+                            completableFuture.setResult(t);
+                        } finally {
+                            trackableJobs.remove(jobId);
+                        }
                     }
                 });
 
@@ -131,7 +154,8 @@ public class ClientMapReduceProxy
     }
 
     private class ClientCompletableFuture<V>
-            extends AbstractCompletableFuture<V> {
+            extends AbstractCompletableFuture<V>
+            implements JobCompletableFuture<V> {
 
         private final String jobId;
 
@@ -140,6 +164,11 @@ public class ClientMapReduceProxy
         protected ClientCompletableFuture(String jobId) {
             super(null, Logger.getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
+        }
+
+        @Override
+        public String getJobId() {
+            return jobId;
         }
 
         @Override
@@ -163,10 +192,8 @@ public class ClientMapReduceProxy
             for (; ; ) {
                 try {
                     Thread.sleep(100);
-                } catch (Exception e) {
-                    if (e instanceof InterruptedException) {
-                        throw (InterruptedException) e;
-                    }
+                } catch (InterruptedException e) {
+                    throw e;
                 }
 
                 if (isDone()) {

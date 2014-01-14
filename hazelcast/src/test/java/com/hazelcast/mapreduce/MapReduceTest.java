@@ -31,9 +31,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -43,7 +45,7 @@ public class MapReduceTest
 
     private static final String MAP_NAME = "default";
 
-    @Test(timeout = 30000, expected = NullPointerException.class)
+    @Test(timeout = 30000, expected = ExecutionException.class)
     public void testExceptionDistribution()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -74,6 +76,7 @@ public class MapReduceTest
             Map<String, List<Integer>> result = future.get();
         } catch (Exception e) {
             e.printStackTrace();
+            assertTrue(e.getCause() instanceof NullPointerException);
             throw e;
         }
     }
@@ -278,13 +281,13 @@ public class MapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Map<String, Integer>> future =
+        JobCompletableFuture<Map<String, Integer>> future =
                 job.chunkSize(10)
                         .mapper(new GroupingTestMapper())
                         .reducer(new TestReducerFactory())
                         .submit();
 
-        final TrackableJob trackableJob = tracker.getTrackableJob(job.getJobId());
+        final TrackableJob trackableJob = tracker.getTrackableJob(future.getJobId());
         final JobProcessInformation processInformation = trackableJob.getJobProcessInformation();
         Map<String, Integer> result = future.get();
 

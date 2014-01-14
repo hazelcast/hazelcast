@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.ICompletableFuture;
-
 import java.util.List;
 import java.util.Map;
 
@@ -33,14 +31,6 @@ import java.util.Map;
  * @see com.hazelcast.mapreduce.Job
  */
 public interface MappingJob<EntryKey, KeyIn, ValueIn> {
-
-    /**
-     * Returns the unique identifier for this mapreduce job. This jobId is used to identify the same
-     * job on all cluster nodes and is unique in the cluster.
-     *
-     * @return jobId for this job
-     */
-    String getJobId();
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
@@ -83,6 +73,15 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
     MappingJob<EntryKey, KeyIn, ValueIn> chunkSize(int chunkSize);
 
     /**
+     * Defines the strategy to handle topology changes while executing the map reduce job. For further
+     * information see {@link com.hazelcast.mapreduce.TopologyChangedStrategy}.
+     *
+     * @param topologyChangedStrategy strategy to use
+     * @return instance of this Job with generics changed on usage
+     */
+    MappingJob<EntryKey, KeyIn, ValueIn> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy);
+
+    /**
      * Defines the {@link CombinerFactory} for this task. This method is not idempotent and is callable only one time. Further
      * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
      *
@@ -103,17 +102,17 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes
      *
-     * @return ICompletableFuture to wait for mapped and possibly reduced result
+     * @return JobCompletableFuture to wait for mapped and possibly reduced result
      */
-    ICompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
+    JobCompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
 
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes and executes the
      * collator before returning the final result.
      *
      * @param collator collator to use after map and reduce
-     * @return ICompletableFuture to wait for mapped and possibly reduced result
+     * @return JobCompletableFuture to wait for mapped and possibly reduced result
      */
-    <ValueOut> ICompletableFuture<ValueOut> submit(Collator<Map.Entry<KeyIn, List<ValueIn>>, ValueOut> collator);
+    <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<KeyIn, List<ValueIn>>, ValueOut> collator);
 
 }

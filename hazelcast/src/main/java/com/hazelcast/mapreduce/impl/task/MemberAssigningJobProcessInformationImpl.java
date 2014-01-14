@@ -22,8 +22,8 @@ import com.hazelcast.nio.Address;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.mapreduce.impl.MapReduceUtil.*;
-import static com.hazelcast.mapreduce.JobPartitionState.State.*;
+import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
 
 public class MemberAssigningJobProcessInformationImpl extends JobProcessInformationImpl {
 

@@ -20,10 +20,13 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
+import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
+import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,6 +34,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
 
 public class KeyValueJobOperation<K, V>
         extends AbstractOperation
@@ -44,6 +48,7 @@ public class KeyValueJobOperation<K, V>
     private CombinerFactory combinerFactory;
     private ReducerFactory reducerFactory;
     private boolean communicateStats;
+    private TopologyChangedStrategy topologyChangedStrategy;
 
     public KeyValueJobOperation() {
     }
@@ -52,7 +57,8 @@ public class KeyValueJobOperation<K, V>
                                 KeyValueSource<K, V> keyValueSource,
                                 Mapper mapper, CombinerFactory combinerFactory,
                                 ReducerFactory reducerFactory,
-                                boolean communicateStats) {
+                                boolean communicateStats,
+                                TopologyChangedStrategy topologyChangedStrategy) {
         this.name = name;
         this.jobId = jobId;
         this.chunkSize = chunkSize;
@@ -61,6 +67,7 @@ public class KeyValueJobOperation<K, V>
         this.combinerFactory = combinerFactory;
         this.reducerFactory = reducerFactory;
         this.communicateStats = communicateStats;
+        this.topologyChangedStrategy = topologyChangedStrategy;
     }
 
     @Override
@@ -77,9 +84,17 @@ public class KeyValueJobOperation<K, V>
         }
         JobSupervisor supervisor = mapReduceService.createJobSupervisor(
                 new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name,jobId, mapper,
-                        combinerFactory, reducerFactory, keyValueSource, communicateStats));
+                        combinerFactory, reducerFactory, keyValueSource,
+                        communicateStats, topologyChangedStrategy));
+
         if (supervisor == null) {
-            throw new IllegalStateException("Supervisor could not be created");
+            // Supervisor was cancelled prior to creation
+            AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.getJobTracker(name);
+            TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+            if (future != null) {
+                Exception exception = new CancellationException("Operation was cancelled by the user");
+                future.setResult(exception);
+            }
         }
     }
 

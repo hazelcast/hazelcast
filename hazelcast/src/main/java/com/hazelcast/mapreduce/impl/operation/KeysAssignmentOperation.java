@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.mapreduce.TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
-import static com.hazelcast.mapreduce.TopologyChangedStrategy.DISCARD_AND_RESTART;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;

@@ -94,7 +94,6 @@ public class SetKeyValueSource<V>
         if (value instanceof Data) {
             value = ss.toObject((Data) value);
         }
-        System.out.println(value);
         simpleEntry.setKey(setName);
         simpleEntry.setValue((V) value);
         return simpleEntry;

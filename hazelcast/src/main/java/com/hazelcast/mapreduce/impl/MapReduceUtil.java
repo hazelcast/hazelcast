@@ -61,11 +61,9 @@ public final class MapReduceUtil {
         NotifyRemoteExceptionOperation operation = new NotifyRemoteExceptionOperation(name, jobId, throwable);
         MapReduceService mapReduceService = supervisor.getMapReduceService();
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
-        ClusterService cs = nodeEngine.getClusterService();
         OperationService os = nodeEngine.getOperationService();
-        for (MemberImpl member : cs.getMemberList()) {
-            os.send(operation, member.getAddress());
-        }
+        Address jobOwner = supervisor.getJobOwner();
+        os.send(operation, jobOwner);
     }
 
     public static JobPartitionState.State stateChange(Address owner, int partitionId,
@@ -78,7 +76,7 @@ public final class MapReduceUtil {
 
         // If not yet assigned we don't need to check owner and state
         if (partitionState != null) {
-            if (!partitionState.getOwner().equals(owner)) {
+            if (!owner.equals(partitionState.getOwner())) {
                 return null;
             }
             if (partitionState.getState() != currentState) {

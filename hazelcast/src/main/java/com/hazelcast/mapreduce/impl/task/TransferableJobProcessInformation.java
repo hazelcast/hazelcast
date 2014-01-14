@@ -18,25 +18,27 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
-import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
+import com.hazelcast.mapreduce.impl.MapReducePortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
 public class TransferableJobProcessInformation
-        implements JobProcessInformation, IdentifiedDataSerializable {
+        implements JobProcessInformation, Portable {
 
     private JobPartitionState[] partitionStates;
-    private int processRecords;
+    private int processedRecords;
 
     public TransferableJobProcessInformation() {
     }
 
-    public TransferableJobProcessInformation(JobPartitionState[] partitionStates, int processRecords) {
+    public TransferableJobProcessInformation(JobPartitionState[] partitionStates, int processedRecords) {
         this.partitionStates = partitionStates;
-        this.processRecords = processRecords;
+        this.processedRecords = processedRecords;
     }
 
     @Override
@@ -46,29 +48,31 @@ public class TransferableJobProcessInformation
 
     @Override
     public int getProcessedRecords() {
-        return processRecords;
+        return processedRecords;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(processRecords);
+    public void writePortable(PortableWriter writer) throws IOException {
+        writer.writeInt("processedRecords", processedRecords);
+        ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(partitionStates);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        processRecords = in.readInt();
+    public void readPortable(PortableReader reader) throws IOException {
+        processedRecords = reader.readInt("processedRecords");
+        ObjectDataInput in = reader.getRawDataInput();
         partitionStates = in.readObject();
     }
 
     @Override
     public int getFactoryId() {
-        return MapReduceDataSerializerHook.F_ID;
+        return MapReducePortableHook.F_ID;
     }
 
     @Override
-    public int getId() {
-        return MapReduceDataSerializerHook.TRANSFERABLE_PROCESS_INFORMATION;
+    public int getClassId() {
+        return MapReducePortableHook.TRANSFERABLE_PROCESS_INFORMATION;
     }
 
 }
