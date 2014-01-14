@@ -69,6 +69,16 @@ public class JobProcessInformationImpl
         this.partitionStates = newPartitionStates;
     }
 
+    public void resetPartitionState() {
+        JobPartitionState[] oldPartitionStates = this.partitionStates;
+        JobPartitionState[] newPartitionStates = new JobPartitionState[oldPartitionStates.length];
+        for (int i = 0; i < newPartitionStates.length; i++) {
+            newPartitionStates[i] = null;
+        }
+
+        this.partitionStates = newPartitionStates;
+    }
+
     public boolean updatePartitionState(int partitionId, JobPartitionState oldPartitionState,
                                         JobPartitionState newPartitionState) {
 

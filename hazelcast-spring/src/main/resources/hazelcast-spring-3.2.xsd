@@ -229,6 +229,7 @@
                                 <xs:attribute name="retry-count" use="optional" type="xs:positiveInteger" default="0"/>
                                 <xs:attribute name="chunk-size" use="optional" type="xs:positiveInteger" default="1000"/>
                                 <xs:attribute name="communicate-stats" use="optional" type="xs:boolean" default="true"/>
+                                <xs:attribute name="topology-changed-strategy" use="optional" type="topology-changed-strategy" default="CANCEL_RUNNING_OPERATION"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
@@ -1005,6 +1006,13 @@
     <xs:simpleType name="concurrency-level">
         <xs:restriction base="xs:int">
             <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="topology-changed-strategy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CANCEL_RUNNING_OPERATION" />
+            <xs:enumeration value="DISCARD_AND_RESTART"/>
         </xs:restriction>
     </xs:simpleType>
 

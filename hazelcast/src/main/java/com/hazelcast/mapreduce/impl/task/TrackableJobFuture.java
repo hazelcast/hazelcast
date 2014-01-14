@@ -29,6 +29,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -70,7 +71,8 @@ public class TrackableJobFuture<V>
         if (supervisor == null || !supervisor.isOwnerNode()) {
             return false;
         }
-        cancelled = supervisor.cancelAndNotify();
+        Exception exception = new CancellationException("Operation was cancelled by the user");
+        cancelled = supervisor.cancelAndNotify(exception);
         return cancelled;
     }
 

@@ -43,7 +43,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -58,7 +57,7 @@ public class JobSupervisor {
     private final ConcurrentMap<Object, Reducer> reducers = new ConcurrentHashMap<Object, Reducer>();
     private final ConcurrentMap<Integer, Set<Address>> remoteReducers = new ConcurrentHashMap<Integer, Set<Address>>();
     private final AtomicReference<DefaultContext> context = new AtomicReference<DefaultContext>();
-    private final ConcurrentMap<Object, Address> keyAssignment = new ConcurrentHashMap<Object, Address>();
+    private final ConcurrentMap<Object, Address> keyAssignments = new ConcurrentHashMap<Object, Address>();
 
     private final Address jobOwner;
     private final boolean ownerNode;
@@ -127,41 +126,13 @@ public class JobSupervisor {
         jobProcessInformation.cancelPartitionState();
 
         // Notify all other nodes about cancellation
-        Set<Address> addresses = new HashSet<Address>();
-        for (Set<Address> remoteReducers : this.remoteReducers.values()) {
-            addAllFilterJobOwner(addresses, remoteReducers);
-        }
-        for (JobPartitionState partitionState : jobProcessInformation.getPartitionStates()) {
-            if (partitionState != null && partitionState.getOwner() != null) {
-                if (!partitionState.getOwner().equals(jobOwner)) {
-                    addresses.add(partitionState.getOwner());
-                }
-            }
-        }
+        Set<Address> addresses = collectRemoteAddresses();
 
         // Now notify all involved members to cancel the job
-        String name = getConfiguration().getName();
-        String jobId = getConfiguration().getJobId();
-        for (Address address : addresses) {
-            try {
-                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
-                mapReduceService.processRequest(address, operation, name);
-            } catch (Exception ignore) {
-                // We can ignore this exception since we just want to cancel the job
-                // and the member may be crashed or unreachable in some way
-            }
-        }
+        cancelRemoteOperations(addresses);
 
-        TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
-        MapCombineTask mapCombineTask = jobTracker.unregisterMapCombineTask(jobId);
-        if (mapCombineTask != null) {
-            mapCombineTask.cancel();
-        }
-        ReducerTask reducerTask = jobTracker.unregisterReducerTask(jobId);
-        if (reducerTask != null) {
-            reducerTask.cancel();
-        }
-        mapReduceService.destroyJobSupervisor(this);
+        // Cancel local job
+        TrackableJobFuture future = cancel();
 
         if (future != null) {
             // Might be already cancelled by another members exception
@@ -171,36 +142,64 @@ public class JobSupervisor {
         }
     }
 
-    public boolean cancelAndNotify() {
+    public boolean cancelAndNotify(Exception exception) {
         // Cancel all partition states
         jobProcessInformation.cancelPartitionState();
 
         // Notify all other nodes about cancellation
-        Set<Address> addresses = new HashSet<Address>();
-        for (Set<Address> remoteReducers : this.remoteReducers.values()) {
-            addAllFilterJobOwner(addresses, remoteReducers);
-        }
-        for (JobPartitionState partitionState : jobProcessInformation.getPartitionStates()) {
-            if (partitionState != null && partitionState.getOwner() != null) {
-                if (!partitionState.getOwner().equals(jobOwner)) {
-                    addresses.add(partitionState.getOwner());
-                }
-            }
-        }
+        Set<Address> addresses = collectRemoteAddresses();
 
         // Now notify all involved members to cancel the job
-        String name = getConfiguration().getName();
-        String jobId = getConfiguration().getJobId();
-        for (Address address : addresses) {
-            try {
-                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
-                mapReduceService.processRequest(address, operation, name);
-            } catch (Exception ignore) {
-                // We can ignore this exception since we just want to cancel the job
-                // and the member may be crashed or unreachable in some way
-            }
+        cancelRemoteOperations(addresses);
+
+        // Cancel local job
+        TrackableJobFuture future = cancel();
+
+        if (future != null) {
+            // Might be already cancelled by another members exception
+            future.setResult(exception);
         }
 
+        return true;
+    }
+
+    // TODO Not yet fully supported
+    public boolean cancelNotifyAndRestart() {
+        // Cancel all partition states
+        jobProcessInformation.cancelPartitionState();
+
+        // Notify all other nodes about cancellation
+        Set<Address> addresses = collectRemoteAddresses();
+
+        // Now notify all involved members to cancel the job
+        cancelRemoteOperations(addresses);
+
+        // Kill local tasks
+        String jobId = getConfiguration().getJobId();
+        MapCombineTask mapCombineTask = jobTracker.unregisterMapCombineTask(jobId);
+        if (mapCombineTask != null) {
+            mapCombineTask.cancel();
+        }
+        ReducerTask reducerTask = jobTracker.unregisterReducerTask(jobId);
+        if (reducerTask != null) {
+            reducerTask.cancel();
+        }
+
+        // Reset local data
+        jobProcessInformation.resetPartitionState();
+        reducers.clear();
+        remoteReducers.clear();
+        context.set(null);
+        keyAssignments.clear();
+
+        // Restart
+        // TODO restart with a new KeyValueJob
+
+        return true;
+    }
+
+    public TrackableJobFuture cancel() {
+        String jobId = getConfiguration().getJobId();
         TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
         MapCombineTask mapCombineTask = jobTracker.unregisterMapCombineTask(jobId);
         if (mapCombineTask != null) {
@@ -211,27 +210,7 @@ public class JobSupervisor {
             reducerTask.cancel();
         }
         mapReduceService.destroyJobSupervisor(this);
-
-        if (future != null) {
-            // Might be already cancelled by another members exception
-            future.setResult(new CancellationException("Operation was cancelled by the user"));
-        }
-
-        return true;
-    }
-
-    public void cancel() {
-        String jobId = getConfiguration().getJobId();
-        jobTracker.unregisterTrackableJob(jobId);
-        MapCombineTask mapCombineTask = jobTracker.unregisterMapCombineTask(jobId);
-        if (mapCombineTask != null) {
-            mapCombineTask.cancel();
-        }
-        ReducerTask reducerTask = jobTracker.unregisterReducerTask(jobId);
-        if (reducerTask != null) {
-            reducerTask.cancel();
-        }
-        mapReduceService.destroyJobSupervisor(this);
+        return future;
     }
 
     public Map<Object, Object> getJobResults() {
@@ -263,7 +242,7 @@ public class JobSupervisor {
     }
 
     public Address getReducerAddressByKey(Object key) {
-        Address address = keyAssignment.get(key);
+        Address address = keyAssignments.get(key);
         if (address != null) {
             return address;
         }
@@ -271,10 +250,11 @@ public class JobSupervisor {
     }
 
     public Address assignKeyReducerAddress(Object key) {
-        Address address = keyAssignment.get(key);
+        // Assign new key to a known member
+        Address address = keyAssignments.get(key);
         if (address == null) {
             address = mapReduceService.getKeyMember(key);
-            Address oldAddress = keyAssignment.putIfAbsent(key, address);
+            Address oldAddress = keyAssignments.putIfAbsent(key, address);
             if (oldAddress != null) {
                 address = oldAddress;
             }
@@ -282,8 +262,12 @@ public class JobSupervisor {
         return address;
     }
 
+    public boolean checkAssignedMembersAvailable() {
+        return mapReduceService.checkAssignedMembersAvailable(keyAssignments.values());
+    }
+
     public boolean assignKeyReducerAddress(Object key, Address address) {
-        Address oldAssignment = keyAssignment.putIfAbsent(key, address);
+        Address oldAssignment = keyAssignments.putIfAbsent(key, address);
         return oldAssignment == null || oldAssignment.equals(address);
     }
 
@@ -376,6 +360,35 @@ public class JobSupervisor {
 
     public JobTaskConfiguration getConfiguration() {
         return configuration;
+    }
+
+    private Set<Address> collectRemoteAddresses() {
+        Set<Address> addresses = new HashSet<Address>();
+        for (Set<Address> remoteReducers : this.remoteReducers.values()) {
+            addAllFilterJobOwner(addresses, remoteReducers);
+        }
+        for (JobPartitionState partitionState : jobProcessInformation.getPartitionStates()) {
+            if (partitionState != null && partitionState.getOwner() != null) {
+                if (!partitionState.getOwner().equals(jobOwner)) {
+                    addresses.add(partitionState.getOwner());
+                }
+            }
+        }
+        return addresses;
+    }
+
+    private void cancelRemoteOperations(Set<Address> addresses) {
+        String name = getConfiguration().getName();
+        String jobId = getConfiguration().getJobId();
+        for (Address address : addresses) {
+            try {
+                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
+                mapReduceService.processRequest(address, operation, name);
+            } catch (Exception ignore) {
+                // We can ignore this exception since we just want to cancel the job
+                // and the member may be crashed or unreachable in some way
+            }
+        }
     }
 
     private void processReducerFinished(final ReducingFinishedNotification notification) {

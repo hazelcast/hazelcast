@@ -16,9 +16,11 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
 import com.hazelcast.mapreduce.impl.operation.FireNotificationOperation;
@@ -37,6 +39,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +67,7 @@ public class MapReduceService
 
     private final PartitionServiceImpl partitionService;
     private final InternalPartition[] partitions;
+    private final ClusterService clusterService;
 
     private final NodeEngineImpl nodeEngine;
     private final Config config;
@@ -71,6 +75,7 @@ public class MapReduceService
     public MapReduceService(NodeEngine nodeEngine) {
         this.config = nodeEngine.getConfig();
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        this.clusterService = nodeEngine.getClusterService();
         this.partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
         this.partitions = partitionService.getPartitions();
     }
@@ -142,6 +147,20 @@ public class MapReduceService
             }
         }
         return owner;
+    }
+
+    public boolean checkAssignedMembersAvailable(Collection<Address> assignedMembers) {
+        Collection<MemberImpl> members = clusterService.getMemberList();
+        List<Address> addresses = new ArrayList<Address>(members.size());
+        for (MemberImpl member : members) {
+            addresses.add(member.getAddress());
+        }
+        for (Address address : assignedMembers) {
+            if (!addresses.contains(address)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public <R> R processRequest(Address address, ProcessingOperation processingOperation, String name)

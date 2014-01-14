@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
+import com.hazelcast.mapreduce.TopologyChangedException;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
@@ -29,6 +31,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.mapreduce.TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
+import static com.hazelcast.mapreduce.TopologyChangedStrategy.DISCARD_AND_RESTART;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
@@ -61,6 +66,27 @@ public class KeysAssignmentOperation
         }
 
         Map<Object, Address> assignment = new HashMap<Object, Address>();
+
+        // Precheck if still all members are available
+        if (!supervisor.checkAssignedMembersAvailable()) {
+            TopologyChangedStrategy tcs = supervisor.getConfiguration().getTopologyChangedStrategy();
+            if (tcs == CANCEL_RUNNING_OPERATION) {
+                Exception exception = new TopologyChangedException();
+                supervisor.cancelAndNotify(exception);
+                this.result = new KeysAssignmentResult(CHECK_STATE_FAILED, assignment);
+                return;
+            // TODO Not yet fully supported
+            /* } else if (tcs == DISCARD_AND_RESTART) {
+             *   supervisor.cancelNotifyAndRestart();
+             */
+            } else {
+                Exception exception = new TopologyChangedException("Unknown or unsupported TopologyChangedStrategy");
+                supervisor.cancelAndNotify(exception);
+                this.result = new KeysAssignmentResult(CHECK_STATE_FAILED, assignment);
+                return;
+            }
+        }
+
         for (Object key : keys) {
             Address address = supervisor.assignKeyReducerAddress(key);
             assignment.put(key, address);

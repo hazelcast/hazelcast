@@ -20,6 +20,7 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
@@ -35,11 +36,13 @@ public class JobTaskConfiguration {
     private final KeyValueSource keyValueSource;
     private final NodeEngine nodeEngine;
     private final boolean communicateStats;
+    private final TopologyChangedStrategy topologyChangedStrategy;
 
     public JobTaskConfiguration(Address jobOwner, NodeEngine nodeEngine, int chunkSize,
                                 String name, String jobId, Mapper mapper,
                                 CombinerFactory combinerFactory, ReducerFactory reducerFactory,
-                                KeyValueSource keyValueSource, boolean communicateStats) {
+                                KeyValueSource keyValueSource, boolean communicateStats,
+                                TopologyChangedStrategy topologyChangedStrategy) {
         this.jobOwner = jobOwner;
         this.chunkSize = chunkSize;
         this.name = name;
@@ -50,6 +53,7 @@ public class JobTaskConfiguration {
         this.keyValueSource = keyValueSource;
         this.nodeEngine = nodeEngine;
         this.communicateStats = communicateStats;
+        this.topologyChangedStrategy = topologyChangedStrategy;
     }
 
     public Address getJobOwner() {
@@ -90,6 +94,10 @@ public class JobTaskConfiguration {
 
     public boolean isCommunicateStats() {
         return communicateStats;
+    }
+
+    public TopologyChangedStrategy getTopologyChangedStrategy() {
+        return topologyChangedStrategy;
     }
 
 }

@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
 
 public class ClientCancellationRequest
         extends InvocationClientRequest
@@ -60,7 +61,8 @@ public class ClientCancellationRequest
         if (supervisor == null || !supervisor.isOwnerNode()) {
             engine.sendResponse(endpoint, Boolean.FALSE);
         }
-        engine.sendResponse(endpoint, supervisor.cancelAndNotify());
+        Exception exception = new CancellationException("Operation was cancelled by the user");
+        engine.sendResponse(endpoint, supervisor.cancelAndNotify(exception));
     }
 
     @Override

@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
+
 public class JobTrackerConfigReadOnly
         extends JobTrackerConfig {
 
@@ -50,6 +52,11 @@ public class JobTrackerConfigReadOnly
 
     @Override
     public void setCommunicateStats(boolean communicateStats) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
@@ -1039,6 +1040,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("communicate-stats".equals(nodeName)) {
                 jConfig.setCommunicateStats(value == null || value.length() == 0 ?
                         JobTrackerConfig.DEFAULT_COMMUNICATE_STATS : Boolean.parseBoolean(value));
+            } else if ("topology-changed-stategy".equals(nodeName)) {
+                TopologyChangedStrategy topologyChangedStrategy = JobTrackerConfig.DEFAULT_TOPOLOGY_CHANGED_STRATEGY;
+                for (TopologyChangedStrategy temp : TopologyChangedStrategy.values()) {
+                    if (temp.name().equals(value)) {
+                        topologyChangedStrategy = temp;
+                    }
+                }
+                jConfig.setTopologyChangedStrategy(topologyChangedStrategy);
             }
         }
         config.addJobTrackerConfig(jConfig);
