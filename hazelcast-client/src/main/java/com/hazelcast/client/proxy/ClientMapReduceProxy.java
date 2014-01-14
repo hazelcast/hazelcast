@@ -116,6 +116,7 @@ public class ClientMapReduceProxy
                             event = collator.collate(((Map) event).entrySet());
                         }
                         completableFuture.setResult(event);
+                        trackableJobs.remove(getJobId());
                     }
                 });
 
@@ -207,7 +208,7 @@ public class ClientMapReduceProxy
 
         @Override
         public String getName() {
-            return getName();
+            return ClientMapReduceProxy.this.getName();
         }
 
         @Override
