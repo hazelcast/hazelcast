@@ -140,6 +140,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals("value2", h1.getMap(map2).get(key));
         assertEquals("value2", h2.getMap(map2).get(key));
+
+        assertFalse(h1.getMap(map1).isLocked(key));
+        assertFalse(h1.getMap(map2).isLocked(key));
     }
 
     @Test
