@@ -25,6 +25,7 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
+import com.hazelcast.cluster.client.ClientMemberAttributeChangedEvent;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
@@ -32,6 +33,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.*;
+import com.hazelcast.map.operation.MapOperationType;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -306,18 +311,36 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             while (!Thread.currentThread().isInterrupted()) {
                 final Data clientResponseData = conn.read();
                 final ClientResponse clientResponse = serializationService.toObject(clientResponseData);
-                final ClientMembershipEvent event = serializationService.toObject(clientResponse.getResponse());
-                final MemberImpl member = (MemberImpl) event.getMember();
-                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                    members.add(member);
-                } else {
-                    members.remove(member);
-//                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
+                final Object eventObject = serializationService.toObject(clientResponse.getResponse());
+                if (eventObject instanceof ClientMembershipEvent) {
+                    final ClientMembershipEvent event = (ClientMembershipEvent) eventObject;
+                    final MemberImpl member = (MemberImpl) event.getMember();
+                    if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                        members.add(member);
+                    } else {
+                        members.remove(member);
+    //                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
+                    }
+                    updateMembersRef();
+                    logger.info(membersString());
+                    fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
+                            Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
+                } else if (eventObject instanceof ClientMemberAttributeChangedEvent) {
+                    ClientMemberAttributeChangedEvent event = (ClientMemberAttributeChangedEvent) eventObject;
+                    Map<Address, MemberImpl> memberMap = membersRef.get();
+                    if (memberMap != null) {
+                        for (MemberImpl member : memberMap.values()) {
+                            if (member.getUuid().equals(event.getUuid())) {
+                                final MapOperationType operationType = event.getOperationType();
+                                final String key = event.getKey();
+                                final Object value = event.getValue();
+                                member.updateAttribute(operationType, key, value);
+                                fireMemberAttributeEvent(new MemberAttributeEvent(client.getCluster(), member, operationType, key, value));
+                                break;
+                            }
+                        }
+                    }
                 }
-                updateMembersRef();
-                logger.info(membersString());
-                fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                        Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
             }
         }
 
@@ -330,6 +353,17 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         } else {
                             listener.memberRemoved(event);
                         }
+                    }
+                }
+            });
+        }
+
+        private void fireMemberAttributeEvent(final MemberAttributeEvent event) {
+            client.getClientExecutionService().execute(new Runnable() {
+                @Override
+                public void run() {
+                    for (MembershipListener listener : listeners.values()) {
+                        listener.memberAttributeChanged(event);
                     }
                 }
             });

@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.RunnableAdapter;
@@ -46,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -60,12 +62,65 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ClientExecutorServiceProxy extends ClientProxy implements IExecutorService {
 
     private final String name;
+    private final Random random = new Random();
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
     private volatile long lastSubmitTime = 0L;
 
     public ClientExecutorServiceProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
         name = objectId;
+    }
+
+    @Override
+    public void execute(Runnable command, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        executeOnMember(command, members.get(selectedMember));
+    }
+
+    @Override
+    public void executeOnMembers(Runnable command, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        executeOnMembers(command, members);
+    }
+
+    @Override
+    public <T> Future<T> submit(Callable<T> task, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        return submitToMember(task, members.get(selectedMember));
+    }
+
+    @Override
+    public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, MemberSelector memberSelector) {
+        List<Member> members = selectMembers(memberSelector);
+        return submitToMembers(task, members);
+    }
+
+    @Override
+    public void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback callback) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        submitToMember(task, members.get(selectedMember), callback);
+    }
+
+    @Override
+    public void submitToMembers(Runnable task, MemberSelector memberSelector, MultiExecutionCallback callback) {
+        List<Member> members = selectMembers(memberSelector);
+        submitToMembers(task, members, callback);
+    }
+
+    @Override
+    public <T> void submit(Callable<T> task, MemberSelector memberSelector, ExecutionCallback<T> callback) {
+        List<Member> members = selectMembers(memberSelector);
+        int selectedMember = random.nextInt(members.size());
+        submitToMember(task, members.get(selectedMember), callback);
+    }
+
+    @Override
+    public <T> void submitToMembers(Callable<T> task, MemberSelector memberSelector, MultiExecutionCallback callback) {
+        List<Member> members = selectMembers(memberSelector);
+        submitToMembers(task, members, callback);
     }
 
     public Future<?> submit(Runnable command) {
@@ -379,8 +434,21 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return new DelegatingFuture<T>(f, getContext().getSerializationService());
     }
 
-    private static class ExecutionCallbackWrapper<T> implements ExecutionCallback<T> {
+    private List<Member> selectMembers(MemberSelector memberSelector) {
+        if (memberSelector == null) {
+            throw new IllegalArgumentException("memberSelector must not be null");
+        }
+        List<Member> selected = new ArrayList<Member>();
+        Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            if (memberSelector.select(member)) {
+                selected.add(member);
+            }
+        }
+        return selected;
+    }
 
+    private static class ExecutionCallbackWrapper<T> implements ExecutionCallback<T> {
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper;
 
         Member member;
