@@ -539,7 +539,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         List<Member> selected = new ArrayList<Member>();
         Collection<MemberImpl> members = getNodeEngine().getClusterService().getMemberList();
         for (MemberImpl member : members) {
-            if (memberSelector.acceptTask(member)) {
+            if (memberSelector.select(member)) {
                 selected.add(member);
             }
         }

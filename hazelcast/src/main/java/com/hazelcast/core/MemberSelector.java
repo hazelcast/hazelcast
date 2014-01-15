@@ -19,7 +19,7 @@ package com.hazelcast.core;
 /**
  * <p>Implementations of this interface are thought to select members
  * that are capable of executing a special kind of task.<br/>
- * The {@link #acceptTask(Member)} method is called for every available
+ * The {@link #select(Member)} method is called for every available
  * member in the cluster and it's up to the implementation to decide
  * if the member is going to be used or not.</p>
  * <p>A basic implementation for example could select members on
@@ -40,6 +40,6 @@ public interface MemberSelector {
      * @param member the member instance to decide on
      * @return true of member should take part in the operation otherwise false
      */
-    boolean acceptTask(Member member);
+    boolean select(Member member);
 
 }

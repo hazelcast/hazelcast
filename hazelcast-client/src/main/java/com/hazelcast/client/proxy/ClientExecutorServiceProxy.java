@@ -441,7 +441,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         List<Member> selected = new ArrayList<Member>();
         Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
         for (MemberImpl member : members) {
-            if (memberSelector.acceptTask(member)) {
+            if (memberSelector.select(member)) {
                 selected.add(member);
             }
         }
