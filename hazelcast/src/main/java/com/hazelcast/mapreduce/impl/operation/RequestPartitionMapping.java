@@ -61,7 +61,7 @@ public class RequestPartitionMapping
             return;
         }
 
-        List<Integer> memberPartitions = mapReduceService.getMemberPartitions(getCallerAddress());
+        List<Integer> memberPartitions = getNodeEngine().getPartitionService().getMemberPartitions(getCallerAddress());
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
 
         for (; ; ) {

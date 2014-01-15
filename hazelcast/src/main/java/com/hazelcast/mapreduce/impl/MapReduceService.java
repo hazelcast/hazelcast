@@ -29,7 +29,6 @@ import com.hazelcast.mapreduce.impl.operation.ProcessingOperation;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
@@ -67,7 +66,6 @@ public class MapReduceService
     private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
 
     private final PartitionServiceImpl partitionService;
-    private final InternalPartition[] partitions;
     private final ClusterService clusterService;
 
     private final NodeEngineImpl nodeEngine;
@@ -78,7 +76,6 @@ public class MapReduceService
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        this.partitions = partitionService.getPartitions();
     }
 
     public JobTracker getJobTracker(String name) {
@@ -224,27 +221,6 @@ public class MapReduceService
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public final List<Integer> getLocalPartitions() {
-        Address address = nodeEngine.getThisAddress();
-        List<Integer> partitions = new ArrayList<Integer>();
-        for (InternalPartition partition : this.partitions) {
-            if (partition.getReplicaAddress(0).equals(address)) {
-                partitions.add(partition.getPartitionId());
-            }
-        }
-        return partitions;
-    }
-
-    public final List<Integer> getMemberPartitions(Address address) {
-        List<Integer> partitions = new ArrayList<Integer>();
-        for (InternalPartition partition : this.partitions) {
-            if (partition.getReplicaAddress(0).equals(address)) {
-                partitions.add(partition.getPartitionId());
-            }
-        }
-        return partitions;
     }
 
     public final Address getLocalAddress() {
