@@ -351,12 +351,12 @@
     </xs:complexType>
     <xs:complexType name="jobtracker">
         <xs:sequence>
-            <xs:element name="max-thread-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="queue-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="retry-count" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="chunk-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="max-thread-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="queue-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="retry-count" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="chunk-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="1000"/>
             <xs:element name="communicate-stats" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="topology-changed-stategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="0" default="CANCEL_RUNNING_OPERATION"/>
+            <xs:element name="topology-changed-stategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1" default="CANCEL_RUNNING_OPERATION"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
