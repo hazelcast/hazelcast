@@ -43,6 +43,11 @@
         	<config-property-name>configurationLocation</config-property-name>
         	<config-property-type>java.lang.String</config-property-type>
         </config-property>
+        <config-property>
+        	<description>External Hazelcast Instance to handle with this Resource Adaptor</description>
+        	<config-property-name>hazelcast</config-property-name>
+        	<config-property-type>com.hazelcast.core.HazelcastInstance</config-property-type>
+        </config-property>
 
         <outbound-resourceadapter>
             <connection-definition>
