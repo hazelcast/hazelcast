@@ -293,21 +293,37 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
 
         public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            final Object response = resolveResponse(waitForResponse(timeout, unit));
-            done = true;
-            if (response instanceof Response) {
-                if (op instanceof BackupAwareOperation && callback == null) {
-                    final Object obj = waitForBackupsAndGetResponse((Response) response);
-                    if (obj == RETRY_RESPONSE) {
-                        final Future f = resetAndReInvoke();
-                        return f.get(timeout, unit);
+            try {
+                Object response = waitForResponse(timeout, unit);
+                Object resolvedResponse = resolveResponse(response);
+                done = true;
+                if (resolvedResponse instanceof Response) {
+                    if (op instanceof BackupAwareOperation && callback == null) {
+                        final Object obj = waitForBackupsAndGetResponse((Response) resolvedResponse);
+                        if (obj == RETRY_RESPONSE) {
+                            final Future f = resetAndReInvoke();
+                            return f.get(timeout, unit);
+                        }
+                        return obj;
+                    } else {
+                        return ((Response) resolvedResponse).response;
                     }
-                    return obj;
-                } else {
-                    return ((Response) response).response;
                 }
+                return resolvedResponse;
+            }finally{
+                cleanup();
             }
-            return response;
+        }
+
+        private void cleanup() {
+            OperationServiceImpl operationService = nodeEngine.operationService;
+            long callId = op.getCallId();
+            if (callId > 0) {
+                if(op instanceof BackupAwareOperation){
+                    operationService.deregisterBackupCall(op.getCallId());
+                }
+                operationService.deregisterRemoteCall(op.getCallId());
+            }
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {

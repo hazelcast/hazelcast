@@ -57,7 +57,7 @@ final class OperationServiceImpl implements OperationService {
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
-    private final ConcurrentMap<Long, RemoteCall> remoteCalls;
+    final ConcurrentMap<Long, RemoteCall> remoteCalls;
     private final ExecutorService[] operationExecutors;
     private final BlockingQueue[] operationExecutorQueues;
 
@@ -65,7 +65,7 @@ final class OperationServiceImpl implements OperationService {
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-    private final ConcurrentMap<Long, Semaphore> backupCalls;
+    final ConcurrentMap<Long, Semaphore> backupCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
@@ -608,8 +608,6 @@ final class OperationServiceImpl implements OperationService {
         RemoteCall call = deregisterRemoteCall(callId);
         if (call != null) {
             call.offerResponse(response);
-        } else {
-            throw new HazelcastException("No call with id: " + callId + ", Response: " + response);
         }
     }
 
