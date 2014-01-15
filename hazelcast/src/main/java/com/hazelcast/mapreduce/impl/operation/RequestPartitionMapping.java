@@ -24,6 +24,7 @@ import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.PartitionService;
 
 import java.io.IOException;
 import java.util.List;
@@ -61,7 +62,8 @@ public class RequestPartitionMapping
             return;
         }
 
-        List<Integer> memberPartitions = getNodeEngine().getPartitionService().getMemberPartitions(getCallerAddress());
+        PartitionService ps = getNodeEngine().getPartitionService();
+        List<Integer> memberPartitions = ps.getMemberPartitions(getCallerAddress());
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
 
         for (; ; ) {
