@@ -75,16 +75,18 @@ public final class ClassLoaderUtil {
         }
 
         // First try to load it through the given classloader
-        try {
-            return theClassLoader.loadClass(className);
-        } catch (ClassNotFoundException e) {
-            // If failed and this is a Hazelcast class try again with our classloader
-            if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
-                theClassLoader = ClassLoaderUtil.class.getClassLoader();
+        if (theClassLoader != null) {
+            try {
+                return theClassLoader.loadClass(className);
+            } catch (ClassNotFoundException ignore) {
             }
-            if (theClassLoader == null) {
-                theClassLoader = Thread.currentThread().getContextClassLoader();
-            }
+        }
+        // If failed and this is a Hazelcast class try again with our classloader
+        if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
+            theClassLoader = ClassLoaderUtil.class.getClassLoader();
+        }
+        if (theClassLoader == null) {
+            theClassLoader = Thread.currentThread().getContextClassLoader();
         }
         if (theClassLoader != null) {
             if (className.startsWith("[")) {
