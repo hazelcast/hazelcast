@@ -51,6 +51,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap replicatedMapManagedMap;
         private ManagedMap executorManagedMap;
         private ManagedMap wanReplicationManagedMap;
+        private ManagedMap jobTrackerManagedMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -64,6 +65,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.replicatedMapManagedMap = new ManagedMap();
             this.executorManagedMap = new ManagedMap();
             this.wanReplicationManagedMap = new ManagedMap();
+            this.jobTrackerManagedMap = new ManagedMap();
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
             this.configBuilder.addPropertyValue("queueConfigs", queueManagedMap);
             this.configBuilder.addPropertyValue("listConfigs", listManagedMap);
@@ -73,6 +75,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.configBuilder.addPropertyValue("replicatedMapConfigs", replicatedMapManagedMap);
             this.configBuilder.addPropertyValue("executorConfigs", executorManagedMap);
             this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
+            this.configBuilder.addPropertyValue("jobTrackerConfigs", jobTrackerManagedMap);
 
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
             this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
@@ -109,6 +112,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSet(node);
                 } else if ("topic".equals(nodeName)) {
                     handleTopic(node);
+                } else if ("jobtracker".equals(nodeName)) {
+                    handleJobTracker(node);
                 } else if ("wan-replication".equals(nodeName)) {
                     handleWanReplication(node);
                 } else if ("partition-group".equals(nodeName)) {
@@ -525,7 +530,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     replicatedMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 }
             }
-            multiMapManagedMap.put(name, replicatedMapConfigBuilder.getBeanDefinition());
+            replicatedMapManagedMap.put(name, replicatedMapConfigBuilder.getBeanDefinition());
         }
 
         public void handleTopic(Node node) {
@@ -540,6 +545,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleJobTracker(Node node) {
+            BeanDefinitionBuilder jobTrackerConfigBuilder = createBeanBuilder(JobTrackerConfig.class);
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getTextContent(attName);
+            fillAttributeValues(node, jobTrackerConfigBuilder);
+            jobTrackerManagedMap.put(name, jobTrackerConfigBuilder.getBeanDefinition());
         }
 
         private void handleSecurity(final Node node) {

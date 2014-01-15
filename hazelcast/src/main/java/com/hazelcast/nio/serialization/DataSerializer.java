@@ -95,7 +95,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
                 id = in.readInt();
                 ds = dsf.create(id);
                 if (ds == null) {
-                    throw new HazelcastSerializationException(dsf + " is not be able to create an instance for id: " + id);
+                    throw new HazelcastSerializationException(dsf + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
                 }
                 // TODO: @mm - we can check if DS class is final.
             } else {

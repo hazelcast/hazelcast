@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -75,6 +76,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getClient().getReplicatedMap(name);
+    }
+
+    public JobTracker getJobTracker(String name) {
+        return getClient().getJobTracker(name);
     }
 
     public ILock getLock(Object key) {

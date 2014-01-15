@@ -72,6 +72,8 @@ public class Config {
 
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
+    private final Map<String, JobTrackerConfig> jobTrackerConfigs = new ConcurrentHashMap<String, JobTrackerConfig>();
+
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
@@ -609,6 +611,47 @@ public class Config {
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
         this.wanReplicationConfigs.clear();
         this.wanReplicationConfigs.putAll(wanReplicationConfigs);
+        return this;
+    }
+
+    public JobTrackerConfig findJobTrackerConfig(String name) {
+        name = getBaseName(name);
+        JobTrackerConfig config;
+        if ((config = lookupByPattern(jobTrackerConfigs, name)) != null) return config.getAsReadOnly();
+        return getJobTrackerConfig(name);
+    }
+
+    public JobTrackerConfig getJobTrackerConfig(String name) {
+        name = getBaseName(name);
+        JobTrackerConfig config;
+        if ((config = lookupByPattern(jobTrackerConfigs, name)) != null) return config;
+        JobTrackerConfig defConfig = jobTrackerConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new JobTrackerConfig();
+            defConfig.setName("default");
+            addJobTrackerConfig(defConfig);
+        }
+        config = new JobTrackerConfig(defConfig);
+        config.setName(name);
+        addJobTrackerConfig(config);
+        return config;
+    }
+
+    public Config addJobTrackerConfig(JobTrackerConfig jobTrackerConfig) {
+        jobTrackerConfigs.put(jobTrackerConfig.getName(), jobTrackerConfig);
+        return this;
+    }
+
+    public Map<String, JobTrackerConfig> getJobTrackerConfigs() {
+        return jobTrackerConfigs;
+    }
+
+    public Config setJobTrackerConfigs(Map<String, JobTrackerConfig> jobTrackerConfigs) {
+        this.jobTrackerConfigs.clear();
+        this.jobTrackerConfigs.putAll(jobTrackerConfigs);
+        for (final Entry<String, JobTrackerConfig> entry : this.jobTrackerConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 

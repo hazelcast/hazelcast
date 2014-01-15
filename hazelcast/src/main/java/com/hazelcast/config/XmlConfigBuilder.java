@@ -22,6 +22,7 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
@@ -291,6 +292,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleSet(node);
             } else if ("topic".equals(nodeName)) {
                 handleTopic(node);
+            } else if ("jobtracker".equals(nodeName)) {
+                handleJobTracker(node);
             } else if ("semaphore".equals(nodeName)) {
                 handleSemaphore(node);
             } else if ("listeners".equals(nodeName)) {
@@ -1016,6 +1019,38 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         config.addTopicConfig(tConfig);
+    }
+
+    private void handleJobTracker(final Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final JobTrackerConfig jConfig = new JobTrackerConfig();
+        jConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            final String value = getTextContent(n).trim();
+            if ("max-thread-size".equals(nodeName)) {
+                jConfig.setMaxThreadSize(getIntegerValue("max-thread-size", value, JobTrackerConfig.DEFAULT_MAX_THREAD_SIZE));
+            } else if ("queue-size".equals(nodeName)) {
+                jConfig.setQueueSize(getIntegerValue("queue-size", value, JobTrackerConfig.DEFAULT_QUEUE_SIZE));
+            } else if ("retry-count".equals(nodeName)) {
+                jConfig.setRetryCount(getIntegerValue("retry-count", value, JobTrackerConfig.DEFAULT_RETRY_COUNT));
+            } else if ("chunk-size".equals(nodeName)) {
+                jConfig.setChunkSize(getIntegerValue("chunk-size", value, JobTrackerConfig.DEFAULT_CHUNK_SIZE));
+            } else if ("communicate-stats".equals(nodeName)) {
+                jConfig.setCommunicateStats(value == null || value.length() == 0 ?
+                        JobTrackerConfig.DEFAULT_COMMUNICATE_STATS : Boolean.parseBoolean(value));
+            } else if ("topology-changed-stategy".equals(nodeName)) {
+                TopologyChangedStrategy topologyChangedStrategy = JobTrackerConfig.DEFAULT_TOPOLOGY_CHANGED_STRATEGY;
+                for (TopologyChangedStrategy temp : TopologyChangedStrategy.values()) {
+                    if (temp.name().equals(value)) {
+                        topologyChangedStrategy = temp;
+                    }
+                }
+                jConfig.setTopologyChangedStrategy(topologyChangedStrategy);
+            }
+        }
+        config.addJobTrackerConfig(jConfig);
     }
 
     private void handleSemaphore(final org.w3c.dom.Node node) {

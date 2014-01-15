@@ -39,6 +39,7 @@
                 <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="jobtracker" type="jobtracker" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
@@ -343,6 +344,21 @@
             </xs:element>
         </xs:sequence>
         <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="jobtracker">
+        <xs:sequence>
+            <xs:element name="max-thread-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="queue-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="retry-count" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="chunk-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="communicate-stats" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="topology-changed-stategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1" default="CANCEL_RUNNING_OPERATION"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
@@ -886,4 +902,11 @@
             <xs:element name="property" type="property"/>
         </xs:sequence>
     </xs:complexType>
+
+    <xs:simpleType name="topology-changed-strategy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CANCEL_RUNNING_OPERATION" />
+            <xs:enumeration value="DISCARD_AND_RESTART"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -71,6 +72,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
 
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getOriginal().getReplicatedMap(name);
+    }
+
+    public JobTracker getJobTracker(String name) {
+        return getOriginal().getJobTracker(name);
     }
 
     public ILock getLock(Object key) {

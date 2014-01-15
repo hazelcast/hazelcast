@@ -49,6 +49,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -124,7 +125,7 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("EventFilter required!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        Registration reg = new Registration( UuidUtil.buildRandomUuidString(), serviceName, topic, filter,
+        Registration reg = new Registration( UUID.randomUUID().toString(), serviceName, topic, filter,
                 nodeEngine.getThisAddress(), listener, localOnly);
         if (segment.addRegistration(topic, reg)) {
             if (!localOnly) {

@@ -37,12 +37,13 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     private final ILogger logger;
     protected final NodeEngine nodeEngine;
+    // This field is only assigned by the atomic updater
     private volatile ExecutionCallbackNode<V> callbackHead;
     protected volatile Object result = NULL_VALUE;
 
-    protected AbstractCompletableFuture(NodeEngine nodeEngine) {
+    protected AbstractCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(AbstractCompletableFuture.class);
+        this.logger = logger;
         this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
                 AbstractCompletableFuture.class, ExecutionCallbackNode.class, "callbackHead");
         this.resultUpdater = AtomicReferenceFieldUpdater.newUpdater(
@@ -134,7 +135,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         });
     }
 
-    private ExecutorService getAsyncExecutor() {
+    protected ExecutorService getAsyncExecutor() {
         return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
