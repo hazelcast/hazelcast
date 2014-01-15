@@ -922,6 +922,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
+            } else if ("index-service".equals(nodeName)) {
+                mapConfig.setIndexServiceClassName(value.trim());
             }
         }
         this.config.addMapConfig(mapConfig);

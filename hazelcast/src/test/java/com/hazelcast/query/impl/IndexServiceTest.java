@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.IndexService;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -40,7 +41,7 @@ public class IndexServiceTest {
 
     @Test
     public void testAndWithSingleEntry() throws Exception {
-        IndexService indexService = new IndexService();
+        IndexService indexService = new DefaultIndexService();
         indexService.addOrGetIndex("name", false);
         indexService.addOrGetIndex("age", true);
         indexService.addOrGetIndex("salary", true);
@@ -66,7 +67,7 @@ public class IndexServiceTest {
 
     @Test
     public void testIndex() throws Exception {
-        IndexService indexService = new IndexService();
+        IndexService indexService = new DefaultIndexService();
         indexService.addOrGetIndex("name", false);
         indexService.addOrGetIndex("age", true);
         indexService.addOrGetIndex("salary", true);
@@ -83,7 +84,7 @@ public class IndexServiceTest {
 
     @Test
     public void testIndex2() throws Exception {
-        IndexService indexService = new IndexService();
+        IndexService indexService = new DefaultIndexService();
         indexService.addOrGetIndex("name", false);
         indexService.saveEntryIndex(new QueryEntry(null, toData(1), 1, new Value("abc")));
         indexService.saveEntryIndex(new QueryEntry(null, toData(2), 2, new Value("xyz")));

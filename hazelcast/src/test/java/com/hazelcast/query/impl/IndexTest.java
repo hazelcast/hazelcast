@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.*;
+import com.hazelcast.query.IndexService;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -53,7 +54,7 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        IndexService is = new IndexService();
+        IndexService is = new DefaultIndexService();
         Index dIndex = is.addOrGetIndex("d", false);
         Index boolIndex = is.addOrGetIndex("bool", false);
         Index strIndex = is.addOrGetIndex("str", false);
