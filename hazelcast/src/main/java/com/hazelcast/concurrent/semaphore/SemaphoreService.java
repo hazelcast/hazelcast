@@ -89,6 +89,9 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         onOwnerDisconnected(caller);
     }
 
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+    }
+
     private void onOwnerDisconnected(final String caller) {
         for (String name: permitMap.keySet()){
             int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));

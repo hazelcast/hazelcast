@@ -88,6 +88,9 @@ public class ClientIssueTest {
 
         public void memberRemoved(MembershipEvent membershipEvent) {
         }
+
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+        }
     }
 
     @Test
@@ -315,6 +318,10 @@ public class ClientIssueTest {
             }
 
             public void memberRemoved(MembershipEvent membershipEvent) {
+
+            }
+
+            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
 
             }
         }));

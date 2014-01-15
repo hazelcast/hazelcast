@@ -88,6 +88,8 @@ public class Config {
 
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
+    private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
+
     private String licenseKey;
 
     public Config() {
@@ -134,6 +136,14 @@ public class Config {
     public Config setProperty(String name, String value) {
         properties.put(name, value);
         return this;
+    }
+
+    public MemberAttributeConfig getMemberAttributeConfig() {
+        return memberAttributeConfig;
+    }
+
+    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+        this.memberAttributeConfig = memberAttributeConfig;
     }
 
     public Properties getProperties() {

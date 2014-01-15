@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.config;
 
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import java.util.Collections;
+import java.util.Map;
 
-public class DummyMembershipListener implements MembershipListener {
+public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
 
-    public void memberAdded(MembershipEvent membershipEvent) {
-//        System.err.println(membershipEvent);
-    }
-
-    public void memberRemoved(MembershipEvent membershipEvent) {
-//        System.err.println(membershipEvent);
+    MemberAttributeConfigReadOnly(MemberAttributeConfig source) {
+        super(source);
     }
 
     @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        System.err.println(memberAttributeEvent);
+    public void setAttribute(String key, Object value) {
+        throw new UnsupportedOperationException("This config is read-only");
     }
+
+    @Override
+    public void removeAttribute(String key) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public Map<String, Object> getAttributes() {
+        return Collections.unmodifiableMap(super.getAttributes());
+    }
+
 }

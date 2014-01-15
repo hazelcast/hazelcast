@@ -16,28 +16,19 @@
 
 package com.hazelcast.spi;
 
-/**
- * An interface that can be implemented by a SPI service that needs to be notified members joining and leaving
- * the cluster.
- *
- * @author mdogan 9/5/12
- */
-public interface MembershipAwareService {
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.operation.MapOperationType;
 
-    /**
-     * Invoked when a new member is added to the cluster.
-     */
-    void memberAdded(MembershipServiceEvent event);
+public class MemberAttributeServiceEvent extends MemberAttributeEvent {
 
-    /**
-     * Invoked when an existing member leaves the cluster.
-     */
-    void memberRemoved(MembershipServiceEvent event);
+    public MemberAttributeServiceEvent() {
+        super();
+    }
 
-
-    /**
-     * Invoked when a member attribute is changed.
-     */
-    void memberAttributeChanged(MemberAttributeServiceEvent event);
+    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MapOperationType operationType, String key, Object value) {
+        super(cluster, member, operationType, key, value);
+    }
 
 }
