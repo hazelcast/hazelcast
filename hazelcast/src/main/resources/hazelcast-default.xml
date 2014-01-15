@@ -212,7 +212,7 @@
         <retry-count>0</retry-count>
         <chunk-size>1000</chunk-size>
         <communicate-stats>true</communicate-stats>
-        <topology-changed-stategy>CANCEL_RUNNING_OPERATION</topology-changed-stategy>
+        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
     </jobtracker>
 
     <semaphore name="default">
