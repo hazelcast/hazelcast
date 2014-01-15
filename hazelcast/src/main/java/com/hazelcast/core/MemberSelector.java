@@ -16,8 +16,30 @@
 
 package com.hazelcast.core;
 
+/**
+ * <p>Implementations of this interface are thought to select members
+ * that are capable of executing a special kind of task.<br/>
+ * The {@link #acceptTask(Member)} method is called for every available
+ * member in the cluster and it's up to the implementation to decide
+ * if the member is going to be used or not.</p>
+ * <p>A basic implementation for example could select members on
+ * existence of a special attribute in the members like the following
+ * example show:<br/>
+ * <pre>public class MyMemberSelector implements MemberSelector {
+ *     public boolean acceptMember(Member member) {
+ *         return Boolean.TRUE.equals(member.getAttribute("my.special.executor"));
+ *     }
+ * }</pre>
+ * </p>
+ */
 public interface MemberSelector {
 
+    /**
+     * Decides for the given member to be part of an operation or not.
+     *
+     * @param member the member instance to decide on
+     * @return true of member should take part in the operation otherwise false
+     */
     boolean acceptTask(Member member);
 
 }
