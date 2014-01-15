@@ -21,8 +21,8 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
-    <title>Setting License Key <superscript>(Enterprise Edition Only)</superscript></title>
-    <para>To be able to use Hazelcast Enterprise Edition, you need to set license key in configuration.</para>
+    <title>Setting License Key <superscript>(Enterprise Extensions Only)</superscript></title>
+    <para>To be able to use Enterprise Extensions, you need to set license key in configuration.</para>
     <para>
         <itemizedlist>
             <listitem>

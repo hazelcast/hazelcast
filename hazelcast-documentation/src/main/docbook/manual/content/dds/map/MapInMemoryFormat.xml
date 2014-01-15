@@ -50,7 +50,7 @@
             <listitem>
                 <para>
                     <emphasis role="bold">OFFHEAP:</emphasis>Data will be stored in non-heap region of JVM to avoid GC pauses.
-                    This option is available for only Hazelcast Enterprise Edition.
+                    This option is available only for Enterprise Extensions.
                 </para>
             </listitem>
 

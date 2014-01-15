@@ -22,7 +22,7 @@
       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>What's new in 3.1?</title>
     <para>
-        <emphasis role="bold">Elastic Memory<superscript>(Enterprise Edition Only)</superscript></emphasis>
+        <emphasis role="bold">Elastic Memory<superscript>(Enterprise Extensions Only)</superscript></emphasis>
         <itemizedlist>
             <listitem>
                 Elastic Memory is now available.
@@ -32,7 +32,7 @@
     </para>
 
     <para>
-        <emphasis role="bold">Security<superscript>(Enterprise Edition Only)</superscript></emphasis>
+        <emphasis role="bold">Security<superscript>(Enterprise Extensions Only)</superscript></emphasis>
         <itemizedlist>
             <listitem>
                 Hazelcast Security is now available.

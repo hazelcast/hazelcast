@@ -524,7 +524,7 @@ cfg.setProperty("hazelcast.property.foo", "value");
                     <literal>hazelcast.enterprise.license.key</literal>
                 </td>
                 <td>
-                    <link xlink:href="http://www.hazelcast.com/products.jsp">Hazelcast Enterprise</link>
+                    <link xlink:href="http://www.hazelcast.com/products.jsp">Enterprise Extensions Pack</link>
                     license key
                 </td>
                 <td>string</td>
