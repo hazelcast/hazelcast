@@ -26,7 +26,7 @@ package com.hazelcast.core;
  * existence of a special attribute in the members like the following
  * example show:<br/>
  * <pre>public class MyMemberSelector implements MemberSelector {
- *     public boolean acceptMember(Member member) {
+ *     public boolean select(Member member) {
  *         return Boolean.TRUE.equals(member.getAttribute("my.special.executor"));
  *     }
  * }</pre>
