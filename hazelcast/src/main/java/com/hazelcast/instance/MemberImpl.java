@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeChangedOperation;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -199,6 +200,8 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
                 for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
                     if (!member.localMember()) {
                         os.send(operation, member.getAddress());
+                    } else {
+                        os.executeOperation(operation);
                     }
                 }
             } catch (Throwable t) {
@@ -225,6 +228,8 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
                 for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
                     if (!member.localMember()) {
                         os.send(operation, member.getAddress());
+                    } else {
+                        os.executeOperation(operation);
                     }
                 }
             } catch (Throwable t) {

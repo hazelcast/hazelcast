@@ -761,7 +761,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (memberMap != null) {
                 for (MemberImpl member : memberMap.values()) {
                     if (member.getUuid().equals(uuid)) {
-                        member.updateAttribute(operationType, key, value);
+                        if (!member.equals(getLocalMember())) {
+                            member.updateAttribute(operationType, key, value);
+                        }
                         sendMemberAttributeEvent(member, operationType, key, value);
                         break;
                     }
