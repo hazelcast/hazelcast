@@ -17,7 +17,6 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeChangedOperation;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -181,13 +180,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
         if (key == null) throw new IllegalArgumentException("key must not be null");
         if (value == null) throw new IllegalArgumentException("value must not be null");
-        if (value != null) {
-            Object oldValue = attributes.put(key, value);
-            if (value.equals(oldValue)) {
-                return;
-            }
-        } else {
-            attributes.remove(key);
+        Object oldValue = attributes.put(key, value);
+        if (value.equals(oldValue)) {
+            return;
         }
         if (instance != null) {
             NodeEngineImpl nodeEngine = instance.node.nodeEngine;
