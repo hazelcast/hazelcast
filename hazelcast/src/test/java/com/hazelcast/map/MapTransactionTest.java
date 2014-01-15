@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -140,6 +139,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals("value2", h1.getMap(map2).get(key));
         assertEquals("value2", h2.getMap(map2).get(key));
+
+        assertFalse(h1.getMap(map1).isLocked(key));
+        assertFalse(h1.getMap(map2).isLocked(key));
     }
 
     @Test
