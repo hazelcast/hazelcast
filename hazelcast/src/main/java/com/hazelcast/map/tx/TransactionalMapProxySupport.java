@@ -18,10 +18,7 @@ package com.hazelcast.map.tx;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapValueCollection;
-import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -84,8 +81,12 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
         if (nearCacheEnabled) {
             Object cached = mapService.getFromNearCache(name, key);
-            if (cached != null)
+            if (cached != null) {
+                if (cached.equals(NearCache.NULL_OBJECT)) {
+                    cached = null;
+                }
                 return cached;
+            }
         }
         GetOperation operation = new GetOperation(name, key);
         final NodeEngine nodeEngine = getNodeEngine();
