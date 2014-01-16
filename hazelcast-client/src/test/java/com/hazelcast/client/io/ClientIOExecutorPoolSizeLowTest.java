@@ -198,10 +198,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
 
     @Test
-//    @Ignore("Issue #1391")//TODO
     public void entryListenerWithExecutorService() throws ExecutionException, InterruptedException {
-
-        final IMap<Object, Object> map = client.getMap("map");
 
         IExecutorService executor = client.getExecutorService("simple");
 

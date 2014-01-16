@@ -22,7 +22,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -129,21 +128,6 @@ public class ClientExecutorServiceTest {
         });
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
-
-    @Test
-    @Ignore//TODO
-    public void testThreadPoolSize() throws Exception {
-        final Thread thread = new Thread() {
-            public void run() {
-                while (true) {
-                    service.submit(new CallableTask("asd"));
-                }
-            }
-        };
-        thread.start();
-        thread.join();
-    }
-
 
     @Test(expected = IllegalStateException.class)
     public void submitFailingCallable() {

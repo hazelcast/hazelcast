@@ -45,9 +45,6 @@ import static junit.framework.Assert.assertTrue;
 @Category(QuickTest.class)
 public class SortLimitTest extends HazelcastTestSupport {
 
-    //TODO local query
-    //TODO client
-
     @Test
     public void testLocalPaging() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
