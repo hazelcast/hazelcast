@@ -116,6 +116,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (nearCacheEnabled) {
             Object cached = mapService.getFromNearCache(name, key);
             if (cached != null) {
+                if (cached.equals(NearCache.NULL_OBJECT)) {
+                    cached = null;
+                }
                 mapService.interceptAfterGet(name, cached);
                 return cached;
             }
@@ -395,7 +398,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                             mapService.toData(entry.getValue())));
                 }
 
-                for (final Map.Entry<Integer, MapEntrySet> entry: entryMap.entrySet()) {
+                for (final Map.Entry<Integer, MapEntrySet> entry : entryMap.entrySet()) {
                     final Integer partitionId = entry.getKey();
                     final PutAllOperation op = new PutAllOperation(name, entry.getValue());
                     op.setPartitionId(partitionId);
@@ -496,7 +499,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public String addMapInterceptorInternal(MapInterceptor interceptor) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
-        if (interceptor instanceof HazelcastInstanceAware){
+        if (interceptor instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) interceptor).setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
         String id = mapService.addInterceptor(name, interceptor);
