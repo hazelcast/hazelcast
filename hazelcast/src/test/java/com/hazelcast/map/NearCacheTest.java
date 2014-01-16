@@ -31,6 +31,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class NearCacheTest extends HazelcastTestSupport {
@@ -88,5 +91,30 @@ public class NearCacheTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         return service.getNearCache(mapName);
+    }
+
+    // issue 1570
+    @Test
+    public void testNullValueNearCache() {
+        int n = 2;
+        String mapName = "testNullValueNearCache";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
+        HazelcastInstance instance = createHazelcastInstanceFactory(n).newInstances(config)[0];
+
+        IMap<String, String> map = instance.getMap(mapName);
+
+        int size = 100;
+
+        for (int i = 0; i < size; i++) {
+            assertNull(map.get("key" + i));
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertNull(map.get("key" + i));
+        }
+
+        assertTrue(map.getLocalMapStats().getGetOperationCount() < size*2);
     }
 }
