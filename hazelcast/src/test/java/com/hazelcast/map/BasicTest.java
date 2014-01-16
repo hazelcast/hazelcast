@@ -63,6 +63,35 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testBoxedPrimtives(){
+        IMap map = getInstance().getMap("testPrimitives");
+
+        map.put("boolean",new Boolean(true));
+        assertEquals(new Boolean(true),map.get("boolean"));
+
+        map.put("int",new Integer(10));
+        assertEquals(new Integer(10),map.get("int"));
+
+        map.put("short",new Short((short)10));
+        assertEquals(new Short((short)10),map.get("short"));
+
+        map.put("byte",new Byte((byte)10));
+        assertEquals(new Byte((byte)10),map.get("byte"));
+
+        map.put("long",new Long(10));
+        assertEquals(new Long(10),map.get("long"));
+
+        map.put("float",new Float(10));
+        assertEquals(new Float(10),map.get("float"));
+
+        map.put("double",new Double(10));
+        assertEquals(new Double(10),map.get("double"));
+
+        map.put("char",new Character('x'));
+        assertEquals(new Character('x'),map.get("char"));
+    }
+
+    @Test
     public void testMapPutAndGet() {
         IMap<String, String> map = getInstance().getMap("testMapPutAndGet");
         String value = map.put("Hello", "World");
