@@ -7,16 +7,19 @@ import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -32,7 +35,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     static HazelcastInstance server3;
     static HazelcastInstance client;
 
-    static final int executorPoolSize=1;
+    static final int executorPoolSize = 1;
 
     static String entryCounterID;
 
@@ -66,15 +69,15 @@ public class ClientIOExecutorPoolSizeLowTest {
 
         final IMap<Object, Object> map = client.getMap("map");
 
-        for(int i=0; i<1000; i++){
+        for (int i = 0; i < 1000; i++) {
             map.putAsync(i, i);
-            if(i==500){
+            if (i == 500) {
                 map.removeEntryListener(entryCounterID);
             }
         }
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(1000, map.size());
             }
         });
@@ -82,9 +85,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     }
 
 
-
     @Test
-    @Ignore("Issue #1391")
     public void moreEntryListenersThanExecutorThreads() throws InterruptedException {
 
         EntryCounter counter = new EntryCounter();
@@ -92,12 +93,12 @@ public class ClientIOExecutorPoolSizeLowTest {
         final IMap<Object, Object> map = client.getMap("map");
         map.addEntryListener(counter, true);//adding 2nd EntryListener
 
-        for(int i=0; i<1000; i++){
+        for (int i = 0; i < 1000; i++) {
             map.putAsync(i, i);
         }
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(1000, map.size());
             }
         });
@@ -107,32 +108,31 @@ public class ClientIOExecutorPoolSizeLowTest {
 
 
     @Test
-    @Ignore("Issue #1391")//TODO
     public void entryListenerWithAsyncMapOps() throws InterruptedException, ExecutionException {
 
         final IMap<Object, Object> map = client.getMap("map");
 
-        for(int i=0; i<1000; i++){
-            map.putAsync(i,i);
+        for (int i = 0; i < 1000; i++) {
+            map.putAsync(i, i);
         }
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(1000, map.size());
             }
         });
 
-        for(int i=0; i<1000; i++){
-            Future f= map.getAsync(i);
+        for (int i = 0; i < 1000; i++) {
+            Future f = map.getAsync(i);
             assertEquals(i, f.get());
         }
 
-        for(int i=0; i<1000; i++){
+        for (int i = 0; i < 1000; i++) {
             map.removeAsync(i);
         }
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(0, map.size());
             }
         });
@@ -140,7 +140,6 @@ public class ClientIOExecutorPoolSizeLowTest {
 
 
     @Test
-    @Ignore("Issue #1391")//TODO
     public void entryListenerWithAsyncQueueOps() throws InterruptedException {
 
         ItemCounter counter = new ItemCounter();
@@ -149,27 +148,27 @@ public class ClientIOExecutorPoolSizeLowTest {
         q.addItemListener(counter, true);
 
 
-        for(int i=0; i<1000; i++){
+        for (int i = 0; i < 1000; i++) {
             q.offer(i);
         }
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(1000, q.size());
             }
         });
 
         assertEquals(1000, counter.count.get());
 
-        for(int i=0; i<1000; i++){
+        for (int i = 0; i < 1000; i++) {
             Object o = q.poll();
 
             assertEquals(i, o);
             q.remove(o);
         }
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(0, q.size());
             }
         });
@@ -178,9 +177,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     }
 
 
-
     @Test
-    @Ignore("Issue #1391")//TODO
     public void entryListenerWithAsyncTopicOps() throws InterruptedException {
 
         final ITopic<Object> t = client.getTopic("stuff");
@@ -188,11 +185,11 @@ public class ClientIOExecutorPoolSizeLowTest {
         final MsgCounter counter = new MsgCounter();
         t.addMessageListener(counter);
 
-        for(int i=0; i<1000; i++)
+        for (int i = 0; i < 1000; i++)
             t.publish(i);
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 assertEquals(1000, counter.count.get());
             }
         });
@@ -200,21 +197,18 @@ public class ClientIOExecutorPoolSizeLowTest {
     }
 
 
-
-
-
     @Test
-    @Ignore("Issue #1391")//TODO
+//    @Ignore("Issue #1391")//TODO
     public void entryListenerWithExecutorService() throws ExecutionException, InterruptedException {
 
         final IMap<Object, Object> map = client.getMap("map");
 
-        IExecutorService executor =  client.getExecutorService("simple");
+        IExecutorService executor = client.getExecutorService("simple");
 
         final Future<String> f = executor.submit(new BasicTestTask());
 
-        assertTrueEventually(new AssertTask(){
-            public void run(){
+        assertTrueEventually(new AssertTask() {
+            public void run() {
                 try {
                     assertEquals(BasicTestTask.RESULT, f.get());
                 } catch (InterruptedException e) {
@@ -236,7 +230,7 @@ public class ClientIOExecutorPoolSizeLowTest {
         }
     }
 
-    public class MsgCounter implements MessageListener{
+    public class MsgCounter implements MessageListener {
 
         public AtomicInteger count = new AtomicInteger(0);
 
@@ -246,7 +240,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     }
 
 
-    public class ItemCounter  implements ItemListener {
+    public class ItemCounter implements ItemListener {
 
         public AtomicInteger count = new AtomicInteger(0);
 
@@ -257,7 +251,9 @@ public class ClientIOExecutorPoolSizeLowTest {
         public void itemRemoved(ItemEvent item) {
             count.getAndDecrement();
         }
-    };
+    }
+
+    ;
 
 
     public class EntryCounter implements EntryListener {
