@@ -70,6 +70,18 @@ public final class ClassLoaderUtil {
             }
         }
         ClassLoader theClassLoader = classLoader;
+        if (theClassLoader == null) {
+            theClassLoader = Thread.currentThread().getContextClassLoader();
+        }
+
+        // First try to load it through the given classloader
+        if (theClassLoader != null) {
+            try {
+                return theClassLoader.loadClass(className);
+            } catch (ClassNotFoundException ignore) {
+            }
+        }
+        // If failed and this is a Hazelcast class try again with our classloader
         if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
             theClassLoader = ClassLoaderUtil.class.getClassLoader();
         }

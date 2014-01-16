@@ -16,7 +16,14 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.ClientImpl;
+import com.hazelcast.client.ClientPrincipal;
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.ClientResponse;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -25,13 +32,28 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
+import com.hazelcast.cluster.client.ClientMemberAttributeChangedEvent;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.*;
+import com.hazelcast.map.operation.MapOperationType;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -46,7 +68,18 @@ import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EventListener;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -212,7 +245,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-    private class ClusterListenerThread extends Thread implements EventHandler<ClientMembershipEvent> {
+    private class ClusterListenerThread extends Thread  {
 
         private ClusterListenerThread(ThreadGroup group, String name) {
             super(group, name);
@@ -306,33 +339,37 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             while (!Thread.currentThread().isInterrupted()) {
                 final Data clientResponseData = conn.read();
                 final ClientResponse clientResponse = serializationService.toObject(clientResponseData);
-                final ClientMembershipEvent event = serializationService.toObject(clientResponse.getResponse());
-                final MemberImpl member = (MemberImpl) event.getMember();
-                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                    members.add(member);
-                } else {
-                    members.remove(member);
-//                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
+                final Object eventObject = serializationService.toObject(clientResponse.getResponse());
+                if (eventObject instanceof ClientMembershipEvent) {
+                    final ClientMembershipEvent event = (ClientMembershipEvent) eventObject;
+                    final MemberImpl member = (MemberImpl) event.getMember();
+                    if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                        members.add(member);
+                    } else {
+                        members.remove(member);
+    //                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
+                    }
+                    updateMembersRef();
+                    logger.info(membersString());
+                    fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
+                            Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
+                } else if (eventObject instanceof ClientMemberAttributeChangedEvent) {
+                    ClientMemberAttributeChangedEvent event = (ClientMemberAttributeChangedEvent) eventObject;
+                    Map<Address, MemberImpl> memberMap = membersRef.get();
+                    if (memberMap != null) {
+                        for (MemberImpl member : memberMap.values()) {
+                            if (member.getUuid().equals(event.getUuid())) {
+                                final MapOperationType operationType = event.getOperationType();
+                                final String key = event.getKey();
+                                final Object value = event.getValue();
+                                member.updateAttribute(operationType, key, value);
+                                fireMemberAttributeEvent(new MemberAttributeEvent(client.getCluster(), member, operationType, key, value));
+                                break;
+                            }
+                        }
+                    }
                 }
-                updateMembersRef();
-                logger.info(membersString());
-                fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                        Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
             }
-        }
-
-        public void handle(ClientMembershipEvent event) {
-            final MemberImpl member = (MemberImpl) event.getMember();
-            if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                members.add(member);
-            } else {
-                members.remove(member);
-//                    getConnectionManager().removeConnectionPool(member.getAddress());// TODO
-            }
-            updateMembersRef();
-            logger.info(membersString());
-            fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                    Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
         }
 
         private void fireMembershipEvent(final MembershipEvent event) {
@@ -344,6 +381,17 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         } else {
                             listener.memberRemoved(event);
                         }
+                    }
+                }
+            });
+        }
+
+        private void fireMemberAttributeEvent(final MemberAttributeEvent event) {
+            client.getClientExecutionService().execute(new Runnable() {
+                @Override
+                public void run() {
+                    for (MembershipListener listener : listeners.values()) {
+                        listener.memberAttributeChanged(event);
                     }
                 }
             });
@@ -575,7 +623,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private ICompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
-        final ClientCallFuture future = new ClientCallFuture(client, request, handler);
+        final ClientCallFuture future = new ClientCallFuture(client, connection, request, handler);
         _send(future, connection);
         return future;
     }

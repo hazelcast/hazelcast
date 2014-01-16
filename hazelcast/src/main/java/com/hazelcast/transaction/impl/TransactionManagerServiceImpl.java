@@ -104,6 +104,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         finalizeTransactionsOf(uuid);
     }
 
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+    }
+
     private void finalizeTransactionsOf(String uuid) {
         if (!txBackupLogs.isEmpty()) {
             for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {

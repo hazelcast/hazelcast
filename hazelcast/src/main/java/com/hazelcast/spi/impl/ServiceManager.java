@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -98,6 +99,7 @@ final class ServiceManager {
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
                 registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
                 registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
+                registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
             }
 
             serviceProps = new HashMap<String, Properties>();

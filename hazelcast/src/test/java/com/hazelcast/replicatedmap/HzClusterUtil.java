@@ -8,8 +8,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.wan.WanNoDelayReplication;
-import org.jruby.util.Random;
-
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,10 +20,14 @@ import static org.junit.Assert.assertTrue;
 
 public class HzClusterUtil {
 
+    private Random random = new Random();
+
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
     private HazelcastInstance[] cluster;
     private Config[] configs;
+
+    private boolean AUTO_RENAME=true;
 
     public HzClusterUtil(String groupName, int port, int clusterSZ){
         setup( groupName,  port,  clusterSZ);
@@ -33,6 +36,10 @@ public class HzClusterUtil {
     private HzClusterUtil(HazelcastInstance[] cluster, Config[] configs){
         this.cluster = cluster;
         this.configs = configs;
+    }
+
+    public void setAutoRenameCluster(boolean rename){
+        AUTO_RENAME=rename;
     }
 
     public HazelcastInstance[] getCluster(){
@@ -88,7 +95,7 @@ public class HzClusterUtil {
     }
 
     public HazelcastInstance getRandomNode(){
-        return cluster[Random.N % cluster.length ];
+        return cluster[random.nextInt(cluster.length) ];
     }
 
     public HazelcastInstance getNode(int index){
@@ -167,7 +174,10 @@ public class HzClusterUtil {
         String name = getName();
 
         for(int i=0; i<cluster.length/2; i++){
-            cluster[i].getConfig().getGroupConfig().setName(name+"("+1+")");
+
+            if(AUTO_RENAME){
+                cluster[i].getConfig().getGroupConfig().setName(name+"("+1+")");
+            }
             cluster[i].getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(split1);
         }
 
@@ -175,7 +185,10 @@ public class HzClusterUtil {
         List split2 = getClusterEndPointsFrom(port, cluster.length / 2);
 
         for(int i=cluster.length/2; i<cluster.length; i++){
-            cluster[i].getConfig().getGroupConfig().setName(name+"("+2+")");
+
+            if(AUTO_RENAME){
+                cluster[i].getConfig().getGroupConfig().setName(name+"("+2+")");
+            }
             cluster[i].getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(split2);
         }
     }
@@ -215,7 +228,12 @@ public class HzClusterUtil {
 
     private void initMergeClustersConfig(HzClusterUtil b){
 
-        String name = this.getName() +"+"+ b.getName();
+        String name;
+        if(AUTO_RENAME){
+            name = this.getName() +"+"+ b.getName();
+        }else{
+            name = this.getName();
+        }
 
         this.setName(name);
         b.setName(name);

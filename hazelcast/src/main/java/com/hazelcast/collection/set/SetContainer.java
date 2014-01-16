@@ -67,7 +67,7 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    protected Set<CollectionItem> getCollection(){
+    public Set<CollectionItem> getCollection(){
         if(itemSet == null){
             if (itemMap != null && !itemMap.isEmpty()){
                 itemSet = new HashSet<CollectionItem>(itemMap.values());

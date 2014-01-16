@@ -16,16 +16,20 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MemberInfo implements DataSerializable {
     Address address = null;
     String uuid;
+    Map<String, Object> attributes = null;
 
     public MemberInfo() {
     }
@@ -35,10 +39,15 @@ public class MemberInfo implements DataSerializable {
         this.address = address;
     }
 
-    public MemberInfo(Address address, String uuid) {
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
         super();
         this.address = address;
         this.uuid = uuid;
+        this.attributes = new HashMap<String, Object>(attributes);
+    }
+
+    public MemberInfo(MemberImpl member) {
+        this(member.getAddress(), member.getUuid(), member.getAttributes());
     }
 
     @Override
@@ -47,6 +56,13 @@ public class MemberInfo implements DataSerializable {
         address.readData(in);
         if (in.readBoolean()) {
             uuid = in.readUTF();
+        }
+        int size = in.readInt();
+        if (size > 0) attributes = new HashMap<String, Object>();
+        for (int i = 0; i < size; i++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            attributes.put(key, value);
         }
     }
 
@@ -57,6 +73,13 @@ public class MemberInfo implements DataSerializable {
         out.writeBoolean(hasUuid);
         if (hasUuid) {
             out.writeUTF(uuid);
+        }
+        out.writeInt(attributes == null ? 0 : attributes.size());
+        if (attributes != null) {
+            for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+                out.writeUTF(entry.getKey());
+                out.writeObject(entry.getValue());
+            }
         }
     }
 

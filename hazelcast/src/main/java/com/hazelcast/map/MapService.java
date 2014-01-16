@@ -243,7 +243,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         } else if (eventObject instanceof MapReplicationRemove) {
             MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
-            DeleteOperation operation = new DeleteOperation(replicationRemove.getMapName(), replicationRemove.getKey());
+            WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(), replicationRemove.getKey());
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
                 Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
@@ -1111,7 +1111,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         Address thisAddress = clusterService.getThisAddress();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId);
-            if (partition.getOwner().equals(thisAddress)) {
+            Address owner = partition.getOwner();
+            if(owner == null){
+                //no-op because no owner is set yet. Therefor we don't know anything about the map
+            }else if (owner.equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                 heapCost += recordStore.getHeapCost();

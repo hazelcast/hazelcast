@@ -33,4 +33,11 @@ public interface MembershipAwareService {
      * Invoked when an existing member leaves the cluster.
      */
     void memberRemoved(MembershipServiceEvent event);
+
+
+    /**
+     * Invoked when a member attribute is changed.
+     */
+    void memberAttributeChanged(MemberAttributeServiceEvent event);
+
 }

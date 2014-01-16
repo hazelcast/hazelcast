@@ -40,6 +40,7 @@ public final class FactoryIdHelper {
     public static final String CDL_DS_FACTORY = "hazelcast.serialization.ds.cdl";
     public static final String ATOMIC_REFERENCE_DS_FACTORY = "hazelcast.serialization.ds.atomic_reference";
     public static final String REPLICATED_MAP_DS_FACTORY = "hazelcast.serialization.ds.replicated_map";
+    public static final String MAP_REDUCE_DS_FACTORY = "hazelcast.serialization.ds.map_reduce";
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
     public static final String PARTITION_PORTABLE_FACTORY = "hazelcast.serialization.portable.partition";
@@ -57,7 +58,7 @@ public final class FactoryIdHelper {
     public static final String ATOMIC_REFERENCE_PORTABLE_FACTORY = "hazelcast.serialization.portable.atomic_reference";
     public static final String CDL_PORTABLE_FACTORY = "hazelcast.serialization.portable.cdl";
     public static final String REPLICATED_PORTABLE_FACTORY = "hazelcast.serialization.portable.replicated_map";
-
+    public static final String MAP_REDUCE_PORTABLE_FACTORY = "hazelcast.serialization.portable.map_reduce";
 
     public static int getFactoryId(String prop, int defaultId) {
         final String value = System.getProperty(prop);

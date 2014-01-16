@@ -23,21 +23,25 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JoinRequest extends JoinMessage implements DataSerializable {
 
     private Credentials credentials;
     private int tryCount = 0;
+    private Map<String, Object> attributes;
 
     public JoinRequest() {
         super();
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
-                       Credentials credentials, int memberCount, int tryCount) {
+                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes) {
         super(packetVersion, buildNumber, address, uuid, config, memberCount);
         this.credentials = credentials;
         this.tryCount = tryCount;
+        this.attributes = attributes;
     }
 
     public Credentials getCredentials() {
@@ -52,6 +56,10 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         this.tryCount = tryCount;
     }
 
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
@@ -60,6 +68,13 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
             credentials.setEndpoint(getAddress().getHost());
         }
         tryCount = in.readInt();
+        int size = in.readInt();
+        attributes = new HashMap<String, Object>();
+        for (int i = 0; i < size; i++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            attributes.put(key, value);
+        }
     }
 
     @Override
@@ -67,6 +82,11 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         super.writeData(out);
         out.writeObject(credentials);
         out.writeInt(tryCount);
+        out.writeInt(attributes.size());
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
     }
 
     @Override

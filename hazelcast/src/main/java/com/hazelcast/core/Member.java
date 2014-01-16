@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.net.InetSocketAddress;
+import java.util.Map;
 
 /**
  * Cluster member interface. The default implementation
@@ -61,4 +62,39 @@ public interface Member extends DataSerializable, Endpoint {
      * @return UUID of this member.
      */
     public String getUuid();
+
+    /**
+     * Returns configured attributes for this member.
+     *
+     * @return Attributes for this member.
+     */
+    Map<String, Object> getAttributes();
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Object getAttribute(String key);
+
+    /**
+     * Defines a key-value pair attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setAttribute(String key, Object value);
+
+    /**
+     * Removes a key-value pair attribute for this member if given key was
+     * previously assigned as an attribute.<br/>
+     * If key wasn't assigned to a value this method does nothing.
+     *
+     * @param key The key to be deleted from the member attributes
+     */
+    void removeAttribute(String key);
+
 }

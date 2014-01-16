@@ -129,7 +129,7 @@ public class ListContainer extends CollectionContainer {
     }
 
     @Override
-    protected List<CollectionItem> getCollection(){
+    public List<CollectionItem> getCollection(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){
                 itemList = new ArrayList<CollectionItem>(itemMap.values());
