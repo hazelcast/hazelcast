@@ -315,4 +315,30 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals(noOfEntries, nearCache.size());
     }
 
+
+    // issue 1570
+    @Test
+    public void testNullValueNearCache() {
+        int n = 2;
+        String mapName = "testNullValueNearCache";
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
+        HazelcastInstance instance = createHazelcastInstanceFactory(n).newInstances(config)[0];
+
+        IMap<String, String> map = instance.getMap(mapName);
+
+        int size = 100;
+
+        for (int i = 0; i < size; i++) {
+            assertNull(map.get("key" + i));
+        }
+
+        for (int i = 0; i < size; i++) {
+            assertNull(map.get("key" + i));
+        }
+
+        assertTrue(map.getLocalMapStats().getGetOperationCount() < size*2);
+    }
+
 }

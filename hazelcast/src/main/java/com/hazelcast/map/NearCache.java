@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class NearCache {
 
-    private static final Object NULL_OBJECT = new Object();
+    public static final Object NULL_OBJECT = new Object();
 
     private static final int evictionPercentage = 20;
     private static final int cleanupInterval = 5000;
@@ -186,7 +186,7 @@ public class NearCache {
                 updateSizeEstimator(-calculateCost(record));
                 return null;
             }
-            return record.value.equals(NULL_OBJECT) ? null : record.value;
+            return record.value;
         } else {
             stats.incrementMisses();
             return null;
