@@ -676,10 +676,15 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public void removeConnectionCalls(ClientConnection connection) {
-        ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
+        final HazelcastException response;
+        if (active) {
+            ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
+            response = new TargetDisconnectedException(connection.getRemoteEndpoint());
+        } else {
+            response = new HazelcastException("Client is shutting down!!!");
+        }
         final ConcurrentMap<Integer, ClientCallFuture> callIdMap = connectionCallMap.remove(connection);
         final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap = connectionEventHandlerMap.remove(connection);
-        final TargetDisconnectedException response = new TargetDisconnectedException(connection.getRemoteEndpoint());
         if (callIdMap != null) {
             for (Map.Entry<Integer, ClientCallFuture> entry : callIdMap.entrySet()) {
                 if (eventHandlerMap != null) {
