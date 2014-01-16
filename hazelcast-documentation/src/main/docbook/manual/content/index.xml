@@ -75,13 +75,13 @@
     </chapter>
     <chapter xml:id="ElasticMemory">
         <title>Elastic Memory
-            <superscript>(Enterprise Edition Only)</superscript>
+            <superscript>(Enterprise Extensions Only)</superscript>
         </title>
         <xi:include href="ElasticMemory.xml"/>
     </chapter>
     <chapter xml:id="Security">
         <title>Security
-            <superscript>(Enterprise Edition Only)</superscript>
+            <superscript>(Enterprise Extensions Only)</superscript>
         </title>
         <xi:include href="security/SecurityIntro.xml"/>
         <xi:include href="security/Credentials.xml"/>

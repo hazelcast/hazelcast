@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.*;
@@ -32,10 +33,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -204,6 +202,10 @@ final class TestNodeRegistry {
                     final Packet packet = (Packet) socketWritable;
                     if (nodeEngine.getNode().isActive()) {
                         packet.setConn(thisConnection);
+                        MemberImpl member = nodeEngine.getClusterService().getMember(thisAddress);
+                        if (member != null) {
+                            member.didRead();
+                        }
                         nodeEngine.handlePacket(packet);
                         return true;
                     }

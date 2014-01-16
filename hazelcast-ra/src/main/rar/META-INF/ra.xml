@@ -30,7 +30,7 @@
     <icon></icon>
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
-    <resourceadapter-version>3.1.5-SNAPSHOT</resourceadapter-version>
+    <resourceadapter-version>3.1.6-SNAPSHOT</resourceadapter-version>
 
     <license>
         <description>Copyright (c) 2008-2013, Hazelcast, Inc.</description>
@@ -42,6 +42,11 @@
         	<description>Location of the hazelcast.xml file</description>
         	<config-property-name>configurationLocation</config-property-name>
         	<config-property-type>java.lang.String</config-property-type>
+        </config-property>
+        <config-property>
+        	<description>External Hazelcast Instance to handle with this Resource Adaptor</description>
+        	<config-property-name>hazelcast</config-property-name>
+        	<config-property-type>com.hazelcast.core.HazelcastInstance</config-property-type>
         </config-property>
 
         <outbound-resourceadapter>

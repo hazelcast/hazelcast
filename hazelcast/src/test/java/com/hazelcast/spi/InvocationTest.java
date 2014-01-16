@@ -34,7 +34,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mdogan 9/16/13
@@ -42,6 +44,31 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class InvocationTest extends HazelcastTestSupport {
+
+    @Test
+    public void testTimeoutDuringBlocking() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        final IQueue<Object> q = hz.getQueue("queue");
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        Thread thread = new Thread(){
+            @Override
+            public void run(){
+                try {
+                    Object poll = q.poll(1, TimeUnit.SECONDS);
+                    assertNull(poll);
+                    latch.countDown();;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+         };
+        thread.start();
+
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
+    }
 
     @Test
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
