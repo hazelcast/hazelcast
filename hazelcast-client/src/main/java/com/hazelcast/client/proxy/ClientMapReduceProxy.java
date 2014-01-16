@@ -174,7 +174,7 @@ public class ClientMapReduceProxy
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             try {
-                cancelled = invoke(new ClientCancellationRequest(getName(), jobId), jobId);
+                cancelled = (Boolean) invoke(new ClientCancellationRequest(getName(), jobId), jobId);
             } catch (Exception ignore) {
             }
             return cancelled;
