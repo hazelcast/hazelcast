@@ -999,6 +999,7 @@ public class DefaultRecordStore implements RecordStore {
                 });
                 operation.setPartitionId(partitionId);
                 OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
+                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             } catch (Exception e) {
