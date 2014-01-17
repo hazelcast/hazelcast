@@ -18,6 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.RemoveOperation;
@@ -39,6 +40,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     protected String name;
     protected Data key;
     protected int threadId;
+    protected transient long startTime;
 
     public MapRemoveRequest() {
     }
@@ -59,6 +61,21 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
 
     public Object getKey() {
         return key;
+    }
+
+    @Override
+    protected void beforeProcess() {
+        startTime = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void afterResponse() {
+        final long latency = System.currentTimeMillis() - startTime;
+        final MapService mapService = getService();
+        MapContainer mapContainer = mapService.getMapContainer(name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getLocalMapStatsImpl(name).incrementRemoves(latency);
+        }
     }
 
     protected Operation prepareOperation() {

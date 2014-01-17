@@ -20,6 +20,7 @@ import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -655,5 +656,22 @@ public class ClientMapTest {
             return pk;
         }
     }
+    @Test
+    public void testMapStatistics() throws Exception {
+        final LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
 
+        final int operationCount = 100;
+        for (int i = 0; i < operationCount; i++) {
+            map.put(i,i);
+            map.get(i);
+            map.remove(i);
+        }
+
+        assertEquals("put count",operationCount,localMapStats.getPutOperationCount());
+        assertEquals("get count",operationCount,localMapStats.getGetOperationCount());
+        assertEquals("remove count",operationCount,localMapStats.getRemoveOperationCount());
+        assertTrue("put latency",  0 < localMapStats.getTotalPutLatency());
+        assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
+        assertTrue("remove latency",0 < localMapStats.getTotalRemoveLatency());
+    }
 }

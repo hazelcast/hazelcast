@@ -18,12 +18,16 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
@@ -38,6 +42,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     protected String name;
     protected int threadId;
     protected long ttl;
+    protected transient long startTime;
 
     public MapPutRequest() {
     }
@@ -68,6 +73,21 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
 
     protected Object getKey() {
         return key;
+    }
+
+    @Override
+    protected void beforeProcess() {
+        startTime = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void afterResponse() {
+        final long latency = System.currentTimeMillis() - startTime;
+        final MapService mapService = getService();
+        MapContainer mapContainer = mapService.getMapContainer(name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getLocalMapStatsImpl(name).incrementPuts(latency);
+        }
     }
 
     @Override
