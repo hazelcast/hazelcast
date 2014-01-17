@@ -438,7 +438,7 @@ final class BasicOperationService implements InternalOperationService {
     private RemoteCallKey beforeCallExecution(Operation op) {
         RemoteCallKey callKey = null;
         if (op.getCallId() != 0 && op.returnsResponse()) {
-            callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallerUuid(), op.getCallId());
+            callKey = new RemoteCallKey(op);
             RemoteCallKey current;
             if ((current = executingCalls.put(callKey, callKey)) != null) {
                 logger.warning("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
@@ -506,9 +506,9 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
-        final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallerUuid(), op.getCallId());
+        final RemoteCallKey key = new RemoteCallKey(op);
         if (logger.isFinestEnabled()) {
-            logger.finest( "Scheduling -> " + backup);
+            logger.finest("Scheduling -> " + backup);
         }
         backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
     }
@@ -522,7 +522,7 @@ final class BasicOperationService implements InternalOperationService {
                 if (!backup.backup()) {
                     final int retries = backup.retries;
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "Re-scheduling[" + retries + "] -> " + backup);
+                        logger.finest("Re-scheduling[" + retries + "] -> " + backup);
                     }
                     scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
                 }
@@ -954,9 +954,27 @@ final class BasicOperationService implements InternalOperationService {
         private final long callId;
 
         private RemoteCallKey(Address callerAddress, String callerUuid, long callId) {
+            if (callerUuid == null) {
+                throw new IllegalArgumentException("Caller UUID is required!");
+            }
             this.callerAddress = callerAddress;
+            if (callerAddress == null) {
+                throw new IllegalArgumentException("Caller address is required!");
+            }
             this.callerUuid = callerUuid;
             this.callId = callId;
+        }
+
+        private RemoteCallKey(final Operation op) {
+            callerUuid = op.getCallerUuid();
+            if (callerUuid == null) {
+                throw new IllegalArgumentException("Caller UUID is required! -> " + op);
+            }
+            callerAddress = op.getCallerAddress();
+            if (callerAddress == null) {
+                throw new IllegalArgumentException("Caller address is required! -> " + op);
+            }
+            callId = op.getCallId();
         }
 
         @Override
