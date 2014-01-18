@@ -37,7 +37,7 @@ public final class ClassLoaderUtil {
     private static final Map<String, Class> PRIMITIVE_CLASSES;
     private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
 
-    private static final ConstructorCache CONSTRCUTOR_CACHE = new ConstructorCache();
+    private static final ConstructorCache CONSTRUCTOR_CACHE = new ConstructorCache();
 
     static {
         final Map<String, Class> primitives = new HashMap<String, Class>(10, 1.0f);
@@ -55,7 +55,7 @@ public final class ClassLoaderUtil {
 
     public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
         classLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
-        Constructor<T> constructor = CONSTRCUTOR_CACHE.get(classLoader, className);
+        Constructor<T> constructor = CONSTRUCTOR_CACHE.get(classLoader, className);
         if (constructor != null) {
             return constructor.newInstance();
         }
@@ -68,7 +68,7 @@ public final class ClassLoaderUtil {
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }
-        CONSTRCUTOR_CACHE.put(classLoader, className, constructor);
+        CONSTRUCTOR_CACHE.put(classLoader, className, constructor);
         return constructor.newInstance();
     }
 
