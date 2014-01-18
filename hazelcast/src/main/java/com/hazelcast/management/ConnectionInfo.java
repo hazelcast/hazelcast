@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @author mdogan 5/8/12
+ * DTO containing {@link com.hazelcast.nio.Connection} information.
  */
 public class ConnectionInfo implements DataSerializable {
 
@@ -58,6 +58,7 @@ public class ConnectionInfo implements DataSerializable {
         return memberIndex;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(memberIndex);
         out.writeLong(lastRead);
@@ -65,6 +66,7 @@ public class ConnectionInfo implements DataSerializable {
         out.writeBoolean(live);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         memberIndex = in.readInt();
         lastRead = in.readLong();

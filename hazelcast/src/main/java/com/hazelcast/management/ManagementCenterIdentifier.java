@@ -23,26 +23,10 @@ import java.util.regex.Pattern;
 import static java.lang.String.format;
 
 /**
- * User: sancar
- * Date: 6/6/13
- * Time: 1:40 PM
+ * Identifier for the ManagementCenter. This information is used when a member identifies itself to the
+ * ManagementCenter. It contains information like version/clustername/address.
  */
 public class ManagementCenterIdentifier implements Serializable {
-
-    private int version;
-    private String clusterName;
-    private String address;
-    public transient String versionString;
-
-    public ManagementCenterIdentifier() {
-
-    }
-
-    public ManagementCenterIdentifier(String version, String clusterName, String address) {
-        this.version = getVersionAsInt(version);
-        this.clusterName = clusterName;
-        this.address = address;
-    }
 
     public static int getVersionAsInt(String versionString) throws IllegalArgumentException {
         int version = 0;
@@ -68,6 +52,22 @@ public class ManagementCenterIdentifier implements Serializable {
         builder.append(v.charAt(2));
         return builder.toString();
     }
+
+    private int version;
+    private String clusterName;
+    private String address;
+    public transient String versionString;
+
+    public ManagementCenterIdentifier() {
+
+    }
+
+    public ManagementCenterIdentifier(String version, String clusterName, String address) {
+        this.version = getVersionAsInt(version);
+        this.clusterName = clusterName;
+        this.address = address;
+    }
+
 
     public void read(InputStream in) throws IOException {
         DataInputStream dataInput = new DataInputStream(in);

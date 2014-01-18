@@ -60,23 +60,28 @@ public class ConsoleCommandHandler {
             super(hazelcast);
         }
 
+        @Override
         protected void handleCommand(String command) {
             super.handleCommand(command);
         }
 
+        @Override
         protected void handleAddListener(String[] args) {
             println("Listener commands are not allowed!");
         }
 
+        @Override
         protected void handleRemoveListener(String[] args) {
             println("Listener commands are not allowed!");
         }
 
+        @Override
         public void println(Object obj) {
             print(obj);
             print('\n');
         }
 
+        @Override
         public void print(Object obj) {
             buffer.append(String.valueOf(obj));
         }

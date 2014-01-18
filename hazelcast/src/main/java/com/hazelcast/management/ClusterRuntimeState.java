@@ -55,7 +55,6 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
                                final Collection<MigrationInfo> activeMigrations,
                                final Map<Address, Connection> connections,
                                final Collection<LockResource> locks) {
-        super();
         this.activeMigrations = activeMigrations != null ? activeMigrations : Collections.<MigrationInfo>emptySet();
         lockInfos = new LinkedList<LockInfo>();
         connectionInfos = new LinkedList<ConnectionInfo>();
@@ -83,7 +82,6 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     private void setLocks(final Collection<LockResource> locks, final Map<Address, Integer> addressIndexes, final Collection<Member> members) {
-//        final long now = Clock.currentTimeMillis();
         Map<String, Address> uuidToAddress = new HashMap<String, Address>(members.size());
         for (Member member : members) {
             uuidToAddress.put(member.getUuid(), ((MemberImpl) member).getAddress());
