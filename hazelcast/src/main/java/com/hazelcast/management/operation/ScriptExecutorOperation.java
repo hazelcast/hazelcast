@@ -62,8 +62,7 @@ public class ScriptExecutorOperation extends Operation {
                 engine.put(entry.getKey(), entry.getValue());
             }
         }
-        Object result = engine.eval(script);
-        this.result = result;
+        this.result = engine.eval(script);
     }
 
     @Override

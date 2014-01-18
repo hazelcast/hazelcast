@@ -23,14 +23,9 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 3/27/13
- * Time: 11:09 AM
- */
 public class ThreadDumpOperation extends Operation {
 
-    private boolean isDeadlock;
+    private boolean dumpDeadlocks;
     private String result;
 
     public ThreadDumpOperation() {
@@ -38,7 +33,7 @@ public class ThreadDumpOperation extends Operation {
     }
 
     public ThreadDumpOperation(boolean dumpDeadlocks) {
-        this.isDeadlock = dumpDeadlocks;
+        this.dumpDeadlocks = dumpDeadlocks;
     }
 
     public void beforeRun() throws Exception {
@@ -46,7 +41,7 @@ public class ThreadDumpOperation extends Operation {
 
     public void run() throws Exception {
         ThreadDumpGenerator gen = ThreadDumpGenerator.newInstance();
-        result = isDeadlock ? gen.dumpDeadlocks() : gen.dumpAllThreads();
+        result = dumpDeadlocks ? gen.dumpDeadlocks() : gen.dumpAllThreads();
     }
 
     public void afterRun() throws Exception {
@@ -61,10 +56,10 @@ public class ThreadDumpOperation extends Operation {
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(isDeadlock);
+        out.writeBoolean(dumpDeadlocks);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
-        isDeadlock = in.readBoolean();
+        dumpDeadlocks = in.readBoolean();
     }
 }
