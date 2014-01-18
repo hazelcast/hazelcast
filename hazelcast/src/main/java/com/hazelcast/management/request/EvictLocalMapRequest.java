@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+//todo: is this class uses at all since it doesn't execute any logic.
 public class EvictLocalMapRequest implements ConsoleRequest {
 
     String map;

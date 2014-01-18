@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class VersionMismatchLogRequest implements ConsoleRequest {
 
@@ -48,7 +47,9 @@ public class VersionMismatchLogRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService managementCenterService, ObjectDataOutput dos) throws Exception {
         managementCenterService.setVersionMismatch(true);
-        final ILogger logger = managementCenterService.getHazelcastInstance().node.getLogger(VersionMismatchLogRequest.class);
+        ILogger logger = managementCenterService.getHazelcastInstance().node.getLogger(VersionMismatchLogRequest.class);
+        //todo: does this message make sense because to the user it just displays version information we already know.
+        //he has no clue that the management version is not matching with his own.
         logger.severe("The version of the management center is " + manCenterVersion);
     }
 
