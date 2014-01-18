@@ -26,22 +26,17 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * User: sancar
- * Date: 7/10/13
- * Time: 1:59 PM
- */
 public class GetSystemWarningsRequest  implements ConsoleRequest {
 
     public GetSystemWarningsRequest(){
-        super();
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_SYSTEM_WARNINGS;
     }
 
-
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         List<SystemLogRecord> list = new LinkedList<SystemLogRecord>();
         String node = in.readUTF();
@@ -55,6 +50,7 @@ public class GetSystemWarningsRequest  implements ConsoleRequest {
         return list;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         List<SystemLogRecord> logBundle = mcs.getHazelcastInstance().node.getSystemLogService().getSystemWarnings();
         final Address address = mcs.getHazelcastInstance().node.getThisAddress();
@@ -65,12 +61,11 @@ public class GetSystemWarningsRequest  implements ConsoleRequest {
         }
     }
 
-    
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
     }
 
-    
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
     }
-
 }

@@ -22,31 +22,32 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-// author: sancar - 21.12.2012
 public class ShutdownMemberRequest implements ConsoleRequest {
 
     public ShutdownMemberRequest() {
-
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_SHUTDOWN;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         return in.readUTF();
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         mcs.getHazelcastInstance().getLifecycleService().shutdown();
         dos.writeUTF("successful");
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-
     }
 }

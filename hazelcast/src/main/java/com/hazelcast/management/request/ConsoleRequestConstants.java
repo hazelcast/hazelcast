@@ -18,6 +18,7 @@ package com.hazelcast.management.request;
 
 public final class ConsoleRequestConstants {
 
+    //todo: unused; what do do with it.
     public static final byte STATE_OUT_OF_MEMORY = 0;
     public static final byte STATE_ACTIVE = 1;
 

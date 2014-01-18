@@ -25,17 +25,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
-// author: sancar - 12.12.2012
 public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
 
     public GetMemberSystemPropertiesRequest() {
-        super();
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_SYSTEM_PROPERTIES;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         Map<String, String> properties = new LinkedHashMap<String, String>();
         int size = in.readInt();
@@ -47,6 +47,7 @@ public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
         return properties;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         Properties properties = System.getProperties();
         dos.writeInt(properties.size());
@@ -56,11 +57,11 @@ public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-
     }
 }

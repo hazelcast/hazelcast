@@ -31,30 +31,35 @@ public class EvictLocalMapRequest implements ConsoleRequest {
     }
 
     public EvictLocalMapRequest(String map, int percent) {
-        super();
         this.map = map;
         this.percent = percent;
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_EVICT_LOCAL_MAP;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+        //todo: unused code: does this Request do anything at all?
 //        EvictLocalMapEntriesCallable call = new EvictLocalMapEntriesCallable(map, percent);
 //        call.setHazelcastInstance(mcs.getHazelcastInstance());
 //        mcs.callOnAllMembers(call);
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         return null;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(map);
         out.writeInt(percent);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         map = in.readUTF();
         percent = in.readInt();

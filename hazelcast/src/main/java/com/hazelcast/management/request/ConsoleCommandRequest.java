@@ -34,14 +34,15 @@ public class ConsoleCommandRequest implements ConsoleRequest {
     }
 
     public ConsoleCommandRequest(String command) {
-        super();
         this.command = command;
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_CONSOLE_COMMAND;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         ConsoleCommandHandler handler = mcs.getCommandHandler();
         try {
@@ -52,14 +53,17 @@ public class ConsoleCommandRequest implements ConsoleRequest {
         }
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         return readLongString(in);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(command);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         command = in.readUTF();
     }
