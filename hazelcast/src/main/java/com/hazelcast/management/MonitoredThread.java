@@ -47,9 +47,9 @@ public class MonitoredThread implements Comparable<MonitoredThread> {
     }
 
     @Override
-    public boolean equals(Object o){
-        if(o!=null && o instanceof MonitoredThread){
-            return this.compareTo((MonitoredThread)o)==0;
+    public boolean equals(Object o) {
+        if (o != null && o instanceof MonitoredThread) {
+            return this.compareTo((MonitoredThread) o) == 0;
         }
         return false;
     }
