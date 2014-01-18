@@ -37,9 +37,8 @@ public class ThreadDumpOperation extends Operation {
         this(false);
     }
 
-    public ThreadDumpOperation(boolean deadlock) {
-        super();
-        this.isDeadlock = deadlock;
+    public ThreadDumpOperation(boolean dumpDeadlocks) {
+        this.isDeadlock = dumpDeadlocks;
     }
 
     public void beforeRun() throws Exception {

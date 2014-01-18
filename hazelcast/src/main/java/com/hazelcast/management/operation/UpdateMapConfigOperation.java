@@ -25,18 +25,12 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 3/27/13
- * Time: 10:05 AM
- */
 public class UpdateMapConfigOperation extends Operation {
 
     private String mapName;
     private MapConfig mapConfig;
 
     public UpdateMapConfigOperation() {
-
     }
 
     public UpdateMapConfigOperation(String mapName, MapConfig mapConfig) {
@@ -44,9 +38,11 @@ public class UpdateMapConfigOperation extends Operation {
         this.mapConfig = mapConfig;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         MapService service = getService();
         MapConfig config = service.getMapContainer(mapName).getMapConfig();
@@ -60,22 +56,27 @@ public class UpdateMapConfigOperation extends Operation {
         config.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
+    @Override
     public Object getResponse() {
         return null;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
         new MapConfigAdapter(mapConfig).writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
         MapConfigAdapter adapter = new MapConfigAdapter();

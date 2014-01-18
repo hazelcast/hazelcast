@@ -28,11 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: sancar
- * Date: 3/27/13
- * Time: 10:57 AM
- */
 public class ScriptExecutorOperation extends Operation {
 
     private String engineName;
@@ -41,19 +36,19 @@ public class ScriptExecutorOperation extends Operation {
     private Object result;
 
     public ScriptExecutorOperation() {
-        super();
     }
 
     public ScriptExecutorOperation(String engineName, String script, Map<String, Object> bindings) {
-        super();
         this.engineName = engineName;
         this.script = script;
         this.bindings = bindings;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
         ScriptEngine engine = scriptEngineManager.getEngineByName(engineName);
@@ -71,17 +66,21 @@ public class ScriptExecutorOperation extends Operation {
         this.result = result;
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
+    @Override
     public Object getResponse() {
         return result;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(engineName);
         out.writeUTF(script);
@@ -97,6 +96,7 @@ public class ScriptExecutorOperation extends Operation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         engineName = in.readUTF();
         script = in.readUTF();

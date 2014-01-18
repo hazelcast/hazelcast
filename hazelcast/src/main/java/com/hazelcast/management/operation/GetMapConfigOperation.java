@@ -24,11 +24,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 3/26/13
- * Time: 3:33 PM
- */
 public class GetMapConfigOperation extends Operation {
 
     private String mapName;
@@ -41,30 +36,36 @@ public class GetMapConfigOperation extends Operation {
         this.mapName = mapName;
     }
 
-
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         MapService service = getService();
         mapConfig = service.getMapContainer(mapName).getMapConfig();
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
+    @Override
     public Object getResponse() {
         return mapConfig;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }

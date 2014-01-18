@@ -24,27 +24,23 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 3/27/13
- * Time: 10:37 AM
- */
 public class ManagementCenterConfigOperation extends Operation {
 
     private int redoCount = 10;
     private String newUrl;
 
     public ManagementCenterConfigOperation() {
-
     }
 
     public ManagementCenterConfigOperation(String newUrl) {
         this.newUrl = newUrl;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         ManagementCenterService service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         int count = 0;
@@ -57,21 +53,26 @@ public class ManagementCenterConfigOperation extends Operation {
             service.changeWebServerUrl(newUrl);
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
+    @Override
     public Object getResponse() {
         return null;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(newUrl);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         newUrl = in.readUTF();
     }
