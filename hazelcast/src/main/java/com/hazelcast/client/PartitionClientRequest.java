@@ -25,7 +25,12 @@ import com.hazelcast.spi.Operation;
  */
 public abstract class PartitionClientRequest extends ClientRequest {
 
+    protected void beforeProcess(){};
+
+    protected void afterResponse(){};
+
     final void process() {
+        beforeProcess();
         final ClientEndpoint endpoint = getEndpoint();
         final Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
@@ -34,6 +39,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
                         endpoint.sendResponse(filter(object), getCallId());
+                        afterResponse();
                     }
                 });
         builder.invoke();
