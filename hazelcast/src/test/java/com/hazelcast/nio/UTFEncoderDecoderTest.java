@@ -16,14 +16,12 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.monitor.MemberState;
+import com.hazelcast.management.TimedMemberStateFactory;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -150,10 +148,8 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         original.setAccessible(true);
 
         HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz);
-        ManagementCenterService mcs = impl.node.getManagementCenterService();
-        Method getTimedMemberState = ManagementCenterService.class.getDeclaredMethod("getTimedMemberState");
-        getTimedMemberState.setAccessible(true);
-        TimedMemberState memberState = (TimedMemberState) getTimedMemberState.invoke(mcs);
+        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(impl);
+        TimedMemberState memberState = timedMemberStateFactory.createTimedMemberState();
 
         SerializationService ss = impl.node.getSerializationService();
 

@@ -19,8 +19,7 @@ package com.hazelcast.util;
 import java.util.Locale;
 
 /**
- * User: ahmetmircik
- * Date: 11/14/13
+ * Utility class for Strings.
  */
 public final class StringUtil {
 
@@ -29,28 +28,31 @@ public final class StringUtil {
     private StringUtil() {
     }
 
-    /**
-     *
-     * HC specific settings, operands etc. use this method.
-     *
-     * */
-    public static String upperCaseInternal(String str) {
-        if (str == null || str.length() == 0) {
-            return str;
+    public static boolean isNullOrEmpty(String s){
+        if(s == null){
+            return true;
         }
-        return str.toUpperCase(LOCALE_INTERNAL);
+        return s.isEmpty();
     }
 
     /**
-     *
      * HC specific settings, operands etc. use this method.
-     *
-     * */
-    public static String lowerCaseInternal(String str) {
-        if (str == null || str.length() == 0) {
-            return str;
+     */
+    public static String upperCaseInternal(String s) {
+        if (isNullOrEmpty(s)) {
+            return s;
         }
-        return str.toLowerCase(LOCALE_INTERNAL);
+        return s.toUpperCase(LOCALE_INTERNAL);
+    }
+
+    /**
+     * HC specific settings, operands etc. use this method.
+     */
+    public static String lowerCaseInternal(String s) {
+        if (isNullOrEmpty(s)) {
+            return s;
+        }
+        return s.toLowerCase(LOCALE_INTERNAL);
     }
 
 }

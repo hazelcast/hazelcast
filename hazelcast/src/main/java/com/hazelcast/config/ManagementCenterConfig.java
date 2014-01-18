@@ -21,7 +21,7 @@ package com.hazelcast.config;
  */
 public class ManagementCenterConfig {
 
-    private boolean enabled = true;
+    private boolean enabled = false;
     
     private String url;
     

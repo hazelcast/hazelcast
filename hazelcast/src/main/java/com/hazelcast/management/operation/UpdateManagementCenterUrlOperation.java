@@ -24,15 +24,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class ManagementCenterConfigOperation extends Operation {
+public class UpdateManagementCenterUrlOperation extends Operation {
 
     private int redoCount = 10;
     private String newUrl;
 
-    public ManagementCenterConfigOperation() {
+    public UpdateManagementCenterUrlOperation() {
     }
 
-    public ManagementCenterConfigOperation(String newUrl) {
+    public UpdateManagementCenterUrlOperation(String newUrl) {
         this.newUrl = newUrl;
     }
 
@@ -49,8 +49,10 @@ public class ManagementCenterConfigOperation extends Operation {
             count++;
             service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         }
-        if (service != null)
-            service.changeWebServerUrl(newUrl);
+
+        if (service != null){
+            service.updateManagementCenterUrl(newUrl);
+        }
     }
 
     @Override

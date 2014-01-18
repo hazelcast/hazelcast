@@ -46,7 +46,7 @@ public class VersionMismatchLogRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService managementCenterService, ObjectDataOutput dos) throws Exception {
-        managementCenterService.setVersionMismatch(true);
+        managementCenterService.signalVersionMismatch();
         ILogger logger = managementCenterService.getHazelcastInstance().node.getLogger(VersionMismatchLogRequest.class);
         //todo: does this message make sense because to the user it just displays version information we already know.
         //he has no clue that the management version is not matching with his own.
