@@ -181,7 +181,6 @@ public class ManagementCenterService {
         }
     }
 
-
     private void logHostedManagementCenterRegisterUrl() {
         //we only want to display the page for hosted management registration once. We don't want to pollute
         //the logfile.
