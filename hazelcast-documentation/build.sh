@@ -18,10 +18,9 @@ MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
 MANIFEST_FILE_BODY+="["
 
 echo "Building manifest file for multipage html"
-fileList=$(ls src/*.md)
-for file in $fileList
+for file in $INDEX
 do
-MANIFEST_FILE_BODY+="\""$file"\","
+MANIFEST_FILE_BODY+="\"$file\","
 done
 MANIFEST_FILE_BODY=${MANIFEST_FILE_BODY:0: ${#MANIFEST_FILE_BODY}-1}
 MANIFEST_FILE_BODY+="]}"
@@ -80,7 +79,7 @@ fi
 
 echo "Creating concatenated markdown file for pdf/single html."
 
-for file in `ls src/*.md`
+for file in $INDEX
 do
  cat $file >> $MERGED_FILE_NAME
  printf "\n" >> $MERGED_FILE_NAME
@@ -118,7 +117,7 @@ MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
 \"date\": \"$date\",
 \"version\": \"$version\",
 \"maxTocLevel\":3,
-\"files\":[\"./src/$MERGED_FILE_NAME\"]}" 
+\"files\":[\"./src/$MERGED_FILE_NAME\"]}"
 
 if [[ -e "./$MANIFEST_FILE_NAME" ]]; then
 	$(rm -rf "./$MANIFEST_FILE_NAME")
@@ -169,6 +168,7 @@ function init {
 	COPYRIGHT_FILE_NAME="copyright.txt"
 	date=`date +%b\ %d\,\ %Y`
 	year=`date +%Y`
+	INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' documentation.index`
 	
 }
 
