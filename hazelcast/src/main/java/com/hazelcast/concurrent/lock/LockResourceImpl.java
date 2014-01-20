@@ -61,6 +61,9 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     @Override
     public boolean isLockedBy(String owner, int threadId) {
+        if (transactional) {
+            return (owner != null && owner.equals(this.owner));
+        }
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
@@ -127,7 +130,13 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     boolean canAcquireLock(String caller, int threadId) {
-        return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
+        if (lockCount == 0) {
+            return true;
+        }
+        if (transactional) {
+            return getOwner().equals(caller);
+        }
+        return getThreadId() == threadId && getOwner().equals(caller);
     }
 
     boolean addAwait(String conditionId, String caller, int threadId) {
