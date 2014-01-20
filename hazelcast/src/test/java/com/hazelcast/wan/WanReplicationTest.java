@@ -15,18 +15,15 @@ import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.jruby.util.Random;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
@@ -38,8 +35,7 @@ import static org.junit.Assert.*;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
-@Ignore//todo:
+@Category(ProblematicTest.class)
 public class WanReplicationTest extends HazelcastTestSupport{
 
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
@@ -51,6 +47,8 @@ public class WanReplicationTest extends HazelcastTestSupport{
     private Config configA;
     private Config configB;
     private Config configC;
+
+    private Random random = new Random();
 
     @Before
     public void setup() throws Exception {
@@ -92,7 +90,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     private HazelcastInstance getNode(HazelcastInstance[] cluster){
-        return cluster[Random.N % cluster.length ];
+        return cluster[random.nextInt(cluster.length) ];
     }
 
 

@@ -21,6 +21,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -485,6 +486,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMapRecordEviction() throws InterruptedException {
         int size = 100000;
         Config cfg = new Config();
@@ -578,8 +580,9 @@ public class EvictionTest extends HazelcastTestSupport {
         assertEquals(2, map.get(1));
     }
 
-    @Ignore("test fails on latch wait(not enough time to eviect enterys)  or map.size < expected so the inner Thread did not have enough time to get the enterys and save them from evection")//TODO
+    //TODO"test fails on latch wait(not enough time to eviect enterys)  or map.size < expected so the inner Thread did not have enough time to get the enterys and save them from evection")
     @Test
+    @Category(ProblematicTest.class)
     public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
         Config cfg = new Config();
         final String name = "testMapRecordIdleEvictionOnMigration";
@@ -691,6 +694,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testIssue1085EvictionBackup() throws InterruptedException {
         Config config = new Config();
         config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);
