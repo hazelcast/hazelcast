@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastException;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Unsafe accessor.
@@ -38,6 +40,7 @@ import java.lang.reflect.Field;
 public final class UnsafeHelper {
 
     public static final Unsafe UNSAFE;
+    public static final boolean UNSAFE_AVAILABLE;
 
     public static final long BYTE_ARRAY_BASE_OFFSET;
     public static final long SHORT_ARRAY_BASE_OFFSET;
@@ -57,9 +60,7 @@ public final class UnsafeHelper {
 
     static {
         try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            Unsafe unsafe = (Unsafe) field.get(null);
+            Unsafe unsafe = findUnsafe();
 
             BYTE_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(byte[].class);
             SHORT_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(short[].class);
@@ -88,8 +89,40 @@ public final class UnsafeHelper {
             unsafe.copyMemory(new byte[8], BYTE_ARRAY_BASE_OFFSET, buffer, BYTE_ARRAY_BASE_OFFSET, buffer.length);
 
             UNSAFE = unsafe;
+            UNSAFE_AVAILABLE = UNSAFE != null;
         } catch (Throwable e) {
             throw new HazelcastException(e);
+        }
+    }
+
+    private static Unsafe findUnsafe() {
+        try {
+            return Unsafe.getUnsafe();
+        } catch (SecurityException se) {
+            return AccessController.doPrivileged(new PrivilegedAction<Unsafe>() {
+                @Override
+                public Unsafe run() {
+                    try {
+                        Class<Unsafe> type = Unsafe.class;
+                        try {
+                            Field field = type.getDeclaredField("theUnsafe");
+                            field.setAccessible(true);
+                            return type.cast(field.get(type));
+
+                        } catch (Exception e) {
+                            for (Field field : type.getDeclaredFields()) {
+                                if (type.isAssignableFrom(field.getType()))  {
+                                    field.setAccessible(true);
+                                    return type.cast(field.get(type));
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unsafe unavailable", e);
+                    }
+                    throw new RuntimeException("Unsafe unavailable");
+                }
+            });
         }
     }
 
