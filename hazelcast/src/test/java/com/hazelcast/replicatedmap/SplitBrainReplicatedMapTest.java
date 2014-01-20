@@ -123,7 +123,7 @@ public class SplitBrainReplicatedMapTest {
     @Test
     @Category(ProblematicTest.class)
     public void splitJoinedClusterReplicatedMap_AssertFromAllNodes_InMemoryFormat_Binary_RepDealy() throws Exception {
-        //splitJoinedClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.BINARY, 1000);
+        splitJoinedClusterReplicatedMap_AssertFromAllNodes(InMemoryFormat.BINARY, 1000);
     }
 
 
