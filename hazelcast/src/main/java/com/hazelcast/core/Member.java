@@ -81,7 +81,9 @@ public interface Member extends DataSerializable, Endpoint {
 
     /**
      * Defines a key-value pair attribute for this member available
-     * to other cluster members.
+     * to other cluster members.<br/>
+     * Available value types are {@link Boolean}, {@link Byte}, {@link Short},
+     * {@link Integer}, {@link Long}, {@link Float}, {@link Double}, {@link String}.
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.

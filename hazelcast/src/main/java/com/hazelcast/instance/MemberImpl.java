@@ -42,6 +42,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
+    private static final byte TYPE_BOOLEAN = 1;
+    private static final byte TYPE_BYTE = 2;
+    private static final byte TYPE_SHORT = 3;
+    private static final byte TYPE_INTEGER = 4;
+    private static final byte TYPE_LONG = 5;
+    private static final byte TYPE_FLOAT = 6;
+    private static final byte TYPE_DOUBLE = 7;
+    private static final byte TYPE_UTF = 8;
+
     private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
 
     private boolean localMember;
@@ -180,6 +189,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
         if (key == null) throw new IllegalArgumentException("key must not be null");
         if (value == null) throw new IllegalArgumentException("value must not be null");
+        checkAttributeType(value);
         Object oldValue = attributes.put(key, value);
         if (value.equals(oldValue)) {
             return;
@@ -248,7 +258,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            Object value = readAttributeValue(in);
             attributes.put(key, value);
         }
     }
@@ -259,7 +269,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
-            out.writeObject(entry.getValue());
+            writeAttributeValue(entry.getValue(), out);
         }
     }
 
@@ -309,4 +319,69 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     public int getId() {
         return ClusterDataSerializerHook.MEMBER;
     }
+
+    private void checkAttributeType(Object value) {
+        Class<?> type = value.getClass();
+        if (type.equals(Boolean.class) || type.equals(Byte.class)
+                || type.equals(Short.class) || type.equals(Integer.class)
+                || type.equals(Long.class) || type.equals(Float.class)
+                || type.equals(Double.class) || type.equals(String.class)) {
+            return;
+        }
+        throw new IllegalArgumentException("Attribute values can only have a value of types ["
+                + "boolean, byte, short, int, long, float, double, String");
+    }
+
+    private void writeAttributeValue(Object value, ObjectDataOutput out) throws IOException {
+        Class<?> type = value.getClass();
+        if (type.equals(Boolean.class)) {
+            out.writeByte(TYPE_BOOLEAN);
+            out.writeBoolean((Boolean) value);
+        } else if (type.equals(Byte.class)) {
+            out.writeByte(TYPE_BYTE);
+            out.writeByte((Byte) value);
+        } else if (type.equals(Short.class)) {
+            out.writeByte(TYPE_SHORT);
+            out.writeShort((Short) value);
+        } else if (type.equals(Integer.class)) {
+            out.writeByte(TYPE_INTEGER);
+            out.writeInt((Integer) value);
+        } else if (type.equals(Long.class)) {
+            out.writeByte(TYPE_LONG);
+            out.writeLong((Long) value);
+        } else if (type.equals(Float.class)) {
+            out.writeByte(TYPE_FLOAT);
+            out.writeFloat((Float) value);
+        } else if (type.equals(Double.class)) {
+            out.writeByte(TYPE_DOUBLE);
+            out.writeDouble((Double) value);
+        } else if(type.equals(String.class)) {
+            out.writeByte(TYPE_UTF);
+            out.writeUTF((String) value);
+        }
+    }
+
+    private Object readAttributeValue(ObjectDataInput in) throws IOException {
+        byte type = in.readByte();
+        switch (type) {
+            case TYPE_BOOLEAN:
+                return in.readBoolean();
+            case TYPE_BYTE:
+                return in.readByte();
+            case TYPE_SHORT:
+                return in.readShort();
+            case TYPE_INTEGER:
+                return in.readInt();
+            case TYPE_LONG:
+                return in.readLong();
+            case TYPE_FLOAT:
+                return in.readFloat();
+            case TYPE_DOUBLE:
+                return in.readDouble();
+            case TYPE_UTF:
+                return in.readUTF();
+        }
+        throw new IllegalStateException("Illegal type id found");
+    }
+
 }
