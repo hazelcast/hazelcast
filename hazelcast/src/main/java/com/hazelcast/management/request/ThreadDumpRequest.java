@@ -29,23 +29,25 @@ import static com.hazelcast.nio.IOUtil.writeLongString;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
-    private boolean isDeadlock;
+    private boolean dumpDeadlocks;
     private Address target;
 
     public ThreadDumpRequest() {
     }
 
-    public ThreadDumpRequest(Address target, boolean deadlock) {
+    public ThreadDumpRequest(Address target, boolean dumpDeadlocks) {
         this.target = target;
-        this.isDeadlock = deadlock;
+        this.dumpDeadlocks = dumpDeadlocks;
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_GET_THREAD_DUMP;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        String threadDump = (String) mcs.callOnAddress(target, new ThreadDumpOperation(isDeadlock));
+        String threadDump = (String) mcs.callOnAddress(target, new ThreadDumpOperation(dumpDeadlocks));
         if (threadDump != null) {
             dos.writeBoolean(true);
             writeLongString(dos, threadDump);
@@ -54,6 +56,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
         }
     }
 
+    @Override
     public String readResponse(ObjectDataInput in) throws IOException {
         if (in.readBoolean()) {
             return readLongString(in);
@@ -62,14 +65,16 @@ public class ThreadDumpRequest implements ConsoleRequest {
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         target.writeData(out);
-        out.writeBoolean(isDeadlock);
+        out.writeBoolean(dumpDeadlocks);
     }
+    @Override
 
     public void readData(ObjectDataInput in) throws IOException {
         target = new Address();
         target.readData(in);
-        isDeadlock = in.readBoolean();
+        dumpDeadlocks = in.readBoolean();
     }
 }

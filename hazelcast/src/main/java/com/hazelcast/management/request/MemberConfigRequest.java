@@ -23,30 +23,33 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-// author: sancar - 11.12.2012
 public class MemberConfigRequest implements ConsoleRequest {
 
     public MemberConfigRequest() {
-        super();
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_CONFIG;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         return in.readUTF();
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         String clusterXml;
         clusterXml = new ConfigXmlGenerator(true).generate(mcs.getHazelcastInstance().getConfig());
         dos.writeUTF(clusterXml);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
     }
 }

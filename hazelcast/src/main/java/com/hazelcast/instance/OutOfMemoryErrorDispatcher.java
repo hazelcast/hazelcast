@@ -65,6 +65,16 @@ public final class OutOfMemoryErrorDispatcher {
         }
     }
 
+    public static void inspectOutputMemoryError(Throwable throwable){
+        if(throwable == null){
+            return;
+        }
+
+        if(throwable instanceof OutOfMemoryError){
+            onOutOfMemory((OutOfMemoryError)throwable);
+        }
+    }
+
     public synchronized static void onOutOfMemory(OutOfMemoryError oom) {
         if (handler != null) {
             try {

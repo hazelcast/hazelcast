@@ -22,11 +22,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 3/27/13
- * Time: 4:15 PM
- */
+//todo: this class is not used at all.
 public class LockInformationOperation extends Operation {
 
     LockInformationOperation() {

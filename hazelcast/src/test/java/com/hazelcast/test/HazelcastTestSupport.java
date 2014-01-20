@@ -77,7 +77,6 @@ public abstract class HazelcastTestSupport {
         task.run();
     }
 
-
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");

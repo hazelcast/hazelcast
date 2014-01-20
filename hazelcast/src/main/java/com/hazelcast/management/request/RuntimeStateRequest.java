@@ -33,13 +33,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author mdogan 5/7/12
- */
 public class RuntimeStateRequest implements ConsoleRequest {
 
+    //todo: unused.
     private static final long LOCK_TIME_THRESHOLD = TimeUnit.SECONDS.toMillis(300);
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_CLUSTER_STATE;
     }
@@ -49,6 +48,7 @@ public class RuntimeStateRequest implements ConsoleRequest {
         return lockService.getAllLocks();
     }
 
+    @Override
     public void writeResponse(final ManagementCenterService mcs, final ObjectDataOutput dos) throws Exception {
         final HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
         final ClusterServiceImpl cluster = instance.node.getClusterService();
@@ -61,15 +61,18 @@ public class RuntimeStateRequest implements ConsoleRequest {
         clusterRuntimeState.writeData(dos);
     }
 
+    @Override
     public Object readResponse(final ObjectDataInput in) throws IOException {
         ClusterRuntimeState clusterRuntimeState = new ClusterRuntimeState();
         clusterRuntimeState.readData(in);
         return clusterRuntimeState;
     }
 
+    @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
     }
 
+    @Override
     public void readData(final ObjectDataInput in) throws IOException {
     }
 }

@@ -22,30 +22,31 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-// author: sancar - 12.12.2012
 public class RunGcRequest implements ConsoleRequest {
 
     public RunGcRequest() {
-        super();
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_RUN_GC;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         return "Successfully garbage collected.";
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         System.gc();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-
     }
 }
