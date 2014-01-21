@@ -30,14 +30,14 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
 
     private Credentials credentials;
     private int tryCount = 0;
-    private Map<String, Object> attributes;
+    private Map<String, String> attributes;
 
     public JoinRequest() {
         super();
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
-                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes) {
+                       Credentials credentials, int memberCount, int tryCount, Map<String, String> attributes) {
         super(packetVersion, buildNumber, address, uuid, config, memberCount);
         this.credentials = credentials;
         this.tryCount = tryCount;
@@ -56,7 +56,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         this.tryCount = tryCount;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
@@ -69,10 +69,10 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         }
         tryCount = in.readInt();
         int size = in.readInt();
-        attributes = new HashMap<String, Object>();
+        attributes = new HashMap<String, String>();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            String value = in.readUTF();
             attributes.put(key, value);
         }
     }
@@ -83,9 +83,9 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         out.writeObject(credentials);
         out.writeInt(tryCount);
         out.writeInt(attributes.size());
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
-            out.writeObject(entry.getValue());
+            out.writeUTF(entry.getValue());
         }
     }
 

@@ -754,7 +754,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    public void updateMemberAttribute(String uuid, MapOperationType operationType, String key, Object value) {
+    public void updateMemberAttribute(String uuid, MapOperationType operationType, String key, String value) {
         lock.lock();
         try {
             Map<Address, MemberImpl> memberMap = membersRef.get();
@@ -941,7 +941,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, Object> attributes) {
+    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, String> attributes) {
         address.setScopeId(ipV6ScopeId);
         return new MemberImpl(address, thisAddress.equals(address), nodeUuid,
                 (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), attributes);
