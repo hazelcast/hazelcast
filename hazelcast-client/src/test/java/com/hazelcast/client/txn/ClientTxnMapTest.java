@@ -17,23 +17,25 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.*;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 6/10/13
@@ -43,7 +45,7 @@ import static org.junit.Assert.assertNull;
 public class ClientTxnMapTest {
 
     static final String name = "test";
-    static HazelcastInstance hz;
+    static HazelcastInstance client;
     static HazelcastInstance server;
     static HazelcastInstance second;
 
@@ -51,39 +53,101 @@ public class ClientTxnMapTest {
     public static void init() {
         server = Hazelcast.newHazelcastInstance();
 //        second = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        client = HazelcastClient.newHazelcastClient(null);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        client.getLifecycleService().shutdown();
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testDeadLockFromClientInstance() throws InterruptedException {
+        final AtomicBoolean running = new AtomicBoolean(true);
+        Thread t = new Thread(){
+            public void run() {
+                while (running.get()){
+                    client.getMap("mapChildTransaction").get("3");
+                }
+            }
+        };
+        t.start();
+
+        CBAuthorisation cb = new CBAuthorisation();
+        cb.setAmount(15000);
+
+        try {
+            TransactionContext context = client.newTransactionContext();
+            context.beginTransaction();
+
+            TransactionalMap mapTransaction = context.getMap("mapChildTransaction");
+            // init data
+            mapTransaction.put("3", cb);
+            // start test deadlock, 3 set and concurrent, get deadlock
+
+            cb.setAmount(12000);
+            mapTransaction.set("3", cb);
+
+            cb.setAmount(10000);
+            mapTransaction.set("3", cb);
+
+            cb.setAmount(900);
+            mapTransaction.set("3", cb);
+
+            cb.setAmount(800);
+            mapTransaction.set("3", cb);
+
+            cb.setAmount(700);
+            mapTransaction.set("3", cb);
+
+            context.commitTransaction();
+
+        } catch (TransactionException e) {
+            e.printStackTrace();
+            fail();
+        }
+        running.set(false);
+        t.join();
+    }
+
+    public static class CBAuthorisation implements Serializable {
+
+        private int amount;
+
+        public void setAmount(int amount) {
+            this.amount = amount;
+        }
+
+        public int getAmount() {
+            return amount;
+        }
     }
 
     @Test
     public void testPutGet() throws Exception {
         final String name = "defMap";
 
-        final TransactionContext context = hz.newTransactionContext();
+        final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         final TransactionalMap<Object, Object> map = context.getMap(name);
         assertNull(map.put("key1", "value1"));
         assertEquals("value1", map.get("key1"));
-        assertNull(hz.getMap(name).get("key1"));
+        assertNull(client.getMap(name).get("key1"));
         context.commitTransaction();
 
-        assertEquals("value1", hz.getMap(name).get("key1"));
+        assertEquals("value1", client.getMap(name).get("key1"));
     }
 
 
     @Test
     public void testKeySetValues() throws Exception {
         final String name = "testKeySetValues";
-        IMap<Object, Object> map = hz.getMap(name);
+        IMap<Object, Object> map = client.getMap(name);
         map.put("key1", "value1");
         map.put("key2", "value2");
 
-        final TransactionContext context = hz.newTransactionContext();
+        final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         final TransactionalMap<Object, Object> txMap = context.getMap(name);
         assertNull(txMap.put("key3", "value3"));
@@ -103,14 +167,14 @@ public class ClientTxnMapTest {
     @Test
     public void testKeysetAndValuesWithPredicates() throws Exception {
         final String name = "testKeysetAndValuesWithPredicates";
-        IMap<Object, Object> map = hz.getMap(name);
+        IMap<Object, Object> map = client.getMap(name);
 
         final SampleObjects.Employee emp1 = new SampleObjects.Employee("abc-123-xvz", 34, true, 10D);
         final SampleObjects.Employee emp2 = new SampleObjects.Employee("abc-123-xvz", 20, true, 10D);
 
         map.put(emp1, emp1);
 
-        final TransactionContext context = hz.newTransactionContext();
+        final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         final TransactionalMap<Object, Object> txMap = context.getMap(name);
         assertNull(txMap.put(emp2, emp2));

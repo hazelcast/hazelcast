@@ -27,11 +27,11 @@ public class TxnMultiMapSizeRequest extends TxnMultiMapRequest {
     public TxnMultiMapSizeRequest() {
     }
 
-    public TxnMultiMapSizeRequest(String name) {
-        super(name);
+    public TxnMultiMapSizeRequest(String name, int clientThreadId) {
+        super(name, clientThreadId);
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
         return context.getMultiMap(name).size();
     }

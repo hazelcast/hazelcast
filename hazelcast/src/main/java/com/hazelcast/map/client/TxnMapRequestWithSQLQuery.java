@@ -35,8 +35,8 @@ public class TxnMapRequestWithSQLQuery extends AbstractTxnMapRequest {
     public TxnMapRequestWithSQLQuery() {
     }
 
-    public TxnMapRequestWithSQLQuery(String name, TxnMapRequestType requestType, String predicate) {
-        super(name, requestType, null, null, null);
+    public TxnMapRequestWithSQLQuery(String name, TxnMapRequestType requestType, String predicate, int clientThreadId) {
+        super(name, requestType, null, null, null, clientThreadId);
         this.predicate = predicate;
     }
 

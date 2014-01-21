@@ -47,17 +47,17 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
     public TxnMultiMapRemoveRequest() {
     }
 
-    public TxnMultiMapRemoveRequest(String name, Data key) {
-        super(name);
+    public TxnMultiMapRemoveRequest(String name, Data key, int clientThreadId) {
+        super(name, clientThreadId);
         this.key = key;
     }
 
-    public TxnMultiMapRemoveRequest(String name, Data key, Data value) {
-        this(name, key);
+    public TxnMultiMapRemoveRequest(String name, Data key, Data value, int clientThreadId) {
+        this(name, key, clientThreadId);
         this.value = value;
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
         final TransactionalMultiMap<Object,Object> multiMap = context.getMultiMap(name);
         if (value == null){
@@ -88,15 +88,15 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
         return null;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         IOUtil.writeNullableData(out, value);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

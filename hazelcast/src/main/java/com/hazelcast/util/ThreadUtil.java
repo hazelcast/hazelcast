@@ -18,9 +18,22 @@ package com.hazelcast.util;
 
 public final class ThreadUtil {
 
+    private static ThreadLocal<Integer> threadLocal = new ThreadLocal<Integer>();
+
     public static int getThreadId() {
+        final Integer threadId = threadLocal.get();
+        if (threadId != null) {
+            return threadId;
+        }
         return (int) Thread.currentThread().getId();  // TODO: @mm - thread-id is truncated from native thread id
     }
 
+    public static void setThreadId(int threadId) {
+        threadLocal.set(threadId);
+    }
+
+    public static void removeThreadId() {
+        threadLocal.remove();
+    }
 
 }
