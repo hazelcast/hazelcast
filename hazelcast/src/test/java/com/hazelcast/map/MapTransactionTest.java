@@ -24,6 +24,7 @@ import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.*;
 import org.junit.Ignore;
@@ -770,8 +771,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
 
-    @Ignore
+
     @Test
+    @Category(ProblematicTest.class)
     // TODO: @mm - Review following case...
     public void testFailingMapStore() throws TransactionException {
         final String map = "map";

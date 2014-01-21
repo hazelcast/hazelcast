@@ -28,6 +28,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -50,8 +51,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
-@Ignore//todo: fails from time to time
+@Category(ProblematicTest.class)
+//todo: fails from time to time
 public class BackupTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
@@ -223,7 +224,7 @@ public class BackupTest extends HazelcastTestSupport {
      * Fix for the issue 395.
      */
     @Test(timeout = 300 * 1000)
-    @Ignore//TODO
+    //TODO
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(6, 2, 50000);
     }

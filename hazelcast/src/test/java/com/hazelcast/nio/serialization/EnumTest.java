@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -52,8 +53,8 @@ public class EnumTest {
     }
 
     @Test
-    @Ignore//TODO
-    // TimeUnit.SECONDS.getClass().isEnum() returns false!
+    @Category(ProblematicTest.class)
+    //TODO TimeUnit.SECONDS.getClass().isEnum() returns false!
     public void test4() throws IOException {
         test(TimeUnit.SECONDS);
     }

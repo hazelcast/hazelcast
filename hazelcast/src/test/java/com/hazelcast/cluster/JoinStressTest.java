@@ -21,10 +21,15 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -38,9 +43,8 @@ import static org.junit.Assert.assertTrue;
  * @author mdogan 6/17/13
  */
 
-@Ignore()//TODO
-//@RunWith(HazelcastSerialClassRunner.class)
-//@Category(SlowTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(ProblematicTest.class)
 public class JoinStressTest {
 
     @Test

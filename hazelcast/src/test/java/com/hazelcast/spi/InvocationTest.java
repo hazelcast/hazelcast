@@ -24,6 +24,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
@@ -42,8 +43,7 @@ import static org.junit.Assert.assertTrue;
  * @author mdogan 9/16/13
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-@Ignore//todo: broken
+@Category(ProblematicTest.class)
 public class InvocationTest extends HazelcastTestSupport {
 
     @Test
@@ -78,7 +78,6 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
     public void testWaitingIndefinitely() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         final Config config = new Config();
@@ -110,7 +109,6 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final Config config = new Config();

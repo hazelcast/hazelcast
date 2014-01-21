@@ -24,6 +24,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Assert;
@@ -442,7 +443,6 @@ public class LockTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
@@ -658,7 +658,7 @@ public class LockTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore//TODO
+    @Category(ProblematicTest.class)//TODO
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");

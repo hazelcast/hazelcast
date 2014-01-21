@@ -30,6 +30,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
@@ -52,8 +53,8 @@ import static com.hazelcast.query.SampleObjects.*;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-@Ignore//TODO
+@Category(ProblematicTest.class)
+//TODO
 public class QueryTest extends HazelcastTestSupport {
 
     @Test
@@ -1537,9 +1538,8 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(indexes, expectedValues);
     }
 
-    // issue 1404
+    // issue 1404 "to be fixed by issue 1404"
     @Test
-    @Ignore("to be fixed by issue 1404")
     public void testQueryAfterInitialLoad() {
         String name = "testQueryAfterInitialLoad";
         Config cfg = new Config();
