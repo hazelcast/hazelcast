@@ -217,7 +217,8 @@ public class DefaultSerializers {
         }
 
         public void write(ObjectDataOutput out, Enum obj) throws IOException {
-            out.writeUTF(obj.getClass().getName());
+            String name = obj.getDeclaringClass().getName();
+            out.writeUTF(name);
             out.writeUTF(obj.name());
         }
 
