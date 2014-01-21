@@ -658,11 +658,12 @@ public class ClientMapTest {
     }
     @Test
     public void testMapStatistics() throws Exception {
-        final LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
+        final LocalMapStats localMapStats = server.getMap("testMapStatistics").getLocalMapStats();
+        final IMap map = client.getMap("testMapStatistics");
 
-        final int operationCount = 100;
+        final int operationCount = 1000;
         for (int i = 0; i < operationCount; i++) {
-            map.put(i,i);
+            map.put(i, i);
             map.get(i);
             map.remove(i);
         }
