@@ -77,7 +77,7 @@ final class TransactionProxy {
             threadFlag.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
 
-            txnId = sendAndReceive(new CreateTransactionRequest(options));
+            txnId = sendAndReceive(new CreateTransactionRequest(options, (int)threadId));
             state = ACTIVE;
         } catch (Exception e){
             closeConnection();
@@ -92,7 +92,7 @@ final class TransactionProxy {
             }
             checkThread();
             checkTimeout();
-            sendAndReceive(new CommitTransactionRequest());
+            sendAndReceive(new CommitTransactionRequest((int)threadId));
             state = COMMITTED;
         } catch (Exception e){
             state = ROLLING_BACK;
@@ -113,7 +113,7 @@ final class TransactionProxy {
             }
             checkThread();
             try {
-                sendAndReceive(new RollbackTransactionRequest());
+                sendAndReceive(new RollbackTransactionRequest((int)threadId));
             } catch (Exception ignored) {
             }
             state = ROLLED_BACK;

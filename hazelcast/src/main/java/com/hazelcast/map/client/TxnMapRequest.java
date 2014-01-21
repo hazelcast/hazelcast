@@ -36,27 +36,27 @@ public class TxnMapRequest extends AbstractTxnMapRequest {
     public TxnMapRequest() {
     }
 
-    public TxnMapRequest(String name, TxnMapRequestType requestType) {
-        super(name, requestType);
+    public TxnMapRequest(String name, TxnMapRequestType requestType, int clientThreadId) {
+        super(name, requestType, clientThreadId);
     }
 
-    public TxnMapRequest(String name, TxnMapRequestType requestType, Data key) {
-        this(name, requestType);
+    public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, int clientThreadId) {
+        this(name, requestType, clientThreadId);
         this.key = key;
     }
 
-    public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value) {
-        this(name, requestType, key);
+    public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, int clientThreadId) {
+        this(name, requestType, key, clientThreadId);
         this.value = value;
     }
 
-    public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, Data newValue) {
-        this(name, requestType, key, value);
+    public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, Data newValue, int clientThreadId) {
+        this(name, requestType, key, value, clientThreadId);
         this.newValue = newValue;
     }
 
-    public TxnMapRequest(String name, TxnMapRequestType requestType, Predicate predicate) {
-        this(name, requestType, null, null, null);
+    public TxnMapRequest(String name, TxnMapRequestType requestType, Predicate predicate, int clientThreadId) {
+        this(name, requestType, null, null, null, clientThreadId);
         this.predicate = predicate;
     }
 

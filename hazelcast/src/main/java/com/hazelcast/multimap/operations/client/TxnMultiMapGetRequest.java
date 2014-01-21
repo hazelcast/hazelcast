@@ -39,13 +39,12 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
     public TxnMultiMapGetRequest() {
     }
 
-    public TxnMultiMapGetRequest(String name, Data key) {
-        super(name);
+    public TxnMultiMapGetRequest(String name, Data key, int clientThreadId) {
+        super(name, clientThreadId);
         this.key = key;
     }
 
-    public Object call() throws Exception {
-
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
         final Collection<Object> objects = context.getMultiMap(name).get(key);
         Collection<Data> coll = createCollection(objects.size());
@@ -71,13 +70,13 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
         return null;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         key.writeData(writer.getRawDataOutput());
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         key = new Data();
         key.readData(reader.getRawDataInput());
     }
