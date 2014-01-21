@@ -20,21 +20,23 @@ import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import static com.hazelcast.cluster.MemberAttributeChangedOperation.*;
 
 import java.io.IOException;
+
+import static com.hazelcast.cluster.MemberAttributeChangedOperation.DELTA_MEMBER_PROPERTIES_OP_PUT;
+import static com.hazelcast.cluster.MemberAttributeChangedOperation.DELTA_MEMBER_PROPERTIES_OP_REMOVE;
 
 public class ClientMemberAttributeChangedEvent implements DataSerializable {
 
     private String uuid;
     private MapOperationType operationType;
     private String key;
-    private Object value;
+    private String value;
 
     public ClientMemberAttributeChangedEvent() {
     }
 
-    public ClientMemberAttributeChangedEvent(String uuid, MapOperationType operationType, String key, Object value) {
+    public ClientMemberAttributeChangedEvent(String uuid, MapOperationType operationType, String key, String value) {
         this.uuid = uuid;
         this.operationType = operationType;
         this.key = key;
@@ -53,7 +55,7 @@ public class ClientMemberAttributeChangedEvent implements DataSerializable {
         return key;
     }
 
-    public Object getValue() {
+    public String getValue() {
         return value;
     }
 
@@ -64,7 +66,7 @@ public class ClientMemberAttributeChangedEvent implements DataSerializable {
         switch (operationType) {
             case PUT:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_PUT);
-                out.writeObject(value);
+                out.writeUTF(value);
                 break;
             case REMOVE:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
@@ -80,7 +82,7 @@ public class ClientMemberAttributeChangedEvent implements DataSerializable {
         switch (operation) {
             case DELTA_MEMBER_PROPERTIES_OP_PUT:
                 operationType = MapOperationType.PUT;
-                value = in.readObject();
+                value = in.readUTF();
                 break;
             case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
                 operationType = MapOperationType.REMOVE;

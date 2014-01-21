@@ -27,7 +27,7 @@ public class MemberAttributeServiceEvent extends MemberAttributeEvent {
         super();
     }
 
-    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MapOperationType operationType, String key, Object value) {
+    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MapOperationType operationType, String key, String value) {
         super(cluster, member, operationType, key, value);
     }
 

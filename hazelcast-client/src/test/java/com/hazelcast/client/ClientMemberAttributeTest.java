@@ -49,15 +49,15 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1").setEnabled(true);
         MemberAttributeConfig memberAttributeConfig = c.getMemberAttributeConfig();
-        memberAttributeConfig.setAttribute("Test", Integer.valueOf(123));
+        memberAttributeConfig.setAttribute("Test", String.valueOf(123));
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
-        assertEquals(123, m1.getAttribute("Test"));
+        assertEquals("123", m1.getAttribute("Test"));
 
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         Member m2 = h2.getCluster().getLocalMember();
-        assertEquals(123, m2.getAttribute("Test"));
+        assertEquals("123", m2.getAttribute("Test"));
 
         assertEquals(2, h2.getCluster().getMembers().size());
 
@@ -71,12 +71,12 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member);
         assertEquals(m1, member);
         assertNotNull(member.getAttribute("Test"));
-        assertEquals(123, member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         Collection<Member> members = client.getCluster().getMembers();
         for (Member m : members) {
-            assertEquals(123, m.getAttribute("Test"));
+            assertEquals("123", m.getAttribute("Test"));
         }
 
         client.getLifecycleService().shutdown();
@@ -92,7 +92,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setAttribute("Test", Integer.valueOf(123));
+        m1.setAttribute("Test", String.valueOf(123));
 
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -107,14 +107,14 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member);
         assertEquals(m1, member);
         assertNotNull(member.getAttribute("Test"));
-        assertEquals(123, member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         boolean found = false;
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         Collection<Member> members = client.getCluster().getMembers();
         for (Member m : members) {
             if (m.equals(m1)) {
-                assertEquals(123, m.getAttribute("Test"));
+                assertEquals("123", m.getAttribute("Test"));
                 found = true;
             }
         }
@@ -133,7 +133,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setAttribute("Test", Integer.valueOf(123));
+        m1.setAttribute("Test", String.valueOf(123));
 
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -148,7 +148,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member);
         assertEquals(m1, member);
         assertNotNull(member.getAttribute("Test"));
-        assertEquals(123, member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
@@ -158,19 +158,19 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         h1.getCluster().addMembershipListener(listener);
         client.getCluster().addMembershipListener(listener);
 
-        m1.setAttribute("Test2", Integer.valueOf(321));
+        m1.setAttribute("Test2", String.valueOf(321));
 
         // Force sleep to distribute value
         latch.await(2, TimeUnit.SECONDS);
 
         assertNotNull(member.getAttribute("Test2"));
-        assertEquals(321, member.getAttribute("Test2"));
+        assertEquals("321", member.getAttribute("Test2"));
 
         boolean found = false;
         Collection<Member> members = client.getCluster().getMembers();
         for (Member m : members) {
             if (m.equals(m1)) {
-                assertEquals(321, m.getAttribute("Test2"));
+                assertEquals("321", m.getAttribute("Test2"));
                 found = true;
             }
         }
@@ -189,7 +189,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setAttribute("Test", Integer.valueOf(123));
+        m1.setAttribute("Test", String.valueOf(123));
 
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -204,7 +204,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member);
         assertEquals(m1, member);
         assertNotNull(member.getAttribute("Test"));
-        assertEquals(123, member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
@@ -214,19 +214,19 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         h1.getCluster().addMembershipListener(listener);
         client.getCluster().addMembershipListener(listener);
 
-        m1.setAttribute("Test", Integer.valueOf(321));
+        m1.setAttribute("Test", String.valueOf(321));
 
         // Force sleep to distribute value
         latch.await(2, TimeUnit.SECONDS);
 
         assertNotNull(member.getAttribute("Test"));
-        assertEquals(321, member.getAttribute("Test"));
+        assertEquals("321", member.getAttribute("Test"));
 
         boolean found = false;
         Collection<Member> members = client.getCluster().getMembers();
         for (Member m : members) {
             if (m.equals(m1)) {
-                assertEquals(321, m.getAttribute("Test"));
+                assertEquals("321", m.getAttribute("Test"));
                 found = true;
             }
         }
@@ -245,7 +245,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         Member m1 = h1.getCluster().getLocalMember();
-        m1.setAttribute("Test", Integer.valueOf(123));
+        m1.setAttribute("Test", String.valueOf(123));
 
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -260,7 +260,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member);
         assertEquals(m1, member);
         assertNotNull(member.getAttribute("Test"));
-        assertEquals(123, member.getAttribute("Test"));
+        assertEquals("123", member.getAttribute("Test"));
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 

@@ -920,7 +920,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private void sendMemberAttributeEvent(MemberImpl member, MapOperationType operationType, String key, Object value) {
+    private void sendMemberAttributeEvent(MemberImpl member, MapOperationType operationType, String key, String value) {
         final MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(getClusterProxy(), member, operationType, key, value);
         final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         final MemberAttributeServiceEvent event = new MemberAttributeServiceEvent(getClusterProxy(), member, operationType, key, value);

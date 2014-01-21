@@ -70,7 +70,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
                     final String uuid = member.getUuid();
                     final MapOperationType op = memberAttributeEvent.getOperationType();
                     final String key = memberAttributeEvent.getKey();
-                    final Object value = memberAttributeEvent.getValue();
+                    final String value = memberAttributeEvent.getValue();
                     endpoint.sendEvent(new ClientMemberAttributeChangedEvent(uuid, op, key, value), getCallId());
                 }
             }

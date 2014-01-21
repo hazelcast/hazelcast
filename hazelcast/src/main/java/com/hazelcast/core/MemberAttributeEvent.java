@@ -31,14 +31,14 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
 
     private MapOperationType operationType;
     private String key;
-    private Object value;
+    private String value;
     private Member member;
 
     public MemberAttributeEvent() {
         super(null, null, MEMBER_ATTRIBUTE_CHANGED, null);
     }
 
-    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MapOperationType operationType, String key, Object value) {
+    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MapOperationType operationType, String key, String value) {
         super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, null);
         this.member = member;
         this.operationType = operationType;
@@ -54,7 +54,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         return key;
     }
 
-    public Object getValue() {
+    public String getValue() {
         return value;
     }
 
@@ -69,7 +69,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         switch (operationType) {
             case PUT:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_PUT);
-                out.writeObject(value);
+                out.writeUTF(value);
                 break;
             case REMOVE:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
@@ -87,7 +87,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         {
             case DELTA_MEMBER_PROPERTIES_OP_PUT:
                 operationType = MapOperationType.PUT;
-                value = in.readObject();
+                value = in.readUTF();
                 break;
             case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
                 operationType = MapOperationType.REMOVE;
