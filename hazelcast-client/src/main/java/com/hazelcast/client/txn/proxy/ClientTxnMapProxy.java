@@ -21,7 +21,6 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapValueCollection;
-import com.hazelcast.map.client.AbstractTxnMapRequest;
 import com.hazelcast.map.client.TxnMapRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;

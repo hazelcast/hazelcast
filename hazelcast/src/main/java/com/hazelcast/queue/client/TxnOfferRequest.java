@@ -52,7 +52,7 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
         this.data = data;
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final TransactionContext context = endpoint.getTransactionContext(txnId);
         final TransactionalQueue queue = context.getQueue(name);

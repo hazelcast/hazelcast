@@ -39,7 +39,7 @@ public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
         this.key = key;
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         return context.getMultiMap(name).valueCount(key);
     }
