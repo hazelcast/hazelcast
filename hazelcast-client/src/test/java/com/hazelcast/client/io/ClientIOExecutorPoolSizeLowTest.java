@@ -88,7 +88,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     @Test
     public void moreEntryListenersThanExecutorThreads() throws InterruptedException {
 
-        EntryCounter counter = new EntryCounter();
+        final EntryCounter counter = new EntryCounter();
 
         final IMap<Object, Object> map = client.getMap("map");
         map.addEntryListener(counter, true);//adding 2nd EntryListener
@@ -103,7 +103,12 @@ public class ClientIOExecutorPoolSizeLowTest {
             }
         });
 
-        assertEquals(1000, counter.count.get());
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, counter.count.get());
+            }
+        });
+
     }
 
 
