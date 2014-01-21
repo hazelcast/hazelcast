@@ -68,7 +68,7 @@ public class BackupTest extends HazelcastTestSupport {
         Runtime.getRuntime().gc();
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testGracefulShutdown() throws Exception {
         int size = 250000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -97,7 +97,7 @@ public class BackupTest extends HazelcastTestSupport {
         assertEquals(size, m4.size());
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testGracefulShutdown2() throws Exception {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(2).setStatisticsEnabled(true);
@@ -150,7 +150,7 @@ public class BackupTest extends HazelcastTestSupport {
         Assert.assertEquals(size, map6.size());
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testGracefulShutdown3() throws Exception {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(2).setStatisticsEnabled(true);
@@ -215,7 +215,7 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Fix for the issue 275.
      */
-    @Test(timeout = 300 * 1000)
+    @Test(timeout = 60 * 1000)
     public void testBackupMigrationAndRecovery() throws Exception {
         testBackupMigrationAndRecovery(4, 1, 50000);
     }
@@ -223,7 +223,7 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Fix for the issue 395.
      */
-    @Test(timeout = 300 * 1000)
+    @Test(timeout = 60 * 1000)
     //TODO
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(6, 2, 50000);
@@ -336,7 +336,7 @@ public class BackupTest extends HazelcastTestSupport {
         return total;
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testIssue177BackupCount() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
         final Config config = new Config();
@@ -402,7 +402,7 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Test for issue #259.
      */
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
@@ -458,7 +458,7 @@ public class BackupTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     /**
      * Test for issue #259.
      */
