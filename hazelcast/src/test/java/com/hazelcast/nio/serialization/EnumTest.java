@@ -52,16 +52,16 @@ public class EnumTest {
         test(RetentionPolicy.SOURCE);
     }
 
+    //the TimeUnit.SECONDS is a difficult once because a subclass is generated. So when this test runs, it indicates
+    //the we can safely deal with subclasses of an enumeration.
     @Test
-    @Category(ProblematicTest.class)
-    //TODO TimeUnit.SECONDS.getClass().isEnum() returns false!
     public void test4() throws IOException {
         test(TimeUnit.SECONDS);
     }
 
     private void test(Enum value) throws IOException {
         Data data = ss.toData(value);
-        Enum found = (Enum) ss.toObject(data);
+        Enum found = ss.toObject(data);
         assertSame(value, found);
     }
 }
