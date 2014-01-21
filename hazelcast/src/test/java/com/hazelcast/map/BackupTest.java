@@ -215,7 +215,7 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Fix for the issue 275.
      */
-    @Test(timeout = 300 * 1000)
+    @Test(timeout = 60 * 1000)
     public void testBackupMigrationAndRecovery() throws Exception {
         testBackupMigrationAndRecovery(4, 1, 50000);
     }
@@ -223,7 +223,7 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Fix for the issue 395.
      */
-    @Test(timeout = 300 * 1000)
+    @Test(timeout = 60 * 1000)
     //TODO
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(6, 2, 50000);
