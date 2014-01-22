@@ -146,11 +146,13 @@ public class JoinStressTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMulticastJoinAtTheSameTime() throws InterruptedException {
         multicastJoin(10, false);
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMulticastJoinWithRandomStartTime() throws InterruptedException {
         multicastJoin(10, true);
     }
