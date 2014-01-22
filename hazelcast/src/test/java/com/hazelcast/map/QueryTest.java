@@ -53,7 +53,7 @@ import static com.hazelcast.query.SampleObjects.*;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(QuickTest.class)
 //TODO
 public class QueryTest extends HazelcastTestSupport {
 
@@ -329,7 +329,6 @@ public class QueryTest extends HazelcastTestSupport {
 
     @Test
     // TODO: fails @mm - Test fails randomly!
-    @Category(SlowTest.class)
     public void testQueryWithTTL() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();

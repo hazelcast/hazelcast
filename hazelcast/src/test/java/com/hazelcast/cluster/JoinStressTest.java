@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  */
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(SlowTest.class)
 public class JoinStressTest {
 
     @Test
