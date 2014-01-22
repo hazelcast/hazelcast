@@ -29,12 +29,12 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
 
     private MapOperationType operationType;
     private String key;
-    private Object value;
+    private String value;
 
     public MemberAttributeChangedOperation() {
     }
 
-    public MemberAttributeChangedOperation(MapOperationType operationType, String key, Object value) {
+    public MemberAttributeChangedOperation(MapOperationType operationType, String key, String value) {
         if (operationType != MapOperationType.PUT && operationType != MapOperationType.REMOVE) {
             throw new IllegalArgumentException("Only PUT / REMOVE operations are allowed for attribute updates");
         }

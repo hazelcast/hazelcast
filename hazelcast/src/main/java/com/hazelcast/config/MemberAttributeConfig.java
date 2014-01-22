@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class MemberAttributeConfig {
 
-    private final Map<String, Object> attributes = new HashMap<String, Object>();
+    private final Map<String, String> attributes = new HashMap<String, String>();
 
     public MemberAttributeConfig() {
     }
@@ -30,11 +30,11 @@ public class MemberAttributeConfig {
         attributes.putAll(source.attributes);
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 
-    public void setAttribute(String key, Object value) {
+    public void setAttribute(String key, String value) {
         attributes.put(key, value);
     }
 
@@ -42,7 +42,7 @@ public class MemberAttributeConfig {
         attributes.remove(key);
     }
 
-    public Object getAttribute(String key) {
+    public String getAttribute(String key) {
         return attributes.get(key);
     }
 

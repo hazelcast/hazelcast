@@ -26,7 +26,7 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     }
 
     @Override
-    public void setAttribute(String key, Object value) {
+    public void setAttribute(String key, String value) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -36,7 +36,7 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     }
 
     @Override
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return Collections.unmodifiableMap(super.getAttributes());
     }
 

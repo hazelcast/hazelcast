@@ -29,7 +29,7 @@ import java.util.Map;
 public class MemberInfo implements DataSerializable {
     Address address = null;
     String uuid;
-    Map<String, Object> attributes = null;
+    Map<String, String> attributes = null;
 
     public MemberInfo() {
     }
@@ -39,11 +39,11 @@ public class MemberInfo implements DataSerializable {
         this.address = address;
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
+    public MemberInfo(Address address, String uuid, Map<String, String> attributes) {
         super();
         this.address = address;
         this.uuid = uuid;
-        this.attributes = new HashMap<String, Object>(attributes);
+        this.attributes = new HashMap<String, String>(attributes);
     }
 
     public MemberInfo(MemberImpl member) {
@@ -58,10 +58,10 @@ public class MemberInfo implements DataSerializable {
             uuid = in.readUTF();
         }
         int size = in.readInt();
-        if (size > 0) attributes = new HashMap<String, Object>();
+        if (size > 0) attributes = new HashMap<String, String>();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            String value = in.readUTF();
             attributes.put(key, value);
         }
     }
@@ -76,9 +76,9 @@ public class MemberInfo implements DataSerializable {
         }
         out.writeInt(attributes == null ? 0 : attributes.size());
         if (attributes != null) {
-            for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            for (Map.Entry<String, String> entry : attributes.entrySet()) {
                 out.writeUTF(entry.getKey());
-                out.writeObject(entry.getValue());
+                out.writeUTF(entry.getValue());
             }
         }
     }

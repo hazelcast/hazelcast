@@ -68,7 +68,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @return Attributes for this member.
      */
-    Map<String, Object> getAttributes();
+    Map<String, String> getAttributes();
 
     /**
      * Returns the value of the specified key for this member or
@@ -77,7 +77,7 @@ public interface Member extends DataSerializable, Endpoint {
      * @param key The key to lookup.
      * @return The value for this members key.
      */
-    Object getAttribute(String key);
+    String getAttribute(String key);
 
     /**
      * Defines a key-value pair attribute for this member available
@@ -86,7 +86,7 @@ public interface Member extends DataSerializable, Endpoint {
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
      */
-    void setAttribute(String key, Object value);
+    void setAttribute(String key, String value);
 
     /**
      * Removes a key-value pair attribute for this member if given key was

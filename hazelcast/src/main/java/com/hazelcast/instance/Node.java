@@ -148,7 +148,7 @@ public class Node {
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
-        final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
+        final Map<String, String> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
         localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
@@ -623,8 +623,8 @@ public class Node {
         return buildInfo;
     }
 
-    private Map<String, Object> findMemberAttributes(MemberAttributeConfig attributeConfig) {
-        Map<String, Object> attributes = new HashMap<String, Object>(attributeConfig.getAttributes());
+    private Map<String, String> findMemberAttributes(MemberAttributeConfig attributeConfig) {
+        Map<String, String> attributes = new HashMap<String, String>(attributeConfig.getAttributes());
         Properties properties = System.getProperties();
         for (String key : properties.stringPropertyNames()) {
             if (key.startsWith("hazelcast.member.attribute.")) {

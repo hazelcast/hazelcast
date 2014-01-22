@@ -361,7 +361,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                             if (member.getUuid().equals(event.getUuid())) {
                                 final MapOperationType operationType = event.getOperationType();
                                 final String key = event.getKey();
-                                final Object value = event.getValue();
+                                final String value = event.getValue();
                                 member.updateAttribute(operationType, key, value);
                                 fireMemberAttributeEvent(new MemberAttributeEvent(client.getCluster(), member, operationType, key, value));
                                 break;

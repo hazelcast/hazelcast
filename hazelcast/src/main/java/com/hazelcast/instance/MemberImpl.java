@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
-    private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
+    private final Map<String, String> attributes = new ConcurrentHashMap<String, String>();
 
     private boolean localMember;
     private Address address;
@@ -66,7 +66,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         this(address, localMember, uuid, instance, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance, Map<String, Object> attributes) {
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance, Map<String, String> attributes) {
         this();
         this.localMember = localMember;
         this.address = address;
@@ -156,16 +156,16 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         return uuid;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         if (!localMember) return Collections.unmodifiableMap(attributes);
         return attributes;
     }
 
-    public Object getAttribute(String key) {
+    public String getAttribute(String key) {
         return attributes.get(key);
     }
 
-    public void updateAttribute(MapOperationType operationType, String key, Object value) {
+    public void updateAttribute(MapOperationType operationType, String key, String value) {
         switch (operationType) {
             case PUT:
                 attributes.put(key, value);
@@ -176,7 +176,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
-    public void setAttribute(String key, Object value) {
+    public void setAttribute(String key, String value) {
         if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
         if (key == null) throw new IllegalArgumentException("key must not be null");
         if (value == null) throw new IllegalArgumentException("value must not be null");
@@ -248,7 +248,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            String value = in.readUTF();
             attributes.put(key, value);
         }
     }
@@ -257,9 +257,9 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         address.writeData(out);
         out.writeUTF(uuid);
         out.writeInt(attributes.size());
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
-            out.writeObject(entry.getValue());
+            out.writeUTF(entry.getValue());
         }
     }
 
