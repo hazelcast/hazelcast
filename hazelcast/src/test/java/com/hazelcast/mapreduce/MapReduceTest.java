@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -270,11 +271,18 @@ public class MapReduceTest
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(3, h1.getCluster().getMembers().size());
+            }
+        });
+
+        final IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
             m1.put(i, i);
         }
@@ -305,6 +313,9 @@ public class MapReduceTest
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
+                if (processInformation.getProcessedRecords() < 10000) {
+                    System.err.println(processInformation.getProcessedRecords());
+                }
                 assertEquals(10000, processInformation.getProcessedRecords());
             }
         });

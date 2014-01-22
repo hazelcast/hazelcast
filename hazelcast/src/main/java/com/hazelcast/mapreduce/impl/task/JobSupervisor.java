@@ -320,7 +320,7 @@ public class JobSupervisor {
         }
     }
 
-    public <K, V> DefaultContext<K, V> createContext(MapCombineTask mapCombineTask) {
+    public <K, V> DefaultContext<K, V> getOrCreateContext(MapCombineTask mapCombineTask) {
         DefaultContext<K, V> context = new DefaultContext<K, V>(
                 configuration.getCombinerFactory(), mapCombineTask);
 

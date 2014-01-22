@@ -100,10 +100,10 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
-    public final void processMapping(int partitionId, KeyValueSource<KeyIn, ValueIn> keyValueSource)
+    public final void processMapping(int partitionId, DefaultContext<KeyOut, ValueOut> context,
+                                     KeyValueSource<KeyIn, ValueIn> keyValueSource)
             throws Exception {
 
-        DefaultContext<KeyOut, ValueOut> context = supervisor.createContext(this);
         context.setPartitionId(partitionId);
 
         if (mapper instanceof LifecycleMapper) {
@@ -116,28 +116,6 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
         if (cancelled.get()) {
             return;
-        }
-
-        RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                new RequestPartitionReducing(name, jobId, partitionId), name);
-
-        if (result.getResultState() == SUCCESSFUL) {
-            // If we have a reducer defined just send it over
-            if (supervisor.getConfiguration().getReducerFactory() != null) {
-                Map<KeyOut, Chunk> chunkMap = context.finish();
-                if (chunkMap.size() > 0) {
-                    sendLastChunkToAssignedReducers(partitionId, chunkMap);
-
-                } else {
-                    // If nothing to reduce we just set partition to processed
-                    result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                            new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
-
-                    if (result.getResultState() != SUCCESSFUL) {
-                        throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
-                    }
-                }
-            }
         }
     }
 
@@ -157,6 +135,32 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
                     mapReduceService.sendNotification(entry.getKey(),
                             new IntermediateChunkNotification(entry.getKey(), name, jobId, entry.getValue(), partitionId));
+                }
+            }
+        }
+    }
+
+    private void finalizeMapping(int partitionId, DefaultContext<KeyOut, ValueOut> context)
+            throws Exception {
+
+        RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
+                new RequestPartitionReducing(name, jobId, partitionId), name);
+
+        if (result.getResultState() == SUCCESSFUL) {
+            // If we have a reducer defined just send it over
+            if (supervisor.getConfiguration().getReducerFactory() != null) {
+                Map<KeyOut, Chunk> chunkMap = context.finish();
+                if (chunkMap.size() > 0) {
+                    sendLastChunkToAssignedReducers(partitionId, chunkMap);
+
+                } else {
+                    // If nothing to reduce we just set partition to processed
+                    result = mapReduceService.processRequest(supervisor.getJobOwner(),
+                            new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
+
+                    if (result.getResultState() != SUCCESSFUL) {
+                        throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
+                    }
                 }
             }
         }
@@ -223,8 +227,10 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     ((PartitionIdAware) keyValueSource).setPartitionId(partitionId);
                     delegate.reset();
                     delegate.open(nodeEngine);
-                    processMapping(partitionId, delegate);
+                    DefaultContext<KeyOut, ValueOut> context = supervisor.getOrCreateContext(MapCombineTask.this);
+                    processMapping(partitionId, context, delegate);
                     delegate.close();
+                    finalizeMapping(partitionId, context);
                 } catch (Throwable t) {
                     notifyRemoteException(supervisor, t);
                 }
@@ -276,8 +282,10 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
                 delegate.reset();
                 delegate.open(nodeEngine);
-                processMapping(result.getPartitionId(), delegate);
+                DefaultContext<KeyOut, ValueOut> context = supervisor.getOrCreateContext(MapCombineTask.this);
+                processMapping(result.getPartitionId(), context, delegate);
                 delegate.close();
+                finalizeMapping(result.getPartitionId(), context);
             } catch (Throwable t) {
                 notifyRemoteException(supervisor, t);
             }
