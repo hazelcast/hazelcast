@@ -63,9 +63,7 @@ public abstract class HazelcastTestSupport {
             sleepSeconds(1);
         }
 
-        printAllStackTraces();
         throw error;
-
     }
 
     public static void assertTrueDelayed5sec(AssertTask task) {
