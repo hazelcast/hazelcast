@@ -117,7 +117,6 @@ public class ExecutionDelayTest {
                     future.get();
                     fl = true;
                 } catch (Exception exception) {
-                    System.err.println("fatal e " + exception.getMessage());
                 }
             } while (!fl);
             long time = System.currentTimeMillis() - start;
