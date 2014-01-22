@@ -17,6 +17,7 @@
 package com.hazelcast.cluster.client;
 
 import com.hazelcast.map.operation.MapOperationType;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -24,17 +25,17 @@ import static com.hazelcast.cluster.MemberAttributeChangedOperation.*;
 
 import java.io.IOException;
 
-public class ClientMemberAttributeChangedEvent implements DataSerializable {
+public class MemberAttributeChange implements DataSerializable {
 
     private String uuid;
     private MapOperationType operationType;
     private String key;
     private Object value;
 
-    public ClientMemberAttributeChangedEvent() {
+    public MemberAttributeChange() {
     }
 
-    public ClientMemberAttributeChangedEvent(String uuid, MapOperationType operationType, String key, Object value) {
+    public MemberAttributeChange(String uuid, MapOperationType operationType, String key, Object value) {
         this.uuid = uuid;
         this.operationType = operationType;
         this.key = key;
@@ -64,7 +65,7 @@ public class ClientMemberAttributeChangedEvent implements DataSerializable {
         switch (operationType) {
             case PUT:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_PUT);
-                out.writeObject(value);
+                IOUtil.writeAttributeValue(value, out);
                 break;
             case REMOVE:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
@@ -80,7 +81,7 @@ public class ClientMemberAttributeChangedEvent implements DataSerializable {
         switch (operation) {
             case DELTA_MEMBER_PROPERTIES_OP_PUT:
                 operationType = MapOperationType.PUT;
-                value = in.readObject();
+                value = IOUtil.readAttributeValue(in);
                 break;
             case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
                 operationType = MapOperationType.REMOVE;

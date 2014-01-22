@@ -24,6 +24,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -41,15 +42,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
-
-    private static final byte TYPE_BOOLEAN = 1;
-    private static final byte TYPE_BYTE = 2;
-    private static final byte TYPE_SHORT = 3;
-    private static final byte TYPE_INTEGER = 4;
-    private static final byte TYPE_LONG = 5;
-    private static final byte TYPE_FLOAT = 6;
-    private static final byte TYPE_DOUBLE = 7;
-    private static final byte TYPE_UTF = 8;
 
     private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
 
@@ -166,12 +158,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public Map<String, Object> getAttributes() {
-        if (!localMember) return Collections.unmodifiableMap(attributes);
-        return attributes;
-    }
-
-    public Object getAttribute(String key) {
-        return attributes.get(key);
+        return Collections.unmodifiableMap(attributes);
     }
 
     public void updateAttribute(MapOperationType operationType, String key, Object value) {
@@ -185,34 +172,84 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
-    public void setAttribute(String key, Object value) {
-        if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
-        if (key == null) throw new IllegalArgumentException("key must not be null");
-        if (value == null) throw new IllegalArgumentException("value must not be null");
-        checkAttributeType(value);
-        Object oldValue = attributes.put(key, value);
-        if (value.equals(oldValue)) {
-            return;
-        }
-        if (instance != null) {
-            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
-            OperationService os = nodeEngine.getOperationService();
-            MemberAttributeChangedOperation operation =
-                    new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
-            String uuid = nodeEngine.getLocalMember().getUuid();
-            operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
-            try {
-                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
-                    if (!member.localMember()) {
-                        os.send(operation, member.getAddress());
-                    } else {
-                        os.executeOperation(operation);
-                    }
-                }
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        }
+    @Override
+    public String getStringAttribute(String key) {
+        return (String) getAttribute(key);
+    }
+
+    @Override
+    public void setStringAttribute(String key, String value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Boolean getBooleanAttribute(String key) {
+        return (Boolean) getAttribute(key);
+    }
+
+    @Override
+    public void setBooleanAttribute(String key, boolean value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Byte getByteAttribute(String key) {
+        return (Byte) getAttribute(key);
+    }
+
+    @Override
+    public void setByteAttribute(String key, byte value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Short getShortAttribute(String key) {
+        return (Short) getAttribute(key);
+    }
+
+    @Override
+    public void setShortAttribute(String key, short value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Integer getIntAttribute(String key) {
+        return (Integer) getAttribute(key);
+    }
+
+    @Override
+    public void setIntAttribute(String key, int value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Long getLongAttribute(String key) {
+        return (Long) getAttribute(key);
+    }
+
+    @Override
+    public void setLongAttribute(String key, long value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Float getFloatAttribute(String key) {
+        return (Float) getAttribute(key);
+    }
+
+    @Override
+    public void setFloatAttribute(String key, float value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Double getDoubleAttribute(String key) {
+        return (Double) getAttribute(key);
+    }
+
+    @Override
+    public void setDoubleAttribute(String key, double value) {
+        setAttribute(key, value);
     }
 
     public void removeAttribute(String key) {
@@ -258,7 +295,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = readAttributeValue(in);
+            Object value = IOUtil.readAttributeValue(in);
             attributes.put(key, value);
         }
     }
@@ -269,7 +306,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
-            writeAttributeValue(entry.getValue(), out);
+            IOUtil.writeAttributeValue(entry.getValue(), out);
         }
     }
 
@@ -320,68 +357,37 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         return ClusterDataSerializerHook.MEMBER;
     }
 
-    private void checkAttributeType(Object value) {
-        Class<?> type = value.getClass();
-        if (type.equals(Boolean.class) || type.equals(Byte.class)
-                || type.equals(Short.class) || type.equals(Integer.class)
-                || type.equals(Long.class) || type.equals(Float.class)
-                || type.equals(Double.class) || type.equals(String.class)) {
+    private Object getAttribute(String key) {
+        return attributes.get(key);
+    }
+
+    private void setAttribute(String key, Object value) {
+        if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        if (key == null) throw new IllegalArgumentException("key must not be null");
+        if (value == null) throw new IllegalArgumentException("value must not be null");
+        Object oldValue = attributes.put(key, value);
+        if (value.equals(oldValue)) {
             return;
         }
-        throw new IllegalArgumentException("Attribute values can only have a value of types ["
-                + "boolean, byte, short, int, long, float, double, String");
-    }
-
-    private void writeAttributeValue(Object value, ObjectDataOutput out) throws IOException {
-        Class<?> type = value.getClass();
-        if (type.equals(Boolean.class)) {
-            out.writeByte(TYPE_BOOLEAN);
-            out.writeBoolean((Boolean) value);
-        } else if (type.equals(Byte.class)) {
-            out.writeByte(TYPE_BYTE);
-            out.writeByte((Byte) value);
-        } else if (type.equals(Short.class)) {
-            out.writeByte(TYPE_SHORT);
-            out.writeShort((Short) value);
-        } else if (type.equals(Integer.class)) {
-            out.writeByte(TYPE_INTEGER);
-            out.writeInt((Integer) value);
-        } else if (type.equals(Long.class)) {
-            out.writeByte(TYPE_LONG);
-            out.writeLong((Long) value);
-        } else if (type.equals(Float.class)) {
-            out.writeByte(TYPE_FLOAT);
-            out.writeFloat((Float) value);
-        } else if (type.equals(Double.class)) {
-            out.writeByte(TYPE_DOUBLE);
-            out.writeDouble((Double) value);
-        } else if(type.equals(String.class)) {
-            out.writeByte(TYPE_UTF);
-            out.writeUTF((String) value);
+        if (instance != null) {
+            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+            OperationService os = nodeEngine.getOperationService();
+            MemberAttributeChangedOperation operation =
+                    new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
+            String uuid = nodeEngine.getLocalMember().getUuid();
+            operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
+            try {
+                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
+                    if (!member.localMember()) {
+                        os.send(operation, member.getAddress());
+                    } else {
+                        os.executeOperation(operation);
+                    }
+                }
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
         }
-    }
-
-    private Object readAttributeValue(ObjectDataInput in) throws IOException {
-        byte type = in.readByte();
-        switch (type) {
-            case TYPE_BOOLEAN:
-                return in.readBoolean();
-            case TYPE_BYTE:
-                return in.readByte();
-            case TYPE_SHORT:
-                return in.readShort();
-            case TYPE_INTEGER:
-                return in.readInt();
-            case TYPE_LONG:
-                return in.readLong();
-            case TYPE_FLOAT:
-                return in.readFloat();
-            case TYPE_DOUBLE:
-                return in.readDouble();
-            case TYPE_UTF:
-                return in.readUTF();
-        }
-        throw new IllegalStateException("Illegal type id found");
     }
 
 }
