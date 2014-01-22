@@ -17,9 +17,9 @@
 package com.hazelcast.executor.client;
 
 import com.hazelcast.client.TargetClientRequest;
-import com.hazelcast.executor.CallableTaskOperation;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorDataSerializerHook;
+import com.hazelcast.executor.MemberCallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -54,7 +54,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
         if (securityContext != null){
             callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
         }
-        return new CallableTaskOperation(name, null, callable);
+        return new MemberCallableTaskOperation(name, null, callable);
     }
 
     public Address getTarget() {
