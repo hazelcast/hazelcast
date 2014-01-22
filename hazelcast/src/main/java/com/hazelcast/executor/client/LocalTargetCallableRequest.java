@@ -17,9 +17,9 @@
 package com.hazelcast.executor.client;
 
 import com.hazelcast.client.TargetClientRequest;
-import com.hazelcast.executor.CallableTaskOperation;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorPortableHook;
+import com.hazelcast.executor.MemberCallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -52,7 +52,7 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
         if (securityContext != null){
             callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
         }
-        return new CallableTaskOperation(name, null, callable);
+        return new MemberCallableTaskOperation(name, null, callable);
     }
 
     @Override
