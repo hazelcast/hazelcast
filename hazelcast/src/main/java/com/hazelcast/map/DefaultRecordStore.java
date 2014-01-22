@@ -34,7 +34,6 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
@@ -130,7 +129,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public void checkIfLoaded() {
         if (mapContainer.getStore() != null && !loaded.get()) {
-            throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
+            throw ExceptionUtil.rethrow(new MapNotReadyException());
         }
     }
 

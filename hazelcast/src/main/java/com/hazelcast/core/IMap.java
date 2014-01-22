@@ -1057,4 +1057,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K,Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 
+    /**
+     * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
+     * Returns the results mapped by each key in the map.
+     * <p/>
+     *
+     */
+    void waitInitialLoad();
+
 }

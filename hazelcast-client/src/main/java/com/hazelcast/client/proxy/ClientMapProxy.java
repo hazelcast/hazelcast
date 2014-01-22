@@ -307,6 +307,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
+    @Override
+    public void waitInitialLoad() {
+        MapWaitInitialLoadRequest request = new MapWaitInitialLoadRequest(name);
+        invoke(request);
+    }
+
     public String addInterceptor(MapInterceptor interceptor) {
         MapAddInterceptorRequest request = new MapAddInterceptorRequest(name, interceptor);
         return invoke(request);
@@ -461,7 +467,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
             Object anchor = null;
             if (keyList.size() != 0) {
-                anchor = keyList.get(keyList.size()-1);
+                anchor = keyList.get(keyList.size() - 1);
             }
             PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(anchor, null));
         }
@@ -529,7 +535,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
             Object anchor = null;
             if (values.size() != 0) {
-                anchor = values.get(values.size()-1);
+                anchor = values.get(values.size() - 1);
             }
             PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(null, anchor));
         }
@@ -564,11 +570,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return invoke(request, keyData);
     }
 
-    public void submitToKey(K key, EntryProcessor entryProcessor,final ExecutionCallback callback) {
+    public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         try {
-            final ClientCallFuture future = (ClientCallFuture)getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            final ClientCallFuture future = (ClientCallFuture) getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
             future.andThen(callback);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -613,15 +619,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         return result;
     }
+
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
-        for(K key : keys)
-        {
+        for (K key : keys) {
             dataKeys.add(toData(key));
         }
 
-        MapExecuteOnKeysRequest request = new MapExecuteOnKeysRequest(name,entryProcessor,dataKeys);
+        MapExecuteOnKeysRequest request = new MapExecuteOnKeysRequest(name, entryProcessor, dataKeys);
         MapEntrySet entrySet = invoke(request);
         Map<K, Object> result = new HashMap<K, Object>();
         for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {

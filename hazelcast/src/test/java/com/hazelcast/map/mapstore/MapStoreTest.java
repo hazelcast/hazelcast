@@ -1158,6 +1158,39 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapInitialLoadTakesTime() {
+        Config config = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(new MapStoreAdapter() {
+            @Override
+            public Map loadAll(Collection keys) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+                Map hmap = new HashMap();
+                hmap.put(1,1);
+                return hmap;
+            }
+
+            @Override
+            public Set loadAllKeys() {
+                HashSet hashSet = new HashSet();
+                for (int i = 0; i < 1000; i++) {
+                    hashSet.add(i);
+                }
+                return hashSet;
+            }
+        });
+        config.getMapConfig("map").setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        IMap<Object,Object> map = instance.getMap("map");
+        map.waitInitialLoad();
+        map.keySet();
+    }
+
+    @Test
     public void testReadingConfiguration() throws Exception {
         String mapName = "mapstore-test";
         InputStream is = getClass().getResourceAsStream("/com/hazelcast/config/hazelcast-mapstore-config.xml");

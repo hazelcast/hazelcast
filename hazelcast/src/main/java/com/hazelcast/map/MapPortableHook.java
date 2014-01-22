@@ -70,6 +70,7 @@ public class MapPortableHook implements PortableHook {
     public static final int EXECUTE_WITH_PREDICATE = 43;
     public static final int REMOVE_ENTRY_LISTENER = 44;
     public static final int EXECUTE_ON_KEYS = 45;
+    public static final int WAIT_INITIAL_LOAD = 46;
 
     public int getFactoryId() {
         return F_ID;
@@ -77,7 +78,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[EXECUTE_ON_KEYS + 1];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[WAIT_INITIAL_LOAD + 1];
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
@@ -322,6 +323,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[REMOVE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapRemoveEntryListenerRequest();
+                    }
+                };
+
+                constructors[WAIT_INITIAL_LOAD] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapWaitInitialLoadRequest();
                     }
                 };
 
