@@ -204,7 +204,7 @@ public final class ProxyManager {
     private void initialize(ClientProxy clientProxy) {
         final ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
         try {
-            client.getInvocationService().invokeOnRandomTarget(request);
+            client.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
         }
