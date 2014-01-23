@@ -204,17 +204,6 @@ public class MapContainer {
         return mapStoreDeleteScheduler;
     }
 
-    public void cancelAllScheduledTasks(Object key) {
-        idleEvictionScheduler.cancel(key);
-        ttlEvictionScheduler.cancel(key);
-        if(mapStoreWriteScheduler != null) {
-            mapStoreWriteScheduler.cancel(key);
-        }
-        if(mapStoreDeleteScheduler != null) {
-            mapStoreDeleteScheduler.cancel(key);
-        }
-    }
-
     public IndexService getIndexService() {
         return indexService;
     }
