@@ -19,6 +19,7 @@ package com.hazelcast.executor;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.util.concurrent.Callable;
 
@@ -36,7 +37,7 @@ public final class MemberCallableTaskOperation extends BaseCallableTaskOperation
 
     @Override
     public ExceptionAction onException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         return super.onException(throwable);
