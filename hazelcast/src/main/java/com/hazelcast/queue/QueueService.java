@@ -67,7 +67,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(QueueService.class);
-        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
+        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
                 new QueueEvictionProcessor(nodeEngine, this), ScheduleType.POSTPONE);
     }
 

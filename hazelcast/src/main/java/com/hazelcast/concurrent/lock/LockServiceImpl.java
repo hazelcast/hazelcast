@@ -109,7 +109,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
 
     private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
         public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace), ScheduleType.POSTPONE);
+            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace), ScheduleType.POSTPONE);
         }
     };
 

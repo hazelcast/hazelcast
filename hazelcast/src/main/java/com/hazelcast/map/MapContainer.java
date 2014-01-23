@@ -121,8 +121,8 @@ public class MapContainer {
             loadInitialKeys();
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService), ScheduleType.SCHEDULE_IF_NEW);
+                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
+                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService), ScheduleType.SCHEDULE_IF_NEW);
             } else {
                 mapStoreDeleteScheduler = null;
                 mapStoreWriteScheduler = null;
@@ -131,8 +131,8 @@ public class MapContainer {
             mapStoreDeleteScheduler = null;
             mapStoreWriteScheduler = null;
         }
-        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
-        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
+        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
+        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
