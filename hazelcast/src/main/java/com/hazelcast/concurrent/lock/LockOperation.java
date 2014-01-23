@@ -25,15 +25,15 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     public LockOperation() {
     }
 
-    public LockOperation(ObjectNamespace namespace, Data key, int threadId) {
+    public LockOperation(ObjectNamespace namespace, Data key, long threadId) {
         super(namespace, key, threadId);
     }
 
-    public LockOperation(ObjectNamespace namespace, Data key, int threadId, long timeout) {
+    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long timeout) {
         super(namespace, key, threadId, timeout);
     }
 
-    public LockOperation(ObjectNamespace namespace, Data key, int threadId, long ttl, long timeout) {
+    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, long timeout) {
         super(namespace, key, threadId, ttl, timeout);
     }
 

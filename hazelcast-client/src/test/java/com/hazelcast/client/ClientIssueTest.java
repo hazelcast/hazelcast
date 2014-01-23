@@ -234,9 +234,8 @@ public class ClientIssueTest {
         assertEquals(1, client.getDistributedObjects().size());
         map.destroy();
 
+        assertEquals(0, instance.getDistributedObjects().size());
         assertEquals(0, client.getDistributedObjects().size());
-
-
     }
 
     /**

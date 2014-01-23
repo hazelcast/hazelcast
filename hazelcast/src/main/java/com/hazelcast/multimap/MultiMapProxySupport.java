@@ -302,7 +302,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
 //        }
 //    }
 
-    private int getThreadId() {
+    private long getThreadId() {
         return ThreadUtil.getThreadId();
     }
 

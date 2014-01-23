@@ -35,7 +35,7 @@ abstract class BaseSignalOperation extends BaseLockOperation {
     public BaseSignalOperation() {
     }
 
-    public BaseSignalOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
+    public BaseSignalOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
         this.all = all;

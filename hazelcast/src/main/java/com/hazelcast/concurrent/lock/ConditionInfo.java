@@ -39,12 +39,12 @@ final class ConditionInfo implements DataSerializable {
         this.conditionId = conditionId;
     }
 
-    public boolean addWaiter(String caller, int threadId) {
+    public boolean addWaiter(String caller, long threadId) {
         final ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
         return waiters.put(waiter, waiter) == null;
     }
 
-    public boolean removeWaiter(String caller, int threadId) {
+    public boolean removeWaiter(String caller, long threadId) {
         return waiters.remove(new ConditionWaiter(caller, threadId)) != null;
     }
 
@@ -56,7 +56,7 @@ final class ConditionInfo implements DataSerializable {
         return waiters.size();
     }
 
-    public boolean startWaiter(String caller, int threadId) {
+    public boolean startWaiter(String caller, long threadId) {
         final ConditionWaiter key = new ConditionWaiter(caller, threadId);
         ConditionWaiter waiter = waiters.get(key);
         if (waiter == null) {
@@ -73,7 +73,7 @@ final class ConditionInfo implements DataSerializable {
         if (len > 0) {
             for (ConditionWaiter w : waiters.values()) {
                 out.writeUTF(w.caller);
-                out.writeInt(w.threadId);
+                out.writeLong(w.threadId);
             }
         }
     }
@@ -84,23 +84,19 @@ final class ConditionInfo implements DataSerializable {
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                final ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readInt());
+                final ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readLong());
                 waiters.put(waiter, waiter);
             }
         }
     }
 
     private static class ConditionWaiter {
-        String caller;
-        int threadId;
+        final String caller;
+        final long threadId;
 
         transient boolean started = false;
 
-        //todo: is this needed?
-        ConditionWaiter() {
-        }
-
-        ConditionWaiter(String caller, int threadId) {
+        ConditionWaiter(String caller, long threadId) {
             this.caller = caller;
             this.threadId = threadId;
         }
@@ -121,7 +117,7 @@ final class ConditionInfo implements DataSerializable {
         @Override
         public int hashCode() {
             int result = caller != null ? caller.hashCode() : 0;
-            result = 31 * result + threadId;
+            result = 31 * result + (int) (threadId ^ (threadId >>> 32));
             return result;
         }
     }

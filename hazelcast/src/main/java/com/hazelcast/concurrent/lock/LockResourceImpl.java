@@ -29,7 +29,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     private Data key;
     private String owner = null;
-    private int threadId = -1;
+    private long threadId = -1;
     private int lockCount;
     private long expirationTime = -1;
     private long acquireTime = -1L;
@@ -60,15 +60,15 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     @Override
-    public boolean isLockedBy(String owner, int threadId) {
+    public boolean isLockedBy(String owner, long threadId) {
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    boolean lock(String owner, int threadId, long leaseTime) {
+    boolean lock(String owner, long threadId, long leaseTime) {
         return lock(owner, threadId, leaseTime, false);
     }
 
-    boolean lock(String owner, int threadId, long leaseTime, boolean transactional) {
+    boolean lock(String owner, long threadId, long leaseTime, boolean transactional) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
@@ -87,7 +87,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return false;
     }
 
-    boolean extendLeaseTime(String caller, int threadId, long leaseTime) {
+    boolean extendLeaseTime(String caller, long threadId, long leaseTime) {
         if (isLockedBy(caller, threadId)) {
             if (expirationTime < Long.MAX_VALUE) {
                 setExpirationTime(expirationTime - Clock.currentTimeMillis() + leaseTime);
@@ -111,7 +111,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         }
     }
 
-    boolean unlock(String owner, int threadId) {
+    boolean unlock(String owner, long threadId) {
         if (lockCount == 0) {
             return false;
         } else {
@@ -126,11 +126,11 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return false;
     }
 
-    boolean canAcquireLock(String caller, int threadId) {
+    boolean canAcquireLock(String caller, long threadId) {
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
-    boolean addAwait(String conditionId, String caller, int threadId) {
+    boolean addAwait(String conditionId, String caller, long threadId) {
         if (conditions == null) {
             conditions = new HashMap<String, ConditionInfo>(2);
         }
@@ -142,7 +142,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return condition.addWaiter(caller, threadId);
     }
 
-    boolean removeAwait(String conditionId, String caller, int threadId) {
+    boolean removeAwait(String conditionId, String caller, long threadId) {
         if (conditions != null) {
             final ConditionInfo condition = conditions.get(conditionId);
             if (condition != null) {
@@ -156,7 +156,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return false;
     }
 
-    boolean startAwaiting(String conditionId, String caller, int threadId) {
+    boolean startAwaiting(String conditionId, String caller, long threadId) {
         if (conditions != null) {
             final ConditionInfo condition = conditions.get(conditionId);
             if (condition != null) {
@@ -240,7 +240,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     @Override
-    public int getThreadId() {
+    public long getThreadId() {
         return threadId;
     }
 
@@ -278,7 +278,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     @Override
     public int hashCode() {
         int result = owner != null ? owner.hashCode() : 0;
-        result = 31 * result + threadId;
+        result = 31 * result + (int) (threadId ^ (threadId >>> 32));
         return result;
     }
 
@@ -286,7 +286,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     public void writeData(ObjectDataOutput out) throws IOException {
         key.writeData(out);
         out.writeUTF(owner);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
         out.writeInt(lockCount);
         out.writeLong(expirationTime);
         out.writeLong(acquireTime);
@@ -321,7 +321,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         key = new Data();
         key.readData(in);
         owner = in.readUTF();
-        threadId = in.readInt();
+        threadId = in.readLong();
         lockCount = in.readInt();
         expirationTime = in.readLong();
         acquireTime = in.readLong();

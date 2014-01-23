@@ -30,7 +30,7 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
     public BeforeAwaitOperation() {
     }
 
-    public BeforeAwaitOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId) {
+    public BeforeAwaitOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
     }

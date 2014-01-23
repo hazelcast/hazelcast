@@ -79,6 +79,7 @@ final class TransactionProxy {
             startTime = Clock.currentTimeMillis();
 
             txnId = invoke(new CreateTransactionRequest(options));
+
             state = ACTIVE;
         } catch (Exception e){
             closeConnection();
@@ -147,6 +148,7 @@ final class TransactionProxy {
     private <T> T invoke(ClientRequest request) {
         if (request instanceof BaseTransactionRequest) {
             ((BaseTransactionRequest) request).setTxnId(txnId);
+            ((BaseTransactionRequest) request).setClientThreadId(threadId);
         }
         final ClientClusterService clusterService = client.getClientClusterService();
         final SerializationService ss = client.getSerializationService();

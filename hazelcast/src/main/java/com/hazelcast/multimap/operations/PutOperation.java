@@ -46,7 +46,7 @@ public class PutOperation extends MultiMapBackupAwareOperation {
     public PutOperation() {
     }
 
-    public PutOperation(String name, Data dataKey, int threadId, Data value, int index) {
+    public PutOperation(String name, Data dataKey, long threadId, Data value, int index) {
         super(name, dataKey, threadId);
         this.value = value;
         this.index = index;

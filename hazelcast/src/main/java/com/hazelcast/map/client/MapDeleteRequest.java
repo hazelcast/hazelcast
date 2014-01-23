@@ -38,12 +38,12 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable,
 
     protected String name;
     protected Data key;
-    protected int threadId;
+    protected long threadId;
 
     public MapDeleteRequest() {
     }
 
-    public MapDeleteRequest(String name, Data key, int threadId) {
+    public MapDeleteRequest(String name, Data key, long threadId) {
         this.name = name;
         this.key = key;
         this.threadId = threadId;
@@ -75,14 +75,14 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable,
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
+        writer.writeLong("t", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
+        threadId = reader.readLong("t");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

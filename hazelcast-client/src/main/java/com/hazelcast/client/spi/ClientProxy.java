@@ -89,7 +89,7 @@ public abstract class ClientProxy implements DistributedObject {
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
         try {
-            context.getInvocationService().invokeOnRandomTarget(request);
+            context.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

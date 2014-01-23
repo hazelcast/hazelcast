@@ -36,7 +36,7 @@ public class AwaitOperation extends BaseLockOperation
     public AwaitOperation() {
     }
 
-    public AwaitOperation(ObjectNamespace namespace, Data key, int threadId, long timeout, String conditionId) {
+    public AwaitOperation(ObjectNamespace namespace, Data key, long threadId, long timeout, String conditionId) {
         super(namespace, key, threadId, timeout);
         this.conditionId = conditionId;
     }

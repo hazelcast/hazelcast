@@ -42,7 +42,7 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
     public RemoveOperation() {
     }
 
-    public RemoveOperation(String name, Data dataKey, int threadId, Data value) {
+    public RemoveOperation(String name, Data dataKey, long threadId, Data value) {
         super(name, dataKey, threadId);
         this.value = value;
     }

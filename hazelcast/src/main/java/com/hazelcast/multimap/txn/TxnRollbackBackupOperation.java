@@ -33,12 +33,12 @@ import java.io.IOException;
 public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     String caller;
-    int threadId;
+    long threadId;
 
     public TxnRollbackBackupOperation() {
     }
 
-    public TxnRollbackBackupOperation(String name, Data dataKey, String caller, int threadId) {
+    public TxnRollbackBackupOperation(String name, Data dataKey, String caller, long threadId) {
         super(name, dataKey);
         this.caller = caller;
         this.threadId = threadId;
@@ -54,13 +54,13 @@ public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implem
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(caller);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         caller = in.readUTF();
-        threadId = in.readInt();
+        threadId = in.readLong();
     }
 
     public int getId() {

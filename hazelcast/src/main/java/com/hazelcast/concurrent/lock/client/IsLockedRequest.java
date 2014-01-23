@@ -38,7 +38,7 @@ public final class IsLockedRequest extends AbstractIsLockedRequest
         super(key);
     }
 
-    public IsLockedRequest(Data key, int threadId) {
+    public IsLockedRequest(Data key, long threadId) {
         super(key, threadId);
     }
 

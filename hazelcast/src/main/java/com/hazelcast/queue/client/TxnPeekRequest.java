@@ -49,7 +49,7 @@ public class TxnPeekRequest extends BaseTransactionRequest implements Portable {
     }
 
     @Override
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final TransactionContext context = endpoint.getTransactionContext(txnId);
         final TransactionalQueue queue = context.getQueue(name);
