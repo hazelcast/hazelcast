@@ -263,22 +263,22 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
-    public boolean lock(Data key, String caller, int threadId, long ttl) {
+    public boolean lock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
     }
 
-    public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+    public boolean txnLock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
-    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+    public boolean extendLock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
-    public boolean unlock(Data key, String caller, int threadId) {
+    public boolean unlock(Data key, String caller, long threadId) {
         checkIfLoaded();
         return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
@@ -296,11 +296,11 @@ public class DefaultRecordStore implements RecordStore {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
-    public boolean isLockedBy(Data key, String caller, int threadId) {
+    public boolean isLockedBy(Data key, String caller, long threadId) {
         return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
     }
 
-    public boolean canAcquireLock(Data key, String caller, int threadId) {
+    public boolean canAcquireLock(Data key, String caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 

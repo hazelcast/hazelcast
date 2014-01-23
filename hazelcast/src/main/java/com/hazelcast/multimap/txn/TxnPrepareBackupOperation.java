@@ -33,13 +33,13 @@ import java.io.IOException;
 public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     String caller;
-    int threadId;
+    long threadId;
     long ttl;
 
     public TxnPrepareBackupOperation() {
     }
 
-    public TxnPrepareBackupOperation(String name, Data dataKey, String caller, int threadId) {
+    public TxnPrepareBackupOperation(String name, Data dataKey, String caller, long threadId) {
         super(name, dataKey);
         this.caller = caller;
         this.threadId = threadId;
@@ -55,14 +55,14 @@ public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation impleme
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(caller);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
         out.writeLong(ttl);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         caller = in.readUTF();
-        threadId = in.readInt();
+        threadId = in.readLong();
         ttl = in.readLong();
     }
 

@@ -37,7 +37,7 @@ public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(String name, Data dataKey, long ttl, int threadId) {
+    public TxnPrepareOperation(String name, Data dataKey, long ttl, long threadId) {
         super(name, dataKey, threadId);
         this.ttl = ttl;
     }

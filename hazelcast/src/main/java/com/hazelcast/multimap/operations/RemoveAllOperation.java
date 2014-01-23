@@ -37,7 +37,7 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     public RemoveAllOperation() {
     }
 
-    public RemoveAllOperation(String name, Data dataKey, int threadId) {
+    public RemoveAllOperation(String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
     }
 

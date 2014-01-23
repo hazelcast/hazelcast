@@ -32,7 +32,7 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
     public UnlockBackupOperation() {
     }
 
-    public UnlockBackupOperation(ObjectNamespace namespace, Data key, int threadId, String originalCallerUuid, boolean force) {
+    public UnlockBackupOperation(ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid, boolean force) {
         super(namespace, key, threadId);
         this.force = force;
         this.originalCallerUuid = originalCallerUuid;

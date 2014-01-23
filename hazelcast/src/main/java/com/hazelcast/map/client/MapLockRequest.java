@@ -38,12 +38,12 @@ public class MapLockRequest extends AbstractLockRequest implements SecureRequest
     public MapLockRequest() {
     }
 
-    public MapLockRequest(String name, Data key, int threadId) {
+    public MapLockRequest(String name, Data key, long threadId) {
         super(key, threadId);
         this.name = name;
     }
 
-    public MapLockRequest(String name, Data key, int threadId, long ttl, long timeout) {
+    public MapLockRequest(String name, Data key, long threadId, long ttl, long timeout) {
         super(key, threadId, ttl, timeout);
         this.name = name;
     }

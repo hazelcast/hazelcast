@@ -29,7 +29,7 @@ public class SignalOperation extends BaseSignalOperation implements BackupAwareO
     public SignalOperation() {
     }
 
-    public SignalOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
+    public SignalOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
         super(namespace, key, threadId, conditionId, all);
     }
 

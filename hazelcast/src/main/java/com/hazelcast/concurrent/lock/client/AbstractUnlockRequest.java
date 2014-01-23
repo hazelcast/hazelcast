@@ -39,19 +39,19 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
 
     protected Data key;
 
-    private int threadId;
+    private long threadId;
 
     private boolean force;
 
     public AbstractUnlockRequest() {
     }
 
-    public AbstractUnlockRequest(Data key, int threadId) {
+    public AbstractUnlockRequest(Data key, long threadId) {
         this.key = key;
         this.threadId = threadId;
     }
 
-    protected AbstractUnlockRequest(Data key, int threadId, boolean force) {
+    protected AbstractUnlockRequest(Data key, long threadId, boolean force) {
         this.key = key;
         this.threadId = threadId;
         this.force = force;
@@ -75,14 +75,14 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeInt("tid", threadId);
+        writer.writeLong("tid", threadId);
         writer.writeBoolean("force", force);
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
-        threadId = reader.readInt("tid");
+        threadId = reader.readLong("tid");
         force = reader.readBoolean("force");
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

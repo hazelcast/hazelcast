@@ -31,11 +31,11 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
     public UnlockOperation() {
     }
 
-    public UnlockOperation(ObjectNamespace namespace, Data key, int threadId) {
+    public UnlockOperation(ObjectNamespace namespace, Data key, long threadId) {
         super(namespace, key, threadId);
     }
 
-    public UnlockOperation(ObjectNamespace namespace, Data key, int threadId, boolean force) {
+    public UnlockOperation(ObjectNamespace namespace, Data key, long threadId, boolean force) {
         super(namespace, key, threadId);
         this.force = force;
     }

@@ -28,7 +28,7 @@ public class IsLockedOperation extends BaseLockOperation {
         super(namespace, key, -1);
     }
 
-    public IsLockedOperation(ObjectNamespace namespace, Data key, int threadId) {
+    public IsLockedOperation(ObjectNamespace namespace, Data key, long threadId) {
         super(namespace, key, threadId);
     }
 

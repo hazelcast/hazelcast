@@ -35,7 +35,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
 
     String name;
     Data key;
-    int threadId = ThreadUtil.getThreadId();
+    long threadId = ThreadUtil.getThreadId();
     Operation op;
 
     public MapTransactionLog() {
@@ -93,7 +93,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         if (!isNullKey) {
             key.writeData(out);
         }
-        out.writeInt(threadId);
+        out.writeLong(threadId);
         out.writeObject(op);
     }
 
@@ -105,7 +105,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
             key = new Data();
             key.readData(in);
         }
-        threadId = in.readInt();
+        threadId = in.readLong();
         op = in.readObject();
     }
 

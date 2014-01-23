@@ -33,7 +33,7 @@ public class AwaitBackupOperation extends BaseLockOperation
     public AwaitBackupOperation() {
     }
 
-    public AwaitBackupOperation(ObjectNamespace namespace, Data key, int threadId,
+    public AwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
                                 String conditionId, String originalCaller) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
