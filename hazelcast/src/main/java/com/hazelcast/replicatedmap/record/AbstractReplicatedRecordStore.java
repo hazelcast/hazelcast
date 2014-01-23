@@ -96,7 +96,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         this.replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
         this.executorService = getExecutorService(nodeEngine, replicatedMapConfig);
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
-                nodeEngine.getExecutionService().getScheduledExecutor(),
+                nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
                 new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name), ScheduleType.POSTPONE);
 
         this.mutexes = new Object[replicatedMapConfig.getConcurrencyLevel()];
@@ -644,7 +644,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                                                         ReplicatedMapConfig replicatedMapConfig) {
         ScheduledExecutorService es = replicatedMapConfig.getReplicatorExecutorService();
         if (es == null) {
-            es = nodeEngine.getExecutionService().getScheduledExecutor();
+            es = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
         }
         return new WrappedExecutorService(es);
     }
