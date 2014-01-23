@@ -1004,21 +1004,27 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap<Object, Object> map = h1.getMap("testWriteBehindSameSecondSameKey");
-        final int mapSize = 100;
+        final int size1 = 20;
+        final int size2 = 10;
         //store op count.
-        testMapStore.latchStoreOpCount = new CountDownLatch(mapSize+1);
+        testMapStore.latchStoreOpCount = new CountDownLatch(size1);
+        testMapStore.latchStoreAllOpCount = new CountDownLatch(size2);
 
-        for (int i = 0; i < mapSize; i++) {
+        for (int i = 0; i < size1; i++) {
             map.put("key", "value" + i);
-            Thread.sleep(1);
         }
-        Thread.sleep(1);
-        map.put("key", "the_last_value");
+        for (int i = 0; i < size2; i++) {
+            map.put("key"+i, "value" + i);
+        }
 
         assertTrue("store operations must be finished.",
                 testMapStore.latchStoreOpCount.await(30, TimeUnit.SECONDS));
 
-        assertEquals("the_last_value", testMapStore.getStore().get("key"));
+        assertTrue("store all operations must be finished.",
+                testMapStore.latchStoreAllOpCount.await(30, TimeUnit.SECONDS));
+
+        assertEquals("value"+ (size1-1), testMapStore.getStore().get("key"));
+        assertEquals("value"+ (size2-1), testMapStore.getStore().get("key"+(size2-1)));
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
@@ -1332,6 +1338,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final CountDownLatch latchLoadAllKeys;
         final CountDownLatch latchLoadAll;
         CountDownLatch latchStoreOpCount;
+        CountDownLatch latchStoreAllOpCount;
         final AtomicInteger callCount = new AtomicInteger();
         final AtomicInteger initCount = new AtomicInteger();
         final AtomicInteger destroyCount = new AtomicInteger();
@@ -1450,7 +1457,7 @@ public class MapStoreTest extends HazelcastTestSupport {
             latchStoreAll.countDown();
             if (latchStoreOpCount != null) {
                 for (int i = 0; i < map.size(); i++) {
-                    latchStoreOpCount.countDown();
+                    latchStoreAllOpCount.countDown();
                 }
             }
         }

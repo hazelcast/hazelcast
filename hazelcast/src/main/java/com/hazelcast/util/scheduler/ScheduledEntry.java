@@ -18,11 +18,12 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.util.Clock;
 
+import java.util.Map;
+
 /**
  * @author mdogan 2/25/13
  */
-public final class ScheduledEntry<K, V> {
-
+public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
     private final K key;
 
     private final V value;
@@ -39,7 +40,15 @@ public final class ScheduledEntry<K, V> {
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleTime = Clock.currentTimeMillis();
+        this.scheduleTime = System.nanoTime();
+    }
+
+    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleTime) {
+        this.key = key;
+        this.value = value;
+        this.scheduledDelayMillis = scheduledDelayMillis;
+        this.actualDelaySeconds = actualDelaySeconds;
+        this.scheduleTime = scheduleTime;
     }
 
     public K getKey() {
@@ -48,6 +57,11 @@ public final class ScheduledEntry<K, V> {
 
     public V getValue() {
         return value;
+    }
+
+    @Override
+    public V setValue(V value) {
+        throw new RuntimeException("Operation is not supported");
     }
 
     public long getScheduledDelayMillis() {

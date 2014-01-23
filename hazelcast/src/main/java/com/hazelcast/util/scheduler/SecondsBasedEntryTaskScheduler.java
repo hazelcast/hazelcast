@@ -169,9 +169,10 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private boolean scheduleEntry(long delayMillis, K key, V value) {
         final int delaySeconds = ceilToSecond(delayMillis);
         final Integer newSecond = findRelativeSecond(delayMillis);
-        TimeKey timeKey = new TimeKey(key, Clock.currentTimeMillis());
+        long time = System.nanoTime();
+        TimeKey timeKey = new TimeKey(key, time);
         secondsOfKeys.put(timeKey, newSecond);
-        doSchedule(timeKey, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
+        doSchedule(timeKey, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, time), newSecond);
         return true;
     }
 
