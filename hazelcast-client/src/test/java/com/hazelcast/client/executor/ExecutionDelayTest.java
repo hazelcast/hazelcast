@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.executor;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
@@ -32,10 +31,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.Assert.assertTrue;
@@ -44,66 +40,66 @@ import static junit.framework.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ExecutionDelayTest {
 
-    private Config cfg;
-    private List<HazelcastInstance> hzs;
+    private static final int NODES = 3;
+    private final List<HazelcastInstance> hzs = new ArrayList<HazelcastInstance>(NODES);
 
     @Before
     public void init() {
-        hzs = new ArrayList<HazelcastInstance>(3);
-        final int NODES = 3;
-        cfg = new Config();
-        cfg.getGroupConfig().setName("142").setPassword("142");
         for (int i = 0; i < NODES; i++) {
-            hzs.add(Hazelcast.newHazelcastInstance(cfg));
+            hzs.add(Hazelcast.newHazelcastInstance());
         }
     }
 
     @After
     public void destroy() throws InterruptedException {
         Hazelcast.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Test
     public void testExecutorOneNodeFailsUnexpectedly() throws InterruptedException {
         int executions = 20;
+        ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
+        try {
+            ex.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    hzs.get(1).getLifecycleService().terminate();
+                }
+            }, 1000, TimeUnit.MILLISECONDS);
 
-        Executors.newScheduledThreadPool(1).schedule(new Runnable() {
-            @Override
-            public void run() {
-                hzs.get(1).getLifecycleService().terminate();
-            }
-        }, 1000, TimeUnit.MILLISECONDS);
-
-        Task task = new Task();
-        long time = runClient(task, executions);
-        assertTrue("was " + time, time < 5000);
-//        assertEquals(executions, task.getCounterValue());
+            Task task = new Task();
+            long time = runClient(task, executions);
+            assertTrue("was " + time, time < 5000);
+            //        assertEquals(executions, task.getCounterValue());
+        } finally {
+            ex.shutdown();
+        }
     }
 
     @Test
     public void testExecutorOneNodeShutdown() throws InterruptedException {
         int executions = 20;
+        ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
+        try {
+            ex.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    hzs.get(1).getLifecycleService().shutdown();
+                }
+            }, 1000, TimeUnit.MILLISECONDS);
 
-        Executors.newScheduledThreadPool(1).schedule(new Runnable() {
-            @Override
-            public void run() {
-                hzs.get(1).getLifecycleService().shutdown();
-            }
-        }, 1000, TimeUnit.MILLISECONDS);
-
-
-        Task task = new Task();
-        long time = runClient(task, executions);
-        assertTrue("was " + time, time < 5000);
-//        assertEquals(executions, task.getCounterValue());
+            Task task = new Task();
+            long time = runClient(task, executions);
+            assertTrue("was " + time, time < 5000);
+            //        assertEquals(executions, task.getCounterValue());
+        } finally {
+            ex.shutdown();
+        }
     }
 
     private long runClient(Task task, int executions) throws InterruptedException {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("142").setPassword("142");
-        clientConfig.addAddress("localhost");
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IExecutorService executor = client.getExecutorService("executor");
         boolean fl;
         long maxTime = 0;
