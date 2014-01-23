@@ -122,7 +122,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setWriteDelaySeconds(1);
         mapStoreConfig.setImplementation(store);
         cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
-
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         final IMap<Integer, Integer> map = h1.getMap("testSlowStore");
         int count = 1000;
