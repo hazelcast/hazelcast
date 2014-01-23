@@ -32,7 +32,7 @@ public class MapTryPutRequest extends MapPutRequest {
     public MapTryPutRequest() {
     }
 
-    public MapTryPutRequest(String name, Data key, Data value, int threadId, long timeout) {
+    public MapTryPutRequest(String name, Data key, Data value, long threadId, long timeout) {
         super(name, key, value, threadId, -1);
         this.timeout = timeout;
     }

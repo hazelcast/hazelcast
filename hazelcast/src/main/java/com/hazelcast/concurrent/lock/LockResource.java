@@ -27,13 +27,13 @@ public interface LockResource {
 
     boolean isLocked();
 
-    boolean isLockedBy(String owner, int threadId);
+    boolean isLockedBy(String owner, long threadId);
 
     String getOwner();
 
     boolean isTransactional();
 
-    int getThreadId();
+    long getThreadId();
 
     int getLockCount();
 

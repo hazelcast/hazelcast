@@ -32,11 +32,11 @@ public final class UnlockRequest extends AbstractUnlockRequest {
     public UnlockRequest() {
     }
 
-    public UnlockRequest(Data key, int threadId) {
+    public UnlockRequest(Data key, long threadId) {
         super(key, threadId);
     }
 
-    public UnlockRequest(Data key, int threadId, boolean force) {
+    public UnlockRequest(Data key, long threadId, boolean force) {
         super(key, threadId, force);
     }
 

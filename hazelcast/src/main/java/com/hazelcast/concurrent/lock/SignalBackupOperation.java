@@ -28,7 +28,7 @@ public class SignalBackupOperation extends BaseSignalOperation implements Backup
     public SignalBackupOperation() {
     }
 
-    public SignalBackupOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
+    public SignalBackupOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
         super(namespace, key, threadId, conditionId, all);
     }
 }

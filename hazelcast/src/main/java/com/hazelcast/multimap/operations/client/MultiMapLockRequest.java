@@ -40,12 +40,12 @@ public class MultiMapLockRequest extends AbstractLockRequest {
     public MultiMapLockRequest() {
     }
 
-    public MultiMapLockRequest(Data key, int threadId, String name) {
+    public MultiMapLockRequest(Data key, long threadId, String name) {
         super(key, threadId);
         this.name = name;
     }
 
-    public MultiMapLockRequest(Data key, int threadId, long ttl, long timeout, String name) {
+    public MultiMapLockRequest(Data key, long threadId, long ttl, long timeout, String name) {
         super(key, threadId, ttl, timeout);
         this.name = name;
     }

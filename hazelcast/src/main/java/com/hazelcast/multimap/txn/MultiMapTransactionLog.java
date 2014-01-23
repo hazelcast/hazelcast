@@ -41,13 +41,13 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     final List<Operation> opList = new LinkedList<Operation>();
     Data key;
     long ttl;
-    int threadId;
+    long threadId;
     long txVersion;
 
     public MultiMapTransactionLog() {
     }
 
-    public MultiMapTransactionLog(Data key, String name, long ttl, int threadId, long version) {
+    public MultiMapTransactionLog(Data key, String name, long ttl, long threadId, long version) {
         this.key = key;
         this.name = name;
         this.ttl = ttl;
@@ -93,7 +93,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         }
         key.writeData(out);
         out.writeLong(ttl);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
         out.writeLong(txVersion);
     }
 
@@ -106,7 +106,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         key = new Data();
         key.readData(in);
         ttl = in.readLong();
-        threadId = in.readInt();
+        threadId = in.readLong();
         txVersion = in.readLong();
     }
 

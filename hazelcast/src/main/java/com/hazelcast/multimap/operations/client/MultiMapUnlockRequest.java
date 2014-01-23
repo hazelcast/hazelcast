@@ -40,12 +40,12 @@ public class MultiMapUnlockRequest extends AbstractUnlockRequest {
     public MultiMapUnlockRequest() {
     }
 
-    public MultiMapUnlockRequest(Data key, int threadId, String name) {
+    public MultiMapUnlockRequest(Data key, long threadId, String name) {
         super(key, threadId);
         this.name = name;
     }
 
-    public MultiMapUnlockRequest(Data key, int threadId, boolean force, String name) {
+    public MultiMapUnlockRequest(Data key, long threadId, boolean force, String name) {
         super(key, threadId, force);
         this.name = name;
     }

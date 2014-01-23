@@ -233,7 +233,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
     }
 
-    private int getThreadId() {
+    private long getThreadId() {
         return ThreadUtil.getThreadId();
     }
 

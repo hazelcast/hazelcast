@@ -77,7 +77,7 @@ final class ConditionImpl implements ICondition {
     @Override
     public boolean await(long time, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
-        final int threadId = ThreadUtil.getThreadId();
+        final long threadId = ThreadUtil.getThreadId();
 
         try {
             BeforeAwaitOperation op = new BeforeAwaitOperation(namespace, lockProxy.key, threadId, conditionId);

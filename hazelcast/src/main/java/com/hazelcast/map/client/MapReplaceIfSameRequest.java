@@ -34,7 +34,7 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
     public MapReplaceIfSameRequest() {
     }
 
-    public MapReplaceIfSameRequest(String name, Data key, Data testValue, Data value, int threadId) {
+    public MapReplaceIfSameRequest(String name, Data key, Data testValue, Data value, long threadId) {
         super(name, key, value, threadId);
         this.testValue = testValue;
     }

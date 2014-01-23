@@ -37,12 +37,12 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
 
     long timeout;
     long ttl;
-    int threadId;
+    long threadId;
 
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, int threadId) {
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, long threadId) {
         super(name, dataKey);
         this.timeout = timeout;
         this.ttl = ttl;
@@ -79,14 +79,14 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         super.writeInternal(out);
         out.writeLong(timeout);
         out.writeLong(ttl);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         timeout = in.readLong();
         ttl = in.readLong();
-        threadId = in.readInt();
+        threadId = in.readLong();
     }
 
     public int getId() {

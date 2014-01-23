@@ -35,22 +35,22 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean lock(Data key, String caller, int threadId, long ttl) {
+    public boolean lock(Data key, String caller, long threadId, long ttl) {
         return getLockStore().lock(key, caller, threadId, ttl);
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+    public boolean txnLock(Data key, String caller, long threadId, long ttl) {
         return getLockStore().txnLock(key, caller, threadId, ttl);
     }
 
     @Override
-    public boolean extendLeaseTime(Data key, String caller, int threadId, long ttl) {
+    public boolean extendLeaseTime(Data key, String caller, long threadId, long ttl) {
         return getLockStore().extendLeaseTime(key, caller, threadId, ttl);
     }
 
     @Override
-    public boolean unlock(Data key, String caller, int threadId) {
+    public boolean unlock(Data key, String caller, long threadId) {
         return getLockStore().unlock(key, caller, threadId);
     }
 
@@ -60,7 +60,7 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean isLockedBy(Data key, String caller, int threadId) {
+    public boolean isLockedBy(Data key, String caller, long threadId) {
         return getLockStore().isLockedBy(key, caller, threadId);
     }
 
@@ -75,7 +75,7 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean canAcquireLock(Data key, String caller, int threadId) {
+    public boolean canAcquireLock(Data key, String caller, long threadId) {
         return getLockStore().canAcquireLock(key, caller, threadId);
     }
 

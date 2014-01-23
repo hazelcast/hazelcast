@@ -40,14 +40,14 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     protected Data key;
     protected Data value;
     protected String name;
-    protected int threadId;
+    protected long threadId;
     protected long ttl;
     protected transient long startTime;
 
     public MapPutRequest() {
     }
 
-    public MapPutRequest(String name, Data key, Data value, int threadId, long ttl) {
+    public MapPutRequest(String name, Data key, Data value, long threadId, long ttl) {
         this.name = name;
         this.key = key;
         this.value = value;
@@ -55,7 +55,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         this.ttl = ttl;
     }
 
-    public MapPutRequest(String name, Data key, Data value, int threadId) {
+    public MapPutRequest(String name, Data key, Data value, long threadId) {
         this.name = name;
         this.key = key;
         this.value = value;
@@ -103,7 +103,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
+        writer.writeLong("t", threadId);
         writer.writeLong("ttl", ttl);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
@@ -112,7 +112,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
+        threadId = reader.readLong("t");
         ttl = reader.readLong("ttl");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

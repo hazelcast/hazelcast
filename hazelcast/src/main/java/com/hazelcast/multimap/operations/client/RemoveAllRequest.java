@@ -38,12 +38,12 @@ import java.util.Collection;
  */
 public class RemoveAllRequest extends MultiMapKeyBasedRequest {
 
-    int threadId = -1;
+    long threadId = -1;
 
     public RemoveAllRequest() {
     }
 
-    public RemoveAllRequest(String name, Data key, int threadId) {
+    public RemoveAllRequest(String name, Data key, long threadId) {
         super(name, key);
         this.threadId = threadId;
     }
@@ -57,12 +57,12 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeInt("t",threadId);
+        writer.writeLong("t",threadId);
         super.write(writer);
     }
 
     public void read(PortableReader reader) throws IOException {
-        threadId = reader.readInt("t");
+        threadId = reader.readLong("t");
         super.read(reader);
     }
 

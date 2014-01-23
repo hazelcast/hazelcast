@@ -38,12 +38,12 @@ public class MapUnlockRequest extends AbstractUnlockRequest implements SecureReq
     public MapUnlockRequest() {
     }
 
-    public MapUnlockRequest(String name, Data key, int threadId) {
+    public MapUnlockRequest(String name, Data key, long threadId) {
         super(key, threadId, false);
         this.name = name;
     }
 
-    public MapUnlockRequest(String name, Data key, int threadId, boolean force) {
+    public MapUnlockRequest(String name, Data key, long threadId, boolean force) {
         super(key, threadId, force);
         this.name = name;
     }

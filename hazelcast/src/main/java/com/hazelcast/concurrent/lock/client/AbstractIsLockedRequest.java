@@ -39,7 +39,7 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest
 
     protected Data key;
 
-    private int threadId;
+    private long threadId;
 
     public AbstractIsLockedRequest() {
     }
@@ -49,7 +49,7 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest
         this.threadId = -1;
     }
 
-    protected AbstractIsLockedRequest(Data key, int threadId) {
+    protected AbstractIsLockedRequest(Data key, long threadId) {
         this.key = key;
         this.threadId = threadId;
     }
@@ -72,13 +72,13 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeInt("tid", threadId);
+        writer.writeLong("tid", threadId);
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
-        threadId = reader.readInt("tid");
+        threadId = reader.readLong("tid");
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

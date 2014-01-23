@@ -26,11 +26,11 @@ public class MapReplaceRequest extends MapPutRequest {
     public MapReplaceRequest() {
     }
 
-    public MapReplaceRequest(String name, Data key, Data value, int threadId) {
+    public MapReplaceRequest(String name, Data key, Data value, long threadId) {
         super(name, key, value, threadId);
     }
 
-    public MapReplaceRequest(String name, Data key, Data value, int threadId, long ttl) {
+    public MapReplaceRequest(String name, Data key, Data value, long threadId, long ttl) {
         super(name, key, value, threadId, ttl);
     }
 
