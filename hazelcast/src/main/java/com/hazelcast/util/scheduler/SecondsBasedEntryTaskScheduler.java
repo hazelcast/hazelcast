@@ -245,6 +245,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
 
         public void run() {
+            scheduledTaskMap.remove(second);
             final Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
             Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
