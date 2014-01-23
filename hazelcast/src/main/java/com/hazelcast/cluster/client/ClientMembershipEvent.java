@@ -18,6 +18,7 @@ package com.hazelcast.cluster.client;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -35,7 +36,11 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
 
     public static final int MEMBER_REMOVED = MembershipEvent.MEMBER_REMOVED;
 
+    public static final int MEMBER_ATTRIBUTE_CHANGED = MembershipEvent.MEMBER_ATTRIBUTE_CHANGED;
+
     private Member member;
+
+    private MemberAttributeChange memberAttributeChange;
 
     private int eventType;
 
@@ -43,8 +48,17 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
     }
 
     public ClientMembershipEvent(Member member, int eventType) {
+        this(member, null, eventType);
+    }
+
+    public ClientMembershipEvent(Member member, MemberAttributeChange memberAttributeChange) {
+        this(member, memberAttributeChange, MEMBER_ATTRIBUTE_CHANGED);
+    }
+
+    private ClientMembershipEvent(Member member, MemberAttributeChange memberAttributeChange, int eventType) {
         this.member = member;
         this.eventType = eventType;
+        this.memberAttributeChange = memberAttributeChange;
     }
 
     /**
@@ -65,10 +79,24 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
         return member;
     }
 
+    /**
+     * Returns the member attribute chance operation to execute
+     * if event type is {@link #MEMBER_ATTRIBUTE_CHANGED}.
+     *
+     * @return MemberAttributeChange to execute
+     */
+    public MemberAttributeChange getMemberAttributeChange() {
+        return memberAttributeChange;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         member.writeData(out);
         out.writeInt(eventType);
+        out.writeBoolean(memberAttributeChange != null);
+        if (memberAttributeChange != null) {
+            memberAttributeChange.writeData(out);
+        }
     }
 
     @Override
@@ -76,6 +104,10 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
         member = new MemberImpl();
         member.readData(in);
         eventType = in.readInt();
+        if (in.readBoolean()) {
+            memberAttributeChange = new MemberAttributeChange();
+            memberAttributeChange.readData(in);
+        }
     }
 
     @Override

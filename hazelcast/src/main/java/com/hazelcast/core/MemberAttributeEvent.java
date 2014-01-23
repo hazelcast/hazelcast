@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.operation.MapOperationType;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -69,7 +70,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         switch (operationType) {
             case PUT:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_PUT);
-                out.writeObject(value);
+                IOUtil.writeAttributeValue(value, out);
                 break;
             case REMOVE:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
@@ -87,7 +88,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         {
             case DELTA_MEMBER_PROPERTIES_OP_PUT:
                 operationType = MapOperationType.PUT;
-                value = in.readObject();
+                value = IOUtil.readAttributeValue(in);
                 break;
             case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
                 operationType = MapOperationType.REMOVE;

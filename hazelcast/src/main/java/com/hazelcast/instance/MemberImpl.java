@@ -24,6 +24,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -157,12 +158,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public Map<String, Object> getAttributes() {
-        if (!localMember) return Collections.unmodifiableMap(attributes);
-        return attributes;
-    }
-
-    public Object getAttribute(String key) {
-        return attributes.get(key);
+        return Collections.unmodifiableMap(attributes);
     }
 
     public void updateAttribute(MapOperationType operationType, String key, Object value) {
@@ -176,33 +172,84 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
-    public void setAttribute(String key, Object value) {
-        if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
-        if (key == null) throw new IllegalArgumentException("key must not be null");
-        if (value == null) throw new IllegalArgumentException("value must not be null");
-        Object oldValue = attributes.put(key, value);
-        if (value.equals(oldValue)) {
-            return;
-        }
-        if (instance != null) {
-            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
-            OperationService os = nodeEngine.getOperationService();
-            MemberAttributeChangedOperation operation =
-                    new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
-            String uuid = nodeEngine.getLocalMember().getUuid();
-            operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
-            try {
-                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
-                    if (!member.localMember()) {
-                        os.send(operation, member.getAddress());
-                    } else {
-                        os.executeOperation(operation);
-                    }
-                }
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        }
+    @Override
+    public String getStringAttribute(String key) {
+        return (String) getAttribute(key);
+    }
+
+    @Override
+    public void setStringAttribute(String key, String value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Boolean getBooleanAttribute(String key) {
+        return (Boolean) getAttribute(key);
+    }
+
+    @Override
+    public void setBooleanAttribute(String key, boolean value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Byte getByteAttribute(String key) {
+        return (Byte) getAttribute(key);
+    }
+
+    @Override
+    public void setByteAttribute(String key, byte value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Short getShortAttribute(String key) {
+        return (Short) getAttribute(key);
+    }
+
+    @Override
+    public void setShortAttribute(String key, short value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Integer getIntAttribute(String key) {
+        return (Integer) getAttribute(key);
+    }
+
+    @Override
+    public void setIntAttribute(String key, int value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Long getLongAttribute(String key) {
+        return (Long) getAttribute(key);
+    }
+
+    @Override
+    public void setLongAttribute(String key, long value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Float getFloatAttribute(String key) {
+        return (Float) getAttribute(key);
+    }
+
+    @Override
+    public void setFloatAttribute(String key, float value) {
+        setAttribute(key, value);
+    }
+
+    @Override
+    public Double getDoubleAttribute(String key) {
+        return (Double) getAttribute(key);
+    }
+
+    @Override
+    public void setDoubleAttribute(String key, double value) {
+        setAttribute(key, value);
     }
 
     public void removeAttribute(String key) {
@@ -248,7 +295,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
-            Object value = in.readObject();
+            Object value = IOUtil.readAttributeValue(in);
             attributes.put(key, value);
         }
     }
@@ -259,7 +306,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
-            out.writeObject(entry.getValue());
+            IOUtil.writeAttributeValue(entry.getValue(), out);
         }
     }
 
@@ -309,4 +356,38 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     public int getId() {
         return ClusterDataSerializerHook.MEMBER;
     }
+
+    private Object getAttribute(String key) {
+        return attributes.get(key);
+    }
+
+    private void setAttribute(String key, Object value) {
+        if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        if (key == null) throw new IllegalArgumentException("key must not be null");
+        if (value == null) throw new IllegalArgumentException("value must not be null");
+        Object oldValue = attributes.put(key, value);
+        if (value.equals(oldValue)) {
+            return;
+        }
+        if (instance != null) {
+            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+            OperationService os = nodeEngine.getOperationService();
+            MemberAttributeChangedOperation operation =
+                    new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
+            String uuid = nodeEngine.getLocalMember().getUuid();
+            operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
+            try {
+                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
+                    if (!member.localMember()) {
+                        os.send(operation, member.getAddress());
+                    } else {
+                        os.executeOperation(operation);
+                    }
+                }
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
+        }
+    }
+
 }
