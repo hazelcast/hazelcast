@@ -349,6 +349,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         members.remove(member);
     //                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
                     }
+                    ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
                     updateMembersRef();
                     logger.info(membersString());
                     fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
