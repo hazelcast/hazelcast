@@ -45,6 +45,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
     final <T> T invoke(ClientRequest request) {
         if (request instanceof BaseTransactionRequest) {
             ((BaseTransactionRequest) request).setTxnId(proxy.getTxnId());
+            ((BaseTransactionRequest) request).setClientThreadId(Thread.currentThread().getId());
         }
         final ClientClusterService clusterService = proxy.getClient().getClientClusterService();
         final SerializationService ss = proxy.getClient().getSerializationService();

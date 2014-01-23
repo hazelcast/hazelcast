@@ -21,7 +21,6 @@ import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
@@ -33,7 +32,7 @@ import java.security.Permission;
 /**
  * @author ali 6/10/13
  */
-public abstract class TxnMultiMapRequest extends BaseTransactionRequest implements Portable, SecureRequest {
+public abstract class TxnMultiMapRequest extends BaseTransactionRequest implements SecureRequest {
 
     String name;
 

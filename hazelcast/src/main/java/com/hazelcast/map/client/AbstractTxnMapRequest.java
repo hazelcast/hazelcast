@@ -27,7 +27,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
@@ -46,7 +45,7 @@ import java.util.Set;
  * Date: 9/18/13
  * Time: 2:28 PM
  */
-public abstract class AbstractTxnMapRequest extends BaseTransactionRequest implements Portable, SecureRequest {
+public abstract class AbstractTxnMapRequest extends BaseTransactionRequest implements SecureRequest {
 
     String name;
     TxnMapRequestType requestType;
@@ -77,7 +76,8 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         this.newValue = newValue;
     }
 
-    public Object call() throws Exception {
+
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         final TransactionalMap map = context.getMap(name);
         switch (requestType) {

@@ -20,6 +20,7 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
 
@@ -30,18 +31,37 @@ public abstract class BaseTransactionRequest extends CallableClientRequest imple
 
     protected String txnId;
 
+    protected long clientThreadId = -1;
+
     public BaseTransactionRequest() {
+    }
+
+    protected abstract Object innerCall() throws Exception;
+
+    public final Object call() throws Exception {
+        ThreadUtil.setThreadId(clientThreadId);
+        try {
+            return innerCall();
+        } finally {
+            ThreadUtil.removeThreadId();
+        }
     }
 
     public void setTxnId(String txnId) {
         this.txnId = txnId;
     }
 
+    public void setClientThreadId(long clientThreadId) {
+        this.clientThreadId = clientThreadId;
+    }
+
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("tId", txnId);
+        writer.writeLong("cti", clientThreadId);
     }
 
     public void read(PortableReader reader) throws IOException {
         txnId = reader.readUTF("tId");
+        clientThreadId = reader.readLong("cti");
     }
 }

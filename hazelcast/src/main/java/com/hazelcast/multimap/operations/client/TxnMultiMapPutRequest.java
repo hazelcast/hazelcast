@@ -46,7 +46,7 @@ public class TxnMultiMapPutRequest extends TxnMultiMapRequest {
         this.value = value;
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         return context.getMultiMap(name).put(key, value);
     }
