@@ -53,7 +53,7 @@ final class ConnectionImpl implements Connection {
     private final int id = newConnId();
     private volatile long lastRead = Clock.currentTimeMillis();
 
-    public ConnectionImpl(Address address, SocketOptions options, SerializationService serializationService) throws IOException {
+    public ConnectionImpl(Address address, SocketOptions options, SerializationService serializationService, boolean ownerConnection) throws IOException {
         final InetSocketAddress isa = address.getInetSocketAddress();
         SocketFactory socketFactory = options.getSocketFactory();
         if (socketFactory == null) {
@@ -67,7 +67,7 @@ final class ConnectionImpl implements Connection {
             if (options.getLingerSeconds() > 0) {
                 socket.setSoLinger(true, options.getLingerSeconds());
             }
-            if (options.getTimeout() > 0) {
+            if (options.getTimeout() > 0 && !ownerConnection) {
                 socket.setSoTimeout(options.getTimeout());
             }
             int bufferSize = options.getBufferSize() * 1024;

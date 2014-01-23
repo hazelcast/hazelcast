@@ -96,13 +96,9 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         socketOptions = config.getSocketOptions();
     }
 
-    public Connection firstConnection(Address address, Authenticator authenticator) throws IOException {
-        return newConnection(address, authenticator);
-    }
-
-    public Connection newConnection(Address address, Authenticator authenticator) throws IOException {
+    public Connection newConnection(Address address, Authenticator authenticator, boolean ownerConnection) throws IOException {
         checkLive();
-        final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, client.getSerializationService());
+        final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, client.getSerializationService(), ownerConnection);
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
         }
@@ -157,7 +153,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         public ObjectPool<ConnectionWrapper> createNew(final Address address) {
             return new QueueBasedObjectPool<ConnectionWrapper>(poolSize, new Factory<ConnectionWrapper>() {
                 public ConnectionWrapper create() throws IOException {
-                    return new ConnectionWrapper(newConnection(address, authenticator));
+                    return new ConnectionWrapper(newConnection(address, authenticator, false));
                 }
             }, new Destructor<ConnectionWrapper>() {
                 public void destroy(ConnectionWrapper connection) {
