@@ -31,6 +31,7 @@ import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -114,6 +115,9 @@ public class MapContainer {
             storeWrapper = null;
         }
 
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        final String scheduledExecutorName = "hz:scheduled:mapstore:" + name;
+        executionService.register(scheduledExecutorName,1,100000);
         if (storeWrapper != null) {
             if (store instanceof MapLoaderLifecycleSupport) {
                 ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapStoreConfig.getProperties(), name);
@@ -121,8 +125,8 @@ public class MapContainer {
             loadInitialKeys();
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService), ScheduleType.SCHEDULE_IF_NEW);
+                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(scheduledExecutorName), new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
+                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(scheduledExecutorName), new MapStoreDeleteProcessor(this, mapService), ScheduleType.SCHEDULE_IF_NEW);
             } else {
                 mapStoreDeleteScheduler = null;
                 mapStoreWriteScheduler = null;
@@ -131,8 +135,8 @@ public class MapContainer {
             mapStoreDeleteScheduler = null;
             mapStoreWriteScheduler = null;
         }
-        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
-        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
+        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
+        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
