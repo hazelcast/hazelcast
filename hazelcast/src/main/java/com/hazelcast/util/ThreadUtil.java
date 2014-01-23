@@ -18,7 +18,7 @@ package com.hazelcast.util;
 
 public final class ThreadUtil {
 
-    private static ThreadLocal<Integer> threadLocal = new ThreadLocal<Integer>();
+    private static final ThreadLocal<Integer> threadLocal = new ThreadLocal<Integer>();
 
     private ThreadUtil(){}
 
