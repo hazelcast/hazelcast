@@ -36,7 +36,7 @@ public class TxnListSizeRequest extends TxnCollectionRequest {
     }
 
     @Override
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         return getEndpoint().getTransactionContext(txnId).getList(name).size();
     }
 

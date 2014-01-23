@@ -57,7 +57,7 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
         this.value = value;
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         final TransactionalMultiMap<Object,Object> multiMap = context.getMultiMap(name);
         if (value == null){
