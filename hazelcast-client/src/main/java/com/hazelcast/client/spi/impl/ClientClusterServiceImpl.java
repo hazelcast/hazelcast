@@ -538,7 +538,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 try {
-                    final Connection connection = getConnectionManager().firstConnection(address, authenticator);
+                    final Connection connection = getConnectionManager().newConnection(address, authenticator, true);
                     active = true;
                     fireConnectionEvent(false);
                     return connection;

@@ -33,7 +33,6 @@ public interface ClientConnectionManager {
 
     public void removeConnectionPool(Address address);
 
-    public Connection newConnection(Address address, Authenticator authenticator) throws IOException ;
+    public Connection newConnection(Address address, Authenticator authenticator, boolean ownerConnection) throws IOException ;
 
-    public Connection firstConnection(Address address, Authenticator authenticator) throws IOException ;
 }
