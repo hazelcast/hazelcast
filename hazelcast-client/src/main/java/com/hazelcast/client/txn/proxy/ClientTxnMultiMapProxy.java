@@ -39,13 +39,15 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public boolean put(K key, V value) throws TransactionException {
-        TxnMultiMapPutRequest request = new TxnMultiMapPutRequest(getName(), toData(key), toData(value));
+        int threadId = (int)Thread.currentThread().getId();
+        TxnMultiMapPutRequest request = new TxnMultiMapPutRequest(getName(), toData(key), toData(value), threadId);
         final Boolean result = invoke(request);
         return result;
     }
 
     public Collection<V> get(K key) {
-        TxnMultiMapGetRequest request = new TxnMultiMapGetRequest(getName(), toData(key));
+        int threadId = (int)Thread.currentThread().getId();
+        TxnMultiMapGetRequest request = new TxnMultiMapGetRequest(getName(), toData(key), threadId);
         final PortableCollection portableCollection = invoke(request);
         final Collection<Data> collection = portableCollection.getCollection();
         Collection<V> coll;
@@ -61,13 +63,15 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public boolean remove(Object key, Object value) {
-        TxnMultiMapRemoveRequest request = new TxnMultiMapRemoveRequest(getName(), toData(key), toData(value));
+        int threadId = (int)Thread.currentThread().getId();
+        TxnMultiMapRemoveRequest request = new TxnMultiMapRemoveRequest(getName(), toData(key), toData(value), threadId);
         Boolean result = invoke(request);
         return result;
     }
 
     public Collection<V> remove(Object key) {
-        TxnMultiMapRemoveRequest request = new TxnMultiMapRemoveRequest(getName(), toData(key));
+        int threadId = (int)Thread.currentThread().getId();
+        TxnMultiMapRemoveRequest request = new TxnMultiMapRemoveRequest(getName(), toData(key), threadId);
         PortableCollection portableCollection = invoke(request);
         final Collection<Data> collection = portableCollection.getCollection();
         Collection<V> coll;
@@ -83,13 +87,15 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public int valueCount(K key) {
-        TxnMultiMapValueCountRequest request = new TxnMultiMapValueCountRequest(getName(), toData(key));
+        int threadId = (int)Thread.currentThread().getId();
+        TxnMultiMapValueCountRequest request = new TxnMultiMapValueCountRequest(getName(), toData(key), threadId);
         Integer result = invoke(request);
         return result;
     }
 
     public int size() {
-        TxnMultiMapSizeRequest request = new TxnMultiMapSizeRequest(getName());
+        int threadId = (int)Thread.currentThread().getId();
+        TxnMultiMapSizeRequest request = new TxnMultiMapSizeRequest(getName(), threadId);
         Integer result = invoke(request);
         return result;
     }

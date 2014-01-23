@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.txn.TransactionRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
@@ -27,7 +27,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
@@ -46,7 +45,7 @@ import java.util.Set;
  * Date: 9/18/13
  * Time: 2:28 PM
  */
-public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, SecureRequest {
+public abstract class AbstractTxnMapRequest extends TransactionRequest implements SecureRequest {
 
     String name;
     TxnMapRequestType requestType;
@@ -57,27 +56,28 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
     public AbstractTxnMapRequest() {
     }
 
-    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType) {
+    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, int clientThreadId) {
+        super(clientThreadId);
         this.name = name;
         this.requestType = requestType;
     }
 
-    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key) {
-        this(name, requestType);
+    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, int clientThreadId) {
+        this(name, requestType, clientThreadId);
         this.key = key;
     }
 
-    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value) {
-        this(name, requestType, key);
+    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, int clientThreadId) {
+        this(name, requestType, key, clientThreadId);
         this.value = value;
     }
 
-    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, Data newValue) {
-        this(name, requestType, key, value);
+    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, Data newValue, int clientThreadId) {
+        this(name, requestType, key, value, clientThreadId);
         this.newValue = newValue;
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
         final TransactionalMap map = context.getMap(name);
         switch (requestType) {
@@ -144,7 +144,7 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         return MapPortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("t", requestType.type);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -154,7 +154,7 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         writeDataInner(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         requestType = TxnMapRequestType.getByType(reader.readInt("t"));
         final ObjectDataInput in = reader.getRawDataInput();

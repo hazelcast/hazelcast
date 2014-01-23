@@ -16,10 +16,8 @@
 
 package com.hazelcast.client.txn;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
@@ -28,12 +26,16 @@ import java.io.IOException;
 /**
  * @author ali 6/7/13
  */
-public class CommitTransactionRequest extends CallableClientRequest implements Portable {
+public class CommitTransactionRequest extends TransactionRequest {
 
     public CommitTransactionRequest() {
     }
 
-    public Object call() throws Exception {
+    public CommitTransactionRequest(int clientThreadId) {
+        super(clientThreadId);
+    }
+
+    public Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         endpoint.getTransactionContext().commitTransaction();
         endpoint.setTransactionContext(null);
@@ -52,11 +54,9 @@ public class CommitTransactionRequest extends CallableClientRequest implements P
         return ClientTxnPortableHook.COMMIT;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-
+    public void write(PortableWriter writer) throws IOException {
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-
+    public void read(PortableReader reader) throws IOException {
     }
 }
