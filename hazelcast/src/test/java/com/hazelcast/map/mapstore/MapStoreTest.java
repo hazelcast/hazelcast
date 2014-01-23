@@ -112,6 +112,35 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSlowStore() throws Exception {
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        final TestMapStore store = new WaitingOnFirstTestMapStore();
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(1);
+        mapStoreConfig.setImplementation(store);
+        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        final IMap<Integer, Integer> map = h1.getMap("testSlowStore");
+        int count = 1000;
+        for (int i = 0; i < count; i++) {
+            map.put(i,1);
+        }
+        Thread.sleep(2000); // sleep for scheduling following puts to a different second
+        for (int i = 0; i < count; i++) {
+            map.put(i,2);
+        }
+        Thread.sleep(15000); // sleep for waiting all stores to be completed for checking correctness
+        for (int i = 0; i < count; i++) {
+            assertEquals(map.get(i),store.getStore().get(i));
+        }
+    }
+
+    @Test
     public void testMapInitialLoad() throws InterruptedException {
         int size = 10000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -1549,7 +1578,26 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
         }
     }
-
+    public static class WaitingOnFirstTestMapStore extends TestMapStore{
+        private AtomicInteger count;
+        public WaitingOnFirstTestMapStore() {
+            super();
+            this.count = new AtomicInteger(0);
+        }
+        @Override
+        public void storeAll(Map map) {
+            if(count.get() == 0)
+            {
+                count.incrementAndGet();
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            super.storeAll(map);
+        }
+    }
     public static class TestMapStore extends MapStoreAdapter implements MapLoaderLifecycleSupport, MapStore {
 
         final Map store = new ConcurrentHashMap();
