@@ -139,8 +139,8 @@ public class TopicStressTest extends HazelcastTestSupport {
             try {
                 startLatch.await();
 
-                long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(RUNNING_TIME_SECONDS);
-                while (System.currentTimeMillis() < endTime) {
+                long endTimeMillis = getEndTimeMillis();
+                while (System.currentTimeMillis() < endTimeMillis) {
                     HazelcastInstance instance = randomInstance();
                     ITopic<Integer> topic = randomTopic(instance);
                     int inc = random.nextInt(100);
@@ -151,6 +151,10 @@ public class TopicStressTest extends HazelcastTestSupport {
             } catch (Throwable t) {
                 t.printStackTrace();
             }
+        }
+
+        private long getEndTimeMillis() {
+            return System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(RUNNING_TIME_SECONDS);
         }
 
         private void updateCount(ITopic<Integer> topic, int inc) {
