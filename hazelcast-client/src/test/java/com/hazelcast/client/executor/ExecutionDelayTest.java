@@ -113,32 +113,25 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
         }
     }
 
-    private long runClient(Task task, int executions) throws InterruptedException {
+    private void runClient(Task task, int executions) throws InterruptedException {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IExecutorService executor = client.getExecutorService("executor");
-        boolean fl;
-        long maxTime = 0;
 
         for (int i = 0; i < executions; i++) {
-            long start = System.currentTimeMillis();
-            fl = false;
+            boolean stop = false;
             do {
                 try {
                     Future<Long> future = executor.submitToKeyOwner(task, i);
                     future.get();
-                    fl = true;
+                    stop = true;
                 } catch (Exception exception) {
                 }
-            } while (!fl);
-            long time = System.currentTimeMillis() - start;
-            if (maxTime < time) {
-                maxTime = time;
-            }
+            } while (!stop);
+
             //System.out.println(i + ": " + time + " mls");
             Thread.sleep(100);
         }
         client.getLifecycleService().shutdown();
-        return maxTime;
     }
 
     private static class Task implements Serializable, Callable<Long> {
