@@ -30,6 +30,7 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -288,6 +289,9 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 finalizeMapping(result.getPartitionId(), context);
             } catch (Throwable t) {
                 notifyRemoteException(supervisor, t);
+                if (t instanceof Error) {
+                    ExceptionUtil.sneakyThrow(t);
+                }
             }
         }
     }

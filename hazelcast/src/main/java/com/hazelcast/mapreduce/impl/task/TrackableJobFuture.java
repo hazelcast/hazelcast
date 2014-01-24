@@ -97,12 +97,7 @@ public class TrackableJobFuture<V>
         ValidationUtil.isNotNull(unit, "unit");
         long deadline = timeout == 0L ? -1 : Clock.currentTimeMillis() + unit.toMillis(timeout);
         for (; ; ) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw e;
-            }
-
+            Thread.sleep(100);
             if (isDone()) {
                 break;
             }

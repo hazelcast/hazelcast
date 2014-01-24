@@ -426,6 +426,9 @@ public class JobSupervisor {
                 }
             } catch (Throwable t) {
                 MapReduceUtil.notifyRemoteException(this, t);
+                if (t instanceof Error) {
+                    ExceptionUtil.sneakyThrow(t);
+                }
             }
         }
     }

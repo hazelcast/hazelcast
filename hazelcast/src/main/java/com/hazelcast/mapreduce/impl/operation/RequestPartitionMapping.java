@@ -102,16 +102,6 @@ public class RequestPartitionMapping
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-    }
-
-    @Override
     public int getFactoryId() {
         return MapReduceDataSerializerHook.F_ID;
     }
