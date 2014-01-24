@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.JobCompletableFuture;
+import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.TrackableJob;
@@ -30,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -144,6 +146,25 @@ public class TrackableJobFuture<V>
             return null;
         }
         return supervisor.getJobProcessInformation();
+    }
+
+    private static class JobProcessInformationAdapter implements JobProcessInformation {
+        private final JobProcessInformation processInformation;
+
+        private JobProcessInformationAdapter(JobProcessInformation processInformation) {
+            this.processInformation = processInformation;
+        }
+
+        @Override
+        public JobPartitionState[] getPartitionStates() {
+            JobPartitionState[] partitionStates = processInformation.getPartitionStates();
+            return Arrays.copyOf(partitionStates, partitionStates.length);
+        }
+
+        @Override
+        public int getProcessedRecords() {
+            return processInformation.getProcessedRecords();
+        }
     }
 
 }
