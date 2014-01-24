@@ -20,7 +20,9 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -35,16 +37,20 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ExecutionDelayTest {
+public class ExecutionDelayTest extends HazelcastTestSupport{
 
     private static final int NODES = 3;
     private final List<HazelcastInstance> hzs = new ArrayList<HazelcastInstance>(NODES);
+    static final AtomicInteger counter = new AtomicInteger();
 
     @Before
     public void init() {
+        counter.set(0);
+
         for (int i = 0; i < NODES; i++) {
             hzs.add(Hazelcast.newHazelcastInstance());
         }
@@ -58,7 +64,7 @@ public class ExecutionDelayTest {
 
     @Test
     public void testExecutorOneNodeFailsUnexpectedly() throws InterruptedException {
-        int executions = 20;
+        final int executions = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
             ex.schedule(new Runnable() {
@@ -69,9 +75,13 @@ public class ExecutionDelayTest {
             }, 1000, TimeUnit.MILLISECONDS);
 
             Task task = new Task();
-            long time = runClient(task, executions);
-            assertTrue("was " + time, time < 5000);
-            //        assertEquals(executions, task.getCounterValue());
+            runClient(task, executions);
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() {
+                    assertEquals(executions, counter.get());
+                }
+            });
         } finally {
             ex.shutdown();
         }
@@ -79,7 +89,7 @@ public class ExecutionDelayTest {
 
     @Test
     public void testExecutorOneNodeShutdown() throws InterruptedException {
-        int executions = 20;
+        final int executions = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
             ex.schedule(new Runnable() {
@@ -90,49 +100,41 @@ public class ExecutionDelayTest {
             }, 1000, TimeUnit.MILLISECONDS);
 
             Task task = new Task();
-            long time = runClient(task, executions);
-            assertTrue("was " + time, time < 5000);
-            //        assertEquals(executions, task.getCounterValue());
+            runClient(task, executions);
+
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() {
+                    assertEquals(executions, counter.get());
+                }
+            });
         } finally {
             ex.shutdown();
         }
     }
 
-    private long runClient(Task task, int executions) throws InterruptedException {
+    private void runClient(Task task, int executions) throws InterruptedException {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IExecutorService executor = client.getExecutorService("executor");
-        boolean fl;
-        long maxTime = 0;
 
-        for (int i = 0; i < executions; i++) {
-            long start = System.currentTimeMillis();
-            fl = false;
+        for (int executionIteration = 0; executionIteration < executions; executionIteration++) {
+            boolean stop = false;
             do {
                 try {
-                    Future<Long> future = executor.submitToKeyOwner(task, i);
+                    Future<Long> future = executor.submitToKeyOwner(task, executionIteration);
                     future.get();
-                    fl = true;
+                    stop = true;
                 } catch (Exception exception) {
                 }
-            } while (!fl);
-            long time = System.currentTimeMillis() - start;
-            if (maxTime < time) {
-                maxTime = time;
-            }
-            //System.out.println(i + ": " + time + " mls");
+            } while (!stop);
+
+            //System.out.println(execution + ": " + time + " mls");
             Thread.sleep(100);
         }
         client.getLifecycleService().shutdown();
-        return maxTime;
     }
 
     private static class Task implements Serializable, Callable<Long> {
-        final AtomicInteger counter = new AtomicInteger();
-
-        public int getCounterValue() {
-            return counter.get();
-        }
-
         @Override
         public Long call() throws Exception {
             long start = System.currentTimeMillis();
