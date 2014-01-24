@@ -117,18 +117,18 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IExecutorService executor = client.getExecutorService("executor");
 
-        for (int i = 0; i < executions; i++) {
+        for (int executionIteration = 0; executionIteration < executions; executionIteration++) {
             boolean stop = false;
             do {
                 try {
-                    Future<Long> future = executor.submitToKeyOwner(task, i);
+                    Future<Long> future = executor.submitToKeyOwner(task, executionIteration);
                     future.get();
                     stop = true;
                 } catch (Exception exception) {
                 }
             } while (!stop);
 
-            //System.out.println(i + ": " + time + " mls");
+            //System.out.println(execution + ": " + time + " mls");
             Thread.sleep(100);
         }
         client.getLifecycleService().shutdown();
