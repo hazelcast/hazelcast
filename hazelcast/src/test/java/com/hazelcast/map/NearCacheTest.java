@@ -139,6 +139,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testNearCacheEvictionByUsingMapTTLEviction() throws InterruptedException {
         final Config cfg = new Config();
         final String mapName = "testNearCacheEvictionByUsingMapTTLEviction";
