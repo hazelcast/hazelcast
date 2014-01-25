@@ -72,6 +72,10 @@ public final class TestHazelcastInstanceFactory {
         return useClient ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
+    public HazelcastInstance[] newInstances(){
+        return newInstances(new Config());
+    }
+
     public HazelcastInstance[] newInstances(Config config) {
         final HazelcastInstance[] instances = new HazelcastInstance[count];
         for (int i = 0; i < count; i++) {

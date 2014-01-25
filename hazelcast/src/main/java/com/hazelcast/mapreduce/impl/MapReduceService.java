@@ -94,7 +94,7 @@ public class MapReduceService
                 for (MemberImpl member : clusterService.getMemberList()) {
                     if (!member.getAddress().equals(jobOwner)) {
                         try {
-                            ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId, jobOwner);
+                            ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId);
                             processRequest(member.getAddress(), operation, name);
                         } catch (Exception ignore) {
                         }
