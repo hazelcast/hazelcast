@@ -636,6 +636,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMapPutTtlWithListener() throws InterruptedException {
         Config cfg = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
