@@ -42,7 +42,7 @@ public class NodeMulticastListener implements MulticastListener {
     @Override
     public void onMessage(Object msg) {
         if (!isValidJoinMessage(msg)) {
-            //todo: should we not log the message?
+            logDroppedMessage(msg);
             return;
         }
 
@@ -54,9 +54,15 @@ public class NodeMulticastListener implements MulticastListener {
         }
     }
 
+    private void logDroppedMessage(Object msg) {
+        if(logger.isFinestEnabled()){
+            logger.info("Dropped: "+msg);
+        }
+    }
+
     private void handleActiveAndJoined(JoinMessage joinMessage) {
         if (!isJoinRequest(joinMessage)) {
-            //todo: should we not log the message?
+            logDroppedMessage(joinMessage);
             return;
         }
 
@@ -79,7 +85,9 @@ public class NodeMulticastListener implements MulticastListener {
             if (joiner instanceof MulticastJoiner) {
                 MulticastJoiner multicastJoiner = (MulticastJoiner) joiner;
                 multicastJoiner.onReceivedJoinRequest((JoinRequest) joinMessage);
-            } //todo: should we not add an else and log the message?
+            } else{
+                logDroppedMessage(joinMessage);
+            }
         } else {
             if (!node.joined() && node.getMasterAddress() == null) {
                 String masterHost = joinMessage.getAddress().getHost();
@@ -90,8 +98,9 @@ public class NodeMulticastListener implements MulticastListener {
                 } else {
                     logJoinMessageDropped(masterHost);
                 }
+            }else{
+                logDroppedMessage(joinMessage);
             }
-            //todo: should we not add an else and log the message?
         }
     }
 
