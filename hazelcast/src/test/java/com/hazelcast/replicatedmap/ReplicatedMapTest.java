@@ -40,10 +40,15 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
@@ -86,7 +91,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -96,7 +101,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("bar", "foo");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
         TimeUnit.SECONDS.sleep(2);
 
         value = map1.get("bar");
@@ -120,7 +125,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar", 3, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         assertEquals("bar", map1.get("foo"));
         assertEquals("bar", map2.get("foo"));
@@ -147,7 +152,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -157,7 +162,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar2");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
 
         value = map2.get("foo");
         assertEquals("bar2", value);
@@ -167,7 +172,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("foo", "bar3");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
 
         value = map1.get("foo");
         assertEquals("bar3", value);
@@ -190,13 +195,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar", 3, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 map1.put("foo2", "bar", 3, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         assertEquals("bar", map1.get("foo"));
         assertEquals("bar", map2.get("foo2"));
@@ -206,13 +211,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("foo", "bar2");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 map2.put("foo2", "bar2", 1, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
         TimeUnit.SECONDS.sleep(5);
 
         assertEquals("bar2", map1.get("foo"));
@@ -239,7 +244,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -249,7 +254,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.remove("foo");
             }
-        }, 2, EntryEventType.REMOVED, map1, map2);
+        }, 60, EntryEventType.REMOVED, map1, map2);
 
         value = map2.get("foo");
         assertNull(value);
@@ -261,21 +266,25 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final CountDownLatch updated = new CountDownLatch(2);
         final CountDownLatch removed = new CountDownLatch(2);
 
+        final Set<ListenerResult> result = new CopyOnWriteArraySet<ListenerResult>();
+
         EntryListener listener = new EntryListener() {
             @Override
             public void entryAdded(EntryEvent event) {
                 added.countDown();
+                result.add(new ListenerResult(event.getMember(), event.getValue()));
             }
 
             @Override
             public void entryRemoved(EntryEvent event) {
                 removed.countDown();
+                result.add(new ListenerResult(event.getMember(), event.getValue()));
             }
 
             @Override
             public void entryUpdated(EntryEvent event) {
                 updated.countDown();
-                ;
+                result.add(new ListenerResult(event.getMember(), event.getValue()));
             }
 
             @Override
@@ -300,7 +309,12 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
+
+        for (ListenerResult r : result) {
+            assertEquals("ListenerResults: " + result.toString(), "bar", r.value);
+        }
+        result.clear();
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -310,7 +324,12 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar2");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
+
+        for (ListenerResult r : result) {
+            assertEquals("ListenerResults: " + result.toString(), "bar2", r.value);
+        }
+        result.clear();
 
         value = map2.get("foo");
         assertEquals("bar2", value);
@@ -320,7 +339,12 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("foo", "bar3");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
+
+        for (ListenerResult r : result) {
+            assertEquals("ListenerResults: " + result.toString(), "bar3", r.value);
+        }
+        result.clear();
 
         value = map1.get("foo");
         assertEquals("bar3", value);
@@ -330,7 +354,11 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.remove("foo");
             }
-        }, 2, EntryEventType.REMOVED, map1, map2);
+        }, 60, EntryEventType.REMOVED, map1, map2);
+
+        for (ListenerResult r : result) {
+            assertEquals("ListenerResults: " + result.toString(), null, r.value);
+        }
 
         added.await();
         updated.await();
@@ -708,7 +736,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -718,7 +746,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("bar", "foo");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
         TimeUnit.SECONDS.sleep(2);
 
         value = map1.get("bar");
@@ -742,7 +770,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar", 3, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         assertEquals("bar", map1.get("foo"));
         assertEquals("bar", map2.get("foo"));
@@ -769,7 +797,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -779,7 +807,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar2");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
 
         value = map2.get("foo");
         assertEquals("bar2", value);
@@ -789,7 +817,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("foo", "bar3");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
 
         value = map1.get("foo");
         assertEquals("bar3", value);
@@ -812,13 +840,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar", 3, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 map1.put("foo2", "bar", 3, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         assertEquals("bar", map1.get("foo"));
         assertEquals("bar", map2.get("foo2"));
@@ -828,13 +856,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("foo", "bar2");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 map2.put("foo2", "bar2", 1, TimeUnit.SECONDS);
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
         TimeUnit.SECONDS.sleep(5);
 
         assertEquals("bar2", map1.get("foo"));
@@ -861,7 +889,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -871,7 +899,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.remove("foo");
             }
-        }, 2, EntryEventType.REMOVED, map1, map2);
+        }, 60, EntryEventType.REMOVED, map1, map2);
 
         value = map2.get("foo");
         assertNull(value);
@@ -897,7 +925,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             @Override
             public void entryUpdated(EntryEvent event) {
                 updated.countDown();
-                ;
             }
 
             @Override
@@ -922,7 +949,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar");
             }
-        }, 2, EntryEventType.ADDED, map1, map2);
+        }, 60, EntryEventType.ADDED, map1, map2);
 
         String value = map2.get("foo");
         assertEquals("bar", value);
@@ -932,7 +959,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.put("foo", "bar2");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
 
         value = map2.get("foo");
         assertEquals("bar2", value);
@@ -942,7 +969,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map2.put("foo", "bar3");
             }
-        }, 2, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.UPDATED, map1, map2);
 
         value = map1.get("foo");
         assertEquals("bar3", value);
@@ -952,7 +979,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             public void run() {
                 map1.remove("foo");
             }
-        }, 2, EntryEventType.REMOVED, map1, map2);
+        }, 60, EntryEventType.REMOVED, map1, map2);
 
         added.await();
         updated.await();
@@ -2049,6 +2076,44 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
                 channel.replicate(message);
             }
         };
+    }
+
+    private static class ListenerResult {
+        private final Member member;
+        private final Object value;
+
+        private ListenerResult(Member member, Object value) {
+            this.member = member;
+            this.value = value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ListenerResult that = (ListenerResult) o;
+
+            if (member != null ? !member.equals(that.member) : that.member != null) return false;
+            if (value != null ? !value.equals(that.value) : that.value != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = member != null ? member.hashCode() : 0;
+            result = 31 * result + (value != null ? value.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "ListenerResult{" +
+                    "member=" + member +
+                    ", value=" + value +
+                    '}';
+        }
     }
 
 }
