@@ -40,7 +40,8 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        returnValue = getReference().compareAndSet(expect, update);
+        ReferenceWrapper reference = getReference();
+        returnValue = reference.compareAndSet(expect, update);
         shouldBackup = !returnValue;
     }
 

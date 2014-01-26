@@ -30,7 +30,6 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation {
     private Map<String, Data> migrationData;
 
     public AtomicReferenceReplicationOperation() {
-        super();
     }
 
     public AtomicReferenceReplicationOperation(Map<String, Data> migrationData) {
@@ -41,7 +40,10 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation {
     public void run() throws Exception {
         AtomicReferenceService atomicReferenceService = getService();
         for (Map.Entry<String, Data> entry : migrationData.entrySet()) {
-            atomicReferenceService.getReference(entry.getKey()).set(entry.getValue());
+            String name = entry.getKey();
+            ReferenceWrapper reference = atomicReferenceService.getReference(name);
+            Data value = entry.getValue();
+            reference.set(value);
         }
     }
 
@@ -59,6 +61,7 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, Data>(mapSize);

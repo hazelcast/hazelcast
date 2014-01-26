@@ -35,14 +35,17 @@ public abstract class AtomicReferenceBaseOperation extends Operation implements 
         this.name = name;
     }
 
-    public AtomicReferenceWrapper getReference() {
-        return ((AtomicReferenceService) getService()).getReference(name);
+    public ReferenceWrapper getReference() {
+        AtomicReferenceService service = getService();
+        return service.getReference(name);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
     }
@@ -64,5 +67,4 @@ public abstract class AtomicReferenceBaseOperation extends Operation implements 
     public boolean returnsResponse() {
         return true;
     }
-
 }

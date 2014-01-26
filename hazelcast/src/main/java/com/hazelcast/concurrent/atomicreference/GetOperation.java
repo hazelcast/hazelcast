@@ -23,7 +23,6 @@ public class GetOperation extends AtomicReferenceBaseOperation {
     private Data returnValue;
 
     public GetOperation() {
-        super();
     }
 
     public GetOperation(String name) {

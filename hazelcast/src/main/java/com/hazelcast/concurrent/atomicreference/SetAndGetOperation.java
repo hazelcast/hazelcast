@@ -22,7 +22,8 @@ public class SetAndGetOperation extends AtomicReferenceBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        getReference().getAndSet(newValue);
+        ReferenceWrapper reference = getReference();
+        reference.getAndSet(newValue);
         returnValue = newValue;
     }
 

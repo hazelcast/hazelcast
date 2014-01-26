@@ -19,9 +19,15 @@ package com.hazelcast.concurrent.atomicreference;
 import com.hazelcast.concurrent.atomicreference.proxy.AtomicReferenceProxy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.*;
-import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
@@ -31,24 +37,25 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+
 public class AtomicReferenceService implements ManagedService, RemoteService, MigrationAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
+
     private NodeEngine nodeEngine;
-
-    private final ConcurrentMap<String, AtomicReferenceWrapper> references = new ConcurrentHashMap<String, AtomicReferenceWrapper>();
-
-    private final ConstructorFunction<String, AtomicReferenceWrapper> atomicReferenceConstructorFunction = new ConstructorFunction<String, AtomicReferenceWrapper>() {
-        public AtomicReferenceWrapper createNew(String key) {
-            return new AtomicReferenceWrapper();
+    private final ConcurrentMap<String, ReferenceWrapper> references = new ConcurrentHashMap<String, ReferenceWrapper>();
+    private final ConstructorFunction<String, ReferenceWrapper> atomicReferenceConstructorFunction = new ConstructorFunction<String, ReferenceWrapper>() {
+        public ReferenceWrapper createNew(String key) {
+            return new ReferenceWrapper();
         }
     };
 
     public AtomicReferenceService() {
     }
 
-    public AtomicReferenceWrapper getReference(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(references, name, atomicReferenceConstructorFunction);
+    public ReferenceWrapper getReference(String name) {
+        return getOrPutIfAbsent(references, name, atomicReferenceConstructorFunction);
     }
 
     // need for testing..
@@ -56,55 +63,70 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         return references.containsKey(name);
     }
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
     }
 
+    @Override
     public void reset() {
         references.clear();
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         reset();
     }
 
+    @Override
     public AtomicReferenceProxy createDistributedObject(String name) {
         return new AtomicReferenceProxy(name, nodeEngine, this);
     }
 
+    @Override
     public void destroyDistributedObject(String name) {
         references.remove(name);
     }
 
+    @Override
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         if (event.getReplicaIndex() > 1) {
             return null;
         }
+
         Map<String, Data> data = new HashMap<String, Data>();
-        final int partitionId = event.getPartitionId();
+        int partitionId = event.getPartitionId();
         for (String name : references.keySet()) {
-            if (partitionId == nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name))) {
-                data.put(name, references.get(name).get());
+            if (partitionId == getPartitionId(name)) {
+                ReferenceWrapper referenceWrapper = references.get(name);
+                Data value = referenceWrapper.get();
+                data.put(name, value);
             }
         }
         return data.isEmpty() ? null : new AtomicReferenceReplicationOperation(data);
     }
 
+    @Override
     public void commitMigration(PartitionMigrationEvent partitionMigrationEvent) {
         if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            removeReference(partitionMigrationEvent.getPartitionId());
+            int partitionId = partitionMigrationEvent.getPartitionId();
+            removeReference(partitionId);
         }
     }
 
+    @Override
     public void rollbackMigration(PartitionMigrationEvent partitionMigrationEvent) {
         if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            removeReference(partitionMigrationEvent.getPartitionId());
+            int partitionId = partitionMigrationEvent.getPartitionId();
+            removeReference(partitionId);
         }
     }
 
+    @Override
     public void clearPartitionReplica(int partitionId) {
         removeReference(partitionId);
     }
@@ -113,9 +135,15 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         final Iterator<String> iterator = references.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();
-            if (nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name)) == partitionId) {
+            if (getPartitionId(name) == partitionId) {
                 iterator.remove();
             }
         }
+    }
+
+    private int getPartitionId(String name) {
+        PartitionService partitionService = nodeEngine.getPartitionService();
+        String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
+        return partitionService.getPartitionId(partitionKey);
     }
 }

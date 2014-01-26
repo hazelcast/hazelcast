@@ -35,8 +35,8 @@ import java.security.Permission;
 
 public abstract class AbstractAlterRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
-    String name;
-    Data function;
+    protected String name;
+    protected Data function;
 
     public AbstractAlterRequest() {
     }

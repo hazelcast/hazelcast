@@ -209,9 +209,6 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("IAtomicReference{");
-        sb.append("name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "IAtomicReference{" + "name='" + name + '\'' + '}';
     }
 }
