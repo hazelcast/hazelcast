@@ -24,14 +24,10 @@ import com.hazelcast.topic.TopicService;
 
 import java.io.IOException;
 
-/**
- * @author ali 23/12/13
- */
 public class RemoveMessageListenerRequest extends CallableClientRequest {
 
-    String name;
-
-    String registrationId;
+    private String name;
+    private String registrationId;
 
     public RemoveMessageListenerRequest() {
     }
@@ -41,28 +37,34 @@ public class RemoveMessageListenerRequest extends CallableClientRequest {
         this.registrationId = registrationId;
     }
 
-    public Object call() throws Exception {
-        final TopicService service = getService();
+    @Override
+    public Boolean call() throws Exception {
+        TopicService service = getService();
         return service.removeMessageListener(name, registrationId);
     }
 
+    @Override
     public String getServiceName() {
         return TopicService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return TopicPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return TopicPortableHook.REMOVE_LISTENER;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeUTF("r", registrationId);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         registrationId = reader.readUTF("r");

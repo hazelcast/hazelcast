@@ -24,9 +24,6 @@ import com.hazelcast.topic.client.RemoveMessageListenerRequest;
 
 import java.util.Collection;
 
-/**
- * @author ali 5/14/13
- */
 public class TopicPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.TOPIC_PORTABLE_FACTORY, -18);

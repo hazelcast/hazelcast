@@ -34,13 +34,9 @@ import com.hazelcast.topic.TopicService;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/14/13
- */
 public class PublishRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
-    String name;
-
+    private String name;
     private Data message;
 
     public PublishRequest() {
@@ -51,44 +47,53 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
         this.message = message;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new PublishOperation(name, message);
     }
 
+    @Override
     protected int getPartition() {
         Data key = getClientEngine().toData(name);
         return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
+    @Override
     protected int getReplicaIndex() {
         return 0;
     }
 
+    @Override
     public String getServiceName() {
         return TopicService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return TopicPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return TopicPortableHook.PUBLISH;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
+        ObjectDataOutput out = writer.getRawDataOutput();
         message.writeData(out);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        final ObjectDataInput in = reader.getRawDataInput();
+        ObjectDataInput in = reader.getRawDataInput();
         message = new Data();
         message.readData(in);
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new TopicPermission(name, ActionConstants.ACTION_PUBLISH);
     }

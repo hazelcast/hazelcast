@@ -33,15 +33,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * User: sancar
- * Date: 12/26/12
- * Time: 1:50 PM
- */
 public class TopicService implements ManagedService, RemoteService, EventPublishingService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
-    private final Lock[] orderingLocks = new Lock[1000];
+    public static final int ORDERING_LOCKS_LENGTH = 1000;
+
+    private final Lock[] orderingLocks = new Lock[ORDERING_LOCKS_LENGTH];
     private NodeEngine nodeEngine;
 
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
@@ -52,6 +49,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
     };
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
         for (int i = 0; i < orderingLocks.length; i++) {
@@ -59,36 +57,50 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
     }
 
+    @Override
     public void reset() {
         statsMap.clear();
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         reset();
     }
 
     public Lock getOrderLock(String key) {
-        final int hash = key.hashCode();
-        return orderingLocks[hash != Integer.MIN_VALUE ? (Math.abs(hash) % orderingLocks.length) : 0];
+        int index = getOrderLockIndex(key);
+        return orderingLocks[index];
     }
 
+    private int getOrderLockIndex(String key) {
+        int hash = key.hashCode();
+        return hash != Integer.MIN_VALUE ? (Math.abs(hash) % orderingLocks.length) : 0;
+    }
+
+    @Override
     public TopicProxy createDistributedObject(String name) {
-        TopicProxy proxy;
-        TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
-        if (topicConfig.isGlobalOrderingEnabled())
-            proxy = new TotalOrderedTopicProxy(name, nodeEngine, this);
-        else
-            proxy = new TopicProxy(name, nodeEngine, this);
-        return proxy;
+        if (isGlobalOrderingEnabled(name)){
+            return new TotalOrderedTopicProxy(name, nodeEngine, this);
+        }else{
+            return new TopicProxy(name, nodeEngine, this);
+        }
     }
 
+    private boolean isGlobalOrderingEnabled(String name) {
+        TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
+        return topicConfig.isGlobalOrderingEnabled();
+    }
+
+    @Override
     public void destroyDistributedObject(String objectId) {
         statsMap.remove(objectId);
     }
 
+    @Override
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
-        Message message = new Message(topicEvent.name, nodeEngine.toObject(topicEvent.data), topicEvent.publishTime, topicEvent.publishingMember);
+        Object msgObject = nodeEngine.toObject(topicEvent.data);
+        Message message = new Message(topicEvent.name, msgObject, topicEvent.publishTime, topicEvent.publishingMember);
         incrementReceivedMessages(topicEvent.name);
         ((MessageListener) listener).onMessage(message);
     }
@@ -121,5 +133,4 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
-
 }
