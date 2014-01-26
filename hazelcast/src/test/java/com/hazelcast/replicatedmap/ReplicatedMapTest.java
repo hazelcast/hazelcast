@@ -47,6 +47,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -262,8 +263,10 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryListenerObject() throws Exception {
+        final AtomicBoolean second = new AtomicBoolean(false);
         final CountDownLatch added = new CountDownLatch(2);
         final CountDownLatch updated = new CountDownLatch(2);
+        final CountDownLatch updated2 = new CountDownLatch(2);
         final CountDownLatch removed = new CountDownLatch(2);
 
         final Set<ListenerResult> result = new CopyOnWriteArraySet<ListenerResult>();
@@ -283,7 +286,11 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
             @Override
             public void entryUpdated(EntryEvent event) {
-                updated.countDown();
+                if (second.get()) {
+                    updated2.countDown();
+                } else {
+                    updated.countDown();
+                }
                 result.add(new ListenerResult(event.getMember(), event.getValue()));
             }
 
@@ -311,6 +318,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.ADDED, map1, map2);
 
+        added.await();
+        assertEquals(2, result.size());
         for (ListenerResult r : result) {
             assertEquals("ListenerResults: " + result.toString(), "bar", r.value);
         }
@@ -326,6 +335,8 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.UPDATED, map1, map2);
 
+        updated.await();
+        assertEquals(2, result.size());
         for (ListenerResult r : result) {
             assertEquals("ListenerResults: " + result.toString(), "bar2", r.value);
         }
@@ -334,6 +345,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         value = map2.get("foo");
         assertEquals("bar2", value);
 
+        second.set(true);
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -341,11 +353,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.UPDATED, map1, map2);
 
+        assertEquals(2, result.size());
         for (ListenerResult r : result) {
             assertEquals("ListenerResults: " + result.toString(), "bar3", r.value);
         }
         result.clear();
 
+        updated2.await();
         value = map1.get("foo");
         assertEquals("bar3", value);
 
@@ -356,12 +370,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.REMOVED, map1, map2);
 
-        for (ListenerResult r : result) {
-            assertEquals("ListenerResults: " + result.toString(), null, r.value);
-        }
-
-        added.await();
-        updated.await();
         removed.await();
     }
 
@@ -907,24 +915,35 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryListenerBinary() throws Exception {
+        final AtomicBoolean second = new AtomicBoolean(false);
         final CountDownLatch added = new CountDownLatch(2);
         final CountDownLatch updated = new CountDownLatch(2);
+        final CountDownLatch updated2 = new CountDownLatch(2);
         final CountDownLatch removed = new CountDownLatch(2);
+
+        final Set<ListenerResult> result = new CopyOnWriteArraySet<ListenerResult>();
 
         EntryListener listener = new EntryListener() {
             @Override
             public void entryAdded(EntryEvent event) {
                 added.countDown();
+                result.add(new ListenerResult(event.getMember(), event.getValue()));
             }
 
             @Override
             public void entryRemoved(EntryEvent event) {
                 removed.countDown();
+                result.add(new ListenerResult(event.getMember(), event.getValue()));
             }
 
             @Override
             public void entryUpdated(EntryEvent event) {
-                updated.countDown();
+                if (second.get()) {
+                    updated2.countDown();
+                } else {
+                    updated.countDown();
+                }
+                result.add(new ListenerResult(event.getMember(), event.getValue()));
             }
 
             @Override
@@ -951,6 +970,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.ADDED, map1, map2);
 
+        added.await();
+        assertEquals(2, result.size());
+        for (ListenerResult r : result) {
+            assertEquals("ListenerResults: " + result.toString(), "bar", r.value);
+        }
+        result.clear();
+
         String value = map2.get("foo");
         assertEquals("bar", value);
 
@@ -961,9 +987,17 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.UPDATED, map1, map2);
 
+        updated.await();
+        assertEquals(2, result.size());
+        for (ListenerResult r : result) {
+            assertEquals("ListenerResults: " + result.toString(), "bar2", r.value);
+        }
+        result.clear();
+
         value = map2.get("foo");
         assertEquals("bar2", value);
 
+        second.set(true);
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -971,6 +1005,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.UPDATED, map1, map2);
 
+        assertEquals(2, result.size());
+        for (ListenerResult r : result) {
+            assertEquals("ListenerResults: " + result.toString(), "bar3", r.value);
+        }
+        result.clear();
+
+        updated2.await();
         value = map1.get("foo");
         assertEquals("bar3", value);
 
@@ -981,8 +1022,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }, 60, EntryEventType.REMOVED, map1, map2);
 
-        added.await();
-        updated.await();
         removed.await();
     }
 
