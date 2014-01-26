@@ -23,9 +23,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.util.concurrent.Callable;
 
-/**
- * @author mdogan 1/18/13
- */
 public final class MemberCallableTaskOperation extends BaseCallableTaskOperation
         implements IdentifiedDataSerializable {
 

@@ -18,9 +18,6 @@ package com.hazelcast.executor;
 
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-/**
- * @author mdogan 2/13/13
- */
 public final class ShutdownOperation extends AbstractNamedOperation {
 
     public ShutdownOperation() {

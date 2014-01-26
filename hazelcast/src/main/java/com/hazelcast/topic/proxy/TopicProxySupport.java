@@ -32,11 +32,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.List;
 
-/**
- * User: sancar
- * Date: 2/26/13
- * Time: 11:44 AM
- */
 abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
     private final String name;
@@ -47,25 +42,31 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
     }
 
     public void initialize() {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         TopicConfig config = nodeEngine.getConfig().findTopicConfig(name);
-        final List<ListenerConfig> messageListenerConfigs = config.getMessageListenerConfigs();
-        for (ListenerConfig listenerConfig : messageListenerConfigs) {
-            MessageListener listener;
-            try {
-                listener = (MessageListener) listenerConfig.getImplementation();
-                if (listener == null && listenerConfig.getClassName() != null) {
-                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
-                }
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+        for (ListenerConfig listenerConfig : config.getMessageListenerConfigs()) {
+            initialize(listenerConfig);
+        }
+    }
+
+    private void initialize(ListenerConfig listenerConfig) {
+        NodeEngine nodeEngine = getNodeEngine();
+
+        MessageListener listener;
+        try {
+            listener = (MessageListener) listenerConfig.getImplementation();
+            if (listener == null && listenerConfig.getClassName() != null) {
+                listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
             }
-            if (listener != null) {
-                if (listener instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
-                }
-                addMessageListenerInternal(listener);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+
+        if (listener != null) {
+            if (listener instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
             }
+            addMessageListenerInternal(listener);
         }
     }
 
@@ -75,8 +76,9 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
 
     public void publishInternal(Data message) {
         TopicEvent topicEvent = new TopicEvent(name, message, getNodeEngine().getLocalMember());
-        getService().getLocalTopicStats(name).incrementPublishes();
-        getService().publishEvent(name, topicEvent);
+        TopicService topicService = getService();
+        topicService.getLocalTopicStats(name).incrementPublishes();
+        topicService.publishEvent(name, topicEvent);
     }
 
     public String addMessageListenerInternal(MessageListener listener) {

@@ -28,17 +28,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.locks.Lock;
 
-/**
- * User: sancar
- * Date: 12/31/12
- * Time: 12:10 PM
- */
 public class PublishOperation extends AbstractNamedOperation {
 
     private Data message;
 
     public PublishOperation() {
-        super();
     }
 
     public PublishOperation(String name, Data message) {

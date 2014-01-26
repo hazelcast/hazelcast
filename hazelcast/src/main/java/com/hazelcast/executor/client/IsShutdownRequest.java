@@ -26,12 +26,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * @author ali 5/27/13
- */
 public class IsShutdownRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    String name;
+    private String name;
 
     public IsShutdownRequest() {
     }
@@ -56,14 +53,17 @@ public class IsShutdownRequest extends CallableClientRequest implements Portable
         return ExecutorPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ExecutorPortableHook.IS_SHUTDOWN_REQUEST;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }

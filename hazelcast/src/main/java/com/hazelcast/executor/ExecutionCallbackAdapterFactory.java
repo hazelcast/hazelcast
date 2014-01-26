@@ -28,19 +28,21 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-/**
- * @author mdogan 1/22/13
- */
 class ExecutionCallbackAdapterFactory {
+
+    //Updates the ExecutionCallbackAdapterFactory.done field. An AtomicBoolean is simpler, but creates another unwanted
+    //object. Using this approach, you don't create that object.
+    private static final AtomicReferenceFieldUpdater<ExecutionCallbackAdapterFactory, Boolean> doneFieldUpdater =
+            AtomicReferenceFieldUpdater.newUpdater(ExecutionCallbackAdapterFactory.class, Boolean.class, "done");
 
     private final MultiExecutionCallback multiExecutionCallback;
     private final ConcurrentMap<Member, ValueWrapper> responses;
     private final Collection<Member> members;
     private final ILogger logger;
-    private final AtomicBoolean done = new AtomicBoolean(false);
+    @SuppressWarnings("CanBeFinal")
+    private volatile Boolean done = Boolean.FALSE;
 
     ExecutionCallbackAdapterFactory(NodeEngine nodeEngine, Collection<Member> members, MultiExecutionCallback multiExecutionCallback) {
         this.multiExecutionCallback = multiExecutionCallback;
@@ -49,28 +51,56 @@ class ExecutionCallbackAdapterFactory {
         this.logger = nodeEngine.getLogger(ExecutionCallbackAdapterFactory.class.getName());
     }
 
-    private  void onResponse(Member member, Object response) {
-        if (done.get()) throw new IllegalStateException("This callback is invalid!");
-        if (members.contains(member)) {
-            ValueWrapper current;
-            if ((current = responses.put(member, new ValueWrapper(response))) != null) {
-                logger.warning("Replacing current callback value[" + current.value
-                        + " with value[" + response + "].");
+    private void onResponse(Member member, Object response) {
+        assertNotDone();
+        assertIsMember(member);
+        placeResponse(member, response);
+        triggerOnResponse(member, response);
+        triggerOnComplete();
+    }
+
+    private void triggerOnComplete() {
+        if (members.size() == responses.size() && setDone()) {
+            Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
+            for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
+                Member key = entry.getKey();
+                Object value = entry.getValue().value;
+                realResponses.put(key, value);
             }
-            try {
-                multiExecutionCallback.onResponse(member, response);
-            } catch (Throwable e) {
-                logger.warning(e.getMessage(), e);
-            }
-            if (members.size() == responses.size() && done.compareAndSet(false, true)) {
-                Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
-                for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
-                    realResponses.put(entry.getKey(), entry.getValue().value);
-                }
-                multiExecutionCallback.onComplete(realResponses);
-            }
-        } else {
+            multiExecutionCallback.onComplete(realResponses);
+        }
+    }
+
+    private boolean setDone() {
+        return doneFieldUpdater.compareAndSet(this, Boolean.FALSE, Boolean.TRUE);
+    }
+
+    private void triggerOnResponse(Member member, Object response) {
+        try {
+            multiExecutionCallback.onResponse(member, response);
+        } catch (Throwable e) {
+            logger.warning(e.getMessage(), e);
+        }
+    }
+
+    private void placeResponse(Member member, Object response) {
+        ValueWrapper current = responses.put(member, new ValueWrapper(response));
+
+        if (current != null) {
+            logger.warning("Replacing current callback value[" + current.value
+                    + " with value[" + response + "].");
+        }
+    }
+
+    private void assertIsMember(Member member) {
+        if (!members.contains(member)) {
             throw new IllegalArgumentException(member + " is not known by this callback!");
+        }
+    }
+
+    private void assertNotDone() {
+        if (done) {
+            throw new IllegalStateException("This callback is invalid!");
         }
     }
 
@@ -101,5 +131,4 @@ class ExecutionCallbackAdapterFactory {
             ExecutionCallbackAdapterFactory.this.onResponse(member, t);
         }
     }
-
 }
