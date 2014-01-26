@@ -23,11 +23,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
-/**
- * User: sancar
- * Date: 12/31/12
- * Time: 12:08 PM
- */
 public class TotalOrderedTopicProxy extends TopicProxy {
 
     private final int partitionId;
@@ -40,7 +35,7 @@ public class TotalOrderedTopicProxy extends TopicProxy {
     @Override
     public void publish(Object message) {
         try {
-            final NodeEngine nodeEngine = getNodeEngine();
+            NodeEngine nodeEngine = getNodeEngine();
             PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
             Future f = nodeEngine.getOperationService().invokeOnPartition(TopicService.SERVICE_NAME,operation,partitionId);
             f.get();
@@ -48,6 +43,4 @@ public class TotalOrderedTopicProxy extends TopicProxy {
             throw ExceptionUtil.rethrow(throwable);
         }
     }
-
-
 }

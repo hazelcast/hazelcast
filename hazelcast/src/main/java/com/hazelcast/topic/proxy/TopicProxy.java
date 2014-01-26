@@ -22,33 +22,31 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.TopicService;
 
-/**
- * User: sancar
- * Date: 12/26/12
- * Time: 2:06 PM
- */
 public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     public TopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
     }
 
+    @Override
     public void publish(E message) {
         publishInternal(getNodeEngine().toData(message));
     }
 
+    @Override
     public String addMessageListener(MessageListener<E> listener) {
         return addMessageListenerInternal(listener);
     }
 
+    @Override
     public boolean removeMessageListener(final String registrationId) {
         return removeMessageListenerInternal(registrationId);
     }
 
+    @Override
     public LocalTopicStats getLocalTopicStats() {
         return getLocalTopicStatsInternal();
     }
-
 }
 
 
