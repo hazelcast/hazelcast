@@ -19,15 +19,18 @@ package com.hazelcast.concurrent.atomiclong.client;
 import com.hazelcast.concurrent.atomiclong.ApplyOperation;
 import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.core.Function;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.nio.IOUtil.readNullableData;
+import static com.hazelcast.nio.IOUtil.writeNullableData;
 
 public class ApplyRequest extends ReadRequest {
 
@@ -43,7 +46,9 @@ public class ApplyRequest extends ReadRequest {
 
     @Override
     protected Operation prepareOperation() {
-        Function f = (Function)getClientEngine().getSerializationService().toObject(function);
+        SerializationService serializationService = getClientEngine().getSerializationService();
+        Function f = serializationService.toObject(function);
+        //noinspection unchecked
         return new ApplyOperation(name, f);
     }
 
@@ -55,14 +60,14 @@ public class ApplyRequest extends ReadRequest {
     @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, function);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        writeNullableData(out, function);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        function = IOUtil.readNullableData(in);
+        function = readNullableData(in);
     }
 }

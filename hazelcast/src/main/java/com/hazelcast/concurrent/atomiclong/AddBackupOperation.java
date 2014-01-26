@@ -22,17 +22,11 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 2/27/13
- * Time: 2:24 PM
- */
 public class AddBackupOperation extends AtomicLongBaseOperation implements BackupOperation {
 
     private long delta;
 
     public AddBackupOperation() {
-        super();
     }
 
     public AddBackupOperation(String name, long delta) {
@@ -42,7 +36,8 @@ public class AddBackupOperation extends AtomicLongBaseOperation implements Backu
 
     @Override
     public void run() throws Exception {
-        getNumber().addAndGet(delta);
+        LongWrapper number = getNumber();
+        number.addAndGet(delta);
     }
 
     @Override

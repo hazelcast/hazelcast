@@ -22,7 +22,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-// author: sancar - 24.12.2012
 public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
 
     private long delta;
@@ -38,7 +37,8 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getNumber().addAndGet(delta);
+        LongWrapper number = getNumber();
+        returnValue = number.addAndGet(delta);
     }
 
     @Override
@@ -58,6 +58,7 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
         delta = in.readLong();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new AddBackupOperation(name, delta);
     }

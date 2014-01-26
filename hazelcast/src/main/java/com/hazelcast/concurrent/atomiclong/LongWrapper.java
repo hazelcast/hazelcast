@@ -16,10 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-/**
- * @author ali 5/13/13
- */
-public class AtomicLongWrapper {
+public class LongWrapper {
 
     private long value;
 
@@ -55,5 +52,4 @@ public class AtomicLongWrapper {
         this.value = value;
         return tempValue;
     }
-
 }

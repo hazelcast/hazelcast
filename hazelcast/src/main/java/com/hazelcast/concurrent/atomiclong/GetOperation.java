@@ -29,7 +29,8 @@ public class GetOperation extends AtomicLongBaseOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getNumber().get();
+        LongWrapper number = getNumber();
+        returnValue = number.get();
     }
 
     @Override
