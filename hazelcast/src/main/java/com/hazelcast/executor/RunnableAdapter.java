@@ -69,11 +69,7 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("RunnableAdapter");
-        sb.append("{task=").append(task);
-        sb.append('}');
-        return sb.toString();
+        return "RunnableAdapter" + "{task=" + task + '}';
     }
 
     @Override

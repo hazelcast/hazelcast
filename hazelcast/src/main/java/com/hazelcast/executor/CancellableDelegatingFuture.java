@@ -21,16 +21,17 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
-/**
- * @author mdogan 6/7/13
- */
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
+
+    public static final int CANCEL_TRY_COUNT = 50;
+    public static final int CANCEL_TRY_PAUSE_MILLIS = 250;
 
     private final NodeEngine nodeEngine;
     private final String uuid;
@@ -54,7 +55,8 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         this.partitionId = -1;
     }
 
-    CancellableDelegatingFuture(ICompletableFuture future, V defaultValue, NodeEngine nodeEngine, String uuid, int partitionId) {
+    CancellableDelegatingFuture(ICompletableFuture future, V defaultValue, NodeEngine nodeEngine,
+                                String uuid, int partitionId) {
         super(future, nodeEngine.getSerializationService(), defaultValue);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
@@ -67,17 +69,8 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         if (isDone() || cancelled) {
             return false;
         }
-        final CancellationOperation op = new CancellationOperation(uuid, mayInterruptIfRunning);
-        final InvocationBuilder builder;
-        OperationService operationService = nodeEngine.getOperationService();
-        if (partitionId > -1) {
-            builder = operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId);
-        } else {
-            builder = operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, target);
-        }
-        builder.setTryCount(50).setTryPauseMillis(250);
 
-        final Future f =  builder.invoke();
+        final Future f = invokeCancelOperation(mayInterruptIfRunning);
         try {
             final Boolean b = (Boolean) f.get();
             if (b != null && b) {
@@ -87,10 +80,23 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
             }
             return false;
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         } finally {
             setDone();
         }
+    }
+
+    private Future invokeCancelOperation(boolean mayInterruptIfRunning) {
+        CancellationOperation op = new CancellationOperation(uuid, mayInterruptIfRunning);
+        OperationService opService = nodeEngine.getOperationService();
+        InvocationBuilder builder;
+        if (partitionId > -1) {
+            builder = opService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId);
+        } else {
+            builder = opService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, target);
+        }
+        builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
+        return builder.invoke();
     }
 
     @Override
