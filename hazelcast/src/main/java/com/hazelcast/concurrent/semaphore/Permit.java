@@ -25,21 +25,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author ali 1/22/13
- */
 public class Permit implements DataSerializable {
 
     private int available;
-
     private int partitionId;
-
     private Map<String, Integer> attachMap;
-
     private int backupCount;
-
     private int asyncBackupCount;
-
     private boolean initialized = false;
 
     public Permit() {
@@ -148,8 +140,8 @@ public class Permit implements DataSerializable {
         return asyncBackupCount;
     }
 
-    protected void setInitialized(boolean initialized) {
-        this.initialized = initialized;
+    protected void setInitialized() {
+        this.initialized = true;
     }
 
     @Override

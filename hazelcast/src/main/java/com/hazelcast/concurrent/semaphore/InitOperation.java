@@ -18,9 +18,6 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 1/22/13
- */
 public class InitOperation extends SemaphoreBackupAwareOperation {
 
     public InitOperation() {

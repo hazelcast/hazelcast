@@ -22,9 +22,6 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/22/13
- */
 public abstract class SemaphoreBackupOperation extends SemaphoreOperation implements BackupOperation {
 
     String firstCaller;

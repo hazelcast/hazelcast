@@ -16,9 +16,6 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-/**
- * @author ali 1/22/13
- */
 public class ReleaseBackupOperation extends SemaphoreBackupOperation {
 
     public ReleaseBackupOperation() {
@@ -30,7 +27,8 @@ public class ReleaseBackupOperation extends SemaphoreBackupOperation {
 
     @Override
     public void run() throws Exception {
-        getPermit().release(permitCount, firstCaller);
+        Permit permit = getPermit();
+        permit.release(permitCount, firstCaller);
         response = true;
     }
 }

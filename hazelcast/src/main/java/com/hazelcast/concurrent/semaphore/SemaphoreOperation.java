@@ -23,13 +23,9 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/22/13
- */
 public abstract class SemaphoreOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
     int permitCount;
-
     transient Object response;
 
     protected SemaphoreOperation() {

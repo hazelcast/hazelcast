@@ -17,17 +17,15 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
+import com.hazelcast.util.ValidationUtil;
 
-/**
- * @author ali 1/22/13
- */
 public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 
     private final String type;
 
     protected SemaphoreWaitNotifyKey(String name, String type) {
         super(SemaphoreService.SERVICE_NAME, name);
-        this.type = type;
+        this.type = ValidationUtil.isNotNull(type,"type");
     }
 
     @Override
@@ -38,7 +36,7 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 
         SemaphoreWaitNotifyKey that = (SemaphoreWaitNotifyKey) o;
 
-        if (type != null ? !type.equals(that.type) : that.type != null) return false;
+        if (!type.equals(that.type))return false;
 
         return true;
     }
@@ -46,7 +44,7 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result +type.hashCode();
         return result;
     }
 }

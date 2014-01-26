@@ -18,9 +18,6 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 1/22/13
- */
 public class ReduceOperation extends SemaphoreBackupAwareOperation {
 
     public ReduceOperation() {
@@ -32,7 +29,8 @@ public class ReduceOperation extends SemaphoreBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        response = getPermit().reduce(permitCount);
+        Permit permit = getPermit();
+        response = permit.reduce(permitCount);
     }
 
     @Override
