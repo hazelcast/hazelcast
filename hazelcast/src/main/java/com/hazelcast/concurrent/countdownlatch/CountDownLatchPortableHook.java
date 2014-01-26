@@ -21,9 +21,6 @@ import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 5/14/13
- */
 public final class CountDownLatchPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
@@ -33,13 +30,15 @@ public final class CountDownLatchPortableHook implements PortableHook {
     public static final int SET_COUNT = 3;
     public static final int GET_COUNT = 4;
 
-
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
+            @Override
             public Portable create(int classId) {
                 switch (classId) {
                     case COUNT_DOWN:
@@ -56,6 +55,7 @@ public final class CountDownLatchPortableHook implements PortableHook {
         };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

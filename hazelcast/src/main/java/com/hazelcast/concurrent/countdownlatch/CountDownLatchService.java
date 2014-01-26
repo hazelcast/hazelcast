@@ -24,9 +24,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @author mdogan 1/10/13
- */
 public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService {
 
     public final static String SERVICE_NAME = "hz:impl:countDownLatchService";
@@ -35,7 +32,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     private NodeEngine nodeEngine;
 
     public int getCount(String name) {
-        final CountDownLatchInfo latch = latches.get(name);
+        CountDownLatchInfo latch = latches.get(name);
         return latch != null ? latch.getCount() : 0;
     }
 
@@ -67,7 +64,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     }
 
     public void countDown(String name) {
-        final CountDownLatchInfo latch = latches.get(name);
+        CountDownLatchInfo latch = latches.get(name);
         if (latch != null) {
             if (latch.countDown() == 0) {
                 latches.remove(name);
@@ -76,56 +73,69 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     }
 
     public boolean shouldWait(String name) {
-        final CountDownLatchInfo latch = latches.get(name);
+        CountDownLatchInfo latch = latches.get(name);
         return latch != null && latch.getCount() > 0;
     }
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
     }
 
+    @Override
     public void reset() {
         latches.clear();
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         latches.clear();
     }
 
+    @Override
     public CountDownLatchProxy createDistributedObject(String name) {
         return new CountDownLatchProxy(name, nodeEngine);
     }
 
+    @Override
     public void destroyDistributedObject(String name) {
         latches.remove(name);
     }
 
+    @Override
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         if (event.getReplicaIndex() > 1) {
             return null;
         }
-        final Collection<CountDownLatchInfo> data = new LinkedList<CountDownLatchInfo>();
+
+        Collection<CountDownLatchInfo> data = new LinkedList<CountDownLatchInfo>();
         for (Map.Entry<String, CountDownLatchInfo> latchEntry : latches.entrySet()) {
-            final String name = latchEntry.getKey();
-            if (nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name)) == event.getPartitionId()) {
-                data.add(latchEntry.getValue());
+            String name = latchEntry.getKey();
+            if (getPartitionId(name) == event.getPartitionId()) {
+                CountDownLatchInfo value = latchEntry.getValue();
+                data.add(value);
             }
         }
         return data.isEmpty() ? null : new CountDownLatchReplicationOperation(data);
     }
 
+    @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearPartition(event.getPartitionId());
+            int partitionId = event.getPartitionId();
+            clearPartition(partitionId);
         }
     }
 
+    @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartition(event.getPartitionId());
+            int partitionId = event.getPartitionId();
+            clearPartition(partitionId);
         }
     }
 
@@ -133,12 +143,17 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         final Iterator<String> iter = latches.keySet().iterator();
         while (iter.hasNext()) {
             final String name = iter.next();
-            if (nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name)) == partitionId) {
+            if (getPartitionId(name) == partitionId) {
                 iter.remove();
             }
         }
     }
 
+    private int getPartitionId(String name) {
+        return nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+    }
+
+    @Override
     public void clearPartitionReplica(int partitionId) {
         clearPartition(partitionId);
     }
@@ -153,6 +168,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     }
 
     public void add(CountDownLatchInfo latch) {
-        latches.put(latch.getName(), latch);
+        String name = latch.getName();
+        latches.put(name, latch);
     }
 }

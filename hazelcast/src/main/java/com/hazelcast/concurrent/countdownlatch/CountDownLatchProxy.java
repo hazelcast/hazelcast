@@ -24,9 +24,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author mdogan 1/10/13
- */
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
+
 public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatchService> implements ICountDownLatch {
 
     private final String name;
@@ -43,61 +42,46 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         return name;
     }
 
-
     @Override
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        final NodeEngine nodeEngine = getNodeEngine();
         AwaitOperation op = new AwaitOperation(name, getTimeInMillis(timeout, unit));
-        Future<Boolean> f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                op, partitionId);
+        Future<Boolean> f = invoke(op);
         try {
             return f.get();
         } catch (ExecutionException e) {
-            throw ExceptionUtil.rethrowAllowInterrupted(e);
+            throw rethrowAllowInterrupted(e);
         }
     }
 
-    private long getTimeInMillis(final long time, final TimeUnit timeunit) {
+    private static long getTimeInMillis(long time, TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
     @Override
     public void countDown() {
-        final NodeEngine nodeEngine = getNodeEngine();
         CountDownOperation op = new CountDownOperation(name);
-        Future f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                op, partitionId);
-        try {
-            f.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        InternalCompletableFuture f = invoke(op);
+        f.getSafely();
     }
 
     @Override
     public int getCount() {
-        final NodeEngine nodeEngine = getNodeEngine();
         GetCountOperation op = new GetCountOperation(name);
-        Future<Integer> f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                op, partitionId);
-        try {
-            return f.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        InternalCompletableFuture<Integer> f = invoke(op);
+        return f.getSafely();
     }
 
     @Override
     public boolean trySetCount(int count) {
-        final NodeEngine nodeEngine = getNodeEngine();
         SetCountOperation op = new SetCountOperation(name, count);
-        Future<Boolean> f = nodeEngine.getOperationService().invokeOnPartition(CountDownLatchService.SERVICE_NAME,
-                op, partitionId);
-        try {
-            return f.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        InternalCompletableFuture<Boolean> f = invoke(op);
+        return f.getSafely();
+    }
+
+    private InternalCompletableFuture invoke(Operation op) {
+        NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnPartition(CountDownLatchService.SERVICE_NAME,op, partitionId);
     }
 
     @Override

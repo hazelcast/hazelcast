@@ -31,10 +31,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author mdogan 5/14/13
- */
-
 public final class AwaitRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     private String name;
@@ -85,6 +81,7 @@ public final class AwaitRequest extends KeyBasedClientRequest implements Portabl
         timeout = reader.readLong("timeout");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new CountDownLatchPermission(name, ActionConstants.ACTION_READ);
     }

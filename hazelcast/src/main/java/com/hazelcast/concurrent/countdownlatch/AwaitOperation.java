@@ -23,9 +23,6 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 1/10/13
- */
 public class AwaitOperation extends BaseCountDownLatchOperation implements WaitSupport {
 
     private long timeout;
@@ -46,19 +43,23 @@ public class AwaitOperation extends BaseCountDownLatchOperation implements WaitS
         return Boolean.TRUE;
     }
 
+    @Override
     public WaitNotifyKey getWaitKey() {
         return waitNotifyKey();
     }
 
+    @Override
     public boolean shouldWait() {
         CountDownLatchService service = getService();
         return service.shouldWait(name);
     }
 
+    @Override
     public long getWaitTimeoutMillis() {
         return timeout;
     }
 
+    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(false);
     }
