@@ -45,8 +45,8 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
 
     @Override
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        final Collection<Future> futures = new ArrayList<Future>(entries.size());
-        final ILogger logger = nodeEngine.getLogger(getClass());
+        Collection<Future> futures = new ArrayList<Future>(entries.size());
+        ILogger logger = nodeEngine.getLogger(getClass());
 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();

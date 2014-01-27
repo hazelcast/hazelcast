@@ -23,9 +23,6 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 2/13/13
- */
 abstract class BaseSignalOperation extends BaseLockOperation {
 
     protected boolean all;
@@ -45,7 +42,7 @@ abstract class BaseSignalOperation extends BaseLockOperation {
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         awaitCount = lockStore.getAwaitCount(key, conditionId);
-        final int signalCount = awaitCount > 0 ? (all ? awaitCount : 1) : 0;
+        int signalCount = awaitCount > 0 ? (all ? awaitCount : 1) : 0;
         final ConditionKey notifiedKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
         for (int i = 0; i < signalCount; i++) {
             lockStore.registerSignalKey(notifiedKey);
