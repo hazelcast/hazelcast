@@ -20,18 +20,16 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 
-/**
- * @author mdogan 5/14/13
- */
 public final class CountDownLatchDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
 
-
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         return null;
     }

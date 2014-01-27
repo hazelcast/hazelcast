@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * @author mdogan 1/17/13
- */
 public class CountDownLatchReplicationOperation extends AbstractOperation {
 
     private Collection<CountDownLatchInfo> data;
@@ -38,11 +35,12 @@ public class CountDownLatchReplicationOperation extends AbstractOperation {
         this.data = data;
     }
 
+    @Override
     public void run() throws Exception {
         if (data != null) {
             CountDownLatchService service = getService();
-            for (CountDownLatchInfo latch : data) {
-                service.add(latch);
+            for (CountDownLatchInfo latchInfo : data) {
+                service.add(latchInfo);
             }
         }
     }

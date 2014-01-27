@@ -19,9 +19,6 @@ package com.hazelcast.concurrent.countdownlatch;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.WaitNotifyKey;
 
-/**
- * @author mdogan 1/10/13
- */
 public class CountDownOperation extends BackupAwareCountDownLatchOperation implements Notifier {
 
     private transient boolean shouldNotify;
@@ -33,20 +30,25 @@ public class CountDownOperation extends BackupAwareCountDownLatchOperation imple
         super(name);
     }
 
+    @Override
     public void run() throws Exception {
         CountDownLatchService service = getService();
         service.countDown(name);
-        shouldNotify = service.getCount(name) == 0;
+        int count = service.getCount(name);
+        shouldNotify = count == 0;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public boolean shouldNotify() {
         return shouldNotify;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return waitNotifyKey();
     }
