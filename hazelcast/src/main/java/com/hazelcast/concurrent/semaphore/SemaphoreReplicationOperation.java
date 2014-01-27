@@ -18,13 +18,14 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SemaphoreReplicationOperation extends AbstractOperation {
+public class SemaphoreReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     Map<String, Permit> migrationData;
 
@@ -65,5 +66,15 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
             permit.readData(in);
             migrationData.put(name, permit);
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.SEMAPHORE_REPLICATION_OPERATION;
     }
 }
