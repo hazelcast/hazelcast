@@ -24,9 +24,6 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-/**
- * @author ali 5/13/13
- */
 public class DrainRequest extends SemaphoreRequest {
 
     public DrainRequest() {
