@@ -39,8 +39,13 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
     public void beforeRun() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         boolean isLockOwner = lockStore.isLockedBy(key, getCallerUuid(), threadId);
+        ensureOwner(lockStore, isLockOwner);
+    }
+
+    private void ensureOwner(LockStoreImpl lockStore, boolean isLockOwner) {
         if (!isLockOwner) {
-            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> "
+                    + lockStore.getOwnerInfo(key));
         }
     }
 

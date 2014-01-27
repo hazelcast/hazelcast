@@ -82,7 +82,7 @@ final class ConditionInfo implements DataSerializable {
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                final ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readLong());
+                ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readLong());
                 waiters.put(waiter, waiter);
             }
         }

@@ -24,10 +24,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-/**
- * @author mdogan 02/12/13
- */
-
 public class LockReplicationOperation extends AbstractOperation {
 
     private final Collection<LockStoreImpl> locks = new LinkedList<LockStoreImpl>();
@@ -37,7 +33,8 @@ public class LockReplicationOperation extends AbstractOperation {
 
     public LockReplicationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        final Collection<LockStoreImpl> lockStores = container.getLockStores();
+
+        Collection<LockStoreImpl> lockStores = container.getLockStores();
         for (LockStoreImpl ls : lockStores) {
             if (ls.getTotalBackupCount() < replicaIndex) {
                 continue;

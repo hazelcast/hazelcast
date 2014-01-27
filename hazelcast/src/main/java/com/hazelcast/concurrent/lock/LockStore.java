@@ -20,9 +20,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
 
-/**
- * @author mdogan 2/12/13
- */
 public interface LockStore {
 
     boolean lock(Data key, String caller, long threadId, long ttl);

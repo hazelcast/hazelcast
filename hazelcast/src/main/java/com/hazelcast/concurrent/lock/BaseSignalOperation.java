@@ -43,7 +43,7 @@ abstract class BaseSignalOperation extends BaseLockOperation {
         LockStoreImpl lockStore = getLockStore();
         awaitCount = lockStore.getAwaitCount(key, conditionId);
         int signalCount = awaitCount > 0 ? (all ? awaitCount : 1) : 0;
-        final ConditionKey notifiedKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
+        ConditionKey notifiedKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
         for (int i = 0; i < signalCount; i++) {
             lockStore.registerSignalKey(notifiedKey);
         }
