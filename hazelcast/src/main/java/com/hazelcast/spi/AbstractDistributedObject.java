@@ -22,9 +22,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
-/**
- * @author mdogan 1/14/13
- */
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 
     protected static final PartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
@@ -47,9 +44,16 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
+    @Override
     public final void destroy() {
-        final NodeEngine engine = getNodeEngine();
-        engine.getProxyService().destroyDistributedObject(getServiceName(), getName());
+        NodeEngine engine = getNodeEngine();
+        ProxyService proxyService = engine.getProxyService();
+        proxyService.destroyDistributedObject(getServiceName(), getName());
+        postDestroy();
+    }
+
+    protected void postDestroy() {
+
     }
 
     public final NodeEngine getNodeEngine() {
