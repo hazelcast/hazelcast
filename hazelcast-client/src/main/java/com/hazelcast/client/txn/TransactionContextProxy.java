@@ -17,9 +17,7 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
@@ -45,8 +43,12 @@ public class TransactionContextProxy implements TransactionContext {
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
     public TransactionContextProxy(HazelcastClient client, TransactionOptions options) {
+        try {
+            this.connection = client.getConnectionManager().tryToConnect(null);
+        } catch (IOException e) {
+            throw new HazelcastException("Could not obtain Connection!!!", e);
+        }
         this.client = client;
-        this.connection = connect();
         this.transaction = new TransactionProxy(client, options, connection);
     }
 
@@ -120,21 +122,6 @@ public class TransactionContextProxy implements TransactionContext {
 
     public HazelcastClient getClient() {
         return client;
-    }
-
-    private ClientConnection connect() {
-        int count = 0;
-        final ClientConnectionManager connectionManager = client.getConnectionManager();
-        IOException lastError = null;
-        while (count < ClientClusterServiceImpl.RETRY_COUNT) {
-            try {
-                return connectionManager.getRandomConnection();
-            } catch (IOException e) {
-                lastError = e;
-            }
-            count++;
-        }
-        throw new HazelcastException("Could not obtain Connection!!!", lastError);
     }
 
     private static class TransactionalObjectKey {

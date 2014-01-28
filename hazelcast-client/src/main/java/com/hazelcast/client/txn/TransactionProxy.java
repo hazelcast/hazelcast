@@ -19,7 +19,7 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -150,10 +150,10 @@ final class TransactionProxy {
             ((BaseTransactionRequest) request).setTxnId(txnId);
             ((BaseTransactionRequest) request).setClientThreadId(threadId);
         }
-        final ClientClusterService clusterService = client.getClientClusterService();
         final SerializationService ss = client.getSerializationService();
+        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)client.getInvocationService();
         try {
-            final Future f = clusterService.send(request, connection);
+            final Future f = invocationService.send(request, connection);
             return ss.toObject(f.get()) ;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

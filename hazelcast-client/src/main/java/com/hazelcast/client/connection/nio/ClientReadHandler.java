@@ -38,7 +38,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
 
     public ClientReadHandler(ClientConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector);
-        buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
+        buffer = ByteBuffer.allocate(ClientConnectionManagerImpl.socketReceiveBufferSize);
     }
 
     public void run() {
