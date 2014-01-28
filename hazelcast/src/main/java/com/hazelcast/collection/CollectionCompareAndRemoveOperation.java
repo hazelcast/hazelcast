@@ -31,7 +31,9 @@ import java.util.Set;
  * @ali 9/2/13
  */
 public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation {
-    
+
+    private final static long serialVersionUID = 1;
+
     private boolean retain;
     
     private Set<Data> valueSet;

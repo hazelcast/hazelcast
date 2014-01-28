@@ -23,6 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 public class TryPutOperation extends BasePutOperation {
+
+    private final static long serialVersionUID = 1;
+
     private long timeout;
     private transient boolean successful;
 

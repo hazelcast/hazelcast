@@ -26,6 +26,8 @@ import java.io.IOException;
 
 public class QueryPartitionOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
+    private final static long serialVersionUID = 1;
+
     private Predicate predicate;
     private transient QueryResult result;
 

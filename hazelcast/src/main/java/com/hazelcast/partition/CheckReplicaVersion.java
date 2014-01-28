@@ -29,6 +29,8 @@ import java.util.logging.Level;
  */
 public final class CheckReplicaVersion extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 
+    private final static long serialVersionUID = 1;
+
     private long version;
     private boolean returnResponse;
 

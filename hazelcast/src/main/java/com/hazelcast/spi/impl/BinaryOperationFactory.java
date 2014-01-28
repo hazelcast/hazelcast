@@ -33,6 +33,8 @@ import java.io.IOException;
  */
 public final class BinaryOperationFactory implements OperationFactory, NodeAware, IdentifiedDataSerializable {
 
+    private final static long serialVersionUID = 1;
+
     private Data operationData;
     private transient NodeEngine nodeEngine;
 

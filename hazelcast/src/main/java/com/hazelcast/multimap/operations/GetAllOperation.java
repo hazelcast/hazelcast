@@ -28,6 +28,8 @@ import java.util.Collection;
  */
 public class GetAllOperation extends MultiMapKeyBasedOperation {
 
+    private final static long serialVersionUID = 1;
+
     transient long begin = -1;
 
     public GetAllOperation() {

@@ -32,6 +32,8 @@ import java.io.IOException;
  */
 public class RemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
+    private final static long serialVersionUID = 1;
+
     private Data data;
 
     transient long itemId = -1;

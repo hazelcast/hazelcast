@@ -18,6 +18,8 @@ package com.hazelcast.concurrent.countdownlatch;
 
 public class GetCountOperation extends BaseCountDownLatchOperation {
 
+    private final static long serialVersionUID = 1;
+
     private transient int count;
 
     public GetCountOperation() {

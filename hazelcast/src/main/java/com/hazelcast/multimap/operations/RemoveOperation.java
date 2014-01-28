@@ -34,6 +34,8 @@ import java.util.Iterator;
  */
 public class RemoveOperation extends MultiMapBackupAwareOperation {
 
+    private final static long serialVersionUID = 1;
+
     Data value;
 
     transient long recordId;

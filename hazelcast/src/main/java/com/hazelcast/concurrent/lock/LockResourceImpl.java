@@ -27,6 +27,8 @@ import java.util.*;
 
 final class LockResourceImpl implements DataSerializable, LockResource {
 
+    private final static long serialVersionUID = 1;
+
     private Data key;
     private String owner = null;
     private long threadId = -1;

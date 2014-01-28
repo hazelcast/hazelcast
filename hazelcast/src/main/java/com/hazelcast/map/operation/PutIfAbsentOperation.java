@@ -20,6 +20,8 @@ import com.hazelcast.nio.serialization.Data;
 
 public class PutIfAbsentOperation extends BasePutOperation {
 
+    private final static long serialVersionUID = 1;
+
     private transient boolean successful;
 
     public PutIfAbsentOperation(String name, Data dataKey, Data value, long ttl) {

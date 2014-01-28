@@ -47,6 +47,8 @@ import java.util.concurrent.Future;
 
 public class QueryOperation extends AbstractMapOperation {
 
+    private final static long serialVersionUID = 1;
+
     Predicate predicate;
     QueryResult result;
     transient PagingPredicate pagingPredicate;

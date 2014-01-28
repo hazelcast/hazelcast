@@ -34,6 +34,8 @@ import java.util.Map;
  */
 public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 
+    private final static long serialVersionUID = 1;
+
     int maxSize;
 
     transient Map<Long, Data> dataMap;

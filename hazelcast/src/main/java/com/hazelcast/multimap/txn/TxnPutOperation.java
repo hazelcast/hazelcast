@@ -34,6 +34,8 @@ import java.util.Collection;
  */
 public class TxnPutOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
 
+    private final static long serialVersionUID = 1;
+
     long recordId;
     Data value;
     transient long begin = -1;

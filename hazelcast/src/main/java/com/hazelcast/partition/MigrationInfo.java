@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MigrationInfo implements DataSerializable {
 
+    private final static long serialVersionUID = 1;
+
     private int partitionId;
     private Address source;
     private Address destination;

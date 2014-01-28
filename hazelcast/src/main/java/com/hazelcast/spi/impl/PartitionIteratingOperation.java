@@ -28,6 +28,9 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
+
+    private final static long serialVersionUID = 1;
+
     private List<Integer> partitions;
     private OperationFactory operationFactory;
 

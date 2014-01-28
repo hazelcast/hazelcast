@@ -43,6 +43,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
+    private final static long serialVersionUID = 1;
+
     private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
 
     private boolean localMember;

@@ -32,6 +32,8 @@ import java.io.IOException;
  */
 public class ListSetOperation extends CollectionBackupAwareOperation {
 
+    private final static long serialVersionUID = 1;
+
     private int index;
 
     private Data value;

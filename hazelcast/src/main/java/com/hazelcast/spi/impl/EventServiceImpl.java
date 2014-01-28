@@ -575,6 +575,9 @@ public class EventServiceImpl implements EventService {
     }
 
     public static class Registration implements EventRegistration {
+
+        private final static long serialVersionUID = 1;
+
         private String id;
         private String serviceName;
         private String topic;
@@ -774,6 +777,8 @@ public class EventServiceImpl implements EventService {
     }
 
     public static class RegistrationOperation extends AbstractOperation {
+
+        private final static long serialVersionUID = 1;
 
         private Registration registration;
         private transient boolean response = false;

@@ -36,6 +36,8 @@ import java.util.List;
  */
 public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
+    private final static long serialVersionUID = 1;
+
     List<Operation> opList;
     long version;
     transient boolean notify = true;

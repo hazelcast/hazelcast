@@ -30,6 +30,8 @@ import java.io.IOException;
  */
 public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 
+    private final static long serialVersionUID = 1;
+
     protected long itemId;
 
     protected Data data;
