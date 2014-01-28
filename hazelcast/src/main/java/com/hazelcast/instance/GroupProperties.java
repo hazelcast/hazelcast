@@ -67,7 +67,7 @@ public class GroupProperties {
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
-    public static final String PROP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS = "hazelcast.backup.wait.seconds.for.scheduled.tasks";
+    public static final String PROP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS = "hazelcast.replica.wait.seconds.for.scheduled.tasks";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
