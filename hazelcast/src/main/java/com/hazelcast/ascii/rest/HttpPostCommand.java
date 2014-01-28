@@ -22,6 +22,8 @@ import com.hazelcast.nio.ascii.SocketTextReader;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class HttpPostCommand extends HttpCommand {
 
     private ByteBuffer data = null;
@@ -62,11 +64,19 @@ public class HttpPostCommand extends HttpCommand {
     }
 
     public byte[] getData() {
-        return (data == null) ? null : data.array();
+        if (data == null) {
+            return null;
+        } else {
+            return data.array();
+        }
     }
 
     public byte[] getContentType() {
-        return (contentType == null) ? null : contentType.getBytes();
+        if (contentType == null) {
+            return null;
+        }else {
+            return stringToBytes(contentType);
+        }
     }
 
     public boolean doActualRead(ByteBuffer cb) {

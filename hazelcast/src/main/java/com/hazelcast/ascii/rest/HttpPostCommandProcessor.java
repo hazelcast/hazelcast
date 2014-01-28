@@ -22,9 +22,12 @@ import com.hazelcast.management.ManagementCenterService;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostCommand> {
 
-    private static final byte[] QUEUE_SIMPLE_VALUE_CONTENT_TYPE = "text/plain".getBytes();
+    private static final byte[] QUEUE_SIMPLE_VALUE_CONTENT_TYPE = stringToBytes("text/plain");
 
     public HttpPostCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
@@ -71,7 +74,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             data = command.getData();
             contentType = command.getContentType();
         } else {
-            data = simpleValue.getBytes();
+            data = stringToBytes(simpleValue);
             contentType = QUEUE_SIMPLE_VALUE_CONTENT_TYPE;
         }
         boolean offerResult = textCommandService.offer(queueName, new RestValue(data, contentType));
@@ -86,7 +89,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (textCommandService.getNode().getGroupProperties().MC_URL_CHANGE_ENABLED.getBoolean()) {
             byte[] res = HttpCommand.RES_204;
             byte[] data = command.getData();
-            String[] strList = new String(data).split("&");
+            String[] strList = bytesToString(data).split("&");
             String cluster = URLDecoder.decode(strList[0], "UTF-8");
             String pass = URLDecoder.decode(strList[1], "UTF-8");
             String url = URLDecoder.decode(strList[2], "UTF-8");

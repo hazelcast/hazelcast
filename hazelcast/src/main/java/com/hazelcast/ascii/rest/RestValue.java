@@ -23,6 +23,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+
 public class RestValue implements DataSerializable {
     private byte[] value;
     private byte[] contentType;
@@ -63,12 +65,18 @@ public class RestValue implements DataSerializable {
 
     @Override
     public String toString() {
-        String contentTypeStr = (contentType == null) ? "unknown-content-type" : new String(contentType);
+        String contentTypeStr;
+        if (contentType == null) {
+            contentTypeStr = "unknown-content-type";
+        }else {
+            contentTypeStr = bytesToString(contentType);
+        }
+
         String valueStr;
         if (value == null) {
             valueStr = "value.length=0";
         } else if (contentTypeStr.contains("text")) {
-            valueStr = "value=\"" + new String(value) + "\"";
+            valueStr = "value=\"" + bytesToString(value) + "\"";
         } else {
             valueStr = "value.length=" + value.length;
         }

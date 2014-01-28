@@ -21,6 +21,8 @@ import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class ErrorCommand extends AbstractTextCommand {
     private final String message;
     ByteBuffer response;
@@ -38,7 +40,7 @@ public class ErrorCommand extends AbstractTextCommand {
             error = SERVER_ERROR;
         }
         this.message = message;
-        byte[] msg = (message == null) ? null : message.getBytes();
+        byte[] msg = (message == null) ? null : stringToBytes(message);
         int total = error.length;
         if (msg != null) {
             total += msg.length;

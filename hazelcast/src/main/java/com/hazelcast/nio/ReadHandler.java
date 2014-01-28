@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+
 final class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     private final ByteBuffer buffer;
@@ -90,7 +92,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 return;
             }
             if (!protocolBuffer.hasRemaining()) {
-                String protocol = new String(protocolBuffer.array());
+                String protocol = bytesToString(protocolBuffer.array());
                 WriteHandler writeHandler = connection.getWriteHandler();
                 if (Protocols.CLUSTER.equals(protocol)) {
                     connection.setType(ConnectionType.MEMBER);
