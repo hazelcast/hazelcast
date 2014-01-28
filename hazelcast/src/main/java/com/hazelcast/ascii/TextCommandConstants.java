@@ -19,22 +19,22 @@ package com.hazelcast.ascii;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public interface TextCommandConstants {
-    final static int MONTH_SECONDS = 60 * 60 * 24 * 30;
+    int MONTH_SECONDS = 60 * 60 * 24 * 30;
 
-    final static byte[] SPACE = stringToBytes(" ");
-    final static byte[] RETURN = stringToBytes("\r\n");
-    final static byte[] FLAG_ZERO = stringToBytes(" 0 ");
-    final static byte[] VALUE_SPACE = stringToBytes("VALUE ");
-    final static byte[] DELETED = stringToBytes("DELETED\r\n");
-    final static byte[] STORED = stringToBytes("STORED\r\n");
-    final static byte[] TOUCHED = stringToBytes("TOUCHED\r\n");
-    final static byte[] NOT_STORED = stringToBytes("NOT_STORED\r\n");
-    final static byte[] NOT_FOUND = stringToBytes("NOT_FOUND\r\n");
-    final static byte[] RETURN_END = stringToBytes("\r\nEND\r\n");
-    final static byte[] END = stringToBytes("END\r\n");
-    final static byte[] ERROR = stringToBytes("ERROR");
-    final static byte[] CLIENT_ERROR = stringToBytes("CLIENT_ERROR ");
-    final static byte[] SERVER_ERROR = stringToBytes("SERVER_ERROR ");
+    byte[] SPACE = stringToBytes(" ");
+    byte[] RETURN = stringToBytes("\r\n");
+    byte[] FLAG_ZERO = stringToBytes(" 0 ");
+    byte[] VALUE_SPACE = stringToBytes("VALUE ");
+    byte[] DELETED = stringToBytes("DELETED\r\n");
+    byte[] STORED = stringToBytes("STORED\r\n");
+    byte[] TOUCHED = stringToBytes("TOUCHED\r\n");
+    byte[] NOT_STORED = stringToBytes("NOT_STORED\r\n");
+    byte[] NOT_FOUND = stringToBytes("NOT_FOUND\r\n");
+    byte[] RETURN_END = stringToBytes("\r\nEND\r\n");
+    byte[] END = stringToBytes("END\r\n");
+    byte[] ERROR = stringToBytes("ERROR");
+    byte[] CLIENT_ERROR = stringToBytes("CLIENT_ERROR ");
+    byte[] SERVER_ERROR = stringToBytes("SERVER_ERROR ");
 
     enum TextCommandType {
         GET((byte) 0),
