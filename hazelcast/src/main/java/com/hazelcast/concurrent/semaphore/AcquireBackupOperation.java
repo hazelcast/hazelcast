@@ -16,7 +16,9 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-public class AcquireBackupOperation extends SemaphoreBackupOperation {
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+public class AcquireBackupOperation extends SemaphoreBackupOperation implements IdentifiedDataSerializable {
 
     public AcquireBackupOperation() {
     }
@@ -30,5 +32,15 @@ public class AcquireBackupOperation extends SemaphoreBackupOperation {
         Permit permit = getPermit();
         permit.acquire(permitCount, firstCaller);
         response = true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.ACQUIRE_BACKUP_OPERATION;
     }
 }

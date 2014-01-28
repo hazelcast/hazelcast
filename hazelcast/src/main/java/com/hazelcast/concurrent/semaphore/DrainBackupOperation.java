@@ -16,7 +16,9 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-public class DrainBackupOperation extends SemaphoreBackupOperation {
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+public class DrainBackupOperation extends SemaphoreBackupOperation implements IdentifiedDataSerializable{
 
     public DrainBackupOperation() {
     }
@@ -30,5 +32,15 @@ public class DrainBackupOperation extends SemaphoreBackupOperation {
         Permit permit = getPermit();
         permit.drain(firstCaller);
         response = true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.DRAIN_BACKUP_OPERATION;
     }
 }
