@@ -45,6 +45,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -80,7 +81,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 
-    private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
+    private final AtomicReference<Map<Address, MemberImpl>> membersMapRef = new AtomicReference<Map<Address, MemberImpl>>(Collections.EMPTY_MAP);
+
+    private final AtomicReference<Set<MemberImpl>> membersRef = new AtomicReference<Set<MemberImpl>>(Collections.EMPTY_SET);
 
     private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
 
@@ -713,10 +716,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     void updateMembers(Collection<MemberInfo> members) {
         lock.lock();
         try {
-            Map<Address, MemberImpl> oldMemberMap = membersRef.get();
-            if (oldMemberMap == null) {
-                oldMemberMap = Collections.emptyMap();
-            }
+            Map<Address, MemberImpl> oldMemberMap = membersMapRef.get();
+
             if (oldMemberMap.size() == members.size()) {
                 boolean same = true;
                 for (MemberInfo memberInfo : members) {
@@ -757,16 +758,14 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     public void updateMemberAttribute(String uuid, MapOperationType operationType, String key, Object value) {
         lock.lock();
         try {
-            Map<Address, MemberImpl> memberMap = membersRef.get();
-            if (memberMap != null) {
-                for (MemberImpl member : memberMap.values()) {
-                    if (member.getUuid().equals(uuid)) {
-                        if (!member.equals(getLocalMember())) {
-                            member.updateAttribute(operationType, key, value);
-                        }
-                        sendMemberAttributeEvent(member, operationType, key, value);
-                        break;
+            Map<Address, MemberImpl> memberMap = membersMapRef.get();
+            for (MemberImpl member : memberMap.values()) {
+                if (member.getUuid().equals(uuid)) {
+                    if (!member.equals(getLocalMember())) {
+                        member.updateAttribute(operationType, key, value);
                     }
+                    sendMemberAttributeEvent(member, operationType, key, value);
+                    break;
                 }
             }
         } finally {
@@ -820,10 +819,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         lock.lock();
         try {
-            Map<Address, MemberImpl> oldMemberMap = membersRef.get();
-            if (oldMemberMap == null) {
-                oldMemberMap = Collections.emptyMap();
-            }
+            Map<Address, MemberImpl> oldMemberMap = membersMapRef.get();
             final Map<Address, MemberImpl> memberMap = new LinkedHashMap<Address, MemberImpl>();  // ! ORDERED !
             final Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
             for (MemberImpl member : members) {
@@ -860,8 +856,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         logger.info("Removing " + deadMember);
         lock.lock();
         try {
-            final Map<Address, MemberImpl> members = membersRef.get();
-            if (members != null && members.containsKey(deadMember.getAddress())) {
+            final Map<Address, MemberImpl> members = membersMapRef.get();
+            if (members.containsKey(deadMember.getAddress())) {
                 Map<Address, MemberImpl> newMembers = new LinkedHashMap<Address, MemberImpl>(members);  // ! ORDERED !
                 newMembers.remove(deadMember.getAddress());
                 masterConfirmationTimes.remove(deadMember);
@@ -952,8 +948,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (address == null) {
             return null;
         }
-        final Map<Address, MemberImpl> memberMap = membersRef.get();
-        return memberMap != null ? memberMap.get(address) : null;
+        Map<Address, MemberImpl> memberMap = membersMapRef.get();
+        return memberMap.get(address);
     }
 
     @Override
@@ -961,10 +957,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (uuid == null) {
             return null;
         }
-        final Map<Address, MemberImpl> memberMap = membersRef.get();
-        if (memberMap == null) {
-            return null;
-        }
+
+        Map<Address, MemberImpl> memberMap = membersMapRef.get();
         for (MemberImpl member : memberMap.values()) {
             if (uuid.equals(member.getUuid())) {
                 return member;
@@ -973,19 +967,24 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return null;
     }
 
-    private void setMembersRef(final Map<Address, MemberImpl> memberMap) {
-        final Map<Address, MemberImpl> members = Collections.unmodifiableMap(memberMap);
+    private void setMembersRef(Map<Address, MemberImpl> memberMap) {
+        memberMap = unmodifiableMap(memberMap);
         // make values(), keySet() and entrySet() to be cached
-        members.values();
-        members.keySet();
-        members.entrySet();
-        membersRef.set(members);
+        memberMap.values();
+        memberMap.keySet();
+        memberMap.entrySet();
+        membersMapRef.set(memberMap);
+        membersRef.set(unmodifiableSet(new LinkedHashSet<MemberImpl>(memberMap.values())));
     }
 
     @Override
     public Collection<MemberImpl> getMemberList() {
-        final Map<Address, MemberImpl> map = membersRef.get();
-        return map != null ? Collections.unmodifiableCollection(map.values()) : Collections.<MemberImpl>emptySet();
+        return membersRef.get();
+    }
+
+    @Override
+    public Set<Member> getMembers() {
+        return (Set)membersRef.get();
     }
 
     @Override
@@ -1010,12 +1009,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public Member getLocalMember() {
         return node.getLocalMember();
-    }
-
-    @Override
-    public Set<Member> getMembers() {
-        final Collection<MemberImpl> members = getMemberList();
-        return members != null ? new LinkedHashSet<Member>(members) : new HashSet<Member>(0);
     }
 
     @Override

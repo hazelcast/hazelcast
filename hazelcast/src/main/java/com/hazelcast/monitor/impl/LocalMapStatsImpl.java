@@ -58,6 +58,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         creationTime = Clock.currentTimeMillis();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(getCount.get());
         out.writeLong(putCount.get());
@@ -90,6 +91,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         getCount.set(in.readLong());
         putCount.set(in.readLong());
@@ -122,6 +124,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         }
     }
 
+    @Override
     public long getOwnedEntryCount() {
         return ownedEntryCount;
     }
@@ -130,6 +133,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.ownedEntryCount = ownedEntryCount;
     }
 
+    @Override
     public long getBackupEntryCount() {
         return backupEntryCount;
     }
@@ -138,6 +142,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.backupEntryCount = backupEntryCount;
     }
 
+    @Override
     public int getBackupCount() {
         return backupCount;
     }
@@ -146,6 +151,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.backupCount = backupCount;
     }
 
+    @Override
     public long getOwnedEntryMemoryCost() {
         return ownedEntryMemoryCost;
     }
@@ -154,6 +160,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.ownedEntryMemoryCost = ownedEntryMemoryCost;
     }
 
+    @Override
     public long getBackupEntryMemoryCost() {
         return backupEntryMemoryCost;
     }
@@ -162,10 +169,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.backupEntryMemoryCost = backupEntryMemoryCost;
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
 
+    @Override
     public long getLastAccessTime() {
         return lastAccessTime.get();
     }
@@ -174,6 +183,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.lastAccessTime.set(Math.max(this.lastAccessTime.get(), lastAccessTime));
     }
 
+    @Override
     public long getLastUpdateTime() {
         return lastUpdateTime.get();
     }
@@ -182,6 +192,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.lastUpdateTime.set(Math.max(this.lastUpdateTime.get(), lastUpdateTime));
     }
 
+    @Override
     public long getHits() {
         return hits.get();
     }
@@ -190,6 +201,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.hits.set(hits);
     }
 
+    @Override
     public long getLockedEntryCount() {
         return lockedEntryCount;
     }
@@ -198,6 +210,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.lockedEntryCount = lockedEntryCount;
     }
 
+    @Override
     public long getDirtyEntryCount() {
         return dirtyEntryCount;
     }
@@ -206,10 +219,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.dirtyEntryCount = l;
     }
 
+    @Override
     public long total() {
         return putCount.get() + getCount.get() + removeCount.get() + numberOfOtherOperations.get();
     }
 
+    @Override
     public long getPutOperationCount() {
         return putCount.get();
     }
@@ -220,6 +235,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxPutLatency.set(Math.max(maxPutLatency.get(), latency));
     }
 
+    @Override
     public long getGetOperationCount() {
         return getCount.get();
     }
@@ -230,6 +246,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxGetLatency.set(Math.max(maxGetLatency.get(), latency));
     }
 
+    @Override
     public long getRemoveOperationCount() {
         return removeCount.get();
     }
@@ -240,30 +257,37 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxRemoveLatency.set(Math.max(maxRemoveLatency.get(), latency));
     }
 
+    @Override
     public long getTotalPutLatency() {
         return totalPutLatencies.get();
     }
 
+    @Override
     public long getTotalGetLatency() {
         return totalGetLatencies.get();
     }
 
+    @Override
     public long getTotalRemoveLatency() {
         return totalRemoveLatencies.get();
     }
 
+    @Override
     public long getMaxPutLatency() {
         return maxPutLatency.get();
     }
 
+    @Override
     public long getMaxGetLatency() {
         return maxGetLatency.get();
     }
 
+    @Override
     public long getMaxRemoveLatency() {
         return maxRemoveLatency.get();
     }
 
+    @Override
     public long getOtherOperationCount() {
         return numberOfOtherOperations.get();
     }
@@ -272,6 +296,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         numberOfOtherOperations.incrementAndGet();
     }
 
+    @Override
     public long getEventOperationCount() {
         return numberOfEvents.get();
     }
@@ -284,10 +309,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.heapCost = heapCost;
     }
 
+    @Override
     public long getHeapCost() {
         return heapCost;
     }
 
+    @Override
     public NearCacheStatsImpl getNearCacheStats() {
         return nearCacheStats;
     }
@@ -296,6 +323,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.nearCacheStats = nearCacheStats;
     }
 
+    @Override
     public String toString() {
         return "LocalMapStatsImpl{" +
                 "lastAccessTime=" + lastAccessTime +
