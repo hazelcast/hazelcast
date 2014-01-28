@@ -64,7 +64,7 @@ public class ListKeyValueSource<V>
 
         Address thisAddress = nei.getThisAddress();
         PartitionService ps = nei.getPartitionService();
-        Data data = ss.toData(listName, new StringAndPartitionAwarePartitioningStrategy());
+        Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
         if (!ps.getPartitionOwner(partitionId).equals(thisAddress)) {
             return;
