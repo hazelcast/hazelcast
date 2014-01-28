@@ -29,7 +29,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class IdGeneratorProxy implements IdGenerator {
 
-    private static final int BLOCK_SIZE = 10000;
+    public static final int BLOCK_SIZE = 10000;
+
     final String name;
     final IAtomicLong atomicLong;
     AtomicInteger residue;

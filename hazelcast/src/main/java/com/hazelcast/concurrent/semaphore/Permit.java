@@ -55,13 +55,15 @@ public class Permit implements DataSerializable {
 
     private void detach(String caller, int permitCount) {
         Integer attached = attachMap.get(caller);
-        if (attached != null) {
-            attached -= permitCount;
-            if (attached <= 0) {
-                attachMap.remove(caller);
-            } else {
-                attachMap.put(caller, attached);
-            }
+        if (attached == null) {
+            return;
+        }
+
+        attached -= permitCount;
+        if (attached <= 0) {
+            attachMap.remove(caller);
+        } else {
+            attachMap.put(caller, attached);
         }
     }
 

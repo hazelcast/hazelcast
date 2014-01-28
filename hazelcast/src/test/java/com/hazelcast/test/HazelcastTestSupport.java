@@ -83,6 +83,10 @@ public abstract class HazelcastTestSupport {
         return factory = new TestHazelcastInstanceFactory(nodeCount);
     }
 
+    public HazelcastInstance createHazelcastInstance() {
+        return createHazelcastInstanceFactory(1).newHazelcastInstance();
+    }
+
     @After
     public final void shutdownNodeFactory() {
         final TestHazelcastInstanceFactory f = factory;
