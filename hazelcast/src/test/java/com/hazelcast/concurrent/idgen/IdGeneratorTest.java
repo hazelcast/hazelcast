@@ -32,7 +32,6 @@ public class IdGeneratorTest extends HazelcastTestSupport {
         testInit(-1, false, 0);
         testInit(1, true, 2);
         testInit(10, true, 11);
-
     }
 
     private void testInit(int initialValue, boolean expected, long expectedValue) {
@@ -42,6 +41,14 @@ public class IdGeneratorTest extends HazelcastTestSupport {
 
         long newId = idGenerator.newId();
         assertEquals(expectedValue, newId);
+    }
+
+    @Test
+    public void testInitWhenAlreadyInitialized(){
+        IdGenerator idGenerator = hz.getIdGenerator("id-" + UUID.randomUUID().toString());
+        idGenerator.newId();
+
+        testInit(10,false,2);
     }
 
     @Test

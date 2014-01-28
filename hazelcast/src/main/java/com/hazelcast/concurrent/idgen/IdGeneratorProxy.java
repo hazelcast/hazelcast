@@ -58,7 +58,6 @@ public class IdGeneratorProxy implements IdGenerator {
             }
             return init;
         }
-
     }
 
     @Override
@@ -71,6 +70,7 @@ public class IdGeneratorProxy implements IdGenerator {
                     local.set(atomicLong.getAndIncrement());
                     residue.set(0);
                 }
+                //todo: we need to get rid of this.
                 return newId();
             }
         }
