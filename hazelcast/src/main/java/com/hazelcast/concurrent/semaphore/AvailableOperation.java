@@ -16,9 +16,6 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-/**
- * @author ali 1/22/13
- */
 public class AvailableOperation extends SemaphoreOperation {
 
     public AvailableOperation() {

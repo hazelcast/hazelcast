@@ -20,10 +20,8 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-/**
- * @author mdogan 1/10/13
- */
-abstract class BaseCountDownLatchOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+abstract class BaseCountDownLatchOperation extends AbstractNamedOperation
+        implements PartitionAwareOperation {
 
     protected BaseCountDownLatchOperation() {
     }

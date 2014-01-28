@@ -24,9 +24,6 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/23/13
- */
 public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
     String firstCaller;
@@ -41,7 +38,8 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        response = getPermit().memberRemoved(firstCaller);
+        Permit permit = getPermit();
+        response = permit.memberRemoved(firstCaller);
     }
 
     @Override

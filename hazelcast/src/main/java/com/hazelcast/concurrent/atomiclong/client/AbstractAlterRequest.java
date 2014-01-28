@@ -16,28 +16,32 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.core.Function;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicLongPermission;
 
 import java.io.IOException;
 import java.security.Permission;
 
+import static com.hazelcast.nio.IOUtil.readNullableData;
+import static com.hazelcast.nio.IOUtil.writeNullableData;
+
 public abstract class AbstractAlterRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
-    String name;
-    Data function;
+    protected String name;
+    protected Data function;
 
     public AbstractAlterRequest() {
     }
@@ -49,7 +53,8 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
 
     @Override
     protected int getPartition() {
-        Data key = getClientEngine().getSerializationService().toData(name);
+        ClientEngine clientEngine = getClientEngine();
+        Data key = clientEngine.getSerializationService().toData(name);
         return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
@@ -71,19 +76,21 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, function);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        writeNullableData(out, function);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         ObjectDataInput in = reader.getRawDataInput();
-        function = IOUtil.readNullableData(in);
+        function = readNullableData(in);
     }
 
-    protected Function<Long,Long> getFunction() {
-        return (Function<Long,Long>)getClientEngine().getSerializationService().toObject(function);
+    protected Function<Long, Long> getFunction() {
+        SerializationService serializationService = getClientEngine().getSerializationService();
+        //noinspection unchecked
+        return (Function<Long, Long>) serializationService.toObject(function);
     }
 
     @Override

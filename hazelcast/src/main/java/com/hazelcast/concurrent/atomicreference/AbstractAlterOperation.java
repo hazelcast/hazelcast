@@ -30,7 +30,6 @@ public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareO
     protected Data backup;
 
     public AbstractAlterOperation() {
-        super();
     }
 
     public AbstractAlterOperation(String name, Data function) {
@@ -38,6 +37,7 @@ public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareO
         this.function = function;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected boolean isEquals(Object o1, Object o2){
         if(o1 == null){
             return o2 == null;
@@ -67,6 +67,7 @@ public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareO
         function = in.readObject();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new SetBackupOperation(name, backup);
     }

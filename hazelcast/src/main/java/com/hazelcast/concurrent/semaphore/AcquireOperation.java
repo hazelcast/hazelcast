@@ -19,14 +19,12 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/22/13
- */
 public class AcquireOperation extends SemaphoreBackupAwareOperation implements WaitSupport {
 
     long timeout;
@@ -75,7 +73,8 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation implements W
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(false);
     }
 
     @Override

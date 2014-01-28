@@ -25,9 +25,6 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-/**
- * @author ali 5/13/13
- */
 public class GetAndAddRequest extends AtomicLongRequest {
 
     public GetAndAddRequest() {
@@ -37,14 +34,17 @@ public class GetAndAddRequest extends AtomicLongRequest {
         super(name, delta);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new GetAndAddOperation(name, delta);
     }
 
+    @Override
     public int getClassId() {
         return AtomicLongPortableHook.GET_AND_ADD;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         if (name.startsWith(IdGeneratorService.ATOMIC_LONG_NAME)){
             return null;

@@ -390,7 +390,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                             : e.getMessage();
                     logger.log(level, message, e);
                 }
-                endpoint.sendResponse(e, request.getCallId());
+                if (request != null) {
+                    endpoint.sendResponse(e, request.getCallId());
+                }
             }
         }
     }

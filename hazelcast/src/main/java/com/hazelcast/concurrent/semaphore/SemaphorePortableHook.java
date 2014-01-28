@@ -21,23 +21,14 @@ import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
 
-/**
- * @author ali 5/13/13
- */
 public class SemaphorePortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY, -16);
-
     public static final int ACQUIRE = 1;
-
     public static final int AVAILABLE = 2;
-
     public static final int DRAIN = 3;
-
     public static final int INIT = 4;
-
     public static final int REDUCE = 5;
-
     public static final int RELEASE = 6;
 
     @Override
@@ -48,7 +39,7 @@ public class SemaphorePortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory(){
-
+            @Override
             public Portable create(int classId) {
                 switch (classId){
                     case ACQUIRE:

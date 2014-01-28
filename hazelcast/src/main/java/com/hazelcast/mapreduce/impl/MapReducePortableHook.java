@@ -48,7 +48,7 @@ public class MapReducePortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LENGTH];
+            private final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LENGTH];
             {
                 constructors[CLIENT_JOB_PROCESS_INFO_REQUEST] = new ConstructorFunction<Integer, Portable>() {
                     @Override

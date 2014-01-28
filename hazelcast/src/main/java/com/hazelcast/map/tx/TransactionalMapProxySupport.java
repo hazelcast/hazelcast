@@ -101,9 +101,6 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Object getForUpdateInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
-        }
         TxnUnlockOperation operation = new TxnUnlockOperation(name, key, versionedValue.version);
         tx.addTransactionLog(new MapTransactionLog(name, key, operation, versionedValue.version));
         return versionedValue.value;

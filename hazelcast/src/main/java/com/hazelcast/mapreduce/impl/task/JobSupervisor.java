@@ -382,7 +382,7 @@ public class JobSupervisor {
         String jobId = getConfiguration().getJobId();
         for (Address address : addresses) {
             try {
-                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId, jobOwner);
+                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
                 mapReduceService.processRequest(address, operation, name);
             } catch (Exception ignore) {
                 // We can ignore this exception since we just want to cancel the job
@@ -426,6 +426,9 @@ public class JobSupervisor {
                 }
             } catch (Throwable t) {
                 MapReduceUtil.notifyRemoteException(this, t);
+                if (t instanceof Error) {
+                    ExceptionUtil.sneakyThrow(t);
+                }
             }
         }
     }

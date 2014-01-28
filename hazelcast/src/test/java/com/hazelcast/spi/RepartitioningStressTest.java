@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -61,24 +62,29 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private final static int THREAD_COUNT = 10;
     private Config config;
 
-    @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    @After
+    public  void tearDown() throws IOException {
         Hazelcast.shutdownAll();
     }
 
     @Before
     public void setUp() {
-        instanceFactory = this.createHazelcastInstanceFactory(100000);
+        Hazelcast.shutdownAll();
+
+        instanceFactory = createHazelcastInstanceFactory(10000);
         config = new Config();
         MapConfig mapConfig = new MapConfig("map");
         //mapConfig.setBackupCount(0);
         config.addMapConfig(mapConfig);
         hz = createHazelcastInstance();
 
-        for (int k = 0; k < 5; k++) {
+        for (int k = 0; k < INITIAL_MEMBER_COUNT(); k++) {
             queue.add(createHazelcastInstance());
         }
+    }
+
+    private int INITIAL_MEMBER_COUNT() {
+        return 5;
     }
 
     private HazelcastInstance createHazelcastInstance() {
@@ -174,6 +180,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             super(name);
         }
 
+        @Override
         public final void run() {
             try {
                 doRun();
@@ -199,6 +206,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
         private volatile boolean stop;
 
+        @Override
         public void run() {
             while (!stop) {
                 try {

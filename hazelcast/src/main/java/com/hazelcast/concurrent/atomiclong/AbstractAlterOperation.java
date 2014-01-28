@@ -54,6 +54,7 @@ public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperat
         function = in.readObject();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new SetBackupOperation(name, backup);
     }

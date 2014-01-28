@@ -19,10 +19,8 @@ package com.hazelcast.concurrent.countdownlatch;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author mdogan 1/10/13
- */
-abstract class BackupAwareCountDownLatchOperation extends BaseCountDownLatchOperation implements BackupAwareOperation {
+abstract class BackupAwareCountDownLatchOperation extends BaseCountDownLatchOperation
+        implements BackupAwareOperation {
 
     protected BackupAwareCountDownLatchOperation() {
     }
@@ -31,19 +29,21 @@ abstract class BackupAwareCountDownLatchOperation extends BaseCountDownLatchOper
         super(name);
     }
 
+    @Override
     public Operation getBackupOperation() {
         CountDownLatchService service = getService();
         CountDownLatchInfo latch = service.getLatch(name);
-        final int count = latch != null ? latch.getCount() : 0;
+        int count = latch != null ? latch.getCount() : 0;
         return new CountDownLatchBackupOperation(name, count);
     }
 
+    @Override
     public int getSyncBackupCount() {
         return 1;
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return 0;
     }
-
 }

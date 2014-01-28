@@ -24,9 +24,6 @@ import com.hazelcast.topic.TopicPortableHook;
 
 import java.io.IOException;
 
-/**
- * @author ali 5/24/13
- */
 public class PortableMessage implements Portable {
 
     private Data message;
@@ -54,20 +51,24 @@ public class PortableMessage implements Portable {
         return uuid;
     }
 
+    @Override
     public int getFactoryId() {
         return TopicPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return TopicPortableHook.PORTABLE_MESSAGE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeLong("pt",publishTime);
         writer.writeUTF("u",uuid);
         message.writeData(writer.getRawDataOutput());
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         publishTime = reader.readLong("pt");
         uuid = reader.readUTF("u");

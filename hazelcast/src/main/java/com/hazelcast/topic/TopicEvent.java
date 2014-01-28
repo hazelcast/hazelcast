@@ -27,11 +27,6 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 12/26/12
- * Time: 3:20 PM
- */
 public class TopicEvent implements DataSerializable {
 
     public String name;
@@ -49,6 +44,7 @@ public class TopicEvent implements DataSerializable {
         this.data = data;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeLong(publishTime);
@@ -56,6 +52,7 @@ public class TopicEvent implements DataSerializable {
         IOUtil.writeNullableData(out, data);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         publishTime = in.readLong();

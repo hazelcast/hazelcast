@@ -23,6 +23,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -88,6 +89,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testExecutorOneNodeShutdown() throws InterruptedException {
         final int executions = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();

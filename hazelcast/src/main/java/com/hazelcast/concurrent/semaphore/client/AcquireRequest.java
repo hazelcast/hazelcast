@@ -27,12 +27,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/13/13
- */
 public class AcquireRequest extends SemaphoreRequest {
 
-    long timeout;
+    private long timeout;
 
     public AcquireRequest() {
     }
@@ -52,11 +49,13 @@ public class AcquireRequest extends SemaphoreRequest {
         return SemaphorePortableHook.ACQUIRE;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeLong("t",timeout);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         timeout = reader.readLong("t");

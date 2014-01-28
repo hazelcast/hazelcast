@@ -19,9 +19,6 @@ package com.hazelcast.executor;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.spi.Callback;
 
-/**
- * @author mdogan 4/10/13
- */
 public final class ExecutionCallbackAdapter implements Callback<Object> {
 
     private final ExecutionCallback executionCallback;
@@ -35,6 +32,7 @@ public final class ExecutionCallbackAdapter implements Callback<Object> {
         if (response instanceof Throwable) {
             executionCallback.onFailure((Throwable) response);
         } else {
+            //noinspection unchecked
             executionCallback.onResponse(response);
         }
     }

@@ -16,10 +16,9 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.core.Function;
 import com.hazelcast.nio.serialization.Data;
 
-public class AtomicReferenceWrapper {
+public class ReferenceWrapper {
 
     private Data value;
 

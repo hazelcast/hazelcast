@@ -31,10 +31,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author mdogan 5/14/13
- */
-
 public final class CountDownRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     private String name;
@@ -81,6 +77,7 @@ public final class CountDownRequest extends KeyBasedClientRequest implements Por
         name = reader.readUTF("name");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new CountDownLatchPermission(name, ActionConstants.ACTION_READ);
     }

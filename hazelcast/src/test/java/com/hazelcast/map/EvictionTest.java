@@ -268,7 +268,9 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
+    //this test is flawed because it assumes to out map entries in a certain amount of time.
     @Test
+    @Category(ProblematicTest.class)
     public void testEvictionSpeedTestPerPartition() {
         final int k = 2;
         final int size = 100;
@@ -634,6 +636,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMapPutTtlWithListener() throws InterruptedException {
         Config cfg = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);

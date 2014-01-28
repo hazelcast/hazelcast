@@ -24,11 +24,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: sancar
- * Date: 12/28/12
- * Time: 2:26 PM
- */
 public class AtomicLongReplicationOperation extends AbstractOperation {
 
     private Map<String, Long> migrationData;
@@ -40,19 +35,23 @@ public class AtomicLongReplicationOperation extends AbstractOperation {
         this.migrationData = migrationData;
     }
 
+    @Override
     public void run() throws Exception {
         AtomicLongService atomicLongService = getService();
         for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
-            atomicLongService.getNumber(longEntry.getKey()).set(longEntry.getValue());
+            String name = longEntry.getKey();
+            LongWrapper number = atomicLongService.getNumber(name);
+            Long value = longEntry.getValue();
+            number.set(value);
         }
-
     }
 
+    @Override
     public String getServiceName() {
         return AtomicLongService.SERVICE_NAME;
     }
 
-
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Long> entry : migrationData.entrySet()) {
@@ -61,6 +60,7 @@ public class AtomicLongReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, Long>(mapSize);

@@ -16,11 +16,11 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,6 +32,9 @@ import com.hazelcast.security.permission.AtomicReferencePermission;
 
 import java.io.IOException;
 import java.security.Permission;
+
+import static com.hazelcast.nio.IOUtil.readNullableData;
+import static com.hazelcast.nio.IOUtil.writeNullableData;
 
 public abstract class ModifyRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
@@ -48,8 +51,9 @@ public abstract class ModifyRequest extends PartitionClientRequest implements Po
 
     @Override
     protected int getPartition() {
-        Data key = getClientEngine().getSerializationService().toData(name);
-        return getClientEngine().getPartitionService().getPartitionId(key);
+        ClientEngine clientEngine = getClientEngine();
+        Data key = clientEngine.getSerializationService().toData(name);
+        return clientEngine.getPartitionService().getPartitionId(key);
     }
 
     @Override
@@ -70,15 +74,15 @@ public abstract class ModifyRequest extends PartitionClientRequest implements Po
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, update);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        writeNullableData(out, update);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         ObjectDataInput in = reader.getRawDataInput();
-        update = IOUtil.readNullableData(in);
+        update = readNullableData(in);
     }
 
     @Override

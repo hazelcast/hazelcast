@@ -32,9 +32,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-/**
- * @author mdogan 5/13/13
- */
 public final class TargetCallableRequest extends TargetClientRequest implements Portable {
 
     private String name;
@@ -53,7 +50,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
     @SuppressWarnings("unchecked")
     @Override
     protected Operation prepareOperation() {
-        final SecurityContext securityContext = getClientEngine().getSecurityContext();
+        SecurityContext securityContext = getClientEngine().getSecurityContext();
         if (securityContext != null) {
             callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
         }
@@ -75,24 +72,25 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
         return ExecutorPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ExecutorPortableHook.TARGET_CALLABLE_REQUEST;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
+        ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
         rawDataOutput.writeObject(callable);
         target.writeData(rawDataOutput);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        final ObjectDataInput rawDataInput = reader.getRawDataInput();
+        ObjectDataInput rawDataInput = reader.getRawDataInput();
         callable = rawDataInput.readObject();
         target = new Address();
         target.readData(rawDataInput);
     }
-
-
 }

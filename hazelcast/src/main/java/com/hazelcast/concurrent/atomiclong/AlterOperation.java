@@ -29,7 +29,7 @@ public class AlterOperation extends AbstractAlterOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicLongWrapper reference = getNumber();
+        LongWrapper reference = getNumber();
 
         long input = reference.get();
         long output = function.apply(input);

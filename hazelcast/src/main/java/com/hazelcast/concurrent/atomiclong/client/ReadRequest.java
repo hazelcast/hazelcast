@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
@@ -30,9 +31,10 @@ import com.hazelcast.security.permission.AtomicLongPermission;
 import java.io.IOException;
 import java.security.Permission;
 
-public abstract class ReadRequest extends PartitionClientRequest implements Portable, SecureRequest {
+public abstract class ReadRequest extends PartitionClientRequest
+        implements Portable, SecureRequest {
 
-    String name;
+    protected String name;
 
     public ReadRequest() {
     }
@@ -43,8 +45,9 @@ public abstract class ReadRequest extends PartitionClientRequest implements Port
 
     @Override
     protected int getPartition() {
-        Data key = getClientEngine().getSerializationService().toData(name);
-        return getClientEngine().getPartitionService().getPartitionId(key);
+        ClientEngine clientEngine = getClientEngine();
+        Data key = clientEngine.getSerializationService().toData(name);
+        return clientEngine.getPartitionService().getPartitionId(key);
     }
 
     @Override

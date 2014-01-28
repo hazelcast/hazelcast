@@ -16,9 +16,6 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-/**
- * @author ali 1/23/13
- */
 public class DeadMemberBackupOperation extends SemaphoreBackupOperation {
 
     public DeadMemberBackupOperation() {
@@ -30,7 +27,8 @@ public class DeadMemberBackupOperation extends SemaphoreBackupOperation {
 
     @Override
     public void run() throws Exception {
-        getPermit().memberRemoved(firstCaller);
+        Permit permit = getPermit();
+        permit.memberRemoved(firstCaller);
         response = true;
     }
 }

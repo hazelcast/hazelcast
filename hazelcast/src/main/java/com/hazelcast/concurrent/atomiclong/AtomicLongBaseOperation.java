@@ -23,8 +23,8 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-// author: sancar - 24.12.2012
-public abstract class AtomicLongBaseOperation extends Operation implements PartitionAwareOperation {
+public abstract class AtomicLongBaseOperation extends Operation
+        implements PartitionAwareOperation {
 
     protected String name;
 
@@ -35,14 +35,17 @@ public abstract class AtomicLongBaseOperation extends Operation implements Parti
         this.name = name;
     }
 
-    public AtomicLongWrapper getNumber() {
-        return ((AtomicLongService) getService()).getNumber(name);
+    public LongWrapper getNumber() {
+        AtomicLongService service = getService();
+        return service.getNumber(name);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
     }
@@ -63,6 +66,5 @@ public abstract class AtomicLongBaseOperation extends Operation implements Parti
     @Override
     public boolean returnsResponse() {
         return true;
-    }
-
+   }
 }

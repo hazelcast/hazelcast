@@ -30,7 +30,8 @@ public class IsNullOperation extends AtomicReferenceBaseOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getReference().isNull();
+        ReferenceWrapper reference = getReference();
+        returnValue = reference.isNull();
     }
 
     @Override

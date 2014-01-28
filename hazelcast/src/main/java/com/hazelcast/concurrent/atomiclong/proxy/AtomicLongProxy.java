@@ -24,11 +24,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-/**
- * User: sancar
- * Date: 2/26/13
- * Time: 12:22 PM
- */
 public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements AsyncAtomicLong {
 
     private final String name;
@@ -43,7 +38,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
         try {
             OperationService operationService = getNodeEngine().getOperationService();
-            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(AtomicLongService.SERVICE_NAME, operation, partitionId);
+            //noinspection unchecked
+            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(
+                    AtomicLongService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
@@ -213,9 +210,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("IAtomicLong{");
-        sb.append("name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "IAtomicLong{" + "name='" + name + '\'' + '}';
     }
 }

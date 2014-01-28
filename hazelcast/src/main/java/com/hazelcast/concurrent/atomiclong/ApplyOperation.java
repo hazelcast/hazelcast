@@ -24,8 +24,8 @@ import java.io.IOException;
 
 public class ApplyOperation<R> extends AtomicLongBaseOperation {
 
-    protected Function<Long,R> function;
-    protected R returnValue;
+    private Function<Long,R> function;
+    private R returnValue;
 
     public ApplyOperation() {
     }
@@ -37,7 +37,7 @@ public class ApplyOperation<R> extends AtomicLongBaseOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicLongWrapper number = getNumber();
+        LongWrapper number = getNumber();
         returnValue = function.apply(number.get());
     }
 

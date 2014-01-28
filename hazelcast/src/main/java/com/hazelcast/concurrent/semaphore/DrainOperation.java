@@ -18,9 +18,6 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 1/22/13
- */
 public class DrainOperation extends SemaphoreBackupAwareOperation {
 
     public DrainOperation() {
@@ -32,7 +29,8 @@ public class DrainOperation extends SemaphoreBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        response = getPermit().drain(getCallerUuid());
+        Permit permit = getPermit();
+        response = permit.drain(getCallerUuid());
     }
 
     @Override

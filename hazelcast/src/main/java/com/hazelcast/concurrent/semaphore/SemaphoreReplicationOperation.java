@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author ali 1/22/13
- */
 public class SemaphoreReplicationOperation extends AbstractOperation {
 
     Map<String, Permit> migrationData;
@@ -42,7 +39,7 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
     public void run() throws Exception {
         SemaphoreService service = getService();
         for (Permit permit : migrationData.values()) {
-            permit.setInitialized(true);
+            permit.setInitialized();
         }
         service.insertMigrationData(migrationData);
     }
@@ -51,8 +48,10 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Permit> entry : migrationData.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
+            String key = entry.getKey();
+            out.writeUTF(key);
+            Permit value = entry.getValue();
+            value.writeData(out);
         }
     }
 

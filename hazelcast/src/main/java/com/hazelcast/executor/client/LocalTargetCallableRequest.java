@@ -30,9 +30,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-/**
- * @author ali 5/26/13
- */
 public final class LocalTargetCallableRequest extends TargetClientRequest implements Portable {
 
     private String name;
@@ -48,7 +45,7 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
 
     @Override
     protected Operation prepareOperation() {
-        final SecurityContext securityContext = getClientEngine().getSecurityContext();
+        SecurityContext securityContext = getClientEngine().getSecurityContext();
         if (securityContext != null){
             callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
         }
@@ -70,18 +67,20 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
         return ExecutorPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ExecutorPortableHook.LOCAL_TARGET_CALLABLE_REQUEST;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.getRawDataOutput().writeObject(callable);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         callable = reader.getRawDataInput().readObject();
     }
-
 }

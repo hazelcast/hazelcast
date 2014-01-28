@@ -31,11 +31,8 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author mdogan 5/14/13
- */
-
-public final class SetCountRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public final class SetCountRequest extends KeyBasedClientRequest
+        implements Portable, SecureRequest {
 
     private String name;
     private int count;
@@ -85,6 +82,7 @@ public final class SetCountRequest extends KeyBasedClientRequest implements Port
         count = reader.readInt("count");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new CountDownLatchPermission(name, ActionConstants.ACTION_MODIFY);
     }

@@ -20,6 +20,7 @@ import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
 
 public class ReducerTask<Key, Chunk>
         implements Runnable {
@@ -87,8 +90,11 @@ public class ReducerTask<Key, Chunk>
                 reduceChunk(reducerChunk.chunk);
                 processProcessedState(reducerChunk);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Throwable t) {
+            notifyRemoteException(supervisor, t);
+            if (t instanceof Error) {
+                ExceptionUtil.sneakyThrow(t);
+            }
         } finally {
             active.compareAndSet(true, false);
         }

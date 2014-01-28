@@ -20,9 +20,6 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-/**
- * @author ali 1/22/13
- */
 public class ReleaseOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
     public ReleaseOperation() {
@@ -34,7 +31,8 @@ public class ReleaseOperation extends SemaphoreBackupAwareOperation implements N
 
     @Override
     public void run() throws Exception {
-        getPermit().release(permitCount, getCallerUuid());
+        Permit permit = getPermit();
+        permit.release(permitCount, getCallerUuid());
         response = true;
     }
 

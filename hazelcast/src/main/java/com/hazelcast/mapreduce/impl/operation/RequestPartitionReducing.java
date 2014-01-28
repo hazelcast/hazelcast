@@ -35,7 +35,7 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 public class RequestPartitionReducing
         extends ProcessingOperation {
 
-    protected volatile RequestPartitionResult result;
+    private volatile RequestPartitionResult result;
 
     private transient int partitionId;
 

@@ -33,7 +33,7 @@ public class CancelJobSupervisorOperation
     public CancelJobSupervisorOperation() {
     }
 
-    public CancelJobSupervisorOperation(String name, String jobId, Address jobOwner) {
+    public CancelJobSupervisorOperation(String name, String jobId) {
         super(name, jobId);
     }
 
