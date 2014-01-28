@@ -64,7 +64,6 @@ public abstract class HazelcastTestSupport {
         }
 
         printAllStackTraces();
-
         throw error;
     }
 
