@@ -26,6 +26,9 @@ public class StringAndPartitionAwarePartitioningStrategy implements Partitioning
     public final static StringAndPartitionAwarePartitioningStrategy INSTANCE
             = new StringAndPartitionAwarePartitioningStrategy();
 
+    //we don't want instance.
+    private StringAndPartitionAwarePartitioningStrategy(){}
+
     @Override
     public Object getPartitionKey(Object key) {
         if (key instanceof String) {
