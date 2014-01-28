@@ -26,6 +26,7 @@ import java.net.URLDecoder;
 import java.util.logging.Level;
 
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
 
@@ -108,7 +109,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
                 } else if (oldValue instanceof byte[]) {
                     entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(((byte[]) oldValue), setCommand.getValue()), 0);
                 } else if (oldValue instanceof String) {
-                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(((String) oldValue).getBytes(), setCommand.getValue()), 0);
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(stringToBytes((String) oldValue), setCommand.getValue()), 0);
                 } else {
                     try {
                         entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(textCommandService.toByteArray(oldValue), setCommand.getValue()), 0);
@@ -142,7 +143,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
                 } else if (oldValue instanceof byte[]) {
                     entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), ((byte[]) oldValue)), 0);
                 } else if (oldValue instanceof String) {
-                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), ((String) oldValue).getBytes()), 0);
+                    entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), stringToBytes((String) oldValue)), 0);
                 } else {
                     try {
                         entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), textCommandService.toByteArray(oldValue)), 0);

@@ -21,26 +21,28 @@ import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class StatsCommand extends AbstractTextCommand {
     ByteBuffer response;
-    static final byte[] STAT = "STAT ".getBytes();
-    static final byte[] UPTIME = "uptime ".getBytes();
-    static final byte[] BYTES = "bytes ".getBytes();
-    static final byte[] CMD_SET = "cmd_set ".getBytes();
-    static final byte[] CMD_GET = "cmd_get ".getBytes();
-    static final byte[] CMD_TOUCH = "cmd_touch ".getBytes();
-    static final byte[] THREADS = "threads ".getBytes();
-    static final byte[] WAITING_REQUESTS = "waiting_requests ".getBytes();
-    static final byte[] GET_HITS = "get_hits ".getBytes();
-    static final byte[] GET_MISSES = "get_misses ".getBytes();
-    static final byte[] DELETE_HITS = "delete_hits ".getBytes();
-    static final byte[] DELETE_MISSES = "delete_misses ".getBytes();
-    static final byte[] INCR_HITS = "incr_hits ".getBytes();
-    static final byte[] INCR_MISSES = "incr_misses ".getBytes();
-    static final byte[] DECR_HITS = "decr_hits ".getBytes();
-    static final byte[] DECR_MISSES = "decr_misses ".getBytes();
-    static final byte[] CURR_CONNECTIONS = "curr_connections ".getBytes();
-    static final byte[] TOTAL_CONNECTIONS = "total_connections ".getBytes();
+    static final byte[] STAT = stringToBytes("STAT ");
+    static final byte[] UPTIME = stringToBytes("uptime ");
+    static final byte[] BYTES = stringToBytes("bytes ");
+    static final byte[] CMD_SET = stringToBytes("cmd_set ");
+    static final byte[] CMD_GET = stringToBytes("cmd_get ");
+    static final byte[] CMD_TOUCH = stringToBytes("cmd_touch ");
+    static final byte[] THREADS = stringToBytes("threads ");
+    static final byte[] WAITING_REQUESTS = stringToBytes("waiting_requests ");
+    static final byte[] GET_HITS = stringToBytes("get_hits ");
+    static final byte[] GET_MISSES = stringToBytes("get_misses ");
+    static final byte[] DELETE_HITS = stringToBytes("delete_hits ");
+    static final byte[] DELETE_MISSES = stringToBytes("delete_misses ");
+    static final byte[] INCR_HITS = stringToBytes("incr_hits ");
+    static final byte[] INCR_MISSES = stringToBytes("incr_misses ");
+    static final byte[] DECR_HITS = stringToBytes("decr_hits ");
+    static final byte[] DECR_MISSES = stringToBytes("decr_misses ");
+    static final byte[] CURR_CONNECTIONS = stringToBytes("curr_connections ");
+    static final byte[] TOTAL_CONNECTIONS = stringToBytes("total_connections ");
 
     public StatsCommand() {
         super(TextCommandType.STATS);
@@ -76,14 +78,14 @@ public class StatsCommand extends AbstractTextCommand {
     private void putInt(byte[] name, int value) {
         response.put(STAT);
         response.put(name);
-        response.put(String.valueOf(value).getBytes());
+        response.put(stringToBytes(String.valueOf(value)));
         response.put(RETURN);
     }
 
     private void putLong(byte[] name, long value) {
         response.put(STAT);
         response.put(name);
-        response.put(String.valueOf(value).getBytes());
+        response.put(stringToBytes(String.valueOf(value)));
         response.put(RETURN);
     }
 

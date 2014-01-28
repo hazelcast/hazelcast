@@ -26,6 +26,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public final class Address implements IdentifiedDataSerializable {
 
     public static final int ID = 1;
@@ -81,7 +84,7 @@ public final class Address implements IdentifiedDataSerializable {
         out.writeInt(port);
         out.write(type);
         if (host != null) {
-            byte[] address = host.getBytes();
+            byte[] address = stringToBytes(host);
             out.writeInt(address.length);
             out.write(address);
         } else {
@@ -96,7 +99,7 @@ public final class Address implements IdentifiedDataSerializable {
         if (len > 0) {
             byte[] address = new byte[len];
             in.readFully(address);
-            host = new String(address);
+            host = bytesToString(address);
         }
     }
 

@@ -16,23 +16,25 @@
 
 package com.hazelcast.ascii;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public interface TextCommandConstants {
     final static int MONTH_SECONDS = 60 * 60 * 24 * 30;
 
-    final static byte[] SPACE = new String(" ").getBytes();
-    final static byte[] RETURN = new String("\r\n").getBytes();
-    final static byte[] FLAG_ZERO = new String(" 0 ").getBytes();
-    final static byte[] VALUE_SPACE = new String("VALUE ").getBytes();
-    final static byte[] DELETED = new String("DELETED\r\n").getBytes();
-    final static byte[] STORED = new String("STORED\r\n").getBytes();
-    final static byte[] TOUCHED = new String("TOUCHED\r\n").getBytes();
-    final static byte[] NOT_STORED = new String("NOT_STORED\r\n").getBytes();
-    final static byte[] NOT_FOUND = new String("NOT_FOUND\r\n").getBytes();
-    final static byte[] RETURN_END = new String("\r\nEND\r\n").getBytes();
-    final static byte[] END = new String("END\r\n").getBytes();
-    final static byte[] ERROR = new String("ERROR").getBytes();
-    final static byte[] CLIENT_ERROR = new String("CLIENT_ERROR ").getBytes();
-    final static byte[] SERVER_ERROR = new String("SERVER_ERROR ").getBytes();
+    final static byte[] SPACE = stringToBytes(" ");
+    final static byte[] RETURN = stringToBytes("\r\n");
+    final static byte[] FLAG_ZERO = stringToBytes(" 0 ");
+    final static byte[] VALUE_SPACE = stringToBytes("VALUE ");
+    final static byte[] DELETED = stringToBytes("DELETED\r\n");
+    final static byte[] STORED = stringToBytes("STORED\r\n");
+    final static byte[] TOUCHED = stringToBytes("TOUCHED\r\n");
+    final static byte[] NOT_STORED = stringToBytes("NOT_STORED\r\n");
+    final static byte[] NOT_FOUND = stringToBytes("NOT_FOUND\r\n");
+    final static byte[] RETURN_END = stringToBytes("\r\nEND\r\n");
+    final static byte[] END = stringToBytes("END\r\n");
+    final static byte[] ERROR = stringToBytes("ERROR");
+    final static byte[] CLIENT_ERROR = stringToBytes("CLIENT_ERROR ");
+    final static byte[] SERVER_ERROR = stringToBytes("SERVER_ERROR ");
 
     enum TextCommandType {
         GET((byte) 0),

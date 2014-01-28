@@ -28,6 +28,14 @@ public final class StringUtil {
     private StringUtil() {
     }
 
+    public static String bytesToString(byte[] bytes){
+        return new String(bytes);
+    }
+
+    public static byte[] stringToBytes(String s){
+        return s.getBytes();
+    }
+
     public static boolean isNullOrEmpty(String s){
         if(s == null){
             return true;

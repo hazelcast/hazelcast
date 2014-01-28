@@ -20,6 +20,8 @@ import com.hazelcast.ascii.AbstractTextCommand;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 /**
  * User: sancar
  * Date: 3/7/13
@@ -27,7 +29,7 @@ import java.nio.ByteBuffer;
  */
 public class VersionCommand extends AbstractTextCommand {
 
-    public static final byte[] version = "VERSION Hazelcast\r\n".getBytes();
+    public static final byte[] version = stringToBytes("VERSION Hazelcast\r\n");
 
     protected VersionCommand(TextCommandType type) {
         super(type);
