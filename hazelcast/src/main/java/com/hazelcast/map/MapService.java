@@ -723,7 +723,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
         // this info is created to be used in backups.
         // we added following latency (10 seconds) to be sure the ongoing migration is completed if the owner of the record could not complete task before migration
-        int delay = 10000;
+        int delay = getNodeEngine().getGroupProperties().REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(key);
         long idleDelay = idleScheduledEntry == null ? -1 : delay + findDelayMillis(idleScheduledEntry);
 
@@ -743,7 +743,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public RecordInfo createRecordInfo(MapContainer mapContainer, Record record, Data key) {
         // this info is created to be used in backups.
         // we added following latency (10 seconds) to be sure the ongoing promotion is completed if the owner of the record could not complete task before promotion
-        int backupDelay = 10000;
+        int backupDelay = getNodeEngine().getGroupProperties().REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(record.getKey());
         long idleDelay = idleScheduledEntry == null ? -1 : backupDelay + findDelayMillis(idleScheduledEntry);
 

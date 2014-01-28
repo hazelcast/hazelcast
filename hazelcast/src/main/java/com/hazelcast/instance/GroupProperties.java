@@ -18,7 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.util.HealthMonitorLevel;
-import com.hazelcast.util.VersionCheck;
 
 /**
  * The GroupProperties contain the Hazelcast properties. They can be set as an environmental variable, or
@@ -68,6 +67,7 @@ public class GroupProperties {
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
+    public static final String PROP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS = "hazelcast.backup.wait.seconds.for.scheduled.tasks";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
@@ -175,6 +175,8 @@ public class GroupProperties {
 
     public final GroupProperty INITIAL_MIN_CLUSTER_SIZE;
 
+    public final GroupProperty REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS;
+
     public final GroupProperty PARTITION_COUNT;
 
     public final GroupProperty LOGGING_TYPE;
@@ -263,6 +265,7 @@ public class GroupProperties {
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
+        REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS = new GroupProperty(config, PROP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "10");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
