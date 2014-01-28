@@ -35,6 +35,8 @@ import java.util.Arrays;
  */
 final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
+    private final static long serialVersionUID = 1;
+
     private Operation backupOp;
     private Address originalCaller;
     private long[] replicaVersions;

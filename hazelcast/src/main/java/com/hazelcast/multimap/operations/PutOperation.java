@@ -36,6 +36,8 @@ import java.util.List;
  */
 public class PutOperation extends MultiMapBackupAwareOperation {
 
+    private final static long serialVersionUID = 1;
+
     Data value;
 
     int index = -1;

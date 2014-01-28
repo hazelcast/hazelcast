@@ -29,6 +29,8 @@ import java.io.IOException;
  */
 public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
+    private final static long serialVersionUID = 1;
+
     private Data value;
 
     private transient long itemId = -1;

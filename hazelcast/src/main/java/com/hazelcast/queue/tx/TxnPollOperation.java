@@ -33,6 +33,8 @@ import java.io.IOException;
  */
 public class TxnPollOperation extends QueueBackupAwareOperation implements Notifier {
 
+    private final static long serialVersionUID = 1;
+
     long itemId;
 
     transient Data data;

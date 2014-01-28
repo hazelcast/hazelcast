@@ -25,9 +25,10 @@ import java.io.IOException;
 
 public class ReplaceIfSameOperation extends BasePutOperation {
 
+    private final static long serialVersionUID = 1;
+
     private Data testValue;
     private transient boolean successful = false;
-
 
     public ReplaceIfSameOperation(String name, Data dataKey, Data testValue, Data value) {
         super(name, dataKey, value);

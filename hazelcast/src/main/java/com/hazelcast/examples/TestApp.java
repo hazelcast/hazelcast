@@ -467,6 +467,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private static class SimulateLoadTask implements Callable,Serializable, HazelcastInstanceAware{
+
+        private final static long serialVersionUID = 1;
+
         private final int delay;
         private final int taskId;
         private final String latchId;

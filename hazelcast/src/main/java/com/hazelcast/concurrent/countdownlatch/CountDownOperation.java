@@ -21,6 +21,8 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 public class CountDownOperation extends BackupAwareCountDownLatchOperation implements Notifier {
 
+    private final static long serialVersionUID = 1;
+
     private transient boolean shouldNotify;
 
     public CountDownOperation() {

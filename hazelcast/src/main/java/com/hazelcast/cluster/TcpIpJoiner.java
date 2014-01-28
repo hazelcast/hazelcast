@@ -87,6 +87,8 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public static class MasterClaim extends AbstractOperation implements JoinOperation {
 
+        private final static long serialVersionUID = 1;
+
         private transient boolean approvedAsMaster = false;
 
         @Override

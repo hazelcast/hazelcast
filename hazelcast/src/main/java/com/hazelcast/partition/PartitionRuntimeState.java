@@ -30,6 +30,7 @@ import java.util.*;
  * @author mdogan 5/7/12
  */
 public class PartitionRuntimeState implements DataSerializable {
+    private final static long serialVersionUID = 1;
 
     protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
 

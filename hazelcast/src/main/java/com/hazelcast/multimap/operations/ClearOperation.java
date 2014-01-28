@@ -34,6 +34,9 @@ import java.util.Map;
  */
 public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
+
+    private final static long serialVersionUID = 1;
+
     transient Map<Data, Collection<MultiMapRecord>> objects;
 
     public ClearOperation() {

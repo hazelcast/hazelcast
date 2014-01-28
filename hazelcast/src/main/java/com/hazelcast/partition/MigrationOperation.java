@@ -33,6 +33,8 @@ import java.util.logging.Level;
 
 public final class MigrationOperation extends BaseMigrationOperation {
 
+    private final static long serialVersionUID = 1;
+
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ErrorResponseHandler();
 
     private long[] replicaVersions;

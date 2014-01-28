@@ -25,6 +25,8 @@ import java.io.IOException;
 
 public class RemoveIfSameOperation extends BaseRemoveOperation {
 
+    private final static long serialVersionUID = 1;
+
     private Data testValue;
     private transient boolean successful = false;
 

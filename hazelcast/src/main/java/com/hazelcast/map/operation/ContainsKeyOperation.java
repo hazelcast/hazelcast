@@ -20,6 +20,8 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ContainsKeyOperation extends KeyBasedMapOperation {
 
+    private final static long serialVersionUID = 1;
+
     private transient boolean containsKey;
 
     public ContainsKeyOperation() {

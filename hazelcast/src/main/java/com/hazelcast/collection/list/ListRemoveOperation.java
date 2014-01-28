@@ -33,6 +33,8 @@ import java.io.IOException;
  */
 public class ListRemoveOperation extends CollectionBackupAwareOperation {
 
+    private final static long serialVersionUID = 1;
+
     private int index;
 
     private transient long itemId;

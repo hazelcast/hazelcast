@@ -23,6 +23,8 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 public final class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable, ReadonlyOperation {
 
+    private final static long serialVersionUID = 1;
+
     private transient Data result;
 
     public GetOperation() {

@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class QueryResultSet extends AbstractSet implements IdentifiedDataSerializable {
 
+    private final static long serialVersionUID = 1;
+
     private transient final SerializationService serializationService;
 
     private final Set<QueryResultEntry> entries = Collections.newSetFromMap(new ConcurrentHashMap<QueryResultEntry, Boolean>());

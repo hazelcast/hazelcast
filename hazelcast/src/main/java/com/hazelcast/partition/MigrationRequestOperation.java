@@ -37,6 +37,8 @@ import java.util.logging.Level;
 
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
+    private final static long serialVersionUID = 1;
+
     private transient boolean returnResponse = true;
 
     public MigrationRequestOperation() {
