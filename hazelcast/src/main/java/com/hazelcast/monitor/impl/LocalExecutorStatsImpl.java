@@ -57,34 +57,42 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         cancelled.incrementAndGet();
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
 
+    @Override
     public long getPendingTaskCount() {
         return pending.get();
     }
 
+    @Override
     public long getStartedTaskCount() {
         return started.get();
     }
 
+    @Override
     public long getCompletedTaskCount() {
         return completed.get();
     }
 
+    @Override
     public long getCancelledTaskCount() {
         return cancelled.get();
     }
 
+    @Override
     public long getTotalStartLatency() {
         return totalStartLatency.get();
     }
 
+    @Override
     public long getTotalExecutionLatency() {
         return totalExecutionTime.get();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(pending.get());
@@ -94,6 +102,7 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         out.writeLong(totalExecutionTime.get());
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
         pending.set(in.readLong());

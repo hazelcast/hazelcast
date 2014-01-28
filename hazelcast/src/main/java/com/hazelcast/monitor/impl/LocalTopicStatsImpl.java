@@ -34,22 +34,26 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         creationTime = Clock.currentTimeMillis();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(totalPublishes.get());
         out.writeLong(totalReceivedMessages.get());
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
         totalPublishes.set(in.readLong());
         totalReceivedMessages.set(in.readLong());
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
 
+    @Override
     public long getPublishOperationCount() {
         return totalPublishes.get();
     }
@@ -58,6 +62,7 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         totalPublishes.incrementAndGet();
     }
 
+    @Override
     public long getReceiveOperationCount() {
         return totalReceivedMessages.get();
     }
