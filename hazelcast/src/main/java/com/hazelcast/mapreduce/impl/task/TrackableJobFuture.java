@@ -34,6 +34,7 @@ import com.hazelcast.util.ValidationUtil;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -46,6 +47,7 @@ public class TrackableJobFuture<V>
     private final String jobId;
     private final JobTracker jobTracker;
     private final Collator collator;
+    private final CountDownLatch latch;
     private final MapReduceService mapReduceService;
 
     private volatile boolean cancelled;
@@ -57,6 +59,7 @@ public class TrackableJobFuture<V>
         this.jobId = jobId;
         this.jobTracker = jobTracker;
         this.collator = collator;
+        this.latch = new CountDownLatch(1);
         this.mapReduceService = ((NodeEngineImpl) nodeEngine).getService(MapReduceService.SERVICE_NAME);
     }
 
@@ -70,6 +73,7 @@ public class TrackableJobFuture<V>
             result = new ExecutionException((Throwable) result);
         }
         super.setResult(result);
+        latch.countDown();
     }
 
     @Override
@@ -95,17 +99,9 @@ public class TrackableJobFuture<V>
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         ValidationUtil.isNotNull(unit, "unit");
-        long deadline = timeout == 0L ? -1 : Clock.currentTimeMillis() + unit.toMillis(timeout);
-        for (; ; ) {
-            Thread.sleep(100);
-            if (isDone()) {
-                break;
-            }
-
-            long delta = deadline - Clock.currentTimeMillis();
-            if (delta <= 0L) {
-                throw new TimeoutException("timeout reached");
-            }
+        latch.await(timeout, unit);
+        if (!isDone()) {
+            throw new TimeoutException("timeout reached");
         }
         return getResult();
     }
