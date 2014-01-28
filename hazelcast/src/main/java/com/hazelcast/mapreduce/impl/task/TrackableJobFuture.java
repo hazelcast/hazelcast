@@ -28,7 +28,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.Arrays;
