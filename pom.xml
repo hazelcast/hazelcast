@@ -438,7 +438,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <parallel>none</parallel>
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
