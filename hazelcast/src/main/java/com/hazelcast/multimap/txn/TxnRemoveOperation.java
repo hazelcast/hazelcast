@@ -35,11 +35,9 @@ import java.util.Iterator;
  */
 public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
     long recordId;
     Data value;
-    transient long begin = -1;
+    long begin = -1;
 
     public TxnRemoveOperation() {
     }

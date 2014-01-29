@@ -24,11 +24,9 @@ import java.io.IOException;
 
 public final class CancellationOperation extends Operation {
 
-    private final static long serialVersionUID = 1;
-
     private String uuid;
     private boolean interrupt;
-    private transient boolean response;
+    private boolean response;
 
     public CancellationOperation() {
     }

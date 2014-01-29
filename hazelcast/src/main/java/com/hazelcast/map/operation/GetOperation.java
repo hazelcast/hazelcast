@@ -21,11 +21,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ReadonlyOperation;
 
-public final class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable, ReadonlyOperation {
+public final class GetOperation extends KeyBasedMapOperation
+        implements IdentifiedDataSerializable, ReadonlyOperation {
 
-    private final static long serialVersionUID = 1;
-
-    private transient Data result;
+    private Data result;
 
     public GetOperation() {
     }

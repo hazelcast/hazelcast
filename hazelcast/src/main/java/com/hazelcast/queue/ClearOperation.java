@@ -29,9 +29,7 @@ import java.util.Map;
  */
 public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private final static long serialVersionUID = 1;
-
-    private transient Map<Long, Data> dataMap;
+    private Map<Long, Data> dataMap;
 
     public ClearOperation() {
     }

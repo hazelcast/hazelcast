@@ -32,13 +32,9 @@ import java.util.Set;
  */
 public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
     private boolean retain;
-    
     private Set<Data> valueSet;
-
-    private transient Map<Long, Data> itemIdMap;
+    private Map<Long, Data> itemIdMap;
 
     public CollectionCompareAndRemoveOperation() {
     }

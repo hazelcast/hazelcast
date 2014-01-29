@@ -37,11 +37,9 @@ import java.util.LinkedList;
  */
 public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
     Collection<Long> recordIds;
-    transient long begin = -1;
-    transient Collection<MultiMapRecord> removed;
+    long begin = -1;
+    Collection<MultiMapRecord> removed;
 
     public TxnRemoveAllOperation() {
     }

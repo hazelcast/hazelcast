@@ -30,11 +30,9 @@ import java.io.IOException;
 
 public class MergeOperation extends BasePutOperation {
 
-    private final static long serialVersionUID = 1;
-
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
-    private transient boolean merged = false;
+    private boolean merged = false;
 
     public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView, MapMergePolicy policy) {
         super(name, dataKey, null);

@@ -29,11 +29,8 @@ import java.io.IOException;
  */
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
-    private final static long serialVersionUID = 1;
-
     private JoinRequest joinRequest;
-
-    private transient JoinRequest response;
+    private JoinRequest response;
 
     public JoinCheckOperation() {
     }

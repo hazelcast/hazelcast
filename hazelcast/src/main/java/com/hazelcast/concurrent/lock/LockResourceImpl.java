@@ -27,8 +27,6 @@ import java.util.*;
 
 final class LockResourceImpl implements DataSerializable, LockResource {
 
-    private final static long serialVersionUID = 1;
-
     private static boolean isNullOrEmpty(Collection c) {
         return c == null || c.isEmpty();
     }
@@ -49,7 +47,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
 
-    private transient LockStoreImpl lockStore;
+    private LockStoreImpl lockStore;
 
     public LockResourceImpl() {
     }

@@ -34,13 +34,11 @@ import java.io.IOException;
  * Date: 11/14/12
  * Time: 12:14 AM
  */
-public final class OfferOperation extends QueueBackupAwareOperation implements WaitSupport, Notifier, IdentifiedDataSerializable {
-
-    private final static long serialVersionUID = 1;
+public final class OfferOperation extends QueueBackupAwareOperation
+        implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
     private Data data;
-
-    private transient long itemId;
+    private long itemId;
 
     public OfferOperation() {
     }

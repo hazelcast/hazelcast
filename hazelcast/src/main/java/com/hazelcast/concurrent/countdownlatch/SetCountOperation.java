@@ -23,10 +23,8 @@ import java.io.IOException;
 
 public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
-    private final static long serialVersionUID = 1;
-
     private int count;
-    private transient boolean response = false;
+    private boolean response = false;
 
     public SetCountOperation() {
     }

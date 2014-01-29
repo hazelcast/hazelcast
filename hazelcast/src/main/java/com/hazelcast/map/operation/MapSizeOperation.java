@@ -22,9 +22,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 public class MapSizeOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
-    private transient int size;
+    private int size;
 
     public MapSizeOperation(String name) {
         super(name);

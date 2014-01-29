@@ -36,8 +36,6 @@ import static com.hazelcast.nio.IOUtil.decompress;
 
 public final class MigrationOperation extends BaseMigrationOperation {
 
-    private final static long serialVersionUID = 1;
-
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ResponseHandler() {
         @Override
         public void sendResponse(Object obj) {
@@ -51,7 +49,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
     };
 
     private long[] replicaVersions;
-    private transient Collection<Operation> tasks;
+    private Collection<Operation> tasks;
     private byte[] taskData;
     private int taskCount;
     private boolean compressed;

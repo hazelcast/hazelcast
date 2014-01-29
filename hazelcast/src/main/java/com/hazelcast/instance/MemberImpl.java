@@ -43,20 +43,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
-    private final static long serialVersionUID = 1;
-
     private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
 
     private boolean localMember;
     private Address address;
     private String uuid;
 
-    private transient volatile HazelcastInstanceImpl instance;
+    private volatile HazelcastInstanceImpl instance;
 
-    private transient volatile long lastRead = 0;
-    private transient volatile long lastWrite = 0;
-    private transient volatile long lastPing = 0;
-    private transient volatile ILogger logger;
+    private volatile long lastRead = 0;
+    private volatile long lastWrite = 0;
+    private volatile long lastPing = 0;
+    private volatile ILogger logger;
 
     public MemberImpl() {
     }

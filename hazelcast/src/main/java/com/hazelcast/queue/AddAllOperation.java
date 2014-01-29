@@ -36,11 +36,8 @@ import java.util.Map;
 
 public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private final static long serialVersionUID = 1;
-
     private Collection<Data> dataList;
-    private transient Map<Long, Data> dataMap;
-
+    private  Map<Long, Data> dataMap;
 
     public AddAllOperation() {
     }

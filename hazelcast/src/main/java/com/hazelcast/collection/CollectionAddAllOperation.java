@@ -30,11 +30,9 @@ import java.util.*;
  */
 public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
     protected List<Data> valueList;
 
-    protected transient Map<Long, Data> valueMap;
+    protected Map<Long, Data> valueMap;
 
     public CollectionAddAllOperation() {
     }
