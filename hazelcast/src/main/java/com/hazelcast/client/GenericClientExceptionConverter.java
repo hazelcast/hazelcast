@@ -27,6 +27,6 @@ final class GenericClientExceptionConverter implements ClientExceptionConverter 
     public Object convert(Throwable t) {
         StringWriter s = new StringWriter();
         t.printStackTrace(new PrintWriter(s));
-        return new GenericError(s.toString(), 0);
+        return new GenericError(t.getClass().getName(),t.getMessage(), s.toString(), 0);
     }
 }

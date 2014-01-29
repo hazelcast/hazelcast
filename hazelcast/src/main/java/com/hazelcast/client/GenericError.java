@@ -27,6 +27,9 @@ import java.io.IOException;
  */
 public final class GenericError implements Portable {
 
+
+    private String name;
+
     private String message;
 
     private String details;
@@ -36,12 +39,12 @@ public final class GenericError implements Portable {
     public GenericError() {
     }
 
-    public GenericError(String message, int type) {
-        this.message = message;
-        this.type = type;
+    public GenericError(String name,String message, int type) {
+        this(name,message,null,type);
     }
 
-    public GenericError(String message, String details, int type) {
+    public GenericError(String name,String message, String details, int type) {
+        this.name = name;
         this.message = message;
         this.details = details;
         this.type = type;
@@ -56,6 +59,8 @@ public final class GenericError implements Portable {
         return ClientPortableHook.GENERIC_ERROR;
     }
 
+    public String getName() { return name;    }
+
     public String getMessage() {
         return message;
     }
@@ -69,12 +74,14 @@ public final class GenericError implements Portable {
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
         writer.writeUTF("m", message);
         writer.writeUTF("d", details);
         writer.writeInt("t", type);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
         message = reader.readUTF("m");
         details = reader.readUTF("d");
         type = reader.readInt("t");
