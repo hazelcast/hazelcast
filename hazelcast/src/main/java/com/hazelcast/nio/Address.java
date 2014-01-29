@@ -33,7 +33,6 @@ public final class Address implements IdentifiedDataSerializable {
 
     public static final int ID = 1;
 
-    private static final long serialVersionUID = -7626390274220424603L;
     private static final byte IPv4 = 4;
     private static final byte IPv6 = 6;
 
@@ -41,14 +40,14 @@ public final class Address implements IdentifiedDataSerializable {
     private String host;
     private byte type;
 
-    private transient String scopeId;
-    private transient boolean hostSet;
+    private String scopeId;
+    private boolean hostSet;
 
     public Address() {
     }
 
     public Address(String host, int port) throws UnknownHostException {
-        this(host, InetAddress.getByName(host), port) ;
+        this(host, InetAddress.getByName(host), port);
         hostSet = !AddressUtil.isIpAddress(host);
     }
 
@@ -159,7 +158,7 @@ public final class Address implements IdentifiedDataSerializable {
 
     public String getScopedHost() {
         return (isIPv4() || hostSet || scopeId == null) ? getHost()
-                                             : getHost() + "%" + scopeId;
+                : getHost() + "%" + scopeId;
     }
 
     @Override

@@ -31,8 +31,6 @@ import java.util.concurrent.ConcurrentMap;
 
 final class LockStoreImpl implements DataSerializable, LockStore {
 
-    private final static long serialVersionUID = 1;
-
     private transient final ConstructorFunction<Data, LockResourceImpl> lockConstructor = new ConstructorFunction<Data, LockResourceImpl>() {
         public LockResourceImpl createNew(Data key) {
             return new LockResourceImpl(key, LockStoreImpl.this);
@@ -44,7 +42,7 @@ final class LockStoreImpl implements DataSerializable, LockStore {
     private int backupCount;
     private int asyncBackupCount;
 
-    private transient LockServiceImpl lockService;
+    private LockServiceImpl lockService;
 
     public LockStoreImpl() {
     }

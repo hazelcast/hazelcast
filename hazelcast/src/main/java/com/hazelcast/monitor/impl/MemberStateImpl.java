@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 public class MemberStateImpl implements MemberState {
-    private static final long serialVersionUID = -1817978625085375340L;
 
     Address address = new Address();
     Map<String, Long> runtimeProps = new HashMap<String, Long>();

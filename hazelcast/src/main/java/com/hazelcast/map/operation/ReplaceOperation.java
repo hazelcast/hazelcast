@@ -20,9 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ReplaceOperation extends BasePutOperation {
 
-    private final static long serialVersionUID = 1;
-
-    private transient boolean successful = false;
+    private boolean successful = false;
 
     public ReplaceOperation(String name, Data dataKey, Data value) {
         super(name, dataKey, value);

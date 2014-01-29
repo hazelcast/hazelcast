@@ -29,9 +29,7 @@ import java.util.Arrays;
  */
 public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation {
 
-    private final static long serialVersionUID = 1;
-
-    private transient Operation[] operations;
+    private Operation[] operations;
 
     public PostJoinOperation() {
     }

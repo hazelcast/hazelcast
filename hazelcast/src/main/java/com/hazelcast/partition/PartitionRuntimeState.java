@@ -30,7 +30,6 @@ import java.util.*;
  * @author mdogan 5/7/12
  */
 public class PartitionRuntimeState implements DataSerializable {
-    private final static long serialVersionUID = 1;
 
     protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
 
@@ -38,8 +37,7 @@ public class PartitionRuntimeState implements DataSerializable {
     private long masterTime = Clock.currentTimeMillis();
     private int version;
     private Collection<MigrationInfo> completedMigrations;
-
-    private transient Address endpoint;
+    private Address endpoint;
 
     public PartitionRuntimeState() {
     }

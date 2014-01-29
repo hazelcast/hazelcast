@@ -26,11 +26,9 @@ import java.io.IOException;
 public class AwaitOperation extends BaseLockOperation
         implements WaitSupport, BackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
     private String conditionId;
-    private transient boolean firstRun = false;
-    private transient boolean expired = false;
+    private boolean firstRun = false;
+    private boolean expired = false;
 
     public AwaitOperation() {
     }

@@ -30,11 +30,8 @@ import java.util.Collection;
  */
 public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
-    transient Collection<MultiMapRecord> coll;
-
-    transient long begin = -1;
+    Collection<MultiMapRecord> coll;
+    long begin = -1;
 
     public RemoveAllOperation() {
     }

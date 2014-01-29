@@ -25,10 +25,8 @@ import java.io.IOException;
 
 public class UnlockOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
     private boolean force = false;
-    private transient boolean shouldNotify;
+    private boolean shouldNotify;
 
     public UnlockOperation() {
     }

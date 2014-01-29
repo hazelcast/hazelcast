@@ -26,16 +26,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MigrationInfo implements DataSerializable {
 
-    private final static long serialVersionUID = 1;
-
     private int partitionId;
     private Address source;
     private Address destination;
     private Address master;
     private String masterUuid;
 
-    private transient final AtomicBoolean processing = new AtomicBoolean(false);
-    private transient volatile boolean valid = true;
+    private final AtomicBoolean processing = new AtomicBoolean(false);
+    private volatile boolean valid = true;
 
     public MigrationInfo() {
     }

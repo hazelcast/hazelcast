@@ -24,10 +24,8 @@ import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
 
-    private final static long serialVersionUID = 1;
-
     private long timeout;
-    private transient boolean successful = false;
+    private boolean successful = false;
 
     public TryRemoveOperation(String name, Data dataKey, long timeout) {
         super(name, dataKey);

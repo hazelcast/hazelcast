@@ -35,12 +35,10 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 public class RequestPartitionProcessed
         extends ProcessingOperation {
 
-    private final static long serialVersionUID = 1;
-
     private volatile RequestPartitionResult result;
 
-    private transient int partitionId;
-    private transient JobPartitionState.State currentState;
+    private int partitionId;
+    private JobPartitionState.State currentState;
 
     public RequestPartitionProcessed() {
     }

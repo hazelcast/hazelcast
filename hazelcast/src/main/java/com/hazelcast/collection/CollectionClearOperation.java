@@ -27,9 +27,7 @@ import java.util.Map;
  */
 public class CollectionClearOperation extends CollectionBackupAwareOperation {
 
-    private final static long serialVersionUID = 1;
-
-    private transient Map<Long, Data> itemIdMap;
+    private Map<Long, Data> itemIdMap;
 
     public CollectionClearOperation() {
     }
