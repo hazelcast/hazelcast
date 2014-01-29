@@ -95,7 +95,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final ILogger logger = Logger.getLogger(ClientClusterService.class);
-    public static int RETRY_COUNT = 20;
+    public final static int RETRY_COUNT = 20;
 
     private final HazelcastClient client;
     private final ClusterListenerThread clusterThread;

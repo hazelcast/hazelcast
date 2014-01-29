@@ -222,23 +222,6 @@ public class HealthMonitor extends Thread {
         }
     }
 
-    public static void main(String[] args)throws Exception{
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_HEALTH_MONITORING_LEVEL,HealthMonitorLevel.NOISY.name());
-        config.setProperty(GroupProperties.PROP_HEALTH_MONITORING_DELAY_SECONDS,"10");
-
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
-        Hazelcast.newHazelcastInstance(config);
-
-        IMap map =  hz1.getMap("foo");
-        for(int k=0;k<1000000000;k++){
-            map.putAsync("1","2");
-        }
-
-        System.out.println("Finished");
-        Thread.sleep(10000000);
-    }
-
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
 
     private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue) {
