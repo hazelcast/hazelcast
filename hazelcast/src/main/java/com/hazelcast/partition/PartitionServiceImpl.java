@@ -107,7 +107,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         proxy = new PartitionServiceProxy(this);
 
         replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(new ReplicaSyncInfo[partitionCount]);
-        replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
+        replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
                 new ReplicaSyncEntryProcessor(), ScheduleType.SCHEDULE_IF_NEW);
 
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new SyncReplicaVersionTask(), 30, 30, TimeUnit.SECONDS);

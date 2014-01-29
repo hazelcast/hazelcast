@@ -520,11 +520,15 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public void destroyDistributedObject(String name) {
         MapContainer mapContainer = mapContainers.remove(name);
-        if (mapContainer != null && mapContainer.isNearCacheEnabled()) {
-            NearCache nearCache = nearCacheMap.remove(name);
-            if (nearCache != null) {
-                nearCache.clear();
+        if (mapContainer != null) {
+            if(mapContainer.isNearCacheEnabled())
+            {
+                NearCache nearCache = nearCacheMap.remove(name);
+                if (nearCache != null) {
+                    nearCache.clear();
+                }
             }
+            mapContainer.shutDownMapStoreScheduledExecutor();
         }
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
