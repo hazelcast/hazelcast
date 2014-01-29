@@ -1112,7 +1112,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackup";
-        config.setProperty(GroupProperties.PROP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "50");
+        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "50");
         MapConfig writeBehindBackup = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
