@@ -42,7 +42,6 @@ class NodeJobTracker extends AbstractJobTracker {
         if (maxThreadSize <= 0) {
             maxThreadSize = Runtime.getRuntime().availableProcessors();
         }
-        int retryCount = jobTrackerConfig.getRetryCount();
         int queueSize = jobTrackerConfig.getQueueSize();
         if (queueSize <= 0) {
             queueSize = ps.getPartitionCount() * 2;

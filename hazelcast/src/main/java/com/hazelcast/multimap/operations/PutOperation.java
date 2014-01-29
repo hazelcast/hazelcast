@@ -73,7 +73,6 @@ public class PutOperation extends MultiMapBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value);
         }

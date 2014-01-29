@@ -468,13 +468,11 @@ public class AllTest {
         }, 4);
         addOperation(operations, new Runnable() {
             public void run() {
-                long begin = Clock.currentTimeMillis();
                 IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.entrySet(new SqlPredicate("year=" + random.nextInt(100))).iterator();
                 while (it.hasNext()) {
                     it.next();
                 }
-//                System.out.println("Took: " + (Clock.currentTimeMillis() - begin));
             }
         }, 1);
         addOperation(operations, new Runnable() {

@@ -224,7 +224,7 @@ public final class UTFEncoderDecoder {
     public static boolean useOldStringConstructor() {
         try {
             Class<String> clazz = String.class;
-            Constructor<String> c = clazz.getDeclaredConstructor(int.class, int.class, char[].class);
+            clazz.getDeclaredConstructor(int.class, int.class, char[].class);
             return true;
         } catch (Throwable ignore) {
         }

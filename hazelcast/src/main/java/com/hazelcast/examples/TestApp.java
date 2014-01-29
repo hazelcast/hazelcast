@@ -1271,12 +1271,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         doExecute(false, true, args);
     }
 
-    private void ex(String input) throws Exception {
-        IExecutorService executorService = hazelcast.getExecutorService("default");
-        Future<String> f = executorService.submit(new Echo(input));
-        String echoResult = f.get();
-    }
-
     private void doExecute(boolean onKey, boolean onMember, String[] args) {
         // executeOnKey <echo-string> <key>
         try {
