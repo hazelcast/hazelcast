@@ -68,7 +68,7 @@ public class SetKeyValueSource<V>
         PartitionService ps = nei.getPartitionService();
         Data data = ss.toData(setName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
-        if (!ps.getPartitionOwner(partitionId).equals(thisAddress)) {
+        if (!thisAddress.equals(ps.getPartitionOwner(partitionId))) {
             return;
         }
 
