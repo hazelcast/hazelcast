@@ -778,10 +778,11 @@ public class Config {
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
-            final Set<String> tNames = map.keySet();
-            for (final String pattern : tNames) {
+            for (Map.Entry<String,T> entry : map.entrySet()) {
+                String pattern = entry.getKey();
+                T value = entry.getValue();
                 if (nameMatches(name, pattern)) {
-                    return map.get(pattern);
+                    return value;
                 }
             }
         }

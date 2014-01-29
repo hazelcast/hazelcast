@@ -1056,12 +1056,18 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
-        if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-            listener.memberAdded(event);
-        } else if (event.getEventType() == MembershipEvent.MEMBER_REMOVED) {
-            listener.memberRemoved(event);
-        } else if (event.getEventType() == MembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
-            listener.memberAttributeChanged((MemberAttributeEvent) event);
+        switch (event.getEventType()){
+            case MembershipEvent.MEMBER_ADDED:
+                listener.memberAdded(event);
+                break;
+            case MembershipEvent.MEMBER_REMOVED:
+                listener.memberRemoved(event);
+                break;
+            case MembershipEvent.MEMBER_ATTRIBUTE_CHANGED:
+                listener.memberAttributeChanged((MemberAttributeEvent) event);
+                break;
+            default:
+                throw new IllegalArgumentException("Unhandled event:"+event);
         }
     }
 
