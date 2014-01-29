@@ -36,7 +36,7 @@ public class AllTest {
     private final AtomicInteger messagesReceived = new AtomicInteger(0);
     private final AtomicInteger messagesSend = new AtomicInteger(0);
 
-    private final int size = 10000;
+    private final static int size = 10000;
     private static final int STATS_SECONDS = 10;
 
     final Logger logger = Logger.getLogger("All-test");
