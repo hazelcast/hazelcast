@@ -601,7 +601,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleLoginModules(final Node node, final BeanDefinitionBuilder securityConfigBuilder, boolean member) {
-            final String name = (member ? "member" : "client") + "LoginModuleConfigs";
             final List lms = new ManagedList();
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
