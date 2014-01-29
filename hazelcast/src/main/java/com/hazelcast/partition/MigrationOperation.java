@@ -23,13 +23,8 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -155,7 +150,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         partitionService.addActiveMigration(migrationInfo);
     }
 
-    private BufferObjectDataInput buildMigrationTasks() throws IOException {
+    private void buildMigrationTasks() throws IOException {
         SerializationService serializationService = getNodeEngine().getSerializationService();
         BufferObjectDataInput in = serializationService.createObjectDataInput(toData());
         try {
@@ -172,7 +167,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
                         "\nfrom: " + migrationInfo.getSource() + ", partition: " + getPartitionId()
                         + ", replica: " + getReplicaIndex());
             }
-            return in;
         } finally {
             closeResource(in);
         }
@@ -187,9 +181,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private void runMigrationTask(Operation op) throws Exception {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-
-        op.setNodeEngine(nodeEngine)
+        op.setNodeEngine(getNodeEngine())
                 .setPartitionId(getPartitionId())
                 .setReplicaIndex(getReplicaIndex());
         op.setResponseHandler(ERROR_RESPONSE_HANDLER);
