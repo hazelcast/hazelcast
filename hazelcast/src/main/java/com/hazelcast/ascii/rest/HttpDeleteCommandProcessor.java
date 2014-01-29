@@ -38,7 +38,7 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
             } else {
                 String mapName = uri.substring(URI_MAPS.length(), indexEnd);
                 String key = uri.substring(indexEnd + 1);
-                Object value = textCommandService.delete(mapName, key);
+                textCommandService.delete(mapName, key);
                 command.send204();
             }
         } else if (uri.startsWith(URI_QUEUES)) {

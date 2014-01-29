@@ -228,7 +228,7 @@ public class HealthMonitor extends Thread {
         config.setProperty(GroupProperties.PROP_HEALTH_MONITORING_DELAY_SECONDS,"10");
 
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
 
         IMap map =  hz1.getMap("foo");
         for(int k=0;k<1000000000;k++){

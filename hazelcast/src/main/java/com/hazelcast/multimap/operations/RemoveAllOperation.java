@@ -50,7 +50,6 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         if (coll != null) {
             getOrCreateContainer().update();
             for (MultiMapRecord record : coll) {
