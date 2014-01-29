@@ -38,7 +38,6 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest
         implements Portable, SecureRequest {
 
     protected Data key;
-
     private long threadId;
 
     public AbstractIsLockedRequest() {
@@ -52,6 +51,10 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest
     protected AbstractIsLockedRequest(Data key, long threadId) {
         this.key = key;
         this.threadId = threadId;
+    }
+
+    protected String getName() {
+        return (String) getClientEngine().toObject(key);
     }
 
     @Override

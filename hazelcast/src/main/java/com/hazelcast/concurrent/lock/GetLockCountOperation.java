@@ -30,6 +30,7 @@ public class GetLockCountOperation extends BaseLockOperation {
 
     @Override
     public void run() throws Exception {
-        response = getLockStore().getLockCount(key);
+        LockStoreImpl lockStore = getLockStore();
+        response = lockStore.getLockCount(key);
     }
 }

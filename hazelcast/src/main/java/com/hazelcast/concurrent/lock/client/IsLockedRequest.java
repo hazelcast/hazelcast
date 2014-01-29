@@ -25,9 +25,6 @@ import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
 
-/**
- * @author mdogan 5/3/13
- */
 public final class IsLockedRequest extends AbstractIsLockedRequest
         implements RetryableRequest {
 
@@ -44,7 +41,7 @@ public final class IsLockedRequest extends AbstractIsLockedRequest
 
     @Override
     protected InternalLockNamespace getNamespace() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = getName();
         return new InternalLockNamespace(name);
     }
 
@@ -60,7 +57,7 @@ public final class IsLockedRequest extends AbstractIsLockedRequest
 
     @Override
     public Permission getRequiredPermission() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = getName();
         return new LockPermission(name, ActionConstants.ACTION_READ);
     }
 }

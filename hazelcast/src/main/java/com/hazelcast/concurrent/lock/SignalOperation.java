@@ -21,9 +21,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author mdogan 2/13/13
- */
 public class SignalOperation extends BaseSignalOperation implements BackupAwareOperation {
 
     public SignalOperation() {
@@ -35,10 +32,15 @@ public class SignalOperation extends BaseSignalOperation implements BackupAwareO
 
     @Override
     public void beforeRun() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         boolean isLockOwner = lockStore.isLockedBy(key, getCallerUuid(), threadId);
+        ensureLockOwner(lockStore, isLockOwner);
+    }
+
+    private void ensureLockOwner(LockStoreImpl lockStore, boolean isLockOwner) {
         if (!isLockOwner) {
-            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
+            String ownerInfo = lockStore.getOwnerInfo(key);
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
         }
     }
 
