@@ -23,6 +23,7 @@ import com.hazelcast.spi.Operation;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,8 +68,11 @@ public class ScriptExecutorOperation extends Operation {
                 engine.put(entry.getKey(), entry.getValue());
             }
         }
-        Object result = engine.eval(script);
-        this.result = result;
+        try {
+            this.result = engine.eval(script);
+        } catch (ScriptException e) {
+            this.result = e.getMessage();
+        }
     }
 
     public void afterRun() throws Exception {
