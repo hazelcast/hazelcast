@@ -63,7 +63,7 @@ public class SimpleFunctionalMapTest {
                             map.containsKey(key);
                             stats.increment("containsKey");
                         } else if (operation < 5) {
-                            Object value = new String(String.valueOf(key));
+                            Object value = String.valueOf(key);
                             map.containsValue(value);
                             stats.increment("containsValue");
                         } else if (operation < 6) {
