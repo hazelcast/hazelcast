@@ -30,7 +30,6 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import java.io.IOException;
 import java.util.concurrent.*;
@@ -237,13 +236,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             } else {
                 invocationFuture.set(WAIT_RESPONSE);
                 final ExecutionService ex = nodeEngine.getExecutionService();
-                final ExecutorService asyncExecutor = ex.getExecutor(ExecutionService.ASYNC_EXECUTOR);
                 // fast retry for the first few invocations
                 if (invokeCount < 5) {
-                    asyncExecutor.execute(new ReInvocationTask());
+                    getAsyncExecutor().execute(new ReInvocationTask());
                 } else {
-                    ex.schedule(new ScheduledTaskRunner(asyncExecutor, new ReInvocationTask()),
-                            tryPauseMillis, TimeUnit.MILLISECONDS);
+                    ex.schedule(ExecutionService.ASYNC_EXECUTOR, new ReInvocationTask(),
+                                tryPauseMillis, TimeUnit.MILLISECONDS);
                 }
             }
             return;
@@ -404,7 +402,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             this.potentialResponse = response;
         }
 
-        nodeEngine.getExecutionService().schedule(new ScheduledTaskRunner(getAsyncExecutor(), new Runnable() {
+        nodeEngine.getExecutionService().schedule(ExecutionService.ASYNC_EXECUTOR, new Runnable() {
             @Override
             public void run() {
                 synchronized (BasicInvocation.this) {
@@ -425,7 +423,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
                 resetAndReInvoke();
             }
-        }), timeout, unit);
+        }, timeout, unit);
     }
 
     public static class IsStillExecuting extends AbstractOperation {

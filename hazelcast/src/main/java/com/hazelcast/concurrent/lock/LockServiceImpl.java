@@ -117,7 +117,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         @Override
         public EntryTaskScheduler createNew(ObjectNamespace namespace) {
             LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-            ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getScheduledExecutor();
+            final ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
             return EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
         }
     };

@@ -44,7 +44,6 @@ public interface ExecutionService {
 
     void shutdownExecutor(String name);
 
-
     void execute(String name, Runnable command);
 
     Future<?> submit(String name, Runnable task);
@@ -53,11 +52,19 @@ public interface ExecutionService {
 
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
-    ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit);
 
-    ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
 
-    ScheduledExecutorService getScheduledExecutor();
+    ScheduledFuture<?> scheduleAtFixedRate(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    ScheduledFuture<?> scheduleWithFixedDelay(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
+
+    ScheduledExecutorService getDefaultScheduledExecutor();
+
+    ScheduledExecutorService getScheduledExecutor(String name);
 
     <V> ICompletableFuture<V> asCompletableFuture(Future<V> future);
 }

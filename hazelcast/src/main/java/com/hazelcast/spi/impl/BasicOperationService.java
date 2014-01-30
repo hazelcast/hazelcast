@@ -138,7 +138,7 @@ final class BasicOperationService implements InternalOperationService {
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);
-        backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(),
+        backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getDefaultScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
 
