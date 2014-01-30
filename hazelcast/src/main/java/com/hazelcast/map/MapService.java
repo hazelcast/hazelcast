@@ -117,10 +117,6 @@ public class MapService implements ManagedService, MigrationAwareService,
                 public LockStoreInfo createNew(final ObjectNamespace key) {
                     final MapContainer mapContainer = getMapContainer(key.getObjectName());
                     return new LockStoreInfo() {
-                        public ObjectNamespace getObjectNamespace() {
-                            return key;
-                        }
-
                         public int getBackupCount() {
                             return mapContainer.getBackupCount();
                         }

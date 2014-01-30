@@ -16,10 +16,10 @@
 
 package com.hazelcast.multimap.operations;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.MultiMapContainer;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapRecord;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,11 +37,9 @@ import java.util.List;
 public class PutOperation extends MultiMapBackupAwareOperation {
 
     Data value;
-
     int index = -1;
-
-    transient long begin = -1;
-    transient long recordId;
+    long begin = -1;
+    long recordId;
 
     public PutOperation() {
     }
@@ -71,7 +69,6 @@ public class PutOperation extends MultiMapBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value);
         }

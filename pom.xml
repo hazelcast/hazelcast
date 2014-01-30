@@ -438,7 +438,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
-                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <parallel>none</parallel>
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
@@ -447,7 +447,6 @@
                                 -Dhazelcast.test.use.network=true
                             </argLine>
                             <groups>com.hazelcast.test.annotation.ProblematicTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>

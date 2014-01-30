@@ -36,7 +36,7 @@ public class AllTest {
     private final AtomicInteger messagesReceived = new AtomicInteger(0);
     private final AtomicInteger messagesSend = new AtomicInteger(0);
 
-    private final int size = 10000;
+    private final static int size = 10000;
     private static final int STATS_SECONDS = 10;
 
     final Logger logger = Logger.getLogger("All-test");
@@ -468,13 +468,11 @@ public class AllTest {
         }, 4);
         addOperation(operations, new Runnable() {
             public void run() {
-                long begin = Clock.currentTimeMillis();
                 IMap map = hazelcast.getMap("myMap");
                 Iterator it = map.entrySet(new SqlPredicate("year=" + random.nextInt(100))).iterator();
                 while (it.hasNext()) {
                     it.next();
                 }
-//                System.out.println("Took: " + (Clock.currentTimeMillis() - begin));
             }
         }, 1);
         addOperation(operations, new Runnable() {

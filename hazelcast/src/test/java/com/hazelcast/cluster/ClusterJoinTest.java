@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(SlowTest.class)
 //TODO:
 public class ClusterJoinTest {
 
@@ -52,6 +52,7 @@ public class ClusterJoinTest {
     }
 
     @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
     public void testTcpIp1() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -72,6 +73,7 @@ public class ClusterJoinTest {
     }
 
     @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
     public void testTcpIp2() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -94,6 +96,7 @@ public class ClusterJoinTest {
     }
 
     @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
     public void testTcpIp3() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -115,6 +118,7 @@ public class ClusterJoinTest {
     }
 
     @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
     public void testMulticast() throws Exception {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -124,6 +128,7 @@ public class ClusterJoinTest {
     }
 
     @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
     public void testTcpIpWithDifferentBuildNumber() throws Exception {
         System.setProperty("hazelcast.build", "1");
         try {
@@ -146,6 +151,7 @@ public class ClusterJoinTest {
     }
 
     @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
     public void testMulticastWithDifferentBuildNumber() throws Exception {
         System.setProperty("hazelcast.build", "1");
         try {
@@ -167,6 +173,7 @@ public class ClusterJoinTest {
      * new Config() should be enough as the default config.
      */
     @Test(timeout = 240000)
+    @Category(ProblematicTest.class)
     public void testDefaultConfigCluster() {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -288,6 +295,7 @@ public class ClusterJoinTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testJoinWithIncompatibleJoiners() throws Exception {
         Config config1 = new Config();
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
@@ -305,6 +313,7 @@ public class ClusterJoinTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMulticastJoinWithIncompatiblePartitionGroups() throws Exception {
         Config config1 = new Config();
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);

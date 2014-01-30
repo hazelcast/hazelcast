@@ -34,6 +34,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 /**
  * @author ali 16/12/13
  */
@@ -89,8 +91,8 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void init() throws IOException {
-        out.write(Protocols.CLIENT_BINARY.getBytes());
-        out.write(ClientTypes.JAVA.getBytes());
+        out.write(stringToBytes(Protocols.CLIENT_BINARY));
+        out.write(stringToBytes(ClientTypes.JAVA));
         out.flush();
     }
 

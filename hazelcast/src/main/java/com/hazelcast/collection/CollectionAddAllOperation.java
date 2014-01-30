@@ -32,7 +32,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
 
     protected List<Data> valueList;
 
-    protected transient Map<Long, Data> valueMap;
+    protected Map<Long, Data> valueMap;
 
     public CollectionAddAllOperation() {
     }

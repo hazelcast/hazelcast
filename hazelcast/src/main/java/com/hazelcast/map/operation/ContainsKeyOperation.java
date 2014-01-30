@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ContainsKeyOperation extends KeyBasedMapOperation {
 
-    private transient boolean containsKey;
+    private boolean containsKey;
 
     public ContainsKeyOperation() {
     }

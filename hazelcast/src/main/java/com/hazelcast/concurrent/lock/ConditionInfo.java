@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author mdogan 2/14/13
- */
 final class ConditionInfo implements DataSerializable {
 
     private String conditionId;
@@ -40,12 +37,13 @@ final class ConditionInfo implements DataSerializable {
     }
 
     public boolean addWaiter(String caller, long threadId) {
-        final ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
+        ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
         return waiters.put(waiter, waiter) == null;
     }
 
     public boolean removeWaiter(String caller, long threadId) {
-        return waiters.remove(new ConditionWaiter(caller, threadId)) != null;
+        ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
+        return waiters.remove(waiter) != null;
     }
 
     public String getConditionId() {
@@ -57,7 +55,7 @@ final class ConditionInfo implements DataSerializable {
     }
 
     public boolean startWaiter(String caller, long threadId) {
-        final ConditionWaiter key = new ConditionWaiter(caller, threadId);
+        ConditionWaiter key = new ConditionWaiter(caller, threadId);
         ConditionWaiter waiter = waiters.get(key);
         if (waiter == null) {
             throw new IllegalStateException();
@@ -84,7 +82,7 @@ final class ConditionInfo implements DataSerializable {
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                final ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readLong());
+                ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readLong());
                 waiters.put(waiter, waiter);
             }
         }

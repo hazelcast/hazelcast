@@ -49,7 +49,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     Predicate predicate;
     QueryResult result;
-    transient PagingPredicate pagingPredicate;
+    PagingPredicate pagingPredicate;
 
     public QueryOperation(String mapName, Predicate predicate) {
         super(mapName);

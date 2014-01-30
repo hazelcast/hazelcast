@@ -23,6 +23,8 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 public class DataAwareEntryEvent extends EntryEvent {
 
+    private final static long serialVersionUID = 1;
+
     protected final Data dataKey;
 
     protected final Data dataNewValue;

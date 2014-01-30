@@ -28,6 +28,9 @@ import java.util.*;
 import static com.hazelcast.query.Predicates.*;
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
+
+    private final static long serialVersionUID = 1;
+
     private transient Predicate predicate;
     private String sql;
 

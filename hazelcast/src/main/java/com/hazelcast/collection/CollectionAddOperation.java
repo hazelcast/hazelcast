@@ -30,8 +30,7 @@ import java.io.IOException;
 public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     protected Data value;
-
-    protected transient long itemId = -1;
+    protected long itemId = -1;
 
     public CollectionAddOperation() {
     }

@@ -28,6 +28,8 @@ import static java.lang.String.format;
  */
 public class ManagementCenterIdentifier implements Serializable {
 
+    private final static long serialVersionUID = 1;
+
     public static int getVersionAsInt(String versionString) throws IllegalArgumentException {
         int version = 0;
         Pattern pattern = Pattern.compile("^(\\d)\\.(\\d)(?:\\.(\\d))?+.*");

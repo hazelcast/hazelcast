@@ -26,7 +26,8 @@ import static com.hazelcast.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
 public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {
 
-    public ManagedExecutorServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService, ManagementService service) {
+    public ManagedExecutorServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService,
+                                       ManagementService service) {
         super(executorService, service);
 
         Hashtable<String, String> properties = new Hashtable<String, String>(3);

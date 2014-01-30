@@ -8,11 +8,6 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * User: eminn
- * Date: 03/12/13
- * Time: 10:58 AM
- */
 public class NearCacheStatsImpl implements NearCacheStats {
 
     private long ownedEntryCount;
@@ -58,18 +53,17 @@ public class NearCacheStatsImpl implements NearCacheStats {
         this.hits.set(hits);
     }
 
+    @Override
     public double getRatio() {
-        return (double)hits.get() / misses.get()  ;
+        return (double) hits.get() / misses.get();
     }
-
 
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
 
         this.ownedEntryMemoryCost = ownedEntryMemoryCost;
     }
 
-    public void incrementMisses()
-    {
+    public void incrementMisses() {
         misses.incrementAndGet();
     }
 

@@ -143,45 +143,6 @@ public class ClientIOExecutorPoolSizeLowTest {
         });
     }
 
-
-    @Test
-    public void entryListenerWithAsyncQueueOps() throws InterruptedException {
-
-        ItemCounter counter = new ItemCounter();
-
-        final IQueue<Object> q = client.getQueue("Q");
-        q.addItemListener(counter, true);
-
-
-        for (int i = 0; i < 1000; i++) {
-            q.offer(i);
-        }
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals(1000, q.size());
-            }
-        });
-
-        assertEquals(1000, counter.count.get());
-
-        for (int i = 0; i < 1000; i++) {
-            Object o = q.poll();
-
-            assertEquals(i, o);
-            q.remove(o);
-        }
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals(0, q.size());
-            }
-        });
-
-        assertEquals(0, counter.count.get());
-    }
-
-
     @Test
     public void entryListenerWithAsyncTopicOps() throws InterruptedException {
 

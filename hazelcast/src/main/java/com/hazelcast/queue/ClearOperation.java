@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private transient Map<Long, Data> dataMap;
+    private Map<Long, Data> dataMap;
 
     public ClearOperation() {
     }

@@ -25,9 +25,6 @@ import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @author mdogan 2/12/13
- */
 final class LockStoreContainer {
 
     private final LockServiceImpl lockService;
@@ -37,7 +34,7 @@ final class LockStoreContainer {
         public LockStoreImpl createNew(ObjectNamespace namespace) {
             final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor = lockService.constructors.get(namespace.getServiceName());
             if (ctor != null) {
-                final LockStoreInfo info = ctor.createNew(namespace);
+                LockStoreInfo info = ctor.createNew(namespace);
                 if (info != null) {
                     return new LockStoreImpl(lockService, namespace, info.getBackupCount(), info.getAsyncBackupCount());
                 }
@@ -52,7 +49,7 @@ final class LockStoreContainer {
     }
 
     void clearLockStore(ObjectNamespace namespace) {
-        final LockStoreImpl lockStore = lockStores.get(namespace);
+        LockStoreImpl lockStore = lockStores.get(namespace);
         if (lockStore != null) {
             lockStore.clear();
         }

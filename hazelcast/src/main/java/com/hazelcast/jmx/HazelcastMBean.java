@@ -16,28 +16,20 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.instance.Node;
-
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Hashtable;
 
-/**
- * @author ali 1/30/13
- */
 public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistration {
 
     protected HashMap<String, BeanInfo> attributeMap = new HashMap<String, BeanInfo>();
     protected HashMap<String, BeanInfo> operationMap = new HashMap<String, BeanInfo>();
 
     final T managedObject;
-
     final ManagementService service;
-
     String description;
-
     ObjectName objectName;
 
     protected HazelcastMBean(T managedObject, ManagementService service) {
@@ -83,7 +75,9 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         }
     }
 
-    public Object getAttribute(String attribute) throws AttributeNotFoundException, MBeanException, ReflectionException {
+    @Override
+    public Object getAttribute(String attribute)
+            throws AttributeNotFoundException, MBeanException, ReflectionException {
         if (attribute == null || attribute.length() == 0)
             throw new NullPointerException("Invalid null attribute requested");
         BeanInfo info = attributeMap.get(attribute);
@@ -102,10 +96,13 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         }
     }
 
-    public void setAttribute(Attribute attribute) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
+    @Override
+    public void setAttribute(Attribute attribute)
+            throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public AttributeList getAttributes(String[] attributes) {
         AttributeList list = new AttributeList(attributes.length);
         try {
@@ -113,16 +110,19 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
                 list.add(new Attribute(attribute, getAttribute(attribute)));
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(e);
         }
         return list;
     }
 
+    @Override
     public AttributeList setAttributes(AttributeList attributes) {
         throw new UnsupportedOperationException();
     }
 
-    public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
+    @Override
+    public Object invoke(String actionName, Object[] params, String[] signature)
+            throws MBeanException, ReflectionException {
         if (actionName == null || actionName.isEmpty()){
             throw new IllegalArgumentException("Empty actionName");
         }
@@ -137,8 +137,10 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         }
     }
 
+    @Override
     public MBeanInfo getMBeanInfo() {
-        return new MBeanInfo(managedObject.getClass().getName(), description, attributeInfos(), null, operationInfos(), null);
+        String className = managedObject.getClass().getName();
+        return new MBeanInfo(className, description, attributeInfos(), null, operationInfos(), null);
     }
 
     private MBeanAttributeInfo[] attributeInfos(){
@@ -184,6 +186,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         }
     }
 
+    @Override
     public ObjectName preRegister(MBeanServer server, ObjectName name) throws Exception {
         try {
             scan();
@@ -193,12 +196,15 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         return objectName;
     }
 
+    @Override
     public void postRegister(Boolean registrationDone) {
     }
 
+    @Override
     public void preDeregister() throws Exception {
     }
 
+    @Override
     public void postDeregister() {
     }
 }

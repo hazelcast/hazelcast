@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.countdownlatch;
 
 public class GetCountOperation extends BaseCountDownLatchOperation {
 
-    private transient int count;
+    private int count;
 
     public GetCountOperation() {
     }

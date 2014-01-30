@@ -1,11 +1,7 @@
 package com.hazelcast.monitor;
 
-/**
- * User: eminn
- * Date: 03/12/13
- * Time: 10:48 AM
- */
 public interface NearCacheStats extends LocalInstanceStats {
+
     /**
      * Returns the creation time of this NearCache on this member
      *
@@ -19,7 +15,6 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return number of entries owned by this member.
      */
     long getOwnedEntryCount();
-
 
     /**
      * Returns memory cost (number of bytes) of entries in this cache.
@@ -48,6 +43,4 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return hit/miss ratio.
      */
     double getRatio();
-
-
 }

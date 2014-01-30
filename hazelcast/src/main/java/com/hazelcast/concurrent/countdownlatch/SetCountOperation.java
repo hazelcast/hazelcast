@@ -24,7 +24,7 @@ import java.io.IOException;
 public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
     private int count;
-    private transient boolean response = false;
+    private boolean response = false;
 
     public SetCountOperation() {
     }

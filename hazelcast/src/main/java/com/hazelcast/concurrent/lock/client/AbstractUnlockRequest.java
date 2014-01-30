@@ -57,6 +57,10 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
         this.force = force;
     }
 
+    protected String getName() {
+        return (String) getClientEngine().toObject(key);
+    }
+
     @Override
     protected final Object getKey() {
         return key;

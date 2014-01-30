@@ -50,6 +50,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         creationTime = Clock.currentTimeMillis();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(getCount.get());
         out.writeLong(putCount.get());
@@ -69,6 +70,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         out.writeLong(maxRemoveLatency.get());
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         getCount.set(in.readLong());
         putCount.set(in.readLong());
@@ -88,6 +90,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         maxRemoveLatency.set(in.readLong());
     }
 
+    @Override
     public long getOwnedEntryCount() {
         return ownedEntryCount;
     }
@@ -96,13 +99,16 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         this.ownedEntryCount = ownedEntryCount;
     }
 
+    @Override
     public long getBackupEntryCount() {
         return 0;
     }
 
+    //todo: unused.
     public void setBackupEntryCount(long backupEntryCount) {
     }
 
+    @Override
     public int getBackupCount() {
         return 0;
     }
@@ -110,40 +116,50 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
     public void setBackupCount(int backupCount) {
     }
 
+    @Override
     public long getOwnedEntryMemoryCost() {
         return 0;
     }
 
+    //todo:unused
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
     }
 
+    @Override
     public long getBackupEntryMemoryCost() {
         return 0;
     }
 
+    //todo:unused
     public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
 
+    @Override
     public long getLastAccessTime() {
         return lastAccessTime.get();
     }
 
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime.set(Math.max(this.lastAccessTime.get(), lastAccessTime));
+        long max = Math.max(this.lastAccessTime.get(), lastAccessTime);
+        this.lastAccessTime.set(max);
     }
 
+    @Override
     public long getLastUpdateTime() {
         return lastUpdateTime.get();
     }
 
     public void setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime.set(Math.max(this.lastUpdateTime.get(), lastUpdateTime));
+        long max = Math.max(this.lastUpdateTime.get(), lastUpdateTime);
+        this.lastUpdateTime.set(max);
     }
 
+    @Override
     public long getHits() {
         return hits.get();
     }
@@ -152,6 +168,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         this.hits.set(hits);
     }
 
+    @Override
     public long getLockedEntryCount() {
         return 0;
     }
@@ -159,6 +176,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
     public void setLockedEntryCount(long lockedEntryCount) {
     }
 
+    @Override
     public long getDirtyEntryCount() {
         return 0;
     }
@@ -166,10 +184,12 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
     public void setDirtyEntryCount(long l) {
     }
 
+    @Override
     public long total() {
         return putCount.get() + getCount.get() + removeCount.get() + numberOfOtherOperations.get();
     }
 
+    @Override
     public long getPutOperationCount() {
         return putCount.get();
     }
@@ -180,6 +200,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         maxPutLatency.set(Math.max(maxPutLatency.get(), latency));
     }
 
+    @Override
     public long getGetOperationCount() {
         return getCount.get();
     }
@@ -190,6 +211,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         maxGetLatency.set(Math.max(maxGetLatency.get(), latency));
     }
 
+    @Override
     public long getRemoveOperationCount() {
         return removeCount.get();
     }
@@ -200,30 +222,37 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         maxRemoveLatency.set(Math.max(maxRemoveLatency.get(), latency));
     }
 
+    @Override
     public long getTotalPutLatency() {
         return totalPutLatencies.get();
     }
 
+    @Override
     public long getTotalGetLatency() {
         return totalGetLatencies.get();
     }
 
+    @Override
     public long getTotalRemoveLatency() {
         return totalRemoveLatencies.get();
     }
 
+    @Override
     public long getMaxPutLatency() {
         return maxPutLatency.get();
     }
 
+    @Override
     public long getMaxGetLatency() {
         return maxGetLatency.get();
     }
 
+    @Override
     public long getMaxRemoveLatency() {
         return maxRemoveLatency.get();
     }
 
+    @Override
     public long getOtherOperationCount() {
         return numberOfOtherOperations.get();
     }
@@ -232,6 +261,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         numberOfOtherOperations.incrementAndGet();
     }
 
+    @Override
     public long getEventOperationCount() {
         return numberOfEvents.get();
     }
@@ -240,6 +270,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         numberOfEvents.incrementAndGet();
     }
 
+    @Override
     public long getReplicationEventCount() {
         return numberOfReplicationEvents.get();
     }
@@ -248,9 +279,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
         numberOfReplicationEvents.incrementAndGet();
     }
 
+    //todo: unused
     public void setHeapCost(long heapCost) {
     }
 
+    @Override
     public long getHeapCost() {
         return 0;
     }

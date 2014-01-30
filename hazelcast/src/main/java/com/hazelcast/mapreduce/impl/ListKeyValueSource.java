@@ -41,6 +41,8 @@ public class ListKeyValueSource<V>
         extends KeyValueSource<String, V>
         implements IdentifiedDataSerializable {
 
+    private final static long serialVersionUID = 1;
+
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<String, V> simpleEntry = new MapReduceSimpleEntry<String, V>();
 
@@ -64,9 +66,9 @@ public class ListKeyValueSource<V>
 
         Address thisAddress = nei.getThisAddress();
         PartitionService ps = nei.getPartitionService();
-        Data data = ss.toData(listName, new StringAndPartitionAwarePartitioningStrategy());
+        Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
-        if (!ps.getPartitionOwner(partitionId).equals(thisAddress)) {
+        if (!thisAddress.equals(ps.getPartitionOwner(partitionId))) {
             return;
         }
 

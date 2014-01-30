@@ -35,9 +35,8 @@ import java.util.Iterator;
 public class RemoveOperation extends MultiMapBackupAwareOperation {
 
     Data value;
-
-    transient long recordId;
-    transient long begin = -1;
+    long recordId;
+    long begin = -1;
 
     public RemoveOperation() {
     }

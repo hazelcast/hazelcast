@@ -38,6 +38,8 @@ public class MultiMapKeyValueSource<K, V>
         extends KeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
 
+    private final static long serialVersionUID = 1;
+
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<K, V> simpleEntry = new MapReduceSimpleEntry<K, V>();
 

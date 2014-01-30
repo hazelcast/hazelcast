@@ -33,12 +33,9 @@ import java.io.IOException;
 public class ListSetOperation extends CollectionBackupAwareOperation {
 
     private int index;
-
     private Data value;
-
-    private transient long itemId = -1;
-
-    private transient long oldItemId = -1;
+    private long itemId = -1;
+    private long oldItemId = -1;
 
     public ListSetOperation() {
     }

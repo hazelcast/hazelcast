@@ -38,7 +38,7 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
 
     List<Operation> opList;
     long version;
-    transient boolean notify = true;
+    boolean notify = true;
 
     public TxnCommitOperation() {
     }

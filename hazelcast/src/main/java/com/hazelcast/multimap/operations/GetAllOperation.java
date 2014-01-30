@@ -28,7 +28,7 @@ import java.util.Collection;
  */
 public class GetAllOperation extends MultiMapKeyBasedOperation {
 
-    transient long begin = -1;
+    long begin = -1;
 
     public GetAllOperation() {
     }

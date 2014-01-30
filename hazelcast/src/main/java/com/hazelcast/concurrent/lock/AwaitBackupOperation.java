@@ -42,9 +42,10 @@ public class AwaitBackupOperation extends BaseLockOperation
 
     @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         lockStore.lock(key, originalCaller, threadId);
-        lockStore.removeSignalKey(new ConditionKey(namespace.getObjectName(), key, conditionId));
+        ConditionKey conditionKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
+        lockStore.removeSignalKey(conditionKey);
         lockStore.removeAwait(key, conditionId, originalCaller, threadId);
         response = true;
     }

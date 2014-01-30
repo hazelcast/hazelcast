@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class GetEntryViewOperation extends KeyBasedMapOperation {
 
-    private transient EntryView<Data, Data> result;
+    private EntryView<Data, Data> result;
 
     public GetEntryViewOperation(String name, Data dataKey) {
         super(name, dataKey);

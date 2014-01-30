@@ -18,6 +18,8 @@ package com.hazelcast.ascii;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+
 public class NoOpCommand extends AbstractTextCommand {
     final ByteBuffer response;
 
@@ -39,6 +41,6 @@ public class NoOpCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "NoOpCommand {" + new String(response.array()) + "}";
+        return "NoOpCommand {" + bytesToString(response.array()) + "}";
     }
 }

@@ -39,10 +39,11 @@ import java.util.AbstractMap;
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
     private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
+
     private EntryProcessor entryProcessor;
-    private transient EntryEventType eventType;
-    private transient Object response;
-    protected transient Object oldValue;
+    private EntryEventType eventType;
+    private Object response;
+    protected Object oldValue;
 
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {

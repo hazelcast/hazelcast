@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.idgen;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -24,13 +25,9 @@ import com.hazelcast.spi.RemoteService;
 
 import java.util.Properties;
 
-/**
- * @author ali 5/28/13
- */
 public class IdGeneratorService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:idGeneratorService";
-
     public static final String ATOMIC_LONG_NAME = "hz:atomic:idGenerator:";
 
     private NodeEngine nodeEngine;
@@ -39,24 +36,31 @@ public class IdGeneratorService implements ManagedService, RemoteService {
         this.nodeEngine = nodeEngine;
     }
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
     }
 
+    @Override
     public void reset() {
     }
 
+    @Override
     public void shutdown(boolean terminate) {
     }
 
-    private IAtomicLong getAtomicLong(String name) {
-        return nodeEngine.getHazelcastInstance().getAtomicLong(ATOMIC_LONG_NAME + name);
+    private IAtomicLong getBlockGenerator(String name) {
+        HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
+        return hazelcastInstance.getAtomicLong(ATOMIC_LONG_NAME + name);
     }
 
+    @Override
     public DistributedObject createDistributedObject(String name) {
-        return new IdGeneratorProxy(getAtomicLong(name), name);
+        IAtomicLong blockGenerator = getBlockGenerator(name);
+        return new IdGeneratorProxy(blockGenerator, name,nodeEngine,this);
     }
 
+    @Override
     public void destroyDistributedObject(String name) {
     }
 }

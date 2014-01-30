@@ -18,9 +18,6 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ISemaphore;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("ISemaphore")
 public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
 

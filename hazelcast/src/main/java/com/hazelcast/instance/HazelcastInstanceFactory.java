@@ -269,15 +269,15 @@ public final class HazelcastInstanceFactory {
         }
 
        void set(HazelcastInstanceProxy proxy) {
-            this.hz = proxy;
             synchronized (this) {
+                this.hz = proxy;
                 notifyAll();
             }
         }
 
         public void setFailure(Throwable throwable) {
-            this.throwable = throwable;
             synchronized (this) {
+                this.throwable = throwable;
                 notifyAll();
             }
         }

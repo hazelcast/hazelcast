@@ -27,6 +27,14 @@ import java.util.*;
 
 final class LockResourceImpl implements DataSerializable, LockResource {
 
+    private static boolean isNullOrEmpty(Collection c) {
+        return c == null || c.isEmpty();
+    }
+
+    private static boolean isNullOrEmpty(Map m) {
+        return m == null || m.isEmpty();
+    }
+
     private Data key;
     private String owner = null;
     private long threadId = -1;
@@ -39,14 +47,14 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
 
-    private transient LockStoreImpl lockStore;
+    private LockStoreImpl lockStore;
 
     public LockResourceImpl() {
     }
 
     public LockResourceImpl(Data key, LockStoreImpl lockStore) {
         this.key = key;
-        this.lockStore= lockStore;
+        this.lockStore = lockStore;
     }
 
     @Override
@@ -88,14 +96,15 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     boolean extendLeaseTime(String caller, long threadId, long leaseTime) {
-        if (isLockedBy(caller, threadId)) {
-            if (expirationTime < Long.MAX_VALUE) {
-                setExpirationTime(expirationTime - Clock.currentTimeMillis() + leaseTime);
-                lockStore.scheduleEviction(key, leaseTime);
-            }
-            return true;
+        if (!isLockedBy(caller, threadId)) {
+            return false;
         }
-        return false;
+
+        if (expirationTime < Long.MAX_VALUE) {
+            setExpirationTime(expirationTime - Clock.currentTimeMillis() + leaseTime);
+            lockStore.scheduleEviction(key, leaseTime);
+        }
+        return true;
     }
 
     private void setExpirationTime(long leaseTime) {
@@ -114,16 +123,17 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     boolean unlock(String owner, long threadId) {
         if (lockCount == 0) {
             return false;
-        } else {
-            if (isLockedBy(owner, threadId)) {
-                lockCount--;
-                if (lockCount == 0) {
-                    clear();
-                }
-                return true;
-            }
         }
-        return false;
+
+        if (!isLockedBy(owner, threadId)) {
+            return false;
+        }
+
+        lockCount--;
+        if (lockCount == 0) {
+            clear();
+        }
+        return true;
     }
 
     boolean canAcquireLock(String caller, long threadId) {
@@ -134,6 +144,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         if (conditions == null) {
             conditions = new HashMap<String, ConditionInfo>(2);
         }
+
         ConditionInfo condition = conditions.get(conditionId);
         if (condition == null) {
             condition = new ConditionInfo(conditionId);
@@ -143,35 +154,46 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     boolean removeAwait(String conditionId, String caller, long threadId) {
-        if (conditions != null) {
-            final ConditionInfo condition = conditions.get(conditionId);
-            if (condition != null) {
-                final boolean ok = condition.removeWaiter(caller, threadId);
-                if (condition.getAwaitCount() == 0) {
-                    conditions.remove(conditionId);
-                }
-                return ok;
-            }
+        if (conditions == null) {
+            return false;
         }
-        return false;
+
+        ConditionInfo condition = conditions.get(conditionId);
+        if (condition == null) {
+            return false;
+        }
+
+        boolean ok = condition.removeWaiter(caller, threadId);
+        if (condition.getAwaitCount() == 0) {
+            conditions.remove(conditionId);
+        }
+        return ok;
     }
 
     boolean startAwaiting(String conditionId, String caller, long threadId) {
-        if (conditions != null) {
-            final ConditionInfo condition = conditions.get(conditionId);
-            if (condition != null) {
-                return condition.startWaiter(caller, threadId);
-            }
+        if (conditions == null) {
+            return false;
         }
-        return false;
+
+        ConditionInfo condition = conditions.get(conditionId);
+        if (condition == null) {
+            return false;
+        }
+
+        return condition.startWaiter(caller, threadId);
     }
 
     int getAwaitCount(String conditionId) {
-        if (conditions != null) {
-            final ConditionInfo condition = conditions.get(conditionId);
-            return condition != null ? condition.getAwaitCount() : 0;
+        if (conditions == null) {
+            return 0;
         }
-        return 0;
+
+        ConditionInfo condition = conditions.get(conditionId);
+        if (condition == null) {
+            return 0;
+        } else {
+            return condition.getAwaitCount();
+        }
     }
 
     void registerSignalKey(ConditionKey conditionKey) {
@@ -182,8 +204,12 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     ConditionKey getSignalKey() {
-        final List<ConditionKey> keys = signalKeys;
-        return keys != null && !keys.isEmpty() ? keys.iterator().next() : null;
+        List<ConditionKey> keys = signalKeys;
+        if (isNullOrEmpty(keys)) {
+            return null;
+        }
+
+        return keys.iterator().next();
     }
 
     void removeSignalKey(ConditionKey conditionKey) {
@@ -200,14 +226,15 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     AwaitOperation pollExpiredAwaitOp() {
-        final List<AwaitOperation> ops = expiredAwaitOps;
-        if (ops != null && !ops.isEmpty()) {
-            Iterator<AwaitOperation> iter = ops.iterator();
-            AwaitOperation awaitResponse = iter.next();
-            iter.remove();
-            return awaitResponse;
+        List<AwaitOperation> ops = expiredAwaitOps;
+        if (isNullOrEmpty(ops)) {
+            return null;
         }
-        return null;
+
+        Iterator<AwaitOperation> iter = ops.iterator();
+        AwaitOperation awaitResponse = iter.next();
+        iter.remove();
+        return awaitResponse;
     }
 
     void clear() {
@@ -225,8 +252,8 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     boolean isRemovable() {
         return !isLocked()
-                && (conditions == null || conditions.isEmpty())
-                && (expiredAwaitOps == null || expiredAwaitOps.isEmpty());
+                && isNullOrEmpty(conditions)
+                && isNullOrEmpty(expiredAwaitOps);
     }
 
     @Override

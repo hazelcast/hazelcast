@@ -43,6 +43,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         creationTime = Clock.currentTimeMillis();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(ownedItemCount);
         out.writeInt(backupItemCount);
@@ -58,6 +59,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         out.writeLong(numberOfEvents.get());
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         ownedItemCount = in.readInt();
         backupItemCount = in.readInt();
@@ -73,6 +75,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         numberOfEvents.set(in.readLong());
     }
 
+    @Override
     public long getMinAge() {
         return minAge;
     }
@@ -81,6 +84,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.minAge = minAge;
     }
 
+    @Override
     public long getMaxAge() {
         return maxAge;
     }
@@ -89,6 +93,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.maxAge = maxAge;
     }
 
+    @Override
     public long getAvgAge() {
         return aveAge;
     }
@@ -97,6 +102,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.aveAge = aveAge;
     }
 
+    @Override
     public long getOwnedItemCount() {
         return ownedItemCount;
     }
@@ -105,6 +111,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.ownedItemCount = ownedItemCount;
     }
 
+    @Override
     public long getBackupItemCount() {
         return backupItemCount;
     }
@@ -113,6 +120,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.backupItemCount = backupItemCount;
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
@@ -121,22 +129,27 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         return numberOfOffers.get() + numberOfPolls.get() + numberOfOtherOperations.get();
     }
 
+    @Override
     public long getOfferOperationCount() {
         return numberOfOffers.get();
     }
 
+    @Override
     public long getRejectedOfferOperationCount() {
         return numberOfRejectedOffers.get();
     }
 
+    @Override
     public long getPollOperationCount() {
         return numberOfPolls.get();
     }
 
+    @Override
     public long getEmptyPollOperationCount() {
         return numberOfEmptyPolls.get();
     }
 
+    @Override
     public long getOtherOperationsCount() {
         return numberOfOtherOperations.get();
     }
@@ -165,9 +178,8 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         numberOfEvents.incrementAndGet();
     }
 
+    @Override
     public long getEventOperationCount() {
         return numberOfEvents.get();
     }
-
-
 }

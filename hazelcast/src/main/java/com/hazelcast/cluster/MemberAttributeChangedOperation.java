@@ -61,6 +61,8 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
             case REMOVE:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
                 break;
+            default:
+                throw new IllegalStateException("Unhandeled operationType:" + operationType);
         }
     }
 
@@ -69,8 +71,7 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
         super.readInternal(in);
         key = in.readUTF();
         int operation = in.readByte();
-        switch (operation)
-        {
+        switch (operation) {
             case DELTA_MEMBER_PROPERTIES_OP_PUT:
                 operationType = MapOperationType.PUT;
                 value = in.readObject();
@@ -78,6 +79,8 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
             case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
                 operationType = MapOperationType.REMOVE;
                 break;
+            default:
+                throw new IllegalStateException("Unhandeled operationType:" + operationType);
         }
     }
 
