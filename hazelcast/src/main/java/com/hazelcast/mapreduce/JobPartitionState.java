@@ -17,11 +17,15 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.annotation.Experimental;
 
 /**
  * An implementation of this interface contains current information about
  * the status of an process piece while operation is executing.
+ *
+ * @since 3.2
  */
+@Experimental
 public interface JobPartitionState {
 
     /**

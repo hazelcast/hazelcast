@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Experimental;
+
 import java.util.Map;
 
 /**
@@ -27,7 +29,10 @@ import java.util.Map;
  * @param <EntryKey> type of the original input key
  * @param <ValueIn>  type of value used as input value type
  * @see Job
+ *
+ * @since 3.2
  */
+@Experimental
 public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
 
     /**

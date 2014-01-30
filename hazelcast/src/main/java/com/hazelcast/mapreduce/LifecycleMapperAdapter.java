@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Experimental;
+
 /**
  * <p>
  * The abstract LifecycleMapperAdapter superclass is used to ease building mappers for the {@link Job}.
@@ -46,7 +48,10 @@ package com.hazelcast.mapreduce;
  * @param <ValueIn>  type of value used in the {@link KeyValueSource}
  * @param <KeyOut>   key type for mapped results
  * @param <ValueOut> value type for mapped results
+ *
+ * @since 3.2
  */
+@Experimental
 public abstract class LifecycleMapperAdapter<KeyIn, ValueIn, KeyOut, ValueOut>
         implements LifecycleMapper<KeyIn, ValueIn, KeyOut, ValueOut> {
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Experimental;
+
 import java.io.Serializable;
 
 /**
@@ -23,7 +25,10 @@ import java.io.Serializable;
  * Preselecting keys can speed up the job since not all partitions may be used.
  *
  * @param <Key> key type
+ *
+ * @since 3.2
  */
+@Experimental
 public interface KeyPredicate<Key>
         extends Serializable {
 

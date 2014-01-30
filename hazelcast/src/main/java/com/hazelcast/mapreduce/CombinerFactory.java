@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Experimental;
+
 import java.io.Serializable;
 
 /**
@@ -28,7 +30,10 @@ import java.io.Serializable;
  * @param <KeyIn>    key type of the resulting keys
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
+ *
+ * @since 3.2
  */
+@Experimental
 public interface CombinerFactory<KeyIn, ValueIn, ValueOut>
         extends Serializable {
 

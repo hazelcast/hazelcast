@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Experimental;
+
 import java.io.Serializable;
 
 /**
@@ -47,7 +49,10 @@ import java.io.Serializable;
  * @param <ValueIn>  The type of value used in the {@link KeyValueSource}
  * @param <KeyOut>   The key type for mapped results
  * @param <ValueOut> The value type for mapped results
+ *
+ * @since 3.2
  */
+@Experimental
 public interface Mapper<KeyIn, ValueIn, KeyOut, ValueOut>
         extends Serializable {
 
