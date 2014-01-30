@@ -16,7 +16,6 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionService;
@@ -31,7 +30,8 @@ public class PartitionServiceMBean  extends HazelcastMBean<PartitionService> {
 
     private final HazelcastInstanceImpl hazelcastInstance;
 
-    public PartitionServiceMBean(HazelcastInstanceImpl hazelcastInstance, PartitionService partitionService, ManagementService service) {
+    public PartitionServiceMBean(HazelcastInstanceImpl hazelcastInstance, PartitionService partitionService,
+                                 ManagementService service) {
         super(partitionService, service);
 
         this.hazelcastInstance = hazelcastInstance;

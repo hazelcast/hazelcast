@@ -21,12 +21,13 @@ import com.hazelcast.spi.OperationService;
 
 import java.util.Hashtable;
 
-
 import static com.hazelcast.jmx.ManagementService.quote;
+
 @ManagedDescription("HazelcastInstance.OperationService")
 public class OperationServiceMBean extends HazelcastMBean<OperationService> {
 
-    public OperationServiceMBean(HazelcastInstance hazelcastInstance, OperationService operationService, ManagementService service) {
+    public OperationServiceMBean(HazelcastInstance hazelcastInstance, OperationService operationService,
+                                 ManagementService service) {
         super(operationService, service);
 
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
@@ -39,37 +40,37 @@ public class OperationServiceMBean extends HazelcastMBean<OperationService> {
 
     @ManagedAnnotation("responseQueueSize")
     @ManagedDescription("The size of the response queue")
-    public int getResponseQueueSize(){
+    public int getResponseQueueSize() {
         return managedObject.getResponseQueueSize();
     }
 
     @ManagedAnnotation("operationExecutorQueueSize")
     @ManagedDescription("The size of the operation executor queue")
-    int getOperationExecutorQueueSize(){
+    int getOperationExecutorQueueSize() {
         return managedObject.getOperationExecutorQueueSize();
     }
 
     @ManagedAnnotation("runningOperationsCount")
     @ManagedDescription("the running operations count")
-    public int getRunningOperationsCount(){
-       return managedObject.getRunningOperationsCount();
+    public int getRunningOperationsCount() {
+        return managedObject.getRunningOperationsCount();
     }
 
     @ManagedAnnotation("remoteOperationCount")
     @ManagedDescription("The number of remote operations")
-    public int getRemoteOperationsCount(){
+    public int getRemoteOperationsCount() {
         return managedObject.getRemoteOperationsCount();
     }
 
     @ManagedAnnotation("executedOperationCount")
     @ManagedDescription("The number of executed operations")
-    public long getExecutedOperationCount(){
+    public long getExecutedOperationCount() {
         return managedObject.getExecutedOperationCount();
     }
 
     @ManagedAnnotation("operationThreadCount")
     @ManagedDescription("Number of threads executing operations")
-    public long getOperationThreadCount(){
+    public long getOperationThreadCount() {
         return managedObject.getOperationThreadCount();
     }
 }

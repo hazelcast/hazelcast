@@ -16,24 +16,25 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {
 
-    private AtomicLong totalMessageCount = new AtomicLong();
+    private final AtomicLong totalMessageCount = new AtomicLong();
     private final String registrationId;
 
     protected TopicMBean(ITopic managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("ITopic", managedObject.getName());
+
+        //can't we rely on the statics functionality of the topic instead of relying on the event system?
         MessageListener messageListener = new MessageListener() {
             public void onMessage(Message message) {
                 totalMessageCount.incrementAndGet();
@@ -73,10 +74,12 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
 
     @ManagedAnnotation("config")
     public String getConfig() {
-        return service.instance.getConfig().findTopicConfig(managedObject.getName()).toString();
+        Config config = service.instance.getConfig();
+        TopicConfig topicConfig = config.findTopicConfig(managedObject.getName());
+        return topicConfig.toString();
     }
 
-
+    @Override
     public void preDeregister() throws Exception {
         super.preDeregister();
         try {
@@ -84,6 +87,4 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
         } catch (Exception ignored) {
         }
     }
-
-
 }

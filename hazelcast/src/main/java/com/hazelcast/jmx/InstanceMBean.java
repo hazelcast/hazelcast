@@ -23,6 +23,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.OperationService;
 
 import java.io.File;
 import java.net.URL;
@@ -33,9 +34,6 @@ import java.util.Set;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
-/**
- * @author ali 2/1/13
- */
 @ManagedDescription("HazelcastInstance")
 public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
@@ -80,7 +78,8 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         eventServiceMBean = new EventServiceMBean(hazelcastInstance, node.nodeEngine.getEventService(), service);
         register(eventServiceMBean);
 
-        operationServiceMBean = new OperationServiceMBean(hazelcastInstance, node.nodeEngine.getOperationService(), service);
+        OperationService operationService = node.nodeEngine.getOperationService();
+        operationServiceMBean = new OperationServiceMBean(hazelcastInstance, operationService, service);
         register(operationServiceMBean);
 
         proxyServiceMBean = new ProxyServiceMBean(hazelcastInstance, node.nodeEngine.getProxyService(), service);
