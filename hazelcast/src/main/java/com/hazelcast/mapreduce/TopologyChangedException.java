@@ -17,12 +17,16 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This exception is thrown when a topology change happens during the
  * execution of a map reduce job and the {@link com.hazelcast.mapreduce.TopologyChangedStrategy}
  * is set to {@link com.hazelcast.mapreduce.TopologyChangedStrategy#CANCEL_RUNNING_OPERATION}.
+ *
+ * @since 3.2
  */
+@Beta
 public class TopologyChangedException extends HazelcastException {
 
     public TopologyChangedException() {

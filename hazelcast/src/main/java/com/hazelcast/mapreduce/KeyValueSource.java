@@ -25,6 +25,7 @@ import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.mapreduce.impl.SetKeyValueSource;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Closeable;
 import java.io.Serializable;
@@ -40,7 +41,10 @@ import java.util.Map;
  *
  * @param <K> key type
  * @param <V> value type
+ *
+ * @since 3.2
  */
+@Beta
 public abstract class KeyValueSource<K, V>
         implements Closeable, Serializable {
 

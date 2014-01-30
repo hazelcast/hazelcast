@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * <p>
@@ -42,7 +43,10 @@ import com.hazelcast.core.DistributedObject;
  * <b>Caution: Do not use the JobTracker with data structures of other {@link com.hazelcast.core.HazelcastInstance}
  * instances than the one used for creation of the JobTracker. Unexpected results may happen!</b>
  * </p>
+ *
+ * @since 3.2
  */
+@Beta
 public interface JobTracker
         extends DistributedObject {
 
