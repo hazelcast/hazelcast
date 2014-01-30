@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,6 +62,46 @@ public class ClientTxnMultiMapTest {
     public static void destroy() {
         hz.getLifecycleService().shutdown();
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testRemove() throws Exception {
+
+        final String NAME = "test";
+        final String KEY = "key";
+        final String VALUE = "value";
+
+        hz.getMultiMap(NAME).put(KEY, VALUE);
+        TransactionContext tx = hz.newTransactionContext();
+
+        tx.beginTransaction();
+        tx.getMultiMap(NAME).remove(KEY,VALUE);
+        tx.commitTransaction();
+
+        assertEquals(Collections.EMPTY_LIST,hz.getMultiMap(NAME).get(KEY));
+
+
+    }
+    @Test
+    public void testRemoveAll() throws Exception {
+
+        final String NAME = "test";
+        final String KEY = "key";
+        final String VALUE = "value";
+
+        for (int i = 0; i < 10; i++) {
+            hz.getMultiMap(NAME).put(KEY, VALUE + i);
+
+        }
+        TransactionContext tx = hz.newTransactionContext();
+
+        tx.beginTransaction();
+        tx.getMultiMap(NAME).remove(KEY);
+        tx.commitTransaction();
+        assertEquals(Collections.EMPTY_LIST,hz.getMultiMap(NAME).get(KEY));
+
+
+
     }
 
     @Test

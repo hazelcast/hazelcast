@@ -54,6 +54,7 @@ public class MultiMapPortableHook implements PortableHook {
     public static final int TXN_MM_REMOVE = 21;
     public static final int TXN_MM_VALUE_COUNT = 22;
     public static final int TXN_MM_SIZE = 23;
+    public static final int TXN_MM_REMOVEALL = 24;
 
 
 
@@ -62,7 +63,7 @@ public class MultiMapPortableHook implements PortableHook {
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_MM_SIZE +1];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_MM_REMOVEALL +1];
         constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new ClearRequest();
@@ -166,6 +167,11 @@ public class MultiMapPortableHook implements PortableHook {
         constructors[TXN_MM_SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new TxnMultiMapSizeRequest();
+            }
+        };
+        constructors[TXN_MM_REMOVEALL] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnMultiMapRemoveAllRequest();
             }
         };
 
