@@ -14,48 +14,77 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.IndexAwarePredicate;
-import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.*;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 
-public class IndexService {
+public abstract class IndexService {
+
+    private static final Index[] EMPTY_ARRAY = new Index[0];
+
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
-    private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
+
+    /**
+     * Does not need to be volatile since guarded (picky backed) on hasIndex
+     */
+    private Index[] indexes;
+
     private volatile boolean hasIndex = false;
 
     public synchronized Index destroyIndex(String attribute) {
         return mapIndexes.remove(attribute);
     }
 
-    public synchronized Index addOrGetIndex(String attribute, boolean ordered) {
+    public Index addOrGetIndex(String attribute, boolean ordered) {
         Index index = mapIndexes.get(attribute);
         if (index != null) return index;
-        index = new IndexImpl(attribute, ordered);
-        mapIndexes.put(attribute, index);
-        Object[] indexObjects = mapIndexes.values().toArray();
-        Index[] newIndexes = new Index[indexObjects.length];
-        for (int i = 0; i < indexObjects.length; i++) {
-            newIndexes[i] = (Index) indexObjects[i];
+        index = buildIndex(attribute, ordered);
+        Index old = mapIndexes.putIfAbsent(attribute, index);
+        if (old == null) {
+            Collection<Index> values = mapIndexes.values();
+            Index[] indexes = values.toArray(new Index[values.size()]);
+
+            // Do not reorder the other next two statements we need the
+            // volatile guarantee
+            this.indexes = indexes;
+            hasIndex = true;
         }
-        indexes.set(newIndexes);
-        hasIndex = true;
-        return index;
+        return old;
     }
 
     public Index[] getIndexes() {
-        return indexes.get();
+        // Don't remove this it's a guard access for the indexes
+        if (hasIndex) {
+            return indexes;
+        }
+        return EMPTY_ARRAY;
+    }
+
+    public Index getIndex(String attribute) {
+        return mapIndexes.get(attribute);
     }
 
     public void removeEntryIndex(Data indexKey) throws QueryException {
-        for (Index index : indexes.get()) {
-            index.removeEntryIndex(indexKey);
+        // Don't remove this it's a guard access for the indexes
+        if (hasIndex) {
+            for (Index index : indexes) {
+                index.removeEntryIndex(indexKey);
+            }
+        }
+    }
+
+    public void saveEntryIndex(QueryableEntry queryableEntry) throws QueryException {
+        // Don't remove this it's a guard access for the indexes
+        if (hasIndex) {
+            for (Index index : indexes) {
+                index.saveEntryIndex(queryableEntry);
+            }
         }
     }
 
@@ -63,17 +92,8 @@ public class IndexService {
         return hasIndex;
     }
 
-    public void saveEntryIndex(QueryableEntry queryableEntry) throws QueryException {
-        for (Index index : indexes.get()) {
-            index.saveEntryIndex(queryableEntry);
-        }
-    }
-
-    Index getIndex(String attribute) {
-        return mapIndexes.get(attribute);
-    }
-
     public Set<QueryableEntry> query(Predicate predicate) {
+        // Don't remove this it's a guard access for the indexes
         if (hasIndex) {
             QueryContext queryContext = new QueryContext(this);
             if (predicate instanceof IndexAwarePredicate) {
@@ -85,4 +105,7 @@ public class IndexService {
         }
         return null;
     }
+
+    protected abstract Index buildIndex(String attribute, boolean ordered);
+
 }

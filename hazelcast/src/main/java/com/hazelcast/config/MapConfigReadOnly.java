@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.query.IndexService;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -171,4 +173,13 @@ public class MapConfigReadOnly extends MapConfig {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }
 
+    @Override
+    public void setIndexServiceClassName(String indexServiceClassName) {
+        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+    }
+
+    @Override
+    public void setIndexService(IndexService indexService) {
+        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+    }
 }

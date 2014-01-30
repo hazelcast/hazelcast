@@ -46,7 +46,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;

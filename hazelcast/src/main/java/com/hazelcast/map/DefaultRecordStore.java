@@ -27,7 +27,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;

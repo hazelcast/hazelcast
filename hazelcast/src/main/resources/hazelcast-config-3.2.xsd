@@ -175,6 +175,7 @@
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="index-service" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>

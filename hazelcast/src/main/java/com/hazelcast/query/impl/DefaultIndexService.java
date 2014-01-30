@@ -18,14 +18,10 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.query.IndexService;
 
-public class QueryContext {
-    private final IndexService indexService;
+public class DefaultIndexService extends IndexService {
 
-    public QueryContext(IndexService indexService) {
-        this.indexService = indexService;
-    }
-
-    public Index getIndex(String attributeName) {
-        return (indexService == null) ? null : indexService.getIndex(attributeName);
+    @Override
+    protected Index buildIndex(String attribute, boolean ordered) {
+        return new IndexImpl(attribute, ordered);
     }
 }

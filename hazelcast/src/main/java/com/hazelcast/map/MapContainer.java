@@ -30,7 +30,8 @@ import com.hazelcast.map.record.OffHeapRecordFactory;
 import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.IndexService;
+import com.hazelcast.query.impl.DefaultIndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
@@ -55,7 +56,7 @@ public class MapContainer {
     private final MapStoreWrapper storeWrapper;
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
-    private final IndexService indexService = new IndexService();
+    private final IndexService indexService;
     private final boolean nearCacheEnabled;
     private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
@@ -113,6 +114,20 @@ public class MapContainer {
         } else {
             storeWrapper = null;
         }
+
+        IndexService indexService = mapConfig.getIndexService();
+        if (indexService == null && mapConfig.getIndexServiceClassName() != null) {
+            try {
+                String indexServiceClassName = mapConfig.getIndexServiceClassName();
+                indexService = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), indexServiceClassName);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+        if (indexService == null) {
+            indexService = new DefaultIndexService();
+        }
+        this.indexService = indexService;
 
         if (storeWrapper != null) {
             if (store instanceof MapLoaderLifecycleSupport) {

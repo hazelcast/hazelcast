@@ -17,6 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.query.IndexService;
+import com.hazelcast.query.impl.DefaultIndexService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +41,7 @@ public class MapConfig {
     public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
     public final static String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
     public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    public final static String DEFAULT_INDEX_SERVICE_CLASSNAME = DefaultIndexService.class.getCanonicalName();
 
     private String name = null;
 
@@ -80,6 +83,10 @@ public class MapConfig {
 
     private MapConfigReadOnly readOnly;
 
+    private String indexServiceClassName;
+
+    private IndexService indexService;
+
     public enum EvictionPolicy {
         LRU, LFU, NONE
     }
@@ -107,6 +114,8 @@ public class MapConfig {
         this.optimizeQueries = config.optimizeQueries;
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
+        this.indexService = config.indexService;
+        this.indexServiceClassName = config.indexServiceClassName;
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
         this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
@@ -376,6 +385,22 @@ public class MapConfig {
         return this;
     }
 
+    public String getIndexServiceClassName() {
+        return indexServiceClassName;
+    }
+
+    public void setIndexServiceClassName(String indexServiceClassName) {
+        this.indexServiceClassName = indexServiceClassName;
+    }
+
+    public IndexService getIndexService() {
+        return indexService;
+    }
+
+    public void setIndexService(IndexService indexService) {
+        this.indexService = indexService;
+    }
+
     public MapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
         getEntryListenerConfigs().add(listenerConfig);
         return this;
@@ -469,6 +494,12 @@ public class MapConfig {
         result = prime
                 * result
                 + ((this.mergePolicy == null) ? 0 : this.mergePolicy.hashCode());
+        result = prime
+                * result
+                + ((this.indexService == null) ? 0 : this.indexService.hashCode());
+        result = prime
+                * result
+                + ((this.indexServiceClassName == null) ? 0 : this.indexServiceClassName.hashCode());
         result = prime * result
                 + ((this.name == null) ? 0 : this.name.hashCode());
         result = prime
@@ -499,6 +530,10 @@ public class MapConfig {
                         this.timeToLiveSeconds == other.timeToLiveSeconds &&
                         this.readBackupData == other.readBackupData &&
                         (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
+                        (this.indexService != null ? this.indexService.equals(other.indexService)
+                                : other.indexService == null) &&
+                        (this.indexServiceClassName != null ? this.indexServiceClassName.equals(other.indexServiceClassName)
+                                : other.indexServiceClassName == null) &&
                         (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null) &&
                         (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
                                 : other.evictionPolicy == null) &&
@@ -528,6 +563,8 @@ public class MapConfig {
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
+        sb.append(", indexService=").append(indexService);
+        sb.append(", indexServiceClassName=").append(indexServiceClassName);
         sb.append('}');
         return sb.toString();
     }

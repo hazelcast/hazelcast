@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.IndexService;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
