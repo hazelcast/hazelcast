@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This is a special version of ICompletableFuture to return the assigned job
@@ -27,7 +27,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface JobCompletableFuture<V> extends ICompletableFuture<V> {
 
     /**

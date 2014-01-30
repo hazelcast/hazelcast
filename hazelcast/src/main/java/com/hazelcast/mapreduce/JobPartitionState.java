@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * An implementation of this interface contains current information about
@@ -25,7 +25,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface JobPartitionState {
 
     /**

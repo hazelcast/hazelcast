@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
 
     /**

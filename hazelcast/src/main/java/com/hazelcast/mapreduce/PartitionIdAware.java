@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This interface can be used to mark implementation being aware of the data partition
@@ -24,7 +24,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface PartitionIdAware {
 
     /**

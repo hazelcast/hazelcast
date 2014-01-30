@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This interface describes a trackable job. In the default implementation
@@ -36,7 +36,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface TrackableJob<V> {
 
     /**

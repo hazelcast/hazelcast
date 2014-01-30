@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * <p>The LifecycleMapper interface is a more sophisticated version of {@link Mapper} normally used for complexer
@@ -33,7 +33,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface LifecycleMapper<KeyIn, ValueIn, KeyOut, ValueOut>
         extends Mapper<KeyIn, ValueIn, KeyOut, ValueOut> {
 

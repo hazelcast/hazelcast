@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This exception is thrown when a topology change happens during the
@@ -26,7 +26,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public class TopologyChangedException extends HazelcastException {
 
     public TopologyChangedException() {

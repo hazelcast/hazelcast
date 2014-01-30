@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This enum class is used to define how a map reduce job behaves
@@ -35,7 +35,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public enum TopologyChangedStrategy {
 
     /**

@@ -23,8 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An element annotated with this annotation is considered experimental.<br/>
- * Experimental in this case means it is a fully new feature and in general seems
+ * An element annotated with this annotation is considered beta status.<br/>
+ * Beta in this case means it is a fully new feature and in general seems
  * ready for production use but can be subject to change in the near future when
  * problems coming up with the proposed API. In addition to that it can contain
  * further bugs and due to that should be used with attention.
@@ -32,5 +32,5 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PACKAGE, ElementType.TYPE})
-public @interface Experimental {
+public @interface Beta {
 }

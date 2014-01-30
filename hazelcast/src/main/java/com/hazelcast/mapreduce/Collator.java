@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This interface can be implemented to define a Collator which is executed after calculation
@@ -28,7 +28,7 @@ import com.hazelcast.spi.annotation.Experimental;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface Collator<ValueIn, ValueOut> {
 
     /**

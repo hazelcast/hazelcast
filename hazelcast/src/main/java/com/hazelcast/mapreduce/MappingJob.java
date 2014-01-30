@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Experimental;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +34,7 @@ import java.util.Map;
  *
  * @since 3.2
  */
-@Experimental
+@Beta
 public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
     /**
