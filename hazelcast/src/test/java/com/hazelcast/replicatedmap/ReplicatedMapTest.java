@@ -39,6 +39,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1274,7 +1275,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                int half = testValues.length / 2;
                 for (int i = 0; i < testValues.length; i++) {
                     final SimpleEntry<Integer, Integer> entry = testValues[i];
                     map1.put(entry.getKey(), entry.getValue());
@@ -1529,7 +1529,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
 
-        map1.put(1, 1, 1, TimeUnit.SECONDS);
+        map1.put(1, 1, 1, TimeUnit.MINUTES);
         map1.put(1, 1);
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
@@ -1538,7 +1538,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         });
 
-        map1.put(1, 1, 1, TimeUnit.SECONDS);
+        map1.put(1, 1, 1, TimeUnit.MINUTES);
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() {
@@ -1571,7 +1571,6 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void putOrderTest_repDelay1000() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
