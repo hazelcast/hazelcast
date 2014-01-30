@@ -60,7 +60,7 @@ public class ListKeyValueSource<V>
     }
 
     @Override
-    public void open(NodeEngine nodeEngine) {
+    public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         ss = nei.getSerializationService();
 
@@ -68,14 +68,17 @@ public class ListKeyValueSource<V>
         PartitionService ps = nei.getPartitionService();
         Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
-        if (!thisAddress.equals(ps.getPartitionOwner(partitionId))) {
-            return;
+        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        if (partitionOwner == null) {
+            return false;
         }
-
-        ListService listService = nei.getService(ListService.SERVICE_NAME);
-        ListContainer listContainer = listService.getOrCreateContainer(listName, false);
-        List<CollectionItem> items = new ArrayList<CollectionItem>(listContainer.getCollection());
-        iterator = items.iterator();
+        if (thisAddress.equals(partitionOwner)) {
+            ListService listService = nei.getService(ListService.SERVICE_NAME);
+            ListContainer listContainer = listService.getOrCreateContainer(listName, false);
+            List<CollectionItem> items = new ArrayList<CollectionItem>(listContainer.getCollection());
+            iterator = items.iterator();
+        }
+        return true;
     }
 
     @Override
