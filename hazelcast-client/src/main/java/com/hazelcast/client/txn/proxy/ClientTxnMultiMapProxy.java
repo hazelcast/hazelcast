@@ -63,6 +63,8 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public boolean remove(Object key, Object value) {
+        throwExceptionIfNull(key);
+        throwExceptionIfNull(value);
         int threadId = (int)Thread.currentThread().getId();
         TxnMultiMapRemoveRequest request = new TxnMultiMapRemoveRequest(getName(), toData(key), toData(value), threadId);
         Boolean result = invoke(request);
@@ -70,8 +72,9 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public Collection<V> remove(Object key) {
+        throwExceptionIfNull(key);
         int threadId = (int)Thread.currentThread().getId();
-        TxnMultiMapRemoveRequest request = new TxnMultiMapRemoveRequest(getName(), toData(key), threadId);
+        TxnMultiMapRemoveAllRequest request = new TxnMultiMapRemoveAllRequest(getName(), toData(key), threadId);
         PortableCollection portableCollection = invoke(request);
         final Collection<Data> collection = portableCollection.getCollection();
         Collection<V> coll;
@@ -111,4 +114,11 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
 
     void onDestroy() {
     }
+
+    private void throwExceptionIfNull(Object o) {
+        if (o == null) {
+            throw new NullPointerException("Object is null");
+        }
+    }
+
 }
