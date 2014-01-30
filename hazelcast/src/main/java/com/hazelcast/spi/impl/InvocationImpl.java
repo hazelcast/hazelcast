@@ -28,7 +28,6 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import java.io.IOException;
 import java.util.concurrent.*;
@@ -245,8 +244,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             if (response == RETRY_RESPONSE) {
                 responseQ.offer(WAIT_RESPONSE); // wait on poll while retrying invocation!
                 final ExecutionService ex = nodeEngine.getExecutionService();
-                ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
-                        new ScheduledInv()), tryPauseMillis, TimeUnit.MILLISECONDS);
+                ex.schedule(ExecutionService.ASYNC_EXECUTOR,
+                        new ScheduledInv(), tryPauseMillis, TimeUnit.MILLISECONDS);
             } else if (response == WAIT_RESPONSE) {
                 responseQ.offer(WAIT_RESPONSE);
             } else {

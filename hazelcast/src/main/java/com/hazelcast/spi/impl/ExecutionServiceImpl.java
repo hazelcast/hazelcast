@@ -23,9 +23,9 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
-import com.hazelcast.util.executor.ScheduledTaskRunner;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.lang.reflect.InvocationTargetException;
@@ -44,7 +44,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final ExecutorService scheduledManagedExecutor;
+    private final ScheduledExecutorService defaultScheduledExecutorServiceDelegate;
     private final ILogger logger;
 
     private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<String, ManagedExecutorService>();
@@ -76,7 +76,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
         register(OPERATION_EXECUTOR, coreSize * 2, Integer.MAX_VALUE);
         register(ASYNC_EXECUTOR, coreSize * 10, coreSize * 10000);
         register(CLIENT_EXECUTOR, coreSize * 10, coreSize * 10000);
-        scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 10000);
+        register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 10000);
+        defaultScheduledExecutorServiceDelegate = getScheduledExecutor(SCHEDULED_EXECUTOR);
     }
 
     public Set<String> getExecutorNames(){
@@ -93,7 +94,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-    private ExecutorService register(String name, int poolSize, int queueCapacity) {
+    public ExecutorService register(String name, int poolSize, int queueCapacity) {
         ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfigs().get(name);
         if (cfg != null) {
             poolSize = cfg.getPoolSize();
@@ -132,23 +133,27 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return getExecutor(name).submit(task);
     }
 
-    public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
-        return scheduledExecutorService.schedule(createScheduledRunner(command, scheduledManagedExecutor), delay, unit);
+    public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+        return defaultScheduledExecutorServiceDelegate.schedule(command, delay, unit);
+    }
+    public ScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit) {
+        return getScheduledExecutor(name).schedule(command, delay, unit);
     }
 
-    public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutorService.scheduleAtFixedRate(createScheduledRunner(command, scheduledManagedExecutor), initialDelay, period, unit);
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return defaultScheduledExecutorServiceDelegate.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
-    public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutorService.scheduleWithFixedDelay(createScheduledRunner(command, scheduledManagedExecutor), initialDelay, period, unit);
+    public ScheduledFuture<?> scheduleAtFixedRate(String name,Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return getScheduledExecutor(name).scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
-    private static ScheduledTaskRunner createScheduledRunner(Runnable command, Executor executor) {
-        if (command instanceof ScheduledTaskRunner) {
-            return (ScheduledTaskRunner) command;
-        }
-        return new ScheduledTaskRunner(executor, command);
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return defaultScheduledExecutorServiceDelegate.scheduleWithFixedDelay(command, initialDelay, period, unit);
+    }
+
+    public ScheduledFuture<?> scheduleWithFixedDelay(String name, Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return getScheduledExecutor(name).scheduleWithFixedDelay(command, initialDelay, period, unit);
     }
 
     @PrivateApi
@@ -156,8 +161,11 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return new ExecutorDelegate(cachedExecutorService);
     }
 
-    public ScheduledExecutorService getScheduledExecutor() {
-        return new ScheduledExecutorServiceDelegate(scheduledExecutorService, scheduledManagedExecutor);
+    public ScheduledExecutorService getDefaultScheduledExecutor() {
+        return defaultScheduledExecutorServiceDelegate;
+    }
+    public ScheduledExecutorService getScheduledExecutor(String name) {
+        return new ScheduledExecutorServiceDelegate(scheduledExecutorService, getExecutor(name));
     }
 
     @PrivateApi
@@ -222,15 +230,15 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
 
         public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-            return scheduledExecutorService.schedule(createScheduledRunner(command, executor), delay, unit);
+            return scheduledExecutorService.schedule(new ScheduledTaskRunner(command, executor), delay, unit);
         }
 
         public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-            return scheduledExecutorService.scheduleAtFixedRate(createScheduledRunner(command, executor), initialDelay, period, unit);
+            return scheduledExecutorService.scheduleAtFixedRate(new ScheduledTaskRunner(command, executor), initialDelay, period, unit);
         }
 
         public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-            return scheduledExecutorService.scheduleWithFixedDelay(createScheduledRunner(command, executor), initialDelay, delay, unit);
+            return scheduledExecutorService.scheduleWithFixedDelay(new ScheduledTaskRunner(command, executor), initialDelay, delay, unit);
         }
 
         public void shutdown() {
@@ -273,6 +281,25 @@ public final class ExecutionServiceImpl implements ExecutionService {
             throw new UnsupportedOperationException();
         }
     }
+    private static class ScheduledTaskRunner implements Runnable {
+
+        private final Executor executor;
+        private final Runnable runnable;
+
+        public ScheduledTaskRunner(Runnable runnable, Executor executor) {
+            this.executor = executor;
+            this.runnable = runnable;
+        }
+
+        public void run() {
+            try {
+                executor.execute(runnable);
+            } catch (Throwable t) {
+                ExceptionUtil.sneakyThrow(t);
+            }
+        }
+    }
+
 
 
 }

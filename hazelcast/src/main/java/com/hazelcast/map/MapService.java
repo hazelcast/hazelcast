@@ -470,7 +470,11 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void destroyDistributedObject(String name) {
-        mapContainers.remove(name);
+        final MapContainer mapContainer = mapContainers.remove(name);
+        if(mapContainer != null)
+        {
+            mapContainer.shutDownMapStoreScheduledExecutor();
+        }
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
             if (container != null) {
