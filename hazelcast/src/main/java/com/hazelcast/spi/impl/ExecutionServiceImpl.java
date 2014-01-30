@@ -66,8 +66,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         });
 
         final String scheduledThreadName = node.getThreadNamePrefix("scheduled");
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
-                new SingleExecutorThreadFactory(node.threadGroup, classLoader, scheduledThreadName));
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new SingleExecutorThreadFactory(node.threadGroup, classLoader, scheduledThreadName));
         enableRemoveOnCancelIfAvailable();
 
         final int coreSize = Runtime.getRuntime().availableProcessors();

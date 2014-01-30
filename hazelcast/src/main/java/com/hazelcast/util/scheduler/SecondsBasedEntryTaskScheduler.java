@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,6 +50,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private final ScheduledExecutorService scheduledExecutorService;
     private final ScheduledEntryProcessor entryProcessor;
     private final ScheduleType scheduleType;
+    private final ConcurrentMap<Integer, ScheduledFuture> scheduledTaskMap = new ConcurrentHashMap<Integer, ScheduledFuture>(1000);
 
     SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor, ScheduleType scheduleType) {
         this.scheduledExecutorService = scheduledExecutorService;
@@ -125,6 +127,12 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             if (entries != null) {
                 return entries.remove(key);
             }
+            if (entries.isEmpty()) {
+                ScheduledFuture removed = scheduledTaskMap.remove(second);
+                if (removed != null) {
+                    removed.cancel(false);
+                }
+            }
         }
         return null;
     }
@@ -145,6 +153,12 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
                     result = entries.remove(timeKey);
+                }
+                if (entries.isEmpty()) {
+                    ScheduledFuture removed = scheduledTaskMap.remove(second);
+                    if (removed != null) {
+                        removed.cancel(false);
+                    }
                 }
             }
         }
@@ -218,11 +232,18 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         ConcurrentMap<Object, ScheduledEntry<K, V>> scheduledKeys = scheduledEntries.get(existingSecond);
         if (scheduledKeys != null) {
             scheduledKeys.remove(key);
+            if (scheduledKeys.isEmpty()) {
+                ScheduledFuture removed = scheduledTaskMap.remove(existingSecond);
+                if (removed != null) {
+                    removed.cancel(false);
+                }
+            }
         }
     }
 
     private void schedule(final Integer second, final int delaySeconds) {
-        scheduledExecutorService.schedule(new EntryProcessorExecutor(second), delaySeconds, TimeUnit.SECONDS);
+        ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(new EntryProcessorExecutor(second), delaySeconds, TimeUnit.SECONDS);
+        scheduledTaskMap.put(second, scheduledFuture);
     }
 
     private class EntryProcessorExecutor implements Runnable {
@@ -233,6 +254,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
 
         public void run() {
+            scheduledTaskMap.remove(second);
             final Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
             Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
@@ -248,17 +270,17 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
-    private List<ScheduledEntry<K,V>> sortForEntryProcessing(Set<ScheduledEntry<K,V>> coll) {
+    private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
         if (coll == null || coll.isEmpty()) return Collections.EMPTY_LIST;
 
-        final List<ScheduledEntry<K,V>> sortedEntries = new ArrayList<ScheduledEntry<K,V>>(coll);
+        final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);
         Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
 
         return sortedEntries;
 
     }
 
-    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR =  new Comparator<ScheduledEntry>() {
+    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
             if (o1.getScheduleTime() > o2.getScheduleTime()) {
@@ -278,6 +300,10 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     public void cancelAll() {
         secondsOfKeys.clear();
         scheduledEntries.clear();
+        for (ScheduledFuture task : scheduledTaskMap.values()) {
+            task.cancel(false);
+        }
+        scheduledTaskMap.clear();
     }
 
     @Override
