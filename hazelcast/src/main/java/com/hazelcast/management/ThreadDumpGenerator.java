@@ -20,8 +20,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.lang.management.LockInfo;
-import java.lang.management.*;
-import java.util.logging.Level;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MonitorInfo;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 
 public class ThreadDumpGenerator {
 
@@ -43,14 +45,14 @@ public class ThreadDumpGenerator {
     }
 
     public final String dumpAllThreads() {
-        logger.finest( "Generating full thread dump...");
+        logger.finest("Generating full thread dump...");
         StringBuilder s = new StringBuilder();
         s.append("Full thread dump ");
         return dump(getAllThreads(), s);
     }
 
     public final String dumpDeadlocks() {
-        logger.finest( "Generating dead-locked threads dump...");
+        logger.finest("Generating dead-locked threads dump...");
         StringBuilder s = new StringBuilder();
         s.append("Deadlocked thread dump ");
         return dump(findDeadlockedThreads(), s);
@@ -60,7 +62,7 @@ public class ThreadDumpGenerator {
         header(s);
         appendThreadInfos(infos, s);
         if (logger.isFinestEnabled()) {
-            logger.finest( "\n" + s.toString());
+            logger.finest("\n" + s.toString());
         }
         return s.toString();
     }
@@ -120,9 +122,9 @@ public class ThreadDumpGenerator {
             sb.append(" (in native)");
         }
         sb.append('\n');
-        final StackTraceElement[] stackTrace = info.getStackTrace();
-        final Object lockInfo = info.getLockInfo();
-        final MonitorInfo[] monitorInfo = info.getLockedMonitors();
+        StackTraceElement[] stackTrace = info.getStackTrace();
+        Object lockInfo = info.getLockInfo();
+        MonitorInfo[] monitorInfo = info.getLockedMonitors();
         for (int i = 0; i < stackTrace.length; i++) {
             StackTraceElement ste = stackTrace[i];
             sb.append("\tat ").append(ste.toString());
@@ -153,7 +155,7 @@ public class ThreadDumpGenerator {
                 }
             }
         }
-        final LockInfo[] locks = info.getLockedSynchronizers();
+        LockInfo[] locks = info.getLockedSynchronizers();
         if (locks.length > 0) {
             sb.append("\n\tNumber of locked synchronizers = ").append(locks.length);
             sb.append('\n');

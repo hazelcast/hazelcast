@@ -30,7 +30,6 @@ public class ConsoleCommandHandler {
     private final StringBuilder buffer = new StringBuilder();
 
     public ConsoleCommandHandler(HazelcastInstance instance) {
-        super();
         this.app = new ConsoleApp(instance);
     }
 
@@ -38,6 +37,7 @@ public class ConsoleCommandHandler {
         if ("exit".equals(command) || "quit".equals(command)) {
             return "'" + command + "' is not allowed!";
         }
+
         if (lock.tryLock(1, TimeUnit.SECONDS)) {
             try {
                 return doHandleCommand(command);

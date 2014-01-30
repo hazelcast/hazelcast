@@ -181,31 +181,37 @@ public class TimedMemberStateFactory {
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
                     if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
-                        memberState.putLocalQueueStats(queue.getName(), (LocalQueueStatsImpl) queue.getLocalQueueStats());
+                        LocalQueueStatsImpl stats = (LocalQueueStatsImpl) queue.getLocalQueueStats();
+                        memberState.putLocalQueueStats(queue.getName(), stats);
                         count++;
                     }
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
                     if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
-                        memberState.putLocalTopicStats(topic.getName(), (LocalTopicStatsImpl) topic.getLocalTopicStats());
+                        LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
+                        memberState.putLocalTopicStats(topic.getName(), stats);
                         count++;
                     }
                 } else if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
                     if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
-                        memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats());
+                        LocalMultiMapStatsImpl stats = (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats();
+                        memberState.putLocalMultiMapStats(multiMap.getName(), stats);
                         count++;
                     }
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
                     if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
-                        memberState.putLocalExecutorStats(executorService.getName(), (LocalExecutorStatsImpl) executorService.getLocalExecutorStats());
+                        LocalExecutorStatsImpl stats = (LocalExecutorStatsImpl) executorService.getLocalExecutorStats();
+                        memberState.putLocalExecutorStats(executorService.getName(), stats);
                         count++;
                     }
                 } else if (distributedObject instanceof ReplicatedMapProxy) {
                     ReplicatedMapProxy replicatedMap = (ReplicatedMapProxy) distributedObject;
                     if (config.findReplicatedMapConfig(replicatedMap.getName()).isStatisticsEnabled()) {
-                        memberState.putLocalReplicatedMapStats(replicatedMap.getName(), (LocalReplicatedMapStatsImpl) replicatedMap.getReplicatedMapStats());
+                        LocalReplicatedMapStatsImpl stats =
+                                (LocalReplicatedMapStatsImpl) replicatedMap.getReplicatedMapStats();
+                        memberState.putLocalReplicatedMapStats(replicatedMap.getName(), stats);
                     }
                 }
             }

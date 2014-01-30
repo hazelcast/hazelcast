@@ -85,7 +85,8 @@ public class ThreadMonitoringService {
             threadGroup.enumerate(threads);
             long now = System.nanoTime();
             for (Thread thread : threads) {
-                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads,thread.getId(),new ThreadCpuInfoConstructor(thread));
+                ThreadCpuInfoConstructor constructor = new ThreadCpuInfoConstructor(thread);
+                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads,thread.getId(), constructor);
                 int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * 100);
                 monitoredThreads.add(new MonitoredThread(thread.getName(), thread.getId(), percentage));
             }
