@@ -22,16 +22,11 @@ import com.hazelcast.core.ItemListener;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("ISet")
 public class SetMBean extends HazelcastMBean<ISet> {
 
-    private AtomicLong totalAddedItemCount = new AtomicLong();
-
-    private AtomicLong totalRemovedItemCount = new AtomicLong();
-
+    private final AtomicLong totalAddedItemCount = new AtomicLong();
+    private final AtomicLong totalRemovedItemCount = new AtomicLong();
     private final String registrationId;
 
     protected SetMBean(ISet managedObject, ManagementService service) {
@@ -77,6 +72,7 @@ public class SetMBean extends HazelcastMBean<ISet> {
         return totalRemovedItemCount.get();
     }
 
+    @Override
     public void preDeregister() throws Exception {
         super.preDeregister();
         try {

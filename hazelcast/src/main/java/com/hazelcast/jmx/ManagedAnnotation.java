@@ -19,9 +19,6 @@ package com.hazelcast.jmx;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-/**
- * @author ali 1/31/13
- */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ManagedAnnotation {
     String value();

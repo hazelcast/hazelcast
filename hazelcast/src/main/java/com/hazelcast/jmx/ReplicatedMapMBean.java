@@ -29,42 +29,40 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("ReplicatedMap")
 public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
-    private AtomicLong totalAddedEntryCount = new AtomicLong();
-
-    private AtomicLong totalRemovedEntryCount = new AtomicLong();
-
-    private AtomicLong totalUpdatedEntryCount = new AtomicLong();
-
+    private final AtomicLong totalAddedEntryCount = new AtomicLong();
+    private final AtomicLong totalRemovedEntryCount = new AtomicLong();
+    private final AtomicLong totalUpdatedEntryCount = new AtomicLong();
     private final String listenerId;
 
     protected ReplicatedMapMBean(ReplicatedMapProxy managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("ReplicatedMap", managedObject.getName());
+
+        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
         EntryListener entryListener = new EntryListener() {
+            @Override
             public void entryAdded(EntryEvent event) {
                 totalAddedEntryCount.incrementAndGet();
             }
-
+            @Override
             public void entryRemoved(EntryEvent event) {
                 totalRemovedEntryCount.incrementAndGet();
             }
-
+            @Override
             public void entryUpdated(EntryEvent event) {
                 totalUpdatedEntryCount.incrementAndGet();
             }
-
+            @Override
             public void entryEvicted(EntryEvent event) {
             }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
     }
 
+    @Override
     public void preDeregister() throws Exception {
         super.preDeregister();
         try {
@@ -259,6 +257,4 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
         }
         return buf.toString();
     }
-
-
 }

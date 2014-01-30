@@ -31,19 +31,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-/**
- * @author ali 1/31/13
- */
 public class ManagementService implements DistributedObjectListener {
 
     public static final String DOMAIN = "com.hazelcast";
 
     final HazelcastInstanceImpl instance;
-
     private final boolean enabled;
-
     private final ILogger logger;
-
     private final String registrationId;
     private final InstanceMBean instanceMBean;
 
@@ -113,10 +107,12 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
+    @Override
     public void distributedObjectCreated(DistributedObjectEvent event) {
         registerDistributedObject(event.getDistributedObject());
     }
 
+    @Override
     public void distributedObjectDestroyed(DistributedObjectEvent event) {
         unregisterDistributedObject(event.getDistributedObject());
     }
