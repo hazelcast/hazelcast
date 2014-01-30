@@ -36,8 +36,8 @@ public class LockInfo implements DataSerializable {
     public LockInfo() {
     }
 
-    public LockInfo(final String name, final String key, final long acquireTime,
-             final int ownerMemberIndex, final int waitingThreadCount) {
+    public LockInfo(String name, String key, long acquireTime,
+                    int ownerMemberIndex, int waitingThreadCount) {
         this.acquireTime = acquireTime;
         this.key = key;
         this.name = name;
@@ -66,7 +66,7 @@ public class LockInfo implements DataSerializable {
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         key = in.readUTF();
         ownerMemberIndex = in.readInt();
@@ -75,7 +75,7 @@ public class LockInfo implements DataSerializable {
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(key);
         out.writeInt(ownerMemberIndex);
