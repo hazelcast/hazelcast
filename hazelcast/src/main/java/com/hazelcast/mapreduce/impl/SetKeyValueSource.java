@@ -60,7 +60,7 @@ public class SetKeyValueSource<V>
     }
 
     @Override
-    public void open(NodeEngine nodeEngine) {
+    public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         ss = nei.getSerializationService();
 
@@ -68,14 +68,17 @@ public class SetKeyValueSource<V>
         PartitionService ps = nei.getPartitionService();
         Data data = ss.toData(setName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
-        if (!thisAddress.equals(ps.getPartitionOwner(partitionId))) {
-            return;
+        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        if (partitionOwner == null) {
+            return false;
         }
-
-        SetService setService = nei.getService(SetService.SERVICE_NAME);
-        SetContainer setContainer = setService.getOrCreateContainer(setName, false);
-        List<CollectionItem> items = new ArrayList<CollectionItem>(setContainer.getCollection());
-        iterator = items.iterator();
+        if (thisAddress.equals(partitionOwner)) {
+            SetService setService = nei.getService(SetService.SERVICE_NAME);
+            SetContainer setContainer = setService.getOrCreateContainer(setName, false);
+            List<CollectionItem> items = new ArrayList<CollectionItem>(setContainer.getCollection());
+            iterator = items.iterator();
+        }
+        return true;
     }
 
     @Override

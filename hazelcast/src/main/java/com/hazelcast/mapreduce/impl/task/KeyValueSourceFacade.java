@@ -39,8 +39,8 @@ class KeyValueSourceFacade<K, V> extends KeyValueSource<K, V> {
     }
 
     @Override
-    public void open(NodeEngine nodeEngine) {
-        keyValueSource.open(nodeEngine);
+    public boolean open(NodeEngine nodeEngine) {
+        return keyValueSource.open(nodeEngine);
     }
 
     @Override

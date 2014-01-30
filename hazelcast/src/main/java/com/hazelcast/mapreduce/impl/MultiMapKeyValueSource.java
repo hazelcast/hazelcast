@@ -63,13 +63,14 @@ public class MultiMapKeyValueSource<K, V>
     }
 
     @Override
-    public void open(NodeEngine nodeEngine) {
+    public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);
         ss = nei.getSerializationService();
         multiMapContainer = multiMapService.getOrCreateCollectionContainer(partitionId, multiMapName);
         isBinary = multiMapContainer.getConfig().isBinary();
         keyIterator = multiMapContainer.keySet().iterator();
+        return true;
     }
 
     @Override

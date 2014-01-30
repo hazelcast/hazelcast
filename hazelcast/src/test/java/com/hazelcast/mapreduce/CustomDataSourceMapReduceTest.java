@@ -103,12 +103,13 @@ public class CustomDataSourceMapReduceTest
         private transient Map.Entry<String, Integer> nextElement;
 
         @Override
-        public void open(NodeEngine nodeEngine) {
+        public boolean open(NodeEngine nodeEngine) {
             entries = new ArrayList<Map.Entry<String, Integer>>();
             for (int i = 0; i < 1000; i++) {
                 entries.add(new AbstractMap.SimpleEntry<String, Integer>(String.valueOf(i), i));
             }
             iterator = entries.iterator();
+            return true;
         }
 
         @Override
