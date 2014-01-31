@@ -197,8 +197,6 @@ public class LongRunningTest {
             for (int i = 0; i < threadCount; i++) {
                 es.submit(new Runnable() {
                     public void run() {
-                        Random random = new Random();
-
                         Map<String, byte[]> map = hazelcast.getMap("default");
                         while (running) {
                             try {
