@@ -28,8 +28,6 @@ import java.util.Collection;
  */
 public class GetAllOperation extends MultiMapKeyBasedOperation {
 
-    long begin = -1;
-
     public GetAllOperation() {
     }
 
@@ -44,7 +42,6 @@ public class GetAllOperation extends MultiMapKeyBasedOperation {
             wrapper.incrementHit();
             coll = wrapper.getCollection();
         }
-        begin = Clock.currentTimeMillis();
         response = new MultiMapResponse(coll);
     }
 

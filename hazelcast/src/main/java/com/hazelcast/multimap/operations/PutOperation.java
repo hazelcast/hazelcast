@@ -38,7 +38,6 @@ public class PutOperation extends MultiMapBackupAwareOperation {
 
     Data value;
     int index = -1;
-    long begin = -1;
     long recordId;
 
     public PutOperation() {
@@ -51,7 +50,6 @@ public class PutOperation extends MultiMapBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        begin = Clock.currentTimeMillis();
         MultiMapContainer container = getOrCreateContainer();
         recordId = container.nextId();
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
