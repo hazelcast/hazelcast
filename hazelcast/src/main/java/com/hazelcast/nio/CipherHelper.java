@@ -31,6 +31,8 @@ import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public final class CipherHelper {
     private static SymmetricCipherBuilder symmetricCipherBuilder = null;
 
@@ -46,6 +48,8 @@ public final class CipherHelper {
             logger.warning(e);
         }
     }
+
+    private CipherHelper(){}
 
     @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createSymmetricReaderCipher(SymmetricEncryptionConfig config) throws Exception {
@@ -113,11 +117,11 @@ public final class CipherHelper {
                 // 32-bit digest key=pass+salt
                 ByteBuffer bbPass = ByteBuffer.allocate(32);
                 MessageDigest md = MessageDigest.getInstance("MD5");
-                bbPass.put(md.digest(passPhrase.getBytes()));
+                bbPass.put(md.digest(stringToBytes(passPhrase)));
                 md.reset();
                 byte[] saltDigest = md.digest(salt);
                 bbPass.put(saltDigest);
-                boolean isCBC = algorithm.indexOf("/CBC/") != -1;
+                boolean isCBC = algorithm.contains("/CBC/");
                 SecretKey key = null;
                 //CBC mode requires IvParameter with 8 byte input
                 int ivLength = 8;

@@ -17,13 +17,13 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -50,7 +50,9 @@ public class ClientTxnTest {
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        final ClientConfig config = new ClientConfig();
+        config.setRedoOperation(true);
+        hz = HazelcastClient.newHazelcastClient(config);
         second = Hazelcast.newHazelcastInstance();
     }
 

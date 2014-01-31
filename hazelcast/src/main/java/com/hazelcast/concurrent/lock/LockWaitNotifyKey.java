@@ -20,9 +20,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
-/**
- * @author mdogan 2/13/13
- */
 public final class LockWaitNotifyKey implements WaitNotifyKey {
 
     private final ObjectNamespace namespace;
@@ -33,10 +30,12 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
         this.key = key;
     }
 
+    @Override
     public String getServiceName() {
         return namespace.getServiceName();
     }
 
+    @Override
     public String getObjectName() {
         return namespace.getObjectName();
     }

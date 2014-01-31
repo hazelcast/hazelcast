@@ -30,8 +30,7 @@ import java.io.IOException;
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
     private JoinRequest joinRequest;
-
-    private transient JoinRequest response;
+    private JoinRequest response;
 
     public JoinCheckOperation() {
     }
@@ -40,6 +39,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
         this.joinRequest = joinRequest;
     }
 
+    @Override
     public void run() {
         final ClusterServiceImpl service = getService();
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();

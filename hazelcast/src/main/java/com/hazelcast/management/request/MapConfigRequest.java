@@ -40,14 +40,12 @@ public class MapConfigRequest implements ConsoleRequest {
     }
 
     public MapConfigRequest(String map, MapConfig config) {
-        super();
         this.map = map;
         this.config = config;
         this.update = true;
     }
 
     public MapConfigRequest(String map, Address target) {
-        super();
         this.map = map;
         this.target = target;
         this.update = false;
@@ -61,10 +59,12 @@ public class MapConfigRequest implements ConsoleRequest {
         this.target = target;
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_CONFIG;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos)
             throws Exception {
         dos.writeBoolean(update);
@@ -85,6 +85,7 @@ public class MapConfigRequest implements ConsoleRequest {
         }
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         update = in.readBoolean();
 
@@ -100,6 +101,7 @@ public class MapConfigRequest implements ConsoleRequest {
         return in.readUTF();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(map);
         out.writeBoolean(update);
@@ -110,6 +112,7 @@ public class MapConfigRequest implements ConsoleRequest {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         map = in.readUTF();
         update = in.readBoolean();

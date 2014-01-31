@@ -47,9 +47,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -150,7 +148,8 @@ public class Node {
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
-        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address));
+        final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
+        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
                 loggingType, localMember, buildInfo);
@@ -263,7 +262,9 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        logger.finest(getThisAddress() + " failed connecting to " + address);
+        if(logger.isFinestEnabled()){
+            logger.finest(getThisAddress() + " failed connecting to " + address);
+        }
         failedConnections.add(address);
     }
 
@@ -313,13 +314,17 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.finest("** setting master address to " + master);
+            if(logger.isFinestEnabled()){
+                logger.finest("** setting master address to " + master);
+            }
         }
         masterAddress = master;
     }
 
     public void start() {
-        logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        if(logger.isFinestEnabled()){
+            logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        }
         if (completelyShutdown) return;
         nodeEngine.start();
         connectionManager.start();
@@ -354,7 +359,9 @@ public class Node {
 
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
-        logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
+        if(logger.isFinestEnabled()){
+            logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
+        }
         if (!terminate && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
@@ -399,7 +406,9 @@ public class Node {
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
                 if (thread.isAlive()) {
-                    logger.finest("Shutting down thread " + thread.getName());
+                    if(logger.isFinestEnabled()){
+                        logger.finest("Shutting down thread " + thread.getName());
+                    }
                     thread.interrupt();
                 }
             }
@@ -413,7 +422,9 @@ public class Node {
         joined.set(false);
         joiner.reset();
         final String uuid = UuidUtil.createMemberUuid(address);
-        logger.finest("Generated new UUID for local member: " + uuid);
+        if(logger.isFinestEnabled()){
+            logger.finest("Generated new UUID for local member: " + uuid);
+        }
         localMember.setUuid(uuid);
     }
 
@@ -487,7 +498,8 @@ public class Node {
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
-                localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0);
+                localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0,
+                config.getMemberAttributeConfig().getAttributes());
     }
 
     public ConfigCheck createConfigCheck() {
@@ -507,31 +519,44 @@ public class Node {
     }
 
     public void rejoin() {
+        prepareForRejoin();
+        join();
+    }
+
+    private void prepareForRejoin() {
         systemLogService.logJoin("Rejoining!");
         masterAddress = null;
         joined.set(false);
         clusterService.reset();
         failedConnections.clear();
-        join();
     }
 
     public void join() {
-        final long joinStartTime = joiner != null ? joiner.getStartTime() : Clock.currentTimeMillis();
+        if (joiner == null) {
+            logger.warning("No join method is enabled! Starting standalone.");
+            setAsMaster();
+            return;
+        }
+
         final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-        try {
-            if (joiner == null) {
-                logger.warning("No join method is enabled! Starting standalone.");
-                setAsMaster();
-            } else {
+        //This method used to be recursive. The problem is that eventually you can get a stackoverflow if
+        //there are enough retries. With an iterative approach you don't suffer from this problem.
+        int rejoinCount = 0;
+        for (; ; ) {
+            final long joinStartTime = joiner.getStartTime();
+            try {
                 joiner.join(joined);
-            }
-        } catch (Exception e) {
-            if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                logger.warning("Trying to rejoin: " + e.getMessage());
-                rejoin();
-            } else {
-                logger.severe("Could not join cluster, shutting down!", e);
-                shutdown(true);
+                return;
+            } catch (Exception e) {
+                rejoinCount++;
+                if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
+                    logger.warning("Trying to rejoin for the "+rejoinCount+" time: " + e.getMessage());
+                    prepareForRejoin();
+                } else {
+                    logger.severe("Could not join cluster after "+rejoinCount+" attempts, shutting down!", e);
+                    shutdown(true);
+                    return;
+                }
             }
         }
     }
@@ -598,36 +623,27 @@ public class Node {
         return buildInfo;
     }
 
+    private Map<String, Object> findMemberAttributes(MemberAttributeConfig attributeConfig) {
+        Map<String, Object> attributes = new HashMap<String, Object>(attributeConfig.getAttributes());
+        Properties properties = System.getProperties();
+        for (String key : properties.stringPropertyNames()) {
+            if (key.startsWith("hazelcast.member.attribute.")) {
+                String shortKey = key.substring("hazelcast.member.attribute.".length());
+                String value = properties.getProperty(key);
+                attributes.put(shortKey, value);
+            }
+        }
+        return attributes;
+    }
+
     private static final ConstructorFunction<String, BuildInfo> BUILD_INFO_CONSTRUCTOR = new ConstructorFunction<String, BuildInfo>() {
 
         public BuildInfo createNew(String key) {
-
-            String version = System.getProperty("hazelcast.version", "unknown");
-            String build = System.getProperty("hazelcast.build", "unknown");
-            int buildNumber = 0;
-            if ("unknown".equals(version) || "unknown".equals(build)) {
-                try {
-                    final InputStream inRuntimeProperties =
-                            Node.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-                    if (inRuntimeProperties != null) {
-                        Properties runtimeProperties = new Properties();
-                        runtimeProperties.load(inRuntimeProperties);
-                        inRuntimeProperties.close();
-                        version = runtimeProperties.getProperty("hazelcast.version");
-                        build = runtimeProperties.getProperty("hazelcast.build");
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-            try {
-                buildNumber = Integer.getInteger("hazelcast.build", -1);
-                if (buildNumber == -1) {
-                    buildNumber = Integer.parseInt(build);
-                }
-            } catch (Exception ignored) {
-            }
-
-            return new BuildInfo(version, build, buildNumber);
+            String version = HazelcastUtil.getVersion();
+            String build = HazelcastUtil.getBuild();
+            int buildNumber = HazelcastUtil.getBuildNumber();
+            boolean enterprise = HazelcastUtil.isEnterprise();
+            return new BuildInfo(version, build, buildNumber, enterprise);
         }
     };
 }

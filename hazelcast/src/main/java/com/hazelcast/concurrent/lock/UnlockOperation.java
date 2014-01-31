@@ -26,56 +26,82 @@ import java.io.IOException;
 public class UnlockOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
 
     private boolean force = false;
-    private transient boolean shouldNotify;
+    private boolean shouldNotify;
 
     public UnlockOperation() {
     }
 
-    public UnlockOperation(ObjectNamespace namespace, Data key, int threadId) {
+    public UnlockOperation(ObjectNamespace namespace, Data key, long threadId) {
         super(namespace, key, threadId);
     }
 
-    public UnlockOperation(ObjectNamespace namespace, Data key, int threadId, boolean force) {
+    public UnlockOperation(ObjectNamespace namespace, Data key, long threadId, boolean force) {
         super(namespace, key, threadId);
         this.force = force;
     }
 
+    @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
         if (force) {
-            response = lockStore.forceUnlock(key);
+            forceUnlock();
         } else {
-            final boolean unlocked = lockStore.unlock(key, getCallerUuid(), threadId);
-            response = unlocked;
-            if (!unlocked) {
-                throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
-            }
+            unlock();
         }
     }
 
+    private void unlock() {
+        LockStoreImpl lockStore = getLockStore();
+        boolean unlocked = lockStore.unlock(key, getCallerUuid(), threadId);
+        response = unlocked;
+        ensureUnlocked(lockStore, unlocked);
+    }
+
+    private void ensureUnlocked(LockStoreImpl lockStore, boolean unlocked) {
+        if (!unlocked) {
+            String ownerInfo = lockStore.getOwnerInfo(key);
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
+        }
+    }
+
+    private void forceUnlock() {
+        LockStoreImpl lockStore = getLockStore();
+        response = lockStore.forceUnlock(key);
+    }
+
+    @Override
     public void afterRun() throws Exception {
-        final AwaitOperation awaitResponse = getLockStore().pollExpiredAwaitOp(key);
+        LockStoreImpl lockStore = getLockStore();
+        AwaitOperation awaitResponse = lockStore.pollExpiredAwaitOp(key);
         if (awaitResponse != null) {
-            getNodeEngine().getOperationService().runOperation(awaitResponse);
+            OperationService operationService = getNodeEngine().getOperationService();
+            operationService.runOperation(awaitResponse);
         }
         shouldNotify = awaitResponse == null;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new UnlockBackupOperation(namespace, key, threadId, getCallerUuid(), force);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public boolean shouldNotify() {
         return shouldNotify;
     }
 
+    @Override
     public final WaitNotifyKey getNotifiedKey() {
         final ConditionKey conditionKey = getLockStore().getSignalKey(key);
-        return conditionKey != null ? conditionKey : new LockWaitNotifyKey(namespace, key);
+        if (conditionKey == null) {
+            return new LockWaitNotifyKey(namespace, key);
+        } else {
+            return conditionKey;
+        }
     }
 
     @Override

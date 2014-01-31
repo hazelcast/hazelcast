@@ -33,11 +33,12 @@ public class AlterAndGetOperation extends AbstractAlterOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         Function f = nodeEngine.toObject(function);
-        AtomicReferenceWrapper reference = getReference();
+        ReferenceWrapper reference = getReference();
 
         Object input = nodeEngine.toObject(reference.get());
+        //noinspection unchecked
         Object output = f.apply(input);
-        shouldBackup = !equals(input,output);
+        shouldBackup = !isEquals(input, output);
         if(shouldBackup){
             backup = nodeEngine.toData(output);
             reference.set(backup);

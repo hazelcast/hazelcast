@@ -18,9 +18,6 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.MultiMap;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("MultiMap")
 public class MultiMapMBean extends HazelcastMBean<MultiMap> {
 
@@ -69,6 +66,12 @@ public class MultiMapMBean extends HazelcastMBean<MultiMap> {
     @ManagedDescription("the last access (read) time of the locally owned entries.")
     public long getLocalLastAccessTime(){
         return managedObject.getLocalMultiMapStats().getLastAccessTime();
+    }
+
+    @ManagedAnnotation("localLastUpdateTime")
+    @ManagedDescription("the last update time of the locally owned entries.")
+    public long getLocalLastUpdateTime(){
+        return managedObject.getLocalMultiMapStats().getLastUpdateTime();
     }
 
     @ManagedAnnotation("localHits")

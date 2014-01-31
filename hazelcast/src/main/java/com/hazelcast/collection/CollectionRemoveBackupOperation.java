@@ -37,27 +37,31 @@ public class CollectionRemoveBackupOperation extends CollectionOperation impleme
         this.itemId = itemId;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().removeBackup(itemId);
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_REMOVE_BACKUP;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();

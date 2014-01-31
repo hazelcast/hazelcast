@@ -18,16 +18,14 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/23/13
- */
-public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
+public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier, IdentifiedDataSerializable {
 
     String firstCaller;
 
@@ -39,37 +37,56 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
         this.firstCaller = firstCaller;
     }
 
+    @Override
     public void run() throws Exception {
-        response = getPermit().memberRemoved(firstCaller);
+        Permit permit = getPermit();
+        response = permit.memberRemoved(firstCaller);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public boolean returnsResponse() {
         return false;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new DeadMemberBackupOperation(name, firstCaller);
     }
 
+    @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(firstCaller);
     }
 
+    @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         firstCaller = in.readUTF();
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return new SemaphoreWaitNotifyKey(name, "acquire");
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.SEMAPHORE_DEAD_MEMBER_OPERATION;
     }
 }

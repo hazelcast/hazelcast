@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.impl.Response;
 
 import java.util.Collection;
 import java.util.Map;
@@ -46,8 +47,6 @@ public interface OperationService {
 
     long  getExecutedOperationCount();
 
-    boolean isOperationThread();
-
     /**
      * Runs operation in calling thread.
      *
@@ -60,7 +59,11 @@ public interface OperationService {
      *
      * @param op the operation to execute.
      */
-    void executeOperation(final Operation op);
+    void executeOperation(Operation op);
+
+    <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
+
+    <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
@@ -90,28 +93,6 @@ public interface OperationService {
                                             Collection<Integer> partitions) throws Exception;
 
     /**
-     * Invokes a set of operations on all partitions of a target member.
-     *
-     * @param serviceName
-     * @param operationFactory the factory responsible creating operations
-     * @param target  the address of the target member
-     * @return a Map with partitionId as key and outcome of the operation as value.
-     * @throws Exception
-     */
-    Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
-                                                  Address target) throws Exception;
-
-    /**
-     * Executes an operation remotely.
-     *
-     * @param op the operation to execute.
-     * @param partitionId the id of the partition the operation should be executed on
-     * @param replicaIndex
-     * @return
-     */
-    boolean send(Operation op, int partitionId, int replicaIndex);
-
-    /**
      * Executes an operation remotely.
      *
      * It isn't allowed
@@ -122,12 +103,5 @@ public interface OperationService {
      */
     boolean send(Operation op, Address target);
 
-    /**
-     * Executes an operation remotely
-     *
-     * @param op the operation to send and execute.
-     * @param connection the connection to the target machine.
-     * @return
-     */
-    boolean send(Operation op, Connection connection);
+    boolean send(Response response, Address target);
 }

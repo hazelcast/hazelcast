@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @author mdogan 5/8/12
+ * DTO containing Lock information.
  */
 public class LockInfo implements DataSerializable {
 
@@ -36,8 +36,8 @@ public class LockInfo implements DataSerializable {
     public LockInfo() {
     }
 
-    public LockInfo(final String name, final String key, final long acquireTime,
-             final int ownerMemberIndex, final int waitingThreadCount) {
+    public LockInfo(String name, String key, long acquireTime,
+                    int ownerMemberIndex, int waitingThreadCount) {
         this.acquireTime = acquireTime;
         this.key = key;
         this.name = name;
@@ -65,7 +65,8 @@ public class LockInfo implements DataSerializable {
         return waitingThreadCount;
     }
 
-    public void readData(final ObjectDataInput in) throws IOException {
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         key = in.readUTF();
         ownerMemberIndex = in.readInt();
@@ -73,7 +74,8 @@ public class LockInfo implements DataSerializable {
         waitingThreadCount = in.readInt();
     }
 
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(key);
         out.writeInt(ownerMemberIndex);

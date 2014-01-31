@@ -16,21 +16,23 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.concurrent.atomiclong.client.*;
+import com.hazelcast.concurrent.atomiclong.client.AddAndGetRequest;
 import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
 import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
 import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
 import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndAddRequest;
 import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
 import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
 import com.hazelcast.concurrent.atomiclong.client.SetRequest;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
-/**
- * @author ali 5/13/13
- */
 public class AtomicLongPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_PORTABLE_FACTORY, -17);
@@ -45,15 +47,16 @@ public class AtomicLongPortableHook implements PortableHook {
     public static final int ALTER_AND_GET = 8;
     public static final int GET_AND_ALTER = 9;
 
-
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                switch (classId){
+                switch (classId) {
                     case ADD_AND_GET:
                         return new AddAndGetRequest();
                     case COMPARE_AND_SET:

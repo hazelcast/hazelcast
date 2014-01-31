@@ -18,7 +18,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -35,11 +34,10 @@ public abstract class TargetClientRequest extends ClientRequest {
                 .setTryCount(100)
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
-                        clientEngine.sendResponse(endpoint, filter(object));
+                        endpoint.sendResponse(filter(object), getCallId());
                     }
                 });
-        Invocation inv = builder.build();
-        inv.invoke();
+        builder.invoke();
     }
 
     protected abstract Operation prepareOperation();

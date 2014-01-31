@@ -17,8 +17,8 @@
 package com.hazelcast.query;
 
 import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryException;
 import com.hazelcast.query.impl.ReflectionHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,22 +28,28 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.query.Predicates.greaterThan;
+import static com.hazelcast.query.Predicates.lessThan;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.State;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PredicatesTest {
 
     @Test
-    public void testEqual() {
+    public void testSql() {
         Employee value = new Employee("abc-123-xvz", 34, true, 10D);
         value.setState(State.STATE2);
         Employee nullNameValue = new Employee(null, 34, true, 10D);
@@ -51,7 +57,7 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("state == " + State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", nullNameValue)));
-        assertTrue(new SqlPredicate("createDate >= '" + new Date(0) + "'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate("createDate >= '" + new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US).format(new Date(0)) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("sqlDate >= '" + new java.sql.Date(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("date >= '" + new Timestamp(0) + "'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("bigDecimal > '" + new BigDecimal("1.23E2") + "'").apply(createEntry("1", value)));
@@ -88,38 +94,78 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("name LIKE 'abc-%'").apply(createEntry("1", new Employee("abc-123", 34, true, 10D))));
         assertTrue(new SqlPredicate("name REGEX '^\\w{3}-\\d{3}-\\w{3}$'").apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("name REGEX '^[^\\w]{3}-\\d{3}-\\w{3}$'").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate(" (name ILIKE 'ABC-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
+    }
+
+    @Test
+    public void testEqual() {
         assertTrue(Predicates.equal(null, "value").apply(new DummyEntry("value")));
         assertFalse(Predicates.equal(null, "value1").apply(new DummyEntry("value")));
         assertTrue(Predicates.equal(null, TRUE).apply(new DummyEntry(true)));
         assertTrue(Predicates.equal(null, true).apply(new DummyEntry(TRUE)));
         assertFalse(Predicates.equal(null, true).apply(new DummyEntry(FALSE)));
-        assertTrue(Predicates.greaterThan(null, new BigDecimal("1.23E2")).apply(new DummyEntry(new BigDecimal("1.23E3"))));
         assertFalse(Predicates.equal(null, new BigDecimal("1.23E3")).apply(new DummyEntry(new BigDecimal("1.23E2"))));
         assertTrue(Predicates.equal(null, new BigDecimal("1.23E3")).apply(new DummyEntry(new BigDecimal("1.23E3"))));
         assertFalse(Predicates.equal(null, 15.22).apply(new DummyEntry(15.23)));
         assertTrue(Predicates.equal(null, 15.22).apply(new DummyEntry(15.22)));
         assertFalse(Predicates.equal(null, 16).apply(new DummyEntry(15)));
-        assertTrue(Predicates.greaterThan(null, 5).apply(new DummyEntry(6)));
-        assertFalse(Predicates.greaterThan(null, 5).apply(new DummyEntry(4)));
-        assertFalse(Predicates.greaterThan(null, 5).apply(new DummyEntry(5)));
-        assertTrue(Predicates.greaterThan(null, "aa").apply(new DummyEntry("xa")));
-        assertFalse(Predicates.greaterThan(null, "da").apply(new DummyEntry("cz")));
+    }
+
+
+    @Test
+    public void testAnd() {
+        assertTrue(Predicates.and(greaterThan(null,4), lessThan(null,6)).apply(new DummyEntry(5)));
+        assertFalse(Predicates.and(greaterThan(null,5), lessThan(null,6)).apply(new DummyEntry(4)));
+    }
+
+    @Test
+    public void testGreaterEqual() {
         assertTrue(Predicates.greaterEqual(null, 5).apply(new DummyEntry(5)));
-        assertTrue(Predicates.lessThan(null, 7).apply(new DummyEntry(6)));
-        assertFalse(Predicates.lessThan(null, 3).apply(new DummyEntry(4)));
-        assertFalse(Predicates.lessThan(null, 4).apply(new DummyEntry(4)));
-        assertTrue(Predicates.lessThan(null, "tc").apply(new DummyEntry("bz")));
-        assertFalse(Predicates.lessThan(null, "gx").apply(new DummyEntry("h0")));
+    }
+
+    @Test
+    public void testLessThan() {
+        assertTrue(lessThan(null, 7).apply(new DummyEntry(6)));
+        assertFalse(lessThan(null, 3).apply(new DummyEntry(4)));
+        assertFalse(lessThan(null, 4).apply(new DummyEntry(4)));
+        assertTrue(lessThan(null, "tc").apply(new DummyEntry("bz")));
+        assertFalse(lessThan(null, "gx").apply(new DummyEntry("h0")));
+    }
+
+    @Test
+    public void testGreaterThan() {
+        assertTrue(greaterThan(null, 5).apply(new DummyEntry(6)));
+        assertFalse(greaterThan(null, 5).apply(new DummyEntry(4)));
+        assertFalse(greaterThan(null, 5).apply(new DummyEntry(5)));
+        assertTrue(greaterThan(null, "aa").apply(new DummyEntry("xa")));
+        assertFalse(greaterThan(null, "da").apply(new DummyEntry("cz")));
+        assertTrue(greaterThan(null, new BigDecimal("1.23E2")).apply(new DummyEntry(new BigDecimal("1.23E3"))));
+    }
+
+    @Test
+    public void testLessEqual() {
         assertTrue(Predicates.lessEqual(null, 4).apply(new DummyEntry(4)));
+    }
+
+    @Test
+    public void testBetween() {
         assertTrue(Predicates.between(null, 4, 6).apply(new DummyEntry(5)));
         assertTrue(Predicates.between(null, 5, 6).apply(new DummyEntry(5)));
         assertTrue(Predicates.between(null, "abc", "xyz").apply(new DummyEntry("prs")));
         assertFalse(Predicates.between(null, "klmn", "xyz").apply(new DummyEntry("efgh")));
         assertFalse(Predicates.between(null, 6, 7).apply(new DummyEntry(5)));
+    }
+
+    @Test
+    public void testIn() {
         assertTrue(Predicates.in(null, 4, 7, 8, 5).apply(new DummyEntry(5)));
         assertTrue(Predicates.in(null, 5, 7, 8).apply(new DummyEntry(5)));
         assertFalse(Predicates.in(null, 6, 7, 8).apply(new DummyEntry(5)));
         assertFalse(Predicates.in(null, 6, 7, 8).apply(new DummyEntry(9)));
+    }
+
+    @Test
+    public void testLike() {
         assertTrue(Predicates.like(null, "J%").apply(new DummyEntry("Java")));
         assertTrue(Predicates.like(null, "Ja%").apply(new DummyEntry("Java")));
         assertTrue(Predicates.like(null, "J_v_").apply(new DummyEntry("Java")));
@@ -138,7 +184,16 @@ public class PredicatesTest {
         assertTrue(Predicates.like(null, "Java%ld").apply(new DummyEntry("Java World")));
         assertTrue(Predicates.like(null, "%World").apply(new DummyEntry("Java World")));
         assertTrue(Predicates.like(null, "Java_World").apply(new DummyEntry("Java World")));
+
+    }
+
+    @Test
+    public void testILike() {
         assertFalse(Predicates.like(null, "JavaWorld").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.ilike(null, "Java_World").apply(new DummyEntry("java World")));
+        assertTrue(Predicates.ilike(null, "java%ld").apply(new DummyEntry("Java World")));
+        assertTrue(Predicates.ilike(null, "%world").apply(new DummyEntry("Java World")));
+        assertFalse(Predicates.ilike(null, "Java_World").apply(new DummyEntry("gava World")));
     }
 
     void assertThis(boolean expected, String function, Comparable value, Object... args) {
@@ -212,6 +267,7 @@ public class PredicatesTest {
         assertEquals("(active=true OR age BETWEEN 10 AND 15)", sql("active or (age between 10 and 15)"));
         assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
         assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
+        assertEquals("name ILIKE 'J%'", sql("name ilike 'J%'"));
         //issue #594
         assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
     }

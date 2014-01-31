@@ -18,12 +18,13 @@ package com.hazelcast.management;
 
 import javax.script.ScriptEngineManager;
 
-/**
- * @author mdogan 30/10/13
- */
 public final class ScriptEngineManagerContext {
 
     private static volatile ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+
+    //we don't want instances.
+    private ScriptEngineManagerContext() {
+    }
 
     public static ScriptEngineManager getScriptEngineManager() {
         return scriptEngineManager;

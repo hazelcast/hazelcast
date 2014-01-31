@@ -73,30 +73,22 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public IQueue<Object> getQueue() {
-//        if (queue == null) {
         queue = hazelcast.getQueue(namespace);
-//        }
         return queue;
     }
 
     public ITopic<Object> getTopic() {
-//        if (topic == null) {
         topic = hazelcast.getTopic(namespace);
-//        }
         return topic;
     }
 
     public IMap<Object, Object> getMap() {
-//        if (map == null) {
         map = hazelcast.getMap(namespace);
-//        }
         return map;
     }
 
     public MultiMap<Object, Object> getMultiMap() {
-//        if (map == null) {
         multiMap = hazelcast.getMultiMap(namespace);
-//        }
         return multiMap;
     }
 
@@ -107,16 +99,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public ISet<Object> getSet() {
-//        if (set == null) {
         set = hazelcast.getSet(namespace);
-//        }
         return set;
     }
 
     public IList<Object> getList() {
-//        if (list == null) {
         list = hazelcast.getList(namespace);
-//        }
         return list;
     }
 
@@ -160,31 +148,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    public void setLineReader(LineReader lineReader) {
-        this.lineReader = lineReader;
-    }
-
-    class DefaultLineReader implements LineReader {
+    static class DefaultLineReader implements LineReader {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
         public String readLine() throws Exception {
             return in.readLine();
-        }
-    }
-
-    class HistoricLineReader implements LineReader {
-        InputStream in = System.in;
-
-        public String readLine() throws Exception {
-            while (true) {
-                System.in.read();
-                println("char " + System.in.read());
-            }
-        }
-
-        int readCharacter() throws Exception {
-            return in.read();
         }
     }
 
@@ -467,6 +436,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private static class SimulateLoadTask implements Callable,Serializable, HazelcastInstanceAware{
+
+        private final static long serialVersionUID = 1;
+
         private final int delay;
         private final int taskId;
         private final String latchId;
@@ -941,8 +913,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             println(getMultiMap().getLocalMultiMapStats());
         } else if (iteratorStr.startsWith("q.")) {
             println(getQueue().getLocalQueueStats());
-        } else if (iteratorStr.startsWith("l.")) {
         }
+        //if l then ??
+        //else if (iteratorStr.startsWith("l.")) {
+        //}
     }
 
     @SuppressWarnings("LockAcquiredButNotSafelyReleased")
@@ -1266,12 +1240,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         doExecute(false, true, args);
     }
 
-    private void ex(String input) throws Exception {
-        IExecutorService executorService = hazelcast.getExecutorService("default");
-        Future<String> f = executorService.submit(new Echo(input));
-        String echoResult = f.get();
-    }
-
     private void doExecute(boolean onKey, boolean onMember, String[] args) {
         // executeOnKey <echo-string> <key>
         try {
@@ -1317,117 +1285,39 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void executeLong(String[] args) {
-        // executeOnMembers <echo-string>
-        /*
-        try {
-            ExecutorService executorService = hazelcast.getExecutorService("default");
-
-            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), hazelcast.getCluster()
-                    .getMembers()) {
-                @Override
-                public void setMemberLeft(Member member) {
-                    println("Member Left " + member);
-                }
-
-                @Override
-                public void done() {
-                    println("Done!");
-                }
-            };
-            executorService.execute(echoTask);
-            Collection<String> results = echoTask.get();
-            for (String result : results) {
-                println(result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }  *.
-    }
-
-    private void executeLongTaskOnOtherMember(String[] args) {
-        // executeOnMembers <echo-string>
-    /*
-        try {
-            ExecutorService executorService = hazelcast.getExecutorService("default");
-            Member otherMember = null;
-            Set<Member> members = hazelcast.getCluster().getMembers();
-            for (Member member : members) {
-                if (!member.localMember()) {
-                    otherMember = member;
-                }
-            }
-            if (otherMember == null) {
-                otherMember = hazelcast.getCluster().getLocalMember();
-            }
-            DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
-                @Override
-                public void setMemberLeft(Member member) {
-                    println("Member Left " + member);
-                }
-
-                @Override
-                public void done() {
-                    println("Done!");
-                }
-            };
-            executorService.execute(echoTask);
-           Object result = echoTask.get();
-           println(result);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }  */
-    }
-
+    @Override
     public void entryAdded(EntryEvent event) {
         println(event);
     }
 
+    @Override
     public void entryRemoved(EntryEvent event) {
         println(event);
     }
 
+    @Override
     public void entryUpdated(EntryEvent event) {
         println(event);
     }
 
+    @Override
     public void entryEvicted(EntryEvent event) {
         println(event);
     }
 
+    @Override
     public void itemAdded(ItemEvent itemEvent) {
         println("Item added = " + itemEvent.getItem());
     }
 
+    @Override
     public void itemRemoved(ItemEvent itemEvent) {
         println("Item removed = " + itemEvent.getItem());
     }
 
+    @Override
     public void onMessage(Message msg) {
         println("Topic received = " + msg.getMessageObject());
-    }
-
-    public static class LongTask extends HazelcastInstanceAwareObject implements Callable<String>, Serializable {
-        String input = null;
-
-        public LongTask() {
-            super();
-        }
-
-        public LongTask(String input) {
-            super();
-            this.input = input;
-        }
-
-        public String call() {
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                System.out.println("Interrupted! Cancelling task!");
-                return "No-result";
-            }
-            return getHazelcastInstance().getCluster().getLocalMember().toString() + ":" + input;
-        }
     }
 
     public static class Echo extends HazelcastInstanceAwareObject implements Callable<String>, DataSerializable {
@@ -1440,15 +1330,18 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             this.input = input;
         }
 
+        @Override
         public String call() {
             getHazelcastInstance().getCountDownLatch("latch").countDown();
             return getHazelcastInstance().getCluster().getLocalMember().toString() + ":" + input;
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(input);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             input = in.readUTF();
         }
@@ -1462,6 +1355,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             return hazelcastInstance;
         }
 
+        @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             this.hazelcastInstance = hazelcastInstance;
         }

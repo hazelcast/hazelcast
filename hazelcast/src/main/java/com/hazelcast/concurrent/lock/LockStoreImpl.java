@@ -42,7 +42,7 @@ final class LockStoreImpl implements DataSerializable, LockStore {
     private int backupCount;
     private int asyncBackupCount;
 
-    private transient LockServiceImpl lockService;
+    private LockServiceImpl lockService;
 
     public LockStoreImpl() {
     }
@@ -54,59 +54,88 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         this.lockService = lockService;
     }
 
-    public boolean lock(Data key, String caller, int threadId) {
+    public boolean lock(Data key, String caller, long threadId) {
         return lock(key, caller, threadId, Long.MAX_VALUE);
     }
 
-    public boolean lock(Data key, String caller, int threadId, long leaseTime) {
-        final LockResourceImpl lock = getLock(key);
+    @Override
+    public boolean lock(Data key, String caller, long threadId, long leaseTime) {
+        LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, leaseTime);
     }
 
-    public boolean txnLock(Data key, String caller, int threadId, long leaseTime) {
-        final LockResourceImpl lock = getLock(key);
+    @Override
+    public boolean txnLock(Data key, String caller, long threadId, long leaseTime) {
+        LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, leaseTime, true);
     }
 
-    public boolean extendLeaseTime(Data key, String caller, int threadId, long leaseTime) {
-        final LockResourceImpl lock = locks.get(key);
-        return lock != null && lock.extendLeaseTime(caller, threadId, leaseTime);
+    @Override
+    public boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime) {
+        LockResourceImpl lock = locks.get(key);
+        if (lock == null) {
+            return false;
+        }
+        return lock.extendLeaseTime(caller, threadId, leaseTime);
     }
 
     private LockResourceImpl getLock(Data key) {
         return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
     }
 
+    @Override
     public boolean isLocked(Data key) {
-        final LockResource lock = locks.get(key);
+        LockResource lock = locks.get(key);
         return lock != null && lock.isLocked();
     }
 
-    public boolean isLockedBy(Data key, String caller, int threadId) {
+    @Override
+    public boolean isLockedBy(Data key, String caller, long threadId) {
         LockResource lock = locks.get(key);
-        return lock != null && lock.isLockedBy(caller, threadId);
+        if (lock == null) {
+            return false;
+        }
+        return lock.isLockedBy(caller, threadId);
     }
 
+    @Override
     public int getLockCount(Data key) {
         LockResource lock = locks.get(key);
-        return lock != null ? lock.getLockCount() : 0;
+        if (lock == null) {
+            return 0;
+        } else {
+            return lock.getLockCount();
+        }
     }
 
+    @Override
     public long getRemainingLeaseTime(Data key) {
         LockResource lock = locks.get(key);
-        return lock != null ? lock.getRemainingLeaseTime() : -1L;
+        if (lock == null) {
+            return -1L;
+        } else {
+            return lock.getRemainingLeaseTime();
+        }
     }
 
-    public boolean canAcquireLock(Data key, String caller, int threadId) {
-        final LockResourceImpl lock = locks.get(key);
-        return lock == null || lock.canAcquireLock(caller, threadId);
+    @Override
+    public boolean canAcquireLock(Data key, String caller, long threadId) {
+        LockResourceImpl lock = locks.get(key);
+        if (lock == null) {
+            return true;
+        } else {
+            return lock.canAcquireLock(caller, threadId);
+        }
     }
 
-    public boolean unlock(Data key, String caller, int threadId) {
-        final LockResourceImpl lock = locks.get(key);
+    @Override
+    public boolean unlock(Data key, String caller, long threadId) {
+        LockResourceImpl lock = locks.get(key);
+        if (lock == null) {
+            return false;
+        }
+
         boolean result = false;
-        if (lock == null)
-            return result;
         if (lock.canAcquireLock(caller, threadId)) {
             if (lock.unlock(caller, threadId)) {
                 result = true;
@@ -118,11 +147,12 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return result;
     }
 
+    @Override
     public boolean forceUnlock(Data key) {
-        final LockResourceImpl lock = locks.get(key);
-        if (lock == null)
+        LockResourceImpl lock = locks.get(key);
+        if (lock == null) {
             return false;
-        else {
+        } else {
             lock.clear();
             if (lock.isRemovable()) {
                 locks.remove(key);
@@ -136,12 +166,13 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return Collections.<LockResource>unmodifiableCollection(locks.values());
     }
 
+    @Override
     public Set<Data> getLockedKeys() {
         Set<Data> keySet = new HashSet<Data>(locks.size());
         for (Map.Entry<Data, LockResourceImpl> entry : locks.entrySet()) {
-            final Data key = entry.getKey();
-            final LockResource lock = entry.getValue();
-            if (lock.isLocked()){
+            Data key = entry.getKey();
+            LockResource lock = entry.getValue();
+            if (lock.isLocked()) {
                 keySet.add(key);
             }
         }
@@ -180,54 +211,73 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return backupCount + asyncBackupCount;
     }
 
-    boolean addAwait(Data key, String conditionId, String caller, int threadId) {
-        return getLock(key).addAwait(conditionId, caller, threadId);
+    boolean addAwait(Data key, String conditionId, String caller, long threadId) {
+        LockResourceImpl lock = getLock(key);
+        return lock.addAwait(conditionId, caller, threadId);
     }
 
-    boolean removeAwait(Data key, String conditionId, String caller, int threadId) {
-        return getLock(key).removeAwait(conditionId, caller, threadId);
+    boolean removeAwait(Data key, String conditionId, String caller, long threadId) {
+        LockResourceImpl lock = getLock(key);
+        return lock.removeAwait(conditionId, caller, threadId);
     }
 
-    boolean startAwaiting(Data key, String conditionId, String caller, int threadId) {
-        return getLock(key).startAwaiting(conditionId, caller, threadId);
+    boolean startAwaiting(Data key, String conditionId, String caller, long threadId) {
+        LockResourceImpl lock = getLock(key);
+        return lock.startAwaiting(conditionId, caller, threadId);
     }
 
     int getAwaitCount(Data key, String conditionId) {
-        return getLock(key).getAwaitCount(conditionId);
+        LockResourceImpl lock = getLock(key);
+        return lock.getAwaitCount(conditionId);
     }
 
     void registerSignalKey(ConditionKey conditionKey) {
-        getLock(conditionKey.getKey()).registerSignalKey(conditionKey);
+        LockResourceImpl lock = getLock(conditionKey.getKey());
+        lock.registerSignalKey(conditionKey);
     }
 
     ConditionKey getSignalKey(Data key) {
-        final LockResourceImpl lock = locks.get(key);
-        return lock != null ? lock.getSignalKey() : null;
+        LockResourceImpl lock = locks.get(key);
+        if (lock == null) {
+            return null;
+        } else {
+            return lock.getSignalKey();
+        }
     }
 
     void removeSignalKey(ConditionKey conditionKey) {
-        final LockResourceImpl lock = locks.get(conditionKey.getKey());
+        LockResourceImpl lock = locks.get(conditionKey.getKey());
         if (lock != null) {
             lock.removeSignalKey(conditionKey);
         }
     }
 
     void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
-        final Data key = awaitResponse.getKey();
-        getLock(key).registerExpiredAwaitOp(awaitResponse);
+        Data key = awaitResponse.getKey();
+        LockResourceImpl lock = getLock(key);
+        lock.registerExpiredAwaitOp(awaitResponse);
     }
 
     AwaitOperation pollExpiredAwaitOp(Data key) {
         LockResourceImpl lock = locks.get(key);
-        return lock != null ? lock.pollExpiredAwaitOp() : null;
+        if (lock == null) {
+            return null;
+        } else {
+            return lock.pollExpiredAwaitOp();
+        }
     }
 
+    @Override
     public String getOwnerInfo(Data key) {
         final LockResource lock = locks.get(key);
-        return lock != null ? "Owner: " + lock.getOwner() + ", thread-id: " + lock.getThreadId()
-                : "<not-locked>";
+        if (lock == null) {
+            return "<not-locked>";
+        } else {
+            return "Owner: " + lock.getOwner() + ", thread-id: " + lock.getThreadId();
+        }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(namespace);
         out.writeInt(backupCount);
@@ -241,6 +291,7 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         namespace = in.readObject();
         backupCount = in.readInt();

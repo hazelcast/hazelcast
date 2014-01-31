@@ -32,14 +32,15 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
     public UnlockBackupOperation() {
     }
 
-    public UnlockBackupOperation(ObjectNamespace namespace, Data key, int threadId, String originalCallerUuid, boolean force) {
+    public UnlockBackupOperation(ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid, boolean force) {
         super(namespace, key, threadId);
         this.force = force;
         this.originalCallerUuid = originalCallerUuid;
     }
 
+    @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         if (force) {
             response = lockStore.forceUnlock(key);
         } else {
@@ -48,12 +49,14 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
         lockStore.pollExpiredAwaitOp(key);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(originalCallerUuid);
         out.writeBoolean(force);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         originalCallerUuid = in.readUTF();

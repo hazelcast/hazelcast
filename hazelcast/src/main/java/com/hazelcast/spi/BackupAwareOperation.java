@@ -17,16 +17,42 @@
 package com.hazelcast.spi;
 
 /**
+ * A BackupAwareOperation is an Operation to indicate then when a change is made, a
+ * {@link com.hazelcast.spi.BackupOperation} is created to replicate the backup.
+ *
  * @author mdogan 12/6/12
  */
 public interface BackupAwareOperation extends PartitionAwareOperation {
 
+    /**
+     * Checks if a backup needs to be made.
+     *
+     * If a call has not made any change, e.g. an AtomicLong increment with 0, no backup needs to be made.
+     *
+     * @return true if a backup needs to be made, false otherwise.
+     */
     boolean shouldBackup();
 
+    /**
+     * The synchronous backup count.
+     *
+     * @return  the synchronous backup count.
+     */
     int getSyncBackupCount();
 
+    /**
+     * The asynchronous backup count.
+     *
+     * @return the asynchronous backup count.
+     */
     int getAsyncBackupCount();
 
-    Operation getBackupOperation();
+    /**
+     * Creates the {@link com.hazelcast.spi.BackupOperation} responsible for making the backup.
+     *
+     * @return the created BackupOperation.
+     */
 
+    //todo: should this not return a BackupOperation?
+    Operation getBackupOperation();
 }

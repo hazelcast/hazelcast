@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -52,7 +53,7 @@ public class HazelcastClientReconnectTest {
     }
 
     @Test(timeout = 180000)
-    @Ignore
+    @Category(ProblematicTest.class)
     public void testClientReconnectOnClusterDown() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -85,7 +86,7 @@ public class HazelcastClientReconnectTest {
     }
 
     @Test(timeout = 180000)
-    @Ignore
+    @Category(ProblematicTest.class)
     public void testClientReconnectOnClusterDownWithEntryListeners() throws Exception {
         Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);

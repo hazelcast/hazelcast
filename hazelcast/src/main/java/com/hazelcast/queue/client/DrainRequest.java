@@ -62,13 +62,13 @@ public class DrainRequest extends QueueRequest {
         return super.filter(response);
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeInt("m",maxSize);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         maxSize = reader.readInt("m");
     }
 

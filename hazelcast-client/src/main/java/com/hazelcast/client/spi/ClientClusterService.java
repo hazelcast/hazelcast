@@ -16,9 +16,14 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClientPacket;
 
+import java.io.IOException;
 import java.util.Collection;
 
 /**
@@ -37,4 +42,22 @@ public interface ClientClusterService {
     int getSize();
 
     long getClusterTime();
+
+    void handlePacket(ClientPacket packet);
+
+    ICompletableFuture send(ClientRequest request) throws IOException;
+
+    ICompletableFuture send(ClientRequest request, Address target) throws IOException ;
+
+    ICompletableFuture send(ClientRequest request, ClientConnection connection) throws IOException;
+
+    ICompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws IOException ;
+
+    ICompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException ;
+
+    void registerListener(String uuid, int callId);
+
+    public boolean deRegisterListener(String uuid);
+
+    public void removeConnectionCalls(ClientConnection connection);
 }

@@ -16,10 +16,9 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-/**
- * @author ali 1/22/13
- */
-public class ReleaseBackupOperation extends SemaphoreBackupOperation {
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+public class ReleaseBackupOperation extends SemaphoreBackupOperation implements IdentifiedDataSerializable {
 
     public ReleaseBackupOperation() {
     }
@@ -28,8 +27,20 @@ public class ReleaseBackupOperation extends SemaphoreBackupOperation {
         super(name, permitCount, firstCaller);
     }
 
+    @Override
     public void run() throws Exception {
-        getPermit().release(permitCount, firstCaller);
+        Permit permit = getPermit();
+        permit.release(permitCount, firstCaller);
         response = true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.RELEASE_BACKUP_OPERATION;
     }
 }

@@ -84,6 +84,7 @@ public final class ExceptionUtil {
     }
 
     private final static String EXCEPTION_SEPARATOR = "------ End remote and begin local stack-trace ------";
+    private final static String EXCEPTION_MESSAGE_SEPARATOR = "------ %MSG% ------";
 
     public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace) {
         StackTraceElement[] remoteStackTrace = remoteCause.getStackTrace();
@@ -94,4 +95,18 @@ public final class ExceptionUtil {
         remoteCause.setStackTrace(newStackTrace);
     }
 
+    public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace, String localExceptionMessage) {
+        String msg = EXCEPTION_MESSAGE_SEPARATOR.replace("%MSG%", localExceptionMessage);
+        StackTraceElement[] remoteStackTrace = remoteCause.getStackTrace();
+        StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length + 1];
+        System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
+        newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", null, -1);
+        StackTraceElement nextElement = localSideStackTrace[1];
+        newStackTrace[remoteStackTrace.length + 1] = new StackTraceElement(msg, nextElement.getMethodName(), nextElement.getFileName(), nextElement.getLineNumber());
+        System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 2, localSideStackTrace.length - 1);
+        remoteCause.setStackTrace(newStackTrace);
+    }
+
+    //we don't want instances
+    private ExceptionUtil(){}
 }

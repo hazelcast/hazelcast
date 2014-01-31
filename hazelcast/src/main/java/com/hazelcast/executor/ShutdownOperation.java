@@ -18,19 +18,16 @@ package com.hazelcast.executor;
 
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-/**
- * @author mdogan 2/13/13
- */
 public final class ShutdownOperation extends AbstractNamedOperation {
 
     public ShutdownOperation() {
-        super();
     }
 
     public ShutdownOperation(String name) {
         super(name);
     }
 
+    @Override
     public void run() throws Exception {
         DistributedExecutorService service = getService();
         service.shutdownExecutor(getName());

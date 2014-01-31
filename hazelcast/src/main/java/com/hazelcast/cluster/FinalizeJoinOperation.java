@@ -64,7 +64,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     if (!member.localMember()) {
                         Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                                 new PostJoinOperation(postJoinOperations), member.getAddress())
-                                .setTryCount(10).setTryPauseMillis(100).build().invoke();
+                                .setTryCount(10).setTryPauseMillis(100).invoke();
                         calls.add(f);
                     }
                 }
@@ -86,8 +86,10 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     } catch (TimeoutException ignored) {
                     } catch (ExecutionException e) {
                         final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
-                        logger.finest( "Error while executing post-join operations -> "
-                                + e.getClass().getSimpleName() + "[" +e.getMessage() + "]");
+                        if (logger.isFinestEnabled()) {
+                            logger.finest( "Error while executing post-join operations -> "
+                                    + e.getClass().getSimpleName() + "[" +e.getMessage() + "]");
+                        }
                     }
                 }
             }

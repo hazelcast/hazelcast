@@ -17,6 +17,7 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.*;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -48,6 +49,11 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     }
 
     public PartitionWideEntryOperation() {
+    }
+
+    public void innerBeforeRun() {
+        final ManagedContext managedContext = getNodeEngine().getSerializationService().getManagedContext();
+        managedContext.initialize(entryProcessor);
     }
 
     public void run() {
@@ -113,10 +119,6 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             }
 
         }
-    }
-
-    public void afterRun() throws Exception {
-        super.afterRun();
     }
 
     @Override

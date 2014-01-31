@@ -33,7 +33,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
 
     protected String name;
     protected Data dataKey;
-    protected int threadId = -1;
+    protected long threadId = -1;
     protected Data dataValue = null;
     protected long ttl = -1;
 
@@ -79,11 +79,11 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         return dataKey;
     }
 
-    public final int getThreadId() {
+    public final long getThreadId() {
         return threadId;
     }
 
-    public final void setThreadId(int threadId) {
+    public final void setThreadId(long threadId) {
         this.threadId = threadId;
     }
 
@@ -126,7 +126,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         dataKey.writeData(out);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
         IOUtil.writeNullableData(out, dataValue);
         out.writeLong(ttl);
     }
@@ -135,7 +135,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         name = in.readUTF();
         dataKey = new Data();
         dataKey.readData(in);
-        threadId = in.readInt();
+        threadId = in.readLong();
         dataValue = IOUtil.readNullableData(in);
         ttl = in.readLong();
     }

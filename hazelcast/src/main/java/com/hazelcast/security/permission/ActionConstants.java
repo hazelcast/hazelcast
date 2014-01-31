@@ -36,6 +36,8 @@ import java.security.Permission;
  */
 public final class ActionConstants {
 
+    private ActionConstants(){}
+
     public static final String ACTION_ALL = "all";
     public static final String ACTION_CREATE = "create";
     public static final String ACTION_DESTROY = "destroy";

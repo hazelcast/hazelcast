@@ -17,10 +17,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -41,7 +42,7 @@ public class GetDistributedObjectsRequest extends ClientRequest implements Porta
             dataArrayList.add(serializationService.toData(distributedObjectInfo));
         }
         SerializableCollection collection = new SerializableCollection(dataArrayList);
-        clientEngine.sendResponse(endpoint, collection);
+        endpoint.sendResponse(collection, getCallId());
     }
 
     @Override
@@ -57,9 +58,4 @@ public class GetDistributedObjectsRequest extends ClientRequest implements Porta
         return ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-    }
-
-    public void readPortable(PortableReader reader) throws IOException {
-    }
 }

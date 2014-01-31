@@ -16,12 +16,10 @@
 
 package com.hazelcast.concurrent.semaphore;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 1/22/13
- */
-public class DrainOperation extends SemaphoreBackupAwareOperation {
+public class DrainOperation extends SemaphoreBackupAwareOperation implements IdentifiedDataSerializable{
 
     public DrainOperation() {
     }
@@ -30,15 +28,29 @@ public class DrainOperation extends SemaphoreBackupAwareOperation {
         super(name, -1);
     }
 
+    @Override
     public void run() throws Exception {
-        response = getPermit().drain(getCallerUuid());
+        Permit permit = getPermit();
+        response = permit.drain(getCallerUuid());
     }
 
+    @Override
     public boolean shouldBackup() {
         return !response.equals(0);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new DrainBackupOperation(name, permitCount, getCallerUuid());
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.DRAIN_OPERATION;
     }
 }

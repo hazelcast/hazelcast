@@ -34,6 +34,9 @@ public class SimpleFunctionalMapTest {
     public static final int KB = 10240;
     public static final int STATS_SECONDS = 10;
 
+    private SimpleFunctionalMapTest(){}
+
+
     public static void main(String[] args) {
         int threadCount = 40;
         final Stats stats = new Stats();
@@ -60,7 +63,7 @@ public class SimpleFunctionalMapTest {
                             map.containsKey(key);
                             stats.increment("containsKey");
                         } else if (operation < 5) {
-                            Object value = new String(String.valueOf(key));
+                            Object value = String.valueOf(key);
                             map.containsValue(value);
                             stats.increment("containsValue");
                         } else if (operation < 6) {

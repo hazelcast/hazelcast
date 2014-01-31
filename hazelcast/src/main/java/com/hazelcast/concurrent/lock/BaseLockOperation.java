@@ -30,36 +30,30 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
     public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
 
     protected ObjectNamespace namespace;
-
     protected Data key;
-
-    protected int threadId;
-
+    protected long threadId;
     protected long ttl = DEFAULT_LOCK_TTL;
-
     protected long timeout = -1;
-
     protected transient Object response;
-
     private transient boolean asyncBackup = false;
 
     public BaseLockOperation() {
     }
 
-    protected BaseLockOperation(ObjectNamespace namespace, Data key, int threadId) {
+    protected BaseLockOperation(ObjectNamespace namespace, Data key, long threadId) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
     }
 
-    protected BaseLockOperation(ObjectNamespace namespace, Data key, int threadId, long timeout) {
+    protected BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
         this.timeout = timeout;
     }
 
-    public BaseLockOperation(ObjectNamespace namespace, Data key, int threadId, long ttl, long timeout) {
+    public BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
@@ -67,23 +61,31 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         this.timeout = timeout;
     }
 
+    @Override
     public final Object getResponse() {
         return response;
     }
 
     protected final LockStoreImpl getLockStore() {
-        final LockServiceImpl service = getService();
+        LockServiceImpl service = getService();
         return service.getLockStore(getPartitionId(), namespace);
     }
 
     public final int getSyncBackupCount() {
-        return !asyncBackup ? getLockStore().getBackupCount() : 0;
+        if (asyncBackup) {
+            return 0;
+        } else {
+            return getLockStore().getBackupCount();
+        }
     }
 
     public final int getAsyncBackupCount() {
-        final LockStoreImpl lockStore = getLockStore();
-        return !asyncBackup ? lockStore.getAsyncBackupCount() :
-                lockStore.getBackupCount() + lockStore.getAsyncBackupCount();
+        LockStoreImpl lockStore = getLockStore();
+        if (asyncBackup) {
+            return lockStore.getBackupCount() + lockStore.getAsyncBackupCount();
+        } else {
+            return lockStore.getAsyncBackupCount();
+        }
     }
 
     public final void setAsyncBackup(boolean asyncBackup) {
@@ -99,21 +101,23 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         return key;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(namespace);
         key.writeData(out);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
         out.writeLong(ttl);
         out.writeLong(timeout);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         namespace = in.readObject();
         key = new Data();
         key.readData(in);
-        threadId = in.readInt();
+        threadId = in.readLong();
         ttl = in.readLong();
         timeout = in.readLong();
     }

@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.concurrent.lock.LockResource;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.management.ClusterRuntimeState;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
@@ -33,43 +34,51 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author mdogan 5/7/12
- */
 public class RuntimeStateRequest implements ConsoleRequest {
 
+    //todo: unused.
     private static final long LOCK_TIME_THRESHOLD = TimeUnit.SECONDS.toMillis(300);
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_CLUSTER_STATE;
     }
 
-    private Collection<LockResource> collectLockState(final HazelcastInstanceImpl instance) {
-        final LockService lockService = instance.node.nodeEngine.getService(LockService.SERVICE_NAME);
+    private Collection<LockResource> collectLockState(HazelcastInstanceImpl instance) {
+        LockService lockService = instance.node.nodeEngine.getService(LockService.SERVICE_NAME);
         return lockService.getAllLocks();
     }
 
-    public void writeResponse(final ManagementCenterService mcs, final ObjectDataOutput dos) throws Exception {
-        final HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
-        final ClusterServiceImpl cluster = instance.node.getClusterService();
-        final PartitionServiceImpl partitionService = instance.node.partitionService;
-        final Collection<LockResource> lockedRecords = collectLockState(instance);
-        final Map<Address,Connection> connectionMap = instance.node.connectionManager.getReadonlyConnectionMap();
+    @Override
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+        HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
+        Node node = instance.node;
+        ClusterServiceImpl cluster = node.getClusterService();
+        PartitionServiceImpl partitionService = node.partitionService;
+        Collection<LockResource> lockedRecords = collectLockState(instance);
+        Map<Address, Connection> connectionMap = node.connectionManager.getReadonlyConnectionMap();
 
-        final ClusterRuntimeState clusterRuntimeState = new ClusterRuntimeState(cluster.getMembers(), partitionService.getPartitions(),
-                partitionService.getActiveMigrations(), connectionMap, lockedRecords);
+        ClusterRuntimeState clusterRuntimeState = new ClusterRuntimeState(
+                cluster.getMembers(),
+                partitionService.getPartitions(),
+                partitionService.getActiveMigrations(),
+                connectionMap,
+                lockedRecords);
         clusterRuntimeState.writeData(dos);
     }
 
-    public Object readResponse(final ObjectDataInput in) throws IOException {
+    @Override
+    public Object readResponse(ObjectDataInput in) throws IOException {
         ClusterRuntimeState clusterRuntimeState = new ClusterRuntimeState();
         clusterRuntimeState.readData(in);
         return clusterRuntimeState;
     }
 
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
     }
 
-    public void readData(final ObjectDataInput in) throws IOException {
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
     }
 }

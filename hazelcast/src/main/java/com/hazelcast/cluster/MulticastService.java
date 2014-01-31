@@ -105,6 +105,7 @@ public class MulticastService implements Runnable {
     }
 
     @SuppressWarnings("WhileLoopSpinsOnField")
+    @Override
     public void run() {
         try {
             while (running) {
@@ -140,7 +141,6 @@ public class MulticastService implements Runnable {
             try {
                 final byte[] data = datagramPacketReceive.getData();
                 final int offset = datagramPacketReceive.getOffset();
-                final int length = datagramPacketReceive.getLength();
                 final BufferObjectDataInput input = node.getSerializationService().createObjectDataInput(data);
                 input.position(offset);
 

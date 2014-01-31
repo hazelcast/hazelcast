@@ -16,6 +16,8 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+
 /**
  * Local map statistics. As everything is partitioned in Hazelcast,
  * each member owns 1/N (N being the number of members in the cluster)
@@ -73,6 +75,14 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return last access time.
      */
     long getLastAccessTime();
+
+
+    /**
+     * Returns the last update time of the locally owned entries.
+     *
+     * @return last update time.
+     */
+    long getLastUpdateTime();
 
     /**
      * Returns the number of hits (reads) of the locally owned entries.
@@ -190,6 +200,8 @@ public interface LocalMapStats extends LocalInstanceStats {
      * @return heap cost
      */
     public long getHeapCost();
+
+    public NearCacheStatsImpl getNearCacheStats();
 
 
 }

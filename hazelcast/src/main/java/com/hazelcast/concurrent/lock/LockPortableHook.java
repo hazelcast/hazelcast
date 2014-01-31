@@ -21,9 +21,6 @@ import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 5/3/13
- */
 public class LockPortableHook implements PortableHook {
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_PORTABLE_FACTORY, -15);
@@ -60,6 +57,7 @@ public class LockPortableHook implements PortableHook {
         };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

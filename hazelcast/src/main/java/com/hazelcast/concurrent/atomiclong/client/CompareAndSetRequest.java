@@ -24,9 +24,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @author ali 5/13/13
- */
 public class CompareAndSetRequest extends AtomicLongRequest {
 
     private long expect;
@@ -39,22 +36,25 @@ public class CompareAndSetRequest extends AtomicLongRequest {
         this.expect = expect;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CompareAndSetOperation(name, expect, delta);
     }
 
+    @Override
     public int getClassId() {
         return AtomicLongPortableHook.COMPARE_AND_SET;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeLong("e",expect);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         expect = reader.readLong("e");
     }
-
 }

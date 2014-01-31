@@ -36,18 +36,22 @@ public class TxnListAddRequest extends TxnCollectionRequest {
         super(name, value);
     }
 
-    public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getList(name).add(value);
+    @Override
+    public Object innerCall() throws Exception {
+        return getEndpoint().getTransactionContext(txnId).getList(name).add(value);
     }
 
+    @Override
     public String getServiceName() {
         return ListService.SERVICE_NAME;
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.TXN_LIST_ADD;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new ListPermission(name, ActionConstants.ACTION_ADD);
     }

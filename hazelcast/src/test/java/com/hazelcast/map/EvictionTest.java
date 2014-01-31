@@ -21,8 +21,10 @@ import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -266,7 +268,9 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
+    //this test is flawed because it assumes to out map entries in a certain amount of time.
     @Test
+    @Category(ProblematicTest.class)
     public void testEvictionSpeedTestPerPartition() {
         final int k = 2;
         final int size = 100;
@@ -484,6 +488,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMapRecordEviction() throws InterruptedException {
         int size = 100000;
         Config cfg = new Config();
@@ -577,7 +582,9 @@ public class EvictionTest extends HazelcastTestSupport {
         assertEquals(2, map.get(1));
     }
 
+    //TODO"test fails on latch wait(not enough time to eviect enterys)  or map.size < expected so the inner Thread did not have enough time to get the enterys and save them from evection")
     @Test
+    @Category(ProblematicTest.class)
     public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
         Config cfg = new Config();
         final String name = "testMapRecordIdleEvictionOnMigration";
@@ -621,6 +628,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
         assertTrue(latch.await(1, TimeUnit.MINUTES));
+
         Assert.assertEquals(nsize, map.size());
 
         thread.interrupt();
@@ -628,6 +636,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMapPutTtlWithListener() throws InterruptedException {
         Config cfg = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -688,6 +697,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testIssue1085EvictionBackup() throws InterruptedException {
         Config config = new Config();
         config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);

@@ -17,18 +17,15 @@
 package com.hazelcast.partition.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientPortableHook;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.PartitionDataSerializerHook;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.partition.Partitions;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +33,7 @@ import java.util.Map;
 /**
  * @author mdogan 5/13/13
  */
-public final class GetPartitionsRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
+public final class GetPartitionsRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     public Object call() throws Exception {
         final PartitionServiceImpl service = getService();
@@ -52,10 +49,10 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
             addressMap.put(address, k);
             k++;
         }
-        final Partitions partitions = service.getPartitions();
-        final int[] indexes = new int[partitions.size()];
+        final InternalPartition[] partitions = service.getPartitions();
+        final int[] indexes = new int[partitions.length];
         for (int i = 0; i < indexes.length; i++) {
-            final Address owner = partitions.get(i).getOwner();
+            final Address owner = partitions[i].getOwner();
             int index = -1;
             if (owner != null) {
                 final Integer idx = addressMap.get(owner);
@@ -69,26 +66,16 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
         return new PartitionsResponse(addresses, indexes);
     }
 
-    @Override
     public String getServiceName() {
         return PartitionServiceImpl.SERVICE_NAME;
     }
 
-    @Override
     public int getFactoryId() {
-        return PartitionDataSerializerHook.F_ID;
+        return ClientPortableHook.ID;
     }
 
-    @Override
-    public int getId() {
-        return PartitionDataSerializerHook.GET_PARTITIONS;
+    public int getClassId() {
+        return ClientPortableHook.GET_PARTITIONS;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-    }
 }

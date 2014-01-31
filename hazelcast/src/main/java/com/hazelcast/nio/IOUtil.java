@@ -26,6 +26,18 @@ import java.util.zip.Inflater;
 
 public final class IOUtil {
 
+    private IOUtil(){}
+
+    public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
+    public static final byte PRIMITIVE_TYPE_BYTE = 2;
+    public static final byte PRIMITIVE_TYPE_SHORT = 3;
+    public static final byte PRIMITIVE_TYPE_INTEGER = 4;
+    public static final byte PRIMITIVE_TYPE_LONG = 5;
+    public static final byte PRIMITIVE_TYPE_FLOAT = 6;
+    public static final byte PRIMITIVE_TYPE_DOUBLE = 7;
+    public static final byte PRIMITIVE_TYPE_UTF = 8;
+
+
     public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
         int size = (value == null) ? 0 : value.length;
         out.writeInt(size);
@@ -192,6 +204,59 @@ public final class IOUtil {
         bos.close();
         inflater.end();
         return bos.toByteArray();
+    }
+
+
+    public static void writeAttributeValue(Object value, ObjectDataOutput out) throws IOException {
+        Class<?> type = value.getClass();
+        if (type.equals(Boolean.class)) {
+            out.writeByte(PRIMITIVE_TYPE_BOOLEAN);
+            out.writeBoolean((Boolean) value);
+        } else if (type.equals(Byte.class)) {
+            out.writeByte(PRIMITIVE_TYPE_BYTE);
+            out.writeByte((Byte) value);
+        } else if (type.equals(Short.class)) {
+            out.writeByte(PRIMITIVE_TYPE_SHORT);
+            out.writeShort((Short) value);
+        } else if (type.equals(Integer.class)) {
+            out.writeByte(PRIMITIVE_TYPE_INTEGER);
+            out.writeInt((Integer) value);
+        } else if (type.equals(Long.class)) {
+            out.writeByte(PRIMITIVE_TYPE_LONG);
+            out.writeLong((Long) value);
+        } else if (type.equals(Float.class)) {
+            out.writeByte(PRIMITIVE_TYPE_FLOAT);
+            out.writeFloat((Float) value);
+        } else if (type.equals(Double.class)) {
+            out.writeByte(PRIMITIVE_TYPE_DOUBLE);
+            out.writeDouble((Double) value);
+        } else if(type.equals(String.class)) {
+            out.writeByte(PRIMITIVE_TYPE_UTF);
+            out.writeUTF((String) value);
+        }
+    }
+
+    public static Object readAttributeValue(ObjectDataInput in) throws IOException {
+        byte type = in.readByte();
+        switch (type) {
+            case PRIMITIVE_TYPE_BOOLEAN:
+                return in.readBoolean();
+            case PRIMITIVE_TYPE_BYTE:
+                return in.readByte();
+            case PRIMITIVE_TYPE_SHORT:
+                return in.readShort();
+            case PRIMITIVE_TYPE_INTEGER:
+                return in.readInt();
+            case PRIMITIVE_TYPE_LONG:
+                return in.readLong();
+            case PRIMITIVE_TYPE_FLOAT:
+                return in.readFloat();
+            case PRIMITIVE_TYPE_DOUBLE:
+                return in.readDouble();
+            case PRIMITIVE_TYPE_UTF:
+                return in.readUTF();
+        }
+        throw new IllegalStateException("Illegal type id found");
     }
 
     /**

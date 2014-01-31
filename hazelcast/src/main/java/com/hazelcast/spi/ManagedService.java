@@ -19,10 +19,21 @@ package com.hazelcast.spi;
 import java.util.Properties;
 
 /**
+ * A interface that can be implemented by a SPI Service to receive lifecycle calls like initialization and shutdown.
+ *
+ * Also there is a reset:
+ * todo: unclear what the purpose of reset is.
+ *
  * @author mdogan 7/23/12
  */
 public interface ManagedService {
 
+    /**
+     * Initializes the ManagedService
+     *
+     * @param nodeEngine the NodeEngine this ManagedService is initialized with.
+     * @param properties the Properties
+     */
     void init(NodeEngine nodeEngine, Properties properties);
 
     /**
@@ -31,9 +42,9 @@ public interface ManagedService {
     void reset();
 
     /**
-     * shutdown service
+     * Shuts down the ManagedService.
+     *
      * @param terminate
      */
     void shutdown(boolean terminate);
-
 }

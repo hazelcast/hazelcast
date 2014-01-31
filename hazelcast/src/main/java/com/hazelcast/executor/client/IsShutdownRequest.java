@@ -19,19 +19,16 @@ package com.hazelcast.executor.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.executor.ExecutorDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.executor.ExecutorPortableHook;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * @author ali 5/27/13
- */
-public class IsShutdownRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
+public class IsShutdownRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    String name;
+    private String name;
 
     public IsShutdownRequest() {
     }
@@ -40,28 +37,34 @@ public class IsShutdownRequest extends CallableClientRequest implements Identifi
         this.name = name;
     }
 
+    @Override
     public Object call() throws Exception {
         final DistributedExecutorService service = getService();
         return service.isShutdown(name);
     }
 
+    @Override
     public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
+        return ExecutorPortableHook.F_ID;
     }
 
-    public int getId() {
-        return ExecutorDataSerializerHook.IS_SHUTDOWN_REQUEST;
+    @Override
+    public int getClassId() {
+        return ExecutorPortableHook.IS_SHUTDOWN_REQUEST;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
     }
 }

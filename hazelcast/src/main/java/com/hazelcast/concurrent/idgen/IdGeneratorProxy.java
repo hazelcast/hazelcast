@@ -16,32 +16,30 @@
 
 package com.hazelcast.concurrent.idgen;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 1/23/13
- */
-public class IdGeneratorProxy implements IdGenerator {
+public class IdGeneratorProxy extends AbstractDistributedObject<IdGeneratorService> implements IdGenerator {
 
-    private static final int BLOCK_SIZE = 10000;
-    final String name;
-    final IAtomicLong atomicLong;
-    AtomicInteger residue;
-    AtomicLong local;
+    public static final int BLOCK_SIZE = 10000;
 
-    public IdGeneratorProxy(IAtomicLong atomicLong, String name) {
+    private final String name;
+    private final IAtomicLong blockGenerator;
+    private final AtomicInteger residue = new AtomicInteger(BLOCK_SIZE);
+    private final AtomicLong local = new AtomicLong(-1);
+
+    public IdGeneratorProxy(IAtomicLong blockGenerator, String name, NodeEngine nodeEngine, IdGeneratorService service) {
+        super(nodeEngine, service);
         this.name = name;
-        this.atomicLong = atomicLong;
-        residue = new AtomicInteger(BLOCK_SIZE);
-        local = new AtomicLong(-1);
+        this.blockGenerator = blockGenerator;
     }
 
+    @Override
     public boolean init(long id) {
         if (id <= 0) {
             return false;
@@ -49,42 +47,35 @@ public class IdGeneratorProxy implements IdGenerator {
         long step = (id / BLOCK_SIZE);
 
         synchronized (this) {
-            boolean init = atomicLong.compareAndSet(0, step + 1);
+            boolean init = blockGenerator.compareAndSet(0, step + 1);
             if (init) {
                 local.set(step);
                 residue.set((int) (id % BLOCK_SIZE) + 1);
             }
             return init;
         }
-
     }
 
+    @Override
     public long newId() {
         int value = residue.getAndIncrement();
         if (value >= BLOCK_SIZE) {
             synchronized (this) {
                 value = residue.get();
                 if (value >= BLOCK_SIZE) {
-                    local.set(atomicLong.getAndIncrement());
+                    local.set(blockGenerator.getAndIncrement());
                     residue.set(0);
                 }
+                //todo: we need to get rid of this.
                 return newId();
             }
         }
         return local.get() * BLOCK_SIZE + value;
     }
 
-    public Object getId() {
-        return name;
-    }
-
+    @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String getPartitionKey() {
-        return StringPartitioningStrategy.getPartitionKey(name);
     }
 
     @Override
@@ -92,31 +83,12 @@ public class IdGeneratorProxy implements IdGenerator {
         return IdGeneratorService.SERVICE_NAME;
     }
 
-    public void destroy() {
-        atomicLong.destroy();
-        residue = null;
-        local = null;
-    }
-
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    protected void postDestroy() {
+        blockGenerator.destroy();
 
-        DistributedObject that = (DistributedObject) o;
-        Object id = getId();
-        if (id != null ? !id.equals(that.getId()) : that.getId() != null) return false;
-
-        String serviceName = getServiceName();
-        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = getServiceName() != null ? getServiceName().hashCode() : 0;
-        result = 31 * result + (getId() != null ? getId().hashCode() : 0);
-        return result;
+        //todo: this behavior is racy; imagine what happens when destroy is called by different threads
+        local.set(-1);
+        residue.set(BLOCK_SIZE);
     }
 }

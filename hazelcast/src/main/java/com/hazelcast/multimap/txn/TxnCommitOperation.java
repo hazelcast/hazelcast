@@ -38,12 +38,12 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
 
     List<Operation> opList;
     long version;
-    transient boolean notify = true;
+    boolean notify = true;
 
     public TxnCommitOperation() {
     }
 
-    public TxnCommitOperation(String name, Data dataKey, int threadId, long version, List<Operation> opList) {
+    public TxnCommitOperation(String name, Data dataKey, long threadId, long version, List<Operation> opList) {
         super(name, dataKey, threadId);
         this.version = version;
         this.opList = opList;

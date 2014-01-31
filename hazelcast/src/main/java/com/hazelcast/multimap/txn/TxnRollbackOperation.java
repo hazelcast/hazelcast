@@ -33,7 +33,7 @@ public class TxnRollbackOperation extends MultiMapBackupAwareOperation implement
     public TxnRollbackOperation() {
     }
 
-    public TxnRollbackOperation(String name, Data dataKey, int threadId) {
+    public TxnRollbackOperation(String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
     }
 

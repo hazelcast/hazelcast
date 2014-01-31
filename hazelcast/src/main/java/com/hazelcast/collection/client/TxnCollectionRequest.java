@@ -17,8 +17,8 @@
 package com.hazelcast.collection.client;///*
 
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -31,7 +31,7 @@ import java.io.IOException;
 /**
 * @author ali 6/11/13
 */
-public abstract class TxnCollectionRequest extends CallableClientRequest implements Portable, SecureRequest {
+public abstract class TxnCollectionRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;
     Data value;
@@ -48,16 +48,19 @@ public abstract class TxnCollectionRequest extends CallableClientRequest impleme
         this.value = value;
     }
 
+    @Override
     public int getFactoryId() {
         return CollectionPortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n",name);
         IOUtil.writeNullableData(writer.getRawDataOutput(), value);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
         value = IOUtil.readNullableData(reader.getRawDataInput());
     }

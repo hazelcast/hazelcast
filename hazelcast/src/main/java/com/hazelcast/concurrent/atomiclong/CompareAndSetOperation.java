@@ -22,7 +22,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-// author: sancar - 24.12.2012
 public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
 
     private long expect;
@@ -30,7 +29,6 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
     private boolean returnValue = false;
 
     public CompareAndSetOperation() {
-        super();
     }
 
     public CompareAndSetOperation(String name, long expect, long update) {
@@ -41,7 +39,8 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getNumber().compareAndSet(expect, update);
+        LongWrapper number = getNumber();
+        returnValue = number.compareAndSet(expect, update);
         shouldBackup = !returnValue;
     }
 

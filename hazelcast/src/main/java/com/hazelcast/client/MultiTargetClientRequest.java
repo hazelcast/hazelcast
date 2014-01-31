@@ -33,7 +33,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         OperationFactory operationFactory = createOperationFactory();
         Collection<Address> targets = getTargets();
         if (targets.isEmpty()) {
-            clientEngine.sendResponse(getEndpoint(), reduce(new HashMap<Address, Object>()));
+            endpoint.sendResponse(reduce(new HashMap<Address, Object>()), getCallId());
             return;
         }
         MultiTargetCallback callback = new MultiTargetCallback(targets);
@@ -43,8 +43,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, target)
                     .setTryCount(100)
                     .setCallback(new SingleTargetCallback(target, callback));
-            Invocation inv = builder.build();
-            inv.invoke();
+            builder.invoke();
         }
     }
 
@@ -69,12 +68,12 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             }
             if (targets.isEmpty()) {
                 final Object response = reduce(results);
-                clientEngine.sendResponse(getEndpoint(), response);
+                endpoint.sendResponse(response, getCallId());
             }
         }
     }
 
-    private class SingleTargetCallback implements Callback<Object> {
+    private static class SingleTargetCallback implements Callback<Object> {
 
         final Address target;
         final MultiTargetCallback parent;

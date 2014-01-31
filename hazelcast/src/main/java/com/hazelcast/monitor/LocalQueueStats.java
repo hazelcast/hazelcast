@@ -20,6 +20,7 @@ package com.hazelcast.monitor;
  * Local queue statistics.
  */
 public interface LocalQueueStats extends LocalInstanceStats {
+
     /**
      * Returns the number of owned items in this member.
      *

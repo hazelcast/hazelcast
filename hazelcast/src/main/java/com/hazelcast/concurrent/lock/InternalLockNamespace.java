@@ -22,9 +22,6 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 2/13/13
- */
 public final class InternalLockNamespace implements ObjectNamespace {
 
     private String name;
@@ -36,10 +33,12 @@ public final class InternalLockNamespace implements ObjectNamespace {
         this.name = name;
     }
 
+    @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
+    @Override
     public String getObjectName() {
         return name;
     }

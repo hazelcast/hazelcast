@@ -80,6 +80,21 @@ public final class SerializationConstants {
 
     public static final int DEFAULT_TYPE_ENUM = -25;
 
+    // ------------------------------------------------------------
+    // AUTOMATICALLY REGISTERED SERIALIZERS
+
+    public static final int AUTO_TYPE_ARRAY_LIST = -100;
+
+    public static final int AUTO_TYPE_JOB_PARTITION_STATE = -101;
+
+    public static final int AUTO_TYPE_JOB_PARTITION_STATE_ARRAY = -102;
+
+    // ------------------------------------------------------------
+    // HIBERNATE SERIALIZERS
+
+    public static final int HIBERNATE_TYPE_HIBERNATE_CACHE_KEY = -200;
+
+    public static final int HIBERNATE_TYPE_HIBERNATE_CACHE_ENTRY = -201;
 
     private SerializationConstants() {}
 }

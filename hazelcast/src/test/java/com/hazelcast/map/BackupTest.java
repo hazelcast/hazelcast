@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
@@ -27,13 +28,18 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -46,16 +52,24 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
+//todo: fails from time to time
 public class BackupTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
+
+    @BeforeClass
+    @AfterClass
+    public static void killAllHazelcastInstances() throws IOException {
+        Hazelcast.shutdownAll();
+    }
 
     @Before
     public void gc() {
         Runtime.getRuntime().gc();
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
+    @Category(ProblematicTest.class)
     public void testGracefulShutdown() throws Exception {
         int size = 250000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -84,7 +98,8 @@ public class BackupTest extends HazelcastTestSupport {
         assertEquals(size, m4.size());
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
+    @Category(ProblematicTest.class)
     public void testGracefulShutdown2() throws Exception {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(2).setStatisticsEnabled(true);
@@ -137,7 +152,8 @@ public class BackupTest extends HazelcastTestSupport {
         Assert.assertEquals(size, map6.size());
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
+    @Category(ProblematicTest.class)
     public void testGracefulShutdown3() throws Exception {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(2).setStatisticsEnabled(true);
@@ -202,7 +218,8 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Fix for the issue 275.
      */
-    @Test(timeout = 300 * 1000)
+    @Test(timeout = 60 * 1000)
+    @Category(ProblematicTest.class)
     public void testBackupMigrationAndRecovery() throws Exception {
         testBackupMigrationAndRecovery(4, 1, 50000);
     }
@@ -210,7 +227,9 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Fix for the issue 395.
      */
-    @Test(timeout = 300 * 1000)
+    @Test(timeout = 60 * 1000)
+    //TODO
+    @Category(ProblematicTest.class)
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(6, 2, 50000);
     }
@@ -322,18 +341,19 @@ public class BackupTest extends HazelcastTestSupport {
         return total;
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
+    @Category(ProblematicTest.class)
     public void testIssue177BackupCount() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
         final Config config = new Config();
         final String name = MAP_NAME;
         config.getMapConfig(name).setBackupCount(1).setStatisticsEnabled(true);
 
-        final Random rand = new Random(System.currentTimeMillis());
+        final Random rand = new Random();
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
         final int count = 10000;
         final int totalCount = count * (instances.length() - 1);
-        final Thread[] threads = new Thread[instances.length()];
+        final CountDownLatch latch = new CountDownLatch(instances.length());
 
         for (int i = 0; i < instances.length(); i++) {
             final int finalI = i;
@@ -352,16 +372,15 @@ public class BackupTest extends HazelcastTestSupport {
                         }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                    } finally {
+                        latch.countDown();
                     }
                 }
             };
-            threads[i] = thread;
             thread.start();
         }
 
-        for (Thread thread : threads) {
-            thread.join();
-        }
+        assertTrue(latch.await(5, TimeUnit.MINUTES));
 
         final int trials = 50;
         for (int i = 0; i < trials; i++) {
@@ -389,7 +408,8 @@ public class BackupTest extends HazelcastTestSupport {
     /**
      * Test for issue #259.
      */
-    @Test
+    @Test(timeout = 60 * 1000)
+    @Category(ProblematicTest.class)
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
@@ -445,10 +465,11 @@ public class BackupTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     /**
      * Test for issue #259.
      */
+    @Category(ProblematicTest.class)
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 

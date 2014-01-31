@@ -30,8 +30,7 @@ import java.io.IOException;
 public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     protected Data value;
-
-    protected transient long itemId = -1;
+    protected long itemId = -1;
 
     public CollectionAddOperation() {
     }
@@ -41,22 +40,26 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
         this.value = value;
     }
 
+    @Override
     public boolean shouldBackup() {
         return itemId != -1;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionAddBackupOperation(name, itemId, value);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_ADD;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         if (hasEnoughCapacity(1)){
             itemId = getOrCreateContainer().add(value);
@@ -64,12 +67,14 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
         response = itemId != -1;
     }
 
+    @Override
     public void afterRun() throws Exception {
         if (itemId != -1){
             publishEvent(ItemEventType.ADDED, value);
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         value.writeData(out);

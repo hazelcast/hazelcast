@@ -16,45 +16,51 @@
 
 package com.hazelcast.management.request;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
-// author: sancar - 17.12.2012
 public class VersionMismatchLogRequest implements ConsoleRequest {
 
     private String manCenterVersion;
+
+    public VersionMismatchLogRequest() {
+    }
 
     public VersionMismatchLogRequest(String manCenterVersion) {
         this.manCenterVersion = manCenterVersion;
     }
 
-    public VersionMismatchLogRequest() {
-        super();
-    }
-
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_LOG_VERSION_MISMATCH;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         return "SUCCESS";
     }
 
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        final ILogger logger = mcs.getHazelcastInstance().node.getLogger(VersionMismatchLogRequest.class.getName());
-        mcs.setVersionMismatch(true);
+    @Override
+    public void writeResponse(ManagementCenterService managementCenterService, ObjectDataOutput dos) throws Exception {
+        managementCenterService.signalVersionMismatch();
+        Node node = managementCenterService.getHazelcastInstance().node;
+        ILogger logger = node.getLogger(VersionMismatchLogRequest.class);
+        //todo: does this message make sense because to the user it just displays version information we already know.
+        //he has no clue that the management version is not matching with his own.
         logger.severe("The version of the management center is " + manCenterVersion);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(manCenterVersion);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         manCenterVersion = in.readUTF();
     }

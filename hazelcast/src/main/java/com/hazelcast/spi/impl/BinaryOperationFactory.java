@@ -34,7 +34,7 @@ import java.io.IOException;
 public final class BinaryOperationFactory implements OperationFactory, NodeAware, IdentifiedDataSerializable {
 
     private Data operationData;
-    private transient NodeEngine nodeEngine;
+    private NodeEngine nodeEngine;
 
     public BinaryOperationFactory() {
     }

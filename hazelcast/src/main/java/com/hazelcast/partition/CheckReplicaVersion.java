@@ -31,8 +31,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
 
     private long version;
     private boolean returnResponse;
-
-    private transient boolean response;
+    private boolean response;
 
     public CheckReplicaVersion() {
     }

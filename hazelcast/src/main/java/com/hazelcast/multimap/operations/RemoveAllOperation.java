@@ -30,25 +30,21 @@ import java.util.Collection;
  */
 public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
-    transient Collection<MultiMapRecord> coll;
-
-    transient long begin = -1;
+    Collection<MultiMapRecord> coll;
 
     public RemoveAllOperation() {
     }
 
-    public RemoveAllOperation(String name, Data dataKey, int threadId) {
+    public RemoveAllOperation(String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
     }
 
     public void run() throws Exception {
-        begin = Clock.currentTimeMillis();
         coll = remove();
         response = new MultiMapResponse(coll);
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         if (coll != null) {
             getOrCreateContainer().update();
             for (MultiMapRecord record : coll) {

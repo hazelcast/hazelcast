@@ -16,7 +16,11 @@
 
 package com.hazelcast.topic.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
@@ -31,10 +35,7 @@ import com.hazelcast.topic.TopicService;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/24/13
- */
-public class AddMessageListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class AddMessageListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
 
@@ -45,45 +46,66 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
         this.name = name;
     }
 
-    public Object call() throws Exception {
-        final TopicService service = getService();
-        final ClientEngine clientEngine = getClientEngine();
-        final ClientEndpoint endpoint = getEndpoint();
-        MessageListener listener = new MessageListener() {
-            public void onMessage(Message message) {
-                if (endpoint.live()){
-                    Data messageData = clientEngine.toData(message.getMessageObject());
-                    PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), message.getPublishingMember().getUuid());
-                    clientEngine.sendResponse(endpoint,portableMessage);
-                }
-            }
-        };
+    @Override
+    public String call() throws Exception {
+        TopicService service = getService();
+        ClientEngine clientEngine = getClientEngine();
+        ClientEndpoint endpoint = getEndpoint();
+        MessageListener listener = new MessageListenerImpl(endpoint, clientEngine, getCallId());
         String registrationId = service.addMessageListener(name, listener);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
-        return null;
+        return registrationId;
     }
 
+    @Override
     public String getServiceName() {
         return TopicService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return TopicPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return TopicPortableHook.ADD_LISTENER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    @Override
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    @Override
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new TopicPermission(name, ActionConstants.ACTION_LISTEN);
+    }
+
+    private static class MessageListenerImpl implements MessageListener {
+        private final ClientEndpoint endpoint;
+        private final ClientEngine clientEngine;
+        private final int callId;
+
+        public MessageListenerImpl(ClientEndpoint endpoint, ClientEngine clientEngine, int callId) {
+            this.endpoint = endpoint;
+            this.clientEngine = clientEngine;
+            this.callId = callId;
+        }
+
+        public void onMessage(Message message) {
+            if (!endpoint.live()) {
+                return;
+            }
+            Data messageData = clientEngine.toData(message.getMessageObject());
+            String publisherUuid = message.getPublishingMember().getUuid();
+            PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), publisherUuid);
+            endpoint.sendEvent(portableMessage, callId);
+        }
     }
 }

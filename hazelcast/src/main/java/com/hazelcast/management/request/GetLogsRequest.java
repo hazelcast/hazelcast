@@ -16,7 +16,9 @@
 
 package com.hazelcast.management.request;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.logging.SystemLogRecord;
+import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,17 +28,17 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-// author: sancar - 12.12.2012
 public class GetLogsRequest implements ConsoleRequest {
 
     public GetLogsRequest() {
-        super();
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_LOGS;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         List<SystemLogRecord> list = new LinkedList<SystemLogRecord>();
         String node = in.readUTF();
@@ -50,9 +52,12 @@ public class GetLogsRequest implements ConsoleRequest {
         return list;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        List<SystemLogRecord> logBundle = mcs.getHazelcastInstance().node.getSystemLogService().getLogBundle();
-        final Address address = mcs.getHazelcastInstance().node.getThisAddress();
+        Node node = mcs.getHazelcastInstance().node;
+        SystemLogService systemLogService = node.getSystemLogService();
+        List<SystemLogRecord> logBundle = systemLogService.getLogBundle();
+        Address address = node.getThisAddress();
         dos.writeUTF(address.getHost() + ":" + address.getPort());
         dos.writeInt(logBundle.size());
         for (SystemLogRecord systemLogRecord : logBundle) {
@@ -60,11 +65,11 @@ public class GetLogsRequest implements ConsoleRequest {
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-
     }
 }

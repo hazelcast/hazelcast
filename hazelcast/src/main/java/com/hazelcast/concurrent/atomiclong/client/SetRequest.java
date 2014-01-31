@@ -20,9 +20,6 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.SetOperation;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 5/13/13
- */
 public class SetRequest extends AtomicLongRequest {
 
     public SetRequest() {
@@ -32,10 +29,12 @@ public class SetRequest extends AtomicLongRequest {
         super(name, value);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new SetOperation(name, delta);
     }
 
+    @Override
     public int getClassId() {
         return AtomicLongPortableHook.SET;
     }

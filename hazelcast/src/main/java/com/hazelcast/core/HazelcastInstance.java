@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -82,6 +83,22 @@ public interface HazelcastInstance {
      * @return distributed map instance with the specified name
      */
     <K, V> IMap<K, V> getMap(String name);
+
+    /**
+     * Returns the replicated map instance with the specified name.
+     *
+     * @param name name of the distributed map
+     * @return replicated map instance with specified name
+     */
+    <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
+
+    /**
+     * Returns the job tracker instance with the specified name.
+     *
+     * @param name name of the job tracker
+     * @return job tracker instance with specified name
+     */
+    JobTracker getJobTracker(String name);
 
     /**
      * Returns the distributed multimap instance with the specified name.

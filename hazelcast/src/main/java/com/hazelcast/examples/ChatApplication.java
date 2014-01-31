@@ -55,10 +55,9 @@ public class ChatApplication {
     }
 
     public void run() {
-        boolean chatting = true;
         showConnected(map);
         map.addEntryListener(new ChatCallback(), true);
-        while (chatting) {
+        while (true) {
             int input;
             StringBuilder message = new StringBuilder();
             ChatMessage chat;

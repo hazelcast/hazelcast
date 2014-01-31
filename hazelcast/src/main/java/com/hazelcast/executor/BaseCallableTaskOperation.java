@@ -26,9 +26,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-/**
- * @author mdogan 1/18/13
- */
 abstract class BaseCallableTaskOperation extends Operation {
 
     protected String name;
@@ -46,9 +43,7 @@ abstract class BaseCallableTaskOperation extends Operation {
 
     @Override
     public final void beforeRun() throws Exception {
-        HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
-        SerializationServiceImpl serializationService = (SerializationServiceImpl) hazelcastInstance.getSerializationService();
-        ManagedContext managedContext = serializationService.getManagedContext();
+        ManagedContext managedContext = getManagedContext();
 
         if (callable instanceof RunnableAdapter) {
             RunnableAdapter adapter = (RunnableAdapter) callable;
@@ -58,6 +53,14 @@ abstract class BaseCallableTaskOperation extends Operation {
         }
     }
 
+    private ManagedContext getManagedContext() {
+        HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
+        SerializationServiceImpl serializationService =
+                (SerializationServiceImpl) hazelcastInstance.getSerializationService();
+        return serializationService.getManagedContext();
+    }
+
+    @Override
     public final void run() throws Exception {
         DistributedExecutorService service = getService();
         service.execute(name, uuid, callable, getResponseHandler());

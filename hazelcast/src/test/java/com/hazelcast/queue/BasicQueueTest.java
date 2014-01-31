@@ -24,16 +24,18 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,6 +128,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void testQueueStats() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = new Config();
@@ -167,7 +170,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
         final String name = "defQueue";
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
 
         for (int i = 0; i < count; i++) {
             int index = rnd.nextInt(insCount);
@@ -198,7 +201,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final IQueue<String> q = instances[0].getQueue(name);
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
 
         for (int i = 0; i < count; i++) {
             int index = rnd.nextInt(insCount);
@@ -424,7 +427,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
     }
 
     private IQueue getQueue(HazelcastInstance[] instances, String name) {
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getQueue(name);
     }
 

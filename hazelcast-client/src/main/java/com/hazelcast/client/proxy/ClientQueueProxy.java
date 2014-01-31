@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.*;
@@ -25,7 +26,6 @@ import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.QueueIterator;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +60,8 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     public boolean removeItemListener(String registrationId) {
-        return stopListening(registrationId);
+        final RemoveListenerRequest request = new RemoveListenerRequest(name, registrationId);
+        return stopListening(request, registrationId);
     }
 
     public LocalQueueStats getLocalQueueStats() {
@@ -244,12 +245,8 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     protected void onDestroy() {
     }
 
-    private <T> T invoke(Object req){
-        try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected  <T> T invoke(ClientRequest req){
+        return super.invoke(req, getPartitionKey());
     }
 
     private List<Data> getDataList(Collection<?> objects) {

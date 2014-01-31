@@ -21,6 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -163,7 +164,9 @@ public class ClientMapTest {
         assertEquals(9, map.size());
     }
 
+
     @Test
+    @Ignore("TODO empty Test")
     public void flush() {
         //TODO map store
     }
@@ -309,6 +312,7 @@ public class ClientMapTest {
     }
 
     @Test
+    @Ignore("TODO empty Test")
     public void testPutTransient() throws Exception {
         //TODO mapstore
     }
@@ -611,6 +615,37 @@ public class ClientMapTest {
         }
     }
 
+    @Test
+    public void testExecuteOnKeys() throws Exception {
+
+        IMap<Integer, Integer> map = client.getMap("testMapMultipleEntryProcessor");
+        IMap<Integer, Integer> map2 = client.getMap("testMapMultipleEntryProcessor");
+
+        for (int i = 0; i < 10; i++) {
+            map.put(i,0);
+        }
+        Set keys = new HashSet();
+        keys.add(1);
+        keys.add(4);
+        keys.add(7);
+        keys.add(9);
+        final Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
+        assertEquals(1,resultMap.get(1));
+        assertEquals(1,resultMap.get(4));
+        assertEquals(1,resultMap.get(7));
+        assertEquals(1,resultMap.get(9));
+        assertEquals(1, (int) map.get(1));
+        assertEquals(0, (int) map.get(2));
+        assertEquals(0, (int) map.get(3));
+        assertEquals(1, (int) map.get(4));
+        assertEquals(0, (int) map.get(5));
+        assertEquals(0, (int) map.get(6));
+        assertEquals(1, (int) map.get(7));
+        assertEquals(0, (int) map.get(8));
+        assertEquals(1, (int) map.get(9));
+
+
+    }
 
     /**
      * Issue #996
@@ -728,5 +763,23 @@ public class ClientMapTest {
         }
     }
 
+    @Test
+    public void testMapStatistics() throws Exception {
+        final LocalMapStats localMapStats = server.getMap("testMapStatistics").getLocalMapStats();
+        final IMap map = client.getMap("testMapStatistics");
 
+        final int operationCount = 1000;
+        for (int i = 0; i < operationCount; i++) {
+            map.put(i, i);
+            map.get(i);
+            map.remove(i);
+        }
+
+        assertEquals("put count",operationCount,localMapStats.getPutOperationCount());
+        assertEquals("get count",operationCount,localMapStats.getGetOperationCount());
+        assertEquals("remove count",operationCount,localMapStats.getRemoveOperationCount());
+        assertTrue("put latency",  0 < localMapStats.getTotalPutLatency());
+        assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
+        assertTrue("remove latency",0 < localMapStats.getTotalRemoveLatency());
+    }
 }

@@ -21,6 +21,6 @@ package com.hazelcast.spi;
  */
 public interface ConfigurableService<T> {
 
-    public void configure(T configObject);
+    void configure(T configObject);
 
 }

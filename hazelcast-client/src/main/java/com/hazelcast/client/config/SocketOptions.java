@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.connection.SocketFactory;
-
 /**
  * @author mdogan 5/17/13
  */
@@ -36,8 +34,6 @@ public class SocketOptions {
     private int timeout = -1;
 
     private int bufferSize = 32; // in kb
-
-    private SocketFactory socketFactory;
 
     public boolean isTcpNoDelay() {
         return tcpNoDelay;
@@ -93,12 +89,4 @@ public class SocketOptions {
         return this;
     }
 
-    public SocketFactory getSocketFactory() {
-        return socketFactory;
-    }
-
-    public SocketOptions setSocketFactory(SocketFactory socketFactory) {
-        this.socketFactory = socketFactory;
-        return this;
-    }
 }

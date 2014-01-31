@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
@@ -27,7 +27,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
@@ -46,7 +45,7 @@ import java.util.Set;
  * Date: 9/18/13
  * Time: 2:28 PM
  */
-public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, SecureRequest {
+public abstract class AbstractTxnMapRequest extends BaseTransactionRequest implements SecureRequest {
 
     String name;
     TxnMapRequestType requestType;
@@ -77,8 +76,9 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         this.newValue = newValue;
     }
 
-    public Object call() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext();
+
+    public Object innerCall() throws Exception {
+        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         final TransactionalMap map = context.getMap(name);
         switch (requestType) {
             case CONTAINS_KEY:
@@ -146,7 +146,8 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         return MapPortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n", name);
         writer.writeInt("t", requestType.type);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -156,7 +157,8 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         writeDataInner(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
         requestType = TxnMapRequestType.getByType(reader.readInt("t"));
         final ObjectDataInput in = reader.getRawDataInput();

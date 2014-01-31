@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.UTFUtil;
+import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,6 +35,8 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     int pos = 0;
 
     final SerializationService service;
+
+    private final byte[] utfBuffer = new byte[1024];
 
     ByteArrayObjectDataOutput(int size, SerializationService service) {
         this.initialSize = size;
@@ -180,7 +182,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeUTF(final String str) throws IOException {
-        UTFUtil.writeUTF(this, str);
+        UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
     }
 
     public void writeCharArray(char[] chars) throws IOException {

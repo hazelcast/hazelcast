@@ -48,6 +48,9 @@ public final class CacheEnvironment {
 
     public static final String EXPLICIT_VERSION_CHECK = "hibernate.cache.hazelcast.explicit_version_check";
 
+    private CacheEnvironment() {
+    }
+
     public static String getConfigFilePath(Properties props) {
         String configResourcePath = ConfigurationHelper.getString(CacheEnvironment.CONFIG_FILE_PATH_LEGACY, props, null);
         if (StringHelper.isEmpty(configResourcePath)) {

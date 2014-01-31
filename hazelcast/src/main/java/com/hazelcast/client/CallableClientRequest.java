@@ -17,7 +17,6 @@
 package com.hazelcast.client;
 
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 5/6/13
@@ -28,10 +27,10 @@ public abstract class CallableClientRequest extends ClientRequest implements Cal
         final Object result;
         try {
             result = call();
-            clientEngine.sendResponse(getEndpoint(), result);
+            getEndpoint().sendResponse(result, getCallId());
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
-            clientEngine.sendResponse(getEndpoint(), e);
+            getEndpoint().sendResponse(e, getCallId());
         }
     }
 }

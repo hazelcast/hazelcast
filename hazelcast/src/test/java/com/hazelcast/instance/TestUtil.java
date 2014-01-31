@@ -29,6 +29,9 @@ public final class TestUtil {
 
     static final private SerializationService serializationService = new SerializationServiceBuilder().build();
 
+    private TestUtil() {
+    }
+
     public static Data toData(Object obj) {
         return serializationService.toData(obj);
     }
@@ -38,13 +41,18 @@ public final class TestUtil {
     }
 
     public static Node getNode(HazelcastInstance hz) {
+        HazelcastInstanceImpl impl = getHazelcastInstanceImpl(hz);
+        return impl != null ? impl.node : null;
+    }
+
+    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance hz) {
         HazelcastInstanceImpl impl = null;
         if (hz instanceof HazelcastInstanceProxy) {
             impl = ((HazelcastInstanceProxy) hz).original;
         } else if (hz instanceof HazelcastInstanceImpl) {
             impl = (HazelcastInstanceImpl) hz;
         }
-        return impl != null ? impl.node : null;
+        return impl;
     }
 
     public static void terminateInstance(HazelcastInstance hz) {

@@ -28,12 +28,8 @@ import java.util.Collection;
 
 public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation {
 
-    private static final long serialVersionUID = -2311579721761844861L;
-
     private Collection<MemberInfo> memberInfos;
-
     private long masterTime = Clock.currentTimeMillis();
-
     private boolean sendResponse = false;
 
     public MemberInfoUpdateOperation() {
@@ -46,6 +42,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         this.sendResponse = sendResponse;
     }
 
+    @Override
     public void run() throws Exception {
         processMemberUpdate();
     }

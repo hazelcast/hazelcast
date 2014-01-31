@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.net.InetSocketAddress;
+import java.util.Map;
 
 /**
  * Cluster member interface. The default implementation
@@ -61,4 +62,166 @@ public interface Member extends DataSerializable, Endpoint {
      * @return UUID of this member.
      */
     public String getUuid();
+
+    /**
+     * Returns configured attributes for this member.<br/>
+     * <b>This method might not be available on all native clients.</b>
+     *
+     * @return Attributes for this member.
+     */
+    Map<String, Object> getAttributes();
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    String getStringAttribute(String key);
+
+    /**
+     * Defines a key-value pair string attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setStringAttribute(String key, String value);
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Boolean getBooleanAttribute(String key);
+
+    /**
+     * Defines a key-value pair boolean attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setBooleanAttribute(String key, boolean value);
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Byte getByteAttribute(String key);
+
+    /**
+     * Defines a key-value pair byte attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setByteAttribute(String key, byte value);
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Short getShortAttribute(String key);
+
+    /**
+     * Defines a key-value pair short attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setShortAttribute(String key, short value);
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Integer getIntAttribute(String key);
+
+    /**
+     * Defines a key-value pair int attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setIntAttribute(String key, int value);
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Long getLongAttribute(String key);
+
+    /**
+     * Defines a key-value pair long attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setLongAttribute(String key, long value);
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Float getFloatAttribute(String key);
+
+    /**
+     * Defines a key-value pair float attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setFloatAttribute(String key, float value);
+
+    /**
+     * Returns the value of the specified key for this member or
+     * null if value is undefined.
+     *
+     * @param key The key to lookup.
+     * @return The value for this members key.
+     */
+    Double getDoubleAttribute(String key);
+
+    /**
+     * Defines a key-value pair double attribute for this member available
+     * to other cluster members.
+     *
+     * @param key The key for this property.
+     * @param value The value corresponds to this attribute and this member.
+     */
+    void setDoubleAttribute(String key, double value);
+
+    /**
+     * Removes a key-value pair attribute for this member if given key was
+     * previously assigned as an attribute.<br/>
+     * If key wasn't assigned to a value this method does nothing.
+     *
+     * @param key The key to be deleted from the member attributes
+     */
+    void removeAttribute(String key);
+
 }

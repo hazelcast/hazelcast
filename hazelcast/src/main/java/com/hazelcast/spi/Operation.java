@@ -24,7 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -48,7 +48,9 @@ public abstract class Operation implements DataSerializable {
     private long callTimeout = Long.MAX_VALUE;
     private String callerUuid;
     // not used anymore, keeping just for serialization compatibility
+    @Deprecated
     private boolean async = false;
+    private String executorName;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -57,6 +59,10 @@ public abstract class Operation implements DataSerializable {
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
     private transient long startTime;
+
+    public boolean isUrgent(){
+        return this instanceof UrgentSystemOperation;
+    }
 
     // runs before wait-support
     public abstract void beforeRun() throws Exception;
@@ -94,12 +100,20 @@ public abstract class Operation implements DataSerializable {
     }
 
     public final Operation setReplicaIndex(int replicaIndex) {
-        if (replicaIndex < 0 || replicaIndex >= PartitionView.MAX_REPLICA_COUNT) {
+        if (replicaIndex < 0 || replicaIndex >= InternalPartition.MAX_REPLICA_COUNT) {
             throw new IllegalArgumentException("Replica index is out of range [0-"
-                    + (PartitionView.MAX_REPLICA_COUNT - 1) + "]");
+                    + (InternalPartition.MAX_REPLICA_COUNT - 1) + "]");
         }
         this.replicaIndex = replicaIndex;
         return this;
+    }
+
+    public String getExecutorName() {
+        return executorName;
+    }
+
+    public void setExecutorName(String executorName) {
+        this.executorName = executorName;
     }
 
     public final long getCallId() {
@@ -234,7 +248,9 @@ public abstract class Operation implements DataSerializable {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {
             final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
-            logger.log(level, e.getClass().getName() + ": " + e.getMessage());
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getClass().getName() + ": " + e.getMessage());
+            }
         } else if (e instanceof OutOfMemoryError) {
             try {
                 logger.log(Level.SEVERE, e.getMessage(), e);
@@ -242,52 +258,38 @@ public abstract class Operation implements DataSerializable {
             }
         } else {
             final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-            logger.log(level, e.getMessage(), e);
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getMessage(), e);
+            }
         }
     }
 
-    private transient boolean writeDataFlag = false;
     public final void writeData(ObjectDataOutput out) throws IOException {
-        if (writeDataFlag) {
-            throw new IOException("Cannot call writeData() from a sub-class[" + getClass().getName() + "]!");
-        }
-        writeDataFlag = true;
-        try {
-            out.writeUTF(serviceName);
-            out.writeInt(partitionId);
-            out.writeInt(replicaIndex);
-            out.writeLong(callId);
-            out.writeBoolean(validateTarget);
-            out.writeLong(invocationTime);
-            out.writeLong(callTimeout);
-            out.writeUTF(callerUuid);
-            out.writeBoolean(async);  // not used anymore
-            writeInternal(out);
-        } finally {
-            writeDataFlag = false;
-        }
+        out.writeUTF(serviceName);
+        out.writeInt(partitionId);
+        out.writeInt(replicaIndex);
+        out.writeLong(callId);
+        out.writeBoolean(validateTarget);
+        out.writeLong(invocationTime);
+        out.writeLong(callTimeout);
+        out.writeUTF(callerUuid);
+        out.writeBoolean(async);  // not used anymore
+        out.writeUTF(executorName);
+        writeInternal(out);
     }
 
-    private transient boolean readDataFlag = false;
     public final void readData(ObjectDataInput in) throws IOException {
-        if (readDataFlag) {
-            throw new IOException("Cannot call readData() from a sub-class[" + getClass().getName() + "]!");
-        }
-        readDataFlag = true;
-        try {
-            serviceName = in.readUTF();
-            partitionId = in.readInt();
-            replicaIndex = in.readInt();
-            callId = in.readLong();
-            validateTarget = in.readBoolean();
-            invocationTime = in.readLong();
-            callTimeout = in.readLong();
-            callerUuid = in.readUTF();
-            async = in.readBoolean();  // not used anymore
-            readInternal(in);
-        } finally {
-            readDataFlag = false;
-        }
+        serviceName = in.readUTF();
+        partitionId = in.readInt();
+        replicaIndex = in.readInt();
+        callId = in.readLong();
+        validateTarget = in.readBoolean();
+        invocationTime = in.readLong();
+        callTimeout = in.readLong();
+        callerUuid = in.readUTF();
+        async = in.readBoolean();  // not used anymore
+        executorName = in.readUTF();
+        readInternal(in);
     }
 
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;

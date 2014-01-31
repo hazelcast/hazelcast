@@ -22,7 +22,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 public class MapSizeOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    private transient int size;
+    private int size;
 
     public MapSizeOperation(String name) {
         super(name);
@@ -33,6 +33,7 @@ public class MapSizeOperation extends AbstractMapOperation implements PartitionA
 
     public void run() {
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        recordStore.checkIfLoaded();
         size = recordStore.size();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();

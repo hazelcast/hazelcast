@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -57,9 +56,7 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object> 
             if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
                 Operation operation = new EvictOperation(mapName, key, true);
                 try {
-                    Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                            .build();
-                    Future f = invocation.invoke();
+                    Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
                     futures.add(f);
                 } catch (Throwable t) {
                     logger.warning(t);

@@ -65,7 +65,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
     }
 
     @Override
-    public boolean equals(Object value1, Object value2) {
+    public boolean isEquals(Object value1, Object value2) {
         return serializationService.toData(value1).equals(serializationService.toData(value2));
     }
 }

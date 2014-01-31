@@ -16,9 +16,9 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -35,7 +35,7 @@ import java.security.Permission;
 /**
  * @author ali 6/7/13
  */
-public class TxnSizeRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class TxnSizeRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -46,9 +46,9 @@ public class TxnSizeRequest extends CallableClientRequest implements Portable, S
         this.name = name;
     }
 
-    public Object call() throws Exception {
+    public Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final TransactionContext context = endpoint.getTransactionContext();
+        final TransactionContext context = endpoint.getTransactionContext(txnId);
         final TransactionalQueue queue = context.getQueue(name);
         return queue.size();
     }
@@ -65,11 +65,13 @@ public class TxnSizeRequest extends CallableClientRequest implements Portable, S
         return QueuePortableHook.TXN_SIZE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n",name);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
     }
 

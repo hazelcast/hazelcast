@@ -31,8 +31,8 @@ public class TxnMultiMapSizeRequest extends TxnMultiMapRequest {
         super(name);
     }
 
-    public Object call() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext();
+    public Object innerCall() throws Exception {
+        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         return context.getMultiMap(name).size();
     }
 

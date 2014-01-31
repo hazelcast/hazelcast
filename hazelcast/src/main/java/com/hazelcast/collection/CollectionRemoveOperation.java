@@ -30,8 +30,7 @@ import java.io.IOException;
 public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
     private Data value;
-
-    private transient long itemId = -1;
+    private long itemId = -1;
 
     public CollectionRemoveOperation() {
     }
@@ -41,10 +40,11 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
         this.value = value;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         response = false;
         final CollectionItem item = getOrCreateContainer().remove(value);
@@ -54,29 +54,35 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
         if (itemId != -1){
             publishEvent(ItemEventType.REMOVED, value);
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return itemId != -1;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionRemoveBackupOperation(name, itemId);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_REMOVE;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         value.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         value = new Data();

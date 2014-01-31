@@ -27,17 +27,17 @@ import java.lang.management.RuntimeMXBean;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// author: sancar - 11.12.2012
 public class ClusterPropsRequest implements ConsoleRequest {
 
     public ClusterPropsRequest() {
-
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_CLUSTER_PROPERTIES;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         Map<String, String> properties = new LinkedHashMap<String, String>();
         int size = in.readInt();
@@ -49,11 +49,13 @@ public class ClusterPropsRequest implements ConsoleRequest {
         return properties;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        Map<String, String> properties = new LinkedHashMap<String, String>();
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         final PartitionServiceImpl partitionService = mcs.getHazelcastInstance().node.getPartitionService();
+
+        Map<String, String> properties = new LinkedHashMap<String, String>();
         properties.put("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());
         properties.put("date.cl_startTime", Long.toString(runtimeMxBean.getStartTime()));
         properties.put("seconds.cl_upTime", Long.toString(runtimeMxBean.getUptime()));
@@ -68,14 +70,13 @@ public class ClusterPropsRequest implements ConsoleRequest {
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             dos.writeUTF(entry.getKey() + ":#" + entry.getValue());
         }
-
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-
     }
 }

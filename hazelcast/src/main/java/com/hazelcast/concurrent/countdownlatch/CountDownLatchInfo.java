@@ -71,11 +71,13 @@ public class CountDownLatchInfo implements DataSerializable {
         return sb.toString();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(count);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         count = in.readInt();

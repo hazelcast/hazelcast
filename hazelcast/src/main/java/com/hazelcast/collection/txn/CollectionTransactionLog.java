@@ -18,7 +18,6 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
@@ -51,44 +50,43 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         this.transactionId = transactionId;
     }
 
+    @Override
     public Object getKey() {
         return new TransactionLogKey(name, itemId, serviceName);
     }
 
+    @Override
     public Future prepare(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
         CollectionPrepareOperation operation = new CollectionPrepareOperation(name, itemId, transactionId, removeOperation);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(serviceName, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(serviceName, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
     public Future commit(NodeEngine nodeEngine) {
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(serviceName, op, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(serviceName, op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
     public Future rollback(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
         CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
         try {
-            Invocation invocation = nodeEngine.getOperationService()
-                    .createInvocationBuilder(serviceName, operation, partitionId).build();
-            return invocation.invoke();
+            return nodeEngine.getOperationService().invokeOnPartition(serviceName,operation,partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
         out.writeUTF(name);
@@ -98,6 +96,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         out.writeUTF(transactionId);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
         name = in.readUTF();

@@ -53,6 +53,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         ManagedService, MembershipAwareService, EventPublishingService<ClientEndpoint, ClientListener> {
 
     public static final String SERVICE_NAME = "hz:core:clientEngine";
+    static final Data NULL = new Data();
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -65,7 +66,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         this.node = node;
         this.serializationService = node.getSerializationService();
         nodeEngine = node.nodeEngine;
-        executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.CLIENT_EXECUTOR);
+        final int coreSize = Runtime.getRuntime().availableProcessors();
+        executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
+                coreSize * 10, coreSize * 100000);
         logger = node.getLogger(ClientEngine.class);
     }
 
@@ -128,13 +131,8 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return nodeEngine.getOperationService().invokeOnPartitions(serviceName, operationFactory, partitions);
     }
 
-    private static final Data NULL = new Data();
-
-    public void sendResponse(ClientEndpoint endpoint, Object response) {
-        if (response instanceof Throwable) {
-            response = ClientExceptionConverters.get(endpoint.getClientType()).convert((Throwable) response);
-        }
-        final Data resultData = response != null ? serializationService.toData(response) : NULL;
+    void sendResponse(ClientEndpoint endpoint, ClientResponse response) {
+        final Data resultData = serializationService.toData(response);
         Connection conn = endpoint.getConnection();
         conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
     }
@@ -315,6 +313,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     }
 
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+    }
+
     String addClientListener(ClientListener clientListener) {
         final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
         return registration.getId();
@@ -377,17 +378,21 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                     } else {
                         exception = new HazelcastInstanceNotActiveException();
                     }
-                    sendResponse(endpoint, exception);
+                    endpoint.sendResponse(exception, request.getCallId());
 
                     removeEndpoint(conn);
                 }
             } catch (Throwable e) {
                 final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-                String message = request != null
-                        ? "While executing request: " + request + " -> " + e.getMessage()
-                        : e.getMessage();
-                logger.log(level, message, e);
-                sendResponse(endpoint, e);
+                if (logger.isLoggable(level)) {
+                    String message = request != null
+                            ? "While executing request: " + request + " -> " + e.getMessage()
+                            : e.getMessage();
+                    logger.log(level, message, e);
+                }
+                if (request != null) {
+                    endpoint.sendResponse(e, request.getCallId());
+                }
             }
         }
     }

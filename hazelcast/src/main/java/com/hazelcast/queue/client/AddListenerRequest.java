@@ -35,7 +35,7 @@ import java.security.Permission;
 /**
  * @author ali 5/9/13
  */
-public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
     private boolean includeValue;
@@ -60,12 +60,12 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
         return QueuePortableHook.ADD_LISTENER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         writer.writeBoolean("i",includeValue);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         includeValue = reader.readBoolean("i");
     }
@@ -88,7 +88,7 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                 if (endpoint.live()){
                     Data item = clientEngine.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
-                    clientEngine.sendResponse(endpoint, portableItemEvent);
+                    endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }
         };

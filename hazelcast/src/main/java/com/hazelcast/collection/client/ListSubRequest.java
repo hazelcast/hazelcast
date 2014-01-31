@@ -42,26 +42,29 @@ public class ListSubRequest extends CollectionRequest {
         this.to = to;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListSubOperation(name, from, to);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_SUB;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeInt("f", from);
         writer.writeInt("t", to);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         from = reader.readInt("f");
         to = reader.readInt("t");
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

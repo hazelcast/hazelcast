@@ -17,13 +17,15 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.connection.Connection;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
@@ -37,18 +39,14 @@ import java.util.Map;
  */
 public class TransactionContextProxy implements TransactionContext {
 
-    static final int CONNECTION_TRY_COUNT = 5;
     final HazelcastClient client;
     final TransactionProxy transaction;
-    final Connection connection;
+    final ClientConnection connection;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
     public TransactionContextProxy(HazelcastClient client, TransactionOptions options) {
         this.client = client;
         this.connection = connect();
-        if (connection == null) {
-            throw new HazelcastException("Could not obtain Connection!!!");
-        }
         this.transaction = new TransactionProxy(client, options, connection);
     }
 
@@ -116,7 +114,7 @@ public class TransactionContextProxy implements TransactionContext {
         return (T) obj;
     }
 
-    public Connection getConnection() {
+    public ClientConnection getConnection() {
         return connection;
     }
 
@@ -124,22 +122,22 @@ public class TransactionContextProxy implements TransactionContext {
         return client;
     }
 
-    private Connection connect() {
-        Connection conn = null;
-        for (int i = 0; i < CONNECTION_TRY_COUNT; i++) {
+    private ClientConnection connect() {
+        int count = 0;
+        final ClientConnectionManager connectionManager = client.getConnectionManager();
+        IOException lastError = null;
+        while (count < ClientClusterServiceImpl.RETRY_COUNT) {
             try {
-                conn = client.getConnectionManager().getRandomConnection();
+                return connectionManager.getRandomConnection();
             } catch (IOException e) {
-                continue;
+                lastError = e;
             }
-            if (conn != null) {
-                break;
-            }
+            count++;
         }
-        return conn;
+        throw new HazelcastException("Could not obtain Connection!!!", lastError);
     }
 
-    private class TransactionalObjectKey {
+    private static class TransactionalObjectKey {
 
         private final String serviceName;
         private final String name;

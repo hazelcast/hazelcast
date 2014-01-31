@@ -31,12 +31,10 @@ import java.util.Set;
  * @ali 9/2/13
  */
 public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation {
-    
-    private boolean retain;
-    
-    private Set<Data> valueSet;
 
-    private transient Map<Long, Data> itemIdMap;
+    private boolean retain;
+    private Set<Data> valueSet;
+    private Map<Long, Data> itemIdMap;
 
     public CollectionCompareAndRemoveOperation() {
     }
@@ -47,33 +45,39 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         this.valueSet = valueSet;
     }
 
+    @Override
     public boolean shouldBackup() {
         return !itemIdMap.isEmpty();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionClearBackupOperation(name, itemIdMap.keySet());
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_COMPARE_AND_REMOVE;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         itemIdMap = getOrCreateContainer().compareAndRemove(retain, valueSet);
         response = !itemIdMap.isEmpty();
     }
 
+    @Override
     public void afterRun() throws Exception {
         for (Data value : itemIdMap.values()) {
             publishEvent(ItemEventType.REMOVED, value);
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(retain);
@@ -83,6 +87,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         retain = in.readBoolean();

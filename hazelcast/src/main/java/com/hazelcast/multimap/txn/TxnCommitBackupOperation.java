@@ -35,12 +35,12 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
 
     List<Operation> opList;
     String caller;
-    int threadId;
+    long threadId;
 
     public TxnCommitBackupOperation() {
     }
 
-    public TxnCommitBackupOperation(String name, Data dataKey, List<Operation> opList, String caller, int threadId) {
+    public TxnCommitBackupOperation(String name, Data dataKey, List<Operation> opList, String caller, long threadId) {
         super(name, dataKey);
         this.opList = opList;
         this.caller = caller;
@@ -64,7 +64,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
             out.writeObject(op);
         }
         out.writeUTF(caller);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
@@ -75,7 +75,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
             opList.add((Operation)in.readObject());
         }
         caller = in.readUTF();
-        threadId = in.readInt();
+        threadId = in.readLong();
     }
 
     public int getId() {

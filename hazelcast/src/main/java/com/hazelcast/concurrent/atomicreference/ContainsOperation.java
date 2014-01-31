@@ -28,7 +28,6 @@ public class ContainsOperation extends AtomicReferenceBaseOperation {
     private Data contains;
 
     public ContainsOperation() {
-        super();
     }
 
     public ContainsOperation(String name, Data contains) {
@@ -38,7 +37,8 @@ public class ContainsOperation extends AtomicReferenceBaseOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getReference().contains(contains);
+        ReferenceWrapper reference = getReference();
+        returnValue = reference.contains(contains);
     }
 
     @Override

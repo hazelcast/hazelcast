@@ -26,11 +26,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public final class Address implements IdentifiedDataSerializable {
 
     public static final int ID = 1;
 
-    private static final long serialVersionUID = -7626390274220424603L;
     private static final byte IPv4 = 4;
     private static final byte IPv6 = 6;
 
@@ -38,14 +40,14 @@ public final class Address implements IdentifiedDataSerializable {
     private String host;
     private byte type;
 
-    private transient String scopeId;
-    private transient boolean hostSet;
+    private String scopeId;
+    private boolean hostSet;
 
     public Address() {
     }
 
     public Address(String host, int port) throws UnknownHostException {
-        this(host, InetAddress.getByName(host), port) ;
+        this(host, InetAddress.getByName(host), port);
         hostSet = !AddressUtil.isIpAddress(host);
     }
 
@@ -81,7 +83,7 @@ public final class Address implements IdentifiedDataSerializable {
         out.writeInt(port);
         out.write(type);
         if (host != null) {
-            byte[] address = host.getBytes();
+            byte[] address = stringToBytes(host);
             out.writeInt(address.length);
             out.write(address);
         } else {
@@ -96,7 +98,7 @@ public final class Address implements IdentifiedDataSerializable {
         if (len > 0) {
             byte[] address = new byte[len];
             in.readFully(address);
-            host = new String(address);
+            host = bytesToString(address);
         }
     }
 
@@ -131,15 +133,9 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        return hash(host.getBytes()) * 29 + port;
-    }
-
-    private int hash(byte[] bytes) {
-        int hash = 0;
-        for (byte b : bytes) {
-            hash = (hash * 29) + b;
-        }
-        return hash;
+        int result = port;
+        result = 31 * result + host.hashCode();
+        return result;
     }
 
     public boolean isIPv4() {
@@ -162,7 +158,7 @@ public final class Address implements IdentifiedDataSerializable {
 
     public String getScopedHost() {
         return (isIPv4() || hostSet || scopeId == null) ? getHost()
-                                             : getHost() + "%" + scopeId;
+                : getHost() + "%" + scopeId;
     }
 
     @Override

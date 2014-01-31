@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-// author: sancar - 12.12.2012
 public class GetMapEntryRequest implements ConsoleRequest {
 
     private String mapName;
@@ -35,7 +34,6 @@ public class GetMapEntryRequest implements ConsoleRequest {
     private String key;
 
     public GetMapEntryRequest() {
-        super();
     }
 
     public GetMapEntryRequest(String type, String mapName, String key) {
@@ -44,10 +42,12 @@ public class GetMapEntryRequest implements ConsoleRequest {
         this.key = key;
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_ENTRY;
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         Map<String, String> properties = new LinkedHashMap<String, String>();
         int size = in.readInt();
@@ -59,6 +59,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
         return properties;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         IMap map = mcs.getHazelcastInstance().getMap(mapName);
 
@@ -93,15 +94,16 @@ public class GetMapEntryRequest implements ConsoleRequest {
         for (Map.Entry<String,String> propertyEntry : result.entrySet()) {
             dos.writeUTF(propertyEntry.getKey() + ":#" + propertyEntry.getValue());
         }
-
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(type);
         out.writeUTF(mapName);
         out.writeUTF(key);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         type = in.readUTF();
         mapName = in.readUTF();

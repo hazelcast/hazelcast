@@ -25,16 +25,15 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
-import com.hazelcast.partition.Partitions;
 
 import java.io.IOException;
 import java.util.*;
 
-/**
- * @author mdogan 5/8/12
- */
+//todo: cluster runtime should not extend PartitionRuntime but should compose it;
+//favor composition over inheritance.
 public class ClusterRuntimeState extends PartitionRuntimeState implements DataSerializable {
 
     private static final int LOCK_MAX_SIZE = 100;
@@ -48,22 +47,22 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     public ClusterRuntimeState() {
     }
 
-    public ClusterRuntimeState(final Collection<Member> members, // !!! ordered !!!
-                               final Partitions partitions,
-                               final Collection<MigrationInfo> activeMigrations,
-                               final Map<Address, Connection> connections,
-                               final Collection<LockResource> locks) {
-        super();
+    public ClusterRuntimeState( Collection<Member> members, // !!! ordered !!!
+                                InternalPartition[] partitions,
+                                Collection<MigrationInfo> activeMigrations,
+                                Map<Address, Connection> connections,
+                                Collection<LockResource> locks) {
         this.activeMigrations = activeMigrations != null ? activeMigrations : Collections.<MigrationInfo>emptySet();
         lockInfos = new LinkedList<LockInfo>();
         connectionInfos = new LinkedList<ConnectionInfo>();
-        final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
+         Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
         int memberIndex = 0;
         for (Member member : members) {
             MemberImpl memberImpl = (MemberImpl) member;
-            addMemberInfo(new MemberInfo(memberImpl.getAddress(), member.getUuid()), addressIndexes, memberIndex);
+            MemberInfo memberInfo = new MemberInfo(memberImpl.getAddress(), member.getUuid(), member.getAttributes());
+            addMemberInfo(memberInfo, addressIndexes, memberIndex);
             if (!member.localMember()) {
-                final Connection conn = connections.get(memberImpl.getAddress());
+                 Connection conn = connections.get(memberImpl.getAddress());
                 ConnectionInfo connectionInfo;
                 if (conn != null) {
                     connectionInfo = new ConnectionInfo(memberIndex, conn.live(), conn.lastReadTime(), conn.lastWriteTime());
@@ -80,8 +79,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         setLocks(locks, addressIndexes, members);
     }
 
-    private void setLocks(final Collection<LockResource> locks, final Map<Address, Integer> addressIndexes, final Collection<Member> members) {
-//        final long now = Clock.currentTimeMillis();
+    private void setLocks( Collection<LockResource> locks,  Map<Address, Integer> addressIndexes,  Collection<Member> members) {
         Map<String, Address> uuidToAddress = new HashMap<String, Address>(members.size());
         for (Member member : members) {
             uuidToAddress.put(member.getUuid(), ((MemberImpl) member).getAddress());
@@ -134,7 +132,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
+    public void readData( ObjectDataInput in) throws IOException {
         super.readData(in);
         localMemberIndex = in.readInt();
         lockTotalNum = in.readInt();
@@ -165,7 +163,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    public void writeData( ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeInt(localMemberIndex);
         out.writeInt(lockTotalNum);
@@ -197,7 +195,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("ClusterRuntimeState");
         sb.append("{members=").append(members);
         sb.append(", localMember=").append(localMemberIndex);

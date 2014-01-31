@@ -20,7 +20,6 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
 
 /**
@@ -30,7 +29,6 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.PARTITION_DS_FACTORY, -2);
 
-    public static final int GET_PARTITIONS = 1;
     public static final int PARTITIONS = 2;
 
 
@@ -42,8 +40,6 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         return new DataSerializableFactory() {
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case GET_PARTITIONS:
-                        return new GetPartitionsRequest();
                     case PARTITIONS:
                         return new PartitionsResponse();
                 }

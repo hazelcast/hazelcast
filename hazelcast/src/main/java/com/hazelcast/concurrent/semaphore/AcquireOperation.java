@@ -18,16 +18,15 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/22/13
- */
-public class AcquireOperation extends SemaphoreBackupAwareOperation implements WaitSupport {
+public class AcquireOperation extends SemaphoreBackupAwareOperation implements WaitSupport, IdentifiedDataSerializable {
 
     long timeout;
 
@@ -39,43 +38,63 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation implements W
         this.timeout = timeout;
     }
 
+    @Override
     public void run() throws Exception {
         Permit permit = getPermit();
         response = permit.acquire(permitCount, getCallerUuid());
     }
 
+    @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(timeout);
     }
 
+    @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         timeout = in.readLong();
     }
 
+    @Override
     public WaitNotifyKey getWaitKey() {
         return new SemaphoreWaitNotifyKey(name, "acquire");
     }
 
+    @Override
     public boolean shouldWait() {
         Permit permit = getPermit();
         return timeout != 0 && !permit.isAvailable(permitCount);
     }
 
+    @Override
     public long getWaitTimeoutMillis() {
         return timeout;
     }
 
+    @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(false);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new AcquireBackupOperation(name, permitCount, getCallerUuid());
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.ACQUIRE_OPERATION;
     }
 }

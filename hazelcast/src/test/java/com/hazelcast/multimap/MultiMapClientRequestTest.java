@@ -508,8 +508,7 @@ public class MultiMapClientRequestTest extends ClientTestSupport {
         return getInstance().getMultiMap(name);
     }
 
-    private int getThreadId() {
-        int threadId = (int) Thread.currentThread().getId();
-        return threadId;
+    private long getThreadId() {
+        return Thread.currentThread().getId();
     }
 }

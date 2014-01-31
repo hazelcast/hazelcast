@@ -38,13 +38,13 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
 
     protected String name;
     protected Data key;
-    protected int threadId;
+    protected long threadId;
     protected long timeout;
 
     public MapTryRemoveRequest() {
     }
 
-    public MapTryRemoveRequest(String name, Data key, int threadId, long timeout) {
+    public MapTryRemoveRequest(String name, Data key, long threadId, long timeout) {
         this.name = name;
         this.key = key;
         this.threadId = threadId;
@@ -75,17 +75,17 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
         return MapService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
+        writer.writeLong("t", threadId);
         writer.writeLong("timeout", timeout);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
+        threadId = reader.readLong("t");
         timeout = reader.readLong("timeout");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

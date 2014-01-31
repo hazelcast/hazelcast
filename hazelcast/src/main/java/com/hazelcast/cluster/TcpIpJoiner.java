@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
@@ -40,7 +39,6 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
@@ -59,7 +57,9 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (targetAddress == null) {
                 throw new IllegalArgumentException("Invalid target address -> NULL");
             }
-            logger.finest( "Joining over target member " + targetAddress);
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Joining over target member " + targetAddress);
+            }
             if (targetAddress.equals(node.getThisAddress()) || isLocalAddress(targetAddress)) {
                 node.setAsMaster();
                 return;
@@ -73,7 +73,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                     Thread.sleep(2000L);
                     continue;
                 }
-                logger.finest( "Sending joinRequest " + targetAddress);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Sending joinRequest " + targetAddress);
+                }
                 node.clusterService.sendJoinRequest(targetAddress, true);
                 //noinspection BusyWait
                 Thread.sleep(3000L);
@@ -87,6 +89,7 @@ public class TcpIpJoiner extends AbstractJoiner {
 
         private transient boolean approvedAsMaster = false;
 
+        @Override
         public void run() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             Node node = nodeEngine.getNode();
@@ -102,7 +105,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                 approvedAsMaster = false;
                 logger.warning("This node requires MulticastJoin strategy!");
             }
-            logger.finest( "Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
+            }
         }
 
         @Override
@@ -116,6 +121,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
+    //todo: why are we passing argument if not used?
     private void joinViaPossibleMembers(AtomicBoolean joined) {
         try {
             node.getFailedConnections().clear();
@@ -129,17 +135,23 @@ public class TcpIpJoiner extends AbstractJoiner {
             int numberOfSeconds = 0;
             final int connectionTimeoutSeconds = getConnTimeoutSeconds();
             while (!foundConnection && numberOfSeconds < connectionTimeoutSeconds) {
-                logger.finest( "Removing failedConnections: " + node.getFailedConnections());
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Removing failedConnections: " + node.getFailedConnections());
+                }
                 colPossibleAddresses.removeAll(node.getFailedConnections());
                 if (colPossibleAddresses.size() == 0) {
                     break;
                 }
-                logger.finest( "We are going to try to connect to each address" + colPossibleAddresses);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "We are going to try to connect to each address" + colPossibleAddresses);
+                }
                 for (Address possibleAddress : colPossibleAddresses) {
                     final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                     if (conn != null) {
                         foundConnection = true;
-                        logger.finest( "Found a connection and sending join request to " + possibleAddress);
+                        if (logger.isFinestEnabled()) {
+                            logger.finest( "Found a connection and sending join request to " + possibleAddress);
+                        }
                         node.clusterService.sendJoinRequest(possibleAddress, true);
                     }
                 }
@@ -148,7 +160,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                     numberOfSeconds++;
                 }
             }
-            logger.finest( "FOUND " + foundConnection);
+            if (logger.isFinestEnabled()) {
+                logger.finest( "FOUND " + foundConnection);
+            }
             if (!foundConnection) {
                 logger.finest( "This node will assume master role since no possible member where connected to.");
                 node.setAsMaster();
@@ -160,7 +174,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                         Thread.sleep(500L);
                         Address masterAddress = node.getMasterAddress();
                         if (masterAddress != null) {
-                            logger.finest( "Sending join request to " + masterAddress);
+                            if (logger.isFinestEnabled()) {
+                                logger.finest( "Sending join request to " + masterAddress);
+                            }
                             node.clusterService.sendJoinRequest(masterAddress, true);
                         }
                     }
@@ -184,10 +200,10 @@ public class TcpIpJoiner extends AbstractJoiner {
                             for (Address address : colPossibleAddresses) {
                                 if (node.getConnectionManager().getConnection(address) != null) {
                                     logger.finest( "Claiming myself as master node!");
-                                    Invocation inv = node.nodeEngine.getOperationService().createInvocationBuilder(
+                                    Future future = node.nodeEngine.getOperationService().createInvocationBuilder(
                                             ClusterServiceImpl.SERVICE_NAME, new MasterClaim(), address)
-                                            .setTryCount(1).build();
-                                    responses.add(inv.invoke());
+                                            .setTryCount(1).invoke();
+                                    responses.add(future);
                                 }
                             }
                             final long maxWait = TimeUnit.SECONDS.toMillis(10);
@@ -209,9 +225,11 @@ public class TcpIpJoiner extends AbstractJoiner {
                                 }
                             }
                             if (allApprovedAsMaster) {
-                                logger.finest( node.getThisAddress() + " Setting myself as master! group "
-                                        + node.getConfig().getGroupConfig().getName() + " possible addresses "
-                                        + colPossibleAddresses.size() + " " + colPossibleAddresses);
+                                if (logger.isFinestEnabled()) {
+                                    logger.finest( node.getThisAddress() + " Setting myself as master! group "
+                                            + node.getConfig().getGroupConfig().getName() + " possible addresses "
+                                            + colPossibleAddresses.size() + " " + colPossibleAddresses);
+                                }
                                 node.setAsMaster();
                                 return;
                             } else {
@@ -246,11 +264,15 @@ public class TcpIpJoiner extends AbstractJoiner {
         colPossibleAddresses.removeAll(node.getFailedConnections());
         if (colPossibleAddresses.size() == 0) {
             node.setAsMaster();
-            logger.finest( node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName()
-                    + " no possible addresses without failed connection");
+            if (logger.isFinestEnabled()) {
+                logger.finest( node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName()
+                        + " no possible addresses without failed connection");
+            }
             return;
         }
-        logger.finest( node.getThisAddress() + " joining to master " + node.getMasterAddress() + ", group " + node.getConfig().getGroupConfig().getName());
+        if (logger.isFinestEnabled()) {
+            logger.finest( node.getThisAddress() + " joining to master " + node.getMasterAddress() + ", group " + node.getConfig().getGroupConfig().getName());
+        }
         while (node.isActive() && !node.joined()) {
             //noinspection BusyWait
             Thread.sleep(1000L);
@@ -262,7 +284,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                     return;
                 }
             } else {
-                logger.finest( node.getThisAddress() + " couldn't find a master! but there was connections available: " + colPossibleAddresses);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( node.getThisAddress() + " couldn't find a master! but there was connections available: " + colPossibleAddresses);
+                }
                 return;
             }
         }
@@ -391,7 +415,9 @@ public class TcpIpJoiner extends AbstractJoiner {
     private boolean isLocalAddress(final Address address) throws UnknownHostException {
         final Address thisAddress = node.getThisAddress();
         final boolean local = thisAddress.getInetSocketAddress().equals(address.getInetSocketAddress());
-        logger.finest( address + " is local? " + local);
+        if (logger.isFinestEnabled()) {
+            logger.finest( address + " is local? " + local);
+        }
         return local;
     }
 
@@ -427,7 +453,9 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
         for (Address possibleAddress : colPossibleAddresses) {
-            logger.finest( node.getThisAddress() + " is connecting to " + possibleAddress);
+            if (logger.isFinestEnabled()) {
+                logger.finest( node.getThisAddress() + " is connecting to " + possibleAddress);
+            }
             node.connectionManager.getOrConnect(possibleAddress, true);
             try {
                 //noinspection BusyWait

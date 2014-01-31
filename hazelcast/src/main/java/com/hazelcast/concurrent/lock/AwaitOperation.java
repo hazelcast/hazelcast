@@ -19,76 +19,85 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.*;
 
 import java.io.IOException;
 
-public class AwaitOperation extends BaseLockOperation implements WaitSupport, BackupAwareOperation {
+public class AwaitOperation extends BaseLockOperation
+        implements WaitSupport, BackupAwareOperation {
 
     private String conditionId;
-    private transient boolean firstRun = false;
-    private transient boolean expired = false;
+    private boolean firstRun = false;
+    private boolean expired = false;
 
     public AwaitOperation() {
     }
 
-    public AwaitOperation(ObjectNamespace namespace, Data key, int threadId, long timeout, String conditionId) {
+    public AwaitOperation(ObjectNamespace namespace, Data key, long threadId, long timeout, String conditionId) {
         super(namespace, key, threadId, timeout);
         this.conditionId = conditionId;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         firstRun = lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
     }
 
+    @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         if (!lockStore.lock(key, getCallerUuid(), threadId)) {
             throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
         }
-        if (!expired) {
+
+        if (expired) {
+            response = false;
+        } else {
             lockStore.removeSignalKey(getWaitKey());
             lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
             response = true;
-        } else {
-            response = false;
         }
     }
 
+    @Override
     public ConditionKey getWaitKey() {
         return new ConditionKey(namespace.getObjectName(), key, conditionId);
     }
 
+    @Override
     public boolean shouldWait() {
-        final boolean shouldWait = firstRun || !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+        boolean shouldWait = firstRun || !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
         firstRun = false;
         return shouldWait;
     }
 
+    @Override
     public long getWaitTimeoutMillis() {
         return timeout;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new AwaitBackupOperation(namespace, key, threadId, conditionId, getCallerUuid());
     }
 
+    @Override
     public void onWaitExpire() {
         expired = true;
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         lockStore.removeSignalKey(getWaitKey());
         lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
 
-        if (lockStore.lock(key, getCallerUuid(), threadId)) {
-            getResponseHandler().sendResponse(false); // expired & acquired lock, send FALSE
+        boolean locked = lockStore.lock(key, getCallerUuid(), threadId);
+        if (locked) {
+            ResponseHandler responseHandler = getResponseHandler();
+            responseHandler.sendResponse(false); // expired & acquired lock, send FALSE
         } else {
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);

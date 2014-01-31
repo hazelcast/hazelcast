@@ -17,34 +17,39 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PartitionInvocationImpl;
-import com.hazelcast.spi.impl.TargetInvocationImpl;
 
-public class InvocationBuilder {
+/**
+ * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
+ *
+ * The original design exposed the actual Invocation class, but this will limit flexibility since
+ * the whole invocation can't be changed or fully removed easily.
+ */
+public abstract class InvocationBuilder {
 
-    private final NodeEngineImpl nodeEngine;
-    private final String serviceName;
-    private final Operation op;
-    private final int partitionId;
-    private final Address target;
-    private Callback<Object> callback;
-    private long callTimeout = -1L;
-    private int replicaIndex = 0;
-    private int tryCount = 250;
-    private long tryPauseMillis = 500;
+    public final static long DEFAULT_CALL_TIMEOUT = -1L;
+    public final static int DEFAULT_REPLICA_INDEX = 0;
+    public final static int DEFAULT_TRY_COUNT = 250;
+    public final static long DEFAULT_TRY_PAUSE_MILLIS = 500;
+    public final static boolean DEFAULT_DESERIALIZE_RESULT = true;
 
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
-        this(nodeEngine, serviceName, op, partitionId, null);
-    }
+    protected final NodeEngineImpl nodeEngine;
+    protected final String serviceName;
+    protected final Operation op;
+    protected final int partitionId;
+    protected final Address target;
+    protected Callback<Object> callback;
 
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-        this(nodeEngine, serviceName, op, -1, target);
-    }
+    protected long callTimeout = DEFAULT_CALL_TIMEOUT;
+    protected int replicaIndex = 0;
+    protected int tryCount = 250;
+    protected long tryPauseMillis = 500;
+    protected String executorName = null;
+    protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
 
-    private InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                              int partitionId, Address target) {
+    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+                                   int partitionId, Address target) {
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -52,12 +57,60 @@ public class InvocationBuilder {
         this.target = target;
     }
 
+    /**
+     * Gets the name of the Executor to use. This functionality is useful if you want to customize which
+     * executor is going to run an operation. By default you don't need to configure anything, but in some
+     * case, for example map reduce logic, where you don't want to hog the partition threads, you could
+     * offload to another executor.
+     *
+     * @return the name of the executor. Returns null if no explicit executor has been configured.
+     */
+    public String getExecutorName() {
+        return executorName;
+    }
+
+    /**
+     * Sets the executor name. Value can be null, meaning that no custom executor will be used.
+     *
+     * @param executorName  the name of the executor.
+     */
+
+    public InvocationBuilder setExecutorName(String executorName) {
+        this.executorName = executorName;
+        return this;
+    }
+
     public InvocationBuilder setReplicaIndex(int replicaIndex) {
-        if (replicaIndex < 0 || replicaIndex >= PartitionView.MAX_REPLICA_COUNT) {
+        if (replicaIndex < 0 || replicaIndex >= InternalPartition.MAX_REPLICA_COUNT) {
             throw new IllegalArgumentException("Replica index is out of range [0-"
-                    + (PartitionView.MAX_REPLICA_COUNT - 1) + "]");
+                    + (InternalPartition.MAX_REPLICA_COUNT - 1) + "]");
         }
         this.replicaIndex = replicaIndex;
+        return this;
+    }
+
+    /**
+     * Checks if the Future should automatically deserialize the result. In most cases you don't want get
+     * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
+     * cases you want to get the raw Data object.
+     *
+     * Defaults to true.
+     *
+     * @return true if the the result is automatically deserialized, false otherwise.
+     */
+    public boolean isResultDeserialized() {
+        return resultDeserialized;
+    }
+
+    /**
+     * Sets the automatic deserialized option for the result.
+     *
+     * @param resultDeserialized true if data
+     * @return the updated InvocationBuilder.
+     * @see #isResultDeserialized()
+     */
+    public InvocationBuilder setResultDeserialized(boolean resultDeserialized) {
+        this.resultDeserialized = resultDeserialized;
         return this;
     }
 
@@ -117,13 +170,5 @@ public class InvocationBuilder {
         return this;
     }
 
-    public Invocation build() {
-        if (target == null) {
-            return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, callback);
-        } else {
-            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, callback);
-        }
-    }
+    public abstract InternalCompletableFuture invoke();
 }

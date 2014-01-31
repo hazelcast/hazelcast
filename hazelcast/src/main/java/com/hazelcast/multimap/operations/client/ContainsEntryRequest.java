@@ -65,15 +65,15 @@ public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements
         return MultiMapPortableHook.CONTAINS_ENTRY;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);

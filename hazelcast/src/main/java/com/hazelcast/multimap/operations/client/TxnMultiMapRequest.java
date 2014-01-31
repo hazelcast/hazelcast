@@ -16,12 +16,11 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
@@ -33,7 +32,7 @@ import java.security.Permission;
 /**
  * @author ali 6/10/13
  */
-public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, SecureRequest {
+public abstract class TxnMultiMapRequest extends BaseTransactionRequest implements SecureRequest {
 
     String name;
 
@@ -52,11 +51,13 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
         return MultiMapPortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n",name);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
     }
 

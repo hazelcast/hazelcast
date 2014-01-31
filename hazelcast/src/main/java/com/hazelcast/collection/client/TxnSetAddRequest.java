@@ -36,18 +36,22 @@ public class TxnSetAddRequest extends TxnCollectionRequest {
         super(name, value);
     }
 
-    public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getSet(name).add(value);
+    @Override
+    public Object innerCall() throws Exception {
+        return getEndpoint().getTransactionContext(txnId).getSet(name).add(value);
     }
 
+    @Override
     public String getServiceName() {
         return SetService.SERVICE_NAME;
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.TXN_SET_ADD;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SetPermission(name, ActionConstants.ACTION_ADD);
     }

@@ -36,7 +36,7 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
 
     long recordId;
     Data value;
-    transient long begin = -1;
+    long begin = -1;
 
     public TxnPutOperation() {
     }

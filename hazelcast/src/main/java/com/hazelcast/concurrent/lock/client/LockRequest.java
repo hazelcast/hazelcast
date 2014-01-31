@@ -24,38 +24,34 @@ import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
 
-/**
- * @author mdogan 5/3/13
- */
 public final class LockRequest extends AbstractLockRequest {
 
     public LockRequest() {
     }
 
-    public LockRequest(Data key, int threadId) {
-        super(key, threadId);
-    }
-
-    public LockRequest(Data key, int threadId, long ttl, long timeout) {
+    public LockRequest(Data key, long threadId, long ttl, long timeout) {
         super(key, threadId, ttl, timeout);
     }
 
+    @Override
     protected InternalLockNamespace getNamespace() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = getName();
         return new InternalLockNamespace(name);
     }
 
+    @Override
     public int getFactoryId() {
         return LockPortableHook.FACTORY_ID;
     }
 
+    @Override
     public int getClassId() {
         return LockPortableHook.LOCK;
     }
 
+    @Override
     public Permission getRequiredPermission() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = getName();
         return new LockPermission(name, ActionConstants.ACTION_LOCK);
     }
-
 }

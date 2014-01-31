@@ -30,37 +30,48 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
     public BeforeAwaitOperation() {
     }
 
-    public BeforeAwaitOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId) {
+    public BeforeAwaitOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         boolean isLockOwner = lockStore.isLockedBy(key, getCallerUuid(), threadId);
+        ensureOwner(lockStore, isLockOwner);
+    }
+
+    private void ensureOwner(LockStoreImpl lockStore, boolean isLockOwner) {
         if (!isLockOwner) {
-            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> "
+                    + lockStore.getOwnerInfo(key));
         }
     }
 
+    @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         lockStore.addAwait(key, conditionId, getCallerUuid(), threadId);
         lockStore.unlock(key, getCallerUuid(), threadId);
     }
 
+    @Override
     public boolean shouldNotify() {
         return true;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new BeforeAwaitBackupOperation(namespace, key, threadId, conditionId, getCallerUuid());
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return new LockWaitNotifyKey(namespace, key);
     }

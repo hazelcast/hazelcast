@@ -16,6 +16,10 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
@@ -34,13 +38,15 @@ public final class ManagedExecutorService implements ExecutorService {
     private final ExecutorService cachedExecutor;
     private final BlockingQueue<Runnable> taskQ;
     private final Lock lock = new ReentrantLock();
+    private final NodeEngine nodeEngine;
+    private final ILogger logger;
     private volatile int size;
 
-    public ManagedExecutorService(String name, ExecutorService cachedExecutor, int maxPoolSize) {
-        this(name, cachedExecutor, maxPoolSize, Integer.MAX_VALUE);
+    public ManagedExecutorService(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor, int maxPoolSize) {
+        this(nodeEngine, name, cachedExecutor, maxPoolSize, Integer.MAX_VALUE);
     }
 
-    public ManagedExecutorService(String name, ExecutorService cachedExecutor, int maxPoolSize, int queueCapacity) {
+    public ManagedExecutorService(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor, int maxPoolSize, int queueCapacity) {
         if (maxPoolSize <= 0) {
             throw new IllegalArgumentException("Max pool size must be positive!");
         }
@@ -48,8 +54,10 @@ public final class ManagedExecutorService implements ExecutorService {
             throw new IllegalArgumentException("Queue capacity must be positive!");
         }
         this.name = name;
+        this.nodeEngine = nodeEngine;
         this.maxPoolSize = maxPoolSize;
         this.cachedExecutor = cachedExecutor;
+        this.logger = nodeEngine.getLogger(ManagedExecutorService.class);
         this.taskQ = new LinkedBlockingQueue<Runnable>(queueCapacity);
     }
 
@@ -85,13 +93,13 @@ public final class ManagedExecutorService implements ExecutorService {
     }
 
     public <T> Future<T> submit(Callable<T> task) {
-        final RunnableFuture<T> rf = new FutureTask<T>(task);
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, getAsyncExecutor());
         execute(rf);
         return rf;
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
-        final RunnableFuture<T> rf = new FutureTask<T>(task, result);
+        final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result, getAsyncExecutor());
         execute(rf);
         return rf;
     }
@@ -155,6 +163,10 @@ public final class ManagedExecutorService implements ExecutorService {
         throw new UnsupportedOperationException();
     }
 
+    private ExecutorService getAsyncExecutor() {
+        return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+    }
+
     private class Worker implements Runnable {
 
         public void run() {
@@ -187,4 +199,5 @@ public final class ManagedExecutorService implements ExecutorService {
             }
         }
     }
+
 }

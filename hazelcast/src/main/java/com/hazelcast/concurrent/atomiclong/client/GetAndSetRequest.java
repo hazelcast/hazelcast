@@ -20,9 +20,6 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.GetAndSetOperation;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 5/13/13
- */
 public class GetAndSetRequest extends AtomicLongRequest {
 
     public GetAndSetRequest() {
@@ -32,10 +29,12 @@ public class GetAndSetRequest extends AtomicLongRequest {
         super(name, value);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new GetAndSetOperation(name, delta);
     }
 
+    @Override
     public int getClassId() {
         return AtomicLongPortableHook.GET_AND_SET;
     }

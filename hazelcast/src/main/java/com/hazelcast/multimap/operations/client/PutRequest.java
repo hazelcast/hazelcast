@@ -39,12 +39,12 @@ public class PutRequest extends MultiMapKeyBasedRequest {
 
     int index = -1;
 
-    int threadId = -1;
+    long threadId = -1;
 
     public PutRequest() {
     }
 
-    public PutRequest(String name, Data key, Data value, int index, int threadId) {
+    public PutRequest(String name, Data key, Data value, int index, long threadId) {
         super(name, key);
         this.value = value;
         this.index = index;
@@ -59,18 +59,18 @@ public class PutRequest extends MultiMapKeyBasedRequest {
         return MultiMapPortableHook.PUT;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeInt("i",index);
-        writer.writeInt("t", threadId);
-        super.writePortable(writer);
+        writer.writeLong("t", threadId);
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         index = reader.readInt("i");
-        threadId = reader.readInt("t");
-        super.readPortable(reader);
+        threadId = reader.readLong("t");
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         value = new Data();
         value.readData(in);

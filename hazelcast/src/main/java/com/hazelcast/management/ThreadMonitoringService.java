@@ -36,7 +36,7 @@ public class ThreadMonitoringService {
         this.threadGroup = threadGroup;
     }
 
-    class ThreadCpuInfo {
+    static class ThreadCpuInfo {
         final Thread thread;
         long lastSet = 0;
         long lastValue = 0;
@@ -58,8 +58,7 @@ public class ThreadMonitoringService {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ThreadCpuInfo that = (ThreadCpuInfo) o;
-            if (thread.getId() != that.thread.getId()) return false;
-            return true;
+            return thread.getId() == that.thread.getId();
         }
 
         @Override
@@ -86,7 +85,8 @@ public class ThreadMonitoringService {
             threadGroup.enumerate(threads);
             long now = System.nanoTime();
             for (Thread thread : threads) {
-                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads,thread.getId(),new ThreadCpuInfoConstructor(thread));
+                ThreadCpuInfoConstructor constructor = new ThreadCpuInfoConstructor(thread);
+                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads,thread.getId(), constructor);
                 int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * 100);
                 monitoredThreads.add(new MonitoredThread(thread.getName(), thread.getId(), percentage));
             }
@@ -96,7 +96,7 @@ public class ThreadMonitoringService {
         }
     }
 
-    private class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
+    private static class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
 
         private Thread thread;
 

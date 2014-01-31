@@ -57,10 +57,12 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         this.bindings = bindings;
     }
 
+    @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_EXECUTE_SCRIPT;
     }
 
+    @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         ArrayList result;
         if (targetAllMembers) {
@@ -83,6 +85,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         writeCollection(dos, result);
     }
 
+    @Override
     public Object readResponse(ObjectDataInput in) throws IOException {
         byte flag = in.readByte();//This line left here for compatibility among 3.x
         if (flag == COLLECTION) {
@@ -120,9 +123,8 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         int size = result != null ? result.size() : 0;
         dos.writeInt(size);
         if (size > 0) {
-            Iterator iter = result.iterator();
-            while (iter.hasNext()) {
-                dos.writeObject(iter.next());
+            for (Object aResult : result) {
+                dos.writeObject(aResult);
             }
         }
     }
@@ -139,6 +141,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         return coll;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(script);
         out.writeUTF(engine);
@@ -150,6 +153,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         writeMap(out, bindings);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         script = in.readUTF();
         engine = in.readUTF();

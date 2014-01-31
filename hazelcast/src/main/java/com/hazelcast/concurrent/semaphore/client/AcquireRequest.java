@@ -27,12 +27,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/13/13
- */
 public class AcquireRequest extends SemaphoreRequest {
 
-    long timeout;
+    private long timeout;
 
     public AcquireRequest() {
     }
@@ -42,24 +39,29 @@ public class AcquireRequest extends SemaphoreRequest {
         this.timeout = timeout;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new AcquireOperation(name, permitCount, timeout);
     }
 
+    @Override
     public int getClassId() {
         return SemaphorePortableHook.ACQUIRE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeLong("t",timeout);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         timeout = reader.readLong("t");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }

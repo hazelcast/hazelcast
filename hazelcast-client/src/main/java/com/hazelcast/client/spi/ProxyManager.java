@@ -19,12 +19,15 @@ package com.hazelcast.client.spi;
 import com.hazelcast.client.ClientCreateRequest;
 import com.hazelcast.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.*;
+import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -42,6 +45,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
@@ -62,7 +66,6 @@ public final class ProxyManager {
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxy> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxy>();
-    private final ConcurrentMap<String, ListenerSupport> listeners = new ConcurrentHashMap<String, ListenerSupport>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
@@ -91,6 +94,12 @@ public final class ProxyManager {
         register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 return new ClientMultiMapProxy(MultiMapService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(ReplicatedMapService.SERVICE_NAME, new ClientProxyFactory() {
+            @Override
+            public ClientProxy create(String id) {
+                return new ClientReplicatedMapProxy(ReplicatedMapService.SERVICE_NAME, id);
             }
         });
         register(ListService.SERVICE_NAME, new ClientProxyFactory() {
@@ -133,7 +142,6 @@ public final class ProxyManager {
                 return new ClientLockProxy(LockServiceImpl.SERVICE_NAME, id);
             }
         });
-
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 String name = String.valueOf(id);
@@ -141,13 +149,17 @@ public final class ProxyManager {
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, name, atomicLong);
             }
         });
-
         register(CountDownLatchService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 return new ClientCountDownLatchProxy(CountDownLatchService.SERVICE_NAME, String.valueOf(id));
             }
         });
-
+        register(MapReduceService.SERVICE_NAME, new ClientProxyFactory() {
+            @Override
+            public ClientProxy create(String id) {
+                return new ClientMapReduceProxy(MapReduceService.SERVICE_NAME, id);
+            }
+        });
 
         for (ProxyFactoryConfig proxyFactoryConfig:config.getProxyFactoryConfigs()){
             try {
@@ -192,7 +204,7 @@ public final class ProxyManager {
     private void initialize(ClientProxy clientProxy) {
         final ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
         try {
-            client.getInvocationService().invokeOnRandomTarget(request);
+            client.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
         }
@@ -206,7 +218,6 @@ public final class ProxyManager {
 
     public void destroy() {
         proxies.clear();
-        listeners.clear();
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
@@ -229,18 +240,14 @@ public final class ProxyManager {
                 }
             }
         };
-        ListenerSupport listenerSupport = new ListenerSupport(context, request, eventHandler, null);
-        final String registrationId = listenerSupport.listen();
-        listeners.put(registrationId, listenerSupport);
-        return registrationId;
+
+        return ListenerUtil.listen(context, request, null, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {
-        final ListenerSupport listenerSupport = listeners.remove(id);
-        if (listenerSupport != null){
-            listenerSupport.stop();
-            return true;
-        }
-        return false;
+        final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
+        ClientContext context = new ClientContext(client.getSerializationService(), client.getClientClusterService(),
+                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig());
+        return ListenerUtil.stopListening(context, request, id);
     }
 }

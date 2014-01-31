@@ -40,4 +40,17 @@ public class MonitoredThread implements Comparable<MonitoredThread> {
     public int compareTo(MonitoredThread o) {
         return name.compareTo(o.name);
     }
+
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o != null && o instanceof MonitoredThread) {
+            return this.compareTo((MonitoredThread) o) == 0;
+        }
+        return false;
+    }
 }

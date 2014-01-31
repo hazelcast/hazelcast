@@ -35,18 +35,22 @@ public class TxnListSizeRequest extends TxnCollectionRequest {
         super(name);
     }
 
-    public Object call() throws Exception {
-        return getEndpoint().getTransactionContext().getList(name).size();
+    @Override
+    public Object innerCall() throws Exception {
+        return getEndpoint().getTransactionContext(txnId).getList(name).size();
     }
 
+    @Override
     public String getServiceName() {
         return ListService.SERVICE_NAME;
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.TXN_LIST_SIZE;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new ListPermission(name, ActionConstants.ACTION_READ);
     }

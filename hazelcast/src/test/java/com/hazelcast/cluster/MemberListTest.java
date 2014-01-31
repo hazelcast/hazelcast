@@ -18,7 +18,10 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -26,21 +29,22 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -48,16 +52,11 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-
 public class MemberListTest {
 
-    @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
+    @Before
     @After
-    public void cleanup() throws Exception {
+    public  void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 
@@ -187,9 +186,9 @@ public class MemberListTest {
 
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid()));
-        members.add(new MemberInfo(m3.getAddress(), m3.getUuid()));
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections. <String, Object> emptyMap()));
+        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections. <String, Object> emptyMap()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections. <String, Object> emptyMap()));
         n2.clusterService.updateMembers(members);
         n2.setMasterAddress(m2.getAddress());
 
@@ -239,8 +238,8 @@ public class MemberListTest {
         final Node n2 = TestUtil.getNode(h2);
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid()));
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections. <String, Object> emptyMap()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections. <String, Object> emptyMap()));
         n2.clusterService.updateMembers(members);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
@@ -291,29 +290,13 @@ public class MemberListTest {
         // Need to wait for at least as long as PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS
         Thread.sleep(15 * 1000);
 
-        final CountDownLatch latch = new CountDownLatch(4);
-
-        final MembershipListener membershipListener = new MembershipListener() {
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                latch.countDown();
-            }
-        };
-
         Member master = h1.getCluster().getLocalMember();
         assertEquals(master, h2.getCluster().getMembers().iterator().next());
         assertEquals(master, h3.getCluster().getMembers().iterator().next());
         assertEquals(master, h4.getCluster().getMembers().iterator().next());
         assertEquals(master, h5.getCluster().getMembers().iterator().next());
 
-        h2.getCluster().addMembershipListener(membershipListener);
-        h3.getCluster().addMembershipListener(membershipListener);
-        h4.getCluster().addMembershipListener(membershipListener);
-        h5.getCluster().addMembershipListener(membershipListener);
-
         h1.getLifecycleService().shutdown();
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
 
         assertEquals(4, h2.getCluster().getMembers().size());
         assertEquals(4, h3.getCluster().getMembers().size());

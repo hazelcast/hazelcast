@@ -29,13 +29,15 @@ import java.util.logging.Logger;
 
 public class SimpleMultiMapTest {
 
-    public static final int STATS_SECONDS = 10;
-    public static int THREAD_COUNT = 40;
-    public static int ENTRY_COUNT = 10 * 1000;
-    public static int VALUE_SIZE = 1000;
+    private SimpleMultiMapTest(){}
+
+    private static final int STATS_SECONDS = 10;
+    private static int THREAD_COUNT = 40;
+    private static int ENTRY_COUNT = 10 * 1000;
+    private static int VALUE_SIZE = 1000;
     //    public static int MULTIMAP_VALUE_COUNT = 1;
-    public static int GET_PERCENTAGE = 40;
-    public static int PUT_PERCENTAGE = 40;
+    private static int GET_PERCENTAGE = 40;
+    private static int PUT_PERCENTAGE = 40;
 
     static Logger logger = Logger.getLogger(SimpleMapTest.class.getName());
     static HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);

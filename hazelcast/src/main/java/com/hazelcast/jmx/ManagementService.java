@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -30,19 +31,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-/**
- * @author ali 1/31/13
- */
 public class ManagementService implements DistributedObjectListener {
 
     public static final String DOMAIN = "com.hazelcast";
 
     final HazelcastInstanceImpl instance;
-
     private final boolean enabled;
-
     private final ILogger logger;
-
     private final String registrationId;
     private final InstanceMBean instanceMBean;
 
@@ -112,10 +107,12 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
+    @Override
     public void distributedObjectCreated(DistributedObjectEvent event) {
         registerDistributedObject(event.getDistributedObject());
     }
 
+    @Override
     public void distributedObjectDestroyed(DistributedObjectEvent event) {
         unregisterDistributedObject(event.getDistributedObject());
     }
@@ -178,6 +175,9 @@ public class ManagementService implements DistributedObjectListener {
             }
             if (distributedObject instanceof MultiMap){
                 return new MultiMapMBean((MultiMap)distributedObject, this);
+            }
+            if (distributedObject instanceof ReplicatedMapProxy){
+                return new ReplicatedMapMBean((ReplicatedMapProxy)distributedObject, this);
             }
             if (distributedObject instanceof IQueue){
                 return new QueueMBean((IQueue)distributedObject, this);

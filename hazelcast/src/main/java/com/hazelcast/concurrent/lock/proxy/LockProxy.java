@@ -39,70 +39,87 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     private final String name;
     private final LockProxySupport lockSupport;
     final Data key;
+    private final int partitionId;
 
     public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final String name) {
         super(nodeEngine, lockService);
         this.name = name;
-        key = getNameAsPartitionAwareData();
-        lockSupport = new LockProxySupport(new InternalLockNamespace(name));
+        this.key = getNameAsPartitionAwareData();
+        this.lockSupport = new LockProxySupport(new InternalLockNamespace(name));
+        this.partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
     }
 
+    @Override
     public boolean isLocked() {
         return lockSupport.isLocked(getNodeEngine(), key);
     }
 
+    @Override
     public boolean isLockedByCurrentThread() {
         return lockSupport.isLockedByCurrentThread(getNodeEngine(), key);
     }
 
+    @Override
     public int getLockCount() {
         return lockSupport.getLockCount(getNodeEngine(), key);
     }
 
+    @Override
     public long getRemainingLeaseTime() {
         return lockSupport.getRemainingLeaseTime(getNodeEngine(), key);
     }
 
+    @Override
     public void lock() {
         lockSupport.lock(getNodeEngine(), key);
     }
 
+    @Override
     public void lock(long ttl, TimeUnit timeUnit) {
         lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(ttl));
     }
 
+    @Override
     public void lockInterruptibly() throws InterruptedException {
         lock();
     }
 
+    @Override
     public boolean tryLock() {
         return lockSupport.tryLock(getNodeEngine(), key);
     }
 
+    @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         return lockSupport.tryLock(getNodeEngine(), key, time, unit);
     }
 
+    @Override
     public void unlock() {
         lockSupport.unlock(getNodeEngine(), key);
     }
 
+    @Override
     public void forceUnlock() {
         lockSupport.forceUnlock(getNodeEngine(), key);
     }
 
+    @Override
     public Condition newCondition() {
         throw new UnsupportedOperationException("Use ICondition.newCondition(String name) instead!");
     }
 
+    @Override
     public ICondition newCondition(String name) {
         return new ConditionImpl(this, name);
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
@@ -113,7 +130,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     }
 
     int getPartitionId() {
-        return getNodeEngine().getPartitionService().getPartitionId(key);
+        return partitionId;
     }
 
     ObjectNamespace getNamespace() {

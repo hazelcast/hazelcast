@@ -24,7 +24,7 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.queue.proxy.QueueProxyImpl;
 import com.hazelcast.queue.tx.QueueTransactionRollbackOperation;
@@ -67,7 +67,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(QueueService.class);
-        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
+        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
                 new QueueEvictionProcessor(nodeEngine, this), ScheduleType.POSTPONE);
     }
 
@@ -205,8 +205,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
-        PartitionView partition = nodeEngine.getPartitionService().getPartition(partitionId);
-        if (thisAddress.equals(partition.getOwner())) {
+        InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+
+        Address owner = partition.getOwner();
+        if(owner == null){
+            //no-op because the owner is not yet set.
+        }else if (thisAddress.equals(owner)) {
             stats.setOwnedItemCount(container.size());
         } else {
             stats.setBackupItemCount(container.backupSize());

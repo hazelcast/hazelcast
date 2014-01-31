@@ -28,6 +28,9 @@ public class TestKeyStoreUtil {
     private static String keyStore;
     private static String trustStore;
 
+    private TestKeyStoreUtil() {
+    }
+
     public static synchronized String getKeyStoreFilePath() throws IOException {
         if (keyStore == null || !new File(keyStore).exists()) {
             keyStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast.keystore").getAbsolutePath();

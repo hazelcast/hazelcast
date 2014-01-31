@@ -26,6 +26,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ResponseQueueFactory {
+
+    private ResponseQueueFactory(){}
+
     public static BlockingQueue newResponseQueue() {
         return new LockBasedResponseQueue();
     }

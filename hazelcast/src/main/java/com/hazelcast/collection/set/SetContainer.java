@@ -36,10 +36,11 @@ public class SetContainer extends CollectionContainer {
     public SetContainer() {
     }
 
-    public SetContainer(String name, NodeEngine nodeEngine, CollectionService service) {
-        super(name, nodeEngine, service);
+    public SetContainer(String name, NodeEngine nodeEngine) {
+        super(name, nodeEngine);
     }
 
+    @Override
     protected SetConfig getConfig() {
         if (config == null){
             config = nodeEngine.getConfig().findSetConfig(name);
@@ -47,6 +48,7 @@ public class SetContainer extends CollectionContainer {
         return config;
     }
 
+    @Override
     protected Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
         final Map<Long, Data> map = new HashMap<Long, Data>(size);
@@ -64,7 +66,8 @@ public class SetContainer extends CollectionContainer {
         return map;
     }
 
-    protected Set<CollectionItem> getCollection(){
+    @Override
+    public Set<CollectionItem> getCollection(){
         if(itemSet == null){
             if (itemMap != null && !itemMap.isEmpty()){
                 itemSet = new HashSet<CollectionItem>(itemMap.values());
@@ -77,6 +80,7 @@ public class SetContainer extends CollectionContainer {
         return itemSet;
     }
 
+    @Override
     protected Map<Long, CollectionItem> getMap(){
         if (itemMap == null){
             if (itemSet != null && !itemSet.isEmpty()){
@@ -93,6 +97,7 @@ public class SetContainer extends CollectionContainer {
         return itemMap;
     }
 
+    @Override
     protected void onDestroy() {
         if (itemSet != null){
             itemSet.clear();

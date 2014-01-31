@@ -22,14 +22,11 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 6/7/13
- */
 public final class CancellationOperation extends Operation {
 
     private String uuid;
     private boolean interrupt;
-    private transient boolean response;
+    private boolean response;
 
     public CancellationOperation() {
     }
@@ -39,30 +36,37 @@ public final class CancellationOperation extends Operation {
         this.interrupt = interrupt;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         DistributedExecutorService service = getService();
         response = service.cancel(uuid, interrupt);
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
+    @Override
     public Object getResponse() {
         return response;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(uuid);
         out.writeBoolean(interrupt);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         uuid = in.readUTF();
         interrupt = in.readBoolean();

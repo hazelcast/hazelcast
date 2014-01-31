@@ -29,6 +29,13 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static java.text.MessageFormat.format;
 
+/**
+ * Contains all the configuration to start a {@link com.hazelcast.core.HazelcastInstance}. A Config
+ * can be created programmatically, but can also be configured using XML, see {@link com.hazelcast.config.XmlConfigBuilder}.
+ *
+ * Config instances can be shared between threads, but should not be modified after they are used to
+ * create HazelcastInstances.
+ */
 public class Config {
 
     private URL configurationUrl;
@@ -53,6 +60,8 @@ public class Config {
 
     private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
 
+    private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
+
     private final Map<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
 
     private final Map<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
@@ -62,6 +71,8 @@ public class Config {
     private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
+
+    private final Map<String, JobTrackerConfig> jobTrackerConfigs = new ConcurrentHashMap<String, JobTrackerConfig>();
 
     private ServicesConfig servicesConfig = new ServicesConfig();
 
@@ -78,6 +89,8 @@ public class Config {
     private ManagedContext managedContext;
 
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
+
+    private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
 
     private String licenseKey;
 
@@ -125,6 +138,14 @@ public class Config {
     public Config setProperty(String name, String value) {
         properties.put(name, value);
         return this;
+    }
+
+    public MemberAttributeConfig getMemberAttributeConfig() {
+        return memberAttributeConfig;
+    }
+
+    public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+        this.memberAttributeConfig = memberAttributeConfig;
     }
 
     public Properties getProperties() {
@@ -374,6 +395,45 @@ public class Config {
         return this;
     }
 
+    public ReplicatedMapConfig findReplicatedMapConfig(String name){
+        ReplicatedMapConfig config;
+        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) return config.getAsReadOnly();
+        return getReplicatedMapConfig("default").getAsReadOnly();
+    }
+
+    public ReplicatedMapConfig getReplicatedMapConfig(String name) {
+        ReplicatedMapConfig config;
+        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) return config;
+        ReplicatedMapConfig defConfig = replicatedMapConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new ReplicatedMapConfig();
+            defConfig.setName("default");
+            addReplicatedMapConfig(defConfig);
+        }
+        config = new ReplicatedMapConfig(defConfig);
+        config.setName(name);
+        addReplicatedMapConfig(config);
+        return config;
+    }
+
+    public Config addReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
+        replicatedMapConfigs.put(replicatedMapConfig.getName(), replicatedMapConfig);
+        return this;
+    }
+
+    public Map<String, ReplicatedMapConfig> getReplicatedMapConfigs() {
+        return replicatedMapConfigs;
+    }
+
+    public Config setReplicatedMapConfigs(Map<String, ReplicatedMapConfig> replicatedMapConfigs) {
+        this.replicatedMapConfigs.clear();
+        this.replicatedMapConfigs.putAll(replicatedMapConfigs);
+        for (final Entry<String, ReplicatedMapConfig> entry : this.replicatedMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
     public TopicConfig findTopicConfig(String name){
         name = getBaseName(name);
         TopicConfig config;
@@ -554,6 +614,47 @@ public class Config {
         return this;
     }
 
+    public JobTrackerConfig findJobTrackerConfig(String name) {
+        name = getBaseName(name);
+        JobTrackerConfig config;
+        if ((config = lookupByPattern(jobTrackerConfigs, name)) != null) return config.getAsReadOnly();
+        return getJobTrackerConfig(name);
+    }
+
+    public JobTrackerConfig getJobTrackerConfig(String name) {
+        name = getBaseName(name);
+        JobTrackerConfig config;
+        if ((config = lookupByPattern(jobTrackerConfigs, name)) != null) return config;
+        JobTrackerConfig defConfig = jobTrackerConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new JobTrackerConfig();
+            defConfig.setName("default");
+            addJobTrackerConfig(defConfig);
+        }
+        config = new JobTrackerConfig(defConfig);
+        config.setName(name);
+        addJobTrackerConfig(config);
+        return config;
+    }
+
+    public Config addJobTrackerConfig(JobTrackerConfig jobTrackerConfig) {
+        jobTrackerConfigs.put(jobTrackerConfig.getName(), jobTrackerConfig);
+        return this;
+    }
+
+    public Map<String, JobTrackerConfig> getJobTrackerConfigs() {
+        return jobTrackerConfigs;
+    }
+
+    public Config setJobTrackerConfigs(Map<String, JobTrackerConfig> jobTrackerConfigs) {
+        this.jobTrackerConfigs.clear();
+        this.jobTrackerConfigs.putAll(jobTrackerConfigs);
+        for (final Entry<String, JobTrackerConfig> entry : this.jobTrackerConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
     public ManagementCenterConfig getManagementCenterConfig() {
         return managementCenterConfig;
     }
@@ -677,10 +778,11 @@ public class Config {
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
-            final Set<String> tNames = map.keySet();
-            for (final String pattern : tNames) {
+            for (Map.Entry<String,T> entry : map.entrySet()) {
+                String pattern = entry.getKey();
+                T value = entry.getValue();
                 if (nameMatches(name, pattern)) {
-                    return map.get(pattern);
+                    return value;
                 }
             }
         }

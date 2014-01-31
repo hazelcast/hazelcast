@@ -40,12 +40,12 @@ public class MultiMapLockRequest extends AbstractLockRequest {
     public MultiMapLockRequest() {
     }
 
-    public MultiMapLockRequest(Data key, int threadId, String name) {
+    public MultiMapLockRequest(Data key, long threadId, String name) {
         super(key, threadId);
         this.name = name;
     }
 
-    public MultiMapLockRequest(Data key, int threadId, long ttl, long timeout, String name) {
+    public MultiMapLockRequest(Data key, long threadId, long ttl, long timeout, String name) {
         super(key, threadId, ttl, timeout);
         this.name = name;
     }
@@ -54,14 +54,14 @@ public class MultiMapLockRequest extends AbstractLockRequest {
         return new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        super.writePortable(writer);
+        super.write(writer);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        super.readPortable(reader);
+        super.read(reader);
     }
 
     public int getFactoryId() {

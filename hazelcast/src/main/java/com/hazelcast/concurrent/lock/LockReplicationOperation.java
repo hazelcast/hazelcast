@@ -24,10 +24,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-/**
- * @author mdogan 02/12/13
- */
-
 public class LockReplicationOperation extends AbstractOperation {
 
     private final Collection<LockStoreImpl> locks = new LinkedList<LockStoreImpl>();
@@ -37,7 +33,8 @@ public class LockReplicationOperation extends AbstractOperation {
 
     public LockReplicationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        final Collection<LockStoreImpl> lockStores = container.getLockStores();
+
+        Collection<LockStoreImpl> lockStores = container.getLockStores();
         for (LockStoreImpl ls : lockStores) {
             if (ls.getTotalBackupCount() < replicaIndex) {
                 continue;
@@ -46,6 +43,7 @@ public class LockReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     public void run() {
         LockServiceImpl lockService = getService();
         LockStoreContainer container = lockService.getLockContainer(getPartitionId());
@@ -54,10 +52,12 @@ public class LockReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     public String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         int len = locks.size();
@@ -69,6 +69,7 @@ public class LockReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int len = in.readInt();
@@ -80,7 +81,6 @@ public class LockReplicationOperation extends AbstractOperation {
             }
         }
     }
-
 
     public boolean isEmpty() {
         return locks.isEmpty();

@@ -23,13 +23,9 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/22/13
- */
 public abstract class SemaphoreOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
     int permitCount;
-
     transient Object response;
 
     protected SemaphoreOperation() {
@@ -40,6 +36,7 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation implemen
         this.permitCount = permitCount;
     }
 
+    @Override
     public Object getResponse() {
         return response;
     }
@@ -49,11 +46,13 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation implemen
         return service.getOrCreatePermit(name);
     }
 
+    @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(permitCount);
     }
 
+    @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         permitCount = in.readInt();

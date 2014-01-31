@@ -133,6 +133,26 @@
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="replicatedmap" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="entry-listener" type="entry-listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+                                <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="OBJECT"/>
+                                <xs:attribute name="concurrency-level" type="concurrency-level" use="optional" default="32"/>
+                                <xs:attribute name="replication-delay-millis" type="xs:unsignedInt" use="optional" default="100"/>
+                                <xs:attribute name="async-fillup" type="xs:boolean" use="optional" default="true"/>
+                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional" default="true"/>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
@@ -199,6 +219,17 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="jobtracker" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                                <xs:attribute name="max-thread-size" use="optional" type="xs:nonNegativeInteger" default="0"/>
+                                <xs:attribute name="queue-size" use="optional" type="xs:nonNegativeInteger" default="0"/>
+                                <xs:attribute name="retry-count" use="optional" type="xs:nonNegativeInteger" default="0"/>
+                                <xs:attribute name="chunk-size" use="optional" type="xs:nonNegativeInteger" default="1000"/>
+                                <xs:attribute name="communicate-stats" use="optional" type="xs:boolean" default="true"/>
+                                <xs:attribute name="topology-changed-strategy" use="optional" type="topology-changed-strategy" default="CANCEL_RUNNING_OPERATION"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
@@ -952,6 +983,7 @@
         <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="eviction-policy" use="optional" type="eviction-policy" default="LRU"/>
         <xs:attribute name="invalidate-on-change" use="optional" type="xs:string" default="true"/>
+        <xs:attribute name="cache-local-entries" use="optional" type="xs:string" default="false"/>
         <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="BINARY"/>
     </xs:complexType>
 
@@ -968,6 +1000,19 @@
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
             <xs:enumeration value="CACHED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="concurrency-level">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="topology-changed-strategy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CANCEL_RUNNING_OPERATION" />
+            <xs:enumeration value="DISCARD_AND_RESTART"/>
         </xs:restriction>
     </xs:simpleType>
 

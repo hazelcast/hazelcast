@@ -16,12 +16,9 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-/**
- * @author mdogan 1/10/13
- */
 public class GetCountOperation extends BaseCountDownLatchOperation {
 
-    private transient int count;
+    private int count;
 
     public GetCountOperation() {
     }
@@ -30,6 +27,7 @@ public class GetCountOperation extends BaseCountDownLatchOperation {
         super(name);
     }
 
+    @Override
     public void run() throws Exception {
         CountDownLatchService service = getService();
         count = service.getCount(name);

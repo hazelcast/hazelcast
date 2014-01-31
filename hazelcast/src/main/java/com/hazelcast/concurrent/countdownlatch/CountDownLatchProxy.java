@@ -21,11 +21,11 @@ import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author mdogan 1/10/13
- */
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
+
 public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatchService> implements ICountDownLatch {
 
     private final String name;
@@ -37,58 +37,54 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new AwaitOperation(name, getTimeInMillis(timeout, unit)), partitionId).build();
+        AwaitOperation op = new AwaitOperation(name, getTimeInMillis(timeout, unit));
+        Future<Boolean> f = invoke(op);
         try {
-            return (Boolean) nodeEngine.toObject(inv.invoke().get());
+            return f.get();
         } catch (ExecutionException e) {
-            throw ExceptionUtil.rethrowAllowInterrupted(e);
+            throw rethrowAllowInterrupted(e);
         }
     }
 
-    private long getTimeInMillis(final long time, final TimeUnit timeunit) {
+    private static long getTimeInMillis(long time, TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
+    @Override
     public void countDown() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new CountDownOperation(name), partitionId).build();
-        try {
-            inv.invoke().get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        CountDownOperation op = new CountDownOperation(name);
+        InternalCompletableFuture f = invoke(op);
+        f.getSafely();
     }
 
+    @Override
     public int getCount() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new GetCountOperation(name), partitionId).build();
-        try {
-            return (Integer) nodeEngine.toObject(inv.invoke().get());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        GetCountOperation op = new GetCountOperation(name);
+        InternalCompletableFuture<Integer> f = invoke(op);
+        return f.getSafely();
     }
 
+    @Override
     public boolean trySetCount(int count) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
-                new SetCountOperation(name, count), partitionId).build();
-        try {
-            return (Boolean) nodeEngine.toObject(inv.invoke().get());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        SetCountOperation op = new SetCountOperation(name, count);
+        InternalCompletableFuture<Boolean> f = invoke(op);
+        return f.getSafely();
     }
 
+    private InternalCompletableFuture invoke(Operation op) {
+        NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnPartition(CountDownLatchService.SERVICE_NAME,op, partitionId);
+    }
+
+    @Override
     public String getServiceName() {
         return CountDownLatchService.SERVICE_NAME;
     }

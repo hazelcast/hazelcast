@@ -25,21 +25,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author ali 1/22/13
- */
 public class Permit implements DataSerializable {
 
     private int available;
-
     private int partitionId;
-
     private Map<String, Integer> attachMap;
-
     private int backupCount;
-
     private int asyncBackupCount;
-
     private boolean initialized = false;
 
     public Permit() {
@@ -63,13 +55,15 @@ public class Permit implements DataSerializable {
 
     private void detach(String caller, int permitCount) {
         Integer attached = attachMap.get(caller);
-        if (attached != null) {
-            attached -= permitCount;
-            if (attached <= 0) {
-                attachMap.remove(caller);
-            } else {
-                attachMap.put(caller, attached);
-            }
+        if (attached == null) {
+            return;
+        }
+
+        attached -= permitCount;
+        if (attached <= 0) {
+            attachMap.remove(caller);
+        } else {
+            attachMap.put(caller, attached);
         }
     }
 
@@ -148,10 +142,11 @@ public class Permit implements DataSerializable {
         return asyncBackupCount;
     }
 
-    protected void setInitialized(boolean initialized) {
-        this.initialized = initialized;
+    protected void setInitialized() {
+        this.initialized = true;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(available);
         out.writeInt(partitionId);
@@ -164,6 +159,7 @@ public class Permit implements DataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         available = in.readInt();
         partitionId = in.readInt();
@@ -178,6 +174,7 @@ public class Permit implements DataSerializable {
         }
     }
 
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("Permit");

@@ -22,13 +22,11 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-// author: sancar - 24.12.2012
 public class SetOperation extends AtomicLongBackupAwareOperation {
 
     private long newValue;
 
     public SetOperation() {
-        super();
     }
 
     public SetOperation(String name, long newValue) {
@@ -38,7 +36,8 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        getNumber().set(newValue);
+        LongWrapper number = getNumber();
+        number.set(newValue);
     }
 
     @Override
@@ -53,6 +52,7 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
         newValue = in.readLong();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new SetBackupOperation(name, newValue);
     }

@@ -51,7 +51,6 @@ public class MockSimpleClient implements SimpleClient {
         AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
         send(auth);
         receive();
-        receive();
     }
 
     public void send(Object o) throws IOException {
@@ -68,7 +67,8 @@ public class MockSimpleClient implements SimpleClient {
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
-        return getSerializationService().toObject(adapter.getData());
+        ClientResponse clientResponse = getSerializationService().toObject(adapter.getData());
+        return getSerializationService().toObject(clientResponse.getResponse());
     }
 
     public void close() {

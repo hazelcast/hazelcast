@@ -18,7 +18,11 @@ package com.hazelcast.executor;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -26,15 +30,22 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-/**
- * @author mdogan 1/18/13
- */
 public class DistributedExecutorService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
+
+    //Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
+    //object. Using this approach, you don't create that object.
+    private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> responseFlagFieldUpdater =
+            AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
 
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
@@ -47,27 +58,31 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
     };
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
         this.executionService = nodeEngine.getExecutionService();
     }
 
+    @Override
     public void reset() {
         shutdownExecutors.clear();
         submittedTasks.clear();
         statsMap.clear();
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         reset();
     }
 
-    public void execute(String name, String uuid, final Callable callable, final ResponseHandler responseHandler) {
+    public void execute(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
         startPending(name);
-        final CallableProcessor processor = new CallableProcessor(name, uuid, callable, responseHandler);
+        CallableProcessor processor = new CallableProcessor(name, uuid, callable, responseHandler);
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
+
         try {
             executionService.execute(name, processor);
         } catch (RejectedExecutionException e) {
@@ -80,7 +95,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public boolean cancel(String uuid, boolean interrupt) {
-        final CallableProcessor processor = submittedTasks.remove(uuid);
+        CallableProcessor processor = submittedTasks.remove(uuid);
         if (processor != null && processor.cancel(interrupt)) {
             processor.sendResponse(new CancellationException());
             getLocalExecutorStats(processor.name).cancelExecution();
@@ -98,10 +113,12 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         return shutdownExecutors.contains(name);
     }
 
+    @Override
     public ExecutorServiceProxy createDistributedObject(String name) {
         return new ExecutorServiceProxy(name, nodeEngine, this);
     }
 
+    @Override
     public void destroyDistributedObject(String name) {
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
@@ -124,14 +141,17 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     private class CallableProcessor extends FutureTask implements Runnable {
-        final String name;
-        final String uuid;
-        final ResponseHandler responseHandler;
-        final String callableToString;
-        final long creationTime = Clock.currentTimeMillis();
-        final AtomicBoolean responseFlag = new AtomicBoolean(false);
+
+        private final String name;
+        private final String uuid;
+        private final ResponseHandler responseHandler;
+        private final String callableToString;
+        private final long creationTime = Clock.currentTimeMillis();
+        //is being used through the responseFlagFieldUpdater. Can't be private due to reflection constraint.
+        volatile Boolean responseFlag = Boolean.FALSE;
 
         private CallableProcessor(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
+            //noinspection unchecked
             super(callable);
             this.name = name;
             this.uuid = uuid;
@@ -139,16 +159,18 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             this.responseHandler = responseHandler;
         }
 
+        @Override
         public void run() {
-            final long start = Clock.currentTimeMillis();
+            long start = Clock.currentTimeMillis();
             startExecution(name, start - creationTime);
             Object result = null;
             try {
                 super.run();
-                result = get();
+                if (!isCancelled()) {
+                    result = get();
+                }
             } catch (Exception e) {
-                final ILogger logger = getLogger();
-                logger.finest( "While executing callable: " + callableToString, e);
+                logException(e);
                 result = e;
             } finally {
                 if (uuid != null) {
@@ -161,14 +183,21 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             }
         }
 
+        private void logException(Exception e) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("While executing callable: " + callableToString, e);
+            }
+        }
+
         private void sendResponse(Object result) {
-            if (responseFlag.compareAndSet(false, true)) {
+            if (responseFlagFieldUpdater.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
                 responseHandler.sendResponse(result);
             }
         }
     }
 
     private ILogger getLogger() {
-        return nodeEngine.getLogger(DistributedExecutorService.class.getName());
+        return nodeEngine.getLogger(DistributedExecutorService.class);
     }
 }

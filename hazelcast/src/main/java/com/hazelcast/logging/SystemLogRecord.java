@@ -76,6 +76,19 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
         return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
     }
 
+    @Override
+    public int hashCode() {
+        return (int) (date ^ (date >>> 32));
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if(o!=null && o instanceof SystemLogRecord){
+            return this.compareTo((SystemLogRecord)o)==0;
+        }
+        return false;
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(date);
         out.writeUTF(message);

@@ -19,19 +19,24 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.query.*;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,9 +54,11 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+//TODO
 public class QueryTest extends HazelcastTestSupport {
 
     @Test
+    @Category(ProblematicTest.class)
     public void issue393() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -75,6 +82,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void issue393Fail() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -90,6 +98,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void negativeDouble() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -108,6 +117,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void issue393SqlEq() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -131,6 +141,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void issue685RemoveIndexesOnClear() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -147,6 +158,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void issue393SqlIn() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -170,6 +182,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void issue393SqlInInteger() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -193,6 +206,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInPredicate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -212,6 +226,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInstanceofPredicate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -230,6 +245,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testIteratorContract() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -261,6 +277,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInPredicateWithEmptyArray() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
@@ -278,6 +295,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInnerIndex() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -301,6 +319,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInnerIndexSql() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -323,7 +342,7 @@ public class QueryTest extends HazelcastTestSupport {
 
     @Test
     // TODO: fails @mm - Test fails randomly!
-    @Category(SlowTest.class)
+    @Category(ProblematicTest.class)
     public void testQueryWithTTL() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
@@ -378,6 +397,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testOneIndexedFieldsWithTwoCriteriaField() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
@@ -393,6 +413,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testQueryDuringAndAfterMigration() throws Exception {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -413,6 +434,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -440,6 +462,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testQueryWithIndexesWhileMigrating() throws Exception {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -471,6 +494,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTwoNodesWithPartialIndexes() throws Exception {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -512,6 +536,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTwoNodesWithIndexes() throws Exception {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -556,6 +581,7 @@ public class QueryTest extends HazelcastTestSupport {
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void testOneMemberWithoutIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -565,6 +591,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testOneMemberWithIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -577,6 +604,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testOneMemberSQLWithoutIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -588,6 +616,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testOneMemberSQLWithIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -600,6 +629,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testIndexSQLPerformance() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -638,6 +668,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -696,6 +727,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testIndexPerformance() {
         Config cfg = new Config();
         final MapConfig mapConfig = cfg.getMapConfig("employees2");
@@ -741,6 +773,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testNullIndexing() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -794,6 +827,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testIndexPerformanceUsingPredicate() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -836,6 +870,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTwoMembers() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -846,6 +881,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexes() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -859,6 +895,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -882,6 +919,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown2() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -906,6 +944,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown3() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -931,6 +970,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testSecondMemberAfterAddingIndexes() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -944,6 +984,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testWithDashInTheNameAndSqlPredicate() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -963,6 +1004,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void queryWithThis() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -982,6 +1024,7 @@ public class QueryTest extends HazelcastTestSupport {
      * Test for issue 711
      */
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateWithEntryKeyObject() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1002,6 +1045,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testShutDown() {
         Config cfg = new Config();
         cfg.getMapConfig("testShutDown").addMapIndexConfig(new MapIndexConfig("typeName", false));
@@ -1033,6 +1077,7 @@ public class QueryTest extends HazelcastTestSupport {
      * Github issues 98 and 131
      */
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateStringAttribute() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1045,6 +1090,7 @@ public class QueryTest extends HazelcastTestSupport {
      * Github issues 98 and 131
      */
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateStringAttributesWithIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1075,6 +1121,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateDateAttribute() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1084,6 +1131,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateDateAttributeWithIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1120,6 +1168,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateEnumAttribute() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1129,6 +1178,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateEnumAttributeWithIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1187,6 +1237,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateCustomAttribute() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1194,10 +1245,10 @@ public class QueryTest extends HazelcastTestSupport {
         IMap map = instance.getMap("testPredicateCustomAttribute");
 
         final CustomAttribute attribute = new CustomAttribute(78, 145);
-        final CustomObject object = new CustomObject("name1", UUID.randomUUID(), attribute);
+        final CustomObject object = new CustomObject("name1", UuidUtil.buildRandomUUID(), attribute);
         map.put(1, object);
 
-        final CustomObject object2 = new CustomObject("name2", UUID.randomUUID(), attribute);
+        final CustomObject object2 = new CustomObject("name2", UuidUtil.buildRandomUUID(), attribute);
         map.put(2, object2);
 
         assertEquals(object, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(object.uuid)).iterator().next());
@@ -1276,6 +1327,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testPredicateNotEqualWithIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1379,6 +1431,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInvalidSqlPredicate() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1423,6 +1476,7 @@ public class QueryTest extends HazelcastTestSupport {
      * test for issue #359
      */
     @Test
+    @Category(ProblematicTest.class)
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
         final int runCount = 500;
@@ -1440,7 +1494,7 @@ public class QueryTest extends HazelcastTestSupport {
             ex.execute(new Runnable() {
                 public void run() {
                     final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-                    final String name = UUID.randomUUID().toString();
+                    final String name = UuidUtil.buildRandomUuidString();
                     final IMap<Object, Value> map = hz.getMap(mapName);
                     map.put(name, new Value(name, 0));
                     map.size();  // helper call on nodes to sync partitions.. see issue github.com/hazelcast/hazelcast/issues/1282
@@ -1484,6 +1538,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testIndexingEnumAttributeIssue597() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -1510,6 +1565,7 @@ public class QueryTest extends HazelcastTestSupport {
      * see pull request 616
      */
     @Test
+    @Category(ProblematicTest.class)
     public void testIndexingEnumAttributeWithSqlIssue597() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -1532,7 +1588,46 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(indexes, expectedValues);
     }
 
+    // issue 1404 "to be fixed by issue 1404"
     @Test
+    @Category(ProblematicTest.class)
+    public void testQueryAfterInitialLoad() {
+        String name = "testQueryAfterInitialLoad";
+        Config cfg = new Config();
+        final int size = 100;
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapStoreAdapter() {
+            @Override
+            public Map loadAll(Collection keys) {
+                Map map = new HashMap();
+                for (Object key : keys) {
+                    Employee emp = new Employee();
+                    emp.setActive(true);
+                    map.put(key, emp);
+                }
+                return map;
+            }
+
+            @Override
+            public Set loadAllKeys() {
+                Set set = new HashSet();
+                for (int i = 0; i < size; i++) {
+                    set.add(i);
+                }
+                return set;
+            }
+        });
+        cfg.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance.getMap(name);
+        Collection values = map.values(new SqlPredicate("active = true"));
+        assertEquals(size, values.size());
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
     public void testMultipleOrPredicatesIssue885WithoutIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(new Config());
@@ -1542,6 +1637,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMultipleOrPredicatesIssue885WithIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(new Config());
@@ -1552,6 +1648,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMultipleOrPredicatesIssue885WithIndex2() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(new Config());
@@ -1605,6 +1702,7 @@ public class QueryTest extends HazelcastTestSupport {
      * see zendesk ticket #82
      */
     @Test
+    @Category(ProblematicTest.class)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";
         final String FIND_ME = "find-me";
@@ -1626,7 +1724,7 @@ public class QueryTest extends HazelcastTestSupport {
                     IMap<Object, Object> map = hz.getMap(name);
 
                     for (int i = 0; i < entryPerNode; i++) {
-                        String id = UUID.randomUUID().toString();
+                        String id = UuidUtil.buildRandomUuidString();
                         String name;
                         if (i % modulo == 0) {
                             name = FIND_ME;

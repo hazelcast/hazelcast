@@ -19,6 +19,9 @@ package com.hazelcast.examples;
 import com.hazelcast.core.Hazelcast;
 
 public class StartServer {
+    private StartServer() {
+    }
+
     public static void main(String[] args) {
         Hazelcast.newHazelcastInstance(null);
     }

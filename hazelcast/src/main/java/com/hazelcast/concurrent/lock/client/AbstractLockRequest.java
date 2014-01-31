@@ -34,11 +34,12 @@ import java.io.IOException;
 /**
  * @author mdogan 5/3/13
  */
-public abstract class AbstractLockRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public abstract class AbstractLockRequest extends KeyBasedClientRequest
+        implements Portable, SecureRequest {
 
     protected Data key;
 
-    private int threadId;
+    private long threadId;
 
     private long ttl = -1;
 
@@ -47,34 +48,41 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
     public AbstractLockRequest() {
     }
 
-    public AbstractLockRequest(Data key, int threadId) {
+    public AbstractLockRequest(Data key, long threadId) {
         this.key = key;
         this.threadId = threadId;
     }
 
-    public AbstractLockRequest(Data key, int threadId, long ttl, long timeout) {
+    public AbstractLockRequest(Data key, long threadId, long ttl, long timeout) {
         this.key = key;
         this.threadId = threadId;
         this.ttl = ttl;
         this.timeout = timeout;
     }
 
+    protected String getName() {
+        return (String) getClientEngine().toObject(key);
+    }
+
+    @Override
     protected final Operation prepareOperation() {
         return new LockOperation(getNamespace(), key, threadId, ttl, timeout);
     }
 
+    @Override
     protected final Object getKey() {
         return key;
     }
 
     protected abstract ObjectNamespace getNamespace();
 
+    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("tid", threadId);
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeLong("tid", threadId);
         writer.writeLong("ttl", ttl);
         writer.writeLong("timeout", timeout);
 
@@ -82,8 +90,8 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        threadId = reader.readInt("tid");
+    public void read(PortableReader reader) throws IOException {
+        threadId = reader.readLong("tid");
         ttl = reader.readLong("ttl");
         timeout = reader.readLong("timeout");
 
@@ -91,5 +99,4 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         key = new Data();
         key.readData(in);
     }
-
 }

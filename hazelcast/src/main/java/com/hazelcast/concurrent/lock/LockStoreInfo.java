@@ -16,14 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.spi.ObjectNamespace;
-
-/**
- * @author mdogan 4/30/13
- */
 public interface LockStoreInfo {
-
-    ObjectNamespace getObjectNamespace();
 
     int getBackupCount();
 

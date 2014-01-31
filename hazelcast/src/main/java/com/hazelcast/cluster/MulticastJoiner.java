@@ -40,6 +40,7 @@ public class MulticastJoiner extends AbstractJoiner {
         maxTryCount = new AtomicInteger(calculateTryCount());
     }
 
+    @Override
     public void doJoin(AtomicBoolean joined) {
         int tryCount = 0;
         long joinStartTime = Clock.currentTimeMillis();
@@ -88,6 +89,7 @@ public class MulticastJoiner extends AbstractJoiner {
         new TcpIpJoiner(node).join(joined);
     }
 
+    @Override
     public void searchForOtherClusters() {
         final BlockingQueue<JoinMessage> q = new LinkedBlockingQueue<JoinMessage>();
         MulticastListener listener = new MulticastListener() {
@@ -138,12 +140,16 @@ public class MulticastJoiner extends AbstractJoiner {
             throw new IllegalArgumentException();
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
-        logger.finest( "Master connection " + conn);
+        if (logger.isFinestEnabled()) {
+            logger.finest( "Master connection " + conn);
+        }
         systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {
-            logger.finest( "Connecting to master node: " + masterAddress);
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Connecting to master node: " + masterAddress);
+            }
             return false;
         }
     }

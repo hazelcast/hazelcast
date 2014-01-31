@@ -18,12 +18,16 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
+import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
@@ -36,13 +40,14 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     protected Data key;
     protected Data value;
     protected String name;
-    protected int threadId;
+    protected long threadId;
     protected long ttl;
+    protected transient long startTime;
 
     public MapPutRequest() {
     }
 
-    public MapPutRequest(String name, Data key, Data value, int threadId, long ttl) {
+    public MapPutRequest(String name, Data key, Data value, long threadId, long ttl) {
         this.name = name;
         this.key = key;
         this.value = value;
@@ -50,7 +55,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         this.ttl = ttl;
     }
 
-    public MapPutRequest(String name, Data key, Data value, int threadId) {
+    public MapPutRequest(String name, Data key, Data value, long threadId) {
         this.name = name;
         this.key = key;
         this.value = value;
@@ -71,6 +76,21 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     }
 
     @Override
+    protected void beforeProcess() {
+        startTime = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void afterResponse() {
+        final long latency = System.currentTimeMillis() - startTime;
+        final MapService mapService = getService();
+        MapContainer mapContainer = mapService.getMapContainer(name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getLocalMapStatsImpl(name).incrementPuts(latency);
+        }
+    }
+
+    @Override
     protected Operation prepareOperation() {
         PutOperation op = new PutOperation(name, key, value, ttl);
         op.setThreadId(threadId);
@@ -81,18 +101,18 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         return MapService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
+        writer.writeLong("t", threadId);
         writer.writeLong("ttl", ttl);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
+        threadId = reader.readLong("t");
         ttl = reader.readLong("ttl");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

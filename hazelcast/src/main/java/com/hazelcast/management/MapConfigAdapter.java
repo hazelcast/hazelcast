@@ -25,9 +25,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 6/11/13
- */
 public class MapConfigAdapter implements DataSerializable {
 
     private MapConfig config;
@@ -39,6 +36,7 @@ public class MapConfigAdapter implements DataSerializable {
         this.config = mapConfig;
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         config = new MapConfig();
         config.setName(in.readUTF());
@@ -55,6 +53,7 @@ public class MapConfigAdapter implements DataSerializable {
         config.setMergePolicy(in.readUTF());
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(config.getName());
         out.writeUTF(config.getInMemoryFormat().toString());

@@ -45,16 +45,18 @@ public class CollectionAddAllRequest extends CollectionRequest {
         this.valueList = valueList;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionAddAllOperation(name, valueList);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_ADD_ALL;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeInt(valueList.size());
         for (Data value : valueList) {
@@ -62,8 +64,8 @@ public class CollectionAddAllRequest extends CollectionRequest {
         }
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         final int size = in.readInt();
         valueList = new ArrayList<Data>(size);
@@ -74,6 +76,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
         }
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_ADD;
     }

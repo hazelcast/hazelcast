@@ -38,7 +38,8 @@ import java.security.Permission;
 /**
  * @author mdogan 5/3/13
  */
-public final class GetLockCountRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public final class GetLockCountRequest extends KeyBasedClientRequest
+        implements Portable, SecureRequest {
 
     private Data key;
 
@@ -49,15 +50,18 @@ public final class GetLockCountRequest extends KeyBasedClientRequest implements 
         this.key = key;
     }
 
+    @Override
     protected final Operation prepareOperation() {
         String name = (String) getClientEngine().toObject(key);
         return new GetLockCountOperation(new InternalLockNamespace(name), key);
     }
 
+    @Override
     protected final Object getKey() {
         return key;
     }
 
+    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
@@ -72,17 +76,18 @@ public final class GetLockCountRequest extends KeyBasedClientRequest implements 
         return LockPortableHook.GET_LOCK_COUNT;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
     }
 
+    @Override
     public Permission getRequiredPermission() {
         String name = (String) getClientEngine().toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_READ);

@@ -34,11 +34,11 @@ import java.io.IOException;
 /**
  * @author mdogan 5/3/13
  */
-public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest
+        implements Portable, SecureRequest {
 
     protected Data key;
-
-    private int threadId;
+    private long threadId;
 
     public AbstractIsLockedRequest() {
     }
@@ -48,36 +48,42 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest impl
         this.threadId = -1;
     }
 
-    protected AbstractIsLockedRequest(Data key, int threadId) {
+    protected AbstractIsLockedRequest(Data key, long threadId) {
         this.key = key;
         this.threadId = threadId;
     }
 
+    protected String getName() {
+        return (String) getClientEngine().toObject(key);
+    }
+
+    @Override
     protected final Operation prepareOperation() {
         return new IsLockedOperation(getNamespace(), key, threadId);
     }
 
+    @Override
     protected final Object getKey() {
         return key;
     }
 
     protected abstract ObjectNamespace getNamespace();
 
+    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("tid", threadId);
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeLong("tid", threadId);
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        threadId = reader.readInt("tid");
+    public void read(PortableReader reader) throws IOException {
+        threadId = reader.readLong("tid");
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
     }
-
 }

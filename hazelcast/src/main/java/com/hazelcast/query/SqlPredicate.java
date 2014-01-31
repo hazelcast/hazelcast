@@ -28,6 +28,9 @@ import java.util.*;
 import static com.hazelcast.query.Predicates.*;
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
+
+    private final static long serialVersionUID = 1;
+
     private transient Predicate predicate;
     private String sql;
 
@@ -39,10 +42,12 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     public SqlPredicate() {
     }
 
+    @Override
     public boolean apply(Map.Entry mapEntry) {
         return predicate.apply(mapEntry);
     }
 
+    @Override
     public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
@@ -50,14 +55,17 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return false;
     }
 
+    @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(sql);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         sql = in.readUTF();
         predicate = createPredicate(sql);
@@ -164,6 +172,12 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, like((String) first, (String) second));
+                    } else if ("ILIKE".equalsIgnoreCase(token)) {
+                        int position = (i - 2);
+                        validateOperandPosition(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, ilike((String) first, (String) second));
                     } else if ("REGEX".equalsIgnoreCase(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
@@ -252,6 +266,11 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
     }
 
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        predicate = createPredicate(sql);
+    }
+
     @Override
     public String toString() {
         return predicate.toString();
@@ -268,10 +287,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 
         SqlPredicate that = (SqlPredicate) o;
 
-        if (!sql.equals(that.sql)) {
-            return false;
-        }
-        return true;
+        return sql.equals(that.sql);
     }
 
     @Override

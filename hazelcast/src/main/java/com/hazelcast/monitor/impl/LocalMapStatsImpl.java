@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializable {
     private final AtomicLong lastAccessTime = new AtomicLong(0);
+    private final AtomicLong lastUpdateTime = new AtomicLong(0);
     private final AtomicLong hits = new AtomicLong(0);
     private final AtomicLong numberOfOtherOperations = new AtomicLong(0);
     private final AtomicLong numberOfEvents = new AtomicLong(0);
@@ -51,10 +52,13 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     private long dirtyEntryCount;
     private int backupCount;
 
+    private NearCacheStatsImpl nearCacheStats;
+
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(getCount.get());
         out.writeLong(putCount.get());
@@ -62,6 +66,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(numberOfOtherOperations.get());
         out.writeLong(numberOfEvents.get());
         out.writeLong(lastAccessTime.get());
+        out.writeLong(lastUpdateTime.get());
         out.writeLong(hits.get());
         out.writeLong(ownedEntryCount);
         out.writeLong(backupEntryCount);
@@ -78,8 +83,15 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(maxPutLatency.get());
         out.writeLong(maxRemoveLatency.get());
         out.writeLong(heapCost);
+        boolean hasNearCache = nearCacheStats != null;
+        out.writeBoolean(hasNearCache);
+        if(hasNearCache)
+        {
+            nearCacheStats.writeData(out);
+        }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         getCount.set(in.readLong());
         putCount.set(in.readLong());
@@ -87,6 +99,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         numberOfOtherOperations.set(in.readLong());
         numberOfEvents.set(in.readLong());
         lastAccessTime.set(in.readLong());
+        lastUpdateTime.set(in.readLong());
         hits.set(in.readLong());
         ownedEntryCount = in.readLong();
         backupEntryCount = in.readLong();
@@ -103,8 +116,15 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxPutLatency.set(in.readLong());
         maxRemoveLatency.set(in.readLong());
         heapCost = in.readLong();
+        boolean hasNearCache = in.readBoolean();
+        if(hasNearCache)
+        {
+            nearCacheStats = new NearCacheStatsImpl();
+            nearCacheStats.readData(in);
+        }
     }
 
+    @Override
     public long getOwnedEntryCount() {
         return ownedEntryCount;
     }
@@ -113,6 +133,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.ownedEntryCount = ownedEntryCount;
     }
 
+    @Override
     public long getBackupEntryCount() {
         return backupEntryCount;
     }
@@ -121,6 +142,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.backupEntryCount = backupEntryCount;
     }
 
+    @Override
     public int getBackupCount() {
         return backupCount;
     }
@@ -129,6 +151,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.backupCount = backupCount;
     }
 
+    @Override
     public long getOwnedEntryMemoryCost() {
         return ownedEntryMemoryCost;
     }
@@ -137,6 +160,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.ownedEntryMemoryCost = ownedEntryMemoryCost;
     }
 
+    @Override
     public long getBackupEntryMemoryCost() {
         return backupEntryMemoryCost;
     }
@@ -145,10 +169,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.backupEntryMemoryCost = backupEntryMemoryCost;
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
 
+    @Override
     public long getLastAccessTime() {
         return lastAccessTime.get();
     }
@@ -157,6 +183,16 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.lastAccessTime.set(Math.max(this.lastAccessTime.get(), lastAccessTime));
     }
 
+    @Override
+    public long getLastUpdateTime() {
+        return lastUpdateTime.get();
+    }
+
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime.set(Math.max(this.lastUpdateTime.get(), lastUpdateTime));
+    }
+
+    @Override
     public long getHits() {
         return hits.get();
     }
@@ -165,6 +201,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.hits.set(hits);
     }
 
+    @Override
     public long getLockedEntryCount() {
         return lockedEntryCount;
     }
@@ -173,6 +210,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.lockedEntryCount = lockedEntryCount;
     }
 
+    @Override
     public long getDirtyEntryCount() {
         return dirtyEntryCount;
     }
@@ -181,10 +219,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.dirtyEntryCount = l;
     }
 
+    @Override
     public long total() {
         return putCount.get() + getCount.get() + removeCount.get() + numberOfOtherOperations.get();
     }
 
+    @Override
     public long getPutOperationCount() {
         return putCount.get();
     }
@@ -195,6 +235,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxPutLatency.set(Math.max(maxPutLatency.get(), latency));
     }
 
+    @Override
     public long getGetOperationCount() {
         return getCount.get();
     }
@@ -205,6 +246,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxGetLatency.set(Math.max(maxGetLatency.get(), latency));
     }
 
+    @Override
     public long getRemoveOperationCount() {
         return removeCount.get();
     }
@@ -215,30 +257,37 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxRemoveLatency.set(Math.max(maxRemoveLatency.get(), latency));
     }
 
+    @Override
     public long getTotalPutLatency() {
         return totalPutLatencies.get();
     }
 
+    @Override
     public long getTotalGetLatency() {
         return totalGetLatencies.get();
     }
 
+    @Override
     public long getTotalRemoveLatency() {
         return totalRemoveLatencies.get();
     }
 
+    @Override
     public long getMaxPutLatency() {
         return maxPutLatency.get();
     }
 
+    @Override
     public long getMaxGetLatency() {
         return maxGetLatency.get();
     }
 
+    @Override
     public long getMaxRemoveLatency() {
         return maxRemoveLatency.get();
     }
 
+    @Override
     public long getOtherOperationCount() {
         return numberOfOtherOperations.get();
     }
@@ -247,6 +296,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         numberOfOtherOperations.incrementAndGet();
     }
 
+    @Override
     public long getEventOperationCount() {
         return numberOfEvents.get();
     }
@@ -259,13 +309,25 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.heapCost = heapCost;
     }
 
+    @Override
     public long getHeapCost() {
         return heapCost;
     }
 
+    @Override
+    public NearCacheStatsImpl getNearCacheStats() {
+        return nearCacheStats;
+    }
+
+    public void setNearCacheStats(NearCacheStatsImpl nearCacheStats) {
+        this.nearCacheStats = nearCacheStats;
+    }
+
+    @Override
     public String toString() {
         return "LocalMapStatsImpl{" +
                 "lastAccessTime=" + lastAccessTime +
+                ", lastUpdateTime=" + lastUpdateTime +
                 ", hits=" + hits +
                 ", numberOfOtherOperations=" + numberOfOtherOperations +
                 ", numberOfEvents=" + numberOfEvents +

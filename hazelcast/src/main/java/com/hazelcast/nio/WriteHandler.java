@@ -28,9 +28,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
+
+    private final Queue<SocketWritable> urgencyWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -72,7 +76,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         if (socketWriter == null) {
             if (Protocols.CLUSTER.equals(protocol)) {
                 socketWriter = new SocketPacketWriter(connection);
-                buffer.put(Protocols.CLUSTER.getBytes());
+                buffer.put(stringToBytes(Protocols.CLUSTER));
                 registerWrite();
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                 socketWriter = new SocketClientDataWriter(connection);
@@ -87,8 +91,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void enqueueSocketWritable(SocketWritable socketWritable) {
-        socketWritable.onEnqueue();
-        writeQueue.offer(socketWritable);
+        if(socketWritable.isUrgent()){
+            urgencyWriteQueue.offer(socketWritable);
+        }else{
+            writeQueue.offer(socketWritable);
+        }
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
@@ -100,7 +107,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private SocketWritable poll() {
-        return writeQueue.poll();
+        SocketWritable writable = urgencyWriteQueue.poll();
+        if(writable == null){
+            writable = writeQueue.poll();
+        }
+
+        return writable;
     }
 
     @SuppressWarnings("unchecked")

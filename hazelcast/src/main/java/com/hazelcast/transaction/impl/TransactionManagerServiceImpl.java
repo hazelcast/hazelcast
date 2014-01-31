@@ -104,6 +104,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         finalizeTransactionsOf(uuid);
     }
 
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+    }
+
     private void finalizeTransactionsOf(String uuid) {
         if (!txBackupLogs.isEmpty()) {
             for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {
@@ -115,8 +118,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                         Collection<Future> futures = new ArrayList<Future>(memberList.size());
                         for (MemberImpl member : memberList) {
                             Operation op = new BroadcastTxRollbackOperation(txnId);
-                            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, member.getAddress()).build();
-                            futures.add(inv.invoke());
+                            Future f = nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, member.getAddress());
+                            futures.add(f);
                         }
                         for (Future future : futures) {
                             try {

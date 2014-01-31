@@ -39,12 +39,12 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
     protected String name;
     protected Data key;
     protected Data value;
-    protected int threadId;
+    protected long threadId;
 
     public MapRemoveIfSameRequest() {
     }
 
-    public MapRemoveIfSameRequest(String name, Data key, Data value, int threadId) {
+    public MapRemoveIfSameRequest(String name, Data key, Data value, long threadId) {
         this.name = name;
         this.key = key;
         this.value = value;
@@ -73,17 +73,17 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
         return MapService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
+        writer.writeLong("t", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
+        threadId = reader.readLong("t");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

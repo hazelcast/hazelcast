@@ -80,14 +80,4 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
         return "ClearOperation{" +
                 '}';
     }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-    }
 }

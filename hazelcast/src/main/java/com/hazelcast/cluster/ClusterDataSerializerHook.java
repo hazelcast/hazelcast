@@ -16,9 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
-import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.*;
@@ -38,14 +36,14 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int CONFIG_CHECK = 4;
 
     // client
-    public static final int ADD_MS_LISTENER = 7;
     public static final int MEMBERSHIP_EVENT = 8;
-    public static final int PING = 9;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable> ctors[] = new ConstructorFunction[10];
         ctors[DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -78,23 +76,12 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         };
 
 
-        ctors[ADD_MS_LISTENER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddMembershipListenerRequest();
-            }
-        };
-
         ctors[MEMBERSHIP_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClientMembershipEvent();
             }
         };
 
-        ctors[PING] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClientPingRequest();
-            }
-        };
 
         return new ArrayDataSerializableFactory(ctors);
     }

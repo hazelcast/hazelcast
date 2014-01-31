@@ -33,6 +33,7 @@ public class JoinRequestOperation extends AbstractClusterOperation implements Jo
         this.message = message;
     }
 
+    @Override
     public void run() {
         ClusterServiceImpl cm = getService();
         cm.handleJoinRequest(this);
@@ -42,11 +43,13 @@ public class JoinRequestOperation extends AbstractClusterOperation implements Jo
         return message;
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         message = new JoinRequest();
         message.readData(in);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         message.writeData(out);
     }

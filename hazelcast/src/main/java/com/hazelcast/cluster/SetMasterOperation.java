@@ -34,6 +34,7 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
         this.masterAddress = originAddress;
     }
 
+    @Override
     public void run() {
         ClusterServiceImpl clusterService = getService();
         clusterService.handleMaster(masterAddress);
@@ -43,11 +44,13 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
         return masterAddress;
     }
 
+    @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
         masterAddress = new Address();
         masterAddress.readData(in);
     }
 
+    @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
         masterAddress.writeData(out);
     }

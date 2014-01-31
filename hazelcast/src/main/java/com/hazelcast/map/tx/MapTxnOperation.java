@@ -27,5 +27,5 @@ public interface MapTxnOperation extends Notifier {
 
     long getVersion();
 
-    void setThreadId(int threadId);
+    void setThreadId(long threadId);
 }

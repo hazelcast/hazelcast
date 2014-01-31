@@ -24,7 +24,6 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 4/3/12
@@ -54,10 +53,18 @@ public class HazelcastCache implements Cache {
         final Object value = map.get(key);
         return value != null ? new SimpleValueWrapper(fromStoreValue(value)) : null;
     }
+    
+    public <T> T get(Object key, Class<T> type) {
+        Object value = fromStoreValue(this.map.get(key));
+        if (type != null && !type.isInstance(value)) {
+            throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
+        }
+        return (T) value;
+    }
 
     public void put(final Object key, final Object value) {
         if (key != null) {
-            map.set(key, toStoreValue(value), 0, TimeUnit.SECONDS);
+            map.set(key, toStoreValue(value));
         }
     }
 

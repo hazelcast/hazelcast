@@ -22,9 +22,6 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 1/22/13
- */
 public abstract class SemaphoreBackupOperation extends SemaphoreOperation implements BackupOperation {
 
     String firstCaller;
@@ -37,11 +34,13 @@ public abstract class SemaphoreBackupOperation extends SemaphoreOperation implem
         this.firstCaller = firstCaller;
     }
 
+    @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(firstCaller);
     }
 
+    @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         firstCaller = in.readUTF();

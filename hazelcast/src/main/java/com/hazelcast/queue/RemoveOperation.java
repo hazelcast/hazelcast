@@ -33,8 +33,7 @@ import java.io.IOException;
 public class RemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Data data;
-
-    transient long itemId = -1;
+    long itemId = -1;
 
     public RemoveOperation() {
     }

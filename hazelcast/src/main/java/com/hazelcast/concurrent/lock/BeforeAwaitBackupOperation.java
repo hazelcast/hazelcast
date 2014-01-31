@@ -32,15 +32,16 @@ public class BeforeAwaitBackupOperation extends BaseLockOperation implements Bac
     public BeforeAwaitBackupOperation() {
     }
 
-    public BeforeAwaitBackupOperation(ObjectNamespace namespace, Data key, int threadId,
+    public BeforeAwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
                                       String conditionId, String originalCaller) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
         this.originalCaller = originalCaller;
     }
 
+    @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         lockStore.addAwait(key, conditionId, originalCaller, threadId);
         lockStore.unlock(key, originalCaller, threadId);
         response = true;

@@ -41,6 +41,13 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
         this.collection = collection;
     }
 
+    public SerializableCollection(Data... dataArray) {
+        this.collection = new ArrayList<Data>();
+        for (Data data : dataArray) {
+            collection.add(data);
+        }
+    }
+
     public Collection<Data> getCollection() {
         return collection;
     }

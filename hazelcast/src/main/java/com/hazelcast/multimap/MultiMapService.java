@@ -31,7 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -78,10 +78,6 @@ public class MultiMapService implements ManagedService, RemoteService,
                     final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
 
                     return new LockStoreInfo() {
-                        public ObjectNamespace getObjectNamespace() {
-                            return key;
-                        }
-
                         public int getBackupCount() {
                             return multiMapConfig.getSyncBackupCount();
                         }
@@ -136,13 +132,13 @@ public class MultiMapService implements ManagedService, RemoteService,
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
+            InternalPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
             if (multiMapContainer == null) {
                 continue;
             }
-            if (partition.getOwner().equals(thisAddress)) {
+            if (thisAddress.equals(partition.getOwner())) {
                 keySet.addAll(multiMapContainer.keySet());
             }
         }
@@ -252,13 +248,16 @@ public class MultiMapService implements ManagedService, RemoteService,
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
+            InternalPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
             if (multiMapContainer == null) {
                 continue;
             }
-            if (partition.getOwner().equals(thisAddress)) {
+            Address owner = partition.getOwner();
+            if(owner == null){
+                //no-op because the owner is not yet set.
+            }else if (owner.equals(thisAddress)) {
                 lockedEntryCount += multiMapContainer.getLockedCount();
                 for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
                     hits += wrapper.getHits();

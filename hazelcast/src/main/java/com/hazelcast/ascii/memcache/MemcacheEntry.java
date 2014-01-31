@@ -25,15 +25,18 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     private byte[] bytes;
     private byte[] value;
     private int flag;
 
     public MemcacheEntry(String key, byte[] value, int flag) {
-        byte[] flagBytes = new String(" " + flag + " ").getBytes();
-        byte[] valueLen = String.valueOf(value.length).getBytes();
-        byte[] keyBytes = key.getBytes();
+        byte[] flagBytes = stringToBytes(" " + flag + " ");
+        byte[] valueLen = stringToBytes(String.valueOf(value.length));
+        byte[] keyBytes = stringToBytes(key);
         this.value = value.clone();
         int size = VALUE_SPACE.length
                 + keyBytes.length
@@ -113,7 +116,7 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
 
     public String toString() {
         return "MemcacheEntry{" +
-                "bytes=" + new String(bytes) +
+                "bytes=" + bytesToString(bytes) +
                 ", flag=" + flag +
                 '}';
     }

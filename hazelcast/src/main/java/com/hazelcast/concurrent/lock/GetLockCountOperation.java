@@ -28,7 +28,9 @@ public class GetLockCountOperation extends BaseLockOperation {
         super(namespace, key, -1);
     }
 
+    @Override
     public void run() throws Exception {
-        response = getLockStore().getLockCount(key);
+        LockStoreImpl lockStore = getLockStore();
+        response = lockStore.getLockCount(key);
     }
 }

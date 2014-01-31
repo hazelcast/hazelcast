@@ -23,10 +23,11 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+//todo: unused class?
 public class MergeRemoveOperation extends BaseRemoveOperation {
 
     private long removeTime;
-    private transient boolean merged = false;
+    private boolean merged = false;
 
     public MergeRemoveOperation(String name, Data dataKey, long removeTime) {
         super(name, dataKey);

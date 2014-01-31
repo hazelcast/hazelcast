@@ -41,25 +41,28 @@ public class CollectionAddRequest extends CollectionRequest {
         this.value = value;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new CollectionAddOperation(name, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_ADD;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         value.writeData(writer.getRawDataOutput());
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         value = new Data();
         value.readData(reader.getRawDataInput());
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_ADD;
     }

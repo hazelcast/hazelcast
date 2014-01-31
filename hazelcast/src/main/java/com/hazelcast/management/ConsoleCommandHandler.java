@@ -30,7 +30,6 @@ public class ConsoleCommandHandler {
     private final StringBuilder buffer = new StringBuilder();
 
     public ConsoleCommandHandler(HazelcastInstance instance) {
-        super();
         this.app = new ConsoleApp(instance);
     }
 
@@ -38,6 +37,7 @@ public class ConsoleCommandHandler {
         if ("exit".equals(command) || "quit".equals(command)) {
             return "'" + command + "' is not allowed!";
         }
+
         if (lock.tryLock(1, TimeUnit.SECONDS)) {
             try {
                 return doHandleCommand(command);
@@ -60,23 +60,28 @@ public class ConsoleCommandHandler {
             super(hazelcast);
         }
 
+        @Override
         protected void handleCommand(String command) {
             super.handleCommand(command);
         }
 
+        @Override
         protected void handleAddListener(String[] args) {
             println("Listener commands are not allowed!");
         }
 
+        @Override
         protected void handleRemoveListener(String[] args) {
             println("Listener commands are not allowed!");
         }
 
+        @Override
         public void println(Object obj) {
             print(obj);
             print('\n');
         }
 
+        @Override
         public void print(Object obj) {
             buffer.append(String.valueOf(obj));
         }

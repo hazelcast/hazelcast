@@ -18,9 +18,6 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ILock;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("ILock")
 public class LockMBean extends  HazelcastMBean<ILock> {
 
@@ -47,5 +44,4 @@ public class LockMBean extends  HazelcastMBean<ILock> {
     public String getPartitionKey() {
         return managedObject.getPartitionKey();
     }
-
 }

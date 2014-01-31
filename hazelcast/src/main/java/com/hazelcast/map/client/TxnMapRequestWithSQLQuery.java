@@ -52,15 +52,16 @@ public class TxnMapRequestWithSQLQuery extends AbstractTxnMapRequest {
         if (predicate != null) {
             out.writeBoolean(true);
             out.writeUTF(predicate);
-        } else{
+        } else {
             out.writeBoolean(false);
         }
     }
 
     protected void readDataInner(ObjectDataInput in) throws IOException {
         final boolean hasPredicate = in.readBoolean();
-        if(hasPredicate)
+        if (hasPredicate) {
             predicate = in.readUTF();
+        }
     }
 
 }

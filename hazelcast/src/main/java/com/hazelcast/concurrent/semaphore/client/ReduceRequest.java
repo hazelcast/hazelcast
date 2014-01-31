@@ -24,9 +24,6 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-/**
- * @author ali 5/13/13
- */
 public class ReduceRequest extends SemaphoreRequest {
 
     public ReduceRequest() {
@@ -36,14 +33,17 @@ public class ReduceRequest extends SemaphoreRequest {
         super(name, permitCount);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ReduceOperation(name, permitCount);
     }
 
+    @Override
     public int getClassId() {
         return SemaphorePortableHook.REDUCE;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }

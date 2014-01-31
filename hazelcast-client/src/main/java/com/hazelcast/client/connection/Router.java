@@ -23,11 +23,11 @@ import com.hazelcast.nio.Address;
 /**
  * @author mdogan 5/15/13
  */
-class Router {
+public class Router {
 
     private final LoadBalancer loadBalancer;
 
-    Router(LoadBalancer loadBalancer) {
+    public Router(LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
     }
 

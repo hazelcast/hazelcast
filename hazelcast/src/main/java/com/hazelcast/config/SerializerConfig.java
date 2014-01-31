@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.Serializer;
 
+/**
+ * Contains the serialization configuration for a particular class.
+ */
 public class SerializerConfig {
 
     private String className;

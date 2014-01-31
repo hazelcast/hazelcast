@@ -22,6 +22,9 @@ import com.hazelcast.spi.impl.SpiPortableHook;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 /**
  * Simple implementation of {@link Credentials} using
  * username and password as security attributes.
@@ -38,7 +41,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
 
     public UsernamePasswordCredentials(String username, String password) {
         super(username);
-        this.password = password.getBytes();
+        this.password = stringToBytes(password);
     }
 
     public String getUsername() {
@@ -50,7 +53,11 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
     }
 
     public String getPassword() {
-        return password == null ? "" : new String(password);
+        if (password == null) {
+            return "";
+        } else {
+            return bytesToString(password);
+        }
     }
 
     public void setUsername(String username) {
@@ -58,7 +65,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
     }
 
     public void setPassword(String password) {
-        this.password = password.getBytes();
+        this.password = stringToBytes(password);
     }
 
     @Override

@@ -128,7 +128,7 @@ public class DefaultRecordStore implements RecordStore {
         loaded.set(isLoaded);
     }
 
-    private void checkIfLoaded() {
+    public void checkIfLoaded() {
         if (mapContainer.getStore() != null && !loaded.get()) {
             throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
         }
@@ -245,7 +245,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public int size() {
-        checkIfLoaded();
+        // do not add checkIfLoaded(), size() is also used internally
         return records.size();
     }
 
@@ -263,22 +263,22 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
-    public boolean lock(Data key, String caller, int threadId, long ttl) {
+    public boolean lock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
     }
 
-    public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+    public boolean txnLock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
-    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+    public boolean extendLock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
-    public boolean unlock(Data key, String caller, int threadId) {
+    public boolean unlock(Data key, String caller, long threadId) {
         checkIfLoaded();
         return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
@@ -296,11 +296,11 @@ public class DefaultRecordStore implements RecordStore {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
-    public boolean isLockedBy(Data key, String caller, int threadId) {
+    public boolean isLockedBy(Data key, String caller, long threadId) {
         return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
     }
 
-    public boolean canAcquireLock(Data key, String caller, int threadId) {
+    public boolean canAcquireLock(Data key, String caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
@@ -608,7 +608,7 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, -1);
             records.put(dataKey, record);
             // increase size.
@@ -617,19 +617,13 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             final Object oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            //check if putting the same value again.
-            if (mapService.compare(name, oldValue, value)) {
-                accessRecord(record);
-            }//otherwise this is a full update operation.
-            else {
-                value = writeMapStore(dataKey, value, record);
-                // if key exists before, first reduce size
-                updateSizeEstimator(-calculateRecordSize(record));
-                setRecordValue(record, value);
-                // then increase size
-                updateSizeEstimator(calculateRecordSize(record));
-                saveIndex(record);
-            }
+            value = writeMapStore(dataKey, value, record);
+            // if key exists before, first reduce size
+            updateSizeEstimator(-calculateRecordSize(record));
+            setRecordValue(record, value);
+            // then increase size
+            updateSizeEstimator(calculateRecordSize(record));
+            saveIndex(record);
         }
 
     }
@@ -643,7 +637,7 @@ public class DefaultRecordStore implements RecordStore {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -651,21 +645,14 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            //check if putting the same value again.
-            if (mapService.compare(name, oldValue, value)) {
-                accessRecord(record);
-                updateTtl(record, ttl);
-            }//otherwise this is a full update operation.
-            else {
-                value = writeMapStore(dataKey, value, record);
-                // if key exists before, first reduce size
-                updateSizeEstimator(-calculateRecordSize(record));
-                setRecordValue(record, value);
-                // then increase size.
-                updateSizeEstimator(calculateRecordSize(record));
-                updateTtl(record, ttl);
-                saveIndex(record);
-            }
+            value = writeMapStore(dataKey, value, record);
+            // if key exists before, first reduce size
+            updateSizeEstimator(-calculateRecordSize(record));
+            setRecordValue(record, value);
+            // then increase size.
+            updateSizeEstimator(calculateRecordSize(record));
+            updateTtl(record, ttl);
+            saveIndex(record);
         }
         return oldValue;
     }
@@ -676,7 +663,7 @@ public class DefaultRecordStore implements RecordStore {
         boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -720,7 +707,7 @@ public class DefaultRecordStore implements RecordStore {
         Object newValue = null;
         if (record == null) {
             newValue = mergingEntry.getValue();
-            newValue = writeMapStore(dataKey, newValue, record);
+            newValue = writeMapStore(dataKey, newValue, null);
             record = mapService.createRecord(name, dataKey, newValue, -1);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -829,7 +816,7 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = writeMapStore(dataKey, value, record);
+            value = writeMapStore(dataKey, value, null);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -1000,6 +987,7 @@ public class DefaultRecordStore implements RecordStore {
                 });
                 operation.setPartitionId(partitionId);
                 OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
+                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             } catch (Exception e) {

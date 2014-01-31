@@ -34,7 +34,7 @@ public class QueuePerformanceTest {
     final AtomicLong totalOffer = new AtomicLong();
     final AtomicLong totalPoll = new AtomicLong();
     final AtomicLong totalPeek = new AtomicLong();
-    final Random rnd = new Random(System.currentTimeMillis());
+    final Random rnd = new Random();
 
     public static void main(String[] args) throws Exception {
 //        System.setProperty("hazelcast.test.use.network","true");

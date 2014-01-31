@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -38,6 +39,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -96,6 +98,8 @@ final class ServiceManager {
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
                 registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
+                registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
+                registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
             }
 
             serviceProps = new HashMap<String, Properties>();
@@ -125,7 +129,9 @@ final class ServiceManager {
             final Object service = serviceInfo.getService();
             if (serviceInfo.isConfigurableService()) {
                 try {
-                    logger.finest( "Configuring service -> " + service);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Configuring service -> " + service);
+                    }
                     final Object configObject = serviceConfigObjects.get(serviceInfo.getName());
                     ((ConfigurableService) service).configure(configObject);
                 } catch (Throwable t) {
@@ -134,7 +140,9 @@ final class ServiceManager {
             }
             if (serviceInfo.isManagedService()) {
                 try {
-                    logger.finest( "Initializing service -> " + service);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Initializing service -> " + service);
+                    }
                     final Properties props = serviceProps.get(serviceInfo.getName());
                     ((ManagedService) service).init(nodeEngine, props != null ? props : new Properties());
                 } catch (Throwable t) {
@@ -147,13 +155,14 @@ final class ServiceManager {
     @SuppressWarnings("unchecked")
     private Object createServiceObject(String className) {
         try {
-            Class serviceClass = ClassLoaderUtil.loadClass(nodeEngine.getConfigClassLoader(), className);
+            ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+            Class serviceClass = ClassLoaderUtil.loadClass(classLoader, className);
             try {
                 Constructor constructor = serviceClass.getConstructor(NodeEngine.class);
                 return constructor.newInstance(nodeEngine);
             } catch (NoSuchMethodException ignored) {
             }
-            return ClassLoaderUtil.newInstance(serviceClass);
+            return ClassLoaderUtil.newInstance(serviceClass, classLoader, className);
         } catch (Exception e) {
             logger.severe(e);
         }
@@ -173,7 +182,9 @@ final class ServiceManager {
 
     private void shutdownService(final ManagedService service, final boolean terminate) {
         try {
-            logger.finest( "Shutting down service -> " + service);
+            if(logger.isFinestEnabled()){
+                logger.finest( "Shutting down service -> " + service);
+            }
             service.shutdown(terminate);
         } catch (Throwable t) {
             logger.severe("Error while shutting down service[" + service + "]: " + t.getMessage(), t);
@@ -181,7 +192,9 @@ final class ServiceManager {
     }
 
     private synchronized void registerService(String serviceName, Object service) {
-        logger.finest( "Registering service: '" + serviceName + "'");
+        if (logger.isFinestEnabled()) {
+            logger.finest( "Registering service: '" + serviceName + "'");
+        }
         final ServiceInfo serviceInfo = new ServiceInfo(serviceName, service);
         final ServiceInfo currentServiceInfo = services.putIfAbsent(serviceName, serviceInfo);
         if (currentServiceInfo != null) {

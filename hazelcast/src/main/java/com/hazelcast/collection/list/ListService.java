@@ -42,10 +42,11 @@ public class ListService extends CollectionService {
         super(nodeEngine);
     }
 
+    @Override
     public ListContainer getOrCreateContainer(String name, boolean backup) {
         ListContainer container = containerMap.get(name);
         if (container == null){
-            container = new ListContainer(name, nodeEngine, this);
+            container = new ListContainer(name, nodeEngine);
             final ListContainer current = containerMap.putIfAbsent(name, container);
             if (current != null){
                 container = current;
@@ -54,22 +55,27 @@ public class ListService extends CollectionService {
         return container;
     }
 
+    @Override
     public Map<String, ? extends CollectionContainer> getContainerMap() {
         return containerMap;
     }
 
+    @Override
     public String getServiceName() {
         return SERVICE_NAME;
     }
 
+    @Override
     public DistributedObject createDistributedObject(String objectId) {
         return new ListProxyImpl(objectId, nodeEngine, this);
     }
 
+    @Override
     public TransactionalListProxy createTransactionalObject(String name, TransactionSupport transaction) {
         return new TransactionalListProxy(name, transaction, nodeEngine, this);
     }
 
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         final Map<String, CollectionContainer> migrationData = getMigrationData(event);
         return migrationData.isEmpty() ? null : new ListReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());

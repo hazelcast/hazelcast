@@ -21,17 +21,21 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -41,14 +45,15 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapIssueTest {
 
-    @AfterClass
-    public static void destroy() {
+    @After
+    public void reset(){
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
-    @Test()
-    public void testClientDisconnectionWhileQuerying() throws InterruptedException {
+
+    @Test
+    public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
@@ -80,6 +85,82 @@ public class ClientMapIssueTest {
         assertTrue(latch.await(15, TimeUnit.SECONDS));
 
     }
+
+    @Test
+    public void testMapPagingEntries() {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Integer, Integer> map = client.getMap("map");
+
+        final int size = 50;
+        final int pageSize = 5;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+
+        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        predicate.nextPage();
+
+        final Set<Map.Entry<Integer,Integer>> entries = map.entrySet(predicate);
+        assertEquals(pageSize, entries.size());
+
+
+    }
+
+    @Test
+    public void testMapPagingValues() {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Integer, Integer> map = client.getMap("map");
+
+        final int size = 50;
+        final int pageSize = 5;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+
+        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        predicate.nextPage();
+
+        final Collection<Integer> values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+
+
+    }
+
+    @Test
+    public void testMapPagingKeySet() {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Integer, Integer> map = client.getMap("map");
+
+        final int size = 50;
+        final int pageSize = 5;
+        for (int i = 0; i < size; i++) {
+            map.put(size - i, i);
+        }
+
+        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        predicate.nextPage();
+
+        final Set<Integer> values = map.keySet(predicate);
+        assertEquals(pageSize, values.size());
+
+
+    }
+
 
 
 }

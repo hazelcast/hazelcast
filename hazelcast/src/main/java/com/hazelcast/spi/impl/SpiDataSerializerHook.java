@@ -16,10 +16,12 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.EventServiceImpl.EventPacket;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
-import com.hazelcast.util.ConstructorFunction;
 
 /**
  * @author mdogan 8/24/12
@@ -28,7 +30,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
 
-    static final int RESPONSE = 0;
+    static final int NORMAL_RESPONSE = 0;
     static final int BACKUP = 1;
     static final int BACKUP_RESPONSE = 2;
     static final int PARTITION_ITERATOR = 3;
@@ -37,62 +39,35 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     static final int EVENT_PACKET = 6;
     static final int COLLECTION = 7;
 
-    private static final int LEN = 10;
-
+    @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-
-        constructors[RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ResponseOperation();
+        return new DataSerializableFactory() {
+            @Override
+            public IdentifiedDataSerializable create(int typeId) {
+                switch (typeId) {
+                    case NORMAL_RESPONSE:
+                        return new NormalResponse();
+                    case BACKUP:
+                        return new Backup();
+                    case BACKUP_RESPONSE:
+                        return new BackupResponse();
+                    case PARTITION_ITERATOR:
+                        return new PartitionIteratingOperation();
+                    case PARTITION_RESPONSE:
+                        return new PartitionResponse();
+                    case PARALLEL_OPERATION_FACTORY:
+                        return new BinaryOperationFactory();
+                    case EVENT_PACKET:
+                        return new EventPacket();
+                    case COLLECTION:
+                        return new SerializableCollection();
+                }
+                return null;
             }
         };
-
-        constructors[BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Backup();
-            }
-        };
-
-        constructors[BACKUP_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BackupResponse();
-            }
-        };
-
-        constructors[EVENT_PACKET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new EventPacket();
-            }
-        };
-
-        constructors[PARTITION_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionIteratingOperation();
-            }
-        };
-
-        constructors[PARTITION_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionResponse();
-            }
-        };
-
-        constructors[PARALLEL_OPERATION_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BinaryOperationFactory();
-            }
-        };
-
-        constructors[COLLECTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SerializableCollection();
-            }
-        };
-
-        return new ArrayDataSerializableFactory(constructors);
     }
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }

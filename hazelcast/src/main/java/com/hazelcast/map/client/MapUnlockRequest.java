@@ -38,12 +38,12 @@ public class MapUnlockRequest extends AbstractUnlockRequest implements SecureReq
     public MapUnlockRequest() {
     }
 
-    public MapUnlockRequest(String name, Data key, int threadId) {
+    public MapUnlockRequest(String name, Data key, long threadId) {
         super(key, threadId, false);
         this.name = name;
     }
 
-    public MapUnlockRequest(String name, Data key, int threadId, boolean force) {
+    public MapUnlockRequest(String name, Data key, long threadId, boolean force) {
         super(key, threadId, force);
         this.name = name;
     }
@@ -60,14 +60,14 @@ public class MapUnlockRequest extends AbstractUnlockRequest implements SecureReq
         return new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        super.writePortable(writer);
+        super.write(writer);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        super.readPortable(reader);
+        super.read(reader);
     }
 
     public Permission getRequiredPermission() {

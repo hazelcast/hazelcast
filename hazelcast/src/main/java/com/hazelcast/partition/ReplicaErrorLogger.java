@@ -37,7 +37,9 @@ public final class ReplicaErrorLogger {
                     || e instanceof TargetNotMemberException) {
                 level = Level.FINEST;
             }
-            logger.log(level, e.toString());
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.toString());
+            }
         } else {
             logger.warning(e);
         }

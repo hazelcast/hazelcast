@@ -28,7 +28,9 @@ public class GetRemainingLeaseTimeOperation extends BaseLockOperation {
         super(namespace, key, -1);
     }
 
+    @Override
     public void run() throws Exception {
-        response = getLockStore().getRemainingLeaseTime(key);
+        LockStoreImpl lockStore = getLockStore();
+        response = lockStore.getRemainingLeaseTime(key);
     }
 }

@@ -33,12 +33,12 @@ import java.io.IOException;
  */
 public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, WaitSupport {
 
-    protected int threadId = -1;
+    protected long threadId = -1;
 
     protected MultiMapBackupAwareOperation() {
     }
 
-    protected MultiMapBackupAwareOperation(String name, Data dataKey, int threadId) {
+    protected MultiMapBackupAwareOperation(String name, Data dataKey, long threadId) {
         super(name, dataKey);
         this.threadId = threadId;
     }
@@ -49,12 +49,12 @@ public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOpera
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(threadId);
+        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        threadId = in.readInt();
+        threadId = in.readLong();
     }
 
     public WaitNotifyKey getWaitKey() {

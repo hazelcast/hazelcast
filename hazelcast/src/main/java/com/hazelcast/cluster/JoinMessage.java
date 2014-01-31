@@ -72,6 +72,7 @@ public class JoinMessage implements DataSerializable {
         return memberCount;
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         packetVersion = in.readByte();
         buildNumber = in.readInt();
@@ -83,6 +84,7 @@ public class JoinMessage implements DataSerializable {
         memberCount = in.readInt();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByte(packetVersion);
         out.writeInt(buildNumber);

@@ -28,7 +28,6 @@ public class SetOperation extends AtomicReferenceBackupAwareOperation {
     private Data newValue;
 
     public SetOperation() {
-        super();
     }
 
     public SetOperation(String name, Data newValue) {
@@ -38,7 +37,8 @@ public class SetOperation extends AtomicReferenceBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        getReference().set(newValue);
+        ReferenceWrapper reference = getReference();
+        reference.set(newValue);
     }
 
     @Override
@@ -58,6 +58,7 @@ public class SetOperation extends AtomicReferenceBackupAwareOperation {
         newValue = in.readObject();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new SetBackupOperation(name, newValue);
     }

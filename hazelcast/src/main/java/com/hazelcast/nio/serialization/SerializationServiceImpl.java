@@ -196,10 +196,13 @@ public final class SerializationServiceImpl implements SerializationService {
         return null;
     }
 
-    public Object toObject(final Data data) {
-        if (data == null) {
-            return null;
+    public <T> T toObject(final Object object) {
+        if ( !(object instanceof Data)) {
+            return (T)object;
         }
+
+        Data data = (Data) object;
+
         if (data.bufferSize() == 0 && data.isDataSerializable()) {
             return null;
         }
@@ -219,7 +222,7 @@ public final class SerializationServiceImpl implements SerializationService {
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
             }
-            return obj;
+            return (T) obj;
         } catch (Throwable e) {
             handleException(e);
         }
@@ -439,7 +442,7 @@ public final class SerializationServiceImpl implements SerializationService {
         constantTypeIds[indexForDefaultType(serializer.getTypeId())] = serializer;
     }
 
-    private void safeRegister(final Class type, final Serializer serializer) {
+    void safeRegister(final Class type, final Serializer serializer) {
         safeRegister(type, createSerializerAdapter(serializer));
     }
 

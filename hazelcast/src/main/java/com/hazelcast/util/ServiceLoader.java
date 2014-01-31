@@ -34,6 +34,9 @@ public class ServiceLoader {
 
     private static final ILogger logger = Logger.getLogger(ServiceLoader.class);
 
+    private ServiceLoader() {
+    }
+
     public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
         final Iterator<T> iter = iterator(clazz, factoryId, classLoader);
         if (iter.hasNext()) {
@@ -107,7 +110,7 @@ public class ServiceLoader {
                         if (name.length() == 0) {
                             continue;
                         }
-                        names.add(new ServiceDefinition(name, classLoader));
+                        names.add(new ServiceDefinition(name, cl));
                     }
                 } finally {
                     IOUtil.closeResource(r);

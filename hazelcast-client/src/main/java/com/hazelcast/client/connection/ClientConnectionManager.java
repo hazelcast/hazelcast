@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;
@@ -27,13 +28,11 @@ public interface ClientConnectionManager {
 
     public void shutdown();
 
-    public Connection getRandomConnection() throws IOException;
+    public void start();
 
-    public Connection getConnection(Address address) throws IOException ;
+    public ClientConnection getRandomConnection() throws IOException;
 
-    public void removeConnectionPool(Address address);
+    public ClientConnection getOrConnect(Address address) throws IOException ;
 
-    public Connection newConnection(Address address, Authenticator authenticator) throws IOException ;
-
-    public Connection firstConnection(Address address, Authenticator authenticator) throws IOException ;
+    public ClientConnection ownerConnection(Address address, Authenticator authenticator) throws IOException ;
 }

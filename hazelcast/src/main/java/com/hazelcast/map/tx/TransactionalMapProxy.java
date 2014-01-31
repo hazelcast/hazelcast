@@ -19,10 +19,10 @@ package com.hazelcast.map.tx;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
@@ -237,13 +237,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
+        if (predicate instanceof PagingPredicate) {
+            throw new NullPointerException("Paging is not supported for Transactional queries!");
+        }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
-        final Set<Object> keySet = new HashSet<Object>(queryResultSet.size());
-        final Iterator iterator = queryResultSet.iterator();
-        while (iterator.hasNext()) {
-            keySet.add(iterator.next());
-        }
+        final Set<Object> keySet = new HashSet<Object>(queryResultSet); //todo: Can't we just use the original set?
 
         for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
@@ -286,12 +285,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.VALUE, false);
-        final Set<Object> valueSet = new HashSet<Object>(queryResultSet.size());
+        final Set<Object> valueSet = new HashSet<Object>(queryResultSet); //todo: Can't we just use the original set?
 
-        final Iterator iterator = queryResultSet.iterator();
-        while (iterator.hasNext()) {
-            valueSet.add(iterator.next());
-        }
         for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
                 final Object value = entry.getValue().value instanceof Data ?

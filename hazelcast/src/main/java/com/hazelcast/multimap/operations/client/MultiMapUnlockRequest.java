@@ -40,12 +40,12 @@ public class MultiMapUnlockRequest extends AbstractUnlockRequest {
     public MultiMapUnlockRequest() {
     }
 
-    public MultiMapUnlockRequest(Data key, int threadId, String name) {
+    public MultiMapUnlockRequest(Data key, long threadId, String name) {
         super(key, threadId);
         this.name = name;
     }
 
-    public MultiMapUnlockRequest(Data key, int threadId, boolean force, String name) {
+    public MultiMapUnlockRequest(Data key, long threadId, boolean force, String name) {
         super(key, threadId, force);
         this.name = name;
     }
@@ -54,14 +54,14 @@ public class MultiMapUnlockRequest extends AbstractUnlockRequest {
         return new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        super.writePortable(writer);
+        super.write(writer);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        super.readPortable(reader);
+        super.read(reader);
     }
 
     public int getFactoryId() {

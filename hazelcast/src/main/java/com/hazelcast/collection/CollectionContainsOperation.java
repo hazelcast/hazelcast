@@ -39,22 +39,25 @@ public class CollectionContainsOperation extends CollectionOperation {
         this.valueSet = valueSet;
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_CONTAINS;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         response = getOrCreateContainer().contains(valueSet);
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(valueSet.size());
@@ -63,6 +66,7 @@ public class CollectionContainsOperation extends CollectionOperation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();

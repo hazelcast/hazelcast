@@ -119,9 +119,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
         } else {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
+
+        SocketInterceptor implementation = null;
         SocketInterceptorConfig sic = ioService.getSocketInterceptorConfig();
         if (sic != null && sic.isEnabled()) {
-            SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
+            implementation = (SocketInterceptor) sic.getImplementation();
             if (implementation == null && sic.getClassName() != null) {
                 try {
                     implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
@@ -133,18 +135,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 if (!(implementation instanceof MemberSocketInterceptor)) {
                     logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
-                } else {
-                    logger.info("SocketInterceptor is enabled");
                 }
             }
-            if (implementation != null) {
-                memberSocketInterceptor = (MemberSocketInterceptor) implementation;
-                memberSocketInterceptor.init(sic.getProperties());
-            } else {
-                memberSocketInterceptor = null;
-            }
-        } else {
-            memberSocketInterceptor = null;
+        }
+
+        memberSocketInterceptor = (MemberSocketInterceptor) implementation;
+        if (memberSocketInterceptor != null) {
+            logger.info("SocketInterceptor is enabled");
+            memberSocketInterceptor.init(sic.getProperties());
         }
         serializationContext = ioService.getSerializationContext();
     }
@@ -180,7 +178,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
     }
 
-    class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+    static class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
         public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
             return new DefaultSocketChannelWrapper(socketChannel);
         }
@@ -227,7 +225,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, final boolean replyBack) {
-        log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
+        if (logger.isFinestEnabled()) {
+            log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
+        }
         final Address thisAddress = ioService.getThisAddress();
         if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
             log(Level.WARNING, "Wrong bind request from " + remoteEndPoint + "! This node is not requested endpoint: " + localEndpoint);
@@ -241,7 +241,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
         final Connection existingConnection = connectionsMap.get(remoteEndPoint);
         if (existingConnection != null && existingConnection.live()) {
             if (existingConnection != connection) {
-                log(Level.FINEST, existingConnection + " is already bound  to " + remoteEndPoint + ", new one is " + connection);
+                if (logger.isFinestEnabled()) {
+                    log(Level.FINEST, existingConnection + " is already bound  to " + remoteEndPoint + ", new one is " + connection);
+                }
                 activeConnections.add(connection);
             }
             return false;
@@ -337,7 +339,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (connection == null) {
             return;
         }
-        log(Level.FINEST, "Destroying " + connection);
+        if (logger.isFinestEnabled()) {
+            log(Level.FINEST, "Destroying " + connection);
+        }
         activeConnections.remove((TcpIpConnection) connection);
         final Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
@@ -401,7 +405,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
         } finally {
             if (serverSocketChannel != null) {
                 try {
-                    log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
+                    if (logger.isFinestEnabled()) {
+                        log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
+                    }
                     serverSocketChannel.close();
                 } catch (IOException ignore) {
                     logger.finest(ignore);
@@ -439,7 +445,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     private synchronized void shutdownIOSelectors() {
-        log(Level.FINEST, "Shutting down IO selectors... Total: " + selectorThreadCount);
+        if (logger.isFinestEnabled()) {
+            log(Level.FINEST, "Shutting down IO selectors... Total: " + selectorThreadCount);
+        }
         for (int i = 0; i < selectorThreadCount; i++) {
             IOSelector ioSelector = inSelectors[i];
             if (ioSelector != null) {

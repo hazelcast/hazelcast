@@ -83,7 +83,7 @@ public class LoggingServiceImpl implements LoggingService {
         }
     }
 
-    private class LogListenerRegistration {
+    private static class LogListenerRegistration {
         final Level level;
         final LogListener logListener;
 

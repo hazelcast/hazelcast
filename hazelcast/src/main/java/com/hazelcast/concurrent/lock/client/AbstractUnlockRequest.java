@@ -34,59 +34,62 @@ import java.io.IOException;
 /**
  * @author mdogan 5/3/13
  */
-public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
+        implements Portable, SecureRequest {
 
     protected Data key;
 
-    private int threadId;
+    private long threadId;
 
     private boolean force;
 
     public AbstractUnlockRequest() {
     }
 
-    public AbstractUnlockRequest(Data key, int threadId) {
+    public AbstractUnlockRequest(Data key, long threadId) {
         this.key = key;
         this.threadId = threadId;
     }
 
-    protected AbstractUnlockRequest(Data key, int threadId, boolean force) {
+    protected AbstractUnlockRequest(Data key, long threadId, boolean force) {
         this.key = key;
         this.threadId = threadId;
         this.force = force;
     }
 
+    protected String getName() {
+        return (String) getClientEngine().toObject(key);
+    }
+
+    @Override
     protected final Object getKey() {
         return key;
     }
 
+    @Override
     protected final Operation prepareOperation() {
         return new UnlockOperation(getNamespace(), key, threadId, force);
     }
 
     protected abstract ObjectNamespace getNamespace();
 
+    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-
-        writer.writeInt("tid", threadId);
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeLong("tid", threadId);
         writer.writeBoolean("force", force);
-
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-
-        threadId = reader.readInt("tid");
+    public void read(PortableReader reader) throws IOException {
+        threadId = reader.readLong("tid");
         force = reader.readBoolean("force");
-
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
     }
-
 }

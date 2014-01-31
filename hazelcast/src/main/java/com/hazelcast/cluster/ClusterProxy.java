@@ -31,22 +31,27 @@ public class ClusterProxy implements Cluster {
 
     public ClusterProxy(final ClusterServiceImpl clusterService) {this.clusterService = clusterService;}
 
+    @Override
     public Member getLocalMember() {
         return clusterService.getLocalMember();
     }
 
+    @Override
     public Set<Member> getMembers() {
         return clusterService.getMembers();
     }
 
+    @Override
     public long getClusterTime() {
         return clusterService.getClusterTime();
     }
 
+    @Override
     public String addMembershipListener(MembershipListener listener) {
         return clusterService.addMembershipListener(listener);
     }
 
+    @Override
     public boolean removeMembershipListener(final String registrationId) {
         return clusterService.removeMembershipListener(registrationId);
     }

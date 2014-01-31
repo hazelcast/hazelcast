@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
@@ -32,7 +33,7 @@ import java.security.Permission;
 
 public abstract class ReadRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
-    String name;
+    protected String name;
 
     public ReadRequest() {
     }
@@ -43,8 +44,9 @@ public abstract class ReadRequest extends PartitionClientRequest implements Port
 
     @Override
     protected int getPartition() {
-        Data key = getClientEngine().getSerializationService().toData(name);
-        return getClientEngine().getPartitionService().getPartitionId(key);
+        ClientEngine clientEngine = getClientEngine();
+        Data key = clientEngine.getSerializationService().toData(name);
+        return clientEngine.getPartitionService().getPartitionId(key);
     }
 
     @Override
@@ -62,13 +64,13 @@ public abstract class ReadRequest extends PartitionClientRequest implements Port
         return AtomicReferencePortableHook.F_ID;
     }
 
-     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    @Override
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
 

@@ -21,6 +21,8 @@ import com.hazelcast.client.ClientTypes;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.StringUtil.bytesToString;
+
 class SocketClientDataReader implements SocketReader {
 
     final TcpIpConnection connection;
@@ -59,7 +61,7 @@ class SocketClientDataReader implements SocketReader {
         if (inBuffer.remaining() >= 3) {
             byte[] typeBytes = new byte[3];
             inBuffer.get(typeBytes);
-            String type = new String(typeBytes);
+            String type = bytesToString(typeBytes);
             if (ClientTypes.JAVA.equals(type)) {
                 connection.setType(ConnectionType.JAVA_CLIENT);
             } else if (ClientTypes.CSHARP.equals(type)) {

@@ -17,23 +17,22 @@
 package com.hazelcast.executor.client;
 
 import com.hazelcast.client.TargetClientRequest;
-import com.hazelcast.executor.CallableTaskOperation;
 import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.executor.ExecutorDataSerializerHook;
+import com.hazelcast.executor.ExecutorPortableHook;
+import com.hazelcast.executor.MemberCallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-/**
- * @author mdogan 5/13/13
- */
-public final class TargetCallableRequest extends TargetClientRequest implements IdentifiedDataSerializable {
+public final class TargetCallableRequest extends TargetClientRequest implements Portable {
 
     private String name;
     private Callable callable;
@@ -49,41 +48,49 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     protected Operation prepareOperation() {
-        final SecurityContext securityContext = getClientEngine().getSecurityContext();
-        if (securityContext != null){
+        SecurityContext securityContext = getClientEngine().getSecurityContext();
+        if (securityContext != null) {
             callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
         }
-        return new CallableTaskOperation(name, null, callable);
+        return new MemberCallableTaskOperation(name, null, callable);
     }
 
+    @Override
     public Address getTarget() {
         return target;
     }
 
+    @Override
     public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
+        return ExecutorPortableHook.F_ID;
     }
 
-    public int getId() {
-        return ExecutorDataSerializerHook.TARGET_CALLABLE_REQUEST;
+    @Override
+    public int getClassId() {
+        return ExecutorPortableHook.TARGET_CALLABLE_REQUEST;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeObject(callable);
-        target.writeData(out);
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
+        ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
+        rawDataOutput.writeObject(callable);
+        target.writeData(rawDataOutput);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        callable = in.readObject();
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
+        ObjectDataInput rawDataInput = reader.getRawDataInput();
+        callable = rawDataInput.readObject();
         target = new Address();
-        target.readData(in);
+        target.readData(rawDataInput);
     }
-
 }

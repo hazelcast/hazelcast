@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -30,7 +29,7 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.*;
 
-public class PostJoinMapOperation extends AbstractOperation implements JoinOperation {
+public class PostJoinMapOperation extends AbstractOperation {
 
     private List<MapIndexInfo> indexInfoList = new LinkedList<MapIndexInfo>();
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
@@ -65,10 +64,10 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
         interceptorInfoList.add(interceptorInfo);
     }
 
-    class InterceptorInfo implements DataSerializable {
+    static class InterceptorInfo implements DataSerializable {
 
         String mapName;
-        List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
+        final List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
 
         InterceptorInfo(String mapName) {
             this.mapName = mapName;
@@ -79,7 +78,6 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
 
         void addInterceptor(String id, MapInterceptor interceptor) {
             interceptors.add(new AbstractMap.SimpleImmutableEntry<String, MapInterceptor>(id, interceptor));
-
         }
 
         @Override
@@ -104,7 +102,7 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
         }
     }
 
-    class MapIndexInfo implements DataSerializable {
+    static class MapIndexInfo implements DataSerializable {
         String mapName;
         private List<MapIndexInfo.IndexInfo> lsIndexes = new LinkedList<MapIndexInfo.IndexInfo>();
 
@@ -115,7 +113,7 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
         public MapIndexInfo() {
         }
 
-        class IndexInfo implements DataSerializable {
+        static class IndexInfo implements DataSerializable {
             String attributeName;
             boolean ordered;
 

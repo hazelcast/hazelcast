@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
@@ -45,23 +44,35 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
         this.namespace = namespace;
     }
 
+    @Override
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        final Collection<Future> futures = new ArrayList<Future>(entries.size());
-        final ILogger logger = nodeEngine.getLogger(getClass());
+        Collection<Future> futures = sendUnlockOperations(entries);
+        awaitCompletion(futures);
+    }
+
+    private Collection<Future> sendUnlockOperations(Collection<ScheduledEntry<Data, Object>> entries) {
+        Collection<Future> futures = new ArrayList<Future>(entries.size());
 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
-            Operation operation = new UnlockOperation(namespace, key, -1, true);
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            try {
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .build();
-                Future f = invocation.invoke();
-                futures.add(f);
-            } catch (Throwable t) {
-                logger.warning(t);
-            }
+            sendUnlockOperation(futures, key);
         }
+        return futures;
+    }
+
+    private void sendUnlockOperation(Collection<Future> futures, Data key) {
+        Operation operation = new UnlockOperation(namespace, key, -1, true);
+        try {
+            Future f = invoke(operation, key);
+            futures.add(f);
+        } catch (Throwable t) {
+            ILogger logger = nodeEngine.getLogger(getClass());
+            logger.warning(t);
+        }
+    }
+
+    private void awaitCompletion(Collection<Future> futures) {
+        ILogger logger = nodeEngine.getLogger(getClass());
 
         for (Future future : futures) {
             try {
@@ -72,6 +83,11 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
                 logger.warning(e);
             }
         }
+    }
+
+    private InternalCompletableFuture invoke(Operation operation, Data key) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
     }
 
 }

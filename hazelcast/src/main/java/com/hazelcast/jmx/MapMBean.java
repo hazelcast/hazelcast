@@ -27,25 +27,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
 
-    private AtomicLong totalAddedEntryCount = new AtomicLong();
-
-    private AtomicLong totalRemovedEntryCount = new AtomicLong();
-
-    private AtomicLong totalUpdatedEntryCount = new AtomicLong();
-
-    private AtomicLong totalEvictedEntryCount = new AtomicLong();
-
+    private final AtomicLong totalAddedEntryCount = new AtomicLong();
+    private final AtomicLong totalRemovedEntryCount = new AtomicLong();
+    private final AtomicLong totalUpdatedEntryCount = new AtomicLong();
+    private final AtomicLong totalEvictedEntryCount = new AtomicLong();
     private final String listenerId;
 
     protected MapMBean(IMap managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("IMap", managedObject.getName());
+        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
         EntryListener entryListener = new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 totalAddedEntryCount.incrementAndGet();
@@ -114,6 +108,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedDescription("the last access (read) time of the locally owned entries.")
     public long getLocalLastAccessTime(){
         return managedObject.getLocalMapStats().getLastAccessTime();
+    }
+
+    @ManagedAnnotation("localLastUpdateTime")
+    @ManagedDescription("the last update time of the locally owned entries.")
+    public long getLocalLastUpdateTime(){
+        return managedObject.getLocalMapStats().getLastUpdateTime();
     }
 
     @ManagedAnnotation("localHits")
@@ -310,6 +310,4 @@ public class MapMBean extends HazelcastMBean<IMap> {
         }
         return buf.toString();
     }
-
-
 }

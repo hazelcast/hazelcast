@@ -35,7 +35,6 @@ public abstract class CollectionContainer implements DataSerializable {
 
     protected String name;
     protected NodeEngine nodeEngine;
-    protected CollectionService service;
     protected ILogger logger;
 
     protected Map<Long, CollectionItem> itemMap = null;
@@ -46,16 +45,14 @@ public abstract class CollectionContainer implements DataSerializable {
     protected CollectionContainer() {
     }
 
-    protected CollectionContainer(String name, NodeEngine nodeEngine, CollectionService service) {
+    protected CollectionContainer(String name, NodeEngine nodeEngine) {
         this.name = name;
         this.nodeEngine = nodeEngine;
-        this.service = service;
-        logger = nodeEngine.getLogger(getClass());
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
-    public void init(NodeEngine nodeEngine, CollectionService service){
+    public void init(NodeEngine nodeEngine){
         this.nodeEngine = nodeEngine;
-        this.service = service;
     }
 
     protected abstract CollectionConfig getConfig();
@@ -349,6 +346,4 @@ public abstract class CollectionContainer implements DataSerializable {
             setId(txCollectionItem.itemId);
         }
     }
-
-
 }

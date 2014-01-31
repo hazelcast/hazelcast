@@ -44,27 +44,30 @@ public class ListIndexOfRequest extends CollectionRequest {
         this.last = last;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ListIndexOfOperation(name, last, value);
     }
 
+    @Override
     public int getClassId() {
         return CollectionPortableHook.LIST_INDEX_OF;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeBoolean("l", last);
         value.writeData(writer.getRawDataOutput());
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         last = reader.readBoolean("l");
         value = new Data();
         value.readData(reader.getRawDataInput());
     }
 
+    @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }

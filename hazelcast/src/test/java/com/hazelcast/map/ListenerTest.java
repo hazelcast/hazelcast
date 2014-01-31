@@ -19,15 +19,15 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.test.*;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -213,6 +213,105 @@ public class ListenerTest extends HazelcastTestSupport {
         map.set(1,2);
         assertTrue(addLatch.await(5, TimeUnit.SECONDS));
         assertTrue(updateLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testLocalEntryListener_singleInstance_with_MatchingPredicate() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        Config config = new Config();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        IMap<String, String> map = instance.getMap("map");
+
+        boolean includeValue = false;
+        map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), includeValue);
+        int count = 1000;
+        for (int i = 0; i < count; i++) {
+            map.put("key"+i, "value"+i);
+        }
+        checkCountWithExpected(count, 0, 0);
+    }
+
+    @Test
+    public void testLocalEntryListener_singleInstance_with_NonMatchingPredicate() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        Config config = new Config();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        IMap<String, String> map = instance.getMap("map");
+
+        boolean includeValue = false;
+        map.addLocalEntryListener(createEntryListener(false), nonMatchingPredicate(), includeValue);
+        int count = 1000;
+        for (int i = 0; i < count; i++) {
+            map.put("key"+i, "value"+i);
+        }
+        checkCountWithExpected(0, 0, 0);
+    }
+
+    @Test
+    public void testLocalEntryListener_multipleInstance_with_MatchingPredicate() throws Exception {
+        int instanceCount = 3;
+        HazelcastInstance instance = createHazelcastInstanceFactory(instanceCount).newInstances(new Config())[0];
+
+        String mapName = "myMap";
+        IMap<String, String> map = instance.getMap(mapName);
+
+        boolean includeValue = false;
+        map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), includeValue);
+        int count = 1000;
+        for (int i = 0; i < count; i++) {
+            map.put("key"+i, "value"+i);
+        }
+        final int eventPerPartitionMin = count / instanceCount - count / 10;
+        final int eventPerPartitionMax = count / instanceCount + count / 10;
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue( globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax);
+            }
+        });
+    }
+
+    @Test
+    public void testLocalEntryListener_multipleInstance_with_MatchingPredicate_and_Key() throws Exception {
+        int instanceCount = 1;
+        HazelcastInstance instance = createHazelcastInstanceFactory(instanceCount).newInstances(new Config())[0];
+
+        String mapName = "myMap";
+        IMap<String, String> map = instance.getMap(mapName);
+
+        boolean includeValue = false;
+        map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), "key500", includeValue);
+        int count = 1000;
+        for (int i = 0; i < count; i++) {
+            map.put("key"+i, "value"+i);
+        }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue( globalCount.get() == 1);
+            }
+        });
+    }
+
+
+    private Predicate<String, String> matchingPredicate() {
+        return new Predicate<String, String>() {
+            @Override
+            public boolean apply(Map.Entry<String, String> mapEntry) {
+                return true;
+            }
+        };
+    }
+
+    private Predicate<String, String> nonMatchingPredicate() {
+        return new Predicate<String, String>() {
+            @Override
+            public boolean apply(Map.Entry<String, String> mapEntry) {
+                return false;
+            }
+        };
     }
 
     private EntryListener<String, String> createEntryListener(final boolean isLocal) {

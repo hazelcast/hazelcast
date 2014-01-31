@@ -22,26 +22,25 @@ import com.hazelcast.core.ItemListener;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 1/31/13
- */
 @ManagedDescription("IList")
 public class ListMBean extends HazelcastMBean<IList<?>> {
 
     private AtomicLong totalAddedItemCount = new AtomicLong();
-
     private AtomicLong totalRemovedItemCount = new AtomicLong();
-
     private final String registrationId;
 
     protected ListMBean(IList<?> managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("IList", managedObject.getName());
+
+        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
         ItemListener itemListener = new ItemListener() {
+            @Override
             public void itemAdded(ItemEvent item) {
                 totalAddedItemCount.incrementAndGet();
             }
 
+            @Override
             public void itemRemoved(ItemEvent item) {
                 totalRemovedItemCount.incrementAndGet();
             }

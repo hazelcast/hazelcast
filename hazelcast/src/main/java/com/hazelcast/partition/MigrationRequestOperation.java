@@ -37,7 +37,7 @@ import java.util.logging.Level;
 
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
-    private transient boolean returnResponse = true;
+    private boolean returnResponse = true;
 
     public MigrationRequestOperation() {
     }
@@ -73,7 +73,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         PartitionServiceImpl partitionService = getService();
-        PartitionImpl partition = partitionService.getPartition(migrationInfo.getPartitionId());
+        InternalPartition partition = partitionService.getPartition(migrationInfo.getPartitionId());
         final Address owner = partition.getOwner();
         if (owner == null) {
             throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
@@ -111,10 +111,10 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                                     data = out.toByteArray();
                                 }
                                 final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
-                                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
-                                        migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
-                                Future future = inv.invoke();
+                                Future future = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
+                                        migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).invoke();
                                 Boolean result = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
+                                migrationInfo.doneProcessing();
                                 responseHandler.sendResponse(result);
                             } catch (Throwable e) {
                                 responseHandler.sendResponse(Boolean.FALSE);
@@ -136,7 +136,9 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 getLogger().warning( e);
                 success = false;
             } finally {
-                migrationInfo.doneProcessing();
+//                if (returnResponse) {
+                    migrationInfo.doneProcessing();
+//                }
             }
         } else {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);

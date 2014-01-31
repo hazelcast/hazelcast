@@ -28,9 +28,9 @@ import java.io.IOException;
 public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private String lockOwner;
-    private int lockThreadId;
+    private long lockThreadId;
 
-    protected TxnPrepareBackupOperation(String name, Data dataKey, String lockOwner, int lockThreadId) {
+    protected TxnPrepareBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
         this.lockThreadId = lockThreadId;
@@ -55,13 +55,13 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(lockOwner);
-        out.writeInt(lockThreadId);
+        out.writeLong(lockThreadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         lockOwner = in.readUTF();
-        lockThreadId = in.readInt();
+        lockThreadId = in.readLong();
     }
 }

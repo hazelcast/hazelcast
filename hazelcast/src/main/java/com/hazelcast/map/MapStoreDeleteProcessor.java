@@ -82,7 +82,7 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
                 mapContainer.getStore().deleteAll(keys);
             } catch (Exception ex) {
                 logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> deleteAll was failed, " +
-                        "now Hazelcast is trying to delete one by one: ", e);
+                        "now Hazelcast is trying to delete one by one: ", ex);
                 // if delete all throws exception we will try to put delete them one by one.
                 for (ScheduledEntry<Data, Object> entry : entries) {
                     Exception temp = tryDelete(scheduler, entry);

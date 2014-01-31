@@ -18,9 +18,6 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ICountDownLatch;
 
-/**
- * @author ali 2/8/13
- */
 @ManagedDescription("ICountDownLatch")
 public class CountDownLatchMBean extends HazelcastMBean<ICountDownLatch> {
 

@@ -31,10 +31,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author mdogan 5/14/13
- */
-
 public final class CountDownRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     private String name;
@@ -72,15 +68,16 @@ public final class CountDownRequest extends KeyBasedClientRequest implements Por
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new CountDownLatchPermission(name, ActionConstants.ACTION_READ);
     }

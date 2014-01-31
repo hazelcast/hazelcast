@@ -16,25 +16,45 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.executor.client.IsShutdownRequest;
+import com.hazelcast.executor.client.LocalTargetCallableRequest;
+import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 5/13/13
- */
 public final class ExecutorPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_PORTABLE_FACTORY, -13);
 
+    public static final int IS_SHUTDOWN_REQUEST = 1;
+    public static final int LOCAL_TARGET_CALLABLE_REQUEST = 2;
+    public static final int TARGET_CALLABLE_REQUEST = 3;
+
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
-        return null;
+        return new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                switch (classId) {
+                    case IS_SHUTDOWN_REQUEST:
+                        return new IsShutdownRequest();
+                    case LOCAL_TARGET_CALLABLE_REQUEST:
+                        return new LocalTargetCallableRequest();
+                    case TARGET_CALLABLE_REQUEST:
+                        return new TargetCallableRequest();
+                }
+                return null;
+            }
+        };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

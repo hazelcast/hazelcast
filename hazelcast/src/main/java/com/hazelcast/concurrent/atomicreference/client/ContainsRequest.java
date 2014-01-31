@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.atomicreference.client;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
 import com.hazelcast.concurrent.atomicreference.ContainsOperation;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,6 +26,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.nio.IOUtil.readNullableData;
+import static com.hazelcast.nio.IOUtil.writeNullableData;
 
 public class ContainsRequest extends ReadRequest {
 
@@ -51,16 +53,16 @@ public class ContainsRequest extends ReadRequest {
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, expected);
+    public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        writeNullableData(out, expected);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        expected = IOUtil.readNullableData(in);
+        expected = readNullableData(in);
     }
 }

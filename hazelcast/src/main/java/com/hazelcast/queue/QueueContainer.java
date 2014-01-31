@@ -106,7 +106,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     //TX Poll
     public QueueItem txnPollReserve(long reservedOfferId, String transactionId) {
-        QueueItem item = getItemQueue().poll();
+        QueueItem item = getItemQueue().peek();
         if (item == null) {
             TxQueueItem txItem = txMap.remove(reservedOfferId);
             if (txItem == null){
@@ -122,6 +122,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
+        getItemQueue().poll();
         txMap.put(item.getItemId(), new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
         return item;
     }
@@ -160,7 +161,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public boolean txnRollbackPoll(long itemId, boolean backup) {
         QueueItem item = txMap.remove(itemId);
         if (item == null) {
-            logger.warning("No txn item for itemId: " + itemId);
             return false;
         }
         if (!backup) {
@@ -200,7 +200,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         else{
             getBackupMap().put(itemId, item);
         }
-        if (store.isEnabled()) {
+        if (store.isEnabled() && !backup) {
             try {
                 store.store(item.getItemId(), data);
             } catch (Exception e) {

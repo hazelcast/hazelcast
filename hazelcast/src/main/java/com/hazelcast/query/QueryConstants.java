@@ -23,4 +23,7 @@ public final class QueryConstants {
 
     public static final String KEY_ATTRIBUTE_NAME = "__key";
     public static final String THIS_ATTRIBUTE_NAME = "this";
+
+    private QueryConstants() {
+    }
 }

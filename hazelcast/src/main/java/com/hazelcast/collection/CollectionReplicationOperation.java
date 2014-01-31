@@ -38,16 +38,18 @@ public abstract class CollectionReplicationOperation extends AbstractOperation i
         this.migrationData = migrationData;
     }
 
+    @Override
     public void run() throws Exception {
         CollectionService service = getService();
         for (Map.Entry<String, CollectionContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             CollectionContainer container = entry.getValue();
-            container.init(getNodeEngine(), service);
+            container.init(getNodeEngine());
             service.addContainer(name, container);
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, CollectionContainer> entry : migrationData.entrySet()) {
@@ -57,6 +59,7 @@ public abstract class CollectionReplicationOperation extends AbstractOperation i
         }
     }
 
+    @Override
     public int getFactoryId() {
         return CollectionDataSerializerHook.F_ID;
     }

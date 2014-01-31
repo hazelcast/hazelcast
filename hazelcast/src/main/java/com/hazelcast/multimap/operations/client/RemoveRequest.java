@@ -37,12 +37,12 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
 
     Data value;
 
-    int threadId;
+    long threadId;
 
     public RemoveRequest() {
     }
 
-    public RemoveRequest(String name, Data key, Data value, int threadId) {
+    public RemoveRequest(String name, Data key, Data value, long threadId) {
         super(name, key);
         this.value = value;
         this.threadId = threadId;
@@ -56,16 +56,16 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
         return MultiMapPortableHook.REMOVE;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("t",threadId);
-        super.writePortable(writer);
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeLong("t",threadId);
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         value.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        threadId = reader.readInt("t");
-        super.readPortable(reader);
+    public void read(PortableReader reader) throws IOException {
+        threadId = reader.readLong("t");
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         value = new Data();
         value.readData(in);

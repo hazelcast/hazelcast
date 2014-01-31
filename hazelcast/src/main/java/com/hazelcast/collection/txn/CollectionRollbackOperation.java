@@ -42,22 +42,26 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
         this.removeOperation = removeOperation;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CollectionRollbackBackupOperation(name, itemId, removeOperation);
     }
 
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_ROLLBACK;
     }
 
+    @Override
     public void beforeRun() throws Exception {
-
     }
 
+    @Override
     public void run() throws Exception {
         if (removeOperation){
             getOrCreateContainer().rollbackRemove(itemId);
@@ -67,16 +71,18 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
-
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
         out.writeBoolean(removeOperation);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();

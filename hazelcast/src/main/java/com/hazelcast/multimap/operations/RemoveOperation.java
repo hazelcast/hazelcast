@@ -35,20 +35,17 @@ import java.util.Iterator;
 public class RemoveOperation extends MultiMapBackupAwareOperation {
 
     Data value;
-
-    transient long recordId;
-    transient long begin = -1;
+    long recordId;
 
     public RemoveOperation() {
     }
 
-    public RemoveOperation(String name, Data dataKey, int threadId, Data value) {
+    public RemoveOperation(String name, Data dataKey, long threadId, Data value) {
         super(name, dataKey, threadId);
         this.value = value;
     }
 
     public void run() throws Exception {
-        begin = Clock.currentTimeMillis();
         response = false;
         MultiMapWrapper wrapper = getCollectionWrapper();
         if (wrapper == null) {

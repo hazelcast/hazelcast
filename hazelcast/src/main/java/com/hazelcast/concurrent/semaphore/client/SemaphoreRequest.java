@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
@@ -27,14 +28,11 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * @author ali 5/13/13
- */
-public abstract class SemaphoreRequest extends PartitionClientRequest implements Portable, SecureRequest {
+public abstract class SemaphoreRequest extends PartitionClientRequest
+        implements Portable, SecureRequest {
 
-    String name;
-
-    int permitCount;
+    protected String name;
+    protected int permitCount;
 
     protected SemaphoreRequest() {
     }
@@ -44,29 +42,36 @@ public abstract class SemaphoreRequest extends PartitionClientRequest implements
         this.permitCount = permitCount;
     }
 
+    @Override
     protected int getPartition() {
-        Data key = getClientEngine().getSerializationService().toData(name);
-        return getClientEngine().getPartitionService().getPartitionId(key);
+        ClientEngine clientEngine = getClientEngine();
+        Data key = clientEngine.getSerializationService().toData(name);
+        return clientEngine.getPartitionService().getPartitionId(key);
     }
 
+    @Override
     protected int getReplicaIndex() {
         return 0;
     }
 
+    @Override
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return SemaphorePortableHook.F_ID;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    @Override
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         writer.writeInt("p",permitCount);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    @Override
+    public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         permitCount = reader.readInt("p");
     }

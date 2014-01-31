@@ -29,17 +29,18 @@ import java.util.List;
 import java.util.Map;
 
 public class MemberStateImpl implements MemberState {
-    private static final long serialVersionUID = -1817978625085375340L;
 
     Address address = new Address();
     Map<String, Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
+    Map<String, LocalReplicatedMapStatsImpl> replicatedMapStats = new HashMap<String, LocalReplicatedMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
     List<Integer> partitions = new ArrayList<Integer>(271);
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeInt(mapStats.size());
@@ -49,6 +50,11 @@ public class MemberStateImpl implements MemberState {
         }
         out.writeInt(multiMapStats.size());
         for (Map.Entry<String, LocalMultiMapStatsImpl> entry : multiMapStats.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        out.writeInt(replicatedMapStats.size());
+        for (Map.Entry<String, LocalReplicatedMapStatsImpl> entry : replicatedMapStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
@@ -79,6 +85,7 @@ public class MemberStateImpl implements MemberState {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         address.readData(in);
         DataSerializable impl;
@@ -92,6 +99,11 @@ public class MemberStateImpl implements MemberState {
             name = in.readUTF();
             (impl = new LocalMultiMapStatsImpl()).readData(in);
             multiMapStats.put(name, (LocalMultiMapStatsImpl) impl);
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            name = in.readUTF();
+            (impl = new LocalReplicatedMapStatsImpl()).readData(in);
+            replicatedMapStats.put(name, (LocalReplicatedMapStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
@@ -125,6 +137,7 @@ public class MemberStateImpl implements MemberState {
         partitions.add(partitionId);
     }
 
+    @Override
     public List<Integer> getPartitions() {
         return partitions;
     }
@@ -141,6 +154,30 @@ public class MemberStateImpl implements MemberState {
         return result;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MemberStateImpl that = (MemberStateImpl) o;
+
+        if (address != null ? !address.equals(that.address) : that.address != null) return false;
+        if (executorStats != null ? !executorStats.equals(that.executorStats) : that.executorStats != null)
+            return false;
+        if (mapStats != null ? !mapStats.equals(that.mapStats) : that.mapStats != null) return false;
+        if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null)
+            return false;
+        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) return false;
+        if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) return false;
+        if (replicatedMapStats != null ? !replicatedMapStats.equals(that.replicatedMapStats) : that.replicatedMapStats != null)
+            return false;
+        if (runtimeProps != null ? !runtimeProps.equals(that.runtimeProps) : that.runtimeProps != null) return false;
+        if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) return false;
+
+        return true;
+    }
+
+    @Override
     public Map<String, Long> getRuntimeProps() {
         return runtimeProps;
     }
@@ -149,26 +186,37 @@ public class MemberStateImpl implements MemberState {
         this.runtimeProps = runtimeProps;
     }
 
+    @Override
     public LocalMapStats getLocalMapStats(String mapName) {
         return mapStats.get(mapName);
     }
 
+    @Override
     public LocalMultiMapStats getLocalMultiMapStats(String mapName) {
         return multiMapStats.get(mapName);
     }
 
+    @Override
+    public LocalReplicatedMapStats getLocalReplicatedMapStats(String mapName) {
+        return replicatedMapStats.get(mapName);
+    }
+
+    @Override
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
     }
 
+    @Override
     public LocalTopicStats getLocalTopicStats(String topicName) {
         return topicStats.get(topicName);
     }
 
+    @Override
     public LocalExecutorStats getLocalExecutorStats(String executorName) {
         return executorStats.get(executorName);
     }
 
+    @Override
     public Address getAddress() {
         return address;
     }
@@ -185,6 +233,10 @@ public class MemberStateImpl implements MemberState {
         multiMapStats.put(name, localMultiMapStats);
     }
 
+    public void putLocalReplicatedMapStats(String name, LocalReplicatedMapStatsImpl localReplicatedMapStats) {
+        replicatedMapStats.put(name, localReplicatedMapStats);
+    }
+
     public void putLocalQueueStats(String name, LocalQueueStatsImpl localQueueStats) {
         queueStats.put(name, localQueueStats);
     }
@@ -197,12 +249,14 @@ public class MemberStateImpl implements MemberState {
         executorStats.put(name, localExecutorStats);
     }
 
+    @Override
     public String toString() {
         return "MemberStateImpl{" +
                 "address=" + address +
                 ", runtimeProps=" + runtimeProps +
                 ", mapStats=" + mapStats +
                 ", multiMapStats=" + multiMapStats +
+                ", replicatedMapStats=" + replicatedMapStats +
                 ", queueStats=" + queueStats +
                 ", topicStats=" + topicStats +
                 ", executorStats=" + executorStats +

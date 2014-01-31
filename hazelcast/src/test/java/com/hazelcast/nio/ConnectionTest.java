@@ -21,8 +21,13 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.management.ThreadDumpGenerator;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.Repeat;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,10 +45,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author mdogan 7/30/13
  */
-//@RunWith(HazelcastSerialClassRunner.class)
-//@Category(SlowTest.class)
-@Ignore("See testBlockedClientSockets and testBlockedClientSockets2 tests. " +
-        "Currently we couldn't find a way to make them pass...")
+
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
+//"See testBlockedClientSockets and testBlockedClientSockets2 tests. " + "Currently we couldn't find a way to make them pass..."
 public class ConnectionTest {
 
     @BeforeClass
@@ -57,7 +62,7 @@ public class ConnectionTest {
     }
 
     @Test
-    @Repeat(100)
+    @Category(ProblematicTest.class)
     public void testBlockedClientSockets() throws IOException, InterruptedException {
         final ServerSocket serverSocket = new ServerSocket(13131, 1);
         final int count = 100;
@@ -119,13 +124,13 @@ public class ConnectionTest {
         try {
             Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.newInstance().dumpAllThreads());
+            System.err.println(ThreadDumpGenerator.dumpAllThreads());
             throw e;
         }
     }
 
     @Test
-    @Repeat(100)
+    @Category(ProblematicTest.class)
     public void testBlockedClientSockets2() throws IOException, InterruptedException {
         final ServerSocket serverSocket = new ServerSocket(13131);
         final int count = 100;
@@ -162,20 +167,20 @@ public class ConnectionTest {
         try {
             Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.newInstance().dumpAllThreads());
+            System.err.println(ThreadDumpGenerator.dumpAllThreads());
             throw e;
         }
     }
 
 
     @Test
-    @Repeat(10)
+    @Category(ProblematicTest.class)
     public void testDanglingSocketsOnTerminate() throws Exception {
         testDanglingSocketsOnTerminate(false);
     }
 
     @Test
-    @Repeat(10)
+    @Category(ProblematicTest.class)
     public void testDanglingSocketsOnTerminate2() throws Exception {
         testDanglingSocketsOnTerminate(true);
     }
@@ -253,7 +258,7 @@ public class ConnectionTest {
         try {
             Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.newInstance().dumpAllThreads());
+            System.err.println(ThreadDumpGenerator.dumpAllThreads());
             throw e;
         } finally {
             for (Socket socket : sockets) {

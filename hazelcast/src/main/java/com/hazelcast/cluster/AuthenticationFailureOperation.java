@@ -26,6 +26,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 public class AuthenticationFailureOperation extends AbstractClusterOperation
         implements JoinOperation {
 
+    @Override
     public void run() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();

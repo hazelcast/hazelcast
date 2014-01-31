@@ -21,13 +21,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 1/10/13
- */
 public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
     private int count;
-    private transient boolean response = false;
+    private boolean response = false;
 
     public SetCountOperation() {
     }
@@ -47,6 +44,7 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation {
         return response;
     }
 
+    @Override
     public boolean shouldBackup() {
         return response;
     }

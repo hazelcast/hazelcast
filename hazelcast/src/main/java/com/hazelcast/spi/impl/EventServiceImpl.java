@@ -22,21 +22,41 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.util.executor.TimeoutRunnable;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -105,7 +125,7 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("EventFilter required!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        Registration reg = new Registration(UUID.randomUUID().toString(), serviceName, topic, filter,
+        Registration reg = new Registration( UUID.randomUUID().toString(), serviceName, topic, filter,
                 nodeEngine.getThisAddress(), listener, localOnly);
         if (segment.addRegistration(topic, reg)) {
             if (!localOnly) {
@@ -156,9 +176,9 @@ public class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                        new RegistrationOperation(reg), member.getAddress()).build();
-                calls.add(inv.invoke());
+                Future f = nodeEngine.getOperationService().invokeOnTarget( serviceName,
+                        new RegistrationOperation( reg ), member.getAddress() );
+                calls.add(f);
             }
         }
         for (Future f : calls) {
@@ -179,9 +199,9 @@ public class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                        new DeregistrationOperation(topic, id), member.getAddress()).build();
-                calls.add(inv.invoke());
+                Future f = nodeEngine.getOperationService().invokeOnTarget( serviceName,
+                        new DeregistrationOperation( topic, id ), member.getAddress() );
+                calls.add(f);
             }
         }
         for (Future f : calls) {
@@ -274,10 +294,10 @@ public class EventServiceImpl implements EventService {
         final EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % 100000 == 0;
         if (sync) {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).build();
+            Future f = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).invoke();
             try {
-                inv.invoke().get(3, TimeUnit.SECONDS);
+                f.get( 3, TimeUnit.SECONDS );
             } catch (Exception ignored) {
             }
         } else {
@@ -555,6 +575,7 @@ public class EventServiceImpl implements EventService {
     }
 
     public static class Registration implements EventRegistration {
+
         private String id;
         private String serviceName;
         private String topic;
@@ -756,7 +777,7 @@ public class EventServiceImpl implements EventService {
     public static class RegistrationOperation extends AbstractOperation {
 
         private Registration registration;
-        private transient boolean response = false;
+        private boolean response = false;
 
         public RegistrationOperation() {
         }

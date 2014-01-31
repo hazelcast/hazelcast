@@ -18,16 +18,14 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author ali 1/22/13
- */
-public class SemaphoreReplicationOperation extends AbstractOperation {
+public class SemaphoreReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     Map<String, Permit> migrationData;
 
@@ -38,22 +36,27 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
         this.migrationData = migrationData;
     }
 
+    @Override
     public void run() throws Exception {
         SemaphoreService service = getService();
         for (Permit permit : migrationData.values()) {
-            permit.setInitialized(true);
+            permit.setInitialized();
         }
         service.insertMigrationData(migrationData);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Permit> entry : migrationData.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
+            String key = entry.getKey();
+            out.writeUTF(key);
+            Permit value = entry.getValue();
+            value.writeData(out);
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         migrationData = new HashMap<String, Permit>(size);
@@ -63,5 +66,15 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
             permit.readData(in);
             migrationData.put(name, permit);
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.SEMAPHORE_REPLICATION_OPERATION;
     }
 }

@@ -24,7 +24,8 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class AwaitBackupOperation extends BaseLockOperation implements BackupOperation {
+public class AwaitBackupOperation extends BaseLockOperation
+        implements BackupOperation {
 
     private String originalCaller;
     private String conditionId;
@@ -32,17 +33,19 @@ public class AwaitBackupOperation extends BaseLockOperation implements BackupOpe
     public AwaitBackupOperation() {
     }
 
-    public AwaitBackupOperation(ObjectNamespace namespace, Data key, int threadId,
+    public AwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
                                 String conditionId, String originalCaller) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
         this.originalCaller = originalCaller;
     }
 
+    @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         lockStore.lock(key, originalCaller, threadId);
-        lockStore.removeSignalKey(new ConditionKey(namespace.getObjectName(), key, conditionId));
+        ConditionKey conditionKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
+        lockStore.removeSignalKey(conditionKey);
         lockStore.removeAwait(key, conditionId, originalCaller, threadId);
         response = true;
     }

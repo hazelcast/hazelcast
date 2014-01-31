@@ -18,10 +18,5 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.monitor.LocalMultiMapStats;
 
-/**
- * User: sancar
- * Date: 4/10/13
- * Time: 2:34 PM
- */
 public class LocalMultiMapStatsImpl extends LocalMapStatsImpl implements LocalMultiMapStats {
 }

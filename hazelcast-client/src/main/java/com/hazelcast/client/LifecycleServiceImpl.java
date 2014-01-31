@@ -22,9 +22,9 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.UuidUtil;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,7 +59,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        final String id = UUID.randomUUID().toString();
+        final String id = UuidUtil.buildRandomUuidString();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }

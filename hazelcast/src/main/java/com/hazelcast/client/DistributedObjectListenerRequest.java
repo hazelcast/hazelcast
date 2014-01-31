@@ -19,16 +19,12 @@ package com.hazelcast.client;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
-
-import java.io.IOException;
 
 /**
  * @ali 10/7/13
  */
-public class DistributedObjectListenerRequest extends CallableClientRequest implements Portable {
+public class DistributedObjectListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     public DistributedObjectListenerRequest() {
     }
@@ -47,7 +43,7 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
                 if (endpoint.live()){
                     final PortableDistributedObjectEvent portableDistributedObjectEvent
                             = new PortableDistributedObjectEvent(event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
-                    clientEngine.sendResponse(endpoint, portableDistributedObjectEvent);
+                    endpoint.sendEvent(portableDistributedObjectEvent, getCallId());
                 }
             }
         };
@@ -69,12 +65,5 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
         return ClientPortableHook.LISTENER;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-
-    }
-
-    public void readPortable(PortableReader reader) throws IOException {
-
-    }
 
 }

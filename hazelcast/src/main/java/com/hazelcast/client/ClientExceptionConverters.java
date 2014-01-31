@@ -33,4 +33,6 @@ final class ClientExceptionConverters {
         return GENERIC;
     }
 
+    private ClientExceptionConverters(){}
+
 }

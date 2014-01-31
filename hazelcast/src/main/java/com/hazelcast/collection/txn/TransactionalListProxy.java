@@ -28,8 +28,8 @@ import java.util.LinkedList;
 /**
 * @author ali 4/16/13
 */
-public class TransactionalListProxy<E> extends AbstractTransactionalCollectionProxy<ListService, E> implements TransactionalList<E> {
-
+public class TransactionalListProxy<E> extends AbstractTransactionalCollectionProxy<ListService, E>
+        implements TransactionalList<E> {
 
     private final LinkedList<CollectionItem> list = new LinkedList<CollectionItem>();
 
@@ -37,10 +37,12 @@ public class TransactionalListProxy<E> extends AbstractTransactionalCollectionPr
         super(name, tx, nodeEngine, service);
     }
 
+    @Override
     public String getServiceName() {
         return ListService.SERVICE_NAME;
     }
 
+    @Override
     protected Collection<CollectionItem> getCollection() {
         return list;
     }

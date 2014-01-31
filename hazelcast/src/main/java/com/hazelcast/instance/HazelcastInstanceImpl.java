@@ -20,6 +20,8 @@ import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.lock.proxy.LockProxy;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -36,6 +38,7 @@ import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
@@ -166,6 +169,20 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             throw new NullPointerException("Retrieving a multi-map instance with a null name is not allowed!");
         }
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
+    }
+
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a replicated-map instance with a null name is not allowed!");
+        }
+        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
+    }
+
+    public JobTracker getJobTracker(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a job tracker instance with a null name is not allowed!");
+        }
+        return getDistributedObject(MapReduceService.SERVICE_NAME, name);
     }
 
     @Deprecated

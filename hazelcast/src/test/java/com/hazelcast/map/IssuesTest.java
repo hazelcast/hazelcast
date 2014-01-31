@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -175,12 +173,15 @@ public class IssuesTest extends HazelcastTestSupport {
                 .setImplementation(new StreamSerializer() {
                     public void write(ObjectDataOutput out, Object object) throws IOException {
                     }
+
                     public Object read(ObjectDataInput in) throws IOException {
                         return new DummyValue();
                     }
+
                     public int getTypeId() {
                         return 123;
                     }
+
                     public void destroy() {
                     }
                 }));
@@ -209,20 +210,21 @@ public class IssuesTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInterceptorInstanceAware() {
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
-        IMap<Object,Object> map = hz1.getMap("test");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        IMap<Object, Object> map = hz1.getMap("test");
 
         InstanceAwareMapInterceptorImpl interceptor = new InstanceAwareMapInterceptorImpl();
         map.addInterceptor(interceptor);
         assertNotNull(interceptor.hazelcastInstance);
         assertEquals(hz1, interceptor.hazelcastInstance);
 
-        for (int i=0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             map.put(i, i);
         }
 
-        for (int i=0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             assertEquals("notNull", map.get(i));
         }
     }
@@ -248,7 +250,7 @@ public class IssuesTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
-            if (hazelcastInstance != null){
+            if (hazelcastInstance != null) {
                 return "notNull";
             }
             return ">null";

@@ -16,14 +16,12 @@
 
 package com.hazelcast.concurrent.semaphore;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-/**
- * @author ali 1/22/13
- */
-public class ReleaseOperation extends SemaphoreBackupAwareOperation implements Notifier {
+public class ReleaseOperation extends SemaphoreBackupAwareOperation implements Notifier, IdentifiedDataSerializable {
 
     public ReleaseOperation() {
     }
@@ -32,24 +30,40 @@ public class ReleaseOperation extends SemaphoreBackupAwareOperation implements N
         super(name, permitCount);
     }
 
+    @Override
     public void run() throws Exception {
-        getPermit().release(permitCount, getCallerUuid());
+        Permit permit = getPermit();
+        permit.release(permitCount, getCallerUuid());
         response = true;
     }
 
+    @Override
     public boolean shouldNotify() {
         return permitCount > 0;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return new SemaphoreWaitNotifyKey(name, "acquire");
     }
 
+    @Override
     public boolean shouldBackup() {
         return permitCount > 0;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new ReleaseBackupOperation(name, permitCount, getCallerUuid());
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.RELEASE_OPERATION;
     }
 }

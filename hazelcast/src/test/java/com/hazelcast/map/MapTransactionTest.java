@@ -24,6 +24,7 @@ import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.*;
 import org.junit.Ignore;
@@ -40,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -141,6 +141,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals("value2", h1.getMap(map2).get(key));
         assertEquals("value2", h2.getMap(map2).get(key));
+
+        assertFalse(h1.getMap(map1).isLocked(key));
+        assertFalse(h1.getMap(map2).isLocked(key));
     }
 
     @Test
@@ -284,7 +287,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         map.put(key, 0);
         new Thread(new TxnIncrementor(count1, h1, latch)).start();
         new Thread(new TxnIncrementor(count2, h2, latch)).start();
-        latch.await(100, TimeUnit.SECONDS);
+        latch.await(600, TimeUnit.SECONDS);
         assertEquals(new Integer(count1 + count2), map.get(key));
     }
 
@@ -768,8 +771,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
 
-    @Ignore
+
     @Test
+    @Category(ProblematicTest.class)
     // TODO: @mm - Review following case...
     public void testFailingMapStore() throws TransactionException {
         final String map = "map";
@@ -936,10 +940,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
                     txMap.put(4, employee4);
 
                     keys = txMap.keySet(new SqlPredicate("age <= 10"));
-                    iterator = keys.iterator();
-                    while (iterator.hasNext()) {
-                        System.err.println(((Integer) iterator.next()).intValue());
-                    }
                     assertEquals(3, keys.size());
 
                     // force rollback.
@@ -984,10 +984,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
         assertEquals(1, txMap.keySet(new SqlPredicate("age = 34")).size());
-
-        for (Object o : txMap.keySet()) {
-            System.err.println(o);
-        }
 
         context.commitTransaction();
 

@@ -29,6 +29,9 @@ public class SimpleQueueTest {
     public static final int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
 
+    private SimpleQueueTest() {
+    }
+
     public static void main(String[] args) {
         int threadCount = 5;
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);

@@ -492,7 +492,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     V replace(K key, V value);
 
     /**
-     * Puts an entry into this map with a given ttl (time to live) value.
+     * Puts an entry into this map.
      * Similar to put operation except that set
      * doesn't return the old value which is more efficient.
      * <p/>
@@ -686,6 +686,37 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @see #localKeySet()
      */
     String addLocalEntryListener(EntryListener<K, V> listener);
+
+    /**
+     *
+     * Adds a local entry listener for this map. Added listener will be only
+     * listening for the events (add/remove/update/evict) of the locally owned entries.
+     * Listener will get notified for map add/remove/update/evict events filtered by given predicate.
+     *
+     *
+     * @param listener entry listener
+     * @param predicate predicate for filtering entries
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return
+     */
+    String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
+
+    /**
+     *
+     * Adds a local entry listener for this map. Added listener will be only
+     * listening for the events (add/remove/update/evict) of the locally owned entries.
+     * Listener will get notified for map add/remove/update/evict events filtered by given predicate.
+     *
+     *
+     * @param listener entry listener
+     * @param predicate predicate for filtering entries
+     * @param key key to listen
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return
+     */
+    String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Adds an interceptor for this map. Added interceptor will intercept operations
@@ -974,6 +1005,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is null
      */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
+
+    /**
+     * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.
+     * the results mapped by each key in the collection.
+     * <p/>
+     *
+     * @return result of entry process.
+     * @throws NullPointerException if the specified key is null
+     */
+    Map<K,Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
 
     /**

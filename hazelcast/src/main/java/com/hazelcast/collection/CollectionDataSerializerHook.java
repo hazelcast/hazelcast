@@ -29,7 +29,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -20);
 
-    public static int increment = 1;
+    private static int increment = 1;
 
     public static final int COLLECTION_ADD = increment++;
     public static final int COLLECTION_ADD_BACKUP = increment++;
@@ -73,10 +73,12 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int LIST_REPLICATION = increment++;
     public static final int SET_REPLICATION = increment++;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[increment];
 

@@ -32,7 +32,10 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 public class ReflectionHelper {
 
+    private final static ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
     private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
+
+    private ReflectionHelper(){}
 
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
@@ -89,7 +92,10 @@ public class ReflectionHelper {
         Class clazz = obj.getClass();
         final String cacheKey = clazz.getName() + ":" + attribute;
         Getter getter = getterCache.get(cacheKey);
-        if (getter != null) return getter;
+        if (getter != null) {
+            return getter;
+        }
+
         try {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(3);
@@ -142,8 +148,11 @@ public class ReflectionHelper {
                 parent = localGetter;
             }
             getter = parent;
-            if (!(getter instanceof ThisGetter)) {
-                getterCache.putIfAbsent(cacheKey, getter);
+            if (getter.isCacheable()) {
+                Getter foundGetter = getterCache.putIfAbsent(cacheKey, getter);
+                if(foundGetter != null){
+                     getter = foundGetter;
+                }
             }
             return getter;
         } catch (Throwable e) {
@@ -165,6 +174,8 @@ public class ReflectionHelper {
         abstract Object getValue(Object obj) throws Exception;
 
         abstract Class getReturnType();
+
+        abstract boolean isCacheable();
     }
 
     static class MethodGetter extends Getter {
@@ -182,6 +193,11 @@ public class ReflectionHelper {
 
         Class getReturnType() {
             return this.method.getReturnType();
+        }
+
+        @Override
+        boolean isCacheable() {
+            return THIS_CL.equals(method.getDeclaringClass().getClassLoader());
         }
 
         @Override
@@ -208,6 +224,11 @@ public class ReflectionHelper {
         }
 
         @Override
+        boolean isCacheable() {
+            return THIS_CL.equals(field.getDeclaringClass().getClassLoader());
+        }
+
+        @Override
         public String toString() {
             return "FieldGetter [parent=" + parent + ", field=" + field + "]";
         }
@@ -229,6 +250,11 @@ public class ReflectionHelper {
         @Override
         Class getReturnType() {
             return this.object.getClass();
+        }
+
+        @Override
+        boolean isCacheable() {
+            return false;
         }
     }
 }

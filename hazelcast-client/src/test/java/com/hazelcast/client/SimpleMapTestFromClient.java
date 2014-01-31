@@ -17,10 +17,13 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import org.junit.Ignore;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,7 +31,21 @@ import java.util.concurrent.atomic.AtomicLong;
 @Ignore("not a JUnit test")
 public class SimpleMapTestFromClient {
 
-    public static int THREAD_COUNT = 4;
+    static {
+        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.socket.bind.any", "false");
+
+        Random rand = new Random();
+        int g1 = rand.nextInt(255);
+        int g2 = rand.nextInt(255);
+        int g3 = rand.nextInt(255);
+//        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
+    }
+
+    public static int THREAD_COUNT = 40;
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
@@ -37,7 +54,9 @@ public class SimpleMapTestFromClient {
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {
             for (String arg : args) {
@@ -70,14 +89,12 @@ public class SimpleMapTestFromClient {
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    IMap<String, byte[]> map = hazelcast.getMap("default");
+                    IMap<String, byte[]> map = client.getMap("default");
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
                         if (operation < GET_PERCENTAGE) {
-//                            long start = Clock.currentTimeMillis();
                             map.get(String.valueOf(key));
-//                            System.out.println("Get takes " + (Clock.currentTimeMillis() - start) + " ms" );
                             stats.gets.incrementAndGet();
                         } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
                             map.put(String.valueOf(key), new byte[VALUE_SIZE]);
@@ -96,7 +113,7 @@ public class SimpleMapTestFromClient {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
                         System.out.println("cluster size:"
-                                + hazelcast.getCluster().getMembers().size());
+                                + client.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
                         System.out.println("Operations per Second : " + currentStats.total()

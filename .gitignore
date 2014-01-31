@@ -1,3 +1,4 @@
+.clover/
 target/
 .project
 .classpath
@@ -8,3 +9,4 @@ target/
 .DS_Store
 reports/
 .directory
+atlassian-ide-plugin.xml

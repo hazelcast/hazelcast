@@ -29,7 +29,6 @@ public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation {
     private Data returnValue;
 
     public GetAndSetOperation() {
-        super();
     }
 
     public GetAndSetOperation(String name, Data newValue) {
@@ -39,7 +38,8 @@ public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getReference().getAndSet(newValue);
+        ReferenceWrapper reference = getReference();
+        returnValue = reference.getAndSet(newValue);
     }
 
     @Override
@@ -59,6 +59,7 @@ public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation {
         newValue = in.readObject();
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new SetBackupOperation(name, newValue);
     }

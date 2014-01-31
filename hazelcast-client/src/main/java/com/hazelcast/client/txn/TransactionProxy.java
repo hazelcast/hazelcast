@@ -16,17 +16,18 @@
 
 package com.hazelcast.client.txn;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.connection.Connection;
-import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.io.IOException;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.*;
@@ -39,17 +40,17 @@ final class TransactionProxy {
     private static final ThreadLocal<Boolean> threadFlag = new ThreadLocal<Boolean>();
 
     private final TransactionOptions options;
-    private final ClientClusterServiceImpl clusterService;
+    private final HazelcastClient client;
     private final long threadId = Thread.currentThread().getId();
-    private final Connection connection;
+    private final ClientConnection connection;
 
     private String txnId;
     private State state = NO_TXN;
     private long startTime = 0L;
 
-    TransactionProxy(HazelcastClient client, TransactionOptions options, Connection connection) {
+    TransactionProxy(HazelcastClient client, TransactionOptions options, ClientConnection connection) {
         this.options = options;
-        this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
+        this.client = client;
         this.connection = connection;
     }
 
@@ -77,7 +78,8 @@ final class TransactionProxy {
             threadFlag.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
 
-            txnId = sendAndReceive(new CreateTransactionRequest(options));
+            txnId = invoke(new CreateTransactionRequest(options));
+
             state = ACTIVE;
         } catch (Exception e){
             closeConnection();
@@ -92,7 +94,7 @@ final class TransactionProxy {
             }
             checkThread();
             checkTimeout();
-            sendAndReceive(new CommitTransactionRequest());
+            invoke(new CommitTransactionRequest());
             state = COMMITTED;
         } catch (Exception e){
             state = ROLLING_BACK;
@@ -113,7 +115,7 @@ final class TransactionProxy {
             }
             checkThread();
             try {
-                sendAndReceive(new RollbackTransactionRequest());
+                invoke(new RollbackTransactionRequest());
             } catch (Exception ignored) {
             }
             state = ROLLED_BACK;
@@ -124,11 +126,11 @@ final class TransactionProxy {
 
     private void closeConnection(){
         threadFlag.set(null);
-        try {
-            connection.release();
-        } catch (IOException e) {
-            IOUtil.closeResource(connection);
-        }
+//        try {
+//            connection.release();
+//        } catch (IOException e) {
+//            IOUtil.closeResource(connection);
+//        }
     }
 
     private void checkThread() {
@@ -143,10 +145,17 @@ final class TransactionProxy {
         }
     }
 
-    private <T> T sendAndReceive(Object request) {
+    private <T> T invoke(ClientRequest request) {
+        if (request instanceof BaseTransactionRequest) {
+            ((BaseTransactionRequest) request).setTxnId(txnId);
+            ((BaseTransactionRequest) request).setClientThreadId(threadId);
+        }
+        final ClientClusterService clusterService = client.getClientClusterService();
+        final SerializationService ss = client.getSerializationService();
         try {
-            return clusterService.sendAndReceiveFixedConnection(connection, request);
-        } catch (IOException e) {
+            final Future f = clusterService.send(request, connection);
+            return ss.toObject(f.get()) ;
+        } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }

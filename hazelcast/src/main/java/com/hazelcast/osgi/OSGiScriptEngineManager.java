@@ -208,9 +208,18 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
                     }
                     continue;
                 }
-                ScriptEngineManager manager = new ScriptEngineManager(factoryLoader);
-                manager.setBindings(bindings);
-                managers.put(manager, factoryLoader);
+                try {
+                    ScriptEngineManager manager = new ScriptEngineManager(factoryLoader);
+                    manager.setBindings(bindings);
+                    managers.put(manager, factoryLoader);
+                } catch (Exception e) {
+                    // may fail if script implementation is not in environment
+                    logger.warning("Found ScriptEngineFactory candidate for " + factoryName + ", but could not load ScripEngineManager! -> " + e);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(e);
+                    }
+                    continue;
+                }
             }
             return managers;
         } catch (IOException ioe) {
@@ -237,8 +246,12 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
                         new InputStreamReader(u.openStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    factoryCandidates.add(line.trim());
+                    line = line.trim();
+                    if (!line.startsWith("#") && line.length() > 0) {
+                        factoryCandidates.add(line);
+                    }
                 }
+                reader.close();
             }
         }
         //add java built in JavaScript ScriptEngineFactory's

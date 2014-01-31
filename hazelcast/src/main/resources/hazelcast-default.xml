@@ -79,7 +79,8 @@
     <partition-group enabled="false"/>
     <executor-service name="default">
         <pool-size>16</pool-size>
-        <queue-capacity>100</queue-capacity>
+        <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
+        <queue-capacity>0</queue-capacity>
     </executor-service>
     <queue name="default">
         <!--
@@ -184,6 +185,18 @@
         <value-collection-type>SET</value-collection-type>
     </multimap>
 
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <value-collection-type>SET</value-collection-type>
+    </multimap>
+
+    <replicatedmap name="default">
+        <in-memory-format>OBJECT</in-memory-format>
+        <concurrency-level>32</concurrency-level>
+        <replication-delay-millis>100</replication-delay-millis>
+        <async-fillup>true</async-fillup>
+    </replicatedmap>
+
     <list name="default">
         <backup-count>1</backup-count>
     </list>
@@ -191,6 +204,16 @@
     <set name="default">
         <backup-count>1</backup-count>
     </set>
+
+    <jobtracker name="default">
+        <max-thread-size>0</max-thread-size>
+        <!-- Queue size 0 means number of partitions * 2 -->
+        <queue-size>0</queue-size>
+        <retry-count>0</retry-count>
+        <chunk-size>1000</chunk-size>
+        <communicate-stats>true</communicate-stats>
+        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
+    </jobtracker>
 
     <semaphore name="default">
         <initial-permits>0</initial-permits>

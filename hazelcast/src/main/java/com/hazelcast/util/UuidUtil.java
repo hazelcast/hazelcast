@@ -18,18 +18,69 @@ package com.hazelcast.util;
 
 import com.hazelcast.nio.Address;
 
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author mdogan 2/1/13
  */
 public class UuidUtil {
 
+    private static final ThreadLocal<Random> RANDOMIZERS = new ThreadLocal<Random>() {
+        @Override
+        protected Random initialValue()
+        {
+            // Using the same way as the OpenJDK version just to
+            // make sure this happens on every JDK implementation
+            // since there are some out there that just use System.currentTimeMillis()
+            return new Random(seedUniquifier() ^ System.nanoTime());
+        }
+    };
+
+    private static final AtomicLong SEED_UNIQUIFIER = new AtomicLong(8682522807148012L);
+
+    private static long seedUniquifier() {
+        // L'Ecuyer, "Tables of Linear Congruential Generators of
+        // Different Sizes and Good Lattice Structure", 1999
+        for (;;) {
+            long current = SEED_UNIQUIFIER.get();
+            long next = current * 181783497276652981L;
+            if (SEED_UNIQUIFIER.compareAndSet(current, next))
+                return next;
+        }
+    }
+
     public static String createMemberUuid(Address endpoint) {
-        return UUID.randomUUID().toString();
+        return buildRandomUUID().toString();
     }
 
     public static String createClientUuid(Address endpoint) {
-        return UUID.randomUUID().toString();
+        return buildRandomUUID().toString();
     }
+
+    public static String buildRandomUuidString() {
+        return buildRandomUUID().toString();
+    }
+
+    public static UUID buildRandomUUID() {
+        byte[] data = new byte[16];
+        RANDOMIZERS.get().nextBytes(data);
+        data[6]  &= 0x0f;  /* clear version        */
+        data[6]  |= 0x40;  /* set to version 4     */
+        data[8]  &= 0x3f;  /* clear variant        */
+        data[8]  |= 0x80;  /* set to IETF variant  */
+
+        long mostSigBits = 0;
+        long leastSigBits = 0;
+        assert data.length == 16 : "data must be 16 bytes in length";
+        for (int i=0; i<8; i++)
+            mostSigBits = (mostSigBits << 8) | (data[i] & 0xff);
+        for (int i=8; i<16; i++)
+            leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
+        return new UUID(mostSigBits, leastSigBits);
+    }
+
+    private UuidUtil(){}
+
 }

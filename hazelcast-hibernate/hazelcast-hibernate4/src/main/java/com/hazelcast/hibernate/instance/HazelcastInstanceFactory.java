@@ -27,6 +27,9 @@ public final class HazelcastInstanceFactory {
     private final static String HZ_CLIENT_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastClientLoader";
     private final static String HZ_INSTANCE_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastInstanceLoader";
 
+    private HazelcastInstanceFactory() {
+    }
+
     public static HazelcastInstance createInstance(Properties props) throws CacheException {
         return createInstanceLoader(props).loadInstance();
     }

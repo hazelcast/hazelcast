@@ -31,18 +31,15 @@
 
     <build>
         <plugins>
-            <!--  this create jar file of code from src/test/java so modules with tests can share code -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.6.4</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/hazelcast/examples/**/*.class</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -113,8 +110,8 @@
                                     com.hazelcast.*
                                 </Export-Package>
                                 <Import-Package>
-                                    !sun.misc,
                                     !org.junit,
+                                    sun.misc;resolution:=optional,
                                     org.apache.log4j;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     org.codehaus.groovy.jsr223;resolution:=optional,
@@ -144,6 +141,13 @@
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>

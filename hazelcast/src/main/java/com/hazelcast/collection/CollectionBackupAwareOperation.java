@@ -30,10 +30,12 @@ public abstract class CollectionBackupAwareOperation extends CollectionOperation
         super(name);
     }
 
+    @Override
     public int getSyncBackupCount() {
         return getOrCreateContainer().getConfig().getBackupCount();
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return getOrCreateContainer().getConfig().getAsyncBackupCount();
     }

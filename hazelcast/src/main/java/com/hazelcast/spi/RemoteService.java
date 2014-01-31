@@ -19,6 +19,9 @@ package com.hazelcast.spi;
 import com.hazelcast.core.DistributedObject;
 
 /**
+ * An interface that can be implemented by SPI-Services to give them the ability to create proxies to
+ * distributed objects.
+ *
  * @author mdogan 10/31/12
  */
 public interface RemoteService {

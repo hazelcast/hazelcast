@@ -20,28 +20,25 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
 
-/**
- * @author mdogan 2/12/13
- */
 public interface LockStore {
 
-    boolean lock(Data key, String caller, int threadId, long ttl);
+    boolean lock(Data key, String caller, long threadId, long ttl);
 
-    boolean txnLock(Data key, String caller, int threadId, long ttl);
+    boolean txnLock(Data key, String caller, long threadId, long ttl);
 
-    boolean extendLeaseTime(Data key, String caller, int threadId, long ttl);
+    boolean extendLeaseTime(Data key, String caller, long threadId, long ttl);
 
-    boolean unlock(Data key, String caller, int threadId);
+    boolean unlock(Data key, String caller, long threadId);
 
     boolean isLocked(Data key);
 
-    boolean isLockedBy(Data key, String caller, int threadId);
+    boolean isLockedBy(Data key, String caller, long threadId);
 
     int getLockCount(Data key);
 
     long getRemainingLeaseTime(Data key);
 
-    boolean canAcquireLock(Data key, String caller, int threadId);
+    boolean canAcquireLock(Data key, String caller, long threadId);
 
     Set<Data> getLockedKeys();
 

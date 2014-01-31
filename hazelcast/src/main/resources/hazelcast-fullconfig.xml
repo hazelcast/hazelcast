@@ -233,6 +233,7 @@
             <max-idle-seconds>0</max-idle-seconds>
             <eviction-policy>LFU</eviction-policy>
             <invalidate-on-change>true</invalidate-on-change>
+            <cache-local-entries>false</cache-local-entries>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
@@ -258,6 +259,14 @@
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
     </multimap>
+
+    <replicatedmap name="default">
+        <in-memory-format>OBJECT</in-memory-format>
+        <concurrency-level>32</concurrency-level>
+        <replication-delay-millis>100</replication-delay-millis>
+        <async-fillup>true</async-fillup>
+        <statistics-enabled>true</statistics-enabled>
+    </replicatedmap>
 
     <list name="default">
         <statistics-enabled>false</statistics-enabled>

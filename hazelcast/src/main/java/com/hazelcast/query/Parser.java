@@ -38,6 +38,7 @@ class Parser {
         precedence.put("between", 10);
         precedence.put("in", 10);
         precedence.put("like", 10);
+        precedence.put("ilike", 10);
         precedence.put("regex", 10);
         precedence.put("and", 5);
         precedence.put("or", 3);

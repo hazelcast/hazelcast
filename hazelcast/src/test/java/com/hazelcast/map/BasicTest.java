@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,13 +42,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class BasicTest extends HazelcastTestSupport {
 
     private static final int instanceCount = 3;
-    private static final Random rand = new Random(Clock.currentTimeMillis());
+    private static final Random rand = new Random();
 
     private HazelcastInstance[] instances;
 
@@ -62,6 +64,75 @@ public class BasicTest extends HazelcastTestSupport {
         return instances[rand.nextInt(instanceCount)];
     }
 
+    @Test
+    public void testBoxedPrimitives(){
+        IMap map = getInstance().getMap("testPrimitives");
+
+        assertPutGet(map,new Boolean(true));
+        assertPutGet(map,new Boolean(false));
+
+        assertPutGet(map, new Integer(10));
+
+        assertPutGet(map, new Short((short)10));
+
+        assertPutGet(map,new Byte((byte)10));
+
+        assertPutGet(map,new Long(10));
+
+        assertPutGet(map, new Float(10));
+
+        assertPutGet(map, new Double(10));
+
+        assertPutGet(map,new Character('x'));
+    }
+
+    public void assertPutGet(Map map, Object value){
+        String key = UUID.randomUUID().toString();
+        map.put(key, value);
+        assertEquals(value, map.get(key));
+    }
+
+    @Test
+    public void testArrays(){
+        IMap map = getInstance().getMap("testArrays");
+
+        boolean[] booleanArray = {true, false};
+        map.put("boolean", booleanArray);
+        assertTrue(Arrays.equals(booleanArray, (boolean[])map.get("boolean")));
+
+        int[] intArray = {1, 2};
+        map.put("int", intArray);
+        assertArrayEquals(intArray, (int[]) map.get("int"));
+
+        short[] shortArray = {(short)1, (short)2};
+        map.put("short", shortArray);
+        assertArrayEquals(shortArray, (short[]) map.get("short"));
+
+        short[] byteArray = {(byte)1, (byte)2};
+        map.put("byte", byteArray);
+        assertArrayEquals(byteArray,(short[])map.get("byte"));
+
+        long[] longArray = {1l, 2l};
+        map.put("long", longArray);
+        assertArrayEquals(longArray,(long[])map.get("long"));
+
+        float[] floatArray = {(float)1, (float)2};
+        map.put("float", floatArray);
+        assertTrue(Arrays.equals(floatArray, (float[]) map.get("float")));
+
+        double[] doubleArray = {(double)1, (double)2};
+        map.put("double", doubleArray);
+        assertTrue(Arrays.equals(doubleArray, (double[]) map.get("double")));
+
+        char[] charArray = {'1', '2'};
+        map.put("char", charArray);
+        assertArrayEquals(charArray,  (char[])map.get("char"));
+
+        Object[] objectArray = {"foo",null,new Integer(3)};
+        map.put("object", objectArray);
+        assertArrayEquals(objectArray,  (Object[])map.get("object"));
+    }
+       
     @Test
     public void testMapPutAndGet() {
         IMap<String, String> map = getInstance().getMap("testMapPutAndGet");

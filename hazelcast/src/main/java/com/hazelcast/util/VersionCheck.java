@@ -32,6 +32,9 @@ import java.net.URLConnection;
 import java.util.logging.Level;
 
 public class VersionCheck {
+
+    private VersionCheck(){}
+
     public static void check(final Node hazelcastNode, final String buildDate, final String version) {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
             return;
@@ -55,7 +58,7 @@ public class VersionCheck {
                 org.w3c.dom.Node nodeSnapshot = (org.w3c.dom.Node) XPathFactory.newInstance().newXPath().evaluate("/hazelcast-version/snapshot", doc, XPathConstants.NODE);
                 String snapshotVersion = nodeSnapshot.getAttributes().getNamedItem("version").getTextContent();
                 String snapshotDate = nodeSnapshot.getAttributes().getNamedItem("date").getTextContent();
-                if (version.indexOf("SNAPSHOT") == -1) {
+                if (!version.contains("SNAPSHOT")) {
                     // final version...check final
                     int currentDate = Integer.parseInt(buildDate);
                     int finalOne = Integer.parseInt(finalDate);

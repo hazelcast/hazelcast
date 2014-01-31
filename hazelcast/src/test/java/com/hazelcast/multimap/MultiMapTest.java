@@ -317,7 +317,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     private MultiMap getMultiMap(HazelcastInstance[] instances, String name){
-        final Random rnd = new Random(System.currentTimeMillis());
+        final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getMultiMap(name);
     }
 }
