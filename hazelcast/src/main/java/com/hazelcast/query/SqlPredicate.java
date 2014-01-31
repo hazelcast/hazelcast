@@ -42,10 +42,12 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     public SqlPredicate() {
     }
 
+    @Override
     public boolean apply(Map.Entry mapEntry) {
         return predicate.apply(mapEntry);
     }
 
+    @Override
     public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
@@ -53,14 +55,17 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return false;
     }
 
+    @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(sql);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         sql = in.readUTF();
         predicate = createPredicate(sql);
@@ -259,6 +264,11 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         } else {
             return (Predicate) statement;
         }
+    }
+
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException{
+        predicate = createPredicate(sql);
     }
 
     @Override

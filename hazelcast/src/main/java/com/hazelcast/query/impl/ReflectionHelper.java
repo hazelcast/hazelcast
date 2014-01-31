@@ -92,7 +92,10 @@ public class ReflectionHelper {
         Class clazz = obj.getClass();
         final String cacheKey = clazz.getName() + ":" + attribute;
         Getter getter = getterCache.get(cacheKey);
-        if (getter != null) return getter;
+        if (getter != null) {
+            return getter;
+        }
+
         try {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(3);
@@ -146,7 +149,10 @@ public class ReflectionHelper {
             }
             getter = parent;
             if (getter.isCacheable()) {
-                getterCache.putIfAbsent(cacheKey, getter);
+                Getter foundGetter = getterCache.putIfAbsent(cacheKey, getter);
+                if(foundGetter != null){
+                     getter = foundGetter;
+                }
             }
             return getter;
         } catch (Throwable e) {
