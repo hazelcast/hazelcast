@@ -539,15 +539,23 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     private void checkState() {
         if (!loaded.get()) {
             if (!replicatedMapConfig.isAsyncFillup()) {
-                waitForLoadedLock.lock();
-                try {
-                    if (!loaded.get()) {
-                        waitForLoadedCondition.await();
+                while (true) {
+                    waitForLoadedLock.lock();
+                    try {
+                        if (!loaded.get()) {
+                            waitForLoadedCondition.await();
+                        }
+                        // If it is a spurious wakeup we restart waiting
+                        if (!loaded.get()) {
+                            continue;
+                        }
+                        // Otherwise return here
+                        return;
+                    } catch (InterruptedException e) {
+                        throw new IllegalStateException("Synchronous loading of ReplicatedMap '" + name + "' failed.", e);
+                    } finally {
+                        waitForLoadedLock.unlock();
                     }
-                } catch (InterruptedException e) {
-                    throw new IllegalStateException("Synchronous loading of ReplicatedMap '" + name + "' failed.", e);
-                } finally {
-                    waitForLoadedLock.unlock();
                 }
             }
         }
