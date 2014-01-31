@@ -224,7 +224,7 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
-    private static class EvictionEntry implements Comparable<EvictionEntry> {
+    static private class EvictionEntry implements Comparable<EvictionEntry> {
         final Object key;
         final Value value;
 
