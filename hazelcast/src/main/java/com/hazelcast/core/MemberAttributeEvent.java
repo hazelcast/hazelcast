@@ -75,6 +75,8 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
             case REMOVE:
                 out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
                 break;
+            default:
+                throw new IllegalStateException("Unknown operation type: " + operationType);
         }
     }
 
@@ -93,6 +95,8 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
             case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
                 operationType = MapOperationType.REMOVE;
                 break;
+            default:
+                throw new IllegalStateException("Unknown operation type received: " + operationType);
         }
         this.source = member;
     }
