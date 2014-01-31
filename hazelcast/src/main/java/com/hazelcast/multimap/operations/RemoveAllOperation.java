@@ -31,7 +31,6 @@ import java.util.Collection;
 public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
     Collection<MultiMapRecord> coll;
-    long begin = -1;
 
     public RemoveAllOperation() {
     }
@@ -41,7 +40,6 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        begin = Clock.currentTimeMillis();
         coll = remove();
         response = new MultiMapResponse(coll);
     }

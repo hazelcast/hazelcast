@@ -36,7 +36,6 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
 
     Data value;
     long recordId;
-    long begin = -1;
 
     public RemoveOperation() {
     }
@@ -47,7 +46,6 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        begin = Clock.currentTimeMillis();
         response = false;
         MultiMapWrapper wrapper = getCollectionWrapper();
         if (wrapper == null) {
