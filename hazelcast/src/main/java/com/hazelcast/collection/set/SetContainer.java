@@ -36,8 +36,8 @@ public class SetContainer extends CollectionContainer {
     public SetContainer() {
     }
 
-    public SetContainer(String name, NodeEngine nodeEngine, CollectionService service) {
-        super(name, nodeEngine, service);
+    public SetContainer(String name, NodeEngine nodeEngine) {
+        super(name, nodeEngine);
     }
 
     @Override
