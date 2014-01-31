@@ -148,6 +148,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
                 case REMOVED:
                     entryListener.entryRemoved(entryEvent);
                     break;
+                default:
+                    throw new IllegalArgumentException("event type " + entryEvent.getEventType() + " not supported");
             }
             String mapName = ((EntryEvent) event).getName();
             if (config.findReplicatedMapConfig(mapName).isStatisticsEnabled()) {
