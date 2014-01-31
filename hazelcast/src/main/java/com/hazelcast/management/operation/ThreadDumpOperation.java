@@ -40,8 +40,7 @@ public class ThreadDumpOperation extends Operation {
     }
 
     public void run() throws Exception {
-        ThreadDumpGenerator gen = ThreadDumpGenerator.newInstance();
-        result = dumpDeadlocks ? gen.dumpDeadlocks() : gen.dumpAllThreads();
+        result = dumpDeadlocks ? ThreadDumpGenerator.dumpDeadlocks() : ThreadDumpGenerator.dumpAllThreads();
     }
 
     public void afterRun() throws Exception {
