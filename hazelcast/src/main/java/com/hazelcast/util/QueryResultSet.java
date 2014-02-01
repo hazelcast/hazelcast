@@ -28,11 +28,12 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Collections.newSetFromMap;
+
 public class QueryResultSet extends AbstractSet implements IdentifiedDataSerializable {
 
-    private transient final SerializationService serializationService;
-
-    private final Set<QueryResultEntry> entries = Collections.newSetFromMap(new ConcurrentHashMap<QueryResultEntry, Boolean>());
+    private final SerializationService serializationService;
+    private final Set<QueryResultEntry> entries = newSetFromMap(new ConcurrentHashMap<QueryResultEntry, Boolean>());
     private IterationType iterationType;
     private boolean data;
 
@@ -77,7 +78,14 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
             } else {
                 Data keyData = entry.getKeyData();
                 Data valueData = entry.getValueData();
-                return (data) ? new AbstractMap.SimpleImmutableEntry(keyData, valueData) : new AbstractMap.SimpleImmutableEntry(serializationService.toObject(keyData), serializationService.toObject(valueData));
+                if (data) {
+                    return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
+                }
+                else {
+                    Object key = serializationService.toObject(keyData);
+                    Object value = serializationService.toObject(valueData);
+                    return new AbstractMap.SimpleImmutableEntry(key, value);
+                }
             }
         }
 

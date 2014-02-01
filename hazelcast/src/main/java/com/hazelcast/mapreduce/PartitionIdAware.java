@@ -16,10 +16,15 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * This interface can be used to mark implementation being aware of the data partition
  * it is currently working on.
+ *
+ * @since 3.2
  */
+@Beta
 public interface PartitionIdAware {
 
     /**

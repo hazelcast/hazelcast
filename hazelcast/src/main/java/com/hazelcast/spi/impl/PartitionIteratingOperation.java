@@ -28,10 +28,10 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
+
     private List<Integer> partitions;
     private OperationFactory operationFactory;
-
-    private transient Map<Integer, Object> results;
+    private Map<Integer, Object> results;
 
     public PartitionIteratingOperation(List<Integer> partitions, OperationFactory operationFactory) {
         this.partitions = partitions != null ? partitions : Collections.<Integer>emptyList();

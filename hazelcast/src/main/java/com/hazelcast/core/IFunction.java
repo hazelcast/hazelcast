@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.core;
 
-import com.hazelcast.core.EntryView;
+import java.io.Serializable;
 
-import java.util.Comparator;
+/**
+ * Represents a function that accepts one argument and produces a result.
+ *
+ * This class is called IFunction instead of Function to prevent clashes with the one in Java 8.
+ *
+ * @param <T>
+ * @param <R>
+ * @since 3.2
+ */
+public interface IFunction<T,R> extends Serializable {
 
-public class LFUMapEntryComparator implements Comparator<EntryView> {
-    public int compare(EntryView r1, EntryView r2) {
-        final int h1 = 0;// r1.getHits();
-        final int h2 = 0;//r2.getHits();
-        return h1 > h2 ? 1 : h1 == h2 ? 0 : -1;
-    }
+    R apply(T input);
 }

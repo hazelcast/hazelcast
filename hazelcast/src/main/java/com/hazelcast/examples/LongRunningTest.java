@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -200,7 +201,7 @@ public class LongRunningTest {
                         while (running) {
                             try {
                                 int key = (int) (Math.random() * entryCount);
-                                int operation = ((int) (Math.random() * 100)) % 10;
+                                int operation = random(10);
                                 if (operation < 4) {
                                     map.put(String.valueOf(key), new byte[valueSize]);
                                     stats.mapPuts.incrementAndGet();

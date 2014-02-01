@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * <p>
  * The abstract Reducer class is used to build reducers for the {@link Job}.<br>
@@ -51,7 +53,10 @@ package com.hazelcast.mapreduce;
  * @param <KeyIn>    key type of the resulting keys
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
+ *
+ * @since 3.2
  */
+@Beta
 public abstract class Reducer<KeyIn, ValueIn, ValueOut> {
 
     /**

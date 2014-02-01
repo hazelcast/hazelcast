@@ -16,32 +16,32 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("IQueue")
 public class QueueMBean extends HazelcastMBean<IQueue> {
 
-    private AtomicLong totalAddedItemCount = new AtomicLong();
-
-    private AtomicLong totalRemovedItemCount = new AtomicLong();
-
+    private final AtomicLong totalAddedItemCount = new AtomicLong();
+    private final AtomicLong totalRemovedItemCount = new AtomicLong();
     private final String registrationId;
 
     protected QueueMBean(IQueue managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("IQueue", managedObject.getName());
+        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
         ItemListener itemListener = new ItemListener() {
+            @Override
             public void itemAdded(ItemEvent item) {
                 totalAddedItemCount.incrementAndGet();
             }
 
+            @Override
             public void itemRemoved(ItemEvent item) {
                 totalRemovedItemCount.incrementAndGet();
             }
@@ -130,7 +130,10 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
     @ManagedAnnotation("config")
     @ManagedDescription("QueueConfig")
     public String getConfig(){
-        return service.instance.getConfig().findQueueConfig(managedObject.getName()).toString();
+        String managedObjectName = managedObject.getName();
+        Config config = service.instance.getConfig();
+        QueueConfig queueConfig = config.findQueueConfig(managedObjectName);
+        return queueConfig.toString();
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
@@ -156,6 +159,4 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
         } catch (Exception ignored) {
         }
     }
-
-
 }

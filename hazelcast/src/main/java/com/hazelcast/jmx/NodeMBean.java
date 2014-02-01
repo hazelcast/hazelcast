@@ -32,7 +32,7 @@ public class NodeMBean extends HazelcastMBean<Node> {
 
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance.Node"));
-        properties.put("name", quote("node"+node.address));
+        properties.put("name", quote("node" + node.address));
         properties.put("instance", quote(hazelcastInstance.getName()));
 
         setObjectName(properties);
@@ -47,7 +47,7 @@ public class NodeMBean extends HazelcastMBean<Node> {
     @ManagedAnnotation("masterAddress")
     @ManagedDescription("The master address of the cluster")
     public String getMasterAddress() {
-        Address a =  managedObject.getMasterAddress();
-        return a == null?null:a.toString();
+        Address a = managedObject.getMasterAddress();
+        return a == null ? null : a.toString();
     }
 }

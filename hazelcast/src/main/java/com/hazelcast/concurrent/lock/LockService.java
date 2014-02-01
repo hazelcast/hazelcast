@@ -22,14 +22,12 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 2/12/13
- */
 public interface LockService extends SharedService {
 
     String SERVICE_NAME = "hz:impl:lockService";
 
-    void registerLockStoreConstructor(String serviceName, ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction);
+    void registerLockStoreConstructor(String serviceName,
+                                      ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction);
 
     LockStore createLockStore(int partitionId, ObjectNamespace namespace);
 

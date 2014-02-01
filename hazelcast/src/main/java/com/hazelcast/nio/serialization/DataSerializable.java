@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-public interface DataSerializable extends Serializable {
+public interface DataSerializable {
 
     void writeData(ObjectDataOutput out) throws IOException;
 

@@ -69,7 +69,12 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
 
     @Override
     public final void onWaitExpire() {
-        final Object response = (timeout < 0 || timeout == Long.MAX_VALUE) ? new OperationTimeoutException() : Boolean.FALSE;
+        Object response;
+        if (timeout < 0 || timeout == Long.MAX_VALUE) {
+            response = new OperationTimeoutException();
+        } else {
+            response = Boolean.FALSE;
+        }
         getResponseHandler().sendResponse(response);
     }
 }

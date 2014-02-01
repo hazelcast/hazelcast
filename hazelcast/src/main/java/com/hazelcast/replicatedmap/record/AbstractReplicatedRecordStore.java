@@ -539,13 +539,23 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     private void checkState() {
         if (!loaded.get()) {
             if (!replicatedMapConfig.isAsyncFillup()) {
-                waitForLoadedLock.lock();
-                try {
-                    waitForLoadedCondition.await();
-                } catch (InterruptedException e) {
-                    throw new IllegalStateException("Synchronous loading of ReplicatedMap '" + name + "' failed.", e);
-                } finally {
-                    waitForLoadedLock.unlock();
+                while (true) {
+                    waitForLoadedLock.lock();
+                    try {
+                        if (!loaded.get()) {
+                            waitForLoadedCondition.await();
+                        }
+                        // If it is a spurious wakeup we restart waiting
+                        if (!loaded.get()) {
+                            continue;
+                        }
+                        // Otherwise return here
+                        return;
+                    } catch (InterruptedException e) {
+                        throw new IllegalStateException("Synchronous loading of ReplicatedMap '" + name + "' failed.", e);
+                    } finally {
+                        waitForLoadedLock.unlock();
+                    }
                 }
             }
         }
@@ -595,7 +605,6 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                     // A new update happened
                     applyTheUpdate(update, localEntry);
                 } else {
-                    // no preceding among the clocks. Lower hash wins..
                     if (localEntry.getLatestUpdateHash() >= update.getUpdateHash()) {
                         applyTheUpdate(update, localEntry);
                     } else {
@@ -615,13 +624,20 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         V marshalledValue = (V) marshallValue(update.getValue());
         long ttlMillis = update.getTtlMillis();
         Object oldValue = localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
+
         applyVector(remoteVector, localVector);
         if (ttlMillis > 0) {
             scheduleTtlEntry(ttlMillis, marshalledKey, null);
         } else {
             cancelTtlEntry(marshalledKey);
         }
-        fireEntryListenerEvent(update.getKey(), unmarshallValue(oldValue), update.getValue());
+
+        V unmarshalledOldValue = (V) unmarshallValue(oldValue);
+        if (unmarshalledOldValue == null
+                || !unmarshalledOldValue.equals(update.getValue())
+                || update.getTtlMillis() != localEntry.getTtlMillis()) {
+            fireEntryListenerEvent(update.getKey(), unmarshalledOldValue, update.getValue());
+        }
     }
 
     private void applyVector(Vector update, Vector current) {

@@ -70,8 +70,8 @@ public class ThreadDumpRequest implements ConsoleRequest {
         target.writeData(out);
         out.writeBoolean(dumpDeadlocks);
     }
-    @Override
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         target = new Address();
         target.readData(in);

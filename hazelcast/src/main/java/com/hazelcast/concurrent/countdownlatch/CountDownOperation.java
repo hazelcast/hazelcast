@@ -21,7 +21,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 public class CountDownOperation extends BackupAwareCountDownLatchOperation implements Notifier {
 
-    private transient boolean shouldNotify;
+    private boolean shouldNotify;
 
     public CountDownOperation() {
     }

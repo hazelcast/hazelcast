@@ -31,12 +31,10 @@ import java.util.Set;
  * @ali 9/2/13
  */
 public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation {
-    
-    private boolean retain;
-    
-    private Set<Data> valueSet;
 
-    private transient Map<Long, Data> itemIdMap;
+    private boolean retain;
+    private Set<Data> valueSet;
+    private Map<Long, Data> itemIdMap;
 
     public CollectionCompareAndRemoveOperation() {
     }

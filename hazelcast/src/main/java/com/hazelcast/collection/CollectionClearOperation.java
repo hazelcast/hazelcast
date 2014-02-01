@@ -27,8 +27,7 @@ import java.util.Map;
  */
 public class CollectionClearOperation extends CollectionBackupAwareOperation {
 
-    private transient Map<Long, Data> itemIdMap;
-
+    private Map<Long, Data> itemIdMap;
 
     public CollectionClearOperation() {
     }

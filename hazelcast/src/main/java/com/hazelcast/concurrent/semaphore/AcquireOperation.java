@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -25,7 +26,7 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-public class AcquireOperation extends SemaphoreBackupAwareOperation implements WaitSupport {
+public class AcquireOperation extends SemaphoreBackupAwareOperation implements WaitSupport, IdentifiedDataSerializable {
 
     long timeout;
 
@@ -85,5 +86,15 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation implements W
     @Override
     public Operation getBackupOperation() {
         return new AcquireBackupOperation(name, permitCount, getCallerUuid());
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.ACQUIRE_OPERATION;
     }
 }

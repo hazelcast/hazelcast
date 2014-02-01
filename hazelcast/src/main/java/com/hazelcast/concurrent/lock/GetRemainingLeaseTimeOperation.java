@@ -30,6 +30,7 @@ public class GetRemainingLeaseTimeOperation extends BaseLockOperation {
 
     @Override
     public void run() throws Exception {
-        response = getLockStore().getRemainingLeaseTime(key);
+        LockStoreImpl lockStore = getLockStore();
+        response = lockStore.getRemainingLeaseTime(key);
     }
 }

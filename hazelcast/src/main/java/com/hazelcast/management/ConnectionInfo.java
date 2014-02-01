@@ -35,7 +35,7 @@ public class ConnectionInfo implements DataSerializable {
     public ConnectionInfo() {
     }
 
-    public ConnectionInfo(final int memberIndex, final boolean live, final long lastRead, final long lastWrite) {
+    public ConnectionInfo(int memberIndex, boolean live, long lastRead, long lastWrite) {
         this.lastRead = lastRead;
         this.lastWrite = lastWrite;
         this.live = live;

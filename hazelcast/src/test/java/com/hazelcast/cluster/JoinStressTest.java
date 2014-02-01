@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  */
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(SlowTest.class)
 public class JoinStressTest {
 
     @Test
@@ -146,11 +146,13 @@ public class JoinStressTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMulticastJoinAtTheSameTime() throws InterruptedException {
         multicastJoin(10, false);
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMulticastJoinWithRandomStartTime() throws InterruptedException {
         multicastJoin(10, true);
     }

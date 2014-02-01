@@ -40,7 +40,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     private long[] replicaVersions;
     private boolean sync;
 
-    private transient boolean valid = true;
+    private boolean valid = true;
 
     Backup() {
     }

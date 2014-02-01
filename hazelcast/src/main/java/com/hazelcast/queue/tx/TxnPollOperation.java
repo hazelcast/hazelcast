@@ -34,8 +34,7 @@ import java.io.IOException;
 public class TxnPollOperation extends QueueBackupAwareOperation implements Notifier {
 
     long itemId;
-
-    transient Data data;
+    Data data;
 
     public TxnPollOperation() {
     }

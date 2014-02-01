@@ -26,7 +26,7 @@ public final class CancellationOperation extends Operation {
 
     private String uuid;
     private boolean interrupt;
-    private transient boolean response;
+    private boolean response;
 
     public CancellationOperation() {
     }

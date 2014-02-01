@@ -37,7 +37,6 @@ import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.ValidationUtil;
 
@@ -45,6 +44,7 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +75,11 @@ public class ClientMapReduceProxy
     @Override
     public <V> TrackableJob<V> getTrackableJob(String jobId) {
         return trackableJobs.get(jobId);
+    }
+
+    @Override
+    public String toString() {
+        return "JobTracker{" + "name='" + getName() + '\'' + '}';
     }
 
     /*
@@ -158,12 +163,14 @@ public class ClientMapReduceProxy
             implements JobCompletableFuture<V> {
 
         private final String jobId;
+        private final CountDownLatch latch;
 
         private volatile boolean cancelled;
 
         protected ClientCompletableFuture(String jobId) {
             super(null, Logger.getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
+            this.latch = new CountDownLatch(1);
         }
 
         @Override
@@ -186,24 +193,17 @@ public class ClientMapReduceProxy
         }
 
         @Override
+        public void setResult(Object result) {
+            super.setResult(result);
+            latch.countDown();
+        }
+
+        @Override
         public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             ValidationUtil.isNotNull(unit, "unit");
-            long deadline = timeout == 0L ? -1 : Clock.currentTimeMillis() + unit.toMillis(timeout);
-            for (; ; ) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    throw e;
-                }
-
-                if (isDone()) {
-                    break;
-                }
-
-                long delta = deadline - Clock.currentTimeMillis();
-                if (delta <= 0L) {
-                    throw new TimeoutException("timeout reached");
-                }
+            latch.await(timeout, unit);
+            if (!isDone()) {
+                throw new TimeoutException("timeout reached");
             }
             return getResult();
         }

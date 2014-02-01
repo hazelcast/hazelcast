@@ -19,15 +19,10 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitNotifyKey;
 
-/**
- * @author mdogan 2/13/13
- */
 public final class ConditionKey implements WaitNotifyKey {
 
     private final String name;
-
     private final Data key;
-
     private final String conditionId;
 
     public ConditionKey(String name, Data key, String conditionId) {

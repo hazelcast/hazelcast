@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 public class TimedMemberState implements DataSerializable, Cloneable {
+
     long time;
     MemberState memberState = null;
     Set<String> instanceNames = null;

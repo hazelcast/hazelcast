@@ -41,6 +41,8 @@ public class ListKeyValueSource<V>
         extends KeyValueSource<String, V>
         implements IdentifiedDataSerializable {
 
+    private final static long serialVersionUID = 1;
+
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<String, V> simpleEntry = new MapReduceSimpleEntry<String, V>();
 
@@ -58,22 +60,25 @@ public class ListKeyValueSource<V>
     }
 
     @Override
-    public void open(NodeEngine nodeEngine) {
+    public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         ss = nei.getSerializationService();
 
         Address thisAddress = nei.getThisAddress();
         PartitionService ps = nei.getPartitionService();
-        Data data = ss.toData(listName, new StringAndPartitionAwarePartitioningStrategy());
+        Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
-        if (!ps.getPartitionOwner(partitionId).equals(thisAddress)) {
-            return;
+        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        if (partitionOwner == null) {
+            return false;
         }
-
-        ListService listService = nei.getService(ListService.SERVICE_NAME);
-        ListContainer listContainer = listService.getOrCreateContainer(listName, false);
-        List<CollectionItem> items = new ArrayList<CollectionItem>(listContainer.getCollection());
-        iterator = items.iterator();
+        if (thisAddress.equals(partitionOwner)) {
+            ListService listService = nei.getService(ListService.SERVICE_NAME);
+            ListContainer listContainer = listService.getOrCreateContainer(listName, false);
+            List<CollectionItem> items = new ArrayList<CollectionItem>(listContainer.getCollection());
+            iterator = items.iterator();
+        }
+        return true;
     }
 
     @Override

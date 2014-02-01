@@ -21,9 +21,6 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.util.Set;
 
-/**
- * @author mdogan 3/14/13
- */
 public final class LockStoreProxy implements LockStore {
 
     private final LockStoreContainer container;
@@ -36,62 +33,74 @@ public final class LockStoreProxy implements LockStore {
 
     @Override
     public boolean lock(Data key, String caller, long threadId, long ttl) {
-        return getLockStore().lock(key, caller, threadId, ttl);
+        LockStore lockStore = getLockStore();
+        return lockStore.lock(key, caller, threadId, ttl);
     }
 
     @Override
     public boolean txnLock(Data key, String caller, long threadId, long ttl) {
-        return getLockStore().txnLock(key, caller, threadId, ttl);
+        LockStore lockStore = getLockStore();
+        return lockStore.txnLock(key, caller, threadId, ttl);
     }
 
     @Override
     public boolean extendLeaseTime(Data key, String caller, long threadId, long ttl) {
-        return getLockStore().extendLeaseTime(key, caller, threadId, ttl);
+        LockStore lockStore = getLockStore();
+        return lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
     @Override
     public boolean unlock(Data key, String caller, long threadId) {
-        return getLockStore().unlock(key, caller, threadId);
+        LockStore lockStore = getLockStore();
+        return lockStore.unlock(key, caller, threadId);
     }
 
     @Override
     public boolean isLocked(Data key) {
-        return getLockStore().isLocked(key);
+        LockStore lockStore = getLockStore();
+        return lockStore.isLocked(key);
     }
 
     @Override
     public boolean isLockedBy(Data key, String caller, long threadId) {
-        return getLockStore().isLockedBy(key, caller, threadId);
+        LockStore lockStore = getLockStore();
+        return lockStore.isLockedBy(key, caller, threadId);
     }
 
     @Override
     public int getLockCount(Data key) {
-        return getLockStore().getLockCount(key);
+        LockStore lockStore = getLockStore();
+        return lockStore.getLockCount(key);
     }
 
     @Override
     public long getRemainingLeaseTime(Data key) {
-        return getLockStore().getRemainingLeaseTime(key);
+        LockStore lockStore = getLockStore();
+        return lockStore.getRemainingLeaseTime(key);
     }
 
     @Override
     public boolean canAcquireLock(Data key, String caller, long threadId) {
-        return getLockStore().canAcquireLock(key, caller, threadId);
+        LockStore lockStore = getLockStore();
+        return lockStore.canAcquireLock(key, caller, threadId);
     }
 
     @Override
     public Set<Data> getLockedKeys() {
-        return getLockStore().getLockedKeys();
+        LockStore lockStore = getLockStore();
+        return lockStore.getLockedKeys();
     }
 
     @Override
     public boolean forceUnlock(Data key) {
-        return getLockStore().forceUnlock(key);
+        LockStore lockStore = getLockStore();
+        return lockStore.forceUnlock(key);
     }
 
     @Override
     public String getOwnerInfo(Data dataKey) {
-        return getLockStore().getOwnerInfo(dataKey);
+        LockStore lockStore = getLockStore();
+        return lockStore.getOwnerInfo(dataKey);
     }
 
     private LockStore getLockStore() {

@@ -78,4 +78,9 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
     protected  <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
+
+    @Override
+    public String toString() {
+        return "ICountDownLatch{" + "name='" + getName() + '\'' + '}';
+    }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -38,7 +39,10 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
+ *
+ * @since 3.2
  */
+@Beta
 public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
 
     /**
@@ -149,9 +153,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * The set is <b>NOT</b> backed by the map, so changes to the map are
      * <b>NOT</b> reflected in the set, and vice-versa.<br/>
      * The order of the elements is not guaranteed due to the internal
-     * asynchronous replication behavior. If a specific order is needed use
-     * {@link #entrySet(java.util.Comparator)} to force reordering of the
-     * elements before returning.
+     * asynchronous replication behavior.
      *
      * @return a set view of the mappings contained in this map
      */

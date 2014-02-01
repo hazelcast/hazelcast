@@ -46,7 +46,7 @@ public class ListService extends CollectionService {
     public ListContainer getOrCreateContainer(String name, boolean backup) {
         ListContainer container = containerMap.get(name);
         if (container == null){
-            container = new ListContainer(name, nodeEngine, this);
+            container = new ListContainer(name, nodeEngine);
             final ListContainer current = containerMap.putIfAbsent(name, container);
             if (current != null){
                 container = current;

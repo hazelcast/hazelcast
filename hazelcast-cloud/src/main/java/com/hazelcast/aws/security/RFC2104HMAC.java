@@ -22,6 +22,8 @@ import java.security.SignatureException;
 
 import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD;
 import static com.hazelcast.util.Base64.encode;
+import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class RFC2104HMAC {
 
@@ -31,12 +33,12 @@ public class RFC2104HMAC {
             throws SignatureException {
         String result;
         try {
-            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(),
+            SecretKeySpec signingKey = new SecretKeySpec(stringToBytes(key),
                     SIGNATURE_METHOD);
             Mac mac = Mac.getInstance(SIGNATURE_METHOD);
             mac.init(signingKey);
-            byte[] rawSignature = mac.doFinal(data.getBytes());
-            result = new String(encode(rawSignature));
+            byte[] rawSignature = mac.doFinal(stringToBytes(data));
+            result = bytesToString(encode(rawSignature));
             result = result.trim();
         } catch (Exception e) {
             throw new SignatureException("Failed to generate HMAC : "

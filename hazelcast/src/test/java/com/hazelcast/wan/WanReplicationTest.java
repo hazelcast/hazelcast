@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(SlowTest.class)
 public class WanReplicationTest extends HazelcastTestSupport{
 
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
@@ -275,8 +275,9 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    @Ignore("Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
+    //"Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
     @Test
+    @Category(ProblematicTest.class)
     public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -352,8 +353,9 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    @Ignore("Issue #1373  this test passes when run in isolation")//TODO
+    //"Issue #1373  this test passes when run in isolation")//TODO
     @Test
+    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_HigherHitsMapMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", HigherHitsMapMergePolicy.class.getName());
@@ -377,8 +379,9 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    @Ignore("Issue #1368 multi replicar topology cluster A replicates to B and C")
+    //("Issue #1368 multi replicar topology cluster A replicates to B and C")
     @Test
+    @Category(ProblematicTest.class)
     public void VTopo_2passiveReplicar_1producer_Test(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -495,8 +498,9 @@ public class WanReplicationTest extends HazelcastTestSupport{
         assertDataInFrom(clusterA, "map", 0, 500, clusterB);
     }
 
-    @Ignore("Issue #1372  is a chain of replicars a valid topology")//TODO
+    //("Issue #1372  is a chain of replicars a valid topology")//TODO
     @Test
+    @Category(ProblematicTest.class)
     public void chainTopo_2passiveReplicars_1producer(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -514,8 +518,9 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    @Ignore("Issue #1372 is a ring topology valid")//TODO
+    //("Issue #1372 is a ring topology valid")//TODO
     @Test
+    @Category(ProblematicTest.class)
     public void replicationRing(){
 
         setupReplicateFrom(configA, configB, clusterB.length,"atob", PassThroughMergePolicy.class.getName());

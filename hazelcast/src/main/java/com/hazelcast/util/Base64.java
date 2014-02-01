@@ -20,6 +20,8 @@ package com.hazelcast.util;
 * package org.apache.xerces.utils
 */
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 /**
  * This class provides encode/decode for RFC 2045 Base64 as
  * defined by RFC 2045, N. Freed and N. Borenstein.
@@ -93,9 +95,10 @@ public final class Base64 {
     }
 
     public static boolean isBase64(String isValidString) {
-        if (isValidString == null)
+        if (isValidString == null){
             return false;
-        return (isArrayByteBase64(isValidString.getBytes()));
+        }
+        return isArrayByteBase64(stringToBytes(isValidString));
     }
 
     public static boolean isBase64(byte octect) {

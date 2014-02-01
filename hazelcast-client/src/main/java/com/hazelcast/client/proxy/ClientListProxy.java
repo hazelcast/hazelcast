@@ -105,4 +105,9 @@ public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> impleme
         }
         return list;
     }
+
+    @Override
+    public String toString() {
+        return "IList{" + "name='" + getName() + '\'' + '}';
+    }
 }

@@ -256,4 +256,9 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         }
         return dataList;
     }
+
+    @Override
+    public String toString() {
+        return "IQueue{" + "name='" + getName() + '\'' + '}';
+    }
 }

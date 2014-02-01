@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
-    transient Map<Data, Collection<MultiMapRecord>> objects;
+    Map<Data, Collection<MultiMapRecord>> objects;
 
     public ClearOperation() {
     }

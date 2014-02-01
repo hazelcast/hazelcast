@@ -18,9 +18,6 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.IAtomicLong;
 
-/**
- * @author ali 2/7/13
- */
 @ManagedDescription("IAtomicLong")
 public class AtomicLongMBean extends HazelcastMBean<IAtomicLong> {
 

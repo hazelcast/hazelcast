@@ -38,7 +38,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     private MapEntrySet entrySet;
     private boolean initialLoad = false;
-    private transient  MapEntrySet backupEntrySet;
+    private MapEntrySet backupEntrySet;
 
     public PutAllOperation(String name, MapEntrySet entrySet) {
         super(name);

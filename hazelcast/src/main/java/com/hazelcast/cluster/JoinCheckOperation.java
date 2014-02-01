@@ -30,8 +30,7 @@ import java.io.IOException;
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
     private JoinRequest joinRequest;
-
-    private transient JoinRequest response;
+    private JoinRequest response;
 
     public JoinCheckOperation() {
     }

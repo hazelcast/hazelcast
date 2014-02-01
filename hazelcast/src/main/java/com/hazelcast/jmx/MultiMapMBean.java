@@ -18,9 +18,6 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.MultiMap;
 
-/**
- * @author ali 2/11/13
- */
 @ManagedDescription("MultiMap")
 public class MultiMapMBean extends HazelcastMBean<MultiMap> {
 

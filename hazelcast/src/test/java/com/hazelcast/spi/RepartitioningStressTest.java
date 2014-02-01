@@ -25,9 +25,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -87,7 +85,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         return 5;
     }
 
-    private HazelcastInstance createHazelcastInstance() {
+    public HazelcastInstance createHazelcastInstance() {
         return instanceFactory.newHazelcastInstance(config);
     }
 

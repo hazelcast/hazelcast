@@ -34,10 +34,11 @@ public class IsLockedOperation extends BaseLockOperation {
 
     @Override
     public void run() throws Exception {
+        LockStoreImpl lockStore = getLockStore();
         if (threadId > -1) {
-            response = getLockStore().isLockedBy(key, getCallerUuid(), threadId);
+            response = lockStore.isLockedBy(key, getCallerUuid(), threadId);
         } else {
-            response = getLockStore().isLocked(key);
+            response = lockStore.isLocked(key);
         }
     }
 }

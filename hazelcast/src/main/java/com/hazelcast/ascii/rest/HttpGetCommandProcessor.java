@@ -20,6 +20,8 @@ import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ConnectionManager;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
 
     public HttpGetCommandProcessor(TextCommandService textCommandService) {
@@ -50,11 +52,11 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             res.append("\n");
             res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
             res.append("\n");
-            command.setResponse(null, res.toString().getBytes());
+            command.setResponse(null, stringToBytes(res.toString()));
         } else if (uri.startsWith(URI_STATE_DUMP)) {
             String stateDump = textCommandService.getNode().getSystemLogService().dump();
             stateDump += textCommandService.getNode().getPartitionService().toString() + "\n";
-            command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stateDump.getBytes());
+            command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stringToBytes(stateDump));
         } else {
             command.send400();
         }
@@ -75,7 +77,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
                 RestValue restValue = (RestValue) value;
                 command.setResponse(restValue.getContentType(), restValue.getValue());
             } else if (value instanceof String) {
-                command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
+                command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
             } else {
                 command.setResponse(HttpCommand.CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
             }

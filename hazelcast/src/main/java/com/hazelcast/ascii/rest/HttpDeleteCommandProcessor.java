@@ -18,6 +18,8 @@ package com.hazelcast.ascii.rest;
 
 import com.hazelcast.ascii.TextCommandService;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteCommand> {
 
     public HttpDeleteCommandProcessor(TextCommandService textCommandService) {
@@ -36,7 +38,7 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
             } else {
                 String mapName = uri.substring(URI_MAPS.length(), indexEnd);
                 String key = uri.substring(indexEnd + 1);
-                Object value = textCommandService.delete(mapName, key);
+                textCommandService.delete(mapName, key);
                 command.send204();
             }
         } else if (uri.startsWith(URI_QUEUES)) {
@@ -56,7 +58,7 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
                     RestValue restValue = (RestValue) value;
                     command.setResponse(restValue.getContentType(), restValue.getValue());
                 } else if (value instanceof String) {
-                    command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, ((String) value).getBytes());
+                    command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
                 } else {
                     command.setResponse(null, textCommandService.toByteArray(value));
                 }

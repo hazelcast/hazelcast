@@ -67,7 +67,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public Collection<V> remove(Object key) {
-        TxnMultiMapRemoveRequest request = new TxnMultiMapRemoveRequest(getName(), toData(key));
+        TxnMultiMapRemoveAllRequest request = new TxnMultiMapRemoveAllRequest(getName(), toData(key));
         PortableCollection portableCollection = invoke(request);
         final Collection<Data> collection = portableCollection.getCollection();
         Collection<V> coll;

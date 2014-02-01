@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -331,7 +331,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
         assertEquals(null, ref.get());
     }
 
-    private static class AppendFunction implements Function<String, String> {
+    private static class AppendFunction implements IFunction<String, String> {
         private String add;
 
         private AppendFunction(String add) {
@@ -344,14 +344,14 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
         }
     }
 
-    private static class NullFunction implements Function<String, String> {
+    private static class NullFunction implements IFunction<String, String> {
         @Override
         public String apply(String input) {
             return null;
         }
     }
 
-    private static class FailingFunction implements Function<String, String> {
+    private static class FailingFunction implements IFunction<String, String> {
         @Override
         public String apply(String input) {
             throw new WoohaaException();

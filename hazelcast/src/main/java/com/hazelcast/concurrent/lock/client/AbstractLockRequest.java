@@ -60,6 +60,10 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
         this.timeout = timeout;
     }
 
+    protected String getName() {
+        return (String) getClientEngine().toObject(key);
+    }
+
     @Override
     protected final Operation prepareOperation() {
         return new LockOperation(getNamespace(), key, threadId, ttl, timeout);
