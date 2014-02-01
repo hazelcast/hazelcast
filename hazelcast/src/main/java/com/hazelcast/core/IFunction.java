@@ -18,7 +18,12 @@ package com.hazelcast.core;
 
 import java.io.Serializable;
 
-public interface Function<T,R> extends Serializable {
+/**
+ * This class is called IFunction instead of Function to prevent clashes with the
+ * @param <T>
+ * @param <R>
+ */
+public interface IFunction<T,R> extends Serializable {
 
     R apply(T input);
 }

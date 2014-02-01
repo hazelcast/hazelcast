@@ -106,7 +106,7 @@ public interface IAtomicLong extends DistributedObject {
      * @param function the function
      * @throws IllegalArgumentException if function is null.
      */
-    void alter(Function<Long, Long> function);
+    void alter(IFunction<Long, Long> function);
 
     /**
      * Alters the currently stored value by applying a function on it and gets the result.
@@ -115,7 +115,7 @@ public interface IAtomicLong extends DistributedObject {
      * @return the new value.
      * @throws IllegalArgumentException if function is null.
      */
-    long alterAndGet(Function<Long, Long> function);
+    long alterAndGet(IFunction<Long, Long> function);
 
     /**
      * Alters the currently stored value by applying a function on it on and gets the old value.
@@ -124,7 +124,7 @@ public interface IAtomicLong extends DistributedObject {
      * @return  the old value
      * @throws IllegalArgumentException if function is null.
      */
-    long getAndAlter(Function<Long, Long> function);
+    long getAndAlter(IFunction<Long, Long> function);
 
     /**
      * Applies a function on the value, the actual stored value will not change.
@@ -133,5 +133,5 @@ public interface IAtomicLong extends DistributedObject {
      * @return  the result of the function application
      * @throws IllegalArgumentException if function is null.
      */
-    <R> R apply(Function<Long, R> function);
+    <R> R apply(IFunction<Long, R> function);
 }

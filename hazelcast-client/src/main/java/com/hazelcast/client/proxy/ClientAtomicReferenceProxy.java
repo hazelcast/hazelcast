@@ -19,7 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.atomicreference.client.*;
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
 
@@ -36,25 +36,25 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     }
 
     @Override
-    public <R> R apply(Function<E, R> function) {
+    public <R> R apply(IFunction<E, R> function) {
         isNotNull(function, "function");
         return invoke(new ApplyRequest(name, toData(function)));
     }
 
     @Override
-    public void alter(Function<E, E> function) {
+    public void alter(IFunction<E, E> function) {
         isNotNull(function, "function");
         invoke(new AlterRequest(name, toData(function)));
     }
 
     @Override
-    public E alterAndGet(Function<E, E> function) {
+    public E alterAndGet(IFunction<E, E> function) {
         isNotNull(function, "function");
         return invoke(new AlterAndGetRequest(name, toData(function)));
     }
 
     @Override
-    public E getAndAlter(Function<E, E> function) {
+    public E getAndAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
         return invoke(new GetAndAlterRequest(name, toData(function)));
     }

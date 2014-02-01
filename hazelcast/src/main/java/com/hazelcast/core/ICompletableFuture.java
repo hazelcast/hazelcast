@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.spi.annotation.Beta;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
@@ -31,6 +33,7 @@ import java.util.concurrent.Future;
  *
  * @param <V>
  */
+@Beta
 public interface ICompletableFuture<V> extends Future<V> {
 
     void andThen(ExecutionCallback<V> callback);

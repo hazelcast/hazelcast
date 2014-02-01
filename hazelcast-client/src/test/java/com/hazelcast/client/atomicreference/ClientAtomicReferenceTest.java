@@ -17,7 +17,7 @@
 package com.hazelcast.client.atomicreference;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
@@ -249,7 +249,7 @@ public class ClientAtomicReferenceTest {
         assertEquals(null,clientReference.get());
     }
 
-    private static class AppendFunction implements Function<String,String> {
+    private static class AppendFunction implements IFunction<String,String> {
         private String add;
 
         private AppendFunction(String add) {
@@ -262,7 +262,7 @@ public class ClientAtomicReferenceTest {
         }
     }
 
-    private static class NullFunction implements Function<String,String>{
+    private static class NullFunction implements IFunction<String,String> {
         @Override
         public String apply(String input) {
             return null;
