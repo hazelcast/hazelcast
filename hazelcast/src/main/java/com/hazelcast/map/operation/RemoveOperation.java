@@ -45,7 +45,8 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
     }
 
     public boolean shouldBackup() {
-        return successful;
+        mapService = getService();
+        return (mapService.getMapContainer(name).getTotalBackupCount() != 0 && successful);
     }
 
     @Override

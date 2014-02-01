@@ -62,7 +62,8 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public boolean shouldBackup() {
-        return successful;
+        mapService = getService();
+        return (mapService.getMapContainer(name).getTotalBackupCount() != 0 && successful);
     }
 
     @Override

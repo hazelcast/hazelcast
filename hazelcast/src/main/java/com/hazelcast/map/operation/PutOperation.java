@@ -50,4 +50,10 @@ public final class PutOperation extends BasePutOperation implements IdentifiedDa
     public int getId() {
         return MapDataSerializerHook.PUT;
     }
+
+    @Override
+    public boolean shouldBackup() {
+        mapService = getService();
+        return (mapService.getMapContainer(name).getTotalBackupCount() > 0);
+    }
 }

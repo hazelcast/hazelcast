@@ -43,7 +43,7 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     public boolean shouldBackup() {
-        return success;
+        return (mapService.getMapContainer(name).getTotalBackupCount() != 0 && success);
     }
 
     @Override
