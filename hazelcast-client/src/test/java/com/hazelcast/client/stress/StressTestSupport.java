@@ -1,5 +1,6 @@
 package com.hazelcast.client.stress;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -13,11 +14,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static org.junit.Assert.assertNull;
 
-public class StressTestSupport extends HazelcastTestSupport {
-
+public abstract class StressTestSupport extends HazelcastTestSupport {
+    //todo: should be system property
+    public static final int RUNNING_TIME_SECONDS = 60;
+    //todo: should be system property
     public static final int CLUSTER_SIZE = 6;
+    //todo: should be system property
     public static final int KILL_DELAY_SECONDS = 10;
 
     private final List<HazelcastInstance> instances = new CopyOnWriteArrayList();
@@ -30,12 +35,16 @@ public class StressTestSupport extends HazelcastTestSupport {
     public void setUp() {
         startLatch = new CountDownLatch(1);
         for (int k = 0; k < CLUSTER_SIZE; k++) {
-            HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+            HazelcastInstance hz = newHazelcastInstance(createClusterConfig());
             instances.add(hz);
         }
 
         killMemberThread = new KillMemberThread();
         killMemberThread.start();
+    }
+
+    public Config createClusterConfig(){
+        return new Config();
     }
 
     @After
@@ -51,6 +60,25 @@ public class StressTestSupport extends HazelcastTestSupport {
 
     public void startTest() {
         startLatch.countDown();
+    }
+
+    public boolean waitForTestCompletion(){
+        for(int k=1;k<=RUNNING_TIME_SECONDS;k++){
+              try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            float percent =(k*100.0f)/RUNNING_TIME_SECONDS;
+            System.out.printf("%.1f Running for %s of %s seconds\n",percent,k,RUNNING_TIME_SECONDS);
+
+            if(stopTest){
+                System.err.println("Test has stopped premature!!!!");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected void setStopOnError(boolean stopOnError) {
@@ -135,7 +163,7 @@ public class StressTestSupport extends HazelcastTestSupport {
                 HazelcastInstance instance = instances.remove(index);
                 instance.shutdown();
 
-                HazelcastInstance newInstance = Hazelcast.newHazelcastInstance();
+                HazelcastInstance newInstance = newHazelcastInstance(createClusterConfig());
                 instances.add(newInstance);
             }
         }

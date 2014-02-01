@@ -3,7 +3,7 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -12,23 +12,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
-/**
- * This tests puts a lot of key/values in a map, where the value is the same as the key. With a client these
- * key/values are read and are expected to be consistent, even if member join and leave the cluster all the time.
- * <p/>
- * If there would be a bug in replicating the data, it could pop up here.
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapStableReadStressTest extends StressTestSupport {
+public class AtomicLongStableReadStressTest extends StressTestSupport {
 
     public static final int CLIENT_THREAD_COUNT = 5;
-    public static final int MAP_SIZE = 100 * 1000;
+    public static final int REFERENCE_COUNT = 10*1000;
 
     private HazelcastInstance client;
-    private IMap<Integer, Integer> map;
+    private IAtomicLong[] references;
     private StressThread[] stressThreads;
 
     @Before
@@ -38,7 +33,10 @@ public class MapStableReadStressTest extends StressTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setRedoOperation(true);
         client = HazelcastClient.newHazelcastClient(clientConfig);
-        map = client.getMap("map");
+        references = new IAtomicLong[REFERENCE_COUNT];
+        for(int k=0;k<references.length;k++){
+            references[k]=client.getAtomicLong("atomicreference:"+k);
+        }
 
         stressThreads = new StressThread[CLIENT_THREAD_COUNT];
         for (int k = 0; k < stressThreads.length; k++) {
@@ -58,7 +56,7 @@ public class MapStableReadStressTest extends StressTestSupport {
 
     @Test
     public void test() throws Exception {
-        fillMap();
+        initializeReferences();
 
         startTest();
 
@@ -75,20 +73,17 @@ public class MapStableReadStressTest extends StressTestSupport {
         assertNoErrors(stressThreads);
     }
 
-    private void fillMap() {
+    private void initializeReferences() {
         System.out.println("==================================================================");
-        System.out.println("Inserting data in map");
+        System.out.println("Initializing references");
         System.out.println("==================================================================");
 
-        for (int k = 0; k < MAP_SIZE; k++) {
-            map.put(k, k);
-            if (k % 10000 == 0) {
-                System.out.println("Inserted data: "+k);
-            }
+        for(int k=0;k<references.length;k++){
+            references[k].set(k);
         }
 
         System.out.println("==================================================================");
-        System.out.println("Completed with inserting data in map");
+        System.out.println("Completed with initializing references");
         System.out.println("==================================================================");
     }
 
@@ -97,9 +92,10 @@ public class MapStableReadStressTest extends StressTestSupport {
         @Override
         public void doRun() throws Exception {
             while (!isStopped()) {
-                int key = random.nextInt(MAP_SIZE);
-                int value = map.get(key);
-                assertEquals("The value for the key was not consistent", key, value);
+                int key = random.nextInt(REFERENCE_COUNT);
+                IAtomicLong reference = references[key];
+                long value = reference.get();
+                assertEquals(format("The value for atomic reference: %s was not consistent",reference), key, value);
             }
         }
     }

@@ -12,14 +12,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.TimeUnit;
+import java.util.HashSet;
+import java.util.Set;
 
+import static org.junit.Assert.fail;
+
+/**
+ * This tests verifies that map updates are not lost. So we have a client which is going to do updates on a map
+ * and in the end we verify that the actual updates in the map, are the same as the expected updates.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class MapUpdateStressTest extends StressTestSupport {
 
     public static final int CLIENT_THREAD_COUNT = 5;
-    public static final int RUNNING_TIME_SECONDS = 60;
     public static final int MAP_SIZE = 100 * 1000;
 
     private HazelcastInstance client;
@@ -53,6 +59,49 @@ public class MapUpdateStressTest extends StressTestSupport {
 
     @Test
     public void test() throws Exception {
+        fillMap();
+
+        startTest();
+        waitForTestCompletion();
+
+        System.out.println("==================================================================");
+        System.out.println("Completed the running period, shutting down threads.");
+        System.out.println("==================================================================");
+
+        stopTest();
+
+        joinAll(stressThreads);
+
+        assertNoErrors(stressThreads);
+
+        int[] increments = new int[MAP_SIZE];
+        for (StressThread t : stressThreads) {
+            t.addIncrements(increments);
+        }
+
+        Set<Integer> failedKeys = new HashSet<Integer>();
+        for (int k = 0; k < MAP_SIZE; k++) {
+            int expectedValue = increments[k];
+            int foundValue = map.get(k);
+            if (expectedValue != foundValue) {
+                failedKeys.add(k);
+            }
+        }
+
+        if (failedKeys.isEmpty()) {
+            return;
+        }
+
+        int index =1;
+        for (Integer key : failedKeys) {
+            System.err.println("Failed write: "+index+" found:" + map.get(key) + " expected:" + increments[key]);
+            index++;
+        }
+
+        fail("There are failed writes, number of failures:" + failedKeys.size());
+    }
+
+    private void fillMap() {
         System.out.println("==================================================================");
         System.out.println("Inserting data in map");
         System.out.println("==================================================================");
@@ -67,21 +116,6 @@ public class MapUpdateStressTest extends StressTestSupport {
         System.out.println("==================================================================");
         System.out.println("Completed with inserting data in map");
         System.out.println("==================================================================");
-
-
-        startTest();
-
-        Thread.sleep(TimeUnit.SECONDS.toMillis(RUNNING_TIME_SECONDS));
-
-        System.out.println("==================================================================");
-        System.out.println("Completed the running period, shutting down threads.");
-        System.out.println("==================================================================");
-
-        stopTest();
-
-        joinAll(stressThreads);
-
-        assertNoErrors(stressThreads);
     }
 
     public class StressThread extends TestThread {
@@ -91,9 +125,21 @@ public class MapUpdateStressTest extends StressTestSupport {
         @Override
         public void doRun() throws Exception {
             while (!isStopped()) {
-                //int key = random.nextInt(MAP_SIZE);
-                //int increment = map.put()
-                //assertEquals("The value for the key was not consistent", key, value);
+                int key = random.nextInt(MAP_SIZE);
+                int increment = random.nextInt(10);
+                increments[key] += increment;
+                for (; ; ) {
+                    int oldValue = map.get(key);
+                    if (map.replace(key, oldValue, oldValue + increment)) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void addIncrements(int[] increments) {
+            for (int k = 0; k < increments.length; k++) {
+                increments[k] += this.increments[k];
             }
         }
     }
