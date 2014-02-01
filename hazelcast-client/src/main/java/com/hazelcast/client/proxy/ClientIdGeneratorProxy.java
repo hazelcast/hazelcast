@@ -85,4 +85,8 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
         local = null;
     }
 
+    @Override
+    public String toString() {
+        return "IdGenerator{" + "name='" + getName() + '\'' + '}';
+    }
 }

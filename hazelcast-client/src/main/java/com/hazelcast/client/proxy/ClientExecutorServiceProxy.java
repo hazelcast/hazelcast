@@ -410,6 +410,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 name + "', you need to destroy current ExecutorService first!";
     }
 
+    @Override
+    public String toString() {
+        return "IExecutorService{" + "name='" + getName() + '\'' + '}';
+    }
+
     private <T> ICompletableFuture<T> checkSync(ICompletableFuture<T> f) {
         boolean sync = false;
         final long last = lastSubmitTime;

@@ -127,4 +127,9 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     protected  <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKeyData());
     }
+
+    @Override
+    public String toString() {
+        return "ILock{" + "name='" + getName() + '\'' + '}';
+    }
 }

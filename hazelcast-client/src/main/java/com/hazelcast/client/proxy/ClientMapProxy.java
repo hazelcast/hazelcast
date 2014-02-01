@@ -721,4 +721,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
     }
 
+    @Override
+    public String toString() {
+        return "IMap{" + "name='" + getName() + '\'' + '}';
+    }
+
 }

@@ -125,4 +125,9 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
             throw new IllegalArgumentException("Permits cannot be negative!");
         }
     }
+
+    @Override
+    public String toString() {
+        return "ISemaphore{" + "name='" + getName() + '\'' + '}';
+    }
 }
