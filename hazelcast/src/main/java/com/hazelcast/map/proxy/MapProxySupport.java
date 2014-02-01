@@ -53,6 +53,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
+    // Register an empty callback to putAsync and removeAsync invocations
+    // to avoid backup notification memory leak.
+    // see issue #1693
+    private static final Callback<Object> EMPTY_ASYNC_CALLBACK = new Callback<Object>() {
+        public void notify(final Object object) {
+        }
+    };
+
     protected final String name;
     protected final MapConfig mapConfig;
     protected final LocalMapStatsImpl localMapStats;
@@ -157,7 +165,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         GetOperation operation = new GetOperation(name, key);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService()
+                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             return invocation.invoke();
         } catch (Throwable t) {
@@ -221,7 +230,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService()
+                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .setCallback(EMPTY_ASYNC_CALLBACK) // see #1693
                     .build();
             return invocation.invoke();
         } catch (Throwable t) {
@@ -275,7 +286,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         RemoveOperation operation = new RemoveOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+            Invocation invocation = nodeEngine.getOperationService()
+                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .setCallback(EMPTY_ASYNC_CALLBACK) // see #1693
                     .build();
             return invocation.invoke();
         } catch (Throwable t) {
