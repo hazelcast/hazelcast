@@ -77,6 +77,11 @@ public class ClientMapReduceProxy
         return trackableJobs.get(jobId);
     }
 
+    @Override
+    public String toString() {
+        return "JobTracker{" + "name='" + getName() + '\'' + '}';
+    }
+
     /*
      * Removed for now since it is moved to Hazelcast 3.3
     @Override
