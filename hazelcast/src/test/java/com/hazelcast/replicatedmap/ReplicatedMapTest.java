@@ -1507,6 +1507,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Repeat(50)
     public void sameMap_putTTLandPut_allMostSimil_repDelay0_inMemoryFormat_Object() throws Exception {
         sameMap_putTTLandPut_allMostSimil_repDelay0(InMemoryFormat.OBJECT);
     }
@@ -1526,11 +1527,19 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
+        final ReplicatedMapProxy<Object, Object> map1 = (ReplicatedMapProxy) instance1.getReplicatedMap("default");
+        final ReplicatedMapProxy<Object, Object> map2 = (ReplicatedMapProxy) instance2.getReplicatedMap("default");
+
+        CountDownLatch replicateLatch = new CountDownLatch(1);
+        CountDownLatch startReplication = new CountDownLatch(2);
+        PreReplicationHook hook = createReplicationHook(replicateLatch, startReplication);
+        map1.setPreReplicationHook(hook);
 
         map1.put(1, 1, 1, TimeUnit.MINUTES);
         map1.put(1, 1);
+
+        startReplication.await(1, TimeUnit.MINUTES);
+        replicateLatch.countDown();
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() {
