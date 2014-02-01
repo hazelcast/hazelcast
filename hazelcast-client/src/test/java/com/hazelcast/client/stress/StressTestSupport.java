@@ -1,7 +1,6 @@
 package com.hazelcast.client.stress;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -30,6 +29,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     private KillMemberThread killMemberThread;
     private volatile boolean stopOnError = true;
     private volatile boolean stopTest = false;
+    private boolean clusterChangeEnabled = true;
 
     @Before
     public void setUp() {
@@ -39,11 +39,13 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
             instances.add(hz);
         }
 
-        killMemberThread = new KillMemberThread();
-        killMemberThread.start();
     }
 
-    public Config createClusterConfig(){
+    public void setClusterChangeEnabled(boolean membershutdownEnabled) {
+        this.clusterChangeEnabled = membershutdownEnabled;
+    }
+
+    public Config createClusterConfig() {
         return new Config();
     }
 
@@ -58,48 +60,63 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public void startTest() {
-        startLatch.countDown();
-    }
+    public final boolean startAndWaitForTestCompletion() {
+        System.out.println("Cluster change enabled:" + clusterChangeEnabled);
+        if (clusterChangeEnabled) {
+            killMemberThread = new KillMemberThread();
+            killMemberThread.start();
+        }
 
-    public boolean waitForTestCompletion(){
-        for(int k=1;k<=RUNNING_TIME_SECONDS;k++){
-              try {
+        System.out.println("==================================================================");
+        System.out.println("Test started.");
+        System.out.println("==================================================================");
+
+        startLatch.countDown();
+
+        for (int k = 1; k <= RUNNING_TIME_SECONDS; k++) {
+            try {
                 Thread.sleep(TimeUnit.SECONDS.toMillis(1));
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            float percent =(k*100.0f)/RUNNING_TIME_SECONDS;
-            System.out.printf("%.1f Running for %s of %s seconds\n",percent,k,RUNNING_TIME_SECONDS);
+            float percent = (k * 100.0f) / RUNNING_TIME_SECONDS;
+            System.out.printf("%.1f Running for %s of %s seconds\n", percent, k, RUNNING_TIME_SECONDS);
 
-            if(stopTest){
-                System.err.println("Test has stopped premature!!!!");
+            if (stopTest) {
+                System.err.println("==================================================================");
+                System.err.println("Test ended premature!");
+                System.err.println("==================================================================");
                 return false;
             }
         }
 
+        System.out.println("==================================================================");
+        System.out.println("Test completed.");
+        System.out.println("==================================================================");
+
+        stopTest();
         return true;
     }
 
-    protected void setStopOnError(boolean stopOnError) {
+    protected final void setStopOnError(boolean stopOnError) {
         this.stopOnError = stopOnError;
     }
 
-    protected void stopTest() {
+    protected final void stopTest() {
         stopTest = true;
     }
 
-    protected boolean isStopped() {
+    protected final boolean isStopped() {
         return stopTest;
     }
 
-    public void assertNoErrors(TestThread... threads) {
+    public final void assertNoErrors(TestThread... threads) {
         for (TestThread thread : threads) {
             thread.assertNoError();
         }
     }
 
-    public void joinAll(TestThread... threads) {
+    public final void joinAll(TestThread... threads) {
         for (TestThread t : threads) {
             try {
                 t.join(60000);

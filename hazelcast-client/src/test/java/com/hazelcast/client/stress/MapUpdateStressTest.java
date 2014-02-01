@@ -57,18 +57,13 @@ public class MapUpdateStressTest extends StressTestSupport {
         }
     }
 
+
+
     @Test
     public void test() throws Exception {
         fillMap();
 
-        startTest();
-        waitForTestCompletion();
-
-        System.out.println("==================================================================");
-        System.out.println("Completed the running period, shutting down threads.");
-        System.out.println("==================================================================");
-
-        stopTest();
+        startAndWaitForTestCompletion();
 
         joinAll(stressThreads);
 
