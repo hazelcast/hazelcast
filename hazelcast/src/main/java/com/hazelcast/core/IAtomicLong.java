@@ -105,6 +105,7 @@ public interface IAtomicLong extends DistributedObject {
      *
      * @param function the function
      * @throws IllegalArgumentException if function is null.
+     * @since 3.2
      */
     void alter(IFunction<Long, Long> function);
 
@@ -114,6 +115,7 @@ public interface IAtomicLong extends DistributedObject {
      * @param function the function
      * @return the new value.
      * @throws IllegalArgumentException if function is null.
+     * @since 3.2
      */
     long alterAndGet(IFunction<Long, Long> function);
 
@@ -123,6 +125,7 @@ public interface IAtomicLong extends DistributedObject {
      * @param function the function
      * @return  the old value
      * @throws IllegalArgumentException if function is null.
+     * @since 3.2
      */
     long getAndAlter(IFunction<Long, Long> function);
 
@@ -132,6 +135,7 @@ public interface IAtomicLong extends DistributedObject {
      * @param function the function
      * @return  the result of the function application
      * @throws IllegalArgumentException if function is null.
+     * @since 3.2
      */
     <R> R apply(IFunction<Long, R> function);
 }

@@ -22,6 +22,7 @@ package com.hazelcast.core;
  * {@link java.util.concurrent.atomic.AtomicReference java.util.concurrent.atomic.AtomicReference}.
  *
  * @see IAtomicLong
+ * @since 3.2
  */
 public interface IAtomicReference<E> extends DistributedObject {
 

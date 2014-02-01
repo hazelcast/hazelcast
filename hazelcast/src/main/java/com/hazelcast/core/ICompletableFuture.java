@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
  * with Java6/7.
  *
  * @param <V>
+ * @since 3.2
  */
 @Beta
 public interface ICompletableFuture<V> extends Future<V> {

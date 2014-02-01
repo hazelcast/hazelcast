@@ -21,6 +21,8 @@ import com.hazelcast.spi.annotation.Beta;
 /**
  * A {@link IAtomicLong} that exposes its operations using a {@link ICompletableFuture}
  * so it can be used in the reactive programming model approach.
+ *
+ * @since 3.2
  */
 @Beta
 public interface AsyncAtomicLong extends IAtomicLong {
