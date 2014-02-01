@@ -115,5 +115,10 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
         return key;
     }
 
+    @Override
+    public String toString() {
+        return "IAtomicReference{" + "name='" + name + '\'' + '}';
+    }
+
 }
 

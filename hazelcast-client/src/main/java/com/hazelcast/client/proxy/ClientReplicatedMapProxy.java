@@ -212,4 +212,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
     }
 
+    @Override
+    public String toString() {
+        return "ReplicatedMap{" + "name='" + getName() + '\'' + '}';
+    }
 }

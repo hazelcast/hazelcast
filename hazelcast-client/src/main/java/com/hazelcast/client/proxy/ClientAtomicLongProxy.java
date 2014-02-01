@@ -131,4 +131,8 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
         return key;
     }
 
+    @Override
+    public String toString() {
+        return "IAtomicLong{" + "name='" + name + '\'' + '}';
+    }
 }

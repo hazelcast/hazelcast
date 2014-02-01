@@ -84,4 +84,9 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     protected  <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
+
+    @Override
+    public String toString() {
+        return "ITopic{" + "name='" + getName() + '\'' + '}';
+    }
 }
