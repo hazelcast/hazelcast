@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomiclong.proxy;
 
 import com.hazelcast.concurrent.atomiclong.*;
 import com.hazelcast.core.AsyncAtomicLong;
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -157,12 +157,12 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public void alter(Function<Long, Long> function) {
+    public void alter(IFunction<Long, Long> function) {
         asyncAlter(function).getSafely();
     }
 
     @Override
-    public InternalCompletableFuture<Void> asyncAlter(Function<Long, Long> function) {
+    public InternalCompletableFuture<Void> asyncAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
 
         Operation operation = new AlterOperation(name,function);
@@ -170,12 +170,12 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public long alterAndGet(Function<Long, Long> function) {
+    public long alterAndGet(IFunction<Long, Long> function) {
         return asyncAlterAndGet(function).getSafely();
     }
 
     @Override
-    public InternalCompletableFuture<Long> asyncAlterAndGet(Function<Long, Long> function) {
+    public InternalCompletableFuture<Long> asyncAlterAndGet(IFunction<Long, Long> function) {
         isNotNull(function, "function");
 
         Operation operation = new AlterAndGetOperation(name, function);
@@ -183,12 +183,12 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public long getAndAlter(Function<Long, Long> function) {
+    public long getAndAlter(IFunction<Long, Long> function) {
         return asyncGetAndAlter(function).getSafely();
     }
 
     @Override
-    public InternalCompletableFuture<Long> asyncGetAndAlter(Function<Long, Long> function) {
+    public InternalCompletableFuture<Long> asyncGetAndAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
 
         Operation operation = new GetAndAlterOperation(name, function);
@@ -196,12 +196,12 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     }
 
     @Override
-    public <R> R apply(Function<Long, R> function) {
+    public <R> R apply(IFunction<Long, R> function) {
         return asyncApply(function).getSafely();
     }
 
     @Override
-    public <R> InternalCompletableFuture<R> asyncApply(Function<Long, R> function) {
+    public <R> InternalCompletableFuture<R> asyncApply(IFunction<Long, R> function) {
         isNotNull(function, "function");
 
         Operation operation = new ApplyOperation<R>(name,function);

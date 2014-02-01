@@ -22,6 +22,7 @@ package com.hazelcast.core;
  * {@link java.util.concurrent.atomic.AtomicReference java.util.concurrent.atomic.AtomicReference}.
  *
  * @see IAtomicLong
+ * @since 3.2
  */
 public interface IAtomicReference<E> extends DistributedObject {
 
@@ -92,7 +93,7 @@ public interface IAtomicReference<E> extends DistributedObject {
      * @param function the function
      * @throws IllegalArgumentException if function is null.
      */
-    void alter(Function<E, E> function);
+    void alter(IFunction<E, E> function);
 
     /**
      * Alters the currently stored reference by applying a function on it and gets the result.
@@ -101,7 +102,7 @@ public interface IAtomicReference<E> extends DistributedObject {
      * @return the new value.
      * @throws IllegalArgumentException if function is null.
      */
-    E alterAndGet(Function<E, E> function);
+    E alterAndGet(IFunction<E, E> function);
 
     /**
      * Alters the currently stored reference by applying a function on it on and gets the old value.
@@ -110,7 +111,7 @@ public interface IAtomicReference<E> extends DistributedObject {
      * @return  the old value
      * @throws IllegalArgumentException if function is null.
      */
-    E getAndAlter(Function<E, E> function);
+    E getAndAlter(IFunction<E, E> function);
 
     /**
      * Applies a function on the value, the actual stored value will not change.
@@ -119,5 +120,5 @@ public interface IAtomicReference<E> extends DistributedObject {
      * @return  the result of the function application
      * @throws IllegalArgumentException if function is null.
      */
-    <R> R apply(Function<E, R> function);
+    <R> R apply(IFunction<E, R> function);
 }

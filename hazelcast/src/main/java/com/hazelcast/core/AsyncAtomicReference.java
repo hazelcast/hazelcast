@@ -1,9 +1,14 @@
 package com.hazelcast.core;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * A {@link IAtomicReference} that exposes its operations using a {@link ICompletableFuture}
  * so it can be used in the reactive programming model approach.
+ *
+ * @since 3.2
  */
+@Beta
 public interface AsyncAtomicReference<E> extends IAtomicReference<E> {
 
     ICompletableFuture<Boolean> asyncCompareAndSet(E expect, E update);
@@ -22,11 +27,11 @@ public interface AsyncAtomicReference<E> extends IAtomicReference<E> {
 
     ICompletableFuture<Boolean> asyncContains(E value);
 
-    ICompletableFuture<Void> asyncAlter(Function<E, E> function);
+    ICompletableFuture<Void> asyncAlter(IFunction<E, E> function);
 
-    ICompletableFuture<E> asyncAlterAndGet(Function<E, E> function);
+    ICompletableFuture<E> asyncAlterAndGet(IFunction<E, E> function);
 
-    ICompletableFuture<E> asyncGetAndAlter(Function<E, E> function);
+    ICompletableFuture<E> asyncGetAndAlter(IFunction<E, E> function);
 
-    <R> ICompletableFuture<R> asyncApply(Function<E, R> function);
+    <R> ICompletableFuture<R> asyncApply(IFunction<E, R> function);
 }

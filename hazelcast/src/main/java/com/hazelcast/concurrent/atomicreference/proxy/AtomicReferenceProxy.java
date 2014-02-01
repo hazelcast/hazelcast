@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomicreference.proxy;
 
 import com.hazelcast.concurrent.atomicreference.*;
 import com.hazelcast.core.AsyncAtomicReference;
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.spi.*;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -46,12 +46,12 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
-    public void alter(Function<E, E> function) {
+    public void alter(IFunction<E, E> function) {
         asyncAlter(function).getSafely();
     }
 
     @Override
-    public InternalCompletableFuture<Void> asyncAlter(Function<E, E> function) {
+    public InternalCompletableFuture<Void> asyncAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -60,12 +60,12 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
-    public E alterAndGet(Function<E, E> function) {
+    public E alterAndGet(IFunction<E, E> function) {
         return asyncAlterAndGet(function).getSafely();
     }
 
     @Override
-    public InternalCompletableFuture<E> asyncAlterAndGet(Function<E, E> function) {
+    public InternalCompletableFuture<E> asyncAlterAndGet(IFunction<E, E> function) {
         isNotNull(function,"function");
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -74,12 +74,12 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
-    public E getAndAlter(Function<E, E> function) {
+    public E getAndAlter(IFunction<E, E> function) {
         return asyncGetAndAlter(function).getSafely();
     }
 
     @Override
-    public InternalCompletableFuture<E> asyncGetAndAlter(Function<E, E> function) {
+    public InternalCompletableFuture<E> asyncGetAndAlter(IFunction<E, E> function) {
         isNotNull(function,"function");
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -88,12 +88,12 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     }
 
     @Override
-    public <R> R apply(Function<E, R> function) {
+    public <R> R apply(IFunction<E, R> function) {
         return asyncApply(function).getSafely();
     }
 
     @Override
-    public <R> InternalCompletableFuture<R> asyncApply(Function<E, R> function) {
+    public <R> InternalCompletableFuture<R> asyncApply(IFunction<E, R> function) {
         isNotNull(function,"function");
 
         NodeEngine nodeEngine = getNodeEngine();

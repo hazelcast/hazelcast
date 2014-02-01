@@ -17,7 +17,7 @@
 package com.hazelcast.client.atomiclong;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -202,7 +202,7 @@ public class ClientAtomicLongTest {
         assertEquals(11, ref.get());
     }
 
-    private static class AddOneFunction implements Function<Long, Long> {
+    private static class AddOneFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
             return input+1;
@@ -210,7 +210,7 @@ public class ClientAtomicLongTest {
     }
 
 
-    private static class FailingFunction implements Function<Long, Long> {
+    private static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
             throw new WoohaaException();
