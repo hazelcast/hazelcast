@@ -57,14 +57,22 @@ public class MapStableReadStressTest extends StressTestSupport {
     }
 
     @Test
-    public void test() throws Exception {
+    public void testWithClusterChangeEnabled() {
+        test(true);
+    }
+
+    @Test
+    public void testWithClusterChangeDisabled() {
+        test(false);
+    }
+
+    public void test(boolean clusterChangeEnabled) {
+        setClusterChangeEnabled(clusterChangeEnabled);
         fillMap();
 
         startAndWaitForTestCompletion();
 
         joinAll(stressThreads);
-
-        assertNoErrors(stressThreads);
     }
 
     private void fillMap() {

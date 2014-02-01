@@ -124,7 +124,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
                 throw new RuntimeException("Interrupted while joining thread:" + t);
             }
 
-            System.err.println("IsStopped:" + isStopped());
             if (t.isAlive()) {
                 System.err.println("Could not join Thread:" + t.getName() + ", it is still alive");
                 for (StackTraceElement e : t.getStackTrace()) {
@@ -132,7 +131,10 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
                 }
                 throw new RuntimeException("Could not join thread:" + t + ", thread is still alive");
             }
+
         }
+
+        assertNoErrors(threads);
     }
 
     public final static AtomicLong ID_GENERATOR = new AtomicLong(1);

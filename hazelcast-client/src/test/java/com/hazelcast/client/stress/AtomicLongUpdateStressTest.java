@@ -12,12 +12,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class AtomicLongStableReadStressTest extends StressTestSupport {
+public class AtomicLongUpdateStressTest extends StressTestSupport {
 
     public static final int CLIENT_THREAD_COUNT = 5;
     public static final int REFERENCE_COUNT = 10 * 1000;
@@ -66,34 +68,57 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
 
     public void test(boolean clusterChangeEnabled) {
         setClusterChangeEnabled(clusterChangeEnabled);
-        initializeReferences();
+
         startAndWaitForTestCompletion();
         joinAll(stressThreads);
+        assertNoUpdateFailures();
     }
 
-    private void initializeReferences() {
-        System.out.println("==================================================================");
-        System.out.println("Initializing references");
-        System.out.println("==================================================================");
-
-        for (int k = 0; k < references.length; k++) {
-            references[k].set(k);
+    private void assertNoUpdateFailures() {
+        int[] increments = new int[REFERENCE_COUNT];
+        for (StressThread t : stressThreads) {
+            t.addIncrements(increments);
         }
 
-        System.out.println("==================================================================");
-        System.out.println("Completed with initializing references");
-        System.out.println("==================================================================");
+        Set<Integer> failedKeys = new HashSet<Integer>();
+        for (int k = 0; k < REFERENCE_COUNT; k++) {
+            long expectedValue = increments[k];
+            long foundValue = references[k].get();
+            if (expectedValue != foundValue) {
+                failedKeys.add(k);
+            }
+        }
+
+        if (failedKeys.isEmpty()) {
+            return;
+        }
+
+        int index = 1;
+        for (Integer key : failedKeys) {
+            System.err.println("Failed write: " + index + " found:" + references[key].get() + " expected:" + increments[key]);
+            index++;
+        }
+
+        fail("There are failed writes, number of failures:" + failedKeys.size());
     }
 
     public class StressThread extends TestThread {
+        private final int[] increments = new int[REFERENCE_COUNT];
 
         @Override
         public void doRun() throws Exception {
             while (!isStopped()) {
-                int key = random.nextInt(REFERENCE_COUNT);
-                IAtomicLong reference = references[key];
-                long value = reference.get();
-                assertEquals(format("The value for atomic reference: %s was not consistent", reference), key, value);
+                int index = random.nextInt(REFERENCE_COUNT);
+                int increment = random.nextInt(100);
+                increments[index] += increment;
+                IAtomicLong reference = references[index];
+                reference.addAndGet(increment);
+            }
+        }
+
+        public void addIncrements(int[] increments) {
+            for (int k = 0; k < increments.length; k++) {
+                increments[k] += this.increments[k];
             }
         }
     }

@@ -57,18 +57,25 @@ public class MapUpdateStressTest extends StressTestSupport {
         }
     }
 
-
+    @Test
+    public void testWithClusterChangeEnabled() {
+        test(true);
+    }
 
     @Test
-    public void test() throws Exception {
+    public void testWithClusterChangeDisabled() {
+        test(false);
+    }
+
+    public void test(boolean clusterChangeEnabled) {
+        setClusterChangeEnabled(clusterChangeEnabled);
         fillMap();
-
         startAndWaitForTestCompletion();
-
         joinAll(stressThreads);
+        assertNoUpdateFailures();
+    }
 
-        assertNoErrors(stressThreads);
-
+    private void assertNoUpdateFailures() {
         int[] increments = new int[MAP_SIZE];
         for (StressThread t : stressThreads) {
             t.addIncrements(increments);
@@ -87,9 +94,9 @@ public class MapUpdateStressTest extends StressTestSupport {
             return;
         }
 
-        int index =1;
+        int index = 1;
         for (Integer key : failedKeys) {
-            System.err.println("Failed write: "+index+" found:" + map.get(key) + " expected:" + increments[key]);
+            System.err.println("Failed write: " + index + " found:" + map.get(key) + " expected:" + increments[key]);
             index++;
         }
 
