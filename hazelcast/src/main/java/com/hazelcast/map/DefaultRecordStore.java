@@ -709,7 +709,7 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             Object oldValue = record.getValue();
             EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()),
-                    record.getStatistics(), record.getVersion());
+                    record.getStatistics(), record.getCost(), record.getVersion());
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
                 deleteRecord(dataKey);

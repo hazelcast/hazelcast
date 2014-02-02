@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
 /**
  * @author enesakar 1/17/13
@@ -278,7 +279,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record.getStatistics(), record.getVersion());
+                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record.getStatistics(), record.getCost(), record.getVersion());
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
@@ -711,6 +712,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             case REMOVED:
                 listener.entryRemoved(event);
                 break;
+            default:
+                throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
         }
         MapContainer mapContainer = getMapContainer(eventData.getMapName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {

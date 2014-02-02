@@ -112,17 +112,17 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         mergeFirstRunDelay = mergeFirstRunDelay <= 0 ? 100 : mergeFirstRunDelay; // milliseconds
 
         ExecutionService executionService = nodeEngine.getExecutionService();
-        final String executor = "hz:cluster";
-        executionService.register(executor, 8, 100000);
+        String executorName = "hz:cluster";
+        executionService.register(executorName, 8, 100000);
 
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
-        executionService.scheduleWithFixedDelay(executor, new SplitBrainHandler(node),
+        executionService.scheduleWithFixedDelay(executorName, new SplitBrainHandler(node),
                                                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
         long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
-        executionService.scheduleWithFixedDelay(executor, new Runnable() {
+        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
             public void run() {
                 heartBeater();
             }
@@ -130,7 +130,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
         masterConfirmationInterval = masterConfirmationInterval <= 0 ? 1 : masterConfirmationInterval;
-        executionService.scheduleWithFixedDelay(executor, new Runnable() {
+        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
@@ -138,7 +138,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
         memberListPublishInterval = memberListPublishInterval <= 0 ? 1 : memberListPublishInterval;
-        executionService.scheduleWithFixedDelay(executor, new Runnable() {
+        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }
