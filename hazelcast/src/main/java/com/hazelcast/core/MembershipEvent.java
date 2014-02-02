@@ -31,10 +31,22 @@ public class MembershipEvent extends EventObject {
 
     private static final long serialVersionUID = -2010865371829087371L;
 
+    /**
+     * This event type is fired when a new member joins the cluster.
+     */
     public static final int MEMBER_ADDED = 1;
 
+    /**
+     * This event type is fired if a member left the cluster or was decided to be
+     * unresponsive by other members for a extended time range.
+     */
     public static final int MEMBER_REMOVED = 2;
 
+    /**
+     * This event type is fired if a member attribute has been changed or removed.
+     *
+     * @since 3.2
+     */
     public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
 
     private final Member member;
@@ -70,7 +82,7 @@ public class MembershipEvent extends EventObject {
     /**
      * Returns the cluster of the event.
      *
-     * @return
+     * @return the current cluster instance
      */
     public Cluster getCluster() {
         return (Cluster) getSource();

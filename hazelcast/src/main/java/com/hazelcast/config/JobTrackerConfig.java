@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 
-// TODO retry count needed?
 public class JobTrackerConfig {
 
     public static final int DEFAULT_MAX_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
