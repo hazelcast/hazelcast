@@ -98,7 +98,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
                         mapService.publishWanReplicationRemove(name, key, Clock.currentTimeMillis());
                     } else {
                         Record r = recordStore.getRecord(key);
-                        SimpleEntryView entryView = new SimpleEntryView(key, mapService.toData(dataValue), r.getStatistics(), r.getVersion());
+                        SimpleEntryView entryView = new SimpleEntryView(key, mapService.toData(dataValue), r.getStatistics(), r.getCost(), r.getVersion());
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }

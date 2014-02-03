@@ -26,13 +26,12 @@ import java.io.IOException;
 public class RecordStatistics implements DataSerializable {
 
     // todo is volatile needed? if yes then hits should be atomicnumber
-    protected volatile int hits = 0;
-    protected volatile long lastStoredTime = 0;
-    protected volatile long lastUpdateTime = 0;
-    protected volatile long lastAccessTime = 0;
-    protected volatile long creationTime = 0;
-    protected volatile long expirationTime = 0;
-    protected volatile long cost = 0;
+    protected int hits = 0;
+    protected long lastStoredTime = 0;
+    protected long lastUpdateTime = 0;
+    protected long lastAccessTime = 0;
+    protected long creationTime = 0;
+    protected long expirationTime = 0;
 
     public RecordStatistics() {
         long now = Clock.currentTimeMillis();
@@ -63,14 +62,6 @@ public class RecordStatistics implements DataSerializable {
 
     public void setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
-    }
-
-    public long getCost() {
-        return cost;
-    }
-
-    public void setCost(long cost) {
-        this.cost = cost;
     }
 
     public void access() {
@@ -108,7 +99,7 @@ public class RecordStatistics implements DataSerializable {
 
     public long size() {
         //size of the instance.
-        return 6 * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
+        return 5 * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -116,7 +107,6 @@ public class RecordStatistics implements DataSerializable {
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(lastAccessTime);
-        out.writeLong(cost);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -124,7 +114,6 @@ public class RecordStatistics implements DataSerializable {
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         lastAccessTime = in.readLong();
-        cost = in.readLong();
     }
 
 

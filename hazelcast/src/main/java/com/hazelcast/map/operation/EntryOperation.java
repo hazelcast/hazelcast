@@ -101,7 +101,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getVersion());
+                SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getCost(), record.getVersion());
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }

@@ -253,6 +253,11 @@ public class NearCache {
             return 0;
         }
 
+        @Override
+        public int hashCode() {
+            return key.hashCode();
+        }
+
         public boolean equals(Object o){
             if(o!=null && o instanceof CacheRecord){
                 return this.compareTo((CacheRecord)o)==0;
