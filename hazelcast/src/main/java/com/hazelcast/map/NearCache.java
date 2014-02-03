@@ -255,7 +255,12 @@ public class NearCache {
 
         @Override
         public int hashCode() {
-            return key.hashCode();
+            if (EvictionPolicy.LRU.equals(evictionPolicy))
+                return ((Long) this.lastAccessTime).hashCode();
+            else if (EvictionPolicy.LFU.equals(evictionPolicy))
+                return ((Integer) this.hit.get()).hashCode();
+            else
+                return key.hashCode();
         }
 
         public boolean equals(Object o){
