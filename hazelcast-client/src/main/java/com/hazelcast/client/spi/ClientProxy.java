@@ -139,4 +139,27 @@ public abstract class ClientProxy implements DistributedObject {
             throw new NullPointerException("Object is null");
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ClientProxy that = (ClientProxy) o;
+
+        String name = getName();
+        if (name != null ? !name.equals(that.getName()) : that.getName() != null) return false;
+
+        String sName = getServiceName();
+        if (sName != null ? !sName.equals(that.getServiceName()) : that.getServiceName() != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = serviceName != null ? serviceName.hashCode() : 0;
+        result = 31 * result + (getName() != null ? getName().hashCode() : 0);
+        return result;
+    }
 }
