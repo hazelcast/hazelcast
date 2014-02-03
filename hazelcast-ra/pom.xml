@@ -39,15 +39,10 @@
 
     <dependencies>
         <dependency>
-            <groupId>geronimo-spec</groupId>
-            <artifactId>geronimo-spec-j2ee-connector</artifactId>
-            <version>1.5-rc4</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-jta_1.0.1B_spec</artifactId>
-            <version>1.0</version>
+            <artifactId>geronimo-j2ee-connector_1.5_spec</artifactId>
+            <version>2.0.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -58,6 +53,7 @@
         <dependency>
             <groupId>com.atomikos</groupId>
             <artifactId>transactions-jdbc</artifactId>
+            <scope>test</scope>
             <version>${atomikos-version}</version>
         </dependency>
         <dependency>
@@ -66,6 +62,12 @@
             <scope>test</scope>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jta_1.1_spec</artifactId>
+            <scope>test</scope>
+            <version>1.1.1</version>
         </dependency>
 
         <!--<dependency>-->
