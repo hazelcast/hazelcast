@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,11 +36,75 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.map.TempData.DeleteEntryProcessor;
+import static com.hazelcast.map.TempData.LoggingEntryProcessor;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class EntryProcessorTest extends HazelcastTestSupport {
+
+    @Test
+    @Ignore
+    public void testEntryProcessorDeleteWithPredicate() {
+        Config cfg = new Config();
+        cfg.getMapConfig("test").setBackupCount(1);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        IMap<String, TempData> map = instance1.getMap("test");
+        try {
+            map.put("a", new TempData("foo", "bar"));
+            map.executeOnEntries(new LoggingEntryProcessor());
+            map.executeOnEntries(new DeleteEntryProcessor());
+            // Now the entry has been removed from the primary store but not the backup.
+            // Let's kill the primary and execute the logging processor again...
+            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            HazelcastInstance newPrimary;
+            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+                instance1.shutdown();
+                newPrimary = instance2;
+            } else {
+                instance2.shutdown();
+                newPrimary = instance1;
+            }
+            IMap<String, TempData> map2 = newPrimary.getMap("test");
+            map2.executeOnEntries(new LoggingEntryProcessor());
+        } finally {
+            instance1.shutdown();
+            instance2.shutdown();
+        }
+    }
+
+    @Test
+    @Ignore
+    public void testEntryProcessorDelete() {
+        Config cfg = new Config();
+        cfg.getMapConfig("test").setBackupCount(1);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        IMap<String, TempData> map = instance1.getMap("test");
+        try {
+            map.put("a", new TempData("foo", "bar"));
+            map.executeOnKey("a", new LoggingEntryProcessor());
+            map.executeOnKey("a", new DeleteEntryProcessor());
+            // Now the entry has been removed from the primary store but not the backup.
+            // Let's kill the primary and execute the logging processor again...
+            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            HazelcastInstance newPrimary;
+            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+                instance1.shutdown();
+                newPrimary = instance2;
+            } else {
+                instance2.shutdown();
+                newPrimary = instance1;
+            }
+            IMap<String, TempData> map2 = newPrimary.getMap("test");
+            assertFalse(map2.containsKey("a"));
+        } finally {
+            instance1.shutdown();
+            instance2.shutdown();
+        }
+    }
 
     @Test
     public void testMapEntryProcessor() throws InterruptedException {
@@ -199,8 +264,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         public Object process(Map.Entry entry) {
-              entry.setValue(null);
-              return entry;
+            entry.setValue(null);
+            return entry;
         }
 
         public EntryBackupProcessor getBackupProcessor() {
