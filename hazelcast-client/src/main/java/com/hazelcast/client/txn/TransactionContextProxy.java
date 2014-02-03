@@ -21,13 +21,14 @@ import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
 
+import javax.transaction.xa.XAResource;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,7 +105,7 @@ public class TransactionContextProxy implements TransactionContext {
                 obj = new ClientTxnMultiMapProxy(name, this);
             } else if (serviceName.equals(ListService.SERVICE_NAME)) {
                 obj = new ClientTxnListProxy(name, this);
-            }else if (serviceName.equals(SetService.SERVICE_NAME)) {
+            } else if (serviceName.equals(SetService.SERVICE_NAME)) {
                 obj = new ClientTxnSetProxy(name, this);
             }
 
@@ -122,6 +123,10 @@ public class TransactionContextProxy implements TransactionContext {
 
     public HazelcastClient getClient() {
         return client;
+    }
+
+    public XAResource getXaResource() {
+        throw new UnsupportedOperationException();
     }
 
     private Connection connect() {
