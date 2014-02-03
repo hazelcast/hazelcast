@@ -21,10 +21,14 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
@@ -41,6 +45,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author ali 30/01/14
  */
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(SerialTest.class)
 public class HazelcastXaTest {
 
     static {
