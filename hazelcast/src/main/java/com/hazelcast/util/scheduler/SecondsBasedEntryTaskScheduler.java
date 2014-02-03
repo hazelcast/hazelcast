@@ -118,6 +118,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     }
 
     public ScheduledEntry<K, V> cancel(K key) {
+        ScheduledEntry<K, V> result = null;
+
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return cancelComparingTimeKey(key);
         }
@@ -125,16 +127,16 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         if (second != null) {
             final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
             if (entries != null) {
-                return entries.remove(key);
-            }
-            if (entries.isEmpty()) {
-                ScheduledFuture removed = scheduledTaskMap.remove(second);
-                if (removed != null) {
-                    removed.cancel(false);
+                result = entries.remove(key);
+                if (entries.isEmpty()) {
+                    ScheduledFuture removed = scheduledTaskMap.remove(second);
+                    if (removed != null) {
+                        removed.cancel(false);
+                    }
                 }
             }
         }
-        return null;
+        return result;
     }
 
     public ScheduledEntry<K, V> cancelComparingTimeKey(K key) {
@@ -153,11 +155,11 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
                     result = entries.remove(timeKey);
-                }
-                if (entries.isEmpty()) {
-                    ScheduledFuture removed = scheduledTaskMap.remove(second);
-                    if (removed != null) {
-                        removed.cancel(false);
+                    if (entries.isEmpty()) {
+                        ScheduledFuture removed = scheduledTaskMap.remove(second);
+                        if (removed != null) {
+                            removed.cancel(false);
+                        }
                     }
                 }
             }
@@ -258,10 +260,10 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             final Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
             Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
-            for (Object key : entries.keySet()) {
-                Integer removed = secondsOfKeys.remove(key);
+            for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
+                Integer removed = secondsOfKeys.remove(entry.getKey());
                 if (removed != null) {
-                    values.add(entries.get(key));
+                    values.add(entry.getValue());
                 }
             }
             //sort entries asc by schedule times and send to processor.
