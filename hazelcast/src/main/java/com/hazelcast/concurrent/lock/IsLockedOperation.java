@@ -25,7 +25,7 @@ public class IsLockedOperation extends BaseLockOperation {
     }
 
     public IsLockedOperation(ObjectNamespace namespace, Data key) {
-        super(namespace, key, 0);
+        super(namespace, key, -1);
     }
 
     public IsLockedOperation(ObjectNamespace namespace, Data key, long threadId) {
@@ -35,7 +35,7 @@ public class IsLockedOperation extends BaseLockOperation {
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        if (threadId == 0) {
+        if (threadId == -1) {
             response = lockStore.isLocked(key);
         } else {
             response = lockStore.isLockedBy(key, getCallerUuid(), threadId);
