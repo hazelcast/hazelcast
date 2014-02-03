@@ -217,6 +217,8 @@ public abstract class AbstractTxnMapRequest extends TransactionRequest implement
             case REMOVE_IF_SAME:
                 action =  ActionConstants.ACTION_REMOVE;
                 break;
+            default:
+                throw new IllegalArgumentException("Invalid request type: " + requestType);
         }
         return new MapPermission(name, action);
     }
