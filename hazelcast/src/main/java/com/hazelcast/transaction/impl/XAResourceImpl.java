@@ -18,6 +18,7 @@ package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionException;
 
@@ -25,6 +26,7 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+@Beta
 public class XAResourceImpl implements XAResource {
 
     private final TransactionContextImpl transactionContext;
