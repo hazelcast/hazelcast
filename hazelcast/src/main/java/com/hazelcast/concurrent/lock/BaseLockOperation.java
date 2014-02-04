@@ -28,6 +28,7 @@ import java.io.IOException;
 abstract class BaseLockOperation extends AbstractOperation implements PartitionAwareOperation {
 
     public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
+    public static final int ANY_THREAD = 0;
 
     protected ObjectNamespace namespace;
     protected Data key;
