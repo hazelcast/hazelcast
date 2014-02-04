@@ -83,9 +83,12 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
+    // we added following latency to be sure the ongoing migration is completed if the owner of the record could not complete task before migration
+    private final Integer replicaWaitSecondsForScheduledTasks;
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.replicaWaitSecondsForScheduledTasks = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
@@ -722,20 +725,17 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
-        // this info is created to be used in backups.
-        // we added following latency (10 seconds) to be sure the ongoing migration is completed if the owner of the record could not complete task before migration
-        int delay = 10000;
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(key);
-        long idleDelay = idleScheduledEntry == null ? -1 : delay + findDelayMillis(idleScheduledEntry);
+        long idleDelay = idleScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(idleScheduledEntry);
 
         ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
-        long ttlDelay = ttlScheduledEntry == null ? -1 : delay + findDelayMillis(ttlScheduledEntry);
+        long ttlDelay = ttlScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(ttlScheduledEntry);
 
         ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
-        long writeDelay = writeScheduledEntry == null ? -1 : delay + findDelayMillis(writeScheduledEntry);
+        long writeDelay = writeScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(writeScheduledEntry);
 
         ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
-        long deleteDelay = deleteScheduledEntry == null ? -1 : delay + findDelayMillis(deleteScheduledEntry);
+        long deleteDelay = deleteScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(deleteScheduledEntry);
 
         return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), record.getStatistics(),
                 idleDelay, ttlDelay, writeDelay, deleteDelay);
@@ -744,7 +744,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public RecordInfo createRecordInfo(MapContainer mapContainer, Record record, Data key) {
         // this info is created to be used in backups.
         // we added following latency (10 seconds) to be sure the ongoing promotion is completed if the owner of the record could not complete task before promotion
-        int backupDelay = 10000;
+        int backupDelay = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(record.getKey());
         long idleDelay = idleScheduledEntry == null ? -1 : backupDelay + findDelayMillis(idleScheduledEntry);
 
