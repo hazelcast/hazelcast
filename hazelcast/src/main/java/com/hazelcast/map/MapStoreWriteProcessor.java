@@ -36,7 +36,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
         this.logger = mapService.getNodeEngine().getLogger(getClass());
     }
 
-    private Exception tryStore(EntryTaskScheduler<Data, Object> scheduler, ScheduledEntry<Data, Object> entry) {
+    private Exception tryStore(EntryTaskScheduler<Data, Object> scheduler, Map.Entry<Data, Object> entry) {
         Exception exception = null;
         try {
             mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
@@ -44,7 +44,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> store failed, " +
                                         "now Hazelcast reschedules this operation ", e);
             exception = e;
-            scheduler.schedule(mapContainer.getWriteDelayMillis(), entry.getKey(), entry.getValue());
+            scheduler.schedule(mapContainer.getWriteDelayMillis(), mapService.toData(entry.getKey()), mapService.toData(entry.getValue()));
         }
         return exception;
     }
@@ -62,7 +62,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             }
         } else {   // if entries size > 0, we will call storeAll
             final Queue<ScheduledEntry> duplicateKeys = new LinkedList<ScheduledEntry>();
-            final Map map = new HashMap(entries.size());
+            final Map<Object,Object> map = new HashMap<Object,Object>(entries.size());
             for (ScheduledEntry<Data, Object> entry : entries) {
                 final Object key = mapService.toObject(entry.getKey());
                 if (map.get(key) != null) {
@@ -71,6 +71,19 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                 }
                 map.put(key, mapService.toObject(entry.getValue()));
             }
+
+            // we will traverse duplicate keys to filter first duplicates from storeAll's map
+            for (ScheduledEntry duplicateKey : duplicateKeys) {
+                Object key = duplicateKey.getKey();
+                Object removed = map.remove(key);
+                if(removed != null) {
+                    final Exception ex = tryStore(scheduler, new AbstractMap.SimpleEntry(key, removed));
+                    if (ex != null) {
+                        logger.severe(ex);
+                    }
+                }
+            }
+
             Exception exception = null;
             try {
                 mapContainer.getStore().storeAll(map);

@@ -649,7 +649,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
-    public Object toObject(Object data) {
+  public Object toObject(Object data) {
         if (data == null)
             return null;
         if (data instanceof Data) {

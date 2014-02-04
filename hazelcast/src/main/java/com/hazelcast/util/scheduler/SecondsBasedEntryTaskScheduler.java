@@ -183,9 +183,10 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private boolean scheduleEntry(long delayMillis, K key, V value) {
         final int delaySeconds = ceilToSecond(delayMillis);
         final Integer newSecond = findRelativeSecond(delayMillis);
-        TimeKey timeKey = new TimeKey(key, Clock.currentTimeMillis());
+        long time = System.nanoTime();
+        TimeKey timeKey = new TimeKey(key, time);
         secondsOfKeys.put(timeKey, newSecond);
-        doSchedule(timeKey, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
+        doSchedule(timeKey, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, time), newSecond);
         return true;
     }
 
@@ -283,9 +284,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
-            if (o1.getScheduleTime() > o2.getScheduleTime()) {
+            if (o1.getScheduleTimeNanos() > o2.getScheduleTimeNanos()) {
                 return 1;
-            } else if (o1.getScheduleTime() < o2.getScheduleTime()) {
+            } else if (o1.getScheduleTimeNanos() < o2.getScheduleTimeNanos()) {
                 return -1;
             }
             return 0;
