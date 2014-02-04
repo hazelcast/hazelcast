@@ -74,7 +74,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
 
             // we will traverse duplicate keys to filter first duplicates from storeAll's map
             for (ScheduledEntry duplicateKey : duplicateKeys) {
-                Object key = duplicateKey.getKey();
+                Object key = mapService.toObject(duplicateKey.getKey());
                 Object removed = map.remove(key);
                 if(removed != null) {
                     final Exception ex = tryStore(scheduler, new AbstractMap.SimpleEntry(key, removed));
