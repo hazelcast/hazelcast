@@ -116,6 +116,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     }
 
     public ScheduledEntry<K, V> cancel(K key) {
+        ScheduledEntry<K, V> result = null;
+
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return cancelComparingTimeKey(key);
         }
@@ -123,16 +125,16 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         if (second != null) {
             final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
             if (entries != null) {
-                return entries.remove(key);
-            }
-            if (entries.isEmpty()) {
-                ScheduledFuture removed = scheduledTaskMap.remove(second);
-                if (removed != null) {
-                    removed.cancel(false);
+                result = entries.remove(key);
+                if (entries.isEmpty()) {
+                    ScheduledFuture removed = scheduledTaskMap.remove(second);
+                    if (removed != null) {
+                        removed.cancel(false);
+                    }
                 }
             }
         }
-        return null;
+        return result;
     }
 
     public ScheduledEntry<K, V> get(K key) {
@@ -165,11 +167,11 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
                     result = entries.remove(timeKey);
-                }
-                if (entries.isEmpty()) {
-                    ScheduledFuture removed = scheduledTaskMap.remove(second);
-                    if (removed != null) {
-                        removed.cancel(false);
+                    if (entries.isEmpty()) {
+                        ScheduledFuture removed = scheduledTaskMap.remove(second);
+                        if (removed != null) {
+                            removed.cancel(false);
+                        }
                     }
                 }
             }
