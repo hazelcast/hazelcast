@@ -16,13 +16,12 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.util.Clock;
+import java.util.Map;
 
 /**
  * @author mdogan 2/25/13
  */
-public final class ScheduledEntry<K, V> {
-
+public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
     private final K key;
 
     private final V value;
@@ -31,7 +30,7 @@ public final class ScheduledEntry<K, V> {
 
     private final int actualDelaySeconds;
 
-    private final long scheduleTime;
+    private final long scheduleTimeNanos;
 
 
     public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds) {
@@ -39,7 +38,15 @@ public final class ScheduledEntry<K, V> {
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleTime = Clock.currentTimeMillis();
+        this.scheduleTimeNanos = System.nanoTime();
+    }
+
+    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleTimeNanos) {
+        this.key = key;
+        this.value = value;
+        this.scheduledDelayMillis = scheduledDelayMillis;
+        this.actualDelaySeconds = actualDelaySeconds;
+        this.scheduleTimeNanos = scheduleTimeNanos;
     }
 
     public K getKey() {
@@ -50,6 +57,11 @@ public final class ScheduledEntry<K, V> {
         return value;
     }
 
+    @Override
+    public V setValue(V value) {
+        throw new RuntimeException("Operation is not supported");
+    }
+
     public long getScheduledDelayMillis() {
         return scheduledDelayMillis;
     }
@@ -58,8 +70,8 @@ public final class ScheduledEntry<K, V> {
         return actualDelaySeconds;
     }
 
-    public long getScheduleTime() {
-        return scheduleTime;
+    public long getScheduleTimeNanos() {
+        return scheduleTimeNanos;
     }
 
     public long getActualDelayMillis() {
@@ -93,7 +105,7 @@ public final class ScheduledEntry<K, V> {
                 ", value=" + value +
                 ", scheduledDelayMillis=" + scheduledDelayMillis +
                 ", actualDelaySeconds=" + actualDelaySeconds +
-                ", scheduleTime=" + scheduleTime +
+                ", scheduleTimeNanos=" + scheduleTimeNanos +
                 '}';
     }
 }

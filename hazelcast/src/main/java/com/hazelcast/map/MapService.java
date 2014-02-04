@@ -762,7 +762,8 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public long findDelayMillis(ScheduledEntry entry) {
-        return Math.max(0, entry.getScheduledDelayMillis() - (Clock.currentTimeMillis() - entry.getScheduleTime()));
+        long diffMillis = (System.nanoTime() - entry.getScheduleTimeNanos()) / 1000000;
+        return Math.max(0, entry.getScheduledDelayMillis() - diffMillis);
     }
 
     public Object toObject(Object data) {
