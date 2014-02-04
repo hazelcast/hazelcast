@@ -82,7 +82,7 @@ public class NearCache {
             fireEvictCache();
         }
         final Object value;
-        if (data == null){
+        if (data == null) {
             value = NULL_OBJECT;
         } else {
             value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
@@ -217,20 +217,7 @@ public class NearCache {
                 return ((Long) this.lastAccessTime).compareTo((o.lastAccessTime));
             else if (EvictionPolicy.LFU.equals(evictionPolicy))
                 return ((Integer) this.hit.get()).compareTo((o.hit.get()));
-
             return 0;
-        }
-
-        @Override
-        public int hashCode() {
-            return key.hashCode();
-        }
-
-        public boolean equals(Object o){
-            if(o!=null && o instanceof CacheRecord){
-                return this.compareTo((CacheRecord)o)==0;
-            }
-            return false;
         }
 
         public long getCost() {
