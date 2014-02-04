@@ -53,8 +53,7 @@ import static org.junit.Assert.*;
 public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
-    @Ignore
-    public void testEntryProcessorDeleteWithPredicate() {
+     public void testEntryProcessorDeleteWithPredicate() {
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
@@ -84,7 +83,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void testEntryProcessorDelete() {
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1);
