@@ -1580,7 +1580,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void putOrderTest_repDelay1000() throws Exception {
+    public void putOrderTest_repDelay1000_Member2() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -1589,11 +1589,116 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
-        final ReplicatedMap<Object, Object> map2 = instance2.getReplicatedMap("default");
+        ReplicatedMapProxy<Object, Object> m1 = (ReplicatedMapProxy) instance1.getReplicatedMap("default");
+        ReplicatedMapProxy<Object, Object> m2 = (ReplicatedMapProxy) instance2.getReplicatedMap("default");
+
+        int hash1 = instance1.getCluster().getLocalMember().getUuid().hashCode();
+        int hash2 = instance2.getCluster().getLocalMember().getUuid().hashCode();
+
+        final ReplicatedMapProxy<Object, Object> map1;
+        final ReplicatedMapProxy<Object, Object> map2;
+        if (hash1 >= hash2) {
+            map1 = m2;
+            map2 = m1;
+        } else {
+            map1 = m1;
+            map2 = m2;
+        }
+
+        CountDownLatch replicateLatch1 = new CountDownLatch(1);
+        CountDownLatch startReplication1 = new CountDownLatch(1);
+        PreReplicationHook hook1 = createReplicationHook(replicateLatch1, startReplication1);
+        map1.setPreReplicationHook(hook1);
+
+        CountDownLatch replicateLatch2 = new CountDownLatch(1);
+        CountDownLatch startReplication2 = new CountDownLatch(1);
+        PreReplicationHook hook2 = createReplicationHook(replicateLatch2, startReplication2);
+        map2.setPreReplicationHook(hook2);
 
         map1.put(1, 1);
         map2.put(1, 2);
+
+        startReplication1.await(1, TimeUnit.MINUTES);
+        startReplication2.await(1, TimeUnit.MINUTES);
+        replicateLatch2.countDown();
+        replicateLatch1.countDown();
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(map1.get(1), map2.get(1));
+            }
+        });
+    }
+
+
+    @Test
+    public void putOrderTest_repDelay1000_Member1() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(1000);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMapProxy<Object, Object> m1 = (ReplicatedMapProxy) instance1.getReplicatedMap("default");
+        ReplicatedMapProxy<Object, Object> m2 = (ReplicatedMapProxy) instance2.getReplicatedMap("default");
+
+        int hash1 = instance1.getCluster().getLocalMember().getUuid().hashCode();
+        int hash2 = instance2.getCluster().getLocalMember().getUuid().hashCode();
+
+        final ReplicatedMapProxy<Object, Object> map1;
+        final ReplicatedMapProxy<Object, Object> map2;
+        if (hash1 >= hash2) {
+            map1 = m1;
+            map2 = m2;
+        } else {
+            map1 = m2;
+            map2 = m1;
+        }
+
+        CountDownLatch replicateLatch1 = new CountDownLatch(1);
+        CountDownLatch startReplication1 = new CountDownLatch(1);
+        PreReplicationHook hook1 = createReplicationHook(replicateLatch1, startReplication1);
+        map1.setPreReplicationHook(hook1);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        map1.addEntryListener(new EntryListener<Object, Object>() {
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                System.out.println("Add: " + event);
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                System.out.println("Remove: " + event);
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                System.out.println("Update: " + event);
+                latch.countDown();
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+                System.out.println("Evicted: " + event);
+            }
+        });
+
+        CountDownLatch replicateLatch2 = new CountDownLatch(1);
+        CountDownLatch startReplication2 = new CountDownLatch(1);
+        PreReplicationHook hook2 = createReplicationHook(replicateLatch2, startReplication2);
+        map2.setPreReplicationHook(hook2);
+
+        map1.put(1, 1);
+        map2.put(1, 2);
+
+        startReplication1.await(1, TimeUnit.MINUTES);
+        startReplication2.await(1, TimeUnit.MINUTES);
+        replicateLatch2.countDown();
+        latch.await(1, TimeUnit.MINUTES);
+        replicateLatch1.countDown();
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() {
