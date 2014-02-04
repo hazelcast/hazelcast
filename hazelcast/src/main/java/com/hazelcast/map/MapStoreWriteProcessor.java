@@ -73,7 +73,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                 if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
                     final Object key = mapService.toObject(entry.getKey());
                     if (map.get(key) != null) {
-                        duplicateKeys.offer(new ScheduledEntry<Object, Object>(key, entry.getValue(), entry.getScheduledDelayMillis(), entry.getActualDelaySeconds(), entry.getScheduleTime()));
+                        duplicateKeys.offer(new ScheduledEntry<Object, Object>(key, entry.getValue(), entry.getScheduledDelayMillis(), entry.getActualDelaySeconds(), entry.getScheduleTimeNanos()));
                         continue;
                     }
                     map.put(key, mapService.toObject(entry.getValue()));
