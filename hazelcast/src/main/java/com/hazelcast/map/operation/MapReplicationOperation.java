@@ -140,7 +140,7 @@ public class MapReplicationOperation extends AbstractOperation {
     }
 
     private long findDelayMillis(ScheduledEntry entry) {
-        return Math.max(0, entry.getScheduledDelayMillis() - (Clock.currentTimeMillis() - entry.getScheduleTime()));
+        return Math.max(0, entry.getScheduledDelayMillis() - (Clock.currentTimeMillis() - entry.getScheduleTimeNanos()));
     }
 
     public String getServiceName() {

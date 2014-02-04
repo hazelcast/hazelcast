@@ -16,8 +16,6 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.util.Clock;
-
 import java.util.Map;
 
 /**
@@ -32,7 +30,7 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
 
     private final int actualDelaySeconds;
 
-    private final long scheduleTime;
+    private final long scheduleTimeNanos;
 
 
     public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds) {
@@ -40,15 +38,15 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleTime = System.nanoTime();
+        this.scheduleTimeNanos = System.nanoTime();
     }
 
-    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleTime) {
+    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleTimeNanos) {
         this.key = key;
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleTime = scheduleTime;
+        this.scheduleTimeNanos = scheduleTimeNanos;
     }
 
     public K getKey() {
@@ -72,8 +70,8 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
         return actualDelaySeconds;
     }
 
-    public long getScheduleTime() {
-        return scheduleTime;
+    public long getScheduleTimeNanos() {
+        return scheduleTimeNanos;
     }
 
     public long getActualDelayMillis() {
@@ -107,7 +105,7 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
                 ", value=" + value +
                 ", scheduledDelayMillis=" + scheduledDelayMillis +
                 ", actualDelaySeconds=" + actualDelaySeconds +
-                ", scheduleTime=" + scheduleTime +
+                ", scheduleTimeNanos=" + scheduleTimeNanos +
                 '}';
     }
 }
