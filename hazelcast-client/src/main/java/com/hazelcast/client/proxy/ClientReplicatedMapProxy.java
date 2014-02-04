@@ -37,8 +37,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private volatile ClientNearCache<Object> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
-    public ClientReplicatedMapProxy(String serviceName, String objectName) {
-        super(serviceName, objectName);
+    public ClientReplicatedMapProxy(String instanceName, String serviceName, String objectName) {
+        super(instanceName, serviceName, objectName);
     }
 
     @Override
