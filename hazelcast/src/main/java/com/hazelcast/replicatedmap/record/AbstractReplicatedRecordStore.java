@@ -609,8 +609,10 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                         applyTheUpdate(update, localEntry);
                     } else {
                         applyVector(updateVector, currentVector);
-                        publishReplicatedMessage(new ReplicationMessage(name, update.getKey(), localEntry.getValue(),
-                                currentVector, localMember, localEntry.getLatestUpdateHash(), update.getTtlMillis()));
+                        incrementClock(currentVector);
+                        distributeReplicationMessage(new ReplicationMessage(name, update.getKey(),
+                                localEntry.getValue(), currentVector, localMember, localEntry.getLatestUpdateHash(),
+                                update.getTtlMillis()), true);
                     }
                 }
             }
@@ -672,7 +674,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
         Collection<EventRegistration> registrations = eventService.getRegistrations(
                 ReplicatedMapService.SERVICE_NAME, name);
-        eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, event, name.hashCode());
+        if (registrations.size() > 0) {
+            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, event, name.hashCode());
+        }
     }
 
     private Collection<EventRegistration> filterEventRegistrations(Collection<EventRegistration> eventRegistrations) {

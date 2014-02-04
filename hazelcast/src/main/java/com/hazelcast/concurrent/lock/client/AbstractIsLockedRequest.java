@@ -45,11 +45,10 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest
 
     public AbstractIsLockedRequest(Data key) {
         this.key = key;
-        this.threadId = -1;
     }
 
     protected AbstractIsLockedRequest(Data key, long threadId) {
-        this.key = key;
+        this(key);
         this.threadId = threadId;
     }
 

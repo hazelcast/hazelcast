@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1134,6 +1135,30 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
+    public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
+        Config config = new Config();
+        String name = "testIssue1085WriteBehindBackup";
+        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "50");
+        MapConfig writeBehindBackup = config.getMapConfig(name);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setWriteDelaySeconds(5);
+        int size = 1000;
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 90, 30);
+        mapStoreConfig.setImplementation(mapStore);
+        writeBehindBackup.setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final IMap map = instance.getMap(name);
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        instance2.getLifecycleService().terminate();
+        mapStore.awaitStores();
+    }
+
+    @Test
     public void testIssue1085WriteBehindBackupTransactional() throws InterruptedException {
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackupTransactional";
@@ -1167,21 +1192,27 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap<Object, Object> map = h1.getMap("testWriteBehindSameSecondSameKey");
-        final int mapSize = 100;
+        final int size1 = 20;
+        final int size2 = 10;
         //store op count.
-        testMapStore.latchStoreOpCount = new CountDownLatch(mapSize+1);
+        testMapStore.latchStoreOpCount = new CountDownLatch(size1);
+        testMapStore.latchStoreAllOpCount = new CountDownLatch(size2);
 
-        for (int i = 0; i < mapSize; i++) {
+        for (int i = 0; i < size1; i++) {
             map.put("key", "value" + i);
-            Thread.sleep(1);
         }
-        Thread.sleep(1);
-        map.put("key", "the_last_value");
+        for (int i = 0; i < size2; i++) {
+            map.put("key"+i, "value" + i);
+        }
 
         assertTrue("store operations must be finished.",
                 testMapStore.latchStoreOpCount.await(30, TimeUnit.SECONDS));
 
-        assertEquals("the_last_value", testMapStore.getStore().get("key"));
+        assertTrue("store all operations must be finished.",
+                testMapStore.latchStoreAllOpCount.await(30, TimeUnit.SECONDS));
+
+        assertEquals("value"+ (size1-1), testMapStore.getStore().get("key"));
+        assertEquals("value"+ (size2-1), testMapStore.getStore().get("key"+(size2-1)));
     }
 
     @Test
@@ -1263,10 +1294,18 @@ public class MapStoreTest extends HazelcastTestSupport {
         final CountDownLatch latch;
         final int waitSecond;
         final AtomicInteger count = new AtomicInteger(0);
+        final int sleepStoreAllSeconds;
 
         public MapStoreWithStoreCount(int expectedStore, int seconds) {
             latch = new CountDownLatch(expectedStore);
             waitSecond = seconds;
+            sleepStoreAllSeconds = 0;
+        }
+
+        public MapStoreWithStoreCount(int expectedStore, int seconds, int sleepStoreAllSeconds) {
+            latch = new CountDownLatch(expectedStore);
+            waitSecond = seconds;
+            this.sleepStoreAllSeconds = sleepStoreAllSeconds;
         }
 
         public void awaitStores() {
@@ -1285,6 +1324,12 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         @Override
         public void storeAll(Map map) {
+            if(sleepStoreAllSeconds > 0) {
+                try {
+                    Thread.sleep(sleepStoreAllSeconds*1000);
+                } catch (InterruptedException e) {
+                }
+            }
             for (Object o : map.keySet()) {
                 latch.countDown();
                 count.incrementAndGet();
@@ -1608,6 +1653,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final CountDownLatch latchLoadAllKeys;
         final CountDownLatch latchLoadAll;
         CountDownLatch latchStoreOpCount;
+        CountDownLatch latchStoreAllOpCount;
         final AtomicInteger callCount = new AtomicInteger();
         final AtomicInteger initCount = new AtomicInteger();
         final AtomicInteger destroyCount = new AtomicInteger();
@@ -1725,9 +1771,9 @@ public class MapStoreTest extends HazelcastTestSupport {
             callCount.incrementAndGet();
             latchStoreAll.countDown();
 
-            if (latchStoreOpCount != null) {
+            if (latchStoreAllOpCount != null) {
                 for (int i = 0; i < map.size(); i++) {
-                    latchStoreOpCount.countDown();
+                    latchStoreAllOpCount.countDown();
                 }
             }
         }

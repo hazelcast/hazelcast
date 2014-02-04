@@ -31,7 +31,7 @@ public abstract class BaseTransactionRequest extends CallableClientRequest imple
 
     protected String txnId;
 
-    protected long clientThreadId = -1;
+    protected long clientThreadId;
 
     public BaseTransactionRequest() {
     }
