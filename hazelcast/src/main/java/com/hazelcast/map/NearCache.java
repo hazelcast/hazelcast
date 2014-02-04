@@ -220,23 +220,6 @@ public class NearCache {
             return 0;
         }
 
-        @Override
-        public int hashCode() {
-            if (EvictionPolicy.LRU.equals(evictionPolicy))
-                return ((Long) this.lastAccessTime).hashCode();
-            else if (EvictionPolicy.LFU.equals(evictionPolicy))
-                return ((Integer) this.hit.get()).hashCode();
-            else
-                return key.hashCode();
-        }
-
-        public boolean equals(Object o) {
-            if (o != null && o instanceof CacheRecord) {
-                return this.compareTo((CacheRecord) o) == 0;
-            }
-            return false;
-        }
-
         public long getCost() {
             // todo find object size  if not a Data instance.
             if (!(value instanceof Data)) return 0;
