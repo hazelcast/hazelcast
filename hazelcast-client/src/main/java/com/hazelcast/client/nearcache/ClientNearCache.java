@@ -25,6 +25,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
+import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.client.ClientReplicatedMapAddEntryListenerRequest;
 import com.hazelcast.replicatedmap.client.ClientReplicatedMapRemoveEntryListenerRequest;
@@ -62,6 +63,8 @@ public class ClientNearCache<K> {
     final ConcurrentMap<K, CacheRecord<K>> cache;
     public static final Object NULL_OBJECT = new Object();
     String registrationId = null;
+    final NearCacheStatsImpl stats;
+
 
     public ClientNearCache(String mapName, ClientNearCacheType cacheType, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
@@ -77,6 +80,7 @@ public class ClientNearCache<K> {
         canCleanUp = new AtomicBoolean(true);
         canEvict = new AtomicBoolean(true);
         lastCleanup = Clock.currentTimeMillis();
+        stats = new NearCacheStatsImpl();
         if (invalidateOnChange) {
             addInvalidateListener();
         }
@@ -193,15 +197,38 @@ public class ClientNearCache<K> {
             record.access();
             if (record.expired()) {
                 cache.remove(key);
+                stats.incrementMisses();
                 return null;
             }
             if (record.value.equals(NULL_OBJECT)){
+                stats.incrementMisses();
                 return NULL_OBJECT;
             }
             return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
         } else {
+            stats.incrementMisses();
             return null;
         }
+    }
+    public NearCacheStatsImpl getNearCacheStats()
+    {
+        return createNearCacheStats();
+    }
+
+    private NearCacheStatsImpl createNearCacheStats() {
+        long ownedEntryCount = 0;
+        long ownedEntryMemory = 0;
+        long hits = 0;
+        for (CacheRecord record : cache.values())
+        {
+            ownedEntryCount++;
+            ownedEntryMemory += record.getCost();
+            hits += record.hit.get();
+        }
+        stats.setOwnedEntryCount(ownedEntryCount);
+        stats.setOwnedEntryMemoryCost(ownedEntryMemory);
+        stats.setHits(hits);
+        return stats;
     }
 
     public void destroy() {
@@ -241,6 +268,19 @@ public class ClientNearCache<K> {
             lastAccessTime = Clock.currentTimeMillis();
         }
 
+        public long getCost() {
+            // todo find object size  if not a Data instance.
+            if (!(value instanceof Data)) return 0;
+            if (!(key instanceof Data)) return 0;
+            // value is Data
+            return ((Data)key).getHeapCost()
+                    + ((Data) value).getHeapCost()
+                    + 2 * (Long.SIZE / Byte.SIZE)
+                    // sizeof atomic integer
+                    + (Integer.SIZE / Byte.SIZE)
+                    // object references (key, value, hit)
+                    + 3 * (Integer.SIZE / Byte.SIZE);
+        }
         boolean expired() {
             long time = Clock.currentTimeMillis();
             return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis) || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);

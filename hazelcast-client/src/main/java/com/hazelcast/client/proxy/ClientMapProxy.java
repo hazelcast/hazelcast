@@ -26,12 +26,14 @@ import com.hazelcast.core.*;
 import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.*;
+import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
@@ -128,6 +130,13 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public Future<V> getAsync(final K key) {
         final Data keyData = toData(key);
+        if (nearCache != null) {
+            Object cached = nearCache.get(keyData);
+            if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+                return new CompletedFuture(getContext().getSerializationService(),cached,getContext().getExecutionService().getAsyncExecutor());
+            }
+        }
+
         final MapGetRequest request = new MapGetRequest(name, keyData);
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -391,16 +400,33 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        Set keySet = new HashSet(keys.size());
+        Set<Data> keySet = new HashSet(keys.size());
+        Map<K, V> result = new HashMap<K, V>();
         for (Object key : keys) {
             keySet.add(toData(key));
         }
+        if (nearCache != null) {
+            final Iterator<Data> iterator = keySet.iterator();
+            while(iterator.hasNext())
+            {
+                Data key = iterator.next();
+                Object cached = nearCache.get(key);
+                if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+                    result.put((K)toObject(key), (V) cached);
+                    iterator.remove();
+                }
+            }
+        }
         MapGetAllRequest request = new MapGetAllRequest(name, keySet);
         MapEntrySet mapEntrySet = invoke(request);
-        Map<K, V> result = new HashMap<K, V>();
         Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Entry<Data, Data> dataEntry : entrySet) {
-            result.put((K) toObject(dataEntry.getKey()), (V) toObject(dataEntry.getValue()));
+            final V value = (V) toObject(dataEntry.getValue());
+            final K key = (K) toObject(dataEntry.getKey());
+            result.put(key, value);
+            if (nearCache != null) {
+                nearCache.put(dataEntry.getKey(),value);
+            }
         }
         return result;
     }
@@ -554,7 +580,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public LocalMapStats getLocalMapStats() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+        LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
+        if(nearCache != null)
+        {
+            localMapStats.setNearCacheStats(nearCache.getNearCacheStats());
+        }
+        return localMapStats;
     }
 
     @Override
