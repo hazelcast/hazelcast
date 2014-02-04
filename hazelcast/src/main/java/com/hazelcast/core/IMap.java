@@ -1057,4 +1057,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K,Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 
+    /**
+     * Waits till the map's initial load from map store is completed.
+     * If initial load takes much time, your operations waiting initial load can throw exception.
+     * In such scenario you can be sure your map is ready to operate, first calling this method.
+     * <p/>
+     *
+     */
+    void waitInitialLoad();
+
 }

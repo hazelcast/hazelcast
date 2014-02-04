@@ -590,6 +590,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return new DelegatingFuture(f,service.getSerializationService());
     }
 
+    @Override
+    public void waitInitialLoad() {
+        waitInitialLoadInternal();
+    }
+
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
         NodeEngine nodeEngine = getNodeEngine();
         Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);

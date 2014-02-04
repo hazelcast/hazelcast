@@ -41,6 +41,7 @@ import com.hazelcast.util.*;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -514,6 +515,29 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(clearOperation, nodeEngine));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public void waitInitialLoadInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        List<Future> flist = new LinkedList<Future>();
+        for (MemberImpl member : members) {
+            try {
+                Future f = nodeEngine.getOperationService()
+                        .invokeOnTarget(SERVICE_NAME, new WaitInitialLoadOperation(name),
+                                member.getAddress());
+                flist.add(f);
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
+        }
+        for (Future future : flist) {
+            try {
+                future.get();
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
         }
     }
 

@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1182,6 +1183,48 @@ public class MapStoreTest extends HazelcastTestSupport {
                 testMapStore.latchStoreOpCount.await(30, TimeUnit.SECONDS));
 
         assertEquals("the_last_value", testMapStore.getStore().get("key"));
+    }
+
+    @Test
+    @Category(SlowTest.class)
+    public void testMapInitialLoadTakesTime() {
+        final int loadMillis = 100;
+        Config config = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(new MapStoreAdapter() {
+            @Override
+            public Map loadAll(Collection keys) {
+                try {
+                    Thread.sleep(loadMillis);
+                } catch (InterruptedException e) {
+                }
+                Map hmap = new HashMap();
+                hmap.put(1,1);
+                return hmap;
+            }
+
+            @Override
+            public Set loadAllKeys() {
+                HashSet hashSet = new HashSet();
+                for (int i = 0; i < 1000; i++) {
+                    hashSet.add(i);
+                }
+                return hashSet;
+            }
+        });
+        config.getMapConfig("map").setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        IMap<Object,Object> map = instance.getMap("map");
+        map.waitInitialLoad();
+        IMap<Object, Object> map2 = instance2.getMap("map");
+        long start = System.currentTimeMillis();
+        map2.size();
+        long duration = System.currentTimeMillis() - start;
+        int pcount = instance.getPartitionService().getPartitions().size();
+        assertTrue(duration < loadMillis* pcount);
+
     }
 
     @Test
