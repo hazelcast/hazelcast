@@ -16,11 +16,7 @@
 
 package com.hazelcast.jca;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
+import com.hazelcast.core.HazelcastInstance;
 
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
@@ -29,16 +25,11 @@ import javax.resource.spi.ConnectionEventListener;
 import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnection;
 import javax.security.auth.Subject;
-import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
-import com.hazelcast.util.UuidUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 public class ManagedConnectionImpl extends JcaBase implements ManagedConnection {
 	/** Identity generator */
@@ -49,7 +40,7 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 	private final ManagedConnectionFactoryImpl factory;
 	private final ConnectionRequestInfo cxRequestInfo;
 	
-	private final XAResourceImpl xaResource;
+	private final XAResourceWrapper xaResource;
 
     private HazelcastTransactionImpl tx;
 
@@ -65,7 +56,7 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 
 		this.id = idGen.incrementAndGet();
 		this.tx = new HazelcastTransactionImpl(factory, this);
-		this.xaResource = new XAResourceImpl(this);
+		this.xaResource = new XAResourceWrapper(this);
 		
 		factory.logHzConnectionEvent(this, HzConnectionEvent.CREATE);
 	}
