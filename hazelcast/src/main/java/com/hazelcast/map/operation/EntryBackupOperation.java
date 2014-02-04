@@ -50,7 +50,11 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         if (mapEntry.getValue() != null) {
             Map.Entry<Object, Object> entry = new AbstractMap.SimpleEntry<Object, Object>(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
             entryProcessor.processBackup(entry);
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            if (entry.getValue() == null){
+                recordStore.remove(dataKey);
+            } else {
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            }
         }
     }
 

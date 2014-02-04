@@ -60,7 +60,11 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
             }
             entry = new AbstractMap.SimpleEntry(objectKey, valueBeforeProcess);
             entryProcessor.processBackup(entry);
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            if (entry.getValue() == null){
+                recordStore.remove(dataKey);
+            } else {
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            }
         }
     }
 
