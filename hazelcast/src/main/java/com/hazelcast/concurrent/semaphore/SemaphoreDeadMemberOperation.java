@@ -18,13 +18,14 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
+public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier, IdentifiedDataSerializable {
 
     String firstCaller;
 
@@ -77,5 +78,15 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
     @Override
     public WaitNotifyKey getNotifiedKey() {
         return new SemaphoreWaitNotifyKey(name, "acquire");
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.SEMAPHORE_DEAD_MEMBER_OPERATION;
     }
 }

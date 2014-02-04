@@ -46,7 +46,7 @@ public class SetService extends CollectionService {
     public SetContainer getOrCreateContainer(String name, boolean backup) {
         SetContainer container = containerMap.get(name);
         if (container == null){
-            container = new SetContainer(name, nodeEngine, this);
+            container = new SetContainer(name, nodeEngine);
             final SetContainer current = containerMap.putIfAbsent(name, container);
             if (current != null){
                 container = current;

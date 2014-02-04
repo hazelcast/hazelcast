@@ -16,10 +16,5 @@
 
 package com.hazelcast.monitor;
 
-/**
- * User: sancar
- * Date: 4/10/13
- * Time: 2:28 PM
- */
 public interface LocalMultiMapStats extends LocalMapStats {
 }

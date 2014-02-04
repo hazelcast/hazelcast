@@ -16,10 +16,15 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * A {@link IAtomicLong} that exposes its operations using a {@link ICompletableFuture}
  * so it can be used in the reactive programming model approach.
+ *
+ * @since 3.2
  */
+@Beta
 public interface AsyncAtomicLong extends IAtomicLong {
 
     ICompletableFuture<Long> asyncAddAndGet(long delta);
@@ -40,11 +45,11 @@ public interface AsyncAtomicLong extends IAtomicLong {
 
     ICompletableFuture<Void> asyncSet(long newValue);
 
-    ICompletableFuture<Void> asyncAlter(Function<Long, Long> function);
+    ICompletableFuture<Void> asyncAlter(IFunction<Long, Long> function);
 
-    ICompletableFuture<Long> asyncAlterAndGet(Function<Long, Long> function);
+    ICompletableFuture<Long> asyncAlterAndGet(IFunction<Long, Long> function);
 
-    ICompletableFuture<Long> asyncGetAndAlter(Function<Long, Long> function);
+    ICompletableFuture<Long> asyncGetAndAlter(IFunction<Long, Long> function);
 
-    <R> ICompletableFuture<R> asyncApply(Function<Long, R> function);
+    <R> ICompletableFuture<R> asyncApply(IFunction<Long, R> function);
 }

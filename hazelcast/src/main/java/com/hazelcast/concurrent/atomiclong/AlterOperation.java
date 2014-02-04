@@ -16,14 +16,14 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 
 public class AlterOperation extends AbstractAlterOperation {
 
     public AlterOperation() {
     }
 
-    public AlterOperation(String name, Function<Long, Long> function) {
+    public AlterOperation(String name, IFunction<Long, Long> function) {
         super(name, function);
     }
 

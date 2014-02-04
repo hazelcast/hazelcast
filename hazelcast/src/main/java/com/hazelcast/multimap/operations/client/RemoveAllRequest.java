@@ -38,7 +38,7 @@ import java.util.Collection;
  */
 public class RemoveAllRequest extends MultiMapKeyBasedRequest {
 
-    long threadId = -1;
+    long threadId;
 
     public RemoveAllRequest() {
     }

@@ -63,6 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
 /**
  * The SPI Service for the Map.
@@ -82,9 +83,12 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
+    // we added following latency to be sure the ongoing migration is completed if the owner of the record could not complete task before migration
+    private final Integer replicaWaitSecondsForScheduledTasks;
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.replicaWaitSecondsForScheduledTasks = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
@@ -117,10 +121,6 @@ public class MapService implements ManagedService, MigrationAwareService,
                 public LockStoreInfo createNew(final ObjectNamespace key) {
                     final MapContainer mapContainer = getMapContainer(key.getObjectName());
                     return new LockStoreInfo() {
-                        public ObjectNamespace getObjectNamespace() {
-                            return key;
-                        }
-
                         public int getBackupCount() {
                             return mapContainer.getBackupCount();
                         }
@@ -293,7 +293,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record.getStatistics(), record.getVersion());
+                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record.getStatistics(), record.getCost(), record.getVersion());
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
@@ -520,11 +520,15 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public void destroyDistributedObject(String name) {
         MapContainer mapContainer = mapContainers.remove(name);
-        if (mapContainer != null && mapContainer.isNearCacheEnabled()) {
-            NearCache nearCache = nearCacheMap.remove(name);
-            if (nearCache != null) {
-                nearCache.clear();
+        if (mapContainer != null) {
+            if(mapContainer.isNearCacheEnabled())
+            {
+                NearCache nearCache = nearCacheMap.remove(name);
+                if (nearCache != null) {
+                    nearCache.clear();
+                }
             }
+            mapContainer.shutDownMapStoreScheduledExecutor();
         }
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
@@ -721,20 +725,17 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
-        // this info is created to be used in backups.
-        // we added following latency (10 seconds) to be sure the ongoing migration is completed if the owner of the record could not complete task before migration
-        int delay = 10000;
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(key);
-        long idleDelay = idleScheduledEntry == null ? -1 : delay + findDelayMillis(idleScheduledEntry);
+        long idleDelay = idleScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(idleScheduledEntry);
 
         ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
-        long ttlDelay = ttlScheduledEntry == null ? -1 : delay + findDelayMillis(ttlScheduledEntry);
+        long ttlDelay = ttlScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(ttlScheduledEntry);
 
         ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
-        long writeDelay = writeScheduledEntry == null ? -1 : delay + findDelayMillis(writeScheduledEntry);
+        long writeDelay = writeScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(writeScheduledEntry);
 
         ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
-        long deleteDelay = deleteScheduledEntry == null ? -1 : delay + findDelayMillis(deleteScheduledEntry);
+        long deleteDelay = deleteScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(deleteScheduledEntry);
 
         return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), record.getStatistics(),
                 idleDelay, ttlDelay, writeDelay, deleteDelay);
@@ -743,7 +744,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public RecordInfo createRecordInfo(MapContainer mapContainer, Record record, Data key) {
         // this info is created to be used in backups.
         // we added following latency (10 seconds) to be sure the ongoing promotion is completed if the owner of the record could not complete task before promotion
-        int backupDelay = 10000;
+        int backupDelay = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().get(record.getKey());
         long idleDelay = idleScheduledEntry == null ? -1 : backupDelay + findDelayMillis(idleScheduledEntry);
 
@@ -761,7 +762,8 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public long findDelayMillis(ScheduledEntry entry) {
-        return Math.max(0, entry.getScheduledDelayMillis() - (Clock.currentTimeMillis() - entry.getScheduleTime()));
+        long diffMillis = (System.nanoTime() - entry.getScheduleTimeNanos()) / 1000000;
+        return Math.max(0, entry.getScheduledDelayMillis() - diffMillis);
     }
 
     public Object toObject(Object data) {
@@ -827,6 +829,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             case REMOVED:
                 listener.entryRemoved(event);
                 break;
+            default:
+                throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
         }
         MapContainer mapContainer = getMapContainer(eventData.getMapName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {

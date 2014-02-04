@@ -39,7 +39,7 @@ final class NodeShutdownLatch {
         localMember = node.localMember;
         Collection<MemberImpl> memberList = node.clusterService.getMemberList();
         registrations = new HashMap<String, HazelcastInstanceImpl>(3);
-        Set<MemberImpl> members = memberList instanceof Set ? (Set<MemberImpl>) memberList : new HashSet<MemberImpl>(memberList);
+        Set<MemberImpl> members = new HashSet<MemberImpl>(memberList);
         members.remove(localMember);
 
         if (!members.isEmpty()) {

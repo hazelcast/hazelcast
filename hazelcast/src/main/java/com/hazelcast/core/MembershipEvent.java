@@ -19,6 +19,8 @@ package com.hazelcast.core;
 import java.util.EventObject;
 import java.util.Set;
 
+import static java.lang.String.format;
+
 /**
  * Membership event fired when a new member is added
  * to the cluster and/or when a member leaves the cluster.
@@ -29,10 +31,22 @@ public class MembershipEvent extends EventObject {
 
     private static final long serialVersionUID = -2010865371829087371L;
 
+    /**
+     * This event type is fired when a new member joins the cluster.
+     */
     public static final int MEMBER_ADDED = 1;
 
+    /**
+     * This event type is fired if a member left the cluster or was decided to be
+     * unresponsive by other members for a extended time range.
+     */
     public static final int MEMBER_REMOVED = 2;
 
+    /**
+     * This event type is fired if a member attribute has been changed or removed.
+     *
+     * @since 3.2
+     */
     public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
 
     private final Member member;
@@ -68,14 +82,17 @@ public class MembershipEvent extends EventObject {
     /**
      * Returns the cluster of the event.
      *
-     * @return
+     * @return the current cluster instance
      */
     public Cluster getCluster() {
         return (Cluster) getSource();
     }
 
     /**
-     * Returns the membership event type; #MEMBER_ADDED or #MEMBER_REMOVED
+     * Returns the membership event type;
+     * #MEMBER_ADDED
+     * #MEMBER_REMOVED
+     * #MEMBER_ATTRIBUTE_CHANGED
      *
      * @return the membership event type
      */
@@ -94,7 +111,21 @@ public class MembershipEvent extends EventObject {
 
     @Override
     public String toString() {
-        return "MembershipEvent {" + member + "} "
-                + ((eventType == MEMBER_ADDED) ? "added" : "removed");
+        String type;
+        switch (eventType){
+            case MEMBER_ADDED:
+                type = "added";
+                break;
+            case MEMBER_REMOVED:
+                type = "removed";
+                break;
+            case MEMBER_ATTRIBUTE_CHANGED:
+                type = "attributed_changes";
+                break;
+            default:
+                throw new IllegalStateException();
+        }
+
+        return format("MembershipEvent {member=%s,type=%s}", member, type);
     }
 }

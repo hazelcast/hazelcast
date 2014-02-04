@@ -80,7 +80,7 @@ final class BasicOperationService implements InternalOperationService {
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
-    private final ConcurrentMap<Long, RemoteCall> remoteCalls;
+    final ConcurrentMap<Long, RemoteCall> remoteCalls;
     private final ExecutorService[] operationExecutors;
     private final BlockingQueue[] operationExecutorQueues;
 
@@ -89,7 +89,7 @@ final class BasicOperationService implements InternalOperationService {
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-    private final ConcurrentMap<Long, BackupCompletionCallback> backupCalls;
+    final ConcurrentMap<Long, BackupCompletionCallback> backupCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
@@ -138,7 +138,7 @@ final class BasicOperationService implements InternalOperationService {
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);
-        backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(),
+        backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getDefaultScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
 

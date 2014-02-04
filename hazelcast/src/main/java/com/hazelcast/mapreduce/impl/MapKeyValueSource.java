@@ -36,6 +36,8 @@ public class MapKeyValueSource<K, V>
         extends KeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
 
+    private final static long serialVersionUID = 1;
+
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<K, V> simpleEntry = new MapReduceSimpleEntry<K, V>();
 
@@ -54,12 +56,13 @@ public class MapKeyValueSource<K, V>
     }
 
     @Override
-    public void open(NodeEngine nodeEngine) {
+    public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         MapService mapService = nei.getService(MapService.SERVICE_NAME);
         ss = nei.getSerializationService();
         RecordStore recordStore = mapService.getRecordStore(partitionId, mapName);
         iterator = recordStore.entrySetData().iterator();
+        return true;
     }
 
     @Override

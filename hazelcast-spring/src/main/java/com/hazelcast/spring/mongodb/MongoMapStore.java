@@ -49,8 +49,10 @@ public class MongoMapStore implements MapStore, MapLoaderLifecycleSupport {
     }
 
     public void storeAll(Map map) {
-        for (Object key : map.keySet()) {
-            store(key, map.get(key));
+        for(Map.Entry entry: (Set<Map.Entry>)map.entrySet()){
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+            store(key, value);
         }
     }
 
@@ -96,8 +98,7 @@ public class MongoMapStore implements MapStore, MapLoaderLifecycleSupport {
         while (cursor.hasNext()) {
             try {
                 DBObject obj = cursor.next();
-                Class clazz = null;
-                clazz = Class.forName(obj.get("_class").toString());
+                Class clazz = Class.forName(obj.get("_class").toString());
                 map.put(obj.get("_id"), converter.toObject(clazz, obj));
             } catch (ClassNotFoundException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);

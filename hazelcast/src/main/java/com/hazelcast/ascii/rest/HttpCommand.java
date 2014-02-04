@@ -21,6 +21,8 @@ import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_CONTENT_TYPE = "content-type: ";
     public static final String HEADER_CONTENT_LENGTH = "content-length: ";
@@ -30,18 +32,18 @@ public abstract class HttpCommand extends AbstractTextCommand {
     protected final String uri;
     protected ByteBuffer response;
 
-    public static final byte[] RES_200 = "HTTP/1.1 200 OK\r\n".getBytes();
-    public static final byte[] RES_400 = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n".getBytes();
-    public static final byte[] RES_403 = "HTTP/1.1 403 Forbidden\r\n\r\n".getBytes();
-    public static final byte[] RES_404 = "HTTP/1.1 404 Not Found\r\n\r\n".getBytes();
-    public static final byte[] RES_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes();
-    public static final byte[] RES_204 = "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n".getBytes();
-    public static final byte[] RES_503 = "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n".getBytes();
-    public static final byte[] RES_500 = "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n".getBytes();
-    public static final byte[] CONTENT_TYPE = "Content-Type: ".getBytes();
-    public static final byte[] CONTENT_LENGTH = "Content-Length: ".getBytes();
-    public static final byte[] CONTENT_TYPE_PLAIN_TEXT = "text/plain".getBytes();
-    public static final byte[] CONTENT_TYPE_BINARY = "application/binary".getBytes();
+    public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
+    public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n");
+    public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\n\r\n");
+    public static final byte[] RES_404 = stringToBytes("HTTP/1.1 404 Not Found\r\n\r\n");
+    public static final byte[] RES_100 = stringToBytes("HTTP/1.1 100 Continue\r\n\r\n");
+    public static final byte[] RES_204 = stringToBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\n\r\n");
+    public static final byte[] RES_503 = stringToBytes("HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n");
+    public static final byte[] RES_500 = stringToBytes("HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n");
+    public static final byte[] CONTENT_TYPE = stringToBytes("Content-Type: ");
+    public static final byte[] CONTENT_LENGTH = stringToBytes("Content-Length: ");
+    public static final byte[] CONTENT_TYPE_PLAIN_TEXT = stringToBytes("text/plain");
+    public static final byte[] CONTENT_TYPE_BINARY = stringToBytes("application/binary");
 
     public HttpCommand(TextCommandType type, String uri) {
         super(type);
@@ -85,7 +87,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
      */
     public void setResponse(byte[] contentType, byte[] value) {
         int valueSize = (value == null) ? 0 : value.length;
-        byte[] len = String.valueOf(valueSize).getBytes();
+        byte[] len = stringToBytes(String.valueOf(valueSize));
         int size = RES_200.length;
         if (contentType != null) {
             size += CONTENT_TYPE.length;

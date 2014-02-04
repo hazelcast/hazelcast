@@ -78,10 +78,6 @@ public class MultiMapService implements ManagedService, RemoteService,
                     final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
 
                     return new LockStoreInfo() {
-                        public ObjectNamespace getObjectNamespace() {
-                            return key;
-                        }
-
                         public int getBackupCount() {
                             return multiMapConfig.getSyncBackupCount();
                         }

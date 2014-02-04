@@ -44,7 +44,7 @@ public abstract class CollectionReplicationOperation extends AbstractOperation i
         for (Map.Entry<String, CollectionContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             CollectionContainer container = entry.getValue();
-            container.init(getNodeEngine(), service);
+            container.init(getNodeEngine());
             service.addContainer(name, container);
         }
     }

@@ -34,10 +34,8 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
 
-/**
- * @author mdogan 2/12/13
- */
 public final class LockServiceImpl implements ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, LockService, ClientAwareService {
 
@@ -61,11 +59,6 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
             public LockStoreInfo createNew(ObjectNamespace key) {
                 return new LockStoreInfo() {
-                    @Override
-                    public ObjectNamespace getObjectNamespace() {
-                        return new InternalLockNamespace("default");
-                    }
-
                     @Override
                     public int getBackupCount() {
                         return 1;
@@ -97,9 +90,12 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
     }
 
     @Override
-    public void registerLockStoreConstructor(String serviceName, ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
-        if (constructors.putIfAbsent(serviceName, constructorFunction) != null) {
-            throw new IllegalArgumentException("LockStore constructor for service[" + serviceName + "] is already registered!");
+    public void registerLockStoreConstructor(String serviceName,
+                                             ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
+        boolean put = constructors.putIfAbsent(serviceName, constructorFunction) == null;
+        if (!put) {
+            throw new IllegalArgumentException("LockStore constructor for service[" + serviceName + "] " +
+                    "is already registered!");
         }
     }
 
@@ -116,21 +112,25 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         container.clearLockStore(namespace);
     }
 
-    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
+    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor =
+            new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
         @Override
         public EntryTaskScheduler createNew(ObjectNamespace namespace) {
             LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), entryProcessor, ScheduleType.POSTPONE);
+            final ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+            return EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
         }
     };
 
     void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
-        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
+        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(
+                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.schedule(delay, key, null);
     }
 
     void cancelEviction(ObjectNamespace namespace, Data key) {
-        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
+        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(
+                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.cancel(key);
     }
 
@@ -153,28 +153,38 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         releaseLocksOf(uuid);
     }
 
+
+    @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    private void releaseLocksOf(final String uuid) {
+    private void releaseLocksOf(String uuid) {
         for (LockStoreContainer container : containers) {
             for (LockStoreImpl lockStore : container.getLockStores()) {
-                Collection<LockResource> locks = lockStore.getLocks();
-                for (LockResource lock : locks) {
-                    final Data key = lock.getKey();
-                    if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
-                        UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
-                        op.setAsyncBackup(true);
-                        op.setNodeEngine(nodeEngine);
-                        op.setServiceName(SERVICE_NAME);
-                        op.setService(LockServiceImpl.this);
-                        op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                        op.setPartitionId(container.getPartitionId());
-                        nodeEngine.getOperationService().executeOperation(op);
-                    }
-                }
+                releaseLock(uuid, container, lockStore);
             }
         }
+    }
+
+    private void releaseLock(String uuid, LockStoreContainer container, LockStoreImpl lockStore) {
+        Collection<LockResource> locks = lockStore.getLocks();
+        for (LockResource lock : locks) {
+            Data key = lock.getKey();
+            if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
+                sendUnlockOperation(container, lockStore, key);
+            }
+        }
+    }
+
+    private void sendUnlockOperation(LockStoreContainer container, LockStoreImpl lockStore, Data key) {
+        UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
+        op.setAsyncBackup(true);
+        op.setNodeEngine(nodeEngine);
+        op.setServiceName(SERVICE_NAME);
+        op.setService(LockServiceImpl.this);
+        op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+        op.setPartitionId(container.getPartitionId());
+        nodeEngine.getOperationService().executeOperation(op);
     }
 
     @Override

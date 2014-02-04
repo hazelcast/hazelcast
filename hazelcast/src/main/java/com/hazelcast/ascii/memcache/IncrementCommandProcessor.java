@@ -25,6 +25,8 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 /**
  * User: sancar
  * Date: 3/8/13
@@ -69,7 +71,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
             } else if (value instanceof byte[]) {
                 entry = new MemcacheEntry(incrementCommand.getKey(), (byte[]) value, 0);
             } else if (value instanceof String) {
-                entry = new MemcacheEntry(incrementCommand.getKey(), ((String) value).getBytes(), 0);
+                entry = new MemcacheEntry(incrementCommand.getKey(), stringToBytes((String) value), 0);
             } else {
                 try {
                     entry = new MemcacheEntry(incrementCommand.getKey(), textCommandService.toByteArray(value), 0);
@@ -89,7 +91,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
                 result = 0 > result ? 0 : result;
                 textCommandService.incrementDecrHitCount();
             }
-            incrementCommand.setResponse(ByteUtil.concatenate(String.valueOf(result).getBytes(), RETURN));
+            incrementCommand.setResponse(ByteUtil.concatenate(stringToBytes(String.valueOf(result)), RETURN));
             MemcacheEntry newValue = new MemcacheEntry(key, longToByteArray(result), entry.getFlag());
             textCommandService.put(mapName, key, newValue);
         } else {

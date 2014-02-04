@@ -16,6 +16,7 @@
 
 package com.hazelcast.management.request;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,8 +41,9 @@ public class MemberConfigRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        String clusterXml;
-        clusterXml = new ConfigXmlGenerator(true).generate(mcs.getHazelcastInstance().getConfig());
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true);
+        Config config = mcs.getHazelcastInstance().getConfig();
+        String clusterXml = configXmlGenerator.generate(config);
         dos.writeUTF(clusterXml);
     }
 

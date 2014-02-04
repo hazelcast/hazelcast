@@ -39,7 +39,7 @@ public class PutRequest extends MultiMapKeyBasedRequest {
 
     int index = -1;
 
-    long threadId = -1;
+    long threadId;
 
     public PutRequest() {
     }

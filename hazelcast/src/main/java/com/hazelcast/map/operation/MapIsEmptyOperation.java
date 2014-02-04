@@ -22,7 +22,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 public class MapIsEmptyOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    private transient boolean empty;
+    private boolean empty;
 
     public MapIsEmptyOperation(String name) {
         super(name);

@@ -28,6 +28,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
 
+import javax.transaction.xa.XAResource;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -122,6 +123,10 @@ public class TransactionContextProxy implements TransactionContext {
 
     public HazelcastClient getClient() {
         return client;
+    }
+
+    public XAResource getXaResource() {
+        throw new UnsupportedOperationException();
     }
 
     private static class TransactionalObjectKey {

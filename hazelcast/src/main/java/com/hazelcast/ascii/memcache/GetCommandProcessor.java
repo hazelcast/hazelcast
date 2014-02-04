@@ -24,6 +24,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
     final boolean single;
     private final ILogger logger;
@@ -55,7 +57,7 @@ public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
             } else if (value instanceof byte[]) {
                 entry = new MemcacheEntry(getCommand.getKey(), ((byte[]) value), 0);
             } else if (value instanceof String) {
-                entry = new MemcacheEntry(getCommand.getKey(), ((String) value).getBytes(), 0);
+                entry = new MemcacheEntry(getCommand.getKey(), stringToBytes((String) value), 0);
             } else {
                 try {
                     entry = new MemcacheEntry(getCommand.getKey(), textCommandService.toByteArray(value), 0);

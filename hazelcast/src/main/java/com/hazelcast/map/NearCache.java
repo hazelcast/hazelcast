@@ -253,13 +253,6 @@ public class NearCache {
             return 0;
         }
 
-        public boolean equals(Object o){
-            if(o!=null && o instanceof CacheRecord){
-                return this.compareTo((CacheRecord)o)==0;
-            }
-            return false;
-        }
-
         public long getCost() {
             // todo find object size  if not a Data instance.
             if (!(value instanceof Data)) return 0;

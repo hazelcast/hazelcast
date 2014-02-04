@@ -33,7 +33,7 @@ import java.io.IOException;
  */
 public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, WaitSupport {
 
-    protected long threadId = -1;
+    protected long threadId;
 
     protected MultiMapBackupAwareOperation() {
     }

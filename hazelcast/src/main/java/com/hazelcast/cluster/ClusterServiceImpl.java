@@ -31,7 +31,6 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -45,6 +44,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -80,7 +80,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 
-    private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
+    private final AtomicReference<Map<Address, MemberImpl>> membersMapRef = new AtomicReference<Map<Address, MemberImpl>>(Collections.EMPTY_MAP);
+
+    private final AtomicReference<Set<MemberImpl>> membersRef = new AtomicReference<Set<MemberImpl>>(Collections.EMPTY_SET);
 
     private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
 
@@ -117,36 +119,37 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         mergeFirstRunDelay = mergeFirstRunDelay <= 0 ? 100 : mergeFirstRunDelay; // milliseconds
 
         ExecutionService executionService = nodeEngine.getExecutionService();
-        Executor executor = executionService.register("hz:cluster", 8, 100000);
+        String executorName = "hz:cluster";
+        executionService.register(executorName, 8, 100000);
 
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
-        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new SplitBrainHandler(node)),
+        executionService.scheduleWithFixedDelay(executorName, new SplitBrainHandler(node),
                                                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
         long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
-        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new Runnable() {
+        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
             public void run() {
                 heartBeater();
             }
-        }), heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
+        }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
 
         long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
         masterConfirmationInterval = masterConfirmationInterval <= 0 ? 1 : masterConfirmationInterval;
-        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new Runnable() {
+        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
-        }), masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
+        }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
 
         long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
         memberListPublishInterval = memberListPublishInterval <= 0 ? 1 : memberListPublishInterval;
-        executionService.scheduleWithFixedDelay(new ScheduledTaskRunner(executor, new Runnable() {
+        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }
-        }), memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
+        }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
     }
 
     public boolean isJoinInProgress() {
@@ -713,10 +716,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     void updateMembers(Collection<MemberInfo> members) {
         lock.lock();
         try {
-            Map<Address, MemberImpl> oldMemberMap = membersRef.get();
-            if (oldMemberMap == null) {
-                oldMemberMap = Collections.emptyMap();
-            }
+            Map<Address, MemberImpl> oldMemberMap = membersMapRef.get();
+
             if (oldMemberMap.size() == members.size()) {
                 boolean same = true;
                 for (MemberInfo memberInfo : members) {
@@ -757,16 +758,14 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     public void updateMemberAttribute(String uuid, MapOperationType operationType, String key, Object value) {
         lock.lock();
         try {
-            Map<Address, MemberImpl> memberMap = membersRef.get();
-            if (memberMap != null) {
-                for (MemberImpl member : memberMap.values()) {
-                    if (member.getUuid().equals(uuid)) {
-                        if (!member.equals(getLocalMember())) {
-                            member.updateAttribute(operationType, key, value);
-                        }
-                        sendMemberAttributeEvent(member, operationType, key, value);
-                        break;
+            Map<Address, MemberImpl> memberMap = membersMapRef.get();
+            for (MemberImpl member : memberMap.values()) {
+                if (member.getUuid().equals(uuid)) {
+                    if (!member.equals(getLocalMember())) {
+                        member.updateAttribute(operationType, key, value);
                     }
+                    sendMemberAttributeEvent(member, operationType, key, value);
+                    break;
                 }
             }
         } finally {
@@ -820,10 +819,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         lock.lock();
         try {
-            Map<Address, MemberImpl> oldMemberMap = membersRef.get();
-            if (oldMemberMap == null) {
-                oldMemberMap = Collections.emptyMap();
-            }
+            Map<Address, MemberImpl> oldMemberMap = membersMapRef.get();
             final Map<Address, MemberImpl> memberMap = new LinkedHashMap<Address, MemberImpl>();  // ! ORDERED !
             final Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
             for (MemberImpl member : members) {
@@ -860,8 +856,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         logger.info("Removing " + deadMember);
         lock.lock();
         try {
-            final Map<Address, MemberImpl> members = membersRef.get();
-            if (members != null && members.containsKey(deadMember.getAddress())) {
+            final Map<Address, MemberImpl> members = membersMapRef.get();
+            if (members.containsKey(deadMember.getAddress())) {
                 Map<Address, MemberImpl> newMembers = new LinkedHashMap<Address, MemberImpl>(members);  // ! ORDERED !
                 newMembers.remove(deadMember.getAddress());
                 masterConfirmationTimes.remove(deadMember);
@@ -952,8 +948,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (address == null) {
             return null;
         }
-        final Map<Address, MemberImpl> memberMap = membersRef.get();
-        return memberMap != null ? memberMap.get(address) : null;
+        Map<Address, MemberImpl> memberMap = membersMapRef.get();
+        return memberMap.get(address);
     }
 
     @Override
@@ -961,10 +957,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (uuid == null) {
             return null;
         }
-        final Map<Address, MemberImpl> memberMap = membersRef.get();
-        if (memberMap == null) {
-            return null;
-        }
+
+        Map<Address, MemberImpl> memberMap = membersMapRef.get();
         for (MemberImpl member : memberMap.values()) {
             if (uuid.equals(member.getUuid())) {
                 return member;
@@ -973,19 +967,24 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return null;
     }
 
-    private void setMembersRef(final Map<Address, MemberImpl> memberMap) {
-        final Map<Address, MemberImpl> members = Collections.unmodifiableMap(memberMap);
+    private void setMembersRef(Map<Address, MemberImpl> memberMap) {
+        memberMap = unmodifiableMap(memberMap);
         // make values(), keySet() and entrySet() to be cached
-        members.values();
-        members.keySet();
-        members.entrySet();
-        membersRef.set(members);
+        memberMap.values();
+        memberMap.keySet();
+        memberMap.entrySet();
+        membersMapRef.set(memberMap);
+        membersRef.set(unmodifiableSet(new LinkedHashSet<MemberImpl>(memberMap.values())));
     }
 
     @Override
     public Collection<MemberImpl> getMemberList() {
-        final Map<Address, MemberImpl> map = membersRef.get();
-        return map != null ? Collections.unmodifiableCollection(map.values()) : Collections.<MemberImpl>emptySet();
+        return membersRef.get();
+    }
+
+    @Override
+    public Set<Member> getMembers() {
+        return (Set)membersRef.get();
     }
 
     @Override
@@ -1010,12 +1009,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public Member getLocalMember() {
         return node.getLocalMember();
-    }
-
-    @Override
-    public Set<Member> getMembers() {
-        final Collection<MemberImpl> members = getMemberList();
-        return members != null ? new LinkedHashSet<Member>(members) : new HashSet<Member>(0);
     }
 
     @Override
@@ -1063,12 +1056,18 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
-        if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-            listener.memberAdded(event);
-        } else if (event.getEventType() == MembershipEvent.MEMBER_REMOVED) {
-            listener.memberRemoved(event);
-        } else if (event.getEventType() == MembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
-            listener.memberAttributeChanged((MemberAttributeEvent) event);
+        switch (event.getEventType()){
+            case MembershipEvent.MEMBER_ADDED:
+                listener.memberAdded(event);
+                break;
+            case MembershipEvent.MEMBER_REMOVED:
+                listener.memberRemoved(event);
+                break;
+            case MembershipEvent.MEMBER_ATTRIBUTE_CHANGED:
+                listener.memberAttributeChanged((MemberAttributeEvent) event);
+                break;
+            default:
+                throw new IllegalArgumentException("Unhandled event:"+event);
         }
     }
 

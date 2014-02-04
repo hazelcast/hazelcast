@@ -38,7 +38,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     private MapEntrySet entrySet;
     private boolean initialLoad = false;
-    private transient  MapEntrySet backupEntrySet;
+    private MapEntrySet backupEntrySet;
 
     public PutAllOperation(String name, MapEntrySet entrySet) {
         super(name);
@@ -79,7 +79,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 keysToInvalidate.add(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     Record record = recordStore.getRecord(dataKey);
-                    SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getVersion());
+                    SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getCost(), record.getVersion());
                     mapService.publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);

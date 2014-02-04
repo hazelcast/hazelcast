@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 /**
  * Creates a {@link Config} loaded from an in memory Hazelcast XML String.
  */
@@ -59,7 +61,7 @@ public class InMemoryXmlConfig extends Config {
             throw new IllegalArgumentException("properties can't be null");
         }
 
-        InputStream in = new ByteArrayInputStream(xml.getBytes());
+        InputStream in = new ByteArrayInputStream(stringToBytes(xml));
         new XmlConfigBuilder(in).setProperties(properties).build(this);
     }
 }

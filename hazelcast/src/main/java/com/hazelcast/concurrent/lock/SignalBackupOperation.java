@@ -20,9 +20,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 
-/**
- * @author mdogan 2/13/13
- */
 public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
 
     public SignalBackupOperation() {

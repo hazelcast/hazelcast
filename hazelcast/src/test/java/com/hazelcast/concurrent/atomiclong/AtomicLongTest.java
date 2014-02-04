@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -297,7 +297,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
        assertEquals(11, ref.get());
    }
 
-    private static class AddOneFunction implements Function<Long, Long> {
+    private static class AddOneFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
             return input+1;
@@ -305,7 +305,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
     }
 
 
-    private static class FailingFunction implements Function<Long, Long> {
+    private static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
             throw new WoohaaException();

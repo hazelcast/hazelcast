@@ -17,13 +17,17 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This is a special version of ICompletableFuture to return the assigned job
  * id of the submit operation.
  *
  * @param <V> type of the resulting value
+ *
+ * @since 3.2
  */
+@Beta
 public interface JobCompletableFuture<V> extends ICompletableFuture<V> {
 
     /**

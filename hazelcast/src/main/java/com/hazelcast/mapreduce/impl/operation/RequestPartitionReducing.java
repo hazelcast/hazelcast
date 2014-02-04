@@ -36,8 +36,7 @@ public class RequestPartitionReducing
         extends ProcessingOperation {
 
     private volatile RequestPartitionResult result;
-
-    private transient int partitionId;
+    private int partitionId;
 
     public RequestPartitionReducing() {
     }

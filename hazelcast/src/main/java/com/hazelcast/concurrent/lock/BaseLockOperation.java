@@ -28,19 +28,14 @@ import java.io.IOException;
 abstract class BaseLockOperation extends AbstractOperation implements PartitionAwareOperation {
 
     public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
+    public static final int ANY_THREAD = 0;
 
     protected ObjectNamespace namespace;
-
     protected Data key;
-
     protected long threadId;
-
     protected long ttl = DEFAULT_LOCK_TTL;
-
     protected long timeout = -1;
-
     protected transient Object response;
-
     private transient boolean asyncBackup = false;
 
     public BaseLockOperation() {
@@ -73,18 +68,25 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
     }
 
     protected final LockStoreImpl getLockStore() {
-        final LockServiceImpl service = getService();
+        LockServiceImpl service = getService();
         return service.getLockStore(getPartitionId(), namespace);
     }
 
     public final int getSyncBackupCount() {
-        return !asyncBackup ? getLockStore().getBackupCount() : 0;
+        if (asyncBackup) {
+            return 0;
+        } else {
+            return getLockStore().getBackupCount();
+        }
     }
 
     public final int getAsyncBackupCount() {
-        final LockStoreImpl lockStore = getLockStore();
-        return !asyncBackup ? lockStore.getAsyncBackupCount() :
-                lockStore.getBackupCount() + lockStore.getAsyncBackupCount();
+        LockStoreImpl lockStore = getLockStore();
+        if (asyncBackup) {
+            return lockStore.getBackupCount() + lockStore.getAsyncBackupCount();
+        } else {
+            return lockStore.getAsyncBackupCount();
+        }
     }
 
     public final void setAsyncBackup(boolean asyncBackup) {

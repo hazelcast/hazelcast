@@ -37,8 +37,8 @@ public class RequestPartitionProcessed
 
     private volatile RequestPartitionResult result;
 
-    private transient int partitionId;
-    private transient JobPartitionState.State currentState;
+    private int partitionId;
+    private JobPartitionState.State currentState;
 
     public RequestPartitionProcessed() {
     }

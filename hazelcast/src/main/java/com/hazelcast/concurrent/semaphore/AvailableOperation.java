@@ -16,7 +16,9 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-public class AvailableOperation extends SemaphoreOperation {
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+public class AvailableOperation extends SemaphoreOperation implements IdentifiedDataSerializable {
 
     public AvailableOperation() {
     }
@@ -28,5 +30,15 @@ public class AvailableOperation extends SemaphoreOperation {
     @Override
     public void run() throws Exception {
         response = getPermit().getAvailable();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SemaphoreDataSerializerHook.AVAILABLE_OPERATION;
     }
 }

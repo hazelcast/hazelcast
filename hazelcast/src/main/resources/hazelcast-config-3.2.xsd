@@ -184,6 +184,16 @@
     </xs:complexType>
 
     <xs:complexType name="replicatedmap">
+        <xs:annotation>
+            <xs:documentation>
+                A replicated map is a fully vector clock based, eventually consistent implementation of the map
+                interface. In difference to all other Hazelcast data structures this implementation is not
+                partitioned but fully replicates all data to all members.
+                Due to the nature of eventually consistency there is a chance of reading staled data and no
+                guarantee is given to retrieve the same value on multiple get calls.
+                ReplicatedMap was added in Hazelcast 3.2.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="OBJECT"/>
             <xs:element name="concurrency-level" type="concurrency-level" minOccurs="0" maxOccurs="1" default="32">
@@ -350,13 +360,72 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="jobtracker">
+        <xs:annotation>
+            <xs:documentation>
+                The JobTracker configuration is used to setup behavior of the Hazelcast MapReduce framework.
+                Every JobTracker is capable of running multiple map reduce jobs at once and so once configuration
+                is meant as a shared resource for all jobs created by the same JobTracker.
+                The configuration gives full control over the expected load behavior and thread counts to be used.
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence>
-            <xs:element name="max-thread-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="queue-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="retry-count" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="chunk-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="1000"/>
-            <xs:element name="communicate-stats" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1" default="CANCEL_RUNNING_OPERATION"/>
+            <xs:element name="max-thread-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The max-thread-size setting configures the maximum thread pool size of the JobTracker.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="queue-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The queue-size defines the maximum number of tasks are able to wait to be processed. A
+                        value of 0 means unbounded queue.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="retry-count" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        retry-count is currently not used but reserved for later use where the framework will
+                        automatically try to restart / retry operations from a available savepoint.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="chunk-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="1000">
+                <xs:annotation>
+                    <xs:documentation>
+                        The chunk-size defined the number of emitted values before a chunk is send to the reducers.
+                        If your emitted values are big or you want to better balance your work you might want to
+                        change this to a lower or higher value.
+                        A value of 0 means immediate transmission but remember that low values mean higher traffic
+                        costs.
+                        A very high value might cause an OutOfMemoryError to occur if emitted values not fit into
+                        heap memory before being send to reducers. To prevent this you might want to use a combiner
+                        to pre-reduce values on mapping nodes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="communicate-stats" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        The communicate-stats setting defines if statistics (for example about processed entries)
+                        are transmitted to the job emitter. This might be used to show any kind of progress to
+                        an user inside of an UI system but produces additional traffic. If not needed you might
+                        want to deactivate this.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1" default="CANCEL_RUNNING_OPERATION">
+                <xs:annotation>
+                    <xs:documentation>
+                        The topology-changed-strategy defines how the map reduce framework will react on topology
+                        changes while executing a job.
+                        Currently only CANCEL_RUNNING_OPERATION is fully supported which throws an exception to
+                        the job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>

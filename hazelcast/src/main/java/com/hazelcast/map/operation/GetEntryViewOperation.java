@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class GetEntryViewOperation extends KeyBasedMapOperation {
 
-    private transient EntryView<Data, Data> result;
+    private EntryView<Data, Data> result;
 
     public GetEntryViewOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -39,7 +39,7 @@ public class GetEntryViewOperation extends KeyBasedMapOperation {
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Record record = recordStore.getRecord(dataKey);
         if (record != null){
-            result = new SimpleEntryView(record.getKey(), mapService.toData(record.getValue()), record.getStatistics(), record.getVersion());
+            result = new SimpleEntryView(record.getKey(), mapService.toData(record.getValue()), record.getStatistics(), record.getCost(), record.getVersion());
         }
     }
 

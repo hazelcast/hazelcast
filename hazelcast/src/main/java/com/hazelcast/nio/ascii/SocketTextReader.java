@@ -129,7 +129,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
 
     public static String toStringAndClear(ByteBuffer bb) {
         if (bb == null) return "";
-        String result = null;
+        String result;
         if (bb.position() == 0) {
             result = "";
         } else {

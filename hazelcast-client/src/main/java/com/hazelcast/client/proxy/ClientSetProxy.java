@@ -27,4 +27,9 @@ public class ClientSetProxy<E> extends AbstractClientCollectionProxy<E> implemen
         super(serviceName, name);
     }
 
+    @Override
+    public String toString() {
+        return "ISet{" + "name='" + getName() + '\'' + '}';
+    }
+
 }

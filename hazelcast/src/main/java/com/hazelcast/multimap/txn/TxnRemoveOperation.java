@@ -37,7 +37,7 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
 
     long recordId;
     Data value;
-    transient long begin = -1;
+    long begin = -1;
 
     public TxnRemoveOperation() {
     }

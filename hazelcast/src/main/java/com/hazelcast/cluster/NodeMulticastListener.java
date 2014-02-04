@@ -20,11 +20,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.AddressUtil;
 
 import java.util.Set;
-import java.util.logging.Level;
 
+import static com.hazelcast.util.AddressUtil.matchAnyInterface;
 import static java.lang.String.format;
 
 public class NodeMulticastListener implements MulticastListener {
@@ -42,57 +41,105 @@ public class NodeMulticastListener implements MulticastListener {
 
     @Override
     public void onMessage(Object msg) {
-        if (msg != null && msg instanceof JoinMessage) {
-            JoinMessage joinMessage = (JoinMessage) msg;
-            if (node.getThisAddress() != null && !node.getThisAddress().equals(joinMessage.getAddress())) {
-                boolean validJoinRequest;
-                try {
-                    validJoinRequest = node.getClusterService().validateJoinMessage(joinMessage);
-                } catch (Exception e) {
-                    validJoinRequest = false;
-                }
-                if (validJoinRequest) {
-                    if (node.isActive() && node.joined()) {
-                        if (joinMessage instanceof JoinRequest) {
-                            if (node.isMaster()) {
-                                JoinRequest request = (JoinRequest) joinMessage;
-                                final JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
-                                        node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
-                                        node.getClusterService().getSize());
-                                node.multicastService.send(response);
+        if (!isValidJoinMessage(msg)) {
+            logDroppedMessage(msg);
+            return;
+        }
 
-                            } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
-                                logger.warning(
-                                        "New join request has been received from current master. "
-                                        + "Removing " + node.getMasterAddress());
-                                node.getClusterService().removeAddress(node.getMasterAddress());
-                            }
-                        }
-                    } else {
-                        if (!node.joined() && !(joinMessage instanceof JoinRequest)) {
-                            if (node.getMasterAddress() == null) {
-                                final String masterHost = joinMessage.getAddress().getHost();
-                                if (trustedInterfaces.isEmpty() ||
-                                    AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
-                                    node.setMasterAddress(new Address(joinMessage.getAddress()));
-                                }else{
-                                    if (logger.isFinestEnabled()) {
-                                        logger.finest(format(
-                                                "JoinMessage from %s is dropped because its sender is not a trusted interface", masterHost));
-                                    }
-                                }
-                            }
-                        } else if (joinMessage instanceof JoinRequest) {
-                            Joiner joiner = node.getJoiner();
-                            if (joiner instanceof MulticastJoiner) {
-                                MulticastJoiner multicastJoiner = (MulticastJoiner) joiner;
-                                multicastJoiner.onReceivedJoinRequest((JoinRequest) joinMessage);
-                            }
-                        }
-                    }
+        JoinMessage joinMessage = (JoinMessage) msg;
+        if (node.isActive() && node.joined()) {
+            handleActiveAndJoined(joinMessage);
+        } else {
+            handleNotActiveOrNotJoined(joinMessage);
+        }
+    }
+
+    private void logDroppedMessage(Object msg) {
+        if(logger.isFinestEnabled()){
+            logger.info("Dropped: "+msg);
+        }
+    }
+
+    private void handleActiveAndJoined(JoinMessage joinMessage) {
+        if (!isJoinRequest(joinMessage)) {
+            logDroppedMessage(joinMessage);
+            return;
+        }
+
+        if (node.isMaster()) {
+            JoinRequest request = (JoinRequest) joinMessage;
+            JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
+                    node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
+                    node.getClusterService().getSize());
+            node.multicastService.send(response);
+        } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
+            logger.warning("New join request has been received from current master. "
+                    + "Removing " + node.getMasterAddress());
+            node.getClusterService().removeAddress(node.getMasterAddress());
+        }
+    }
+
+    private void handleNotActiveOrNotJoined(JoinMessage joinMessage) {
+        if (isJoinRequest(joinMessage)) {
+            Joiner joiner = node.getJoiner();
+            if (joiner instanceof MulticastJoiner) {
+                MulticastJoiner multicastJoiner = (MulticastJoiner) joiner;
+                multicastJoiner.onReceivedJoinRequest((JoinRequest) joinMessage);
+            } else{
+                logDroppedMessage(joinMessage);
+            }
+        } else {
+            if (!node.joined() && node.getMasterAddress() == null) {
+                String masterHost = joinMessage.getAddress().getHost();
+                if (trustedInterfaces.isEmpty() || matchAnyInterface(masterHost, trustedInterfaces)) {
+                    //todo: why are we making a copy here of address?
+                    Address masterAddress = new Address(joinMessage.getAddress());
+                    node.setMasterAddress(masterAddress);
+                } else {
+                    logJoinMessageDropped(masterHost);
                 }
+            }else{
+                logDroppedMessage(joinMessage);
             }
         }
+    }
+
+    private boolean isJoinRequest(JoinMessage joinMessage) {
+        return joinMessage instanceof JoinRequest;
+    }
+
+    private void logJoinMessageDropped(String masterHost) {
+        if (logger.isFinestEnabled()) {
+            logger.finest(format(
+                    "JoinMessage from %s is dropped because its sender is not a trusted interface", masterHost));
+        }
+    }
+
+    private boolean isJoinMessage(Object msg) {
+        return msg != null && msg instanceof JoinMessage;
+    }
+
+    private boolean isValidJoinMessage(Object msg) {
+        if (!isJoinMessage(msg)) {
+            return false;
+        }
+
+        JoinMessage joinMessage = (JoinMessage)msg;
+
+        if (isMessageToSelf(joinMessage)) {
+            return false;
+        }
+
+        try {
+            return node.getClusterService().validateJoinMessage(joinMessage);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isMessageToSelf(JoinMessage joinMessage) {
+        Address thisAddress = node.getThisAddress();
+        return thisAddress == null || thisAddress.equals(joinMessage.getAddress());
     }
 
     private boolean isMasterNode(Address address) {
@@ -100,12 +147,15 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private boolean checkMasterUuid(String uuid) {
-        final Member masterMember = getMasterMember(node.getClusterService().getMembers());
+        Member masterMember = getMasterMember(node.getClusterService().getMembers());
         return masterMember == null || masterMember.getUuid().equals(uuid);
     }
 
-    private Member getMasterMember(final Set<Member> members) {
-        if (members == null || members.isEmpty()) return null;
+    private Member getMasterMember(Set<Member> members) {
+        if (members.isEmpty()) {
+            return null;
+        }
+
         return members.iterator().next();
     }
 }

@@ -26,6 +26,7 @@ import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentResult;
 import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
+import com.hazelcast.mapreduce.impl.operation.PostPonePartitionProcessing;
 import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
@@ -62,10 +63,11 @@ public class MapReduceDataSerializerHook
     public static final int PROCESS_STATS_UPDATE_OPERATION = 14;
     public static final int NOTIFY_REMOTE_EXCEPTION_OPERATION = 15;
     public static final int CANCEL_JOB_SUPERVISOR_OPERATION = 16;
-    public static final int KEY_VALUE_SOURCE_LIST = 17;
-    public static final int KEY_VALUE_SOURCE_SET = 18;
-    public static final int KEYS_ASSIGNMENT_RESULT = 19;
-    public static final int KEYS_ASSIGNMENT_OPERATION = 20;
+    public static final int POSTPONE_PARTITION_PROCESSING_OPERATION = 17;
+    public static final int KEY_VALUE_SOURCE_LIST = 18;
+    public static final int KEY_VALUE_SOURCE_SET = 19;
+    public static final int KEYS_ASSIGNMENT_RESULT = 20;
+    public static final int KEYS_ASSIGNMENT_OPERATION = 21;
 
     public static final int LEN = KEYS_ASSIGNMENT_OPERATION + 1;
 
@@ -201,6 +203,12 @@ public class MapReduceDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new KeysAssignmentOperation();
+            }
+        };
+        constructors[POSTPONE_PARTITION_PROCESSING_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PostPonePartitionProcessing();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

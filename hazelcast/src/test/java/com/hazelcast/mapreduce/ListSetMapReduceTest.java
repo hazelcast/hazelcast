@@ -16,8 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ISet;
 import com.hazelcast.test.AssertTask;

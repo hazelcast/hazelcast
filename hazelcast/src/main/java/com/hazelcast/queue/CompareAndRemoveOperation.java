@@ -36,9 +36,7 @@ import java.util.Map;
 public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;
-
-    transient Map<Long, Data> dataMap;
-
+    Map<Long, Data> dataMap;
     boolean retain;
 
     public CompareAndRemoveOperation() {

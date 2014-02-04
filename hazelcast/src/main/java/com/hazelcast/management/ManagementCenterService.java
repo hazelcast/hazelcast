@@ -176,7 +176,8 @@ public class ManagementCenterService {
             logger.info("======================================================");
         } else {
             logger.info("======================================================");
-            logger.info("To see your application on the Hosted Management Center, you need to enable the ManagementCenterConfig.");
+            logger.info("To see your application on the Hosted Management Center, " +
+                    "you need to enable the ManagementCenterConfig.");
             logger.info("======================================================");
         }
     }
@@ -581,7 +582,9 @@ public class ManagementCenterService {
             return serializationService.createObjectDataInputStream(inputStream);
         }
 
-        private ConsoleRequest newTask(ObjectDataInputStream inputStream) throws InstantiationException, IllegalAccessException, IOException {
+        private ConsoleRequest newTask(ObjectDataInputStream inputStream)
+                throws InstantiationException, IllegalAccessException, IOException {
+
             int requestType = inputStream.readInt();
 
             Class<? extends ConsoleRequest> requestClass = consoleRequests.get(requestType);

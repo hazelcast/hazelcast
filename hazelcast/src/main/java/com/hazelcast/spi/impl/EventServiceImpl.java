@@ -575,6 +575,7 @@ public class EventServiceImpl implements EventService {
     }
 
     public static class Registration implements EventRegistration {
+
         private String id;
         private String serviceName;
         private String topic;
@@ -776,7 +777,7 @@ public class EventServiceImpl implements EventService {
     public static class RegistrationOperation extends AbstractOperation {
 
         private Registration registration;
-        private transient boolean response = false;
+        private boolean response = false;
 
         public RegistrationOperation() {
         }

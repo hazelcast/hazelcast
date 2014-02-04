@@ -29,7 +29,7 @@ import java.util.Arrays;
  */
 public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation {
 
-    private transient Operation[] operations;
+    private Operation[] operations;
 
     public PostJoinOperation() {
     }

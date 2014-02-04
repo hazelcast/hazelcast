@@ -124,7 +124,7 @@ public class ConnectionTest {
         try {
             Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.newInstance().dumpAllThreads());
+            System.err.println(ThreadDumpGenerator.dumpAllThreads());
             throw e;
         }
     }
@@ -167,7 +167,7 @@ public class ConnectionTest {
         try {
             Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.newInstance().dumpAllThreads());
+            System.err.println(ThreadDumpGenerator.dumpAllThreads());
             throw e;
         }
     }
@@ -258,7 +258,7 @@ public class ConnectionTest {
         try {
             Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.newInstance().dumpAllThreads());
+            System.err.println(ThreadDumpGenerator.dumpAllThreads());
             throw e;
         } finally {
             for (Socket socket : sockets) {

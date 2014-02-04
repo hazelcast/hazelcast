@@ -36,8 +36,8 @@ public class ListContainer extends CollectionContainer {
     public ListContainer() {
     }
 
-    public ListContainer(String name, NodeEngine nodeEngine, CollectionService service) {
-        super(name, nodeEngine, service);
+    public ListContainer(String name, NodeEngine nodeEngine) {
+        super(name, nodeEngine);
     }
 
     @Override

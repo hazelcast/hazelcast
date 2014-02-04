@@ -43,10 +43,11 @@ import static org.junit.Assert.assertTrue;
  * @author mdogan 9/16/13
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(QuickTest.class)
 public class InvocationTest extends HazelcastTestSupport {
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz = factory.newHazelcastInstance(new Config());
@@ -78,6 +79,7 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testWaitingIndefinitely() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         final Config config = new Config();
@@ -109,6 +111,7 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final Config config = new Config();
@@ -133,6 +136,7 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp2() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz = factory.newHazelcastInstance(new Config());

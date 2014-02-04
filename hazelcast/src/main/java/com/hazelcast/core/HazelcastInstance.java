@@ -89,6 +89,7 @@ public interface HazelcastInstance {
      *
      * @param name name of the distributed map
      * @return replicated map instance with specified name
+     * @since 3.2
      */
     <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
 
@@ -97,6 +98,7 @@ public interface HazelcastInstance {
      *
      * @param name name of the job tracker
      * @return job tracker instance with specified name
+     * @since 3.2
      */
     JobTracker getJobTracker(String name);
 

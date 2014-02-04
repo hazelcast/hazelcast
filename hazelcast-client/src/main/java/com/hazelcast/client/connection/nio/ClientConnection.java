@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 /**
  * @author ali 16/12/13
  */
@@ -124,8 +126,8 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void init() throws IOException {
-        out.write(Protocols.CLIENT_BINARY.getBytes());
-        out.write(ClientTypes.JAVA.getBytes());
+        out.write(stringToBytes(Protocols.CLIENT_BINARY));
+        out.write(stringToBytes(ClientTypes.JAVA));
         out.flush();
     }
 

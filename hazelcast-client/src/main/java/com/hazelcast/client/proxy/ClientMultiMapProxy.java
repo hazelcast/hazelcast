@@ -271,4 +271,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             }
         };
     }
+
+    @Override
+    public String toString() {
+        return "MultiMap{" + "name='" + getName() + '\'' + '}';
+    }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.core.Function;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -24,13 +24,13 @@ import java.io.IOException;
 
 public class ApplyOperation<R> extends AtomicLongBaseOperation {
 
-    private Function<Long,R> function;
+    private IFunction<Long,R> function;
     private R returnValue;
 
     public ApplyOperation() {
     }
 
-    public ApplyOperation(String name, Function<Long,R> function) {
+    public ApplyOperation(String name, IFunction<Long,R> function) {
         super(name);
         this.function = function;
     }

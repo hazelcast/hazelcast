@@ -37,7 +37,7 @@ import java.util.logging.Level;
 
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
-    private transient boolean returnResponse = true;
+    private boolean returnResponse = true;
 
     public MigrationRequestOperation() {
     }

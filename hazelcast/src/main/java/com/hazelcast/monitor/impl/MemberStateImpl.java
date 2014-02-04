@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 public class MemberStateImpl implements MemberState {
-    private static final long serialVersionUID = -1817978625085375340L;
 
     Address address = new Address();
     Map<String, Long> runtimeProps = new HashMap<String, Long>();
@@ -41,6 +40,7 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
     List<Integer> partitions = new ArrayList<Integer>(271);
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeInt(mapStats.size());
@@ -85,6 +85,7 @@ public class MemberStateImpl implements MemberState {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         address.readData(in);
         DataSerializable impl;
@@ -136,6 +137,7 @@ public class MemberStateImpl implements MemberState {
         partitions.add(partitionId);
     }
 
+    @Override
     public List<Integer> getPartitions() {
         return partitions;
     }
@@ -175,6 +177,7 @@ public class MemberStateImpl implements MemberState {
         return true;
     }
 
+    @Override
     public Map<String, Long> getRuntimeProps() {
         return runtimeProps;
     }
@@ -183,30 +186,37 @@ public class MemberStateImpl implements MemberState {
         this.runtimeProps = runtimeProps;
     }
 
+    @Override
     public LocalMapStats getLocalMapStats(String mapName) {
         return mapStats.get(mapName);
     }
 
+    @Override
     public LocalMultiMapStats getLocalMultiMapStats(String mapName) {
         return multiMapStats.get(mapName);
     }
 
+    @Override
     public LocalReplicatedMapStats getLocalReplicatedMapStats(String mapName) {
         return replicatedMapStats.get(mapName);
     }
 
+    @Override
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
     }
 
+    @Override
     public LocalTopicStats getLocalTopicStats(String topicName) {
         return topicStats.get(topicName);
     }
 
+    @Override
     public LocalExecutorStats getLocalExecutorStats(String executorName) {
         return executorStats.get(executorName);
     }
 
+    @Override
     public Address getAddress() {
         return address;
     }
@@ -239,6 +249,7 @@ public class MemberStateImpl implements MemberState {
         executorStats.put(name, localExecutorStats);
     }
 
+    @Override
     public String toString() {
         return "MemberStateImpl{" +
                 "address=" + address +

@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
+package com.hazelcast.core;
 
-import com.hazelcast.util.ExceptionUtil;
-
-import java.util.concurrent.Executor;
+import java.io.Serializable;
 
 /**
- * @author mdogan 4/9/13
+ * Represents a function that accepts one argument and produces a result.
+ *
+ * This class is called IFunction instead of Function to prevent clashes with the one in Java 8.
+ *
+ * @param <T>
+ * @param <R>
+ * @since 3.2
  */
-public final class ScheduledTaskRunner implements Runnable {
+public interface IFunction<T,R> extends Serializable {
 
-    private final Executor executor;
-    private final Runnable runnable;
-
-    public ScheduledTaskRunner(Executor executor, Runnable runnable) {
-        this.executor = executor;
-        this.runnable = runnable;
-    }
-
-    public void run() {
-        try {
-            executor.execute(runnable);
-        } catch (Throwable t) {
-            ExceptionUtil.sneakyThrow(t);
-        }
-    }
+    R apply(T input);
 }

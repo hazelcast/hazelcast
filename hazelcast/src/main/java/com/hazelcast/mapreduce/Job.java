@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * <p>
  * This interface describes a mapreduce Job that is build by {@link JobTracker#newJob(KeyValueSource)}.<br>
@@ -45,7 +47,10 @@ package com.hazelcast.mapreduce;
  *
  * @param <KeyIn>    type of key used as input key type
  * @param <ValueIn>  type of value used as input value type
+ *
+ * @since 3.2
  */
+@Beta
 public interface Job<KeyIn, ValueIn> {
 
     /**

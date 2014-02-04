@@ -69,10 +69,10 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
                     replicatedRecordStorage = new DataReplicatedRecordStore(
                             name, nodeEngine, cleanerRegistrator, ReplicatedMapService.this);
                     break;
-            }
-            if (replicatedRecordStorage == null) {
-                //TODO
-                throw new IllegalStateException("offheap not yet supported for replicated map");
+                case OFFHEAP:
+                    throw new IllegalStateException("offheap not yet supported for replicated map");
+                default:
+                    throw new IllegalStateException("Unhandeled in memory format:"+inMemoryFormat);
             }
             return replicatedRecordStorage;
         }
@@ -148,6 +148,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService,
                 case REMOVED:
                     entryListener.entryRemoved(entryEvent);
                     break;
+                default:
+                    throw new IllegalArgumentException("event type " + entryEvent.getEventType() + " not supported");
             }
             String mapName = ((EntryEvent) event).getName();
             if (config.findReplicatedMapConfig(mapName).isStatisticsEnabled()) {

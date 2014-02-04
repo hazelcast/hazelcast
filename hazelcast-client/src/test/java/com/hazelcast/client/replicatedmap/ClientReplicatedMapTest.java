@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(SlowTest.class)
 //TODO
 public class ClientReplicatedMapTest extends HazelcastTestSupport {
 

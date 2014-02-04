@@ -68,6 +68,7 @@ public interface Member extends DataSerializable, Endpoint {
      * <b>This method might not be available on all native clients.</b>
      *
      * @return Attributes for this member.
+     * @since 3.2
      */
     Map<String, Object> getAttributes();
 
@@ -77,6 +78,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     String getStringAttribute(String key);
 
@@ -86,6 +88,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setStringAttribute(String key, String value);
 
@@ -95,6 +98,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     Boolean getBooleanAttribute(String key);
 
@@ -104,6 +108,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setBooleanAttribute(String key, boolean value);
 
@@ -113,6 +118,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     Byte getByteAttribute(String key);
 
@@ -122,6 +128,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setByteAttribute(String key, byte value);
 
@@ -131,6 +138,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     Short getShortAttribute(String key);
 
@@ -140,6 +148,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setShortAttribute(String key, short value);
 
@@ -149,6 +158,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     Integer getIntAttribute(String key);
 
@@ -158,6 +168,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setIntAttribute(String key, int value);
 
@@ -167,6 +178,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     Long getLongAttribute(String key);
 
@@ -176,6 +188,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setLongAttribute(String key, long value);
 
@@ -185,6 +198,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     Float getFloatAttribute(String key);
 
@@ -194,6 +208,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setFloatAttribute(String key, float value);
 
@@ -203,6 +218,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key to lookup.
      * @return The value for this members key.
+     * @since 3.2
      */
     Double getDoubleAttribute(String key);
 
@@ -212,6 +228,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @param key The key for this property.
      * @param value The value corresponds to this attribute and this member.
+     * @since 3.2
      */
     void setDoubleAttribute(String key, double value);
 
@@ -221,6 +238,7 @@ public interface Member extends DataSerializable, Endpoint {
      * If key wasn't assigned to a value this method does nothing.
      *
      * @param key The key to be deleted from the member attributes
+     * @since 3.2
      */
     void removeAttribute(String key);
 

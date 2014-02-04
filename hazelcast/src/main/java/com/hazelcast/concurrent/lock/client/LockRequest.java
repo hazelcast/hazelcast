@@ -24,9 +24,6 @@ import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
 
-/**
- * @author mdogan 5/3/13
- */
 public final class LockRequest extends AbstractLockRequest {
 
     public LockRequest() {
@@ -38,7 +35,7 @@ public final class LockRequest extends AbstractLockRequest {
 
     @Override
     protected InternalLockNamespace getNamespace() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = getName();
         return new InternalLockNamespace(name);
     }
 
@@ -54,7 +51,7 @@ public final class LockRequest extends AbstractLockRequest {
 
     @Override
     public Permission getRequiredPermission() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = getName();
         return new LockPermission(name, ActionConstants.ACTION_LOCK);
     }
 }

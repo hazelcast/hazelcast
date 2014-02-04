@@ -40,7 +40,7 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
 
     @Override
     public void run() throws Exception {
-        final LockStoreImpl lockStore = getLockStore();
+        LockStoreImpl lockStore = getLockStore();
         if (force) {
             response = lockStore.forceUnlock(key);
         } else {

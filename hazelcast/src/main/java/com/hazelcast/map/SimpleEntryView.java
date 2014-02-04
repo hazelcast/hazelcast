@@ -37,10 +37,10 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
     private long lastUpdateTime;
     private long version;
 
-    public SimpleEntryView(K key, V value, RecordStatistics statistics, long recordVersion) {
+    public SimpleEntryView(K key, V value, RecordStatistics statistics, long cost, long recordVersion) {
         this.key = key;
         this.value = value;
-        cost = statistics == null ? -1 : statistics.getCost();
+        this.cost = cost;
         creationTime = statistics == null ? -1 : statistics.getCreationTime();
         expirationTime = statistics == null ? -1 : statistics.getExpirationTime();
         hits = statistics == null ? -1 : statistics.getHits();

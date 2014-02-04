@@ -23,8 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 public class TryPutOperation extends BasePutOperation {
+
     private long timeout;
-    private transient boolean successful;
+    private boolean successful;
 
     public TryPutOperation(String name, Data dataKey, Data value, long timeout) {
         super(name, dataKey, value);

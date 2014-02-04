@@ -26,9 +26,10 @@ import com.hazelcast.spi.WaitSupport;
 /**
  * @author ali 12/6/12
  */
-public final class PollOperation extends QueueBackupAwareOperation implements WaitSupport, Notifier, IdentifiedDataSerializable {
+public final class PollOperation extends QueueBackupAwareOperation
+        implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
-    private transient QueueItem item;
+    private QueueItem item;
 
     public PollOperation() {
     }

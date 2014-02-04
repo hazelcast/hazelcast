@@ -37,8 +37,7 @@ public class PartitionRuntimeState implements DataSerializable {
     private long masterTime = Clock.currentTimeMillis();
     private int version;
     private Collection<MigrationInfo> completedMigrations;
-
-    private transient Address endpoint;
+    private Address endpoint;
 
     public PartitionRuntimeState() {
     }

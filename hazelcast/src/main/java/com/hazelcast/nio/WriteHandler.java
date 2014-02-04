@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
@@ -74,7 +76,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         if (socketWriter == null) {
             if (Protocols.CLUSTER.equals(protocol)) {
                 socketWriter = new SocketPacketWriter(connection);
-                buffer.put(Protocols.CLUSTER.getBytes());
+                buffer.put(stringToBytes(Protocols.CLUSTER));
                 registerWrite();
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                 socketWriter = new SocketClientDataWriter(connection);

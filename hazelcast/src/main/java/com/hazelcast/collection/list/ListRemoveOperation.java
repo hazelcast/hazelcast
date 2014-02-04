@@ -34,8 +34,7 @@ import java.io.IOException;
 public class ListRemoveOperation extends CollectionBackupAwareOperation {
 
     private int index;
-
-    private transient long itemId;
+    private long itemId;
 
     public ListRemoveOperation() {
     }

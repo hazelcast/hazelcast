@@ -66,7 +66,7 @@ Maven snippet:
 
 ### Building From Source
 
-Pull latest from repo `git pull origin 3.0` and use Maven install (or package) to build `mvn clean install`.
+Pull latest from repo `git pull origin master` and use Maven install (or package) to build `mvn clean install`.
 
 ### Testing
 
