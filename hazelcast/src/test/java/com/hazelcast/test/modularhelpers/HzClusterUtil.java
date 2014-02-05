@@ -1,4 +1,4 @@
-package com.hazelcast.replicatedmap;
+package com.hazelcast.test.modularhelpers;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.HazelcastInstance;
@@ -8,10 +8,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.wan.WanNoDelayReplication;
-import java.util.Random;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
@@ -30,7 +27,11 @@ public class HzClusterUtil {
     private boolean AUTO_RENAME=true;
 
     public HzClusterUtil(String groupName, int port, int clusterSZ){
-        setup( groupName,  port,  clusterSZ);
+        setupTcpIP(groupName, port, clusterSZ);
+    }
+
+    public HzClusterUtil(String groupName, int clusterSZ){
+        setupMultiCast(groupName, clusterSZ);
     }
 
     private HzClusterUtil(HazelcastInstance[] cluster, Config[] configs){
@@ -38,19 +39,7 @@ public class HzClusterUtil {
         this.configs = configs;
     }
 
-    public void setAutoRenameCluster(boolean rename){
-        AUTO_RENAME=rename;
-    }
-
-    public HazelcastInstance[] getCluster(){
-        return cluster;
-    }
-
-    public Config[] getConfigs(){
-        return configs;
-    }
-
-    public void setup(String groupName, int port, int clusterSZ){
+    public void setupTcpIP(String groupName, int port, int clusterSZ){
         cluster = new HazelcastInstance[clusterSZ];
         configs = new Config[clusterSZ];
 
@@ -61,18 +50,38 @@ public class HzClusterUtil {
             config.getGroupConfig().setName(groupName);
             config.getNetworkConfig().setPort(port);
 
-            boolean multiCastEnabled=false;
-            config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(multiCastEnabled);
-            config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(!multiCastEnabled);
+            config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+            config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
             config.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(members);
-
             configs[i]=config;
         }
     }
 
-    public String getName(){
-        return getConfig().getGroupConfig().getName();
+    public void setupMultiCast(String groupName, int clusterSZ){
+        cluster = new HazelcastInstance[clusterSZ];
+        configs = new Config[clusterSZ];
+
+        for(int i=0; i<clusterSZ; i++){
+            Config config = new Config();
+            config.getGroupConfig().setName(groupName);
+            configs[i]=config;
+        }
     }
+
+    public void setAutoRenameCluster(boolean rename){
+        AUTO_RENAME=rename;
+    }
+
+    public HazelcastInstance[] getCluster(){
+        return cluster;
+    }
+
+    public Config[] getConfigs() { return configs; }
+
+    public String getName(){ return getConfig().getGroupConfig().getName(); }
+
+    public int getSize(){ return cluster.length; }
+
 
     private void setName(String name){
         for(Config c:configs){
@@ -86,32 +95,60 @@ public class HzClusterUtil {
         }
     }
 
-    public int getSize(){return cluster.length;}
-
     public void initCluster(){
         for(int i=0; i<cluster.length; i++){
             cluster[i]= factory.newHazelcastInstance(configs[i]);
         }
     }
 
+
+
+    public void restartNodesNotRunning(){
+        for(int i=0; i<cluster.length; i++){
+            if(cluster[i].getLifecycleService().isRunning()==false){
+                cluster[i] = factory.newHazelcastInstance(configs[i]);
+            }
+        }
+    }
+
     public HazelcastInstance getRandomNode(){
-        return cluster[random.nextInt(cluster.length) ];
+        return getNode(random.nextInt(cluster.length));
     }
 
     public HazelcastInstance getNode(int index){
         return cluster[index];
     }
 
+
+    public boolean terminateRandomNode(){
+
+        List<Integer> idx = new ArrayList(cluster.length);
+        for(int i=0; i<cluster.length; i++){
+            idx.add(i);
+        }
+        Collections.shuffle(idx);
+
+        for(Integer i : idx){
+            HazelcastInstance n = getNode(i);
+            if(n.getLifecycleService().isRunning()){
+                n.getLifecycleService().terminate();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void terminateAllNodes(){
+        for(int i=0; i<cluster.length; i++)
+            cluster[i].getLifecycleService().terminate();
+    }
+
     public Config getConfig(){
-        return getRandomNode().getConfig();
+        return configs[random.nextInt(configs.length)];
     }
 
-    public void terminateRandomNode(){
-        HazelcastInstance node = getRandomNode();
-        TestUtil.terminateInstance(node);
-    }
 
-    private List<String> getClusterEndPoints(){
+    public List<String> getClusterEndPoints(){
         return getClusterEndPoints(this.getConfig(), cluster.length);
     }
 
@@ -119,6 +156,8 @@ public class HzClusterUtil {
         return getClusterEndPointsFrom(toconfig.getNetworkConfig().getPort(), count);
     }
 
+
+    //Assuming we are just running test on this machien
     private List<String> getClusterEndPointsFrom(int port, int count){
         List ends = new ArrayList<String>();
 
@@ -128,6 +167,7 @@ public class HzClusterUtil {
         return ends;
     }
 
+    //assuming we want to use wanNoDelayReplication
     private WanTargetClusterConfig targetCluster(Config toconfig, int count){
         WanTargetClusterConfig target = new WanTargetClusterConfig();
         target.setGroupName(toconfig.getGroupConfig().getName());

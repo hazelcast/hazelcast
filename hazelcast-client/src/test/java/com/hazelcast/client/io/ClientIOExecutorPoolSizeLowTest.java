@@ -6,6 +6,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -141,6 +142,77 @@ public class ClientIOExecutorPoolSizeLowTest {
                 assertEquals(0, map.size());
             }
         });
+    }
+
+    @Test
+    @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
+    public void entryListenerWithMapOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+            if(i==500){
+                server2.getLifecycleService().terminate();
+            }
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+    }
+
+    @Test
+    @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
+    public void entryListenerWithMapAsyncOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.putAsync(i, i);
+            if(i==500){
+                server2.getLifecycleService().terminate();
+            }
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+    }
+
+    @Test
+    @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
+    public void entryListenerWithAsyncMapOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.putAsync(i, i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+
+        for (int i = 0; i < 1000; i++) {
+
+            Future f = map.getAsync(i);
+            assertEquals(i, f.get());
+
+            if(i==500){
+                server2.getLifecycleService().terminate();
+            }
+        }
+
+        for (int i = 0; i < 1000; i++) {
+            map.removeAsync(i);
+        }
     }
 
 
