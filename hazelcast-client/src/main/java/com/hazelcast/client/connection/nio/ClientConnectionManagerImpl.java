@@ -61,11 +61,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     static final int KILO_BYTE = 1024;
     private static final int BUFFER_SIZE = 16 << 10; // 32k
 
-    public static final int socketReceiveBufferSize = 32 * KILO_BYTE;
-    public static final int socketSendBufferSize = 32 * KILO_BYTE;
+    public static final int SOCKET_RECEIVE_BUFFER_SIZE = BUFFER_SIZE;
+    public static final int SOCKET_SEND_BUFFER_SIZE = BUFFER_SIZE;
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
-    private final Authenticator authenticator;
     private final HazelcastClient client;
     private final Router router;
     private final SocketInterceptor socketInterceptor;
@@ -85,7 +84,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     public ClientConnectionManagerImpl(HazelcastClient client, LoadBalancer loadBalancer, boolean smartRouting) {
         this.client = client;
-        this.authenticator = new ClusterAuthenticator();
         this.smartRouting = smartRouting;
         this.credentials = client.getClientConfig().getCredentials();
         ClientConfig config = client.getClientConfig();
@@ -157,6 +155,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     public ClientConnection tryToConnect(Address target) throws IOException {
+        final Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
         IOException lastError = null;
         while (count < RETRY_COUNT) {
@@ -176,7 +175,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         throw lastError;
     }
 
-    public ClientPrincipal getPrincipal(){
+    public ClientPrincipal getPrincipal() {
         return principal;
     }
 
@@ -280,8 +279,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final ClientResponse clientResponse = getSerializationService().toObject(packet.getData());
             final int callId = clientResponse.getCallId();
             final Object response = clientResponse.getResponse();
-            final boolean event = clientResponse.isEvent();
-            if (event) {
+            if (clientResponse.isEvent()) {
                 handleEvent(response, callId, conn);
             } else {
                 handlePacket(response, callId, conn);
@@ -330,13 +328,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connection.init();
         auth.setReAuth(reAuth);
         auth.setFirstConnection(firstConnection);
-        SerializableCollection coll;
+        SerializableCollection collectionWrapper; //contains remoteAddress and principal
         try {
-            coll = (SerializableCollection) sendAndReceive(auth, connection);
+            collectionWrapper = (SerializableCollection) sendAndReceive(auth, connection);
         } catch (Exception e) {
             throw new RetryableIOException(e);
         }
-        final Iterator<Data> iter = coll.getCollection().iterator();
+        final Iterator<Data> iter = collectionWrapper.iterator();
         if (iter.hasNext()) {
             final Data addressData = iter.next();
             final Address address = ss.toObject(addressData);
@@ -346,7 +344,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return ss.toObject(principalData);
             }
         }
-        throw new AuthenticationException(); //TODO
+        throw new AuthenticationException();
     }
 
     public Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception {

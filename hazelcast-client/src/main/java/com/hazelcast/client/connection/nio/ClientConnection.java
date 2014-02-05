@@ -81,9 +81,9 @@ public class ClientConnection implements Connection, Closeable {
         final Socket socket = socketChannel.socket();
         try {
             this.out = ss.createObjectDataOutputStream(
-                    new BufferedOutputStream(socket.getOutputStream(), ClientConnectionManagerImpl.socketSendBufferSize));
+                    new BufferedOutputStream(socket.getOutputStream(), ClientConnectionManagerImpl.SOCKET_SEND_BUFFER_SIZE));
             this.in = ss.createObjectDataInputStream(
-                    new BufferedInputStream(socket.getInputStream(), ClientConnectionManagerImpl.socketReceiveBufferSize));
+                    new BufferedInputStream(socket.getInputStream(), ClientConnectionManagerImpl.SOCKET_RECEIVE_BUFFER_SIZE));
         } catch (IOException e) {
             throw e;
         }
