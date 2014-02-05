@@ -16,6 +16,8 @@
 
 package com.hazelcast.transaction;
 
+import javax.transaction.xa.XAResource;
+
 /**
  * Provides a context to do transactional operations; so beginning/committing transactions, but also retrieving
  * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
@@ -49,4 +51,11 @@ public interface TransactionContext extends TransactionalTaskContext {
      * @return the transaction id.
      */
     String getTxnId();
+
+    /**
+     * Gets xaResource which will participate in XATransaction
+     *
+     * @return the xaResource.
+     */
+    XAResource getXaResource();
 }

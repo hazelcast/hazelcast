@@ -37,7 +37,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     private Data key;
     private String owner = null;
-    private long threadId = -1;
+    private long threadId;
     private int lockCount;
     private long expirationTime = -1;
     private long acquireTime = -1L;
@@ -238,7 +238,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     void clear() {
-        threadId = -1;
+        threadId = 0;
         lockCount = 0;
         owner = null;
         expirationTime = 0;

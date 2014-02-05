@@ -18,9 +18,9 @@ package com.hazelcast.transaction.impl;
 
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -37,11 +37,19 @@ final class TransactionContextImpl implements TransactionContext {
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+    private XAResourceImpl xaResource;
 
     TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
                            TransactionOptions options, String ownerUuid) {
         this.nodeEngine = nodeEngine;
         this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid);
+    }
+
+    public XAResourceImpl getXaResource() {
+        if (xaResource == null) {
+            xaResource = new XAResourceImpl(this, nodeEngine);
+        }
+        return xaResource;
     }
 
     public String getTxnId() {
