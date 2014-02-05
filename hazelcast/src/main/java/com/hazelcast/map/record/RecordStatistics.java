@@ -107,6 +107,8 @@ public class RecordStatistics implements DataSerializable {
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(lastAccessTime);
+        out.writeLong(creationTime);
+        out.writeLong(expirationTime);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -114,6 +116,8 @@ public class RecordStatistics implements DataSerializable {
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         lastAccessTime = in.readLong();
+        creationTime = in.readLong();
+        expirationTime = in.readLong();
     }
 
 
