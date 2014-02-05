@@ -417,6 +417,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 }
             }
         }
+        if(keys.isEmpty()){
+            return result;
+        }
         MapGetAllRequest request = new MapGetAllRequest(name, keySet);
         MapEntrySet mapEntrySet = invoke(request);
         Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();

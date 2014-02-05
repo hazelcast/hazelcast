@@ -377,6 +377,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 }
             }
         }
+        if (keys.isEmpty()){
+           return result;
+        }
         Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses = null;
         try {
