@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashSet;
+
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
@@ -86,6 +88,33 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
 
     }
+    @Test
+    public void testGetAll() throws Exception {
+        final String mapName = "testGetAllWithNearCache";
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
+        final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = hazelcastInstanceFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = hazelcastInstanceFactory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance1.getMap(mapName);
+        HashSet keys = new HashSet();
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            map.put(i,i);
+            keys.add(i);
+        }
+        long begin = System.currentTimeMillis();
+        map.getAll(keys);
+        long firstRead = System.currentTimeMillis() - begin;
+
+        begin = System.currentTimeMillis();
+        map.getAll(keys);
+        long secondRead = System.currentTimeMillis() - begin;
+
+        Assert.assertTrue(secondRead < firstRead);
+    }
+
 
     private NearCache getNearCache(String mapName, HazelcastInstance instance) {
         NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
