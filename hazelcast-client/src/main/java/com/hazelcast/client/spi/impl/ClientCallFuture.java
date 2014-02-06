@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
@@ -54,7 +55,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final EventHandler handler;
 
-    private volatile int reSendCount = 0;
+    private AtomicInteger reSendCount = new AtomicInteger();
 
     private volatile ClientConnection connection;
 
@@ -193,8 +194,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     }
 
     private boolean resend() {
-        reSendCount++;
-        if (reSendCount > MAX_RESEND_COUNT) {
+        if (reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
             return false;
         }
         executionService.execute(new ReSendTask());

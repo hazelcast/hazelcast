@@ -738,6 +738,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                     case EVICTED:
                         listener.entryEvicted(entryEvent);
                         break;
+                    default:
+                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
             }
         };
