@@ -17,6 +17,9 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.*;
@@ -24,6 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -33,6 +37,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -61,6 +68,9 @@ public class ClientConnection implements Connection, Closeable {
 
     private final ObjectDataInputStream in;
 
+    private final ConcurrentMap<Integer, ClientCallFuture> callIdMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
+    private final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
+
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out, int connectionId, SocketChannel socketChannel) throws IOException {
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
@@ -71,12 +81,37 @@ public class ClientConnection implements Connection, Closeable {
         final Socket socket = socketChannel.socket();
         try {
             this.out = ss.createObjectDataOutputStream(
-                    new BufferedOutputStream(socket.getOutputStream(), connectionManager.socketSendBufferSize));
+                    new BufferedOutputStream(socket.getOutputStream(), ClientConnectionManagerImpl.SOCKET_SEND_BUFFER_SIZE));
             this.in = ss.createObjectDataInputStream(
-                    new BufferedInputStream(socket.getInputStream(), connectionManager.socketReceiveBufferSize));
+                    new BufferedInputStream(socket.getInputStream(), ClientConnectionManagerImpl.SOCKET_RECEIVE_BUFFER_SIZE));
         } catch (IOException e) {
             throw e;
         }
+    }
+
+    public void registerCallId(ClientCallFuture future){
+        final int callId = connectionManager.newCallId();
+        future.getRequest().setCallId(callId);
+        callIdMap.put(callId, future);
+        if (future.getHandler() != null) {
+            eventHandlerMap.put(callId, future);
+        }
+    }
+
+    public ClientCallFuture deRegisterCallId(int callId){
+        return callIdMap.remove(callId);
+    }
+
+    public ClientCallFuture deRegisterEventHandler(int callId){
+        return eventHandlerMap.remove(callId);
+    }
+
+    public EventHandler getEventHandler(int callId) {
+        final ClientCallFuture future = eventHandlerMap.get(callId);
+        if (future == null) {
+            return null;
+        }
+        return future.getHandler();
     }
 
     public boolean write(SocketWritable packet) {
@@ -155,14 +190,6 @@ public class ClientConnection implements Connection, Closeable {
         return connectionManager;
     }
 
-    public int getConnectionId() {
-        return connectionId;
-    }
-
-    public ClientWriteHandler getWriteHandler() {
-        return writeHandler;
-    }
-
     public ClientReadHandler getReadHandler() {
         return readHandler;
     }
@@ -191,6 +218,19 @@ public class ClientConnection implements Connection, Closeable {
         writeHandler.shutdown();
         in.close();
         out.close();
+
+        final HazelcastException response;
+        if (connectionManager.isLive()) {
+            response = new TargetDisconnectedException(remoteEndpoint);
+        } else {
+            response = new HazelcastException("Client is shutting down!!!");
+        }
+
+        for (Map.Entry<Integer, ClientCallFuture> entry : callIdMap.entrySet()) {
+            entry.getValue().notify(response);
+        }
+        callIdMap.clear();
+        eventHandlerMap.clear();
     }
 
     public void close(Throwable t) {
@@ -239,4 +279,5 @@ public class ClientConnection implements Connection, Closeable {
         sb.append('}');
         return sb.toString();
     }
+
 }

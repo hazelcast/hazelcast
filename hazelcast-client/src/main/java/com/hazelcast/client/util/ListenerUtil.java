@@ -17,9 +17,9 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.ClientRequest;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -33,30 +33,14 @@ public final class ListenerUtil {
         //TODO callback
         final Future future;
         try {
+            final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)context.getInvocationService();
             if (key == null) {
-                future = context.getInvocationService().invokeOnRandomTarget(request, handler);
+                future = invocationService.invokeOnRandomTarget(request, handler);
             } else {
-                future = context.getInvocationService().invokeOnKeyOwner(request, key, handler);
+                future = invocationService.invokeOnKeyOwner(request, key, handler);
             }
             String registrationId = context.getSerializationService().toObject(future.get());
-            context.getClusterService().registerListener(registrationId, request.getCallId());
-            return registrationId;
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    public static String listen(HazelcastClient client, ClientRequest request, Object key, EventHandler handler) {
-        //TODO callback
-        final Future future;
-        try {
-            if (key == null) {
-                future = client.getInvocationService().invokeOnRandomTarget(request, handler);
-            } else {
-                future = client.getInvocationService().invokeOnKeyOwner(request, key, handler);
-            }
-            String registrationId = client.getSerializationService().toObject(future.get());
-            client.getClientClusterService().registerListener(registrationId, request.getCallId());
+            invocationService.registerListener(registrationId, request.getCallId());
             return registrationId;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -66,9 +50,11 @@ public final class ListenerUtil {
     public static boolean stopListening(ClientContext context, ClientRequest request, String registrationId){
         final Future<Boolean> future;
         try {
-            future = context.getInvocationService().invokeOnRandomTarget(request);
+            final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)context.getInvocationService();
+            future = invocationService.invokeOnRandomTarget(request);
             Boolean result = context.getSerializationService().toObject(future.get());
-            context.getClusterService().deRegisterListener(registrationId);
+
+            invocationService.deRegisterListener(registrationId);
             return result;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

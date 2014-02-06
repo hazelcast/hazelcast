@@ -16,74 +16,35 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.AuthenticationRequest;
-import com.hazelcast.client.ClientImpl;
-import com.hazelcast.client.ClientPrincipal;
-import com.hazelcast.client.ClientRequest;
-import com.hazelcast.client.ClientResponse;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.LifecycleServiceImpl;
+import com.hazelcast.client.*;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.Authenticator;
-import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
-import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
+import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.InitialMembershipListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ClientPacket;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.exception.RetryableIOException;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -95,31 +56,18 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final ILogger logger = Logger.getLogger(ClientClusterService.class);
-    public final static int RETRY_COUNT = 20;
 
     private final HazelcastClient client;
+    private final ClientConnectionManagerImpl connectionManager;
     private final ClusterListenerThread clusterThread;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
-    private final boolean redoOperation;
-    private final Credentials credentials;
-    private volatile ClientPrincipal principal;
-    private volatile boolean active = false;
-
-    private final AtomicInteger callIdIncrementer = new AtomicInteger();
-    private final ConcurrentMap<Connection, ConcurrentMap<Integer, ClientCallFuture>> connectionCallMap = new ConcurrentHashMap<Connection, ConcurrentMap<Integer, ClientCallFuture>>();
-    private final ConcurrentMap<Connection, ConcurrentMap<Integer, ClientCallFuture>> connectionEventHandlerMap = new ConcurrentHashMap<Connection, ConcurrentMap<Integer, ClientCallFuture>>();
-
-    private final ConcurrentMap<String, Integer> registrationIdMap = new ConcurrentHashMap<String, Integer>();
-    private final ConcurrentMap<String, String> registrationAliasMap = new ConcurrentHashMap<String, String>();
-
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
+        this.connectionManager = (ClientConnectionManagerImpl)client.getConnectionManager();
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
         final ClientConfig clientConfig = getClientConfig();
-        redoOperation = clientConfig.isRedoOperation();
-        credentials = clientConfig.getCredentials();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
@@ -132,7 +80,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     }
                 }
                 if (listener instanceof MembershipListener) {
-                    _addMembershipListener((MembershipListener) listener);
+                    addMembershipListenerWithoutInit((MembershipListener) listener);
                 }
             }
         }
@@ -171,12 +119,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return Clock.currentTimeMillis();
     }
 
-    public boolean isRedoOperation() {
-        return redoOperation;
-    }
-
     public Client getLocalClient() {
-        ClientPrincipal cp = principal;
+        ClientPrincipal cp = connectionManager.getPrincipal();
         ClientConnection conn = clusterThread.conn;
         return new ClientImpl(cp != null ? cp.getUuid() : null, conn != null ? conn.getLocalSocketAddress() : null);
     }
@@ -185,15 +129,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return client.getSerializationService();
     }
 
-    private ClientConnectionManager getConnectionManager() {
-        return client.getConnectionManager();
-    }
-
-    public Authenticator getAuthenticator() {
-        return new ClusterAuthenticator();
-    }
-
-    public String addMembershipListener(MembershipListener listener) {
+    public String addMembershipListenerWithInit(MembershipListener listener) {
         final String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, listener);
         if (listener instanceof InitialMembershipListener) {
@@ -204,7 +140,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return id;
     }
 
-    public String _addMembershipListener(MembershipListener listener) {
+    public String addMembershipListenerWithoutInit(MembershipListener listener) {
         final String id = UUID.randomUUID().toString();
         listeners.put(id, listener);
         return id;
@@ -236,12 +172,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         }
         initMembershipListener();
-        active = true;
         // started
     }
 
     public void stop() {
-        active = false;
         clusterThread.shutdown();
     }
 
@@ -303,7 +237,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         private void loadInitialMemberList() throws Exception {
             final SerializationService serializationService = getSerializationService();
             final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
-            final SerializableCollection coll = (SerializableCollection) sendAndReceive(request, conn);
+            final SerializableCollection coll = (SerializableCollection) connectionManager.sendAndReceive(request, conn);
 
             Map<String, MemberImpl> prevMembers = Collections.emptyMap();
             if (!members.isEmpty()) {
@@ -423,24 +357,21 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private ClientConnection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
         final int connectionAttemptLimit = getClientConfig().getConnectionAttemptLimit();
-        final ManagerAuthenticator authenticator = new ManagerAuthenticator();
+        final int connectionAttemptPeriod = getClientConfig().getConnectionAttemptPeriod();
         int attempt = 0;
         Throwable lastError = null;
         while (true) {
-            final long nextTry = Clock.currentTimeMillis() + getClientConfig().getConnectionAttemptPeriod();
+            final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 try {
-                    final ClientConnection connection = getConnectionManager().ownerConnection(address, authenticator);
-                    active = true;
+                    final ClientConnection connection = connectionManager.ownerConnection(address);
                     fireConnectionEvent(false);
                     return connection;
                 } catch (IOException e) {
-                    active = false;
                     lastError = e;
                     logger.finest("IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
-                    active = false;
                     lastError = e;
                     logger.warning("Authentication error on " + address, e);
                 }
@@ -473,10 +404,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private Collection<InetSocketAddress> getConfigAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-        for (String address : getClientConfig().getAddresses()) {
+        final List<String> addresses = getClientConfig().getAddresses();
+        Collections.shuffle(addresses);
+        for (String address : addresses) {
             socketAddresses.addAll(AddressHelper.getSocketAddresses(address));
         }
-//        Collections.shuffle(socketAddresses); //TODO
         return socketAddresses;
     }
 
@@ -484,46 +416,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return client.getClientConfig();
     }
 
-    public class ManagerAuthenticator implements Authenticator {
-
-        public void auth(ClientConnection connection) throws AuthenticationException, IOException {
-            final Object response = authenticate(connection, credentials, principal, true, true);
-            principal = (ClientPrincipal) response;
-        }
-    }
-
-    private class ClusterAuthenticator implements Authenticator {
-        public void auth(ClientConnection connection) throws AuthenticationException, IOException {
-            authenticate(connection, credentials, principal, false, false);
-        }
-    }
-
-    private Object authenticate(ClientConnection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth, boolean firstConnection) throws IOException {
-        final SerializationService ss = getSerializationService();
-        AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
-        connection.init();
-        auth.setReAuth(reAuth);
-        auth.setFirstConnection(firstConnection);
-        SerializableCollection coll;
-        try {
-            coll = (SerializableCollection) sendAndReceive(auth, connection);
-        } catch (Exception e) {
-            throw new RetryableIOException(e);
-        }
-        final Iterator<Data> iter = coll.getCollection().iterator();
-        if (iter.hasNext()) {
-            final Data addressData = iter.next();
-            final Address address = ss.toObject(addressData);
-            connection.setRemoteEndpoint(address);
-            if (iter.hasNext()) {
-                final Data principalData = iter.next();
-                return ss.toObject(principalData);
-            }
-        }
-        throw new AuthenticationException(); //TODO
-    }
-
-    public String membersString() {
+    private String membersString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
         final Collection<MemberImpl> members = getMemberList();
         sb.append(members != null ? members.size() : 0);
@@ -537,222 +430,4 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return sb.toString();
     }
 
-    //NIO
-
-    public ICompletableFuture send(ClientRequest request) throws IOException {
-        final ClientConnection connection = getOrConnect(null);
-        return doSend(request, connection, null);
-    }
-
-    public ICompletableFuture send(ClientRequest request, Address target) throws IOException {
-        final ClientConnection connection = getOrConnect(target);
-        return doSend(request, connection, null);
-    }
-
-    public ICompletableFuture send(ClientRequest request, ClientConnection connection) throws IOException {
-        return doSend(request, connection, null);
-    }
-
-    public ICompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws IOException {
-        final ClientConnection connection = getOrConnect(null);
-        return doSend(request, connection, handler);
-    }
-
-    public ICompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException {
-        final ClientConnection connection = getOrConnect(target);
-        return doSend(request, connection, handler);
-    }
-
-    private ClientConnection getOrConnect(Address target) throws IOException {
-        int count = 0;
-        final ClientConnectionManager connectionManager = client.getConnectionManager();
-        IOException lastError = null;
-        while (count < RETRY_COUNT) {
-            try {
-                if (target == null || getMember(target) == null) {
-                    return connectionManager.getRandomConnection();
-                } else {
-                    return connectionManager.getOrConnect(target);
-                }
-            } catch (IOException e) {
-                lastError = e;
-            }
-            target = null;
-            count++;
-        }
-        throw lastError;
-    }
-
-    public void registerListener(String uuid, int callId) {
-        registrationAliasMap.put(uuid, uuid);
-        registrationIdMap.put(uuid, callId);
-    }
-
-    public void reRegisterListener(String uuid, String alias, int callId) {
-        final String oldAlias = registrationAliasMap.put(uuid, alias);
-        if (oldAlias != null) {
-            registrationIdMap.remove(oldAlias);
-            registrationIdMap.put(alias, callId);
-        }
-    }
-
-    public boolean deRegisterListener(String uuid) {
-        final String alias = registrationAliasMap.remove(uuid);
-        if (alias != null) {
-            final Integer callId = registrationIdMap.remove(alias);
-            for (ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap : connectionEventHandlerMap.values()) {
-                if (eventHandlerMap.remove(callId) != null) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception {
-        final SerializationService ss = getSerializationService();
-        connection.write(ss.toData(request));
-        final Data data = connection.read();
-        ClientResponse clientResponse = ss.toObject(data);
-        Object response = ss.toObject(clientResponse.getResponse());
-        if (response instanceof Throwable) {
-            Throwable t = (Throwable) response;
-            ExceptionUtil.fixRemoteStackTrace(t, Thread.currentThread().getStackTrace());
-            throw new Exception(t);
-        }
-        return response;
-    }
-
-    public Future reSend(ClientCallFuture future) throws IOException {
-        final ClientConnection connection = getOrConnect(null);
-        _send(future, connection);
-        return future;
-    }
-
-    private ICompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
-        final ClientCallFuture future = new ClientCallFuture(client, connection, request, handler);
-        _send(future, connection);
-        return future;
-    }
-
-    public void _send(ClientCallFuture future, ClientConnection connection) {
-        registerCall(future, connection);
-        final SerializationService ss = getSerializationService();
-        final Data data = ss.toData(future.getRequest());
-        if (!connection.write(new DataAdapter(data))) {
-            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
-            connectionCallMap.remove(connection);
-        }
-    }
-
-    private void registerCall(ClientCallFuture future, ClientConnection connection) {
-        final int callId = callIdIncrementer.incrementAndGet();
-        future.getRequest().setCallId(callId);
-        ConcurrentMap<Integer, ClientCallFuture> callIdMap = connectionCallMap.get(connection);
-        if (callIdMap == null) {
-            callIdMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
-            final ConcurrentMap<Integer, ClientCallFuture> current = connectionCallMap.putIfAbsent(connection, callIdMap);
-            if (current != null) {
-                callIdMap = current;
-            }
-        }
-        callIdMap.put(callId, future);
-        if (future.getHandler() != null) {
-            registerEventHandler(future, connection);
-        }
-    }
-
-    private void registerEventHandler(ClientCallFuture future, ClientConnection connection) {
-        ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap = connectionEventHandlerMap.get(connection);
-        if (eventHandlerMap == null) {
-            eventHandlerMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
-            final ConcurrentMap<Integer, ClientCallFuture> current = connectionEventHandlerMap.putIfAbsent(connection, eventHandlerMap);
-            if (current != null) {
-                eventHandlerMap = current;
-            }
-        }
-        eventHandlerMap.put(future.getRequest().getCallId(), future);
-    }
-
-    private ClientCallFuture deRegisterCall(ClientConnection connection, int callId) {
-        final ConcurrentMap<Integer, ClientCallFuture> callIdMap = connectionCallMap.get(connection);
-        if (callIdMap == null) {
-            return null;
-        }
-        return callIdMap.remove(callId);
-    }
-
-    public void removeConnectionCalls(ClientConnection connection) {
-        final HazelcastException response;
-        if (active) {
-            ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
-            response = new TargetDisconnectedException(connection.getRemoteEndpoint());
-        } else {
-            response = new HazelcastException("Client is shutting down!!!");
-        }
-        final ConcurrentMap<Integer, ClientCallFuture> callIdMap = connectionCallMap.remove(connection);
-        final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap = connectionEventHandlerMap.remove(connection);
-        if (callIdMap != null) {
-            for (Map.Entry<Integer, ClientCallFuture> entry : callIdMap.entrySet()) {
-                if (eventHandlerMap != null) {
-                    eventHandlerMap.remove(entry.getKey());
-                }
-                entry.getValue().notify(response);
-            }
-            callIdMap.clear();
-        }
-        if (eventHandlerMap != null) {
-            for (ClientCallFuture future : eventHandlerMap.values()) {
-                future.notify(response);
-            }
-            eventHandlerMap.clear();
-        }
-    }
-
-    public void handlePacket(ClientPacket packet) {
-        client.getClientExecutionService().execute(new ClientPacketProcessor(packet));
-    }
-
-    class ClientPacketProcessor implements Runnable {
-
-        ClientPacket packet;
-
-        ClientPacketProcessor(ClientPacket packet) {
-            this.packet = packet;
-        }
-
-        public void run() {
-            final ClientConnection conn = (ClientConnection) packet.getConn();
-            final ClientResponse clientResponse = getSerializationService().toObject(packet.getData());
-            final int callId = clientResponse.getCallId();
-            final Object response = clientResponse.getResponse();
-            final boolean event = clientResponse.isEvent();
-            if (event) {
-                handleEvent(response, callId, conn);
-            } else {
-                handlePacket(response, callId, conn);
-            }
-        }
-
-        private void handlePacket(Object response, int callId, ClientConnection conn) {
-            final ClientCallFuture future = deRegisterCall(conn, callId);
-            if (future == null) {
-                logger.warning("No call for callId: " + callId + ", response: " + response);
-                return;
-            }
-            future.notify(response);
-        }
-
-        private void handleEvent(Object event, int callId, ClientConnection conn) {
-            final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap = connectionEventHandlerMap.get(conn);
-            if (eventHandlerMap != null) {
-                final ClientCallFuture future = eventHandlerMap.get(callId);
-                if (future != null && future.getHandler() != null) {
-                    future.getHandler().handle(getSerializationService().toObject(event));
-                    return;
-                }
-            }
-            logger.warning("No eventHandler for callId: " + callId + ", event: " + event + ", conn: " + conn);
-        }
-    }
 }

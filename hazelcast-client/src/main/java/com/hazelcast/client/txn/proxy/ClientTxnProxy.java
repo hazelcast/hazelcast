@@ -18,7 +18,7 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.ClientDestroyRequest;
 import com.hazelcast.client.ClientRequest;
-import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.nio.serialization.Data;
@@ -47,10 +47,10 @@ abstract class ClientTxnProxy implements TransactionalObject {
             ((BaseTransactionRequest) request).setTxnId(proxy.getTxnId());
             ((BaseTransactionRequest) request).setClientThreadId(Thread.currentThread().getId());
         }
-        final ClientClusterService clusterService = proxy.getClient().getClientClusterService();
+        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)proxy.getClient().getInvocationService();
         final SerializationService ss = proxy.getClient().getSerializationService();
         try {
-            final Future f = clusterService.send(request, proxy.getConnection());
+            final Future f = invocationService.send(request, proxy.getConnection());
             return ss.toObject(f.get()) ;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

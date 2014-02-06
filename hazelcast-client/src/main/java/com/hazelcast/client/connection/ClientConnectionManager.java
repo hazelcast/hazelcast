@@ -30,9 +30,9 @@ public interface ClientConnectionManager {
 
     public void start();
 
-    public ClientConnection getRandomConnection() throws IOException;
+    public ClientConnection tryToConnect(Address address) throws IOException;
 
-    public ClientConnection getOrConnect(Address address) throws IOException ;
+    public ClientConnection ownerConnection(Address address) throws IOException ;
 
-    public ClientConnection ownerConnection(Address address, Authenticator authenticator) throws IOException ;
+    public boolean removeEventHandler(Integer callId);
 }
