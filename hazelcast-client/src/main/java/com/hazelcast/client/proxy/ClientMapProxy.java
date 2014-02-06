@@ -70,10 +70,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         initNearCache();
 
         final Data keyData = toData(key);
-        if (nearCache != null){
+        if (nearCache != null) {
             Object cached = nearCache.get(keyData);
-            if (cached != null){
-                if (cached.equals(ClientNearCache.NULL_OBJECT)){
+            if (cached != null) {
+                if (cached.equals(ClientNearCache.NULL_OBJECT)) {
                     return null;
                 }
                 return (V) cached;
@@ -81,7 +81,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         MapGetRequest request = new MapGetRequest(name, keyData);
         final V result = invoke(request, keyData);
-        if (nearCache != null){
+        if (nearCache != null) {
             nearCache.put(keyData, result);
         }
         return result;
@@ -334,15 +334,34 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     public Map<K, V> getAll(Set<K> keys) {
         Set keySet = new HashSet(keys.size());
+        Map<K, V> result = new HashMap<K, V>();
         for (Object key : keys) {
             keySet.add(toData(key));
         }
+        if (nearCache != null) {
+            final Iterator<Data> iterator = keySet.iterator();
+            while (iterator.hasNext()) {
+                Data key = iterator.next();
+                Object cached = nearCache.get(key);
+                if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+                    result.put((K) toObject(key), (V) cached);
+                    iterator.remove();
+                }
+            }
+        }
+        if (keys.isEmpty()) {
+            return result;
+        }
         MapGetAllRequest request = new MapGetAllRequest(name, keySet);
         MapEntrySet mapEntrySet = invoke(request);
-        Map<K, V> result = new HashMap<K, V>();
         Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Entry<Data, Data> dataEntry : entrySet) {
-            result.put((K) toObject(dataEntry.getKey()), (V) toObject(dataEntry.getValue()));
+            final V value = (V) toObject(dataEntry.getValue());
+            final K key = (K) toObject(dataEntry.getKey());
+            result.put(key, value);
+            if (nearCache != null) {
+                nearCache.put(dataEntry.getKey(), value);
+            }
         }
         return result;
     }
@@ -379,7 +398,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         QueryResultSet result = invoke(request);
         Set<K> keySet = new HashSet<K>(result.size());
         for (Object data : result) {
-            K key = toObject((Data)data);
+            K key = toObject((Data) data);
             keySet.add(key);
         }
         return keySet;
@@ -390,7 +409,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         QueryResultSet result = invoke(request);
         Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
         for (Object data : result) {
-            AbstractMap.SimpleImmutableEntry<Data ,Data > dataEntry = (AbstractMap.SimpleImmutableEntry<Data ,Data >)data;
+            AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -403,7 +422,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         QueryResultSet result = invoke(request);
         Collection<V> values = new ArrayList<V>(result.size());
         for (Object data : result) {
-            V value = toObject((Data)data);
+            V value = toObject((Data) data);
             values.add(value);
         }
         return values;
@@ -474,7 +493,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     protected void onDestroy() {
-        if (nearCache != null){
+        if (nearCache != null) {
             nearCache.destroy();
         }
     }
@@ -538,10 +557,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         };
     }
 
-    private void initNearCache(){
-        if (nearCacheInitialized.compareAndSet(false, true)){
+    private void initNearCache() {
+        if (nearCacheInitialized.compareAndSet(false, true)) {
             final NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
-            if (nearCacheConfig == null){
+            if (nearCacheConfig == null) {
                 return;
             }
             ClientNearCache _nearCache = new ClientNearCache(name, getContext(), nearCacheConfig);

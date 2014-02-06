@@ -37,6 +37,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -162,7 +163,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Future<Data> getAsyncInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
+        final MapService mapService = getService();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        if (nearCacheEnabled) {
+            Object cached = mapService.getFromNearCache(name, key);
+            if (cached != null && NearCache.NULL_OBJECT.equals(cached)) {
+                return new CompletedFuture<Data>(
+                        nodeEngine.getSerializationService(),
+                        cached);
+            }
+        }
         GetOperation operation = new GetOperation(name, key);
         try {
             Invocation invocation = nodeEngine.getOperationService()
@@ -365,16 +376,39 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
         final NodeEngine nodeEngine = getNodeEngine();
+        final MapService mapService = getService();
         Map<Object, Object> result = new HashMap<Object, Object>();
-
+        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        if (nearCacheEnabled) {
+            final Iterator<Data> iterator = keys.iterator();
+            while (iterator.hasNext()) {
+                Data key = iterator.next();
+                Object cachedValue = mapService.getFromNearCache(name, key);
+                if (cachedValue != null && !NearCache.NULL_OBJECT.equals(cachedValue)) {
+                    result.put(key, cachedValue);
+                    iterator.remove();
+                }
+            }
+        }
+        if (keys.isEmpty()) {
+            return result;
+        }
+        Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses = null;
         try {
             responses = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys));
+                    .invokeOnPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys), partitions);
             for (Object response : responses.values()) {
-                Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) getService().toObject(response)).getEntrySet();
+                Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) mapService.toObject(response)).getEntrySet();
                 for (Entry<Data, Data> entry : entries) {
-                    result.put(getService().toObject(entry.getKey()), getService().toObject(entry.getValue()));
+                    result.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+                    if (nearCacheEnabled) {
+                        int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
+                        if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
+                                .equals(nodeEngine.getClusterService().getThisAddress())) {
+                            mapService.putNearCache(name, entry.getKey(), entry.getValue());
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -382,6 +416,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
 
         return result;
+    }
+
+    private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
+        PartitionService partitionService = getNodeEngine().getPartitionService();
+        int partitions = partitionService.getPartitionCount();
+        int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
+        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+
+        Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext() && partitionIds.size() < partitions) {
+            Data key = iterator.next();
+            partitionIds.add(partitionService.getPartitionId(key));
+        }
+        return partitionIds;
     }
 
     protected void putAllInternal(final Map<? extends Object, ? extends Object> entries) {
