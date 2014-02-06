@@ -143,6 +143,22 @@ public class ClientTxnMapTest {
 
         assertEquals("value1", client.getMap(name).get("key1"));
     }
+    @Test
+    public void testPutWithTTL() throws Exception {
+        final String name = "testPutWithTTL";
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> map = context.getMap(name);
+        assertNull(map.put("key1", "value1",5,TimeUnit.SECONDS));
+        assertEquals("value1", map.get("key1"));
+        assertNull(client.getMap(name).get("key1"));
+        context.commitTransaction();
+
+        assertEquals("value1", client.getMap(name).get("key1"));
+        Thread.sleep(10000);
+        assertNull(client.getMap(name).get("key1"));
+    }
 
     @Test
     public void testGetForUpdate() throws TransactionException {

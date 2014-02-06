@@ -21,14 +21,15 @@ import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Transactional implementation of {@link BaseMap}.
  *
- * @see BaseMap
- * @see IMap
  * @param <K> key
  * @param <V> value
+ * @see BaseMap
+ * @see IMap
  */
 public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, V> {
 
@@ -75,6 +76,15 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      * @see IMap#put(Object, Object)
      */
     V put(K key, V value);
+
+    /**
+     * Transactional implementation of {@link com.hazelcast.core.IMap#put(Object, Object, long, java.util.concurrent.TimeUnit)}.
+     * <p/>
+     * The object to be put will be accessible only in the current transaction context till transaction is committed.
+     *
+     * @see IMap#put(Object, Object, long, java.util.concurrent.TimeUnit)
+     */
+    V put(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#set(Object, Object)}.

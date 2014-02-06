@@ -44,6 +44,11 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         super(name, dataKey, value);
         this.version = version;
     }
+    public TxnSetOperation(String name, Data dataKey, Data value, long version, long ttl) {
+        super(name, dataKey, value);
+        this.version = version;
+        this.ttl  = ttl;
+    }
 
     @Override
     public void run() {
