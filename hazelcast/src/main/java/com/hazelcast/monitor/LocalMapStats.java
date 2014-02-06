@@ -16,8 +16,6 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-
 /**
  * Local map statistics. As everything is partitioned in Hazelcast,
  * each member owns 1/N (N being the number of members in the cluster)
@@ -201,7 +199,13 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     public long getHeapCost();
 
-    public NearCacheStatsImpl getNearCacheStats();
+    /**
+     *
+     * Returns statistics related to the Near Cache.
+     *
+     * @return statistics object for the Near Cache
+     */
+    public NearCacheStats getNearCacheStats();
 
 
 }

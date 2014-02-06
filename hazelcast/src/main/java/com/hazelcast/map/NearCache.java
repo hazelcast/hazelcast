@@ -184,6 +184,7 @@ public class NearCache {
             if (record.expired()) {
                 cache.remove(key);
                 updateSizeEstimator(-calculateCost(record));
+                stats.incrementMisses();
                 return null;
             }
             return record.value;

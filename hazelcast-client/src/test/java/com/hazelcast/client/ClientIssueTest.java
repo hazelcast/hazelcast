@@ -18,9 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -174,43 +172,6 @@ public class ClientIssueTest {
         thread.join();
         assertEquals(expected, map.size());
     }
-
-    @Test
-    public void testNearCache() {
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
-
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setSmartRouting(false);
-
-        clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(InMemoryFormat.OBJECT));
-
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap map = client.getMap("map1");
-
-        for (int i = 0; i < 10 * 1000; i++) {
-            map.put("key" + i, "value" + i);
-        }
-
-        long begin = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            map.get("key" + i);
-        }
-
-        long firstRead = System.currentTimeMillis() - begin;
-
-
-        begin = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            map.get("key" + i);
-        }
-        long secondRead = System.currentTimeMillis() - begin;
-
-        assertTrue(secondRead < firstRead);
-
-    }
-
     @Test
     public void testGetDistributedObjectsIssue678() {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance();
