@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,10 +45,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
      public void testEntryProcessorDeleteWithPredicate() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, TempData> map = instance1.getMap("test");
         try {
             map.put("a", new TempData("foo", "bar"));
@@ -76,10 +76,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryProcessorDelete() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, TempData> map = instance1.getMap("test");
         try {
             map.put("a", new TempData("foo", "bar"));

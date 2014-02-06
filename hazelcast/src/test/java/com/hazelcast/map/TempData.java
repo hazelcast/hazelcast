@@ -59,7 +59,6 @@ public class TempData implements Serializable {
         private static final long serialVersionUID = 1L;
 
         public Object process(Map.Entry<String, TempData> entry) {
-            System.out.println("asdf Deleting entry: " + entry);
             entry.setValue(null);
             return true;
         }
@@ -71,7 +70,6 @@ public class TempData implements Serializable {
         private static final long serialVersionUID = 1L;
 
         public Object process(Map.Entry<String, TempData> entry) {
-            System.out.println("asdf Processing entry " + entry.getValue());
             return true;
         }
 
