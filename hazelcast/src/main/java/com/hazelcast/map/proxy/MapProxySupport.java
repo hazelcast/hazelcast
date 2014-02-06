@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
@@ -73,6 +74,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public void initialize() {
         initializeListeners();
         initializeIndexes();
+        initializeMapStoreLoad();
+
+    }
+
+    private void initializeMapStoreLoad() {
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
+            MapStoreConfig.InitialLoadMode initialLoadMode = mapStoreConfig.getInitialLoadMode();
+            if (initialLoadMode.equals(MapStoreConfig.InitialLoadMode.EAGER)) {
+                loadKeys();
+            }
+        }
     }
 
     private void initializeIndexes() {
@@ -293,6 +306,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, containsKeyOperation,
                     partitionId);
             return (Boolean) getService().toObject(f.get());
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public void loadKeys() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+           nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, new LoadKeysOperationFactory(name));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

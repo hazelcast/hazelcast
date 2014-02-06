@@ -140,6 +140,27 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testInitialLoadModeEager() {
+        int size = 10000;
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
+        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance1.getMap("testMapInitialLoad");
+        System.out.println("getMap finished. mode:"+mapStoreConfig.getInitialLoadMode());
+
+        assertEquals(size, map.size());
+
+    }
+
+    @Test
     public void testMapInitialLoad() throws InterruptedException {
         int size = 10000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -147,12 +168,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config cfg = new Config();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new SimpleMapLoader(size));
-        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
+
+        MapConfig mc = cfg.getMapConfig("default");
+        mc.setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("testMapInitialLoad");
+        System.out.println("getMap finished. mode:"+mapStoreConfig.getInitialLoadMode());
         assertEquals(size, map.size());
         System.out.println(map.size());
 
@@ -173,9 +197,11 @@ public class MapStoreTest extends HazelcastTestSupport {
     private class SimpleMapLoader implements MapLoader {
 
         final int size;
+        final boolean slow;
 
-        SimpleMapLoader(int size) {
+        SimpleMapLoader(int size,boolean slow) {
             this.size = size;
+            this.slow = slow;
         }
 
         @Override
@@ -185,6 +211,14 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         @Override
         public Map loadAll(Collection keys) {
+            if (slow){
+                try {
+                    System.out.println("sleeping 2000 ms before loading keys");
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             Map result = new HashMap();
             for (Object key : keys) {
                 result.put(key, key);
@@ -1053,7 +1087,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, "5");
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new SimpleMapLoader(mapSize));
+        mapStoreConfig.setImplementation(new SimpleMapLoader(mapSize,false));
         cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
