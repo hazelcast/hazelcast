@@ -195,6 +195,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                     case EVICTED:
                         listener.entryEvicted(entryEvent);
                         break;
+                    default:
+                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
             }
         };
