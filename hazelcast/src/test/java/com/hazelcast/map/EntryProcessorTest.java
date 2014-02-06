@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,11 +54,27 @@ import static org.junit.Assert.*;
 public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
-     public void testEntryProcessorDeleteWithPredicate() {
+    @Ignore
+    public void testIndexAware_Issue_1719() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        Config cfg = new Config();
+        cfg.getMapConfig("test").addMapIndexConfig(new MapIndexConfig("attr1", false));
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, TempData> map = instance.getMap("test");
+        map.put("a", new TempData("foo", "bar"));
+        map.put("b", new TempData("abc", "123"));
+        TestPredicate predicate = new TestPredicate("foo");
+        map.executeOnEntries(new LoggingEntryProcessor(), predicate);
+        assertFalse("The predicate shouldn't be applied if indexing works!", predicate.didApply());
+    }
+
+    @Test
+    public void testEntryProcessorDeleteWithPredicate() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, TempData> map = instance1.getMap("test");
         try {
             map.put("a", new TempData("foo", "bar"));
@@ -84,10 +101,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryProcessorDelete() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, TempData> map = instance1.getMap("test");
         try {
             map.put("a", new TempData("foo", "bar"));
