@@ -9,8 +9,41 @@
     <!-- Suppress duplicate checking of copyright notice -->
     <suppress checks="StrictDuplicateCode" files=".java" lines="1-15"/>
 
-    <!--Code Smells -->
+    <!--Enable individual packages to be excluded. We should comment these out as we progress-->
+    <suppress checks="" files="[\\/]ascii[\\/]"/>
+    <suppress checks="" files="[\\/]client[\\/]"/>
+    <suppress checks="" files="[\\/]cluster[\\/]"/>
+    <suppress checks="" files="[\\/]collection[\\/]"/>
+    <suppress checks="" files="[\\/]concurrent[\\/]"/>
+    <suppress checks="" files="[\\/]config[\\/]"/>
+    <suppress checks="" files="[\\/]core[\\/]"/>
+    <suppress checks="" files="[\\/]examples[\\/]"/>
+    <suppress checks="" files="[\\/]executor[\\/]"/>
+    <suppress checks="" files="[\\/]instance[\\/]"/>
+    <suppress checks="" files="[\\/]jmx[\\/]"/>
+    <suppress checks="" files="[\\/]logging[\\/]"/>
+    <suppress checks="" files="[\\/]management[\\/]"/>
+    <suppress checks="" files="[\\/]map[\\/]"/>
+    <!--Chris comment out the following line to turn on checking for mapreduce.
+    Then run mvn -Pcheckstyle -DskipTests  instal-->
+    <suppress checks="" files="[\\/]mapreduce[\\/]"/>
+    <suppress checks="" files="[\\/]monitor[\\/]"/>
+    <suppress checks="" files="[\\/]multimap[\\/]"/>
+    <suppress checks="" files="[\\/]nio[\\/]"/>
+    <suppress checks="" files="[\\/]osgi[\\/]"/>
+    <suppress checks="" files="[\\/]partition[\\/]"/>
+    <suppress checks="" files="[\\/]query[\\/]"/>
+    <suppress checks="" files="[\\/]queue[\\/]"/>
+    <suppress checks="" files="[\\/]replicatedmap[\\/]"/>
+    <suppress checks="" files="[\\/]security[\\/]"/>
+    <suppress checks="" files="[\\/]spi[\\/]"/>
+    <suppress checks="" files="[\\/]storage[\\/]"/>
+    <suppress checks="" files="[\\/]topic[\\/]"/>
+    <suppress checks="" files="[\\/]transaction[\\/]"/>
+    <suppress checks="" files="[\\/]util[\\/]"/>
+    <suppress checks="" files="[\\/]wan[\\/]"/>
 
+    <!--Code Smells -->
 
     <!--Exclude Clover instrumented sources-->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
