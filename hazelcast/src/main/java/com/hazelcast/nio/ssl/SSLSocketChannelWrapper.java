@@ -78,14 +78,10 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
                     }
                     netInBuffer.clear();
                     while (socketChannel.read(netInBuffer) < 1) {
-                        try {
-                            if (DEBUG) {
-                                log("Spinning on channel read...");
-                            }
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            throw new IOException(e);
+                        if (DEBUG) {
+                            log("Spinning on channel read...");
                         }
+                        Thread.yield();
                     }
                     netInBuffer.flip();
                     unwrap(netInBuffer);
@@ -109,14 +105,10 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
                         log("Done WRAP: " + sslEngineResult.getHandshakeStatus());
                     }
                 } else {
-                    try {
-                        if (DEBUG) {
-                            log("Sleeping... Status: " + sslEngineResult.getHandshakeStatus());
-                        }
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        throw new IOException(e);
+                    if (DEBUG) {
+                        log("Sleeping... Status: " + sslEngineResult.getHandshakeStatus());
                     }
+                    Thread.yield();
                 }
             }
             if (sslEngineResult.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
