@@ -145,14 +145,20 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         Config cfg = new Config();
+        GroupConfig groupConfig = new GroupConfig("testEager");
+        cfg.setGroupConfig(groupConfig);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
         cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
 
+
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+
+
         IMap map = instance1.getMap("testMapInitialLoad");
         System.out.println("getMap finished. mode:"+mapStoreConfig.getInitialLoadMode());
 
