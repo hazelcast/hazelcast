@@ -20,14 +20,7 @@
            xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee
            http://java.sun.com/xml/ns/j2ee/connector_1_5.xsd"
            version="1.5">
-    <description>Hazelcast Resource Adapter</description>
-    <display-name>HazelcastRA</display-name>
-    <!--
-    icon element seems to cause a problem with JBoss 5.1.
-    icon element doesn't seem to be part of the connector dtd.
-    try also removing it.
-    -->
-    <icon></icon>
+
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
     <resourceadapter-version>3.1.6-SNAPSHOT</resourceadapter-version>
@@ -42,11 +35,6 @@
         	<description>Location of the hazelcast.xml file</description>
         	<config-property-name>configurationLocation</config-property-name>
         	<config-property-type>java.lang.String</config-property-type>
-        </config-property>
-        <config-property>
-        	<description>External Hazelcast Instance to handle with this Resource Adaptor</description>
-        	<config-property-name>hazelcast</config-property-name>
-        	<config-property-type>com.hazelcast.core.HazelcastInstance</config-property-type>
         </config-property>
 
         <outbound-resourceadapter>

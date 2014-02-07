@@ -49,8 +49,6 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     /** Identity */
     private transient final int id;
 
-    private boolean isEmbeddedInstance =true;
-
     public ResourceAdapterImpl() {
         id = idGen.incrementAndGet();
     }
@@ -80,11 +78,9 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
      * @see javax.resource.spi.ResourceAdapter#start(javax.resource.spi.BootstrapContext)
      */
     public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
-        if(this.isEmbeddedInstance && this.hazelcast ==null){
-            // Gets/creates the hazelcast instance
-            ConfigBuilder config = buildConfiguration();
-            setHazelcast(Hazelcast.newHazelcastInstance(config.build()));;
-        }
+    	// Gets/creates the hazelcast instance
+    	ConfigBuilder config = buildConfiguration();
+    	setHazelcast(Hazelcast.newHazelcastInstance(config.build()));;
     }
 
 	/**
@@ -111,19 +107,18 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
      * @see javax.resource.spi.ResourceAdapter#stop()
      */
     public void stop() {
-    	if(this.isEmbeddedInstance && this.hazelcast != null) {
+    	if (getHazelcast() != null) {
     		getHazelcast().getLifecycleService().shutdown();
     	}
     }
 
     /** Sets the underlying hazelcast instance */
-	public void setHazelcast(HazelcastInstance hazelcast) {
-        this.hazelcast = hazelcast;
-        this.isEmbeddedInstance = hazelcast == null;
+	private void setHazelcast(HazelcastInstance hazelcast) {
+		this.hazelcast = hazelcast;
 	}
 
 	/** Provides access to the underlying hazelcast instance */
-	public HazelcastInstance getHazelcast() {
+	HazelcastInstance getHazelcast() {
 		return hazelcast;
 	}
 
