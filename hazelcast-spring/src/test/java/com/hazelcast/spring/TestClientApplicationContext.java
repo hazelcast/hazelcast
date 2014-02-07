@@ -118,12 +118,12 @@ public class TestClientApplicationContext {
         assertNotNull(client3);
 
         ClientConfig config = client.getClientConfig();
-        assertEquals(3, config.getConnectionAttemptLimit());
-        assertEquals(1000, config.getConnectionTimeout());
-        assertEquals(3000, config.getConnectionAttemptPeriod());
+        assertEquals(3, config.getNetworkConfig().getConnectionAttemptLimit());
+        assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
+        assertEquals(3000, config.getNetworkConfig().getConnectionAttemptPeriod());
 
         ClientConfig config2 = client2.getClientConfig();
-        assertEquals(credentials, config2.getCredentials());
+        assertEquals(credentials, config2.getSecurityConfig().getCredentials());
 
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");

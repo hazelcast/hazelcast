@@ -90,7 +90,7 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return doSend(request, connection, null);
     }
 
-    public Future reSend(ClientCallFuture future) throws IOException {
+    public Future reSend(ClientCallFuture future) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
         _send(future, connection);
         return future;
@@ -125,22 +125,22 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     //NIO private
 
-    private ICompletableFuture send(ClientRequest request) throws IOException {
+    private ICompletableFuture send(ClientRequest request) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
         return doSend(request, connection, null);
     }
 
-    private ICompletableFuture send(ClientRequest request, Address target) throws IOException {
+    private ICompletableFuture send(ClientRequest request, Address target) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(target);
         return doSend(request, connection, null);
     }
 
-    private ICompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws IOException {
+    private ICompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
         return doSend(request, connection, handler);
     }
 
-    private ICompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws IOException {
+    private ICompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(target);
         return doSend(request, connection, handler);
     }

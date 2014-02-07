@@ -14,23 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection;
+package com.hazelcast.client.config;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.nio.Address;
+import com.hazelcast.security.Credentials;
 
 /**
- * @author ali 5/27/13
+ * @author ali 06/02/14
  */
-public interface ClientConnectionManager {
+public class ClientSecurityConfig {
 
-    public void shutdown();
+    private Credentials credentials;
 
-    public void start();
+    private String credentialsClassname;
 
-    public ClientConnection tryToConnect(Address address) throws Exception;
+    public Credentials getCredentials() {
+        return credentials;
+    }
 
-    public ClientConnection ownerConnection(Address address) throws Exception ;
+    public void setCredentials(Credentials credentials) {
+        this.credentials = credentials;
+    }
 
-    public boolean removeEventHandler(Integer callId);
+    public String getCredentialsClassname() {
+        return credentialsClassname;
+    }
+
+    public void setCredentialsClassname(String credentialsClassname) {
+        this.credentialsClassname = credentialsClassname;
+    }
 }

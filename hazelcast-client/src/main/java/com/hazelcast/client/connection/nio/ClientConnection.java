@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -60,7 +59,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private final int connectionId;
 
-    private final SocketChannel socketChannel;
+    private final SocketChannelWrapper socketChannelWrapper;
 
     private volatile Address remoteEndpoint;
 
@@ -71,19 +70,19 @@ public class ClientConnection implements Connection, Closeable {
     private final ConcurrentMap<Integer, ClientCallFuture> callIdMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
     private final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
 
-    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out, int connectionId, SocketChannel socketChannel) throws IOException {
+    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out, int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
+        final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
-        this.socketChannel = socketChannel;
+        this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
-        this.readHandler = new ClientReadHandler(this, in);
-        this.writeHandler = new ClientWriteHandler(this, out);
+        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
+        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
         final SerializationService ss = connectionManager.getSerializationService();
-        final Socket socket = socketChannel.socket();
         try {
             this.out = ss.createObjectDataOutputStream(
-                    new BufferedOutputStream(socket.getOutputStream(), ClientConnectionManagerImpl.SOCKET_SEND_BUFFER_SIZE));
+                    new BufferedOutputStream(socket.getOutputStream(), socket.getSendBufferSize()));
             this.in = ss.createObjectDataInputStream(
-                    new BufferedInputStream(socket.getInputStream(), ClientConnectionManagerImpl.SOCKET_RECEIVE_BUFFER_SIZE));
+                    new BufferedInputStream(socket.getInputStream(), socket.getReceiveBufferSize()));
         } catch (IOException e) {
             throw e;
         }
@@ -171,19 +170,19 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public InetAddress getInetAddress() {
-        return socketChannel.socket().getInetAddress();
+        return socketChannelWrapper.socket().getInetAddress();
     }
 
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
+        return (InetSocketAddress) socketChannelWrapper.socket().getRemoteSocketAddress();
     }
 
     public int getPort() {
-        return socketChannel.socket().getPort();
+        return socketChannelWrapper.socket().getPort();
     }
 
-    public SocketChannel getSocketChannel() {
-        return socketChannel;
+    public SocketChannelWrapper getSocketChannelWrapper() {
+        return socketChannelWrapper;
     }
 
     public ClientConnectionManagerImpl getConnectionManager() {
@@ -203,7 +202,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) socketChannel.socket().getLocalSocketAddress();
+        return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
     }
 
     private void innerClose() throws IOException {
@@ -211,8 +210,8 @@ public class ClientConnection implements Connection, Closeable {
             return;
         }
         live = false;
-        if (socketChannel != null && socketChannel.isOpen()) {
-            socketChannel.close();
+        if (socketChannelWrapper != null && socketChannelWrapper.isOpen()) {
+            socketChannelWrapper.close();
         }
         readHandler.shutdown();
         writeHandler.shutdown();
@@ -242,7 +241,7 @@ public class ClientConnection implements Connection, Closeable {
         } catch (Exception e) {
             logger.warning(e);
         }
-        String message = "Connection [" + socketChannel.socket().getRemoteSocketAddress() + "] lost. Reason: ";
+        String message = "Connection [" + socketChannelWrapper.socket().getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
         } else {
@@ -274,7 +273,7 @@ public class ClientConnection implements Connection, Closeable {
         sb.append(", writeHandler=").append(writeHandler);
         sb.append(", readHandler=").append(readHandler);
         sb.append(", connectionId=").append(connectionId);
-        sb.append(", socketChannel=").append(socketChannel);
+        sb.append(", socketChannel=").append(socketChannelWrapper);
         sb.append(", remoteEndpoint=").append(remoteEndpoint);
         sb.append('}');
         return sb.toString();

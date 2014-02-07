@@ -29,7 +29,6 @@ import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
 
 import javax.transaction.xa.XAResource;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +45,7 @@ public class TransactionContextProxy implements TransactionContext {
     public TransactionContextProxy(HazelcastClient client, TransactionOptions options) {
         try {
             this.connection = client.getConnectionManager().tryToConnect(null);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new HazelcastException("Could not obtain Connection!!!", e);
         }
         this.client = client;

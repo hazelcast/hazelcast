@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.*;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -356,8 +357,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private ClientConnection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
-        final int connectionAttemptLimit = getClientConfig().getConnectionAttemptLimit();
-        final int connectionAttemptPeriod = getClientConfig().getConnectionAttemptPeriod();
+        final ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
+        final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+        final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         int attempt = 0;
         Throwable lastError = null;
         while (true) {

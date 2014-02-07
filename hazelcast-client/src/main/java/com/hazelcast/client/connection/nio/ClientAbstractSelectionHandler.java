@@ -20,9 +20,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOSelector;
 import com.hazelcast.nio.SelectionHandler;
+import com.hazelcast.nio.SocketChannelWrapper;
 
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 
 /**
  * @author ali 14/12/13
@@ -31,7 +31,7 @@ public abstract class ClientAbstractSelectionHandler implements SelectionHandler
 
     protected final ILogger logger;
 
-    protected final SocketChannel socketChannel;
+    protected final SocketChannelWrapper socketChannel;
 
     protected final ClientConnection connection;
 
@@ -44,7 +44,7 @@ public abstract class ClientAbstractSelectionHandler implements SelectionHandler
     public ClientAbstractSelectionHandler(final ClientConnection connection, IOSelector ioSelector) {
         this.connection = connection;
         this.ioSelector = ioSelector;
-        this.socketChannel = connection.getSocketChannel();
+        this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = Logger.getLogger(getClass().getName());
     }
