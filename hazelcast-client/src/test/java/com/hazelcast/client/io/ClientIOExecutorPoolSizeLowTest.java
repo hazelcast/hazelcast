@@ -36,7 +36,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     static HazelcastInstance server3;
     static HazelcastInstance client;
 
-    static final int executorPoolSize = 2;
+    static final int executorPoolSize = 1;
 
     static String entryCounterID;
 
