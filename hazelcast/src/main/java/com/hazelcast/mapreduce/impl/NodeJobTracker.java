@@ -24,7 +24,6 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class NodeJobTracker extends AbstractJobTracker {

@@ -22,11 +22,8 @@ import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionService;
 
-import java.io.IOException;
 import java.util.List;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
