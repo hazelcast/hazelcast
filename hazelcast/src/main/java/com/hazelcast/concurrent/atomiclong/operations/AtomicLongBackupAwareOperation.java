@@ -14,23 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.spi.BackupAwareOperation;
 
-public final class AtomicLongDataSerializerHook implements DataSerializerHook {
+public abstract class AtomicLongBackupAwareOperation extends AtomicLongBaseOperation
+        implements BackupAwareOperation {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_DS_FACTORY, -17);
+    protected boolean shouldBackup = true;
 
-    @Override
-    public int getFactoryId() {
-        return F_ID;
+    public AtomicLongBackupAwareOperation() {
+    }
+
+    public AtomicLongBackupAwareOperation(String name) {
+        super(name);
     }
 
     @Override
-    public DataSerializableFactory createFactory() {
-        return null;
+    public boolean shouldBackup() {
+        return shouldBackup;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return 1;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
     }
 }

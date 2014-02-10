@@ -14,57 +14,48 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public abstract class AtomicLongBaseOperation extends Operation
-        implements PartitionAwareOperation {
+public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperation {
 
-    protected String name;
+    protected IFunction<Long, Long> function;
+    protected long response;
+    protected long backup;
 
-    public AtomicLongBaseOperation() {
+    public AbstractAlterOperation() {
     }
 
-    public AtomicLongBaseOperation(String name) {
-        this.name = name;
-    }
-
-    public LongWrapper getNumber() {
-        AtomicLongService service = getService();
-        return service.getNumber(name);
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
+    public AbstractAlterOperation(String name, IFunction<Long, Long> function) {
+        super(name);
+        this.function = function;
     }
 
     @Override
     public Object getResponse() {
-        return null;
+        return response;
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-   }
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(function);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        function = in.readObject();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new SetBackupOperation(name, backup);
+    }
 }

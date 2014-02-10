@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong.client;
+package com.hazelcast.concurrent.atomiclong.operations;
 
-import com.hazelcast.concurrent.atomiclong.operations.AlterOperation;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.core.IFunction;
 
-public class AlterRequest extends AbstractAlterRequest {
+public class AlterAndGetOperation extends AbstractAlterOperation {
 
-    public AlterRequest() {
+    public AlterAndGetOperation() {
     }
 
-    public AlterRequest(String name, Data function) {
+    public AlterAndGetOperation(String name, IFunction<Long, Long> function) {
         super(name, function);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return new AlterOperation(name, getFunction());
-    }
+    public void run() throws Exception {
+        LongWrapper number = getNumber();
 
-    @Override
-    public int getClassId() {
-        return AtomicLongPortableHook.ALTER;
+        long input = number.get();
+        long output = function.apply(input);
+        shouldBackup = input != output;
+        if (shouldBackup) {
+            backup = output;
+            number.set(output);
+        }
+
+        response = output;
     }
 }

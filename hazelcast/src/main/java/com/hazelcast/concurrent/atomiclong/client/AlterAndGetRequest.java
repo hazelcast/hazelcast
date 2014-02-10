@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.concurrent.atomiclong.AlterAndGetOperation;
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
+import com.hazelcast.concurrent.atomiclong.operations.AlterAndGetOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 

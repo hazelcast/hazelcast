@@ -14,27 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
-
-public class GetOperation extends AtomicLongBaseOperation {
-
-    private long returnValue;
-
-    public GetOperation() {
-    }
-
-    public GetOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public void run() throws Exception {
-        LongWrapper number = getNumber();
-        returnValue = number.get();
-    }
-
-    @Override
-    public Object getResponse() {
-        return returnValue;
-    }
-}
+/**
+ * <p>This package contains the operations on the IAtomicLong.<br/>
+ *
+ * @since 2
+ */
+package com.hazelcast.concurrent.atomiclong.operations;

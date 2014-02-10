@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
-import com.hazelcast.core.IFunction;
+import com.hazelcast.concurrent.atomiclong.LongWrapper;
 
-public class AlterAndGetOperation extends AbstractAlterOperation {
+public class GetOperation extends AtomicLongBaseOperation {
 
-    public AlterAndGetOperation() {
+    private long returnValue;
+
+    public GetOperation() {
     }
 
-    public AlterAndGetOperation(String name, IFunction<Long, Long> function) {
-        super(name, function);
+    public GetOperation(String name) {
+        super(name);
     }
 
     @Override
     public void run() throws Exception {
         LongWrapper number = getNumber();
+        returnValue = number.get();
+    }
 
-        long input = number.get();
-        long output = function.apply(input);
-        shouldBackup = input != output;
-        if (shouldBackup) {
-            backup = output;
-            number.set(output);
-        }
-
-        response = output;
+    @Override
+    public Object getResponse() {
+        return returnValue;
     }
 }

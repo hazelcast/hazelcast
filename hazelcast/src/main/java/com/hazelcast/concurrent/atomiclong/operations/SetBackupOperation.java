@@ -14,48 +14,42 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
-import com.hazelcast.core.IFunction;
+import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-public abstract class AbstractAlterOperation extends AtomicLongBackupAwareOperation {
+public class SetBackupOperation extends AtomicLongBaseOperation implements BackupOperation {
 
-    protected IFunction<Long,Long> function;
-    protected long response;
-    protected long backup;
+    private long newValue;
 
-    public AbstractAlterOperation() {
+    public SetBackupOperation() {
     }
 
-    public AbstractAlterOperation(String name, IFunction<Long,Long> function) {
+    public SetBackupOperation(String name, long newValue) {
         super(name);
-        this.function = function;
+        this.newValue = newValue;
     }
 
     @Override
-    public Object getResponse() {
-        return response;
+    public void run() throws Exception {
+        LongWrapper number = getNumber();
+        number.set(newValue);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(function);
+        out.writeLong(newValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        function = in.readObject();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, backup);
+        newValue = in.readLong();
     }
 }

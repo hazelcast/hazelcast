@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
+public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
 
-    private long delta;
+    private long newValue;
     private long returnValue;
 
-    public AddAndGetOperation() {
+    public GetAndSetOperation() {
     }
 
-    public AddAndGetOperation(String name, long delta) {
+    public GetAndSetOperation(String name, long newValue) {
         super(name);
-        this.delta = delta;
+        this.newValue = newValue;
     }
 
     @Override
     public void run() throws Exception {
         LongWrapper number = getNumber();
-        returnValue = number.addAndGet(delta);
+        returnValue = number.getAndSet(newValue);
     }
 
     @Override
@@ -49,17 +50,17 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(delta);
+        out.writeLong(newValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        delta = in.readLong();
+        newValue = in.readLong();
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new AddBackupOperation(name, delta);
+        return new SetBackupOperation(name, newValue);
     }
 }

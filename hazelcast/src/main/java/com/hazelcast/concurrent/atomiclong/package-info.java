@@ -14,34 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains IAtomicLong functionality for Hazelcast.<br/>
+ * The IAtomicLong is the distributed version of the {@link java.util.concurrent.atomic.AtomicLong}.
+ *
+ * @since 2
+ */
 package com.hazelcast.concurrent.atomiclong;
-
-import com.hazelcast.spi.BackupAwareOperation;
-
-public abstract class AtomicLongBackupAwareOperation extends AtomicLongBaseOperation
-        implements BackupAwareOperation {
-
-    protected boolean shouldBackup = true;
-
-    public AtomicLongBackupAwareOperation() {
-    }
-
-    public AtomicLongBackupAwareOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return shouldBackup;
-    }
-
-    @Override
-    public int getSyncBackupCount() {
-        return 1;
-    }
-
-    @Override
-    public int getAsyncBackupCount() {
-        return 0;
-    }
-}

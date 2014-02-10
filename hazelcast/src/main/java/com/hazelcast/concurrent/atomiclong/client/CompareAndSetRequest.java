@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
-import com.hazelcast.concurrent.atomiclong.CompareAndSetOperation;
+import com.hazelcast.concurrent.atomiclong.operations.CompareAndSetOperation;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
@@ -49,7 +48,7 @@ public class CompareAndSetRequest extends AtomicLongRequest {
     @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeLong("e",expect);
+        writer.writeLong("e", expect);
     }
 
     @Override

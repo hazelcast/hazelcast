@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
+import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ManagedService;
@@ -40,15 +40,19 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
 
+    /**
+     * The name of this service.s
+     */
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, LongWrapper> numbers = new ConcurrentHashMap<String, LongWrapper>();
-    private final ConstructorFunction<String, LongWrapper> atomicLongConstructorFunction = new ConstructorFunction<String, LongWrapper>() {
-        public LongWrapper createNew(String key) {
-            return new LongWrapper();
-        }
-    };
+    private final ConstructorFunction<String, LongWrapper> atomicLongConstructorFunction =
+            new ConstructorFunction<String, LongWrapper>() {
+                public LongWrapper createNew(String key) {
+                    return new LongWrapper();
+                }
+            };
 
     public AtomicLongService() {
     }

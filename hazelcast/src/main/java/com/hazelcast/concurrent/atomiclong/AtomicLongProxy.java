@@ -14,12 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong.proxy;
+package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.concurrent.atomiclong.*;
+import com.hazelcast.concurrent.atomiclong.operations.AddAndGetOperation;
+import com.hazelcast.concurrent.atomiclong.operations.AlterAndGetOperation;
+import com.hazelcast.concurrent.atomiclong.operations.AlterOperation;
+import com.hazelcast.concurrent.atomiclong.operations.ApplyOperation;
+import com.hazelcast.concurrent.atomiclong.operations.CompareAndSetOperation;
+import com.hazelcast.concurrent.atomiclong.operations.GetAndAddOperation;
+import com.hazelcast.concurrent.atomiclong.operations.GetAndAlterOperation;
+import com.hazelcast.concurrent.atomiclong.operations.GetAndSetOperation;
+import com.hazelcast.concurrent.atomiclong.operations.GetOperation;
+import com.hazelcast.concurrent.atomiclong.operations.SetOperation;
 import com.hazelcast.core.AsyncAtomicLong;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
@@ -165,7 +178,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     public InternalCompletableFuture<Void> asyncAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
 
-        Operation operation = new AlterOperation(name,function);
+        Operation operation = new AlterOperation(name, function);
         return asyncInvoke(operation);
     }
 
@@ -204,7 +217,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     public <R> InternalCompletableFuture<R> asyncApply(IFunction<Long, R> function) {
         isNotNull(function, "function");
 
-        Operation operation = new ApplyOperation<R>(name,function);
+        Operation operation = new ApplyOperation<R>(name, function);
         return asyncInvoke(operation);
     }
 

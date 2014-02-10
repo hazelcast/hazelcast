@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.concurrent.atomiclong.client.AddAndGetRequest;
-import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
-import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
-import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAddRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.SetRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
@@ -35,17 +26,17 @@ import java.util.Collection;
 
 public class AtomicLongPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_PORTABLE_FACTORY, -17);
+    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_PORTABLE_FACTORY, -17);
 
-    public static final int ADD_AND_GET = 1;
-    public static final int COMPARE_AND_SET = 2;
-    public static final int GET_AND_ADD = 3;
-    public static final int GET_AND_SET = 4;
-    public static final int SET = 5;
-    public static final int APPLY = 6;
-    public static final int ALTER = 7;
-    public static final int ALTER_AND_GET = 8;
-    public static final int GET_AND_ALTER = 9;
+    static final int ADD_AND_GET = 1;
+    static final int COMPARE_AND_SET = 2;
+    static final int GET_AND_ADD = 3;
+    static final int GET_AND_SET = 4;
+    static final int SET = 5;
+    static final int APPLY = 6;
+    static final int ALTER = 7;
+    static final int ALTER_AND_GET = 8;
+    static final int GET_AND_ALTER = 9;
 
     @Override
     public int getFactoryId() {
@@ -55,6 +46,7 @@ public class AtomicLongPortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
+            @Override
             public Portable create(int classId) {
                 switch (classId) {
                     case ADD_AND_GET:
@@ -75,8 +67,9 @@ public class AtomicLongPortableHook implements PortableHook {
                         return new AlterAndGetRequest();
                     case GET_AND_ALTER:
                         return new GetAndAlterRequest();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

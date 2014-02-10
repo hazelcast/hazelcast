@@ -10,7 +10,7 @@ com.hazelcast.executor.ExecutorPortableHook
 com.hazelcast.topic.TopicPortableHook
 com.hazelcast.concurrent.lock.LockPortableHook
 com.hazelcast.concurrent.semaphore.SemaphorePortableHook
-com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook
+client.AtomicLongPortableHook
 com.hazelcast.concurrent.countdownlatch.CountDownLatchPortableHook
 com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook
 com.hazelcast.replicatedmap.client.ReplicatedMapPortableHook

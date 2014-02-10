@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.core.IFunction;
 
 public class AlterOperation extends AbstractAlterOperation {

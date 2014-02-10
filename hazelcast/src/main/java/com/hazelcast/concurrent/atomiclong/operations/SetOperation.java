@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class SetBackupOperation extends AtomicLongBaseOperation implements BackupOperation {
+public class SetOperation extends AtomicLongBackupAwareOperation {
 
     private long newValue;
 
-    public SetBackupOperation() {
+    public SetOperation() {
     }
 
-    public SetBackupOperation(String name, long newValue) {
+    public SetOperation(String name, long newValue) {
         super(name);
         this.newValue = newValue;
     }
@@ -50,5 +51,10 @@ public class SetBackupOperation extends AtomicLongBaseOperation implements Backu
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         newValue = in.readLong();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new SetBackupOperation(name, newValue);
     }
 }

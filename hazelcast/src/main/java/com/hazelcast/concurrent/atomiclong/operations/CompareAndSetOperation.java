@@ -14,31 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
+public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
 
-    private long newValue;
-    private long returnValue;
+    private long expect;
+    private long update;
+    private boolean returnValue;
 
-    public GetAndSetOperation() {
+    public CompareAndSetOperation() {
     }
 
-    public GetAndSetOperation(String name, long newValue) {
+    public CompareAndSetOperation(String name, long expect, long update) {
         super(name);
-        this.newValue = newValue;
+        this.expect = expect;
+        this.update = update;
     }
 
     @Override
     public void run() throws Exception {
         LongWrapper number = getNumber();
-        returnValue = number.getAndSet(newValue);
+        returnValue = number.compareAndSet(expect, update);
+        shouldBackup = !returnValue;
     }
 
     @Override
@@ -49,17 +53,18 @@ public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(newValue);
+        out.writeLong(expect);
+        out.writeLong(update);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        newValue = in.readLong();
+        expect = in.readLong();
+        update = in.readLong();
     }
 
-    @Override
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, newValue);
+        return new SetBackupOperation(name, update);
     }
 }

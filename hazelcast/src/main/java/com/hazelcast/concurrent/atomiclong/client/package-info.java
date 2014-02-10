@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
-
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-
-public final class AtomicLongDataSerializerHook implements DataSerializerHook {
-
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_DS_FACTORY, -17);
-
-    @Override
-    public int getFactoryId() {
-        return F_ID;
-    }
-
-    @Override
-    public DataSerializableFactory createFactory() {
-        return null;
-    }
-}
+/**
+ * <p>This package contains client requests for the IAtomicLong.<br/>
+ * This package contains all the client requests object to operate on the
+ * IAtomicLong that are send by the client. This is done to reduce tight
+ * coupling between client and server.
+ *
+ * @since 2
+ */
+package com.hazelcast.concurrent.atomiclong.client;
