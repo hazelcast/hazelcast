@@ -46,9 +46,9 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -347,13 +347,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     public void start() {
         clusterThread.start();
 
-        // TODO: replace with a better wait-notify
-        while (membersRef.get() == null && clusterThread.isAlive()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new HazelcastException(e);
-            }
+        try {
+            clusterThread.await();
+        } catch (InterruptedException e) {
+            throw new HazelcastException(e);
         }
         initMembershipListener();
         active = true;
@@ -365,14 +362,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-
-    private class InitialConnectionCall implements Callable<Connection> {
-
-        public Connection call() throws Exception {
-            return connectToOne(getConfigAddresses());
-        }
-    }
-
     private class ClusterListenerThread extends Thread {
 
         private ClusterListenerThread(ThreadGroup group, String name) {
@@ -381,6 +370,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
         private volatile Connection conn;
         private final List<MemberImpl> members = new LinkedList<MemberImpl>();
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        public void await() throws InterruptedException {
+            latch.await();
+        }
 
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
@@ -459,6 +453,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (MembershipEvent event : events) {
                 fireMembershipEvent(event);
             }
+            latch.countDown();
         }
 
         private void listenMembershipEvents() throws IOException {
@@ -509,10 +504,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
             Collections.shuffle(socketAddresses);
             return socketAddresses;
-        }
-
-        void setInitialConn(Connection conn) {
-            this.conn = conn;
         }
 
         void shutdown() {
