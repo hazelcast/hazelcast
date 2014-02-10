@@ -39,6 +39,14 @@
         <property name="basedir" value="${basedir}"/>
     -->
 
+    <!-- Activation here is needed for IntelliJ CheckstyleIDEA plugin -->
+    <module name="SuppressionFilter">
+        <property name="file" value="./suppressions.xml"/>
+    </module>
+
+    <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
+    <module name="SuppressionCommentFilter"/>
+
     <!-- Checks that a package-info.java file exists for each package.     -->
     <!-- See http://checkstyle.sf.net/config_javadoc.html#JavadocPackage -->
     <module name="JavadocPackage"/>
@@ -78,13 +86,15 @@
     <!-- </module> -->
 
     <module name="TreeWalker">
+        <!-- Activate comment suppression filters -->
+        <module name="FileContentsHolder"/>
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <!-- All types should have JavaDoc -->
         <module name="JavadocType"/>
         <!-- Only some methods, on public APIs we agreed to JavaDoc. TODO figure out how to do that -->
-        <!--<module name="JavadocMethod"/>-->
+        <module name="JavadocMethod"/>
 
         <module name="JavadocVariable">
             <property name="scope" value="public"/>
@@ -249,11 +259,14 @@
 
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->
-        <module name="DesignForExtension"/>
+        <!-- module name="DesignForExtension"/ -->
         <module name="FinalClass"/>
         <module name="HideUtilityClassConstructor"/>
         <module name="InterfaceIsType"/>
-        <module name="VisibilityModifier"/>
+        <module name="VisibilityModifier">
+            <property name="packageAllowed" value="true"/>
+            <property name="protectedAllowed" value="true"/>
+        </module>
 
         <!-- Metrics -->
         <module name="BooleanExpressionComplexity">
@@ -278,7 +291,7 @@
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
-        <module name="FinalParameters"/>
+        <!-- module name="FinalParameters"/ -->
         <module name="TodoComment"/>
         <module name="UpperEll"/>
 
