@@ -16,18 +16,17 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
-import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
-import com.hazelcast.concurrent.atomicreference.GetAndSetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.GetAndSetOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
-public class GetAndSetRequest  extends ModifyRequest {
+public class GetAndSetRequest extends ModifyRequest {
 
     public GetAndSetRequest() {
     }
 
     public GetAndSetRequest(String name, Data update) {
-        super(name,update);
+        super(name, update);
     }
 
     @Override

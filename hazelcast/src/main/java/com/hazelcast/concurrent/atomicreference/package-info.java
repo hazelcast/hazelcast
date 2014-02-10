@@ -14,28 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains IAtomicReferece functionality for Hazelcast.<br/>
+ * The IAtomicReference is the distributed version of the {@link java.util.concurrent.atomic.AtomicReference}.
+ *
+ * @since 3.2
+ */
 package com.hazelcast.concurrent.atomicreference;
-
-public class IsNullOperation extends AtomicReferenceBaseOperation {
-
-    private boolean returnValue;
-
-    public IsNullOperation() {
-        super();
-    }
-
-    public IsNullOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public void run() throws Exception {
-        ReferenceWrapper reference = getReference();
-        returnValue = reference.isNull();
-    }
-
-    @Override
-    public Object getResponse() {
-        return returnValue;
-    }
-}

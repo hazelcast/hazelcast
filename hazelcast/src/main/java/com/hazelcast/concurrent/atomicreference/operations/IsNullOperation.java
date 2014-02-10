@@ -14,35 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
-import com.hazelcast.core.IFunction;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 
-public class AlterOperation extends AbstractAlterOperation {
+public class IsNullOperation extends AtomicReferenceBaseOperation {
 
-    public AlterOperation() {
+    private boolean returnValue;
+
+    public IsNullOperation() {
+        super();
     }
 
-    public AlterOperation(String name, Data function) {
-        super(name, function);
+    public IsNullOperation(String name) {
+        super(name);
     }
 
     @Override
     public void run() throws Exception {
-        NodeEngine nodeEngine = getNodeEngine();
-        IFunction f = nodeEngine.toObject(function);
         ReferenceWrapper reference = getReference();
+        returnValue = reference.isNull();
+    }
 
-        Object input = nodeEngine.toObject(reference.get());
-        //noinspection unchecked
-        Object output = f.apply(input);
-        shouldBackup = !isEquals(input, output);
-        if(shouldBackup){
-            backup = nodeEngine.toData(output);
-            reference.set(backup);
-        }
+    @Override
+    public Object getResponse() {
+        return returnValue;
     }
 }
-

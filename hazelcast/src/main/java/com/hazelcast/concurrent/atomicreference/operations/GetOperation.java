@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference.client;
+package com.hazelcast.concurrent.atomicreference.operations;
 
-import com.hazelcast.concurrent.atomicreference.operations.AlterAndGetOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
 
-public class AlterAndGetRequest extends AbstractAlterRequest {
+public class GetOperation extends AtomicReferenceBaseOperation {
 
-    public AlterAndGetRequest() {
+    private Data returnValue;
+
+    public GetOperation() {
     }
 
-    public AlterAndGetRequest(String name, Data function) {
-        super(name, function);
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new AlterAndGetOperation(name, function);
+    public GetOperation(String name) {
+        super(name);
     }
 
     @Override
-    public int getClassId() {
-        return AtomicReferencePortableHook.ALTER_AND_GET;
+    public void run() throws Exception {
+        returnValue = getReference().get();
+    }
+
+    @Override
+    public Object getResponse() {
+        return returnValue;
     }
 }

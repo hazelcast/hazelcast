@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

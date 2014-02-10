@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
-import java.io.IOException;
+public class GetAndAlterOperation extends AbstractAlterOperation {
 
-public class ApplyOperation extends AtomicReferenceBaseOperation {
-
-    protected Data function;
-    protected Data returnValue;
-
-    public ApplyOperation() {
-        super();
+    public GetAndAlterOperation() {
     }
 
-    public ApplyOperation(String name, Data function) {
-        super(name);
-        this.function = function;
+    public GetAndAlterOperation(String name, Data function) {
+        super(name, function);
     }
 
     @Override
@@ -45,25 +37,13 @@ public class ApplyOperation extends AtomicReferenceBaseOperation {
         ReferenceWrapper reference = getReference();
 
         Object input = nodeEngine.toObject(reference.get());
+        response = input;
         //noinspection unchecked
         Object output = f.apply(input);
-        returnValue = nodeEngine.toData(output);
-    }
-
-    @Override
-    public Object getResponse() {
-        return returnValue;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(function);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        function = in.readObject();
+        shouldBackup = !isEquals(input, output);
+        if (shouldBackup) {
+            backup = nodeEngine.toData(output);
+            reference.set(backup);
+        }
     }
 }

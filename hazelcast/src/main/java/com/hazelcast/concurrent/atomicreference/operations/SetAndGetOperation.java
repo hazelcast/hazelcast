@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class SetBackupOperation extends AtomicReferenceBaseOperation implements BackupOperation {
+public class SetAndGetOperation extends AtomicReferenceBackupAwareOperation {
 
     private Data newValue;
+    private Data returnValue;
 
-    public SetBackupOperation() {
+    public SetAndGetOperation() {
     }
 
-    public SetBackupOperation(String name, Data newValue) {
+    public SetAndGetOperation(String name, Data newValue) {
         super(name);
         this.newValue = newValue;
     }
@@ -38,7 +40,13 @@ public class SetBackupOperation extends AtomicReferenceBaseOperation implements 
     @Override
     public void run() throws Exception {
         ReferenceWrapper reference = getReference();
-        reference.set(newValue);
+        reference.getAndSet(newValue);
+        returnValue = newValue;
+    }
+
+    @Override
+    public Object getResponse() {
+        return returnValue;
     }
 
     @Override
@@ -51,5 +59,10 @@ public class SetBackupOperation extends AtomicReferenceBaseOperation implements 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         newValue = in.readObject();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new SetBackupOperation(name, newValue);
     }
 }

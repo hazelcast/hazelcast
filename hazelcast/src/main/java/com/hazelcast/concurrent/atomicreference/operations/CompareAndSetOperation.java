@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,7 +28,7 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
 
     private Data expect;
     private Data update;
-    private boolean returnValue = false;
+    private boolean returnValue;
 
     public CompareAndSetOperation() {
     }

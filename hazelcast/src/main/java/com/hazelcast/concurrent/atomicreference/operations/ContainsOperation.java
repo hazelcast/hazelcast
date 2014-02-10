@@ -14,61 +14,48 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareOperation {
+public class ContainsOperation extends AtomicReferenceBaseOperation {
 
-    protected Data function;
-    protected Object response;
-    protected Data backup;
+    private boolean returnValue;
+    private Data contains;
 
-    public AbstractAlterOperation() {
+    public ContainsOperation() {
     }
 
-    public AbstractAlterOperation(String name, Data function) {
+    public ContainsOperation(String name, Data contains) {
         super(name);
-        this.function = function;
+        this.contains = contains;
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean isEquals(Object o1, Object o2){
-        if(o1 == null){
-            return o2 == null;
-        }
-
-        if(o1 == o2){
-            return true;
-        }
-
-        return o1.equals(o2);
+    @Override
+    public void run() throws Exception {
+        ReferenceWrapper reference = getReference();
+        returnValue = reference.contains(contains);
     }
 
     @Override
     public Object getResponse() {
-        return response;
+        return returnValue;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(function);
+        out.writeObject(contains);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        function = in.readObject();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, backup);
+        contains = in.readObject();
     }
 }

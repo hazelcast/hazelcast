@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.spi.BackupAwareOperation;
 

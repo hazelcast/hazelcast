@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -39,7 +40,7 @@ public class AlterAndGetOperation extends AbstractAlterOperation {
         //noinspection unchecked
         Object output = f.apply(input);
         shouldBackup = !isEquals(input, output);
-        if(shouldBackup){
+        if (shouldBackup) {
             backup = nodeEngine.toData(output);
             reference.set(backup);
         }

@@ -14,28 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
-
-import com.hazelcast.nio.serialization.Data;
-
-public class GetOperation extends AtomicReferenceBaseOperation {
-
-    private Data returnValue;
-
-    public GetOperation() {
-    }
-
-    public GetOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public void run() throws Exception {
-        returnValue = getReference().get();
-    }
-
-    @Override
-    public Object getResponse() {
-        return returnValue;
-    }
-}
+/**
+ * <p>This package contains client requests for the IAtomicLong.<br/>
+ * This package contains all the client requests object to operate on the
+ * IAtomicLong that are send by the client. This is done to reduce tight
+ * coupling between client and server.
+ *
+ * @since 2
+ */
+package com.hazelcast.concurrent.atomicreference.client;

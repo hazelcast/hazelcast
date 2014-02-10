@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -23,45 +23,52 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation {
+public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareOperation {
 
-    private Data newValue;
-    private Data returnValue;
+    protected Data function;
+    protected Object response;
+    protected Data backup;
 
-    public GetAndSetOperation() {
+    public AbstractAlterOperation() {
     }
 
-    public GetAndSetOperation(String name, Data newValue) {
+    public AbstractAlterOperation(String name, Data function) {
         super(name);
-        this.newValue = newValue;
+        this.function = function;
     }
 
-    @Override
-    public void run() throws Exception {
-        ReferenceWrapper reference = getReference();
-        returnValue = reference.getAndSet(newValue);
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    protected boolean isEquals(Object o1, Object o2) {
+        if (o1 == null) {
+            return o2 == null;
+        }
+
+        if (o1 == o2) {
+            return true;
+        }
+
+        return o1.equals(o2);
     }
 
     @Override
     public Object getResponse() {
-        return returnValue;
+        return response;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(newValue);
+        out.writeObject(function);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        newValue = in.readObject();
+        function = in.readObject();
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, newValue);
+        return new SetBackupOperation(name, backup);
     }
 }
-

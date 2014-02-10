@@ -14,12 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference.proxy;
+package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.concurrent.atomicreference.*;
+import com.hazelcast.concurrent.atomicreference.operations.AlterAndGetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.AlterOperation;
+import com.hazelcast.concurrent.atomicreference.operations.ApplyOperation;
+import com.hazelcast.concurrent.atomicreference.operations.CompareAndSetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.ContainsOperation;
+import com.hazelcast.concurrent.atomicreference.operations.GetAndAlterOperation;
+import com.hazelcast.concurrent.atomicreference.operations.GetAndSetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.GetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.IsNullOperation;
+import com.hazelcast.concurrent.atomicreference.operations.SetAndGetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.SetOperation;
 import com.hazelcast.core.AsyncAtomicReference;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
@@ -66,7 +80,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<E> asyncAlterAndGet(IFunction<E, E> function) {
-        isNotNull(function,"function");
+        isNotNull(function, "function");
 
         NodeEngine nodeEngine = getNodeEngine();
         Operation operation = new AlterAndGetOperation(name, nodeEngine.toData(function));
@@ -80,7 +94,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<E> asyncGetAndAlter(IFunction<E, E> function) {
-        isNotNull(function,"function");
+        isNotNull(function, "function");
 
         NodeEngine nodeEngine = getNodeEngine();
         Operation operation = new GetAndAlterOperation(name, nodeEngine.toData(function));
@@ -94,7 +108,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public <R> InternalCompletableFuture<R> asyncApply(IFunction<E, R> function) {
-        isNotNull(function,"function");
+        isNotNull(function, "function");
 
         NodeEngine nodeEngine = getNodeEngine();
         Operation operation = new ApplyOperation(name, nodeEngine.toData(function));
@@ -113,14 +127,14 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return asyncCompareAndSet(expect,update).getSafely();
+        return asyncCompareAndSet(expect, update).getSafely();
     }
 
     @Override
     public InternalCompletableFuture<Boolean> asyncCompareAndSet(E expect, E update) {
         NodeEngine nodeEngine = getNodeEngine();
         Operation operation = new CompareAndSetOperation(name, nodeEngine.toData(expect), nodeEngine.toData(update));
-        return asyncInvoke(operation,nodeEngine);
+        return asyncInvoke(operation, nodeEngine);
     }
 
     @Override
@@ -142,8 +156,8 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     @Override
     public InternalCompletableFuture<Boolean> asyncContains(E value) {
         NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new ContainsOperation(name,nodeEngine.toData(value));
-        return asyncInvoke(operation,nodeEngine);
+        Operation operation = new ContainsOperation(name, nodeEngine.toData(value));
+        return asyncInvoke(operation, nodeEngine);
     }
 
     @Override
@@ -190,7 +204,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     @Override
     public InternalCompletableFuture<Boolean> asyncIsNull() {
         Operation operation = new IsNullOperation(name);
-        return asyncInvoke(operation,getNodeEngine());
+        return asyncInvoke(operation, getNodeEngine());
     }
 
     @Override

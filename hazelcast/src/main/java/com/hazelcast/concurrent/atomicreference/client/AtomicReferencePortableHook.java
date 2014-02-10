@@ -14,27 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.client;
 
-import com.hazelcast.concurrent.atomicreference.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
 public class AtomicReferencePortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_REFERENCE_PORTABLE_FACTORY, -21);
+    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_REFERENCE_PORTABLE_FACTORY, -21);
 
-    public static final int GET = 1;
-    public static final int SET = 2;
-    public static final int GET_AND_SET = 3;
-    public static final int IS_NULL = 4;
-    public static final int COMPARE_AND_SET = 5;
-    public static final int CONTAINS = 6;
-    public static final int APPLY = 7;
-    public static final int ALTER = 8;
-    public static final int ALTER_AND_GET = 9;
-    public static final int GET_AND_ALTER = 10;
+    static final int GET = 1;
+    static final int SET = 2;
+    static final int GET_AND_SET = 3;
+    static final int IS_NULL = 4;
+    static final int COMPARE_AND_SET = 5;
+    static final int CONTAINS = 6;
+    static final int APPLY = 7;
+    static final int ALTER = 8;
+    static final int ALTER_AND_GET = 9;
+    static final int GET_AND_ALTER = 10;
 
     public int getFactoryId() {
         return F_ID;
@@ -64,8 +67,9 @@ public class AtomicReferencePortableHook implements PortableHook {
                         return new AlterAndGetRequest();
                     case GET_AND_ALTER:
                         return new GetAndAlterRequest();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

@@ -14,31 +14,41 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
 
-public class ContainsOperation extends AtomicReferenceBaseOperation {
+public class ApplyOperation extends AtomicReferenceBaseOperation {
 
-    private boolean returnValue;
-    private Data contains;
+    protected Data function;
+    protected Data returnValue;
 
-    public ContainsOperation() {
+    public ApplyOperation() {
+        super();
     }
 
-    public ContainsOperation(String name, Data contains) {
+    public ApplyOperation(String name, Data function) {
         super(name);
-        this.contains = contains;
+        this.function = function;
     }
 
     @Override
     public void run() throws Exception {
+        NodeEngine nodeEngine = getNodeEngine();
+        IFunction f = nodeEngine.toObject(function);
         ReferenceWrapper reference = getReference();
-        returnValue = reference.contains(contains);
+
+        Object input = nodeEngine.toObject(reference.get());
+        //noinspection unchecked
+        Object output = f.apply(input);
+        returnValue = nodeEngine.toData(output);
     }
 
     @Override
@@ -49,12 +59,12 @@ public class ContainsOperation extends AtomicReferenceBaseOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(contains);
+        out.writeObject(function);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        contains = in.readObject();
+        function = in.readObject();
     }
 }
