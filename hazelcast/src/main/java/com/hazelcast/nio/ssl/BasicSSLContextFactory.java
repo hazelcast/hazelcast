@@ -32,7 +32,7 @@ public class BasicSSLContextFactory implements SSLContextFactory {
     public void init(Properties properties) throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
-        String keyStorePassword = properties.getProperty("keyStorePassword");
+        Strteing keyStorePassword = properties.getProperty("keyStorePassword");
         if (keyStorePassword == null) {
             keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
         }
