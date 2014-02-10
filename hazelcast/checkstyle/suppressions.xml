@@ -14,7 +14,6 @@
     <suppress checks="" files="[\\/]client[\\/]"/>
     <suppress checks="" files="[\\/]cluster[\\/]"/>
     <suppress checks="" files="[\\/]collection[\\/]"/>
-    <suppress checks="" files="[\\/]concurrent.countdownlatch[\\/]"/>
     <suppress checks="" files="[\\/]concurrent.idgen[\\/]"/>
     <suppress checks="" files="[\\/]concurrent.lock[\\/]"/>
     <suppress checks="" files="[\\/]concurrent.semaphore[\\/]"/>
@@ -55,8 +54,10 @@
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
     <suppress checks="JavadocType" files="[\\/]"/>
     <suppress checks="JavadocMethod" files="[\\/]"/>
-
+    <suppress checks="JavadocVariable" files="[\\/]"/>
 
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook"/>
 
 </suppressions>

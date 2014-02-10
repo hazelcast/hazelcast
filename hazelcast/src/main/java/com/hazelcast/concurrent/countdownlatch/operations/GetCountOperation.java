@@ -14,52 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch;
+package com.hazelcast.concurrent.countdownlatch.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
 
-import java.io.IOException;
-
-public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation implements BackupOperation, IdentifiedDataSerializable {
+public class GetCountOperation extends BaseCountDownLatchOperation implements IdentifiedDataSerializable {
 
     private int count;
 
-    public CountDownLatchBackupOperation() {
+    public GetCountOperation() {
     }
 
-    public CountDownLatchBackupOperation(String name, int count) {
+    public GetCountOperation(String name) {
         super(name);
-        this.count = count;
     }
 
+    @Override
     public void run() throws Exception {
         CountDownLatchService service = getService();
-        service.setCountDirect(name, count);
+        count = service.getCount(name);
     }
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeInt(count);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        count = in.readInt();
+        return count;
     }
 
     @Override
@@ -69,6 +49,6 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation i
 
     @Override
     public int getId() {
-        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_BACKUP_OPERATION;
+        return CountDownLatchDataSerializerHook.GET_COUNT_OPERATION;
     }
 }

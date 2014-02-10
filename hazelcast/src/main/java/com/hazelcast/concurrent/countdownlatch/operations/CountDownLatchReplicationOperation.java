@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch;
+package com.hazelcast.concurrent.countdownlatch.operations;
 
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchInfo;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

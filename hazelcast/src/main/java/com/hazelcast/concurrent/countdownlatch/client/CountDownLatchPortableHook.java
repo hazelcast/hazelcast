@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch;
+package com.hazelcast.concurrent.countdownlatch.client;
 
-import com.hazelcast.concurrent.countdownlatch.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
 public final class CountDownLatchPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
+    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
 
-    public static final int COUNT_DOWN = 1;
-    public static final int AWAIT = 2;
-    public static final int SET_COUNT = 3;
-    public static final int GET_COUNT = 4;
+    static final int COUNT_DOWN = 1;
+    static final int AWAIT = 2;
+    static final int SET_COUNT = 3;
+    static final int GET_COUNT = 4;
 
     @Override
     public int getFactoryId() {
@@ -49,8 +52,9 @@ public final class CountDownLatchPortableHook implements PortableHook {
                         return new SetCountRequest();
                     case GET_COUNT:
                         return new GetCountRequest();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch;
+package com.hazelcast.concurrent.countdownlatch.operations;
 
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchInfo;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 

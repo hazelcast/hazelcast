@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains ICountDownLatch functionality for Hazelcast.<br/>
+ * The ICountDownLatch is the distributed version of the {@link java.util.concurrent.CountDownLatch}.
+ *
+ * @since 3.2
+ */
 package com.hazelcast.concurrent.countdownlatch;
-
-import com.hazelcast.spi.AbstractWaitNotifyKey;
-
-public class LatchKey extends AbstractWaitNotifyKey {
-
-    public LatchKey(String name) {
-        super(CountDownLatchService.SERVICE_NAME, name);
-    }
-}

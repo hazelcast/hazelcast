@@ -14,40 +14,43 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch;
+package com.hazelcast.concurrent.countdownlatch.operations;
 
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-public class SetCountOperation extends BackupAwareCountDownLatchOperation implements IdentifiedDataSerializable {
+public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
     private int count;
-    private boolean response = false;
 
-    public SetCountOperation() {
+    public CountDownLatchBackupOperation() {
     }
 
-    public SetCountOperation(String name, int count) {
+    public CountDownLatchBackupOperation(String name, int count) {
         super(name);
         this.count = count;
     }
 
     public void run() throws Exception {
         CountDownLatchService service = getService();
-        response = service.setCount(name, count);
+        service.setCountDirect(name, count);
     }
 
     @Override
     public Object getResponse() {
-        return response;
+        return Boolean.TRUE;
     }
 
     @Override
-    public boolean shouldBackup() {
-        return response;
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
@@ -69,6 +72,6 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation implem
 
     @Override
     public int getId() {
-        return CountDownLatchDataSerializerHook.SET_COUNT_OPERATION;
+        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_BACKUP_OPERATION;
     }
 }

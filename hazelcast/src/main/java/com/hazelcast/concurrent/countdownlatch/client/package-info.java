@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch;
-
-import com.hazelcast.spi.AbstractWaitNotifyKey;
-
-public class LatchKey extends AbstractWaitNotifyKey {
-
-    public LatchKey(String name) {
-        super(CountDownLatchService.SERVICE_NAME, name);
-    }
-}
+/**
+ * <p>This package contains client requests for the ICountDownLatch.<br/>
+ * This package contains all the client requests object to operate on the
+ * ICountDownLatch that are send by the client. This is done to reduce tight
+ * coupling between client and server.
+ *
+ * @since 2
+ */
+package com.hazelcast.concurrent.countdownlatch.client;

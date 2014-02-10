@@ -16,6 +16,12 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
+import com.hazelcast.concurrent.countdownlatch.operations.AwaitOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchBackupOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchReplicationOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.CountDownOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
@@ -31,7 +37,6 @@ public final class CountDownLatchDataSerializerHook implements DataSerializerHoo
     public static final int COUNT_DOWN_OPERATION = 3;
     public static final int GET_COUNT_OPERATION = 4;
     public static final int SET_COUNT_OPERATION = 5;
-
 
     @Override
     public int getFactoryId() {
