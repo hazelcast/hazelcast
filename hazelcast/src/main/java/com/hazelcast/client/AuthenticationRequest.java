@@ -32,6 +32,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Set;
 import java.util.logging.Level;
 
 public final class AuthenticationRequest extends CallableClientRequest implements Portable {
@@ -96,6 +97,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         if (authenticated) {
             if (principal != null && reAuth) {
                 principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
+                reAuthLocal();
                 final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
                 for (MemberImpl member : members) {
                     if (!member.localMember()) {
@@ -112,6 +114,13 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         } else {
             clientEngine.removeEndpoint(connection);
             return new AuthenticationException("Invalid credentials!");
+        }
+    }
+
+    private void reAuthLocal() {
+        final Set<ClientEndpoint> endpoints = clientEngine.getEndpoints(principal.getUuid());
+        for (ClientEndpoint endpoint : endpoints) {
+            endpoint.authenticated(principal, firstConnection);
         }
     }
 
