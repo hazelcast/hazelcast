@@ -20,7 +20,7 @@ import static junit.framework.TestCase.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class ClientMapDissuptionTest {
+public class ClientMapDisruptionTest {
 
     HazelcastInstance client;
     HazelcastInstance stableNode;
