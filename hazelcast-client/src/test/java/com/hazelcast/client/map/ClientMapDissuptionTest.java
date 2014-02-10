@@ -51,18 +51,18 @@ public class ClientMapDissuptionTest {
     @Category(ProblematicTest.class)
     //Random Fail @Repeat(20) not seen to pass
     public void testClient_WithDisruption() throws InterruptedException {
-        play1(client);
+        mapOperationsFromNode_withDisruption(client);
     }
 
     @Test
     @Category(ProblematicTest.class)
     //Random Fail at assertTrue("map size="+map.size() +" key="+i+" not found", map.containsKey(i));
     public void testNode_WithDisruption() throws InterruptedException {
-        play1(stableNode);
+        mapOperationsFromNode_withDisruption(stableNode);
     }
 
 
-    public void play1(HazelcastInstance node) throws InterruptedException {
+    public void mapOperationsFromNode_withDisruption(HazelcastInstance node) throws InterruptedException {
 
         IMap map = node.getMap("map");
 
