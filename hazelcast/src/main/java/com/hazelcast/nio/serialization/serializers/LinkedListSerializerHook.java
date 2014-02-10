@@ -26,16 +26,16 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import java.io.IOException;
 import java.util.*;
 
-public class ListSerializerHook implements SerializerHook<List> {
+public class LinkedListSerializerHook implements SerializerHook<LinkedList> {
 
     @Override
-    public Class<List> getSerializationType() {
-        return List.class;
+    public Class<LinkedList> getSerializationType() {
+        return LinkedList.class;
     }
 
     @Override
     public Serializer createSerializer() {
-        return new ListStreamSerializer();
+        return new LinkedListStreamSerializer();
     }
 
     @Override
@@ -43,40 +43,26 @@ public class ListSerializerHook implements SerializerHook<List> {
         return true;
     }
 
-    public static class ListStreamSerializer implements StreamSerializer<List> {
+    public static class LinkedListStreamSerializer implements StreamSerializer<LinkedList> {
 
         @Override
-        public void write(ObjectDataOutput out, List object) throws IOException {
+        public void write(ObjectDataOutput out, LinkedList object) throws IOException {
             out.writeBoolean(object != null);
             if (object != null) {
                 int size = object.size();
                 out.writeInt(size);
-                if (object instanceof RandomAccess) {
-                    out.writeInt(0); // for ArrayList
-                    for (int i = 0; i < size; i++) {
-                        out.writeObject(object.get(i));
-                    }
-                } else {
-                    out.writeInt(1); // for LinkedList
-                    Iterator iterator = object.iterator();
-                    while (iterator.hasNext()) {
-                        out.writeObject(iterator.next());
-                    }
+                Iterator iterator = object.iterator();
+                while (iterator.hasNext()) {
+                    out.writeObject(iterator.next());
                 }
             }
         }
 
         @Override
-        public List read(ObjectDataInput in) throws IOException {
+        public LinkedList read(ObjectDataInput in) throws IOException {
             if (in.readBoolean()) {
                 int size = in.readInt();
-                int type = in.readInt();
-                List result;
-                if (type == 0) {
-                    result = new ArrayList(size);
-                } else {
-                    result = new LinkedList();
-                }
+                LinkedList result = new LinkedList();
                 for (int i = 0; i < size; i++) {
                     result.add(i, in.readObject());
                 }
@@ -87,7 +73,7 @@ public class ListSerializerHook implements SerializerHook<List> {
 
         @Override
         public int getTypeId() {
-            return SerializationConstants.AUTO_TYPE_LIST;
+            return SerializationConstants.AUTO_TYPE_LINKED_LIST;
         }
 
         @Override
