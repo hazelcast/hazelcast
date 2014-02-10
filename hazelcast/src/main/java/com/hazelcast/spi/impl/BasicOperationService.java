@@ -89,7 +89,7 @@ final class BasicOperationService implements InternalOperationService {
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutionService executionService;
-    private final BasicOperationServiceExecutor executor;
+    private final BasicOperationScheduler executor;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -118,7 +118,7 @@ final class BasicOperationService implements InternalOperationService {
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getDefaultScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
 
-        this.executor = new BasicOperationServiceExecutor(node,executionService,operationThreadCount,new RunSystemOperationsProcessor());
+        this.executor = new BasicOperationScheduler(node,executionService,operationThreadCount);
     }
 
     @Override
@@ -191,7 +191,7 @@ final class BasicOperationService implements InternalOperationService {
      * @param op
      */
     @Override
-    //todo: move to BasicOperationServiceExecutor
+    //todo: move to BasicOperationScheduler
     public void runOperation(Operation op) {
         if (isAllowedToRunInCurrentThread(op)) {
             doRunOperation(op);
@@ -200,32 +200,14 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    //todo: move to BasicOperationServiceExecutor
+    //todo: move to BasicOperationScheduler
     boolean isAllowedToRunInCurrentThread(Operation op) {
-        final int partitionId = getPartitionIdForExecution(op);
-        if (partitionId > -1) {
-            final Thread currentThread = Thread.currentThread();
-            if (currentThread instanceof BasicOperationServiceExecutor.PartitionThread) {
-                int tid = ((BasicOperationServiceExecutor.PartitionThread) currentThread).threadId;
-                return partitionId % operationThreadCount == tid;
-            }
-            return false;
-        }
-        return true;
+        return executor.isAllowedToRunInCurrentThread(getPartitionIdForExecution(op));
     }
 
-    //todo: move to BasicOperationServiceExecutor
+    //todo: move to BasicOperationScheduler
     boolean isInvocationAllowedFromCurrentThread(Operation op) {
-        final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof BasicOperationServiceExecutor.PartitionThread) {
-            final int partitionId = getPartitionIdForExecution(op);
-            if (partitionId > -1) {
-                int tid = ((BasicOperationServiceExecutor.PartitionThread) currentThread).threadId;
-                return partitionId % operationThreadCount == tid;
-            }
-            return true;
-        }
-        return true;
+        return executor.isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
     }
 
     /**
@@ -273,8 +255,6 @@ final class BasicOperationService implements InternalOperationService {
      */
     private void doRunOperation(final Operation op) {
         executedOperationsCount.incrementAndGet();
-
-        runPriorityOperations();
 
         RemoteCallKey callKey = null;
         try {
@@ -349,29 +329,6 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    private void runPriorityOperations() {
-        Thread thread = Thread.currentThread();
-        ConcurrentLinkedQueue<Runnable> urgentQueue;
-        if(thread instanceof BasicOperationServiceExecutor.PartitionThread){
-             int id = ((BasicOperationServiceExecutor.PartitionThread)thread).threadId;
-             urgentQueue = systemOperationExecutorQueues[id];
-        } else{
-             urgentQueue = defaultSystemOperationQueue;
-        }
-
-        if(urgentQueue.isEmpty()){
-            return;
-        }
-
-        for (; ; ) {
-            Runnable task = urgentQueue.poll();
-            if (task == null) {
-                return;
-            }
-
-            task.run();
-        }
-    }
 
     private static boolean retryDuringMigration(Operation op) {
         return !(op instanceof ReadonlyOperation || OperationAccessor.isMigrationOperation(op));
@@ -564,7 +521,7 @@ final class BasicOperationService implements InternalOperationService {
     private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                     Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof BasicOperationServiceExecutor.PartitionThread) {
+        if (currentThread instanceof BasicOperationScheduler.PartitionThread) {
             throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
         }
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
@@ -730,25 +687,6 @@ final class BasicOperationService implements InternalOperationService {
         executor.shutdown();
     }
 
-    /**
-     * Processes the System Operations. Normally they are going to be processed before normal execution of operations,
-     * but if there is no work triggering a worker thread, then the system operation put in a urgent queue
-     * are not going to be picked up by a worker thread.
-     *
-     * So when a system operation is send, also a RunSystemOperationsProcessor is send to the executor to make sure
-     * that the operations are picked up. If the system operations already have been processed, then processor
-     * doesn't do anything. So it can safely be send multiple times, without causing problems.
-     */
-    private class RunSystemOperationsProcessor implements Runnable{
-        @Override
-        public void run(){
-            try {
-                runPriorityOperations();
-            } catch (Throwable e) {
-                logger.severe("While processing system operations...", e);
-            }
-        }
-    }
 
     /**
      * Process the operation that has been send locally to this OperationService.

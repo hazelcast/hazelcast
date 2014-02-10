@@ -42,10 +42,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author mdogan 5/20/13
- */
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class PartitionDistributionTest extends HazelcastTestSupport {

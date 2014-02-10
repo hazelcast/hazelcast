@@ -53,9 +53,6 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.*;
 
-/**
- * @author mdogan 8/21/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PartitionControlledIdTest extends HazelcastTestSupport {

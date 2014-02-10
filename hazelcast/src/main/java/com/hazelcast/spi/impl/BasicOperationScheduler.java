@@ -14,21 +14,23 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
-public class BasicOperationServiceExecutor {
+public class BasicOperationScheduler {
 
     private final ConcurrentLinkedQueue[] partitionExecutorPriorityQueues;
+
+    //we don't need executors, we can just run our own thread.
+    //we can also get rid of the forced runnable.
     private final ExecutorService[] partitionExecutors;
+
     private final BlockingQueue[] partitionExecutorQueues;
     private final Node node;
     private final Executor globalExecutor;
     private final ConcurrentLinkedQueue<Runnable> globalExecutorPriorityQueue;
     private final int operationThreadCount;
-    private final Runnable runSystemOperations;
 
-    public BasicOperationServiceExecutor(Node node, ExecutionService executionService,
-                                         int operationThreadCount, Runnable runSystemOperations) {
+    public BasicOperationScheduler(Node node, ExecutionService executionService,
+                                   int operationThreadCount) {
         this.node = node;
-        this.runSystemOperations = runSystemOperations;
         this.operationThreadCount = operationThreadCount;
         this.partitionExecutors = new ExecutorService[operationThreadCount];
         this.partitionExecutorQueues = new BlockingQueue[operationThreadCount];
@@ -52,6 +54,30 @@ public class BasicOperationServiceExecutor {
                 coreSize * 2, coreSize * 100000);
     }
 
+    boolean isAllowedToRunInCurrentThread(int partitionId) {
+        if (partitionId > -1) {
+            final Thread currentThread = Thread.currentThread();
+            if (currentThread instanceof PartitionThread) {
+                int tid = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
+                return partitionId % operationThreadCount == tid;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    boolean isInvocationAllowedFromCurrentThread(int partitionId) {
+        final Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof PartitionThread) {
+            if (partitionId > -1) {
+                int tid = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
+                return partitionId % operationThreadCount == tid;
+            }
+            return true;
+        }
+        return true;
+    }
+
     public int getOperationExecutorQueueSize() {
         int size = 0;
         for (BlockingQueue q : partitionExecutorQueues) {
@@ -62,12 +88,40 @@ public class BasicOperationServiceExecutor {
 
     public void execute(Runnable task, int partitionId, boolean priority) {
         Executor executor = getExecutor(partitionId);
+
+        ConcurrentLinkedQueue<Runnable> priorityQueue = getPriorityQueue(partitionId);
+
         if (priority) {
-            ConcurrentLinkedQueue<Runnable> priorityQueue = getPriorityQueue(partitionId);
             priorityQueue.offer(task);
-            executor.execute(runSystemOperations);
+            executor.execute(new ProcessPriorityQueueTask(priorityQueue, null));
         } else {
-            executor.execute(task);
+            executor.execute(new ProcessPriorityQueueTask(priorityQueue, task));
+        }
+    }
+
+    public class ProcessPriorityQueueTask implements Runnable {
+        private final ConcurrentLinkedQueue<Runnable> priorityQueue;
+        private final Runnable task;
+
+        public ProcessPriorityQueueTask(ConcurrentLinkedQueue<Runnable> priorityQueue, Runnable task) {
+            this.priorityQueue = priorityQueue;
+            this.task = task;
+        }
+
+        @Override
+        public void run() {
+            for (; ; ) {
+                Runnable task = priorityQueue.poll();
+                if (task == null) {
+                    break;
+                }
+
+                task.run();
+            }
+
+            if (task != null) {
+                task.run();
+            }
         }
     }
 
