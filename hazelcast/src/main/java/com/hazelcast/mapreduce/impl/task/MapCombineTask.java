@@ -48,6 +48,17 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
+/**
+ * This class acutally executed the mapping-combine phase. It is responsible for opening / closing
+ * the {@link com.hazelcast.mapreduce.KeyValueSource} implementation and possible configuring the
+ * partitionId to operate on.
+ *
+ * @param <KeyIn>    type of the input key
+ * @param <ValueIn>  type of the input value
+ * @param <KeyOut>   type of the emitted key
+ * @param <ValueOut> type of the emitted value
+ * @param <Chunk>    type of the intermediate chunk (retrieved from combiners)
+ */
 public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
     private final AtomicBoolean cancelled = new AtomicBoolean();
@@ -145,8 +156,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     private void finalizeMapping(int partitionId, DefaultContext<KeyOut, ValueOut> context)
             throws Exception {
 
-        RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                new RequestPartitionReducing(name, jobId, partitionId), name);
+        RequestPartitionResult result = mapReduceService
+                .processRequest(supervisor.getJobOwner(), new RequestPartitionReducing(name, jobId, partitionId), name);
 
         if (result.getResultState() == SUCCESSFUL) {
             // If we have a reducer defined just send it over
@@ -156,15 +167,22 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     sendLastChunkToAssignedReducers(partitionId, chunkMap);
 
                 } else {
-                    // If nothing to reduce we just set partition to processed
-                    result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                            new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
-
-                    if (result.getResultState() != SUCCESSFUL) {
-                        throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
-                    }
+                    finalizeProcessing(partitionId);
                 }
             }
+        }
+    }
+
+    private void finalizeProcessing(int partitionId)
+            throws Exception {
+
+        // If nothing to reduce we just set partition to processed
+        RequestPartitionResult result = mapReduceService
+                .processRequest(supervisor.getJobOwner(), new RequestPartitionProcessed(name, jobId, partitionId, REDUCING),
+                        name);
+
+        if (result.getResultState() != SUCCESSFUL) {
+            throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
         }
     }
 
@@ -181,8 +199,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         for (Map.Entry<Address, Map<KeyOut, Chunk>> entry : mapping.entrySet()) {
             Address receiver = entry.getKey();
             Map<KeyOut, Chunk> chunk = entry.getValue();
-            mapReduceService.sendNotification(receiver, new LastChunkNotification(
-                    receiver, name, jobId, sender, partitionId, chunk));
+            mapReduceService
+                    .sendNotification(receiver, new LastChunkNotification(receiver, name, jobId, sender, partitionId, chunk));
         }
 
         // Send LastChunk notification to notify reducers that received at least one chunk
@@ -191,8 +209,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         if (reducerInterests != null) {
             for (Address address : reducerInterests) {
                 if (!addresses.contains(address)) {
-                    mapReduceService.sendNotification(address, new LastChunkNotification(
-                            address, name, jobId, sender, partitionId, Collections.emptyMap()));
+                    mapReduceService.sendNotification(address,
+                            new LastChunkNotification(address, name, jobId, sender, partitionId, Collections.emptyMap()));
                 }
             }
         }
@@ -200,14 +218,18 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
     private void postponePartitionProcessing(int partitionId)
             throws Exception {
-        RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                new PostPonePartitionProcessing(name, jobId, partitionId), name);
+
+        RequestPartitionResult result = mapReduceService
+                .processRequest(supervisor.getJobOwner(), new PostPonePartitionProcessing(name, jobId, partitionId), name);
 
         if (result.getResultState() != SUCCESSFUL) {
             throw new RuntimeException("Could not postpone processing for partitionId " + partitionId);
         }
     }
 
+    /**
+     * This class implements the partitionId based mapping phase
+     */
     private class PartitionProcessor
             implements Runnable {
 
@@ -218,7 +240,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 delegate = new KeyValueSourceFacade<KeyIn, ValueIn>(keyValueSource, supervisor);
             }
 
-            for (; ; ) {
+            while (true) {
                 if (cancelled.get()) {
                     return;
                 }
@@ -255,8 +277,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
         private Integer findNewPartitionProcessing() {
             try {
-                RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                        new RequestPartitionMapping(name, jobId), name);
+                RequestPartitionResult result = mapReduceService
+                        .processRequest(supervisor.getJobOwner(), new RequestPartitionMapping(name, jobId), name);
 
                 // JobSupervisor doesn't exists anymore on jobOwner, job done?
                 if (result.getResultState() == NO_SUPERVISOR) {
@@ -275,14 +297,17 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
+    /**
+     * This class implements the non partitionId based mapping phase
+     */
     private class SingleExecutionProcessor
             implements Runnable {
 
         @Override
         public void run() {
             try {
-                RequestPartitionResult result = mapReduceService.processRequest(supervisor.getJobOwner(),
-                        new RequestMemberIdAssignment(name, jobId), name);
+                RequestPartitionResult result = mapReduceService
+                        .processRequest(supervisor.getJobOwner(), new RequestMemberIdAssignment(name, jobId), name);
 
                 // JobSupervisor doesn't exists anymore on jobOwner, job done?
                 if (result.getResultState() == NO_SUPERVISOR) {

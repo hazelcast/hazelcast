@@ -23,6 +23,9 @@ import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 
 import java.util.Map;
 
+/**
+ * This operation is used to retrieve results from a remote node
+ */
 public class GetResultOperation
         extends ProcessingOperation {
 
@@ -40,7 +43,8 @@ public class GetResultOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         result = supervisor.getJobResults();

@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentResult;
 import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
@@ -26,6 +27,7 @@ import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
+import com.hazelcast.mapreduce.impl.task.MemberAssigningJobProcessInformationImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -47,12 +49,27 @@ import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
+/**
+ * This utility class contains a few basic operations that are needed in multiple places
+ */
 public final class MapReduceUtil {
 
     private static final String EXECUTOR_NAME_PREFIX = "mapreduce::hz::";
     private static final String SERVICE_NAME = MapReduceService.SERVICE_NAME;
 
     private MapReduceUtil() {
+    }
+
+    public static JobProcessInformationImpl createJobProcessInformation(JobTaskConfiguration configuration,
+                                                                        JobSupervisor supervisor) {
+        NodeEngine nodeEngine = configuration.getNodeEngine();
+        if (configuration.getKeyValueSource() instanceof PartitionIdAware) {
+            int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+            return new JobProcessInformationImpl(partitionCount, supervisor);
+        } else {
+            int partitionCount = nodeEngine.getClusterService().getMemberList().size();
+            return new MemberAssigningJobProcessInformationImpl(partitionCount, supervisor);
+        }
     }
 
     public static void notifyRemoteException(JobSupervisor supervisor, Throwable throwable) {
@@ -66,8 +83,7 @@ public final class MapReduceUtil {
         os.send(operation, jobOwner);
     }
 
-    public static JobPartitionState.State stateChange(Address owner, int partitionId,
-                                                      JobPartitionState.State currentState,
+    public static JobPartitionState.State stateChange(Address owner, int partitionId, JobPartitionState.State currentState,
                                                       JobProcessInformationImpl processInformation,
                                                       JobTaskConfiguration configuration) {
 
@@ -75,6 +91,7 @@ public final class MapReduceUtil {
         JobPartitionState partitionState = partitionStates[partitionId];
 
         // If not yet assigned we don't need to check owner and state
+        JobPartitionState.State finalState = null;
         if (partitionState != null) {
             if (!owner.equals(partitionState.getOwner())) {
                 return null;
@@ -84,30 +101,52 @@ public final class MapReduceUtil {
             }
 
             if (currentState == MAPPING) {
-                JobPartitionState.State newState = PROCESSED;
-                if (configuration.getReducerFactory() != null) {
-                    newState = REDUCING;
-                }
-                JobPartitionState newPartitionState = new JobPartitionStateImpl(owner, newState);
-                if (processInformation.updatePartitionState(partitionId, partitionState, newPartitionState)) {
-                    return newState;
-                }
+                finalState = stateChangeMapping(partitionId, partitionState, processInformation, owner, configuration);
             } else if (currentState == REDUCING) {
-                JobPartitionState newPartitionState = new JobPartitionStateImpl(owner, PROCESSED);
-                if (processInformation.updatePartitionState(partitionId, partitionState, newPartitionState)) {
-                    return PROCESSED;
-                }
+                finalState = stateChangeReducing(partitionId, partitionState, processInformation, owner);
             }
         }
 
         if (currentState == WAITING) {
-            JobPartitionState newPartitionState = new JobPartitionStateImpl(owner, MAPPING);
-            if (processInformation.updatePartitionState(partitionId, partitionState, newPartitionState)) {
-                return MAPPING;
+            if (compareAndSwapPartitionState(partitionId, partitionState, processInformation, owner, MAPPING)) {
+                finalState = MAPPING;
             }
         }
 
+        return finalState;
+    }
+
+    private static JobPartitionState.State stateChangeReducing(int partitionId, JobPartitionState oldPartitionState,
+                                                               JobProcessInformationImpl processInformation, Address owner) {
+
+        if (compareAndSwapPartitionState(partitionId, oldPartitionState, processInformation, owner, PROCESSED)) {
+            return PROCESSED;
+        }
         return null;
+    }
+
+    private static JobPartitionState.State stateChangeMapping(int partitionId, JobPartitionState oldPartitionState,
+                                                              JobProcessInformationImpl processInformation, Address owner,
+                                                              JobTaskConfiguration configuration) {
+        JobPartitionState.State newState = PROCESSED;
+        if (configuration.getReducerFactory() != null) {
+            newState = REDUCING;
+        }
+        if (compareAndSwapPartitionState(partitionId, oldPartitionState, processInformation, owner, newState)) {
+            return newState;
+        }
+        return null;
+    }
+
+    private static boolean compareAndSwapPartitionState(int partitionId, JobPartitionState oldPartitionState,
+                                                        JobProcessInformationImpl processInformation, Address owner,
+                                                        JobPartitionState.State newState) {
+
+        JobPartitionState newPartitionState = new JobPartitionStateImpl(owner, newState);
+        if (processInformation.updatePartitionState(partitionId, oldPartitionState, newPartitionState)) {
+            return true;
+        }
+        return false;
     }
 
     public static <K, V> Map<Address, Map<K, V>> mapResultToMember(JobSupervisor supervisor, Map<K, V> result) {
@@ -145,8 +184,8 @@ public final class MapReduceUtil {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
             String name = supervisor.getConfiguration().getName();
             String jobId = supervisor.getConfiguration().getJobId();
-            KeysAssignmentResult assignmentResult = mapReduceService.processRequest(supervisor.getJobOwner(),
-                    new KeysAssignmentOperation(name, jobId, keys), name);
+            KeysAssignmentResult assignmentResult = mapReduceService
+                    .processRequest(supervisor.getJobOwner(), new KeysAssignmentOperation(name, jobId, keys), name);
 
             if (assignmentResult.getResultState() == SUCCESSFUL) {
                 Map<Object, Address> assignment = assignmentResult.getAssignment();
@@ -166,17 +205,17 @@ public final class MapReduceUtil {
     public static String printPartitionStates(JobPartitionState[] partitionStates) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < partitionStates.length; i++) {
-            if (i > 0) sb.append(", ");
+            if (i > 0) {
+                sb.append(", ");
+            }
             sb.append("[").append(i).append("=>");
             sb.append(partitionStates[i] == null ? "null" : partitionStates[i].getState()).append("]");
         }
         return sb.toString();
     }
 
-    public static <V> List<V> executeOperation(OperationFactory operationFactory,
-                                               MapReduceService mapReduceService,
-                                               NodeEngine nodeEngine,
-                                               boolean returnsResponse) {
+    public static <V> List<V> executeOperation(OperationFactory operationFactory, MapReduceService mapReduceService,
+                                               NodeEngine nodeEngine, boolean returnsResponse) {
         ClusterService cs = nodeEngine.getClusterService();
         OperationService os = nodeEngine.getOperationService();
 
@@ -198,8 +237,7 @@ public final class MapReduceUtil {
                     }
                 } else {
                     if (returnsResponse) {
-                        InvocationBuilder ib = os.createInvocationBuilder(
-                                SERVICE_NAME, operation, member.getAddress());
+                        InvocationBuilder ib = os.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress());
 
                         results.add((V) ib.invoke().get());
                     } else {
@@ -213,8 +251,7 @@ public final class MapReduceUtil {
         return results;
     }
 
-    public static <V> V executeOperation(Operation operation, Address address,
-                                         MapReduceService mapReduceService,
+    public static <V> V executeOperation(Operation operation, Address address, MapReduceService mapReduceService,
                                          NodeEngine nodeEngine) {
 
         ClusterService cs = nodeEngine.getClusterService();

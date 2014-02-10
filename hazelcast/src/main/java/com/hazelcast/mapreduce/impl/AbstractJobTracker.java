@@ -27,6 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * This is the base class for all {@link JobTracker} implementations on node and client side.<br/>
+ * It combines a lot of the base functionality to handle remote operations.
+ */
 public abstract class AbstractJobTracker
         implements JobTracker {
 
@@ -39,8 +43,7 @@ public abstract class AbstractJobTracker
     protected final JobTrackerConfig jobTrackerConfig;
     protected final String name;
 
-    AbstractJobTracker(String name, JobTrackerConfig jobTrackerConfig,
-                       NodeEngine nodeEngine, MapReduceService mapReduceService) {
+    AbstractJobTracker(String name, JobTrackerConfig jobTrackerConfig, NodeEngine nodeEngine, MapReduceService mapReduceService) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.jobTrackerConfig = jobTrackerConfig;
@@ -112,8 +115,8 @@ public abstract class AbstractJobTracker
         return mapCombineTasks.remove(jobId);
     }
 
-    public <KeyIn, ValueIn, KeyOut, ValueOut, Chunk>
-    MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> getMapCombineTask(String jobId) {
+    public <KeyIn, ValueIn, KeyOut, ValueOut, Chunk> MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> getMapCombineTask(
+            String jobId) {
         return mapCombineTasks.get(jobId);
     }
 

@@ -25,6 +25,12 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
+/**
+ * This operation is used to do some kind of partitionId based processing on non partition based implementations
+ * of {@link com.hazelcast.mapreduce.KeyValueSource} (not implementing {@link com.hazelcast.mapreduce.PartitionIdAware})
+ * which can happen for custom data sources like distributed filesystems that are up to the end user on how to
+ * manage the distribution.
+ */
 public class RequestMemberIdAssignment
         extends ProcessingOperation {
 
@@ -43,7 +49,8 @@ public class RequestMemberIdAssignment
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor == null) {
@@ -52,8 +59,7 @@ public class RequestMemberIdAssignment
         }
 
         MemberAssigningJobProcessInformationImpl processInformation = getProcessInformation(supervisor);
-        int memberId = processInformation.assignMemberId(getCallerAddress(),
-                getCallerUuid(), supervisor.getConfiguration());
+        int memberId = processInformation.assignMemberId(getCallerAddress(), getCallerUuid(), supervisor.getConfiguration());
 
         if (memberId == -1) {
             result = new RequestPartitionResult(NO_MORE_PARTITIONS, -1);

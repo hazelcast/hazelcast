@@ -14,28 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce;
-
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.annotation.Beta;
-
 /**
- * This is a special version of ICompletableFuture to return the assigned job
- * id of the submit operation.
- *
- * @param <V> type of the resulting value
- * @since 3.2
+ * This package contains the default implementation for the map reduce framework
+ * internals.
  */
-@Beta
-public interface JobCompletableFuture<V>
-        extends ICompletableFuture<V> {
-
-    /**
-     * Returns the unique identifier for this mapreduce job. This jobId is used to identify the same
-     * job on all cluster nodes and is unique in the cluster.
-     *
-     * @return jobId for this job
-     */
-    String getJobId();
-
-}
+package com.hazelcast.mapreduce.impl;

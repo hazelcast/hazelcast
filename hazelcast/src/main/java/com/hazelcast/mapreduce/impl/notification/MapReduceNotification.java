@@ -22,6 +22,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+/**
+ * Base class for all map reduce framework notifications
+ */
 public abstract class MapReduceNotification
         implements IdentifiedDataSerializable {
 
@@ -45,23 +48,22 @@ public abstract class MapReduceNotification
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeUTF(jobId);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         jobId = in.readUTF();
     }
 
     @Override
     public String toString() {
-        return "MapReduceNotification{" +
-                "name='" + name + '\'' +
-                ", jobId='" + jobId + '\'' +
-                '}';
+        return "MapReduceNotification{" + "name='" + name + '\'' + ", jobId='" + jobId + '\'' + '}';
     }
 
 }

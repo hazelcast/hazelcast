@@ -23,6 +23,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * This notification class is used to signal the {@link com.hazelcast.mapreduce.impl.task.JobSupervisor}
+ * owner node that a reducer has finished the reducing step for the defined partitionId.
+ */
 public class ReducingFinishedNotification
         extends MemberAwareMapReduceNotification {
 
@@ -41,13 +45,15 @@ public class ReducingFinishedNotification
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         super.writeData(out);
         out.writeInt(partitionId);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         super.readData(in);
         partitionId = in.readInt();
     }
@@ -64,9 +70,7 @@ public class ReducingFinishedNotification
 
     @Override
     public String toString() {
-        return "ReducingFinishedNotification{" +
-                "partitionId=" + partitionId +
-                '}';
+        return "ReducingFinishedNotification{" + "partitionId=" + partitionId + '}';
     }
 
 }

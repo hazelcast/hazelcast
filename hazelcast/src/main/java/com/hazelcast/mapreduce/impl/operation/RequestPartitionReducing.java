@@ -32,6 +32,10 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
+/**
+ * This operation tells the job owner to start reducing phase of the defined partition on the first
+ * occurrence of a full emitted chunk
+ */
 public class RequestPartitionReducing
         extends ProcessingOperation {
 
@@ -52,7 +56,8 @@ public class RequestPartitionReducing
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor == null) {
@@ -61,8 +66,8 @@ public class RequestPartitionReducing
         }
 
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
-        JobPartitionState.State nextState = stateChange(getCallerAddress(), partitionId, MAPPING,
-                processInformation, supervisor.getConfiguration());
+        JobPartitionState.State nextState = stateChange(getCallerAddress(), partitionId, MAPPING, processInformation,
+                supervisor.getConfiguration());
 
         if (nextState != null) {
             result = new RequestPartitionResult(SUCCESSFUL, partitionId);
@@ -73,13 +78,15 @@ public class RequestPartitionReducing
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeInt(partitionId);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         partitionId = in.readInt();
     }

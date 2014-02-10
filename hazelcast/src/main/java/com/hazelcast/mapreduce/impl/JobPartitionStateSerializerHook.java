@@ -28,6 +28,9 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
+/**
+ * This class is the auto registered serializer hook for a {@link com.hazelcast.mapreduce.JobPartitionState}.
+ */
 public class JobPartitionStateSerializerHook
         implements SerializerHook<JobPartitionStateImpl> {
 
@@ -46,11 +49,15 @@ public class JobPartitionStateSerializerHook
         return false;
     }
 
+    /**
+     * The {@link com.hazelcast.mapreduce.JobPartitionState} serializer itself
+     */
     private static class JobPartitionStateSerializer
             implements StreamSerializer<JobPartitionStateImpl> {
 
         @Override
-        public void write(ObjectDataOutput out, JobPartitionStateImpl partitionState) throws IOException {
+        public void write(ObjectDataOutput out, JobPartitionStateImpl partitionState)
+                throws IOException {
             out.writeBoolean(partitionState != null);
             if (partitionState != null) {
                 out.writeObject(partitionState.getOwner());
@@ -59,7 +66,8 @@ public class JobPartitionStateSerializerHook
         }
 
         @Override
-        public JobPartitionStateImpl read(ObjectDataInput in) throws IOException {
+        public JobPartitionStateImpl read(ObjectDataInput in)
+                throws IOException {
             if (in.readBoolean()) {
                 Address owner = in.readObject();
                 JobPartitionState.State state = JobPartitionState.State.byOrdinal(in.readInt());

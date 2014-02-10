@@ -24,6 +24,10 @@ import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
+/**
+ * This class contains all configuration settings for a given map reduce job. This class is immutable and values
+ * are set after the job itself is emitted to the job owner.
+ */
 public class JobTaskConfiguration {
 
     private final Address jobOwner;
@@ -38,11 +42,12 @@ public class JobTaskConfiguration {
     private final boolean communicateStats;
     private final TopologyChangedStrategy topologyChangedStrategy;
 
-    public JobTaskConfiguration(Address jobOwner, NodeEngine nodeEngine, int chunkSize,
-                                String name, String jobId, Mapper mapper,
-                                CombinerFactory combinerFactory, ReducerFactory reducerFactory,
-                                KeyValueSource keyValueSource, boolean communicateStats,
-                                TopologyChangedStrategy topologyChangedStrategy) {
+    //Deactivated checkstyle due to more than 10 parameters which is ok in this special case :)
+    //I want that class to be immutable to utilize the memory effect of it.
+    //CHECKSTYLE:OFF
+    public JobTaskConfiguration(Address jobOwner, NodeEngine nodeEngine, int chunkSize, String name, String jobId, Mapper mapper,
+                                CombinerFactory combinerFactory, ReducerFactory reducerFactory, KeyValueSource keyValueSource,
+                                boolean communicateStats, TopologyChangedStrategy topologyChangedStrategy) {
         this.jobOwner = jobOwner;
         this.chunkSize = chunkSize;
         this.name = name;
@@ -55,6 +60,7 @@ public class JobTaskConfiguration {
         this.communicateStats = communicateStats;
         this.topologyChangedStrategy = topologyChangedStrategy;
     }
+    //CHECKSTYLE:ON
 
     public Address getJobOwner() {
         return jobOwner;

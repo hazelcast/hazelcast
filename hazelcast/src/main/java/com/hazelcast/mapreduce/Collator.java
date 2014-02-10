@@ -25,7 +25,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @param <ValueIn>  value type of the resulting values
  * @param <ValueOut> type for the collated result
- *
  * @since 3.2
  */
 @Beta

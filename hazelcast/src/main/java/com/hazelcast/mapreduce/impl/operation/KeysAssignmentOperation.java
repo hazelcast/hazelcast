@@ -36,6 +36,11 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
+/**
+ * This operation is used to request assignment for keys on the job owners node. The job owner
+ * is the only node capable of assigning those reducing nodes to be aware of the number of reducers
+ * per partition and also aware of possible topology changes while executing the job.
+ */
 public class KeysAssignmentOperation
         extends ProcessingOperation {
 
@@ -56,7 +61,8 @@ public class KeysAssignmentOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor == null) {
@@ -74,7 +80,7 @@ public class KeysAssignmentOperation
                 supervisor.cancelAndNotify(exception);
                 this.result = new KeysAssignmentResult(CHECK_STATE_FAILED, assignment);
                 return;
-            // TODO Not yet fully supported
+                // TODO Not yet fully supported
             /* } else if (tcs == DISCARD_AND_RESTART) {
              *   supervisor.cancelNotifyAndRestart();
              */
@@ -94,7 +100,8 @@ public class KeysAssignmentOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeInt(keys.size());
         for (Object key : keys) {
@@ -103,7 +110,8 @@ public class KeysAssignmentOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         int size = in.readInt();
         keys = new HashSet<Object>();
