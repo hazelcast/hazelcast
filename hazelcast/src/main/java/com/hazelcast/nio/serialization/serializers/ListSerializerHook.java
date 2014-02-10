@@ -18,13 +18,13 @@ package com.hazelcast.nio.serialization.serializers;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.SerializationConstants;
+import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.SerializerHook;
+import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.RandomAccess;
+import java.util.*;
 
 public class ListSerializerHook implements SerializerHook<List> {
 
@@ -52,53 +52,33 @@ public class ListSerializerHook implements SerializerHook<List> {
                 int size = object.size();
                 out.writeInt(size);
                 if (object instanceof RandomAccess) {
-                    boolean hasDataSerializable = false;
-                    if (!object.isEmpty()) {
-                        hasDataSerializable = object.get(0) instanceof DataSerializable;
-                    }
-                    out.writeBoolean(hasDataSerializable);
+                    out.writeInt(0); // for ArrayList
                     for (int i = 0; i < size; i++) {
-                        if (hasDataSerializable) {
-                            ((DataSerializable) object.get(i)).writeData(out);
-                        } else {
-                            out.writeObject(object.get(i));
-                        }
+                        out.writeObject(object.get(i));
                     }
                 } else {
+                    out.writeInt(1); // for LinkedList
                     Iterator iterator = object.iterator();
-                    boolean hasDataSerializable = false;
-                    if (!iterator.hasNext()) {
-                        hasDataSerializable = iterator.next() instanceof DataSerializable;
-                    }
-                    out.writeBoolean(hasDataSerializable);
-                    iterator = object.iterator();
                     while (iterator.hasNext()) {
-                        if (hasDataSerializable) {
-                            ((DataSerializable) iterator.next()).writeData(out);
-                        } else {
-                            out.writeObject(iterator.next());
-                        }
+                        out.writeObject(iterator.next());
                     }
                 }
             }
         }
 
         @Override
-        public ArrayList read(ObjectDataInput in) throws IOException {
+        public List read(ObjectDataInput in) throws IOException {
             if (in.readBoolean()) {
                 int size = in.readInt();
-                ArrayList result = new ArrayList(size);
-                boolean hasDataSerializable = in.readBoolean();
-                if (hasDataSerializable) {
-                    for (int i = 0; i < size; i++) {
-                        Object o = new Object();
-                        ((DataSerializable) o).readData(in);
-                        result.add(i, o);
-                    }
+                int type = in.readInt();
+                List result;
+                if (type == 0) {
+                    result = new ArrayList(size);
                 } else {
-                    for (int i = 0; i < size; i++) {
-                        result.add(i, in.readObject());
-                    }
+                    result = new LinkedList();
+                }
+                for (int i = 0; i < size; i++) {
+                    result.add(i, in.readObject());
                 }
                 return result;
             }
