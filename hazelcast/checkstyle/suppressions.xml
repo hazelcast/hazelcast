@@ -26,7 +26,7 @@
     <suppress checks="" files="[\\/]map[\\/]"/>
     <!--Chris comment out the following line to turn on checking for mapreduce.
     Then run mvn -Pcheckstyle -DskipTests  instal-->
-    <suppress checks="" files="[\\/]mapreduce[\\/]">
+    <!-- suppress checks="" files="[\\/]mapreduce[\\/]"/ -->
     <suppress checks="" files="[\\/]monitor[\\/]"/>
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
