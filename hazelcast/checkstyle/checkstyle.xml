@@ -39,10 +39,11 @@
         <property name="basedir" value="${basedir}"/>
     -->
 
-    <!-- Activation here is needed for IntelliJ CheckstyleIDEA plugin -->
-    <module name="SuppressionFilter">
-        <property name="file" value="./suppressions.xml"/>
-    </module>
+    <!-- !!!!!!!! Activation here is needed for IntelliJ CheckstyleIDEA plugin
+     Use the CheckStyle-IDEA plugin and uncomment the following!!!!-->
+    <!--<module name="SuppressionFilter">-->
+        <!--<property name="file" value="./suppressions.xml"/>-->
+    <!--</module>-->
 
     <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
     <module name="SuppressionCommentFilter"/>
@@ -100,7 +101,9 @@
             <property name="scope" value="public"/>
         </module>
 
-        <module name="JavadocStyle"/>
+        <module name="JavadocStyle">
+            <property name="checkFirstSentence" value="false"/>
+        </module>
 
         <module name="TrailingComment"/>
 
@@ -133,7 +136,7 @@
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
         <module name="LineLength">
-            <property name="max" value="120"/>
+            <property name="max" value="130"/>
         </module>
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>
@@ -291,7 +294,6 @@
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
-        <!-- module name="FinalParameters"/ -->
         <module name="TodoComment"/>
         <module name="UpperEll"/>
 
