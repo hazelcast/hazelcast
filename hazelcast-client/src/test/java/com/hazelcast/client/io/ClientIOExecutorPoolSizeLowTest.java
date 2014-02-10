@@ -6,6 +6,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -35,7 +36,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     static HazelcastInstance server3;
     static HazelcastInstance client;
 
-    static final int executorPoolSize = 1;
+    static final int executorPoolSize = 2;
 
     static String entryCounterID;
 
@@ -51,6 +52,7 @@ public class ClientIOExecutorPoolSizeLowTest {
         clientConfig.setExecutorPoolSize(executorPoolSize);
         client = HazelcastClient.newHazelcastClient(clientConfig);
 
+
         final IMap<Object, Object> map = client.getMap("map");
 
         //default to add 1 listener to use the 1 executor thread
@@ -63,6 +65,125 @@ public class ClientIOExecutorPoolSizeLowTest {
         Hazelcast.shutdownAll();
     }
 
+
+    @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
+    //we destroy all the nodes and clients and then init them again but this time with the client init-ed between the nodes.
+    //the test hangs at client.getMap("map");  again only if the pool size is 1
+    public void initNodeAndClientOrderTest() throws InterruptedException, ExecutionException {
+
+        destroy();
+
+        Config config = new Config();
+        server1 = Hazelcast.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setExecutorPoolSize(executorPoolSize);
+        client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        server2 = Hazelcast.newHazelcastInstance(config);
+        server3 = Hazelcast.newHazelcastInstance(config);
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+    }
+
+    @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
+    public void entryListenerWithMapOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+            if(i==500){
+                server2.getLifecycleService().terminate();
+            }
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+    }
+
+    @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)//the client Throws com.hazelcast.spi.exception.TargetDisconnectedException: Target[Address[127.0.0.1]:5702] disconnected. client seems to connect to server1 every time ?
+    public void entryListenerWithMapOps_WithClientConnectedNodeTerminate() throws InterruptedException, ExecutionException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+            if(i==500){
+                server1.getLifecycleService().terminate();
+            }
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+    }
+
+    @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
+    public void entryListenerWithMapAsyncOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.putAsync(i, i);
+            if(i==500){
+                server2.getLifecycleService().terminate();
+            }
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+    }
+
+
+    @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
+    public void entryListenerWithAsyncMapOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
+
+        final IMap<Object, Object> map = client.getMap("map");
+
+        for (int i = 0; i < 1000; i++) {
+            map.putAsync(i, i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(1000, map.size());
+            }
+        });
+
+
+        for (int i = 0; i < 1000; i++) {
+
+            Future f = map.getAsync(i);
+            assertEquals(i, f.get());
+
+            if(i==500){
+                server2.getLifecycleService().terminate();
+            }
+        }
+    }
 
     @Test
     public void removeListenerAfterAsyncOpp() throws InterruptedException {
