@@ -266,6 +266,7 @@
                             <failOnViolation>true</failOnViolation>
                             <includeTestSourceDirectory>false</includeTestSourceDirectory>
                             <enableRulesSummary>true</enableRulesSummary>
+                            <propertyExpansion>basedir=${basedir}</propertyExpansion>
                         </configuration>
                     </plugin>
 

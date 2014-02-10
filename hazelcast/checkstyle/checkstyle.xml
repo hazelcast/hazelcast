@@ -39,11 +39,10 @@
         <property name="basedir" value="${basedir}"/>
     -->
 
-    <!-- !!!!!!!! Activation here is needed for IntelliJ CheckstyleIDEA plugin
-     Use the CheckStyle-IDEA plugin and uncomment the following!!!!-->
-    <!--<module name="SuppressionFilter">-->
-        <!--<property name="file" value="./suppressions.xml"/>-->
-    <!--</module>-->
+    <!-- Activation here is needed for IntelliJ CheckstyleIDEA plugin -->
+    <module name="SuppressionFilter">
+        <property name="file" value="${basedir}/checkstyle/suppressions.xml"/>
+    </module>
 
     <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
     <module name="SuppressionCommentFilter"/>
