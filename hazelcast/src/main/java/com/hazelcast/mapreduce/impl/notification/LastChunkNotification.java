@@ -35,8 +35,8 @@ public class LastChunkNotification<KeyOut, Value>
     public LastChunkNotification() {
     }
 
-    public LastChunkNotification(Address address, String name, String jobId, Address sender,
-                                 int partitionId, Map<KeyOut, Value> chunk) {
+    public LastChunkNotification(Address address, String name, String jobId, Address sender, int partitionId,
+                                 Map<KeyOut, Value> chunk) {
         super(address, name, jobId);
         this.partitionId = partitionId;
         this.sender = sender;
@@ -56,7 +56,8 @@ public class LastChunkNotification<KeyOut, Value>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         super.writeData(out);
         out.writeInt(chunk.size());
         for (Map.Entry<KeyOut, Value> entry : chunk.entrySet()) {
@@ -68,7 +69,8 @@ public class LastChunkNotification<KeyOut, Value>
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         super.readData(in);
         int size = in.readInt();
         chunk = new HashMap<KeyOut, Value>();

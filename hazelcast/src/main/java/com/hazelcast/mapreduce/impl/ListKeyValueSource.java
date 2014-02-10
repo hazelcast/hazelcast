@@ -41,8 +41,6 @@ public class ListKeyValueSource<V>
         extends KeyValueSource<String, V>
         implements IdentifiedDataSerializable {
 
-    private final static long serialVersionUID = 1;
-
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<String, V> simpleEntry = new MapReduceSimpleEntry<String, V>();
 
