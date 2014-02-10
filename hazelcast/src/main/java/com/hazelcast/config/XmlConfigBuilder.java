@@ -197,9 +197,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
             String msg = "Having problem parsing the " + msgPart;
             msg += "\nException: " + e.getMessage();
-            msg += "\nHazelcast will start with default configuration.";
-            logger.warning(msg);
-            return;
+            msg += "\nHazelcast startup interrupted.";
+            logger.severe(msg);
+            throw e;
         } finally {
             IOUtil.closeResource(in);
         }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -252,6 +253,15 @@ public class XMLConfigBuilderTest {
         assertEquals("someToken",manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getClusterId());
         assertNull(manCenterCfg.getUrl());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testParseExceptionIsNotSwallowed() {
+        String invalidXml =
+                "<hazelcast>\n" +
+                "</hazelcast";
+        buildConfig(invalidXml);
+        fail(); //if we, for any reason, we get through the parsing, fail.
     }
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
