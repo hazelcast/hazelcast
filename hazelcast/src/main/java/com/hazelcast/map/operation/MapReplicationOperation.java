@@ -139,8 +139,9 @@ public class MapReplicationOperation extends AbstractOperation {
         }
     }
 
-    private long findDelayMillis(ScheduledEntry entry) {
-        return Math.max(0, entry.getScheduledDelayMillis() - (Clock.currentTimeMillis() - entry.getScheduleTimeNanos()));
+    public long findDelayMillis(ScheduledEntry entry) {
+        long diffMillis = (System.nanoTime() - entry.getScheduleTimeNanos()) / 1000000;
+        return Math.max(0, entry.getScheduledDelayMillis() - diffMillis);
     }
 
     public String getServiceName() {
