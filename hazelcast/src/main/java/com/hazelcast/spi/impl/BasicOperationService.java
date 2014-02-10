@@ -40,7 +40,6 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.scheduler.*;
@@ -81,11 +80,7 @@ final class BasicOperationService implements InternalOperationService {
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
     final ConcurrentMap<Long, RemoteCall> remoteCalls;
-    private final ExecutorService[] operationExecutors;
-    private final BlockingQueue[] operationExecutorQueues;
 
-    private final ExecutorService defaultOperationExecutor;
-    private final ConcurrentLinkedQueue defaultOperationUrgentQueue;
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
@@ -93,8 +88,8 @@ final class BasicOperationService implements InternalOperationService {
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
-    private final ConcurrentLinkedQueue[] operationExecutorUrgentQueues;
     private final ExecutionService executionService;
+    private final BasicOperationServiceExecutor executor;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -107,26 +102,8 @@ final class BasicOperationService implements InternalOperationService {
         remoteCalls = new ConcurrentHashMap<Long, RemoteCall>(1000, 0.75f, concurrencyLevel);
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
         operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
-        operationExecutors = new ExecutorService[operationThreadCount];
-        operationExecutorQueues = new BlockingQueue[operationThreadCount];
-        operationExecutorUrgentQueues = new ConcurrentLinkedQueue[operationThreadCount];
-        for (int i = 0; i < operationExecutors.length; i++) {
-            BlockingQueue<Runnable> operationExecutorQueue = new LinkedBlockingQueue<Runnable>();
-            operationExecutorQueues[i] = operationExecutorQueue;
-
-            ConcurrentLinkedQueue<Runnable> operationExecutorUrgentQueue = new ConcurrentLinkedQueue<Runnable>();
-            operationExecutorUrgentQueues[i]=operationExecutorUrgentQueue;
-
-            operationExecutors[i] = new ThreadPoolExecutor(1, 1,
-                    0L, TimeUnit.MILLISECONDS,
-                    operationExecutorQueue,
-                    new OperationThreadFactory(i));
-        }
 
         executionService = nodeEngine.getExecutionService();
-        defaultOperationUrgentQueue = new ConcurrentLinkedQueue<Runnable>();
-        defaultOperationExecutor = executionService.register(ExecutionService.OPERATION_EXECUTOR,
-                coreSize * 2, coreSize * 100000);
 
         executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 10, coreSize * 100000);
 
@@ -140,6 +117,8 @@ final class BasicOperationService implements InternalOperationService {
         backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getDefaultScheduledExecutor(),
                 new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
+
+        this.executor = new BasicOperationServiceExecutor(node,executionService,operationThreadCount,new RunSystemOperationsProcessor());
     }
 
     @Override
@@ -169,11 +148,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getOperationExecutorQueueSize() {
-        int size = 0;
-        for(BlockingQueue q: operationExecutorQueues){
-            size+=q.size();
-        }
-        return size;
+        return executor.getOperationExecutorQueueSize();
     }
 
     @Override
@@ -194,29 +169,17 @@ final class BasicOperationService implements InternalOperationService {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 responseExecutor.execute(new ResponseProcessor(packet));
             } else {
-                final int partitionId = packet.getPartitionId();
-                final Executor executor = getExecutor(partitionId);
-                if(packet.isUrgent()){
-                    ConcurrentLinkedQueue<Runnable> urgentQueue = getUrgentQueue(partitionId);
-                    urgentQueue.add(new RemoteOperationProcessor(packet));
-                    executor.execute(new UrgentSystemOperationsProcessor());
-                } else{
-                    executor.execute(new RemoteOperationProcessor(packet));
-                }
+                RemoteOperationProcessor task = new RemoteOperationProcessor(packet);
+                int partitionId = packet.getPartitionId();
+                boolean systemOperation = packet.isUrgent();
+                executor.execute(task,partitionId,systemOperation);
+
             }
         } catch (RejectedExecutionException e) {
             if (nodeEngine.isActive()) {
                 throw e;
             }
         }
-    }
-
-    private Executor getExecutor(int partitionId) {
-        return partitionId > -1 ? operationExecutors[partitionId % operationThreadCount] : defaultOperationExecutor;
-    }
-
-    private ConcurrentLinkedQueue<Runnable> getUrgentQueue(int partitionId) {
-        return partitionId > -1 ? operationExecutorUrgentQueues[partitionId % operationThreadCount] : defaultOperationUrgentQueue;
     }
 
     private int getPartitionIdForExecution(Operation op) {
@@ -228,6 +191,7 @@ final class BasicOperationService implements InternalOperationService {
      * @param op
      */
     @Override
+    //todo: move to BasicOperationServiceExecutor
     public void runOperation(Operation op) {
         if (isAllowedToRunInCurrentThread(op)) {
             doRunOperation(op);
@@ -236,16 +200,13 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    public boolean isOperationThread() {
-        return Thread.currentThread() instanceof OperationThread;
-    }
-
+    //todo: move to BasicOperationServiceExecutor
     boolean isAllowedToRunInCurrentThread(Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
         if (partitionId > -1) {
             final Thread currentThread = Thread.currentThread();
-            if (currentThread instanceof OperationThread) {
-                int tid = ((OperationThread) currentThread).id;
+            if (currentThread instanceof BasicOperationServiceExecutor.PartitionThread) {
+                int tid = ((BasicOperationServiceExecutor.PartitionThread) currentThread).threadId;
                 return partitionId % operationThreadCount == tid;
             }
             return false;
@@ -253,12 +214,13 @@ final class BasicOperationService implements InternalOperationService {
         return true;
     }
 
+    //todo: move to BasicOperationServiceExecutor
     boolean isInvocationAllowedFromCurrentThread(Operation op) {
         final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof OperationThread) {
+        if (currentThread instanceof BasicOperationServiceExecutor.PartitionThread) {
             final int partitionId = getPartitionIdForExecution(op);
             if (partitionId > -1) {
-                int tid = ((OperationThread) currentThread).id;
+                int tid = ((BasicOperationServiceExecutor.PartitionThread) currentThread).threadId;
                 return partitionId % operationThreadCount == tid;
             }
             return true;
@@ -275,13 +237,9 @@ final class BasicOperationService implements InternalOperationService {
     public void executeOperation(final Operation op) {
         String executorName = op.getExecutorName();
         if (executorName == null) {
-            final int partitionId = getPartitionIdForExecution(op);
-            if (op instanceof UrgentSystemOperation) {
-                getUrgentQueue(partitionId).offer(new LocalOperationProcessor(op));
-                getExecutor(partitionId).execute(new UrgentSystemOperationsProcessor());
-            } else {
-                getExecutor(partitionId).execute(new LocalOperationProcessor(op));
-            }
+            int partitionId = getPartitionIdForExecution(op);
+            boolean urgent = op.isUrgent();
+            executor.execute(new LocalOperationProcessor(op),partitionId,urgent);
         } else {
             ManagedExecutorService executor = executionService.getExecutor(executorName);
             if(executor == null){
@@ -316,7 +274,7 @@ final class BasicOperationService implements InternalOperationService {
     private void doRunOperation(final Operation op) {
         executedOperationsCount.incrementAndGet();
 
-        runSystemOperations();
+        runPriorityOperations();
 
         RemoteCallKey callKey = null;
         try {
@@ -391,14 +349,14 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    private void runSystemOperations() {
+    private void runPriorityOperations() {
         Thread thread = Thread.currentThread();
         ConcurrentLinkedQueue<Runnable> urgentQueue;
-        if(thread instanceof  OperationThread){
-             int id = ((OperationThread)thread).id;
-             urgentQueue = operationExecutorUrgentQueues[id];
+        if(thread instanceof BasicOperationServiceExecutor.PartitionThread){
+             int id = ((BasicOperationServiceExecutor.PartitionThread)thread).threadId;
+             urgentQueue = systemOperationExecutorQueues[id];
         } else{
-             urgentQueue = defaultOperationUrgentQueue;
+             urgentQueue = defaultSystemOperationQueue;
         }
 
         if(urgentQueue.isEmpty()){
@@ -606,7 +564,7 @@ final class BasicOperationService implements InternalOperationService {
     private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                     Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof OperationThread) {
+        if (currentThread instanceof BasicOperationServiceExecutor.PartitionThread) {
             throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
         }
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
@@ -761,9 +719,6 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void shutdown() {
         logger.finest( "Stopping operation threads...");
-        for (ExecutorService executor : operationExecutors) {
-            executor.shutdown();
-        }
         responseExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
         for (RemoteCall call : remoteCalls.values()) {
@@ -772,12 +727,7 @@ final class BasicOperationService implements InternalOperationService {
         remoteCalls.clear();
         backupCalls.clear();
         backupScheduler.cancelAll();
-        for (ExecutorService executor : operationExecutors) {
-            try {
-                executor.awaitTermination(3, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            }
-        }
+        executor.shutdown();
     }
 
     /**
@@ -785,15 +735,15 @@ final class BasicOperationService implements InternalOperationService {
      * but if there is no work triggering a worker thread, then the system operation put in a urgent queue
      * are not going to be picked up by a worker thread.
      *
-     * So when a system operation is send, also a UrgentSystemOperationsProcessor is send to the executor to make sure
+     * So when a system operation is send, also a RunSystemOperationsProcessor is send to the executor to make sure
      * that the operations are picked up. If the system operations already have been processed, then processor
      * doesn't do anything. So it can safely be send multiple times, without causing problems.
      */
-    private class UrgentSystemOperationsProcessor implements Runnable{
+    private class RunSystemOperationsProcessor implements Runnable{
         @Override
         public void run(){
             try {
-                runSystemOperations();
+                runPriorityOperations();
             } catch (Throwable e) {
                 logger.severe("While processing system operations...", e);
             }
@@ -890,7 +840,6 @@ final class BasicOperationService implements InternalOperationService {
             call.offerResponse(response);
         }
 
-
         @Override
         public void run() {
             try {
@@ -906,43 +855,6 @@ final class BasicOperationService implements InternalOperationService {
                 }
             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
-            }
-        }
-    }
-
-    private class OperationThreadFactory extends AbstractExecutorThreadFactory {
-
-        final String threadName;
-        final int threadId;
-
-        public OperationThreadFactory(int threadId) {
-            super(node.threadGroup, node.getConfigClassLoader());
-            final String poolNamePrefix = node.getThreadPoolNamePrefix("operation");
-            this.threadName = poolNamePrefix + threadId;
-            this.threadId = threadId;
-        }
-
-        @Override
-        protected Thread createThread(Runnable r) {
-            return new OperationThread(threadGroup, r, threadName, threadId);
-        }
-    }
-
-    private static class OperationThread extends Thread {
-
-        final int id;
-
-        public OperationThread(ThreadGroup threadGroup, Runnable target, String name, int id) {
-            super(threadGroup, target, name);
-            this.id = id;
-        }
-
-        @Override
-        public void run() {
-            try {
-                super.run();
-            } catch (OutOfMemoryError e) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
             }
         }
     }
