@@ -28,7 +28,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.io.IOException;
@@ -116,6 +115,8 @@ public class MapReplicationOperation extends AbstractOperation {
                     Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
                     newRecord.setStatistics(recordReplicationInfo.getStatistics());
                     recordStore.putRecord(key, newRecord);
+                    updateSizeEstimator(newRecord,recordStore);
+
                     if (recordReplicationInfo.getIdleDelayMillis() >= 0) {
                         mapService.scheduleIdleEviction(mapName, key, recordReplicationInfo.getIdleDelayMillis());
                     }
@@ -189,5 +190,10 @@ public class MapReplicationOperation extends AbstractOperation {
 
     public boolean isEmpty() {
         return data == null || data.isEmpty();
+    }
+
+    private void updateSizeEstimator(Record record, RecordStore recordStore) {
+        final long cost = recordStore.getSizeEstimator().getCost(record);
+        recordStore.getSizeEstimator().add(cost);
     }
 }
