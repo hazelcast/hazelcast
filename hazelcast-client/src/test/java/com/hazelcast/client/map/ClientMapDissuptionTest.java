@@ -1,6 +1,5 @@
 package com.hazelcast.client.map;
 
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.GroupConfig;
@@ -10,6 +9,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,10 +23,8 @@ import static junit.framework.TestCase.assertTrue;
 public class ClientMapDissuptionTest {
 
     HazelcastInstance client;
-
     HazelcastInstance stableNode;
     SimpleClusterUtil cluster;
-
 
     @Before
     public void init(){
@@ -43,8 +41,11 @@ public class ClientMapDissuptionTest {
         client  = HazelcastClient.newHazelcastClient(clientConfig);
     }
 
-
-
+    @After
+    public void after(){
+        Hazelcast.shutdownAll();
+        client.getLifecycleService().shutdown();
+    }
 
     @Test
     @Category(ProblematicTest.class)
