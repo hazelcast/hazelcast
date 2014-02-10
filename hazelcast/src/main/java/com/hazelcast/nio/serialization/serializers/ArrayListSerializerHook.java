@@ -65,6 +65,7 @@ public class ArrayListSerializerHook implements SerializerHook<ArrayList> {
                 for (int i = 0; i < size; i++) {
                     result.add(i, in.readObject());
                 }
+                return result;
             }
             return null;
         }
