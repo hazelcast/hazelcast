@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -77,7 +76,6 @@ public class ClientSocketInterceptorTest {
     }
 
 
-    @Ignore("Ali is going to look at this failing test")
     @Test(timeout = 120000)
     public void testFailingSocketInterceptor() {
         Config config = new Config();
