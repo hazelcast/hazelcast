@@ -21,7 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -42,7 +44,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientIssueTest {
+public class ClientIssueTest extends HazelcastTestSupport {
 
     @After
     @Before
@@ -377,6 +379,11 @@ public class ClientIssueTest {
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+                latch.countDown();
+            }
         }, true);
 
 
@@ -386,10 +393,31 @@ public class ClientIssueTest {
 
         instance1.getLifecycleService().shutdown();
 
+        final Thread thread = new Thread() {
+            @Override
+            public void run() {
+                while (!isInterrupted()) {
+                    m.put("key2", "value2");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+            }
+        };
+        thread.start();
 
-        m.put("key2", "value2");
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                try {
+                    assertTrue(latch.await(10, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        thread.interrupt();
 
         assertTrue(m.removeEntryListener(id));
 
