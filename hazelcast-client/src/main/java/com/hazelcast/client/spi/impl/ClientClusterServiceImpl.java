@@ -200,6 +200,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         } catch (Exception e) {
                             logger.severe("Error while connecting to cluster!", e);
                             client.getLifecycleService().shutdown();
+                            latch.countDown();
                             return;
                         }
                     }
@@ -220,6 +221,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
+                    latch.countDown();
                     break;
                 }
             }
