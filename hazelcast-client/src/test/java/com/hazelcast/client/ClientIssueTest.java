@@ -172,6 +172,7 @@ public class ClientIssueTest {
         thread.join();
         assertEquals(expected, map.size());
     }
+
     @Test
     public void testGetDistributedObjectsIssue678() {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance();
@@ -203,7 +204,7 @@ public class ClientIssueTest {
      * Client hangs at map.get after shutdown
      */
     @Test
-    public void testIssue821(){
+    public void testIssue821() {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
@@ -216,7 +217,7 @@ public class ClientIssueTest {
         try {
             map.get("key1");
             fail();
-        } catch (HazelcastException ignored){
+        } catch (HazelcastException ignored) {
         }
         assertFalse(instance.getLifecycleService().isRunning());
     }
@@ -233,10 +234,10 @@ public class ClientIssueTest {
 
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(list.size());
-        LifecycleListener listener = new LifecycleListener(){
+        LifecycleListener listener = new LifecycleListener() {
             public void stateChanged(LifecycleEvent event) {
                 final LifecycleState state = list.poll();
-                if (state != null && state.equals(event.getState())){
+                if (state != null && state.equals(event.getState())) {
                     latch.countDown();
                 }
             }
@@ -268,7 +269,7 @@ public class ClientIssueTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
             public void init(InitialMembershipEvent event) {
-                for (int i=0; i<event.getMembers().size(); i++){
+                for (int i = 0; i < event.getMembers().size(); i++) {
                     latch.countDown();
                 }
             }
@@ -313,7 +314,6 @@ public class ClientIssueTest {
         assertEquals("val", map.get("key1"));
 
 
-
         map.put("key2", "oldValue");
         assertEquals("oldValue", map.get("key2"));
         map.put("key2", "newValue");
@@ -322,7 +322,6 @@ public class ClientIssueTest {
         map.put("key3", "value2");
         assertEquals("value2", map.get("key3"));
         assertEquals("removeIntercepted", map.remove("key3"));
-
 
 
     }
@@ -334,7 +333,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptGet(Object value) {
-            if ("value1".equals(value)){
+            if ("value1".equals(value)) {
                 return "getIntercepted";
             }
             return null;
@@ -345,7 +344,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptPut(Object oldValue, Object newValue) {
-            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)){
+            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)) {
                 return "putIntercepted";
             }
             return null;
@@ -355,7 +354,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptRemove(Object removedValue) {
-            if ("value2".equals(removedValue)){
+            if ("value2".equals(removedValue)) {
                 return "removeIntercepted";
             }
             return null;
@@ -365,5 +364,37 @@ public class ClientIssueTest {
         }
 
     }
+
+    @Test
+    public void testListenerReconnect() throws InterruptedException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        final IMap<Object, Object> m = client.getMap("m");
+        final String id = m.addEntryListener(new EntryAdapter() {
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+        }, true);
+
+
+        m.put("key1", "value1");
+
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        instance1.getLifecycleService().shutdown();
+
+
+        m.put("key2", "value2");
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+        assertTrue(m.removeEntryListener(id));
+
+
+    }
+
 
 }

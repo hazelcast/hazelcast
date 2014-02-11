@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.nearcache;
 
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
@@ -245,7 +246,7 @@ public class ClientNearCache<K> {
 
     public void destroy() {
         if (registrationId != null){
-            ClientRequest request;
+            BaseClientRemoveListenerRequest request;
             if (cacheType == ClientNearCacheType.Map) {
                 request = new MapRemoveEntryListenerRequest(mapName, registrationId);
             } else if (cacheType == ClientNearCacheType.ReplicatedMap) {

@@ -16,29 +16,21 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
 
 /**
  * @author ali 23/12/13
  */
-public class RemoveEntryListenerRequest extends CallableClientRequest {
+public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {
 
-    String name;
-
-    String registrationId;
 
     public RemoveEntryListenerRequest() {
     }
 
     public RemoveEntryListenerRequest(String name, String registrationId) {
-        this.name = name;
-        this.registrationId = registrationId;
+        super(name, registrationId);
     }
 
     public Object call() throws Exception {
@@ -58,13 +50,4 @@ public class RemoveEntryListenerRequest extends CallableClientRequest {
         return MultiMapPortableHook.REMOVE_ENTRY_LISTENER;
     }
 
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        writer.writeUTF("r", registrationId);
-    }
-
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        registrationId = reader.readUTF("r");
-    }
 }

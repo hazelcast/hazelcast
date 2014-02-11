@@ -16,29 +16,21 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
 
 /**
  * @author ali 23/12/13
  */
-public class MapRemoveEntryListenerRequest extends CallableClientRequest {
+public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {
 
-    String name;
-
-    String registrationId;
 
     public MapRemoveEntryListenerRequest() {
     }
 
     public MapRemoveEntryListenerRequest(String name, String registrationId) {
-        this.name = name;
-        this.registrationId = registrationId;
+        super(name, registrationId);
     }
 
     public Object call() throws Exception {
@@ -58,13 +50,4 @@ public class MapRemoveEntryListenerRequest extends CallableClientRequest {
         return MapPortableHook.REMOVE_ENTRY_LISTENER;
     }
 
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        writer.writeUTF("r", registrationId);
-    }
-
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        registrationId = reader.readUTF("r");
-    }
 }
