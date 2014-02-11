@@ -53,6 +53,9 @@ public final class ListenerUtil {
         try {
             ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) context.getInvocationService();
             registrationId = invocationService.deRegisterListener(registrationId);
+            if (registrationId == null) {
+                return false;
+            }
             request.setRegistrationId(registrationId);
             final Future<Boolean> future = invocationService.invokeOnRandomTarget(request);
             return (Boolean) context.getSerializationService().toObject(future.get());

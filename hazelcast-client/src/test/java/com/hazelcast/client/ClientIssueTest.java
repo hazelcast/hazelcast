@@ -421,6 +421,8 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
         assertTrue(m.removeEntryListener(id));
 
+        assertFalse(m.removeEntryListener("foo"));
+
 
     }
 
