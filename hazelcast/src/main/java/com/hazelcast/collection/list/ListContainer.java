@@ -134,9 +134,11 @@ public class ListContainer extends CollectionContainer {
             if (itemMap != null && !itemMap.isEmpty()){
                 itemList = new ArrayList<CollectionItem>(itemMap.values());
                 Collections.sort(itemList);
+                itemMap.clear();
             } else {
                 itemList = new ArrayList<CollectionItem>(1000);
             }
+            itemMap = null;
         }
         return itemList;
     }
@@ -148,9 +150,11 @@ public class ListContainer extends CollectionContainer {
                 for (CollectionItem item : itemList) {
                     itemMap.put(item.getItemId(), item);
                 }
+                itemList.clear();
             } else {
                 itemMap = new HashMap<Long, CollectionItem>(1000);
             }
+            itemList = null;
         }
         return itemMap;
     }
