@@ -58,7 +58,7 @@ public class ClientSocketInterceptorTest {
 
         ClientConfig clientConfig = new ClientConfig();
         MySocketInterceptor myClientSocketInterceptor = new MySocketInterceptor(true);
-        clientConfig.setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
+        clientConfig.getNetworkConfig().setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
                 .setImplementation(myClientSocketInterceptor));
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -90,7 +90,7 @@ public class ClientSocketInterceptorTest {
 
         ClientConfig clientConfig = new ClientConfig();
         MySocketInterceptor myClientSocketInterceptor = new MySocketInterceptor(false);
-        clientConfig.setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
+        clientConfig.getNetworkConfig().setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
                 .setImplementation(myClientSocketInterceptor));
 
         try {

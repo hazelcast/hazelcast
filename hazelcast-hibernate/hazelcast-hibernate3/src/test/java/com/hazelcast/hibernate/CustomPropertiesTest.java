@@ -31,14 +31,10 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.Properties;
 
@@ -82,8 +78,8 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         ClientConfig clientConfig = client.getClientConfig();
         assertEquals("dev-custom", clientConfig.getGroupConfig().getName());
         assertEquals("dev-pass", clientConfig.getGroupConfig().getPassword());
-        assertTrue(clientConfig.isSmartRouting());
-        assertTrue(clientConfig.isRedoOperation());
+        assertTrue(clientConfig.getNetworkConfig().isSmartRouting());
+        assertTrue(clientConfig.getNetworkConfig().isRedoOperation());
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
         main.getLifecycleService().shutdown();

@@ -16,8 +16,8 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
@@ -25,10 +25,10 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
@@ -60,7 +60,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastClient.class);
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
-            this.nearCacheConfigMap =  new ManagedMap();
+            this.nearCacheConfigMap = new ManagedMap();
 
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
@@ -102,10 +102,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("proxy-factories".equals(nodeName)) {
                     final List list = parseProxyFactories(node, ProxyFactoryConfig.class);
                     configBuilder.addPropertyValue("proxyFactoryConfigs", list);
-                } else if ("socket-interceptor".equals(nodeName)) {
-                    handleSocketInterceptorConfig(node, configBuilder);
                 } else if ("load-balancer".equals(nodeName)) {
-                    handleLoadBalacer(node);
+                    handleLoadBalancer(node);
                 } else if ("near-cache".equals(nodeName)) {
                     handleNearCache(node);
                 }
@@ -113,21 +111,43 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
         }
 
-         private void handleNetwork(Node node) {
+        private void handleNetwork(Node node) {
             List<String> members = new ArrayList<String>(10);
             fillAttributeValues(node, configBuilder);
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(child);
                 if ("member".equals(nodeName)) {
                     members.add(getTextContent(child));
-                } else if("socket-options".equals(nodeName)) {
-                    createAndFillBeanBuilder(child, SocketOptions.class,"socketOptions", configBuilder);
+                } else if ("socket-options".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, SocketOptions.class, "socketOptions", configBuilder);
+                } else if ("socket-interceptor".equals(nodeName)) {
+                    handleSocketInterceptorConfig(node, configBuilder);
+                } else if ("ssl".equals(nodeName)) {
+                    handleSSLConfig(node, configBuilder);
                 }
             }
             configBuilder.addPropertyValue("addresses", members);
         }
 
-        private void handleLoadBalacer(Node node) {
+        private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
+            BeanDefinitionBuilder sslConfigBuilder = createBeanBuilder(SSLConfig.class);
+            final String implAttribute = "factory-implementation";
+            fillAttributeValues(node, sslConfigBuilder, implAttribute);
+            Node implNode = node.getAttributes().getNamedItem(implAttribute);
+            String implementation = implNode != null ? getTextContent(implNode) : null;
+            if (implementation != null) {
+                sslConfigBuilder.addPropertyReference(xmlToJavaName(implAttribute), implementation);
+            }
+            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(child);
+                if ("properties".equals(name)) {
+                    handleProperties(child, sslConfigBuilder);
+                }
+            }
+            networkConfigBuilder.addPropertyValue("SSLConfig", sslConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleLoadBalancer(Node node) {
             final String type = getAttribute(node, "type");
             if ("random".equals(type)) {
                 configBuilder.addPropertyValue("loadBalancer", new RandomLB());
@@ -137,7 +157,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleNearCache(Node node) {
-            createAndFillListedBean(node, NearCacheConfig.class, "name", nearCacheConfigMap,"name");
+            createAndFillListedBean(node, NearCacheConfig.class, "name", nearCacheConfigMap, "name");
         }
 
     }
