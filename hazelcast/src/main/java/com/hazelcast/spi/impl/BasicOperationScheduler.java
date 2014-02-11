@@ -1,51 +1,42 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 public class BasicOperationScheduler {
 
-    private final ConcurrentLinkedQueue[] partitionExecutorPriorityQueues;
+    private final ILogger logger;
 
-    //we don't need executors, we can just run our own thread.
-    //we can also get rid of the forced runnable.
-    private final ExecutorService[] partitionExecutors;
-
-    private final BlockingQueue[] partitionExecutorQueues;
     private final Node node;
     private final Executor globalExecutor;
     private final ConcurrentLinkedQueue<Runnable> globalExecutorPriorityQueue;
     private final int operationThreadCount;
+    private final BasicOperationProcessor processor;
+    private final PartitionThread[] partitionThreads;
 
     public BasicOperationScheduler(Node node, ExecutionService executionService,
-                                   int operationThreadCount) {
+                                   int operationThreadCount, BasicOperationProcessor processor) {
+        this.logger = node.getLogger(OperationService.class);
         this.node = node;
+        this.processor = processor;
         this.operationThreadCount = operationThreadCount;
-        this.partitionExecutors = new ExecutorService[operationThreadCount];
-        this.partitionExecutorQueues = new BlockingQueue[operationThreadCount];
-        this.partitionExecutorPriorityQueues = new ConcurrentLinkedQueue[operationThreadCount];
-        for (int partitionId = 0; partitionId < partitionExecutors.length; partitionId++) {
-            BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
-            partitionExecutorQueues[partitionId] = queue;
-
-            ConcurrentLinkedQueue<Runnable> priorityQueue = new ConcurrentLinkedQueue<Runnable>();
-            partitionExecutorPriorityQueues[partitionId] = priorityQueue;
-
-            partitionExecutors[partitionId] = new ThreadPoolExecutor(1, 1,
-                    0L, TimeUnit.MILLISECONDS,
-                    queue,
-                    new PartitionThreadFactory(partitionId));
+        this.partitionThreads = new PartitionThread[operationThreadCount];
+        for (int operationThreadId = 0; operationThreadId < operationThreadCount; operationThreadId++) {
+            PartitionThread partitionThread = createPartitionThread(operationThreadId);
+            partitionThreads[operationThreadId] = partitionThread;
+            partitionThread.start();
         }
 
         int coreSize = Runtime.getRuntime().availableProcessors();
@@ -54,12 +45,19 @@ public class BasicOperationScheduler {
                 coreSize * 2, coreSize * 100000);
     }
 
+    private PartitionThread createPartitionThread(int operationThreadId) {
+        BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
+        ConcurrentLinkedQueue<Runnable> priorityQueue = new ConcurrentLinkedQueue<Runnable>();
+        PartitionThreadFactory threadFactory = new PartitionThreadFactory(operationThreadId, workQueue, priorityQueue);
+        return threadFactory.createThread(null);
+    }
+
     boolean isAllowedToRunInCurrentThread(int partitionId) {
         if (partitionId > -1) {
             final Thread currentThread = Thread.currentThread();
             if (currentThread instanceof PartitionThread) {
-                int tid = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
-                return partitionId % operationThreadCount == tid;
+                int threadId = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
+                return toPartitionThreadIndex(partitionId) == threadId;
             }
             return false;
         }
@@ -70,8 +68,8 @@ public class BasicOperationScheduler {
         final Thread currentThread = Thread.currentThread();
         if (currentThread instanceof PartitionThread) {
             if (partitionId > -1) {
-                int tid = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
-                return partitionId % operationThreadCount == tid;
+                int threadId = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
+                return toPartitionThreadIndex(partitionId) == threadId;
             }
             return true;
         }
@@ -80,24 +78,55 @@ public class BasicOperationScheduler {
 
     public int getOperationExecutorQueueSize() {
         int size = 0;
-        for (BlockingQueue q : partitionExecutorQueues) {
-            size += q.size();
+        for (PartitionThread t : partitionThreads) {
+            size += t.workQueue.size();
+            size += t.priorityQueue.size();
         }
+
+        //todo: we don't include the globalExecutor?
         return size;
     }
 
-    public void execute(Runnable task, int partitionId, boolean priority) {
-        Executor executor = getExecutor(partitionId);
+    public void execute(final Object task, int partitionId, boolean priority) {
+        if (task == null) {
+            throw new NullPointerException();
+        }
 
-        ConcurrentLinkedQueue<Runnable> priorityQueue = getPriorityQueue(partitionId);
-
-        if (priority) {
-            priorityQueue.offer(task);
-            executor.execute(new ProcessPriorityQueueTask(priorityQueue, null));
+        if (partitionId > -1) {
+            PartitionThread partitionThread = partitionThreads[toPartitionThreadIndex(partitionId)];
+            if (priority) {
+                partitionThread.priorityQueue.offer(task);
+                partitionThread.workQueue.offer(triggerTask);
+            } else {
+                partitionThread.workQueue.offer(task);
+            }
         } else {
-            executor.execute(new ProcessPriorityQueueTask(priorityQueue, task));
+            Runnable runnable;
+            if (task instanceof Runnable) {
+                runnable = (Runnable) task;
+            } else {
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        processor.process(task);
+                    }
+                };
+            }
+
+            if (priority) {
+
+            } else {
+
+            }
+            globalExecutor.execute(runnable);
         }
     }
+
+    private final Runnable triggerTask = new Runnable() {
+        @Override
+        public void run() {
+        }
+    };
 
     public class ProcessPriorityQueueTask implements Runnable {
         private final ConcurrentLinkedQueue<Runnable> priorityQueue;
@@ -125,30 +154,18 @@ public class BasicOperationScheduler {
         }
     }
 
-    private Executor getExecutor(int partitionId) {
-        if (partitionId > -1) {
-            return partitionExecutors[partitionId % operationThreadCount];
-        } else {
-            return globalExecutor;
-        }
-    }
-
-    private ConcurrentLinkedQueue<Runnable> getPriorityQueue(int partitionId) {
-        if (partitionId > -1) {
-            return partitionExecutorPriorityQueues[partitionId % operationThreadCount];
-        } else {
-            return globalExecutorPriorityQueue;
-        }
+    private int toPartitionThreadIndex(int partitionId) {
+        return partitionId % operationThreadCount;
     }
 
     public void shutdown() {
-        for (ExecutorService executor : partitionExecutors) {
-            executor.shutdown();
+        for (PartitionThread thread : partitionThreads) {
+            thread.shutdown();
         }
 
-        for (ExecutorService executor : partitionExecutors) {
+        for (PartitionThread thread : partitionThreads) {
             try {
-                executor.awaitTermination(3, TimeUnit.SECONDS);
+                thread.awaitTermination(3, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             }
         }
@@ -156,38 +173,94 @@ public class BasicOperationScheduler {
 
     private class PartitionThreadFactory extends AbstractExecutorThreadFactory {
 
-        final String threadName;
-        final int threadId;
+        private final String threadName;
+        private final int threadId;
+        private final BlockingQueue workQueue;
+        private final Queue priorityQueue;
 
-        public PartitionThreadFactory(int threadId) {
+        public PartitionThreadFactory(int threadId, BlockingQueue workQueue, Queue priorityQueue) {
             super(node.threadGroup, node.getConfigClassLoader());
             String poolNamePrefix = node.getThreadPoolNamePrefix("operation");
             this.threadName = poolNamePrefix + threadId;
             this.threadId = threadId;
+            this.workQueue = workQueue;
+            this.priorityQueue = priorityQueue;
         }
 
         @Override
-        protected Thread createThread(Runnable r) {
-            return new PartitionThread(threadGroup, r, threadName, threadId);
+        protected PartitionThread createThread(Runnable r) {
+            return new PartitionThread(threadName, threadId, workQueue, priorityQueue);
         }
     }
 
-    public static class PartitionThread extends Thread {
+    public final class PartitionThread extends Thread {
 
         final int threadId;
+        private final BlockingQueue workQueue;
+        private final Queue priorityQueue;
 
-        public PartitionThread(ThreadGroup threadGroup, Runnable target, String name, int threadId) {
-            super(threadGroup, target, name);
+        public PartitionThread(String name, int threadId,
+                               BlockingQueue workQueue, Queue priorityQueue) {
+            super(node.threadGroup, name);
             this.threadId = threadId;
+            this.workQueue = workQueue;
+            this.priorityQueue = priorityQueue;
         }
 
         @Override
         public void run() {
             try {
-                super.run();
+                doRun();
             } catch (OutOfMemoryError e) {
                 onOutOfMemory(e);
             }
+        }
+
+        private void doRun() {
+            for (; ; ) {
+                Object task;
+                try {
+                    task = workQueue.take();
+                } catch (InterruptedException e) {
+                    continue;
+                }
+
+                if (task instanceof PoisonPill) {
+                    return;
+                }
+                processPriorityMessages();
+                process(task);
+            }
+        }
+
+        private void process(Object task) {
+            try {
+                processor.process(task);
+            } catch (Exception e) {
+                logger.severe("Failed tp process task: " + task + " on partitionThread:" + getName());
+            }
+        }
+
+        private void processPriorityMessages() {
+            for (; ; ) {
+                Object task = priorityQueue.poll();
+                if (task == null) {
+                    return;
+                }
+
+                process(task);
+            }
+        }
+
+        private void shutdown() {
+            workQueue.add(new PoisonPill());
+        }
+
+        public void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
+            join(unit.toMillis(timeout));
+        }
+
+        private class PoisonPill {
         }
     }
 }
