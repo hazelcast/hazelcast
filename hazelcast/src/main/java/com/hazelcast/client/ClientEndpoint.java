@@ -180,15 +180,14 @@ public final class ClientEndpoint implements Client {
     }
 
     public void sendResponse(Object response, int callId) {
+        boolean isError = false;
         if (response == null) {
             response = ClientEngineImpl.NULL;
         } else if (response instanceof Throwable) {
+            isError = true;
             response = ClientExceptionConverters.get(getClientType()).convert((Throwable) response);
-        } else {
-            response = clientEngine.toData(response);
         }
-
-        clientEngine.sendResponse(this, new ClientResponse(response, callId));
+        clientEngine.sendResponse(this, new ClientResponse(clientEngine.toData(response), isError, callId));
     }
 
     public void sendEvent(Object event, int callId) {

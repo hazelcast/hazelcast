@@ -246,8 +246,12 @@ public class ClientConnection implements Connection, Closeable {
 
         for (Map.Entry<Integer, ClientCallFuture> entry : callIdMap.entrySet()) {
             entry.getValue().notify(response);
+            eventHandlerMap.remove(entry.getKey());
         }
         callIdMap.clear();
+        for (ClientCallFuture future : eventHandlerMap.values()) {
+            future.notify(response);
+        }
         eventHandlerMap.clear();
     }
 

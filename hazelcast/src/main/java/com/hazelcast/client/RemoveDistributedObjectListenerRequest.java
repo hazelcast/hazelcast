@@ -16,23 +16,17 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
-
 /**
  * @author ali 23/12/13
  */
-public class RemoveDistributedObjectListenerRequest extends CallableClientRequest {
+public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveListenerRequest {
 
-    String registrationId;
 
     public RemoveDistributedObjectListenerRequest() {
     }
 
     public RemoveDistributedObjectListenerRequest(String registrationId) {
-        this.registrationId = registrationId;
+        super(null, registrationId);
     }
 
     public Object call() throws Exception {
@@ -51,11 +45,4 @@ public class RemoveDistributedObjectListenerRequest extends CallableClientReques
         return ClientPortableHook.REMOVE_LISTENER;
     }
 
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("r", registrationId);
-    }
-
-    public void read(PortableReader reader) throws IOException {
-        registrationId = reader.readUTF("r");
-    }
 }

@@ -21,7 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -42,7 +44,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientIssueTest {
+public class ClientIssueTest extends HazelcastTestSupport {
 
     @After
     @Before
@@ -172,6 +174,7 @@ public class ClientIssueTest {
         thread.join();
         assertEquals(expected, map.size());
     }
+
     @Test
     public void testGetDistributedObjectsIssue678() {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance();
@@ -203,7 +206,7 @@ public class ClientIssueTest {
      * Client hangs at map.get after shutdown
      */
     @Test
-    public void testIssue821(){
+    public void testIssue821() {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
@@ -216,7 +219,7 @@ public class ClientIssueTest {
         try {
             map.get("key1");
             fail();
-        } catch (HazelcastException ignored){
+        } catch (HazelcastException ignored) {
         }
         assertFalse(instance.getLifecycleService().isRunning());
     }
@@ -233,10 +236,10 @@ public class ClientIssueTest {
 
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(list.size());
-        LifecycleListener listener = new LifecycleListener(){
+        LifecycleListener listener = new LifecycleListener() {
             public void stateChanged(LifecycleEvent event) {
                 final LifecycleState state = list.poll();
-                if (state != null && state.equals(event.getState())){
+                if (state != null && state.equals(event.getState())) {
                     latch.countDown();
                 }
             }
@@ -268,7 +271,7 @@ public class ClientIssueTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
             public void init(InitialMembershipEvent event) {
-                for (int i=0; i<event.getMembers().size(); i++){
+                for (int i = 0; i < event.getMembers().size(); i++) {
                     latch.countDown();
                 }
             }
@@ -313,7 +316,6 @@ public class ClientIssueTest {
         assertEquals("val", map.get("key1"));
 
 
-
         map.put("key2", "oldValue");
         assertEquals("oldValue", map.get("key2"));
         map.put("key2", "newValue");
@@ -322,7 +324,6 @@ public class ClientIssueTest {
         map.put("key3", "value2");
         assertEquals("value2", map.get("key3"));
         assertEquals("removeIntercepted", map.remove("key3"));
-
 
 
     }
@@ -334,7 +335,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptGet(Object value) {
-            if ("value1".equals(value)){
+            if ("value1".equals(value)) {
                 return "getIntercepted";
             }
             return null;
@@ -345,7 +346,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptPut(Object oldValue, Object newValue) {
-            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)){
+            if ("oldValue".equals(oldValue) && "newValue".equals(newValue)) {
                 return "putIntercepted";
             }
             return null;
@@ -355,7 +356,7 @@ public class ClientIssueTest {
         }
 
         public Object interceptRemove(Object removedValue) {
-            if ("value2".equals(removedValue)){
+            if ("value2".equals(removedValue)) {
                 return "removeIntercepted";
             }
             return null;
@@ -365,5 +366,63 @@ public class ClientIssueTest {
         }
 
     }
+
+    @Test
+    public void testListenerReconnect() throws InterruptedException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        final IMap<Object, Object> m = client.getMap("m");
+        final String id = m.addEntryListener(new EntryAdapter() {
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+                latch.countDown();
+            }
+        }, true);
+
+
+        m.put("key1", "value1");
+
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        instance1.getLifecycleService().shutdown();
+
+        final Thread thread = new Thread() {
+            @Override
+            public void run() {
+                while (!isInterrupted()) {
+                    m.put("key2", "value2");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+            }
+        };
+        thread.start();
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                try {
+                    assertTrue(latch.await(10, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.interrupt();
+
+        assertTrue(m.removeEntryListener(id));
+
+
+    }
+
 
 }
