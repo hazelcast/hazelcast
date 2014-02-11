@@ -388,6 +388,7 @@
                             </argLine>
                             <groups>com.hazelcast.test.annotation.ParallelTest</groups>
                             <excludedGroups>com.hazelcast.test.annotation.SerialTest</excludedGroups>
+                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -411,6 +412,8 @@
                                 -Dhazelcast.test.use.network=true
                             </argLine>
                             <groups>com.hazelcast.test.annotation.SerialTest</groups>
+                            <excludedGroups>com.hazelcast.test.annotation.ParallelTest</excludedGroups>
+                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
