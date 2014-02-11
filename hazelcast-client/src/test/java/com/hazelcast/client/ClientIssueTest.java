@@ -23,7 +23,9 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +46,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientIssueTest {
+public class ClientIssueTest extends HazelcastTestSupport {
 
     @After
     @Before
@@ -386,6 +388,62 @@ public class ClientIssueTest {
         public MyCredentials() {
             super("foo", "bar");
         }
+    }
+
+    public void testListenerReconnect() throws InterruptedException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        final IMap<Object, Object> m = client.getMap("m");
+        final String id = m.addEntryListener(new EntryAdapter() {
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+                latch.countDown();
+            }
+        }, true);
+
+
+        m.put("key1", "value1");
+
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        instance1.getLifecycleService().shutdown();
+
+        final Thread thread = new Thread() {
+            @Override
+            public void run() {
+                while (!isInterrupted()) {
+                    m.put("key2", "value2");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
+            }
+        };
+        thread.start();
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                try {
+                    assertTrue(latch.await(10, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.interrupt();
+
+        assertTrue(m.removeEntryListener(id));
+
+
     }
 
 }

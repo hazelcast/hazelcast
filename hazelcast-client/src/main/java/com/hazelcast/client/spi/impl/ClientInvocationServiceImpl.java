@@ -113,13 +113,13 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return client.getClientConfig().isRedoOperation();
     }
 
-    public boolean deRegisterListener(String alias) {
+    public String deRegisterListener(String alias) {
         final String uuid = registrationAliasMap.remove(alias);
         if (uuid != null) {
             final Integer callId = registrationMap.remove(alias);
-            return connectionManager.removeEventHandler(callId);
+            connectionManager.removeEventHandler(callId);
         }
-        return false;
+        return uuid;
     }
 
 

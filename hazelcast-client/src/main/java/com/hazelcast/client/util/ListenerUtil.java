@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
@@ -33,7 +34,7 @@ public final class ListenerUtil {
         //TODO callback
         final Future future;
         try {
-            final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)context.getInvocationService();
+            final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) context.getInvocationService();
             if (key == null) {
                 future = invocationService.invokeOnRandomTarget(request, handler);
             } else {
@@ -47,20 +48,18 @@ public final class ListenerUtil {
         }
     }
 
-    public static boolean stopListening(ClientContext context, ClientRequest request, String registrationId){
-        final Future<Boolean> future;
+    public static boolean stopListening(ClientContext context,
+                                        BaseClientRemoveListenerRequest request, String registrationId) {
         try {
-            final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)context.getInvocationService();
-            future = invocationService.invokeOnRandomTarget(request);
-            Boolean result = context.getSerializationService().toObject(future.get());
-
-            invocationService.deRegisterListener(registrationId);
-            return result;
+            ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) context.getInvocationService();
+            registrationId = invocationService.deRegisterListener(registrationId);
+            request.setRegistrationId(registrationId);
+            final Future<Boolean> future = invocationService.invokeOnRandomTarget(request);
+            return (Boolean) context.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
-
 
 
 }

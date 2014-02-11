@@ -308,24 +308,27 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final ClientConnection conn = (ClientConnection) packet.getConn();
             final ClientResponse clientResponse = getSerializationService().toObject(packet.getData());
             final int callId = clientResponse.getCallId();
-            final Object response = clientResponse.getResponse();
+            final Data response = clientResponse.getResponse();
             if (clientResponse.isEvent()) {
                 handleEvent(response, callId, conn);
             } else {
-                handlePacket(response, callId, conn);
+                handlePacket(response, clientResponse.isError(), callId, conn);
             }
         }
 
-        private void handlePacket(Object response, int callId, ClientConnection conn) {
+        private void handlePacket(Object response, boolean isError, int callId, ClientConnection conn) {
             final ClientCallFuture future = conn.deRegisterCallId(callId);
             if (future == null) {
                 logger.warning("No call for callId: " + callId + ", response: " + response);
                 return;
             }
+            if (isError) {
+                response = getSerializationService().toObject(response);
+            }
             future.notify(response);
         }
 
-        private void handleEvent(Object event, int callId, ClientConnection conn) {
+        private void handleEvent(Data event, int callId, ClientConnection conn) {
             final EventHandler eventHandler = conn.getEventHandler(callId);
             final Object eventObject = getSerializationService().toObject(event);
             if (eventHandler == null) {

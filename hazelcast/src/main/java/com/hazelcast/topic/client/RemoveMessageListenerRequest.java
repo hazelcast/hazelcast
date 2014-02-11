@@ -16,25 +16,18 @@
 
 package com.hazelcast.topic.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.topic.TopicPortableHook;
 import com.hazelcast.topic.TopicService;
 
-import java.io.IOException;
+public class RemoveMessageListenerRequest extends BaseClientRemoveListenerRequest {
 
-public class RemoveMessageListenerRequest extends CallableClientRequest {
-
-    private String name;
-    private String registrationId;
 
     public RemoveMessageListenerRequest() {
     }
 
     public RemoveMessageListenerRequest(String name, String registrationId) {
-        this.name = name;
-        this.registrationId = registrationId;
+        super(name, registrationId);
     }
 
     @Override
@@ -58,15 +51,4 @@ public class RemoveMessageListenerRequest extends CallableClientRequest {
         return TopicPortableHook.REMOVE_LISTENER;
     }
 
-    @Override
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        writer.writeUTF("r", registrationId);
-    }
-
-    @Override
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        registrationId = reader.readUTF("r");
-    }
 }
