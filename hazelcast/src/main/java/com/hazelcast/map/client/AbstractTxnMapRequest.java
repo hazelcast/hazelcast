@@ -39,6 +39,7 @@ import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: sancar
@@ -52,6 +53,8 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
     Data key;
     Data value;
     Data newValue;
+    long ttl = -1;
+    TimeUnit timeUnit;
 
     public AbstractTxnMapRequest() {
     }
@@ -75,6 +78,11 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         this(name, requestType, key, value);
         this.newValue = newValue;
     }
+    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, long ttl, TimeUnit timeUnit) {
+        this(name, requestType, key, value);
+        this.ttl = ttl;
+        this.timeUnit = timeUnit;
+    }
 
 
     public Object innerCall() throws Exception {
@@ -91,6 +99,8 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
                 return map.size();
             case PUT:
                 return map.put(key, value);
+            case PUT_WITH_TTL:
+                return map.put(key, value, ttl, timeUnit);
             case PUT_IF_ABSENT:
                 return map.putIfAbsent(key, value);
             case REPLACE:
@@ -155,6 +165,8 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         IOUtil.writeNullableData(out, value);
         IOUtil.writeNullableData(out, newValue);
         writeDataInner(out);
+        out.writeLong(ttl);
+        out.writeObject(timeUnit);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -166,6 +178,8 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         value = IOUtil.readNullableData(in);
         newValue = IOUtil.readNullableData(in);
         readDataInner(in);
+        ttl = in.readLong();
+        timeUnit = in.readObject();
     }
 
     protected abstract Predicate getPredicate();
@@ -190,7 +204,8 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         KEYSET_BY_PREDICATE(13),
         VALUES(14),
         VALUES_BY_PREDICATE(15),
-        GET_FOR_UPDATE(16);
+        GET_FOR_UPDATE(16),
+        PUT_WITH_TTL(17);
         int type;
 
         TxnMapRequestType(int i) {
@@ -212,6 +227,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         switch (requestType) {
             case PUT:
             case PUT_IF_ABSENT:
+            case PUT_WITH_TTL:
             case REPLACE:
             case REPLACE_IF_SAME:
             case SET:

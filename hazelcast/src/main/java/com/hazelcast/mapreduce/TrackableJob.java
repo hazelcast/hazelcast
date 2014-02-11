@@ -33,7 +33,6 @@ import com.hazelcast.spi.annotation.Beta;
  * </pre>
  *
  * @param <V> type of the returning value
- *
  * @since 3.2
  */
 @Beta

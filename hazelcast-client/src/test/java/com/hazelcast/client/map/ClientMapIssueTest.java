@@ -58,7 +58,7 @@ public class ClientMapIssueTest {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final IMap<String, String> m = client.getMap("m");
 

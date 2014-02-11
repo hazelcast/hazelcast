@@ -31,7 +31,6 @@ import java.util.Map;
  * @param <KeyIn>    type of key used as input key type
  * @param <ValueIn>  type of value used as input value type
  * @see com.hazelcast.mapreduce.Job
- *
  * @since 3.2
  */
 @Beta
@@ -91,6 +90,7 @@ public interface ReducingJob<EntryKey, KeyIn, ValueIn> {
      * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
      *
      * @param reducerFactory ReducerFactory to build Reducers
+     * @param <ValueOut>     type of the reduced value
      * @return instance of this Job with generics changed on usage
      */
     <ValueOut> ReducingSubmittableJob<EntryKey, KeyIn, ValueOut> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
@@ -106,7 +106,8 @@ public interface ReducingJob<EntryKey, KeyIn, ValueIn> {
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes and executes the
      * collator before returning the final result.
      *
-     * @param collator collator to use after map and reduce
+     * @param collator   collator to use after map and reduce
+     * @param <ValueOut> type of the collated value
      * @return JobCompletableFuture to wait for mapped and possibly reduced result
      */
     <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<KeyIn, List<ValueIn>>, ValueOut> collator);

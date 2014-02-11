@@ -14,23 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection;
-
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.nio.Address;
-
 /**
- * @author ali 5/27/13
+ * This package contains all remote operations that are needed to control work on
+ * supervising or worker nodes.
  */
-public interface ClientConnectionManager {
-
-    public void shutdown();
-
-    public void start();
-
-    public ClientConnection tryToConnect(Address address) throws Exception;
-
-    public ClientConnection ownerConnection(Address address) throws Exception ;
-
-    public boolean removeEventHandler(Integer callId);
-}
+package com.hazelcast.mapreduce.impl.operation;

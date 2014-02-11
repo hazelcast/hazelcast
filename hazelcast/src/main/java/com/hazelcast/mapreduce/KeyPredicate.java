@@ -25,7 +25,6 @@ import java.io.Serializable;
  * Preselecting keys can speed up the job since not all partitions may be used.
  *
  * @param <Key> key type
- *
  * @since 3.2
  */
 @Beta

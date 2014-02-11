@@ -37,6 +37,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This {@link com.hazelcast.mapreduce.KeyValueSource} implementation is used in
+ * {@link com.hazelcast.mapreduce.KeyValueSource#fromList(com.hazelcast.core.IList)} to generate a default
+ * implementation based on a Hazelcast {@link com.hazelcast.core.IList}.
+ *
+ * @param <V> type of the values inside the IList
+ */
 public class ListKeyValueSource<V>
         extends KeyValueSource<String, V>
         implements IdentifiedDataSerializable {
@@ -110,18 +117,21 @@ public class ListKeyValueSource<V>
     }
 
     @Override
-    public void close() throws IOException {
+    public void close()
+            throws IOException {
         iterator = null;
         nextElement = null;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(listName);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         listName = in.readUTF();
     }
 

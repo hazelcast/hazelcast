@@ -244,7 +244,7 @@ public class ClientIssueTest {
         final ListenerConfig listenerConfig = new ListenerConfig(listener);
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(listenerConfig);
-        clientConfig.setConnectionAttemptLimit(100);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         Thread.sleep(100);

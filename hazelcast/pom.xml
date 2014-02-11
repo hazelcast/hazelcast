@@ -150,7 +150,32 @@
                 </executions>
             </plugin>
 
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.11</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>checkstyle</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <configLocation>${basedir}/checkstyle/checkstyle.xml</configLocation>
+                    <suppressionsLocation>${basedir}/checkstyle/suppressions.xml</suppressionsLocation>
+                    <headerLocation>${basedir}/checkstyle/ClassHeader.txt</headerLocation>
+                    <enableRSS>false</enableRSS>
+                    <linkXRef>true</linkXRef>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <failOnViolation>true</failOnViolation>
+                    <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                    <enableRulesSummary>true</enableRulesSummary>
+                    <propertyExpansion>basedir=${basedir}</propertyExpansion>
+                </configuration>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -239,35 +264,10 @@
 
     <profiles>
         <profile>
-            <!--Only releases need to be signed. Use mvn -Pcheckstyle clean install -->
-            <id>checkstyle</id>
+            <!--Only releases need to be signed. Use mvn -Pfindbugs clean compile site -->
+            <id>findbugs</id>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-checkstyle-plugin</artifactId>
-                        <version>2.11</version>
-                        <executions>
-                            <execution>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>checkstyle</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <configLocation>${basedir}/checkstyle/checkstyle.xml</configLocation>
-                            <suppressionsLocation>${basedir}/checkstyle/suppressions.xml</suppressionsLocation>
-                            <headerLocation>${basedir}/checkstyle/ClassHeader.txt</headerLocation>
-                            <enableRSS>false</enableRSS>
-                            <linkXRef>true</linkXRef>
-                            <consoleOutput>true</consoleOutput>
-                            <failsOnError>true</failsOnError>
-                            <failOnViolation>true</failOnViolation>
-                            <includeTestSourceDirectory>false</includeTestSourceDirectory>
-                            <enableRulesSummary>true</enableRulesSummary>
-                        </configuration>
-                    </plugin>
 
                     <!--Use mvn compile site to generate this-->
                     <plugin>

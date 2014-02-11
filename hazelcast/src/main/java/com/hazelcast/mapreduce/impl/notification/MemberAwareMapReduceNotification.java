@@ -22,6 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * Base class for all notifications based on a member
+ */
 public abstract class MemberAwareMapReduceNotification
         extends MapReduceNotification {
 
@@ -40,13 +43,15 @@ public abstract class MemberAwareMapReduceNotification
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         super.writeData(out);
         address.writeData(out);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         super.readData(in);
         address = new Address();
         address.readData(in);
@@ -54,9 +59,7 @@ public abstract class MemberAwareMapReduceNotification
 
     @Override
     public String toString() {
-        return "MemberAwareMapReduceNotification{" +
-                "address=" + address +
-                '}';
+        return "MemberAwareMapReduceNotification{" + "address=" + address + '}';
     }
 
 }

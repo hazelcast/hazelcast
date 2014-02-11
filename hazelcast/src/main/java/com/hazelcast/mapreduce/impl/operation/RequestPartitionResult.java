@@ -23,6 +23,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+/**
+ * This class is used to store the requested result of all kinds of processing operations.<br/>
+ * By default it holds a basic result state and maybe the partitionId it was operated otherwise
+ * it's value is defined as -1
+ */
 public class RequestPartitionResult
         implements IdentifiedDataSerializable {
 
@@ -46,13 +51,15 @@ public class RequestPartitionResult
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeInt(resultState.ordinal());
         out.writeInt(partitionId);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         resultState = ResultState.byOrdinal(in.readInt());
         partitionId = in.readInt();
     }
@@ -69,17 +76,35 @@ public class RequestPartitionResult
 
     @Override
     public String toString() {
-        return "RequestPartitionResult{" +
-                "resultState=" + resultState +
-                ", partitionId=" + partitionId +
-                '}';
+        return "RequestPartitionResult{" + "resultState=" + resultState + ", partitionId=" + partitionId + '}';
     }
 
+    /**
+     * This enum is used to define the basic state of an operations result
+     */
     public static enum ResultState {
+        /**
+         * Operation was successfully executed, partitionId contains value other than -1
+         */
         SUCCESSFUL,
+
+        /**
+         * Operation wasn't executed, because no supervisor could be found for the given
+         * name-jobId combination, partitionId is -1
+         */
         NO_SUPERVISOR,
+
+        /**
+         * Operation wasn't executed since the old partition owner is not the requesting member,
+         * value of partitionId is undefined (depending on the operation)
+         */
         CHECK_STATE_FAILED,
-        NO_MORE_PARTITIONS,;
+
+        /**
+         * Operation was executed but no more partitions seem to be available for mapping,
+         * partitionId value is -1
+         */
+        NO_MORE_PARTITIONS;
 
         public static ResultState byOrdinal(int ordinal) {
             for (ResultState resultState : values()) {

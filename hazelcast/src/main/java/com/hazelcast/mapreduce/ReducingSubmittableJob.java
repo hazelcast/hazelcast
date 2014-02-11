@@ -27,9 +27,9 @@ import java.util.Map;
  * </p>
  *
  * @param <EntryKey> type of the original input key
+ * @param <KeyIn>    type of the key that is used for reducing
  * @param <ValueIn>  type of value used as input value type
  * @see Job
- *
  * @since 3.2
  */
 @Beta
@@ -54,8 +54,8 @@ public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
     ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> onKeys(EntryKey... keys);
 
     /**
-     * Defines the {@link com.hazelcast.mapreduce.KeyPredicate} implementation to preselect keys the MapReduce task will be executed on.
-     * Preselecting keys can speed up the job massively.<br>
+     * Defines the {@link com.hazelcast.mapreduce.KeyPredicate} implementation to preselect keys the MapReduce task
+     * will be executed on. Preselecting keys can speed up the job massively.<br>
      * This method can be used in conjunction with {@link #onKeys(Iterable)} or {@link #onKeys(Object...)} to define a
      * range of known and evaluated keys.
      *
@@ -95,7 +95,8 @@ public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes and executes the
      * collator before returning the final result.
      *
-     * @param collator collator to use after map and reduce
+     * @param collator   collator to use after map and reduce
+     * @param <ValueOut> type of the collated value
      * @return JobCompletableFuture to wait for mapped and possibly reduced result
      */
     <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<KeyIn, ValueIn>, ValueOut> collator);

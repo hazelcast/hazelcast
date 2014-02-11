@@ -29,14 +29,20 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-public class MapReducePortableHook implements PortableHook {
+/**
+ * This class registers all Portable serializers that are needed for communication between nodes and clients
+ */
+public class MapReducePortableHook
+        implements PortableHook {
 
+    //CHECKSTYLE:OFF
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_REDUCE_PORTABLE_FACTORY, -23);
 
     public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 1;
     public static final int CLIENT_CANCELLATION_REQUEST = 2;
     public static final int CLIENT_MAP_REDUCE_REQUEST = 3;
     public static final int TRANSFERABLE_PROCESS_INFORMATION = 4;
+    //CHECKSTYLE:ON
 
     private static final int LENGTH = TRANSFERABLE_PROCESS_INFORMATION + 1;
 
@@ -45,10 +51,12 @@ public class MapReducePortableHook implements PortableHook {
         return F_ID;
     }
 
+    //CHECKSTYLE:OFF
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
             private final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LENGTH];
+
             {
                 constructors[CLIENT_JOB_PROCESS_INFO_REQUEST] = new ConstructorFunction<Integer, Portable>() {
                     @Override
@@ -81,6 +89,7 @@ public class MapReducePortableHook implements PortableHook {
             }
         };
     }
+    //CHECKSTYLE:ON
 
     @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {

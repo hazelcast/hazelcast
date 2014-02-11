@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
@@ -26,16 +27,30 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-class KeyValueSourceFacade<K, V> extends KeyValueSource<K, V> {
+/**
+ * This class is a facade around the normal {@link com.hazelcast.mapreduce.KeyValueSource}
+ * implementation defined in the job configuration to support updating the information
+ * of processed records on the job owner.
+ *
+ * @param <K> type of the key
+ * @param <V> type of the value
+ */
+class KeyValueSourceFacade<K, V>
+        extends KeyValueSource<K, V> {
+
+    private static final int UPDATE_PROCESSED_RECORDS_INTERVAL = 1000;
+
+    private final ILogger logger;
 
     private final KeyValueSource<K, V> keyValueSource;
     private final JobSupervisor supervisor;
 
-    private int processedRecords = 0;
+    private int processedRecords;
 
     KeyValueSourceFacade(KeyValueSource<K, V> keyValueSource, JobSupervisor supervisor) {
         this.keyValueSource = keyValueSource;
         this.supervisor = supervisor;
+        this.logger = supervisor.getMapReduceService().getNodeEngine().getLogger(KeyValueSourceFacade.class);
     }
 
     @Override
@@ -52,7 +67,7 @@ class KeyValueSourceFacade<K, V> extends KeyValueSource<K, V> {
     public K key() {
         K key = keyValueSource.key();
         processedRecords++;
-        if (processedRecords == 1000) {
+        if (processedRecords == UPDATE_PROCESSED_RECORDS_INTERVAL) {
             notifyProcessStats();
             processedRecords = 0;
         }
@@ -81,7 +96,8 @@ class KeyValueSourceFacade<K, V> extends KeyValueSource<K, V> {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close()
+            throws IOException {
         notifyProcessStats();
         keyValueSource.close();
     }
@@ -93,10 +109,10 @@ class KeyValueSourceFacade<K, V> extends KeyValueSource<K, V> {
                 String name = supervisor.getConfiguration().getName();
                 String jobId = supervisor.getConfiguration().getJobId();
                 Address jobOwner = supervisor.getJobOwner();
-                mapReduceService.processRequest(jobOwner,
-                        new ProcessStatsUpdateOperation(name, jobId, processedRecords), name);
+                mapReduceService.processRequest(jobOwner, new ProcessStatsUpdateOperation(name, jobId, processedRecords), name);
             } catch (Exception ignore) {
                 // Don't care if wasn't executed properly
+                logger.finest("ProcessedRecords update couldn't be executed", ignore);
             }
         }
     }

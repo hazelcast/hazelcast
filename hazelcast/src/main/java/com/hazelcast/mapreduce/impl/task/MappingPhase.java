@@ -24,6 +24,16 @@ import com.hazelcast.mapreduce.Mapper;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * This is the base of all mapping phase implementations. It's responsibility is to test keys
+ * prior to mapping the special value. This is used for preselected key-sets and given
+ * {@link com.hazelcast.mapreduce.KeyPredicate} implementations.
+ *
+ * @param <KeyIn>    type of the input key
+ * @param <ValueIn>  type of the input value
+ * @param <KeyOut>   type of the emitted key
+ * @param <ValueOut> type of the emitted value
+ */
 public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
     private final AtomicBoolean cancelled = new AtomicBoolean();

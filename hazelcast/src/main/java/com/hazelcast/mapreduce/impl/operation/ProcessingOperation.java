@@ -24,6 +24,10 @@ import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 
+/**
+ * This is the base class for all map reduce framework operations, it always contains the name of
+ * the JobTracker and the unique jobId
+ */
 public abstract class ProcessingOperation
         extends AbstractOperation
         implements IdentifiedDataSerializable {
@@ -56,15 +60,18 @@ public abstract class ProcessingOperation
     public String getJobId() {
         return jobId;
     }
+
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeUTF(name);
         out.writeUTF(jobId);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         name = in.readUTF();
         jobId = in.readUTF();

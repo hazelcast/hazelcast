@@ -40,10 +40,15 @@ import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
+
+/**
+ * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the MR framework.
+ */
+//Deactivated all checkstyle rules because those classes will never comply
+//CHECKSTYLE:OFF
 public class MapReduceDataSerializerHook
         implements DataSerializerHook {
 
-    //CHECKSTYLE:OFF
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_REDUCE_DS_FACTORY, -23);
 
     public static final int KEY_VALUE_SOURCE_MAP = 0;
@@ -68,7 +73,6 @@ public class MapReduceDataSerializerHook
     public static final int KEY_VALUE_SOURCE_SET = 19;
     public static final int KEYS_ASSIGNMENT_RESULT = 20;
     public static final int KEYS_ASSIGNMENT_OPERATION = 21;
-    //CHECKSTYLE:ON
 
     private static final int LEN = KEYS_ASSIGNMENT_OPERATION + 1;
 
@@ -79,7 +83,6 @@ public class MapReduceDataSerializerHook
 
     @Override
     public DataSerializableFactory createFactory() {
-        //CHECKSTYLE:OFF
         ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[LEN];
         constructors[KEY_VALUE_SOURCE_MAP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
@@ -214,7 +217,6 @@ public class MapReduceDataSerializerHook
             }
         };
         return new ArrayDataSerializableFactory(constructors);
-        //CHECKSTYLE:ON
     }
 
 }

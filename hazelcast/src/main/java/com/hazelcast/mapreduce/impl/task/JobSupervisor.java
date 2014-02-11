@@ -16,10 +16,10 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
@@ -50,8 +50,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.createJobProcessInformation;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
+/**
+ * The JobSupervisor is the overall control instance of a map reduce job. There is one JobSupervisor per
+ * unique name-jobId combination and per cluster member.<br/>
+ * The emitting cluster member's JobSupervisor has a special control function to synchronize the work of
+ * the other "worker-members" that only execute the task. This job owner node also assigns reducing members
+ * to keys and checks for topology changes that hurt the currently running job and enforces the rules set
+ * by the {@link com.hazelcast.mapreduce.TopologyChangedStrategy} in case of a topology change situation.
+ */
 public class JobSupervisor {
 
     private final ConcurrentMap<Object, Reducer> reducers = new ConcurrentHashMap<Object, Reducer>();
@@ -68,8 +77,8 @@ public class JobSupervisor {
 
     private final JobProcessInformationImpl jobProcessInformation;
 
-    public JobSupervisor(JobTaskConfiguration configuration, AbstractJobTracker jobTracker,
-                         boolean ownerNode, MapReduceService mapReduceService) {
+    public JobSupervisor(JobTaskConfiguration configuration, AbstractJobTracker jobTracker, boolean ownerNode,
+                         MapReduceService mapReduceService) {
         this.jobTracker = jobTracker;
         this.ownerNode = ownerNode;
         this.configuration = configuration;
@@ -78,14 +87,7 @@ public class JobSupervisor {
         this.executorService = mapReduceService.getExecutorService(configuration.getName());
 
         // Calculate partition count
-        NodeEngine nodeEngine = configuration.getNodeEngine();
-        if (configuration.getKeyValueSource() instanceof PartitionIdAware) {
-            int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-            this.jobProcessInformation = new JobProcessInformationImpl(partitionCount, this);
-        } else {
-            int partitionCount = nodeEngine.getClusterService().getMemberList().size();
-            this.jobProcessInformation = new MemberAssigningJobProcessInformationImpl(partitionCount, this);
-        }
+        this.jobProcessInformation = createJobProcessInformation(configuration, this);
 
         // Preregister reducer task to handle immediate reducing events
         String name = configuration.getName();
@@ -136,8 +138,8 @@ public class JobSupervisor {
 
         if (future != null) {
             // Might be already cancelled by another members exception
-            ExceptionUtil.fixRemoteStackTrace(throwable,
-                    Thread.currentThread().getStackTrace(), "Operation failed on node: " + remoteAddress);
+            ExceptionUtil.fixRemoteStackTrace(throwable, Thread.currentThread().getStackTrace(),
+                    "Operation failed on node: " + remoteAddress);
             future.setResult(throwable);
         }
     }
@@ -221,8 +223,8 @@ public class JobSupervisor {
                 result.put(entry.getKey(), entry.getValue().finalizeReduce());
             }
         } else {
-            DefaultContext context = this.context.get();
-            result = context.finish();
+            DefaultContext currentContext = context.get();
+            result = currentContext.finish();
         }
         return result;
     }
@@ -275,8 +277,7 @@ public class JobSupervisor {
         if (isOwnerNode()) {
             JobPartitionState[] partitionStates = processInformation.getPartitionStates();
             for (JobPartitionState partitionState : partitionStates) {
-                if (partitionState == null
-                        || partitionState.getState() != JobPartitionState.State.PROCESSED) {
+                if (partitionState == null || partitionState.getState() != JobPartitionState.State.PROCESSED) {
                     return;
                 }
             }
@@ -284,8 +285,8 @@ public class JobSupervisor {
             String name = configuration.getName();
             String jobId = configuration.getJobId();
             NodeEngine nodeEngine = configuration.getNodeEngine();
-            List<Map> results = MapReduceUtil.executeOperation(new GetResultOperationFactory(name, jobId),
-                    mapReduceService, nodeEngine, true);
+            List<Map> results = MapReduceUtil
+                    .executeOperation(new GetResultOperationFactory(name, jobId), mapReduceService, nodeEngine, true);
 
             boolean reducedResult = configuration.getReducerFactory() != null;
 
@@ -293,19 +294,7 @@ public class JobSupervisor {
                 Map<Object, Object> mergedResults = new HashMap<Object, Object>();
                 for (Map<?, ?> map : results) {
                     for (Map.Entry entry : map.entrySet()) {
-                        if (reducedResult) {
-                            mergedResults.put(entry.getKey(), entry.getValue());
-
-                        } else {
-                            List<Object> list = (List) mergedResults.get(entry.getKey());
-                            if (list == null) {
-                                list = new ArrayList<Object>();
-                                mergedResults.put(entry.getKey(), list);
-                            }
-                            for (Object value : (List) entry.getValue()) {
-                                list.add(value);
-                            }
-                        }
+                        collectResults(reducedResult, mergedResults, entry);
                     }
                 }
 
@@ -321,13 +310,12 @@ public class JobSupervisor {
     }
 
     public <K, V> DefaultContext<K, V> getOrCreateContext(MapCombineTask mapCombineTask) {
-        DefaultContext<K, V> context = new DefaultContext<K, V>(
-                configuration.getCombinerFactory(), mapCombineTask);
+        DefaultContext<K, V> newContext = new DefaultContext<K, V>(configuration.getCombinerFactory(), mapCombineTask);
 
-        if (this.context.compareAndSet(null, context)) {
-            return context;
+        if (context.compareAndSet(null, newContext)) {
+            return newContext;
         }
-        return this.context.get();
+        return context.get();
     }
 
     public void registerReducerEventInterests(int partitionId, Set<Address> remoteReducers) {
@@ -362,10 +350,26 @@ public class JobSupervisor {
         return configuration;
     }
 
+    private void collectResults(boolean reducedResult, Map<Object, Object> mergedResults, Map.Entry entry) {
+        if (reducedResult) {
+            mergedResults.put(entry.getKey(), entry.getValue());
+
+        } else {
+            List<Object> list = (List) mergedResults.get(entry.getKey());
+            if (list == null) {
+                list = new ArrayList<Object>();
+                mergedResults.put(entry.getKey(), list);
+            }
+            for (Object value : (List) entry.getValue()) {
+                list.add(value);
+            }
+        }
+    }
+
     private Set<Address> collectRemoteAddresses() {
         Set<Address> addresses = new HashSet<Address>();
-        for (Set<Address> remoteReducers : this.remoteReducers.values()) {
-            addAllFilterJobOwner(addresses, remoteReducers);
+        for (Set<Address> remoteReducerAddresses : remoteReducers.values()) {
+            addAllFilterJobOwner(addresses, remoteReducerAddresses);
         }
         for (JobPartitionState partitionState : jobProcessInformation.getPartitionStates()) {
             if (partitionState != null && partitionState.getOwner() != null) {
@@ -387,6 +391,8 @@ public class JobSupervisor {
             } catch (Exception ignore) {
                 // We can ignore this exception since we just want to cancel the job
                 // and the member may be crashed or unreachable in some way
+                ILogger logger = mapReduceService.getNodeEngine().getLogger(JobSupervisor.class);
+                logger.finest("Remote node may already be down", ignore);
             }
         }
     }
@@ -418,8 +424,8 @@ public class JobSupervisor {
 
         if (checkPartitionReductionCompleted(partitionId, reducerAddress)) {
             try {
-                RequestPartitionResult result = mapReduceService.processRequest(jobOwner,
-                        new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
+                RequestPartitionResult result = mapReduceService
+                        .processRequest(jobOwner, new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
 
                 if (result.getResultState() != SUCCESSFUL) {
                     throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
@@ -434,14 +440,14 @@ public class JobSupervisor {
     }
 
     private boolean checkPartitionReductionCompleted(int partitionId, Address reducerAddress) {
-        Set<Address> remoteAddresses = this.remoteReducers.get(partitionId);
+        Set<Address> remoteAddresses = remoteReducers.get(partitionId);
         if (remoteAddresses == null) {
             throw new RuntimeException("Reducer for partition " + partitionId + " not registered");
         }
 
         remoteAddresses.remove(reducerAddress);
         if (remoteAddresses.size() == 0) {
-            if (this.remoteReducers.remove(partitionId) != null) {
+            if (remoteReducers.remove(partitionId) != null) {
                 return true;
             }
         }

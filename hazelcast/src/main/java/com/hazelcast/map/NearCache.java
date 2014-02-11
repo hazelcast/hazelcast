@@ -254,6 +254,19 @@ public class NearCache {
             return 0;
         }
 
+        public boolean equals(Object o){
+            if(o!=null && o instanceof CacheRecord){
+                return this.compareTo((CacheRecord)o)==0;
+            }
+            return false;
+        }
+
+        //If you don't think instances of this class will ever be inserted into a HashMap/HashTable, the recommended hashCode implementation to use is:
+        public int hashCode() {
+            assert false : "hashCode not designed";
+            return 42; // any arbitrary constant will do
+        }
+
         public long getCost() {
             // todo find object size  if not a Data instance.
             if (!(value instanceof Data)) return 0;

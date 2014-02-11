@@ -35,14 +35,20 @@ import java.util.Collection;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
+/**
+ * This class is the internal representation of a map reduce job. It is responsible for requesting the
+ * preparation, processing and sets up the future to retrieve the value in a fully reactive way.
+ *
+ * @param <KeyIn>   type of the key
+ * @param <ValueIn> type of the value
+ */
 public class KeyValueJob<KeyIn, ValueIn>
         extends AbstractJob<KeyIn, ValueIn> {
 
     private final NodeEngine nodeEngine;
     private final MapReduceService mapReduceService;
 
-    public KeyValueJob(String name, AbstractJobTracker jobTracker, NodeEngine nodeEngine,
-                       MapReduceService mapReduceService,
+    public KeyValueJob(String name, AbstractJobTracker jobTracker, NodeEngine nodeEngine, MapReduceService mapReduceService,
                        KeyValueSource<KeyIn, ValueIn> keyValueSource) {
         super(name, jobTracker, keyValueSource);
         this.nodeEngine = nodeEngine;
@@ -56,14 +62,14 @@ public class KeyValueJob<KeyIn, ValueIn>
         AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
         TrackableJobFuture<T> jobFuture = new TrackableJobFuture<T>(name, jobId, jobTracker, nodeEngine, collator);
         if (jobTracker.registerTrackableJob(jobFuture)) {
-            return startSupervisionTask(jobFuture, jobTracker, jobId);
+            return startSupervisionTask(jobFuture, jobId);
         }
         throw new IllegalStateException("Could not register map reduce job");
     }
 
-    private <T> JobCompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture,
-                                                          AbstractJobTracker jobTracker, String jobId) {
+    private <T> JobCompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture, String jobId) {
 
+        AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
         JobTrackerConfig config = jobTracker.getJobTrackerConfig();
         boolean communicateStats = config.isCommunicateStats();
         if (chunkSize == -1) {
@@ -76,9 +82,8 @@ public class KeyValueJob<KeyIn, ValueIn>
         ClusterService cs = nodeEngine.getClusterService();
         Collection<MemberImpl> members = cs.getMemberList();
         for (MemberImpl member : members) {
-            Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize,
-                    keyValueSource, mapper, combinerFactory, reducerFactory,
-                    communicateStats, topologyChangedStrategy);
+            Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize, keyValueSource, mapper,
+                    combinerFactory, reducerFactory, communicateStats, topologyChangedStrategy);
 
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }

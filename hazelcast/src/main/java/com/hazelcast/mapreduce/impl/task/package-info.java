@@ -14,23 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection;
-
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.nio.Address;
-
 /**
- * @author ali 5/27/13
+ * This package contains the base implementation for a standard map reduce job.
  */
-public interface ClientConnectionManager {
-
-    public void shutdown();
-
-    public void start();
-
-    public ClientConnection tryToConnect(Address address) throws Exception;
-
-    public ClientConnection ownerConnection(Address address) throws Exception ;
-
-    public boolean removeEventHandler(Integer callId);
-}
+package com.hazelcast.mapreduce.impl.task;

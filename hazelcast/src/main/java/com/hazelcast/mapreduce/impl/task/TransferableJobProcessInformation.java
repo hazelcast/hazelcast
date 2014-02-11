@@ -27,6 +27,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
+/**
+ * This implementation of {@link com.hazelcast.mapreduce.JobProcessInformation} is used to
+ * transmit the currently processed number of records and the partition states to a requesting
+ * client. This information can only be requested by the job emitting client and by requesting
+ * it at the job owner.
+ */
 public class TransferableJobProcessInformation
         implements JobProcessInformation, Portable {
 
@@ -52,14 +58,16 @@ public class TransferableJobProcessInformation
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void writePortable(PortableWriter writer)
+            throws IOException {
         writer.writeInt("processedRecords", processedRecords);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(partitionStates);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void readPortable(PortableReader reader)
+            throws IOException {
         processedRecords = reader.readInt("processedRecords");
         ObjectDataInput in = reader.getRawDataInput();
         partitionStates = in.readObject();

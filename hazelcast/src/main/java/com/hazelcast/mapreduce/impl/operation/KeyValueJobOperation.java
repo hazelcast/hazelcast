@@ -36,6 +36,13 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
+/**
+ * This operation is used to prepare a {@link com.hazelcast.mapreduce.KeyValueSource} based
+ * map reduce operation on all cluster members.
+ *
+ * @param <K> type of the key
+ * @param <V> type of the value
+ */
 public class KeyValueJobOperation<K, V>
         extends AbstractOperation
         implements IdentifiedDataSerializable {
@@ -53,11 +60,8 @@ public class KeyValueJobOperation<K, V>
     public KeyValueJobOperation() {
     }
 
-    public KeyValueJobOperation(String name, String jobId, int chunkSize,
-                                KeyValueSource<K, V> keyValueSource,
-                                Mapper mapper, CombinerFactory combinerFactory,
-                                ReducerFactory reducerFactory,
-                                boolean communicateStats,
+    public KeyValueJobOperation(String name, String jobId, int chunkSize, KeyValueSource<K, V> keyValueSource, Mapper mapper,
+                                CombinerFactory combinerFactory, ReducerFactory reducerFactory, boolean communicateStats,
                                 TopologyChangedStrategy topologyChangedStrategy) {
         this.name = name;
         this.jobId = jobId;
@@ -76,16 +80,17 @@ public class KeyValueJobOperation<K, V>
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         Address jobOwner = getCallerAddress();
         if (jobOwner == null) {
             jobOwner = getNodeEngine().getThisAddress();
         }
-        JobSupervisor supervisor = mapReduceService.createJobSupervisor(
-                new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name,jobId, mapper,
-                        combinerFactory, reducerFactory, keyValueSource,
-                        communicateStats, topologyChangedStrategy));
+        JobTaskConfiguration config = new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name, jobId, mapper,
+                combinerFactory, reducerFactory, keyValueSource, communicateStats, topologyChangedStrategy);
+
+        JobSupervisor supervisor = mapReduceService.createJobSupervisor(config);
 
         if (supervisor == null) {
             // Supervisor was cancelled prior to creation
@@ -109,7 +114,8 @@ public class KeyValueJobOperation<K, V>
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeUTF(jobId);
         out.writeObject(keyValueSource);
@@ -121,7 +127,8 @@ public class KeyValueJobOperation<K, V>
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         jobId = in.readUTF();
         keyValueSource = in.readObject();

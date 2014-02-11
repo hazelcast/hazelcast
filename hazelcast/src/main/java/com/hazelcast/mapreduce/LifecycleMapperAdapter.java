@@ -48,7 +48,6 @@ import com.hazelcast.spi.annotation.Beta;
  * @param <ValueIn>  type of value used in the {@link KeyValueSource}
  * @param <KeyOut>   key type for mapped results
  * @param <ValueOut> value type for mapped results
- *
  * @since 3.2
  */
 @Beta

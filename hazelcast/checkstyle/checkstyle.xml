@@ -41,7 +41,7 @@
 
     <!-- Activation here is needed for IntelliJ CheckstyleIDEA plugin -->
     <module name="SuppressionFilter">
-        <property name="file" value="./suppressions.xml"/>
+        <property name="file" value="${basedir}/checkstyle/suppressions.xml"/>
     </module>
 
     <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
@@ -80,10 +80,10 @@
 
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
-    <!-- <module name="Header"> -->
-    <!--   <property name="headerFile" value="${checkstyle.header.file}"/> -->
-    <!--   <property name="fileExtensions" value="java"/> -->
-    <!-- </module> -->
+     <module name="Header">
+       <property name="headerFile" value="${basedir}/checkstyle/ClassHeader.txt"/>
+       <property name="fileExtensions" value="java"/>
+     </module>
 
     <module name="TreeWalker">
         <!-- Activate comment suppression filters -->
@@ -100,7 +100,9 @@
             <property name="scope" value="public"/>
         </module>
 
-        <module name="JavadocStyle"/>
+        <module name="JavadocStyle">
+            <property name="checkFirstSentence" value="false"/>
+        </module>
 
         <module name="TrailingComment"/>
 
@@ -133,7 +135,7 @@
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
         <module name="LineLength">
-            <property name="max" value="120"/>
+            <property name="max" value="130"/>
         </module>
         <module name="MethodLength">
             <property name="tokens" value="METHOD_DEF"/>
@@ -249,7 +251,10 @@
         <module name="StringLiteralEquality"/>
         <module name="SuperClone"/>
         <module name="SuperFinalize"/>
-        <module name="MagicNumber"/>
+        <module name="MagicNumber">
+            <property name="ignoreHashCodeMethod" value="true"/>
+            <property name="ignoreAnnotation" value="true"/>
+        </module>
         <module name="EqualsHashCode"/>
         <module name="IllegalInstantiation"/>
         <module name="InnerAssignment"/>
@@ -291,7 +296,6 @@
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
-        <!-- module name="FinalParameters"/ -->
         <module name="TodoComment"/>
         <module name="UpperEll"/>
 

@@ -38,6 +38,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Base class for all map reduce job implementations
+ *
+ * @param <KeyIn>   type of the input key
+ * @param <ValueIn> type of the input value
+ */
 public abstract class AbstractJob<KeyIn, ValueIn>
         implements Job<KeyIn, ValueIn> {
 
@@ -70,8 +76,9 @@ public abstract class AbstractJob<KeyIn, ValueIn>
     @Override
     public <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper) {
         ValidationUtil.isNotNull(mapper, "mapper");
-        if (this.mapper != null)
+        if (this.mapper != null) {
             throw new IllegalStateException("mapper already set");
+        }
         this.mapper = mapper;
         return new MappingJobImpl<KeyIn, KeyOut, ValueOut>();
     }
@@ -155,6 +162,13 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         return submit(null);
     }
 
+    /**
+     * This class is just used to comply to the public DSL style API
+     *
+     * @param <EntryKey> type of the original base key
+     * @param <Key>      type of the key at that processing state
+     * @param <Value>    type of the value at that processing state
+     */
     protected class MappingJobImpl<EntryKey, Key, Value>
             implements MappingJob<EntryKey, Key, Value> {
 
@@ -189,11 +203,11 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(
-                CombinerFactory<Key, Value, ValueOut> combinerFactory) {
+        public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(CombinerFactory<Key, Value, ValueOut> combinerFactory) {
             ValidationUtil.isNotNull(combinerFactory, "combinerFactory");
-            if (AbstractJob.this.combinerFactory != null)
+            if (AbstractJob.this.combinerFactory != null) {
                 throw new IllegalStateException("combinerFactory already set");
+            }
             AbstractJob.this.combinerFactory = AbstractJob.this.combinerFactory;
             return new ReducingJobImpl<EntryKey, Key, ValueOut>();
         }
@@ -202,8 +216,9 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
             ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
-            if (AbstractJob.this.reducerFactory != null)
+            if (AbstractJob.this.reducerFactory != null) {
                 throw new IllegalStateException("reducerFactory already set");
+            }
             AbstractJob.this.reducerFactory = reducerFactory;
             return new ReducingSubmittableJobImpl<EntryKey, Key, ValueOut>();
         }
@@ -214,12 +229,18 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> JobCompletableFuture<ValueOut> submit(
-                Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
+        public <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }
 
+    /**
+     * This class is just used to comply to the public DSL style API
+     *
+     * @param <EntryKey> type of the original base key
+     * @param <Key>      type of the key at that processing state
+     * @param <Value>    type of the value at that processing state
+     */
     protected class ReducingJobImpl<EntryKey, Key, Value>
             implements ReducingJob<EntryKey, Key, Value> {
 
@@ -227,8 +248,9 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
             ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
-            if (AbstractJob.this.reducerFactory != null)
+            if (AbstractJob.this.reducerFactory != null) {
                 throw new IllegalStateException("reducerFactory already set");
+            }
             AbstractJob.this.reducerFactory = reducerFactory;
             return new ReducingSubmittableJobImpl<EntryKey, Key, ValueOut>();
         }
@@ -269,12 +291,18 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> JobCompletableFuture<ValueOut> submit(
-                Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
+        public <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }
 
+    /**
+     * This class is just used to comply to the public DSL style API
+     *
+     * @param <EntryKey> type of the original base key
+     * @param <Key>      type of the key at that processing state
+     * @param <Value>    type of the value at that processing state
+     */
     protected class ReducingSubmittableJobImpl<EntryKey, Key, Value>
             implements ReducingSubmittableJob<EntryKey, Key, Value> {
 
@@ -303,7 +331,8 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public ReducingSubmittableJob<EntryKey, Key, Value> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+        public ReducingSubmittableJob<EntryKey, Key, Value> topologyChangedStrategy(
+                TopologyChangedStrategy topologyChangedStrategy) {
             AbstractJob.this.topologyChangedStrategy = topologyChangedStrategy;
             return this;
         }

@@ -21,6 +21,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.notification.MapReduceNotification;
 import com.hazelcast.mapreduce.impl.operation.CancelJobSupervisorOperation;
@@ -48,22 +50,33 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+/**
+ * The MapReduceService class is the base point for the map reduce implementation. It is used to collect
+ * and control a lot of the basic lifecycle events for {@link com.hazelcast.mapreduce.JobTracker} instances
+ * and their corresponding {@link com.hazelcast.mapreduce.impl.task.JobSupervisor}s.
+ */
 public class MapReduceService
         implements ManagedService, RemoteService {
 
+    /**
+     * The service name to retrieve an instance of the MapReduceService
+     */
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
 
-    private final ConstructorFunction<String, NodeJobTracker> trackerConstructor = new ConstructorFunction<String, NodeJobTracker>() {
+    private static final ILogger LOGGER = Logger.getLogger(MapReduceService.class);
+
+    private static final int DEFAULT_RETRY_SLEEP_MILLIS = 100;
+
+    private final ConstructorFunction<String, NodeJobTracker> constructor = new ConstructorFunction<String, NodeJobTracker>() {
         @Override
         public NodeJobTracker createNew(String arg) {
             JobTrackerConfig jobTrackerConfig = config.findJobTrackerConfig(arg);
-            return new NodeJobTracker(arg, jobTrackerConfig.getAsReadOnly(),
-                    nodeEngine, MapReduceService.this);
+            return new NodeJobTracker(arg, jobTrackerConfig.getAsReadOnly(), nodeEngine, MapReduceService.this);
         }
     };
 
-    private final ConcurrentMap<String, NodeJobTracker> jobTrackers = new ConcurrentHashMap<String, NodeJobTracker>();
-    private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
+    private final ConcurrentMap<String, NodeJobTracker> jobTrackers;
+    private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors;
 
     private final PartitionServiceImpl partitionService;
     private final ClusterService clusterService;
@@ -76,6 +89,9 @@ public class MapReduceService
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+
+        this.jobTrackers = new ConcurrentHashMap<String, NodeJobTracker>();
+        this.jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
     }
 
     public JobTracker getJobTracker(String name) {
@@ -97,6 +113,7 @@ public class MapReduceService
                             ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId);
                             processRequest(member.getAddress(), operation, name);
                         } catch (Exception ignore) {
+                            LOGGER.finest("Member might be already unavailable", ignore);
                         }
                     }
                 }
@@ -164,7 +181,7 @@ public class MapReduceService
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        return ConcurrencyUtil.getOrPutSynchronized(jobTrackers, objectName, jobTrackers, trackerConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(jobTrackers, objectName, jobTrackers, constructor);
     }
 
     @Override
@@ -180,9 +197,10 @@ public class MapReduceService
         Address owner;
         while ((owner = partitionService.getPartitionOwner(partitionId)) == null) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(DEFAULT_RETRY_SLEEP_MILLIS);
             } catch (Exception ignore) {
                 // Partitions might not assigned yet so we need to retry
+                LOGGER.finest("Partitions not yet assigned, retry", ignore);
             }
         }
         return owner;
@@ -206,8 +224,8 @@ public class MapReduceService
             throws ExecutionException, InterruptedException {
 
         String executorName = MapReduceUtil.buildExecutorName(name);
-        InvocationBuilder invocation = nodeEngine.getOperationService().createInvocationBuilder(
-                SERVICE_NAME, processingOperation, address);
+        InvocationBuilder invocation = nodeEngine.getOperationService()
+                                                 .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
 
         Future<R> future = invocation.setExecutorName(executorName).invoke();
         return future.get();
@@ -241,7 +259,11 @@ public class MapReduceService
         supervisor.onNotification(notification);
     }
 
-    private static class JobSupervisorKey {
+    /**
+     * This key type is used for assigning {@link com.hazelcast.mapreduce.impl.task.JobSupervisor}s to their
+     * corresponding job trackers by JobTracker name and the unique jobId.
+     */
+    private static final class JobSupervisorKey {
         private final String name;
         private final String jobId;
 
@@ -257,20 +279,26 @@ public class MapReduceService
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             JobSupervisorKey that = (JobSupervisorKey) o;
 
-            if (!jobId.equals(that.jobId)) return false;
+            if (!jobId.equals(that.jobId)) {
+                return false;
+            }
             return name.equals(that.name);
 
         }
 
         @Override
         public int hashCode() {
-            int result = name.hashCode();
-            result = 31 * result + jobId.hashCode();
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + (jobId != null ? jobId.hashCode() : 0);
             return result;
         }
     }

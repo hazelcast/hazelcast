@@ -25,6 +25,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This notification is used to notify the reducer that this chunk is the last chunk of the
+ * defined partitionId.
+ *
+ * @param <KeyOut> type of the key
+ * @param <Value>  type of the value
+ */
 public class LastChunkNotification<KeyOut, Value>
         extends MemberAwareMapReduceNotification {
 
@@ -95,11 +102,7 @@ public class LastChunkNotification<KeyOut, Value>
 
     @Override
     public String toString() {
-        return "LastChunkNotification{" +
-                "chunk=" + chunk +
-                ", partitionId=" + partitionId +
-                ", sender=" + sender +
-                '}';
+        return "LastChunkNotification{" + "chunk=" + chunk + ", partitionId=" + partitionId + ", sender=" + sender + '}';
     }
 
 }

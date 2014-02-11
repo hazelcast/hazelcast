@@ -25,6 +25,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * This operation is fired by the jobs owner node to remotely cancel the defined jobId on all nodes.
+ */
 public class CancelJobSupervisorOperation
         extends ProcessingOperation {
 
@@ -43,7 +46,8 @@ public class CancelJobSupervisorOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         mapReduceService.registerJobSupervisorCancellation(getName(), getJobId(), jobOwner);
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
@@ -53,13 +57,15 @@ public class CancelJobSupervisorOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(jobOwner);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         jobOwner = in.readObject();
     }

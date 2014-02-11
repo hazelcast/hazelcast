@@ -26,6 +26,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * This is the internal default implementation of a map reduce context mappers emit values to. It controls the emitted
+ * values to be combined using either the set {@link com.hazelcast.mapreduce.Combiner} or by utilizing the internal
+ * collecting combiner (which is just a better HashMap ;-)).<br/>
+ * In addition to that it is responsible to notify about an the {@link com.hazelcast.mapreduce.impl.task.MapCombineTask}
+ * about an emitted value to eventually send out chunks on reaching the chunk size limit.
+ *
+ * @param <KeyIn>
+ * @param <ValueIn>
+ */
 public class DefaultContext<KeyIn, ValueIn>
         implements Context<KeyIn, ValueIn> {
 
@@ -34,13 +44,11 @@ public class DefaultContext<KeyIn, ValueIn>
     private final MapCombineTask mapCombineTask;
 
     private volatile int partitionId;
-    private volatile int collected = 0;
+    private volatile int collected;
 
-    protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory,
-                             MapCombineTask mapCombineTask) {
+    protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory, MapCombineTask mapCombineTask) {
         this.mapCombineTask = mapCombineTask;
-        this.combinerFactory = combinerFactory != null ?
-                combinerFactory : new CollectingCombinerFactory<KeyIn, ValueIn>();
+        this.combinerFactory = combinerFactory != null ? combinerFactory : new CollectingCombinerFactory<KeyIn, ValueIn>();
     }
 
     public void setPartitionId(int partitionId) {
@@ -86,6 +94,14 @@ public class DefaultContext<KeyIn, ValueIn>
         return combiner;
     }
 
+    /**
+     * This {@link com.hazelcast.mapreduce.CombinerFactory} implementation is used
+     * if no specific CombinerFactory was set in the configuration of the job to
+     * do mapper aside combining of the emitted values.<br/>
+     *
+     * @param <KeyIn>   type of the key
+     * @param <ValueIn> type of the value
+     */
     private static class CollectingCombinerFactory<KeyIn, ValueIn>
             implements CombinerFactory<KeyIn, ValueIn, List<ValueIn>> {
 
