@@ -54,7 +54,6 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
     Data value;
     Data newValue;
     long ttl = -1;
-    TimeUnit timeUnit;
 
     public AbstractTxnMapRequest() {
     }
@@ -80,8 +79,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
     }
     public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, long ttl, TimeUnit timeUnit) {
         this(name, requestType, key, value);
-        this.ttl = ttl;
-        this.timeUnit = timeUnit;
+        this.ttl = timeUnit == null ? ttl : timeUnit.toMillis(ttl);
     }
 
 
@@ -100,7 +98,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
             case PUT:
                 return map.put(key, value);
             case PUT_WITH_TTL:
-                return map.put(key, value, ttl, timeUnit);
+                return map.put(key, value, ttl, TimeUnit.MILLISECONDS);
             case PUT_IF_ABSENT:
                 return map.putIfAbsent(key, value);
             case REPLACE:
@@ -166,7 +164,6 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         IOUtil.writeNullableData(out, newValue);
         writeDataInner(out);
         out.writeLong(ttl);
-        out.writeObject(timeUnit);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -179,7 +176,6 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         newValue = IOUtil.readNullableData(in);
         readDataInner(in);
         ttl = in.readLong();
-        timeUnit = in.readObject();
     }
 
     protected abstract Predicate getPredicate();
