@@ -97,7 +97,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final String credentialsClassname = securityConfig.getCredentialsClassname();
             if (credentialsClassname != null) {
                 try {
-                    ClassLoaderUtil.newInstance(Credentials.class, config.getClassLoader(), credentialsClassname);
+                    c = ClassLoaderUtil.newInstance(config.getClassLoader(), credentialsClassname);
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }

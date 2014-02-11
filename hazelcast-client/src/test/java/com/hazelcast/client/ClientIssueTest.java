@@ -17,10 +17,12 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -368,6 +370,26 @@ public class ClientIssueTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testCredentials() {
+        final Config config = new Config();
+        config.getGroupConfig().setName("foo").setPassword("bar");
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+
+        final ClientConfig clientConfig = new ClientConfig();
+        final ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
+        securityConfig.setCredentialsClassname(MyCredentials.class.getName());
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+    }
+
+    public static class MyCredentials extends UsernamePasswordCredentials {
+
+        public MyCredentials() {
+            super("foo", "bar");
+        }
+    }
+
     public void testListenerReconnect() throws InterruptedException {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
@@ -425,6 +447,5 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
 
     }
-
 
 }
