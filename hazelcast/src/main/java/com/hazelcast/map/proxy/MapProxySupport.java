@@ -84,7 +84,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             MapStoreConfig.InitialLoadMode initialLoadMode = mapStoreConfig.getInitialLoadMode();
             if (initialLoadMode.equals(MapStoreConfig.InitialLoadMode.EAGER)) {
-                loadKeys();
+                waitUntilLoaded();
             }
         }
     }
@@ -324,14 +324,48 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    public void loadKeys() {
+    public void waitUntilLoaded() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-           nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new LoadKeysOperationFactory(name));
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, new PartitionCheckIfLoadedOperationFactory(name));
+            final Set<Integer> partitions = results.keySet();
+            Iterator<Integer> iterator = partitions.iterator();
+            boolean isFinished = false;
+            final Set<Integer> retrySet = new HashSet<Integer>();
+            while (!isFinished) {
+                while (iterator.hasNext()) {
+                    final Integer partitionId = iterator.next();
+                    if ((Boolean) results.get(partitionId) == true) {
+                        iterator.remove();
+                    } else {
+                        retrySet.add(partitionId);
+                    }
+                }
+                if (retrySet.size() > 0) {
+                    results = retryPartitions(retrySet);
+                    iterator = results.keySet().iterator();
+                    Thread.sleep(1000);
+                    retrySet.clear();
+                } else {
+                    isFinished = true;
+                }
+            }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    private Map<Integer, Object> retryPartitions(Collection partitions) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            final Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnPartitions(SERVICE_NAME, new PartitionCheckIfLoadedOperationFactory(name), partitions);
+            return results;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+
     }
 
     public int size() {
@@ -387,21 +421,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapService mapService = getService();
         Map<Object, Object> result = new HashMap<Object, Object>();
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
-        if(nearCacheEnabled)
-        {
+        if (nearCacheEnabled) {
             final Iterator<Data> iterator = keys.iterator();
-            while(iterator.hasNext())
-            {
+            while (iterator.hasNext()) {
                 Data key = iterator.next();
-                Object cachedValue = mapService.getFromNearCache(name,key);
+                Object cachedValue = mapService.getFromNearCache(name, key);
                 if (cachedValue != null && !NearCache.NULL_OBJECT.equals(cachedValue)) {
                     result.put(key, cachedValue);
                     iterator.remove();
                 }
             }
         }
-        if (keys.isEmpty()){
-           return result;
+        if (keys.isEmpty()) {
+            return result;
         }
         Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses = null;

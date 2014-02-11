@@ -16,37 +16,29 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
 
-public class LoadKeysOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
 
-    public LoadKeysOperation(String name) {
+    private boolean isFinished = false;
+
+    public PartitionCheckIfLoadedOperation(String name) {
         super(name);
     }
 
-    public LoadKeysOperation() {
+    public PartitionCheckIfLoadedOperation() {
     }
 
     public void run() {
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        while (!recordStore.isLoaded()) {
-            try {
-                System.out.println("Thread.currentThread().getName() = " + Thread.currentThread().getName());
-                Thread.sleep(1000);
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        System.out.println("recordStore.isLoaded() is true for partitionId:"+getPartitionId());
+        isFinished = recordStore.isLoaded();
     }
 
     @Override
     public Object getResponse() {
-        return true;
+        return isFinished;
     }
 
 }

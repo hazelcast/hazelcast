@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -953,7 +952,6 @@ public class DefaultRecordStore implements RecordStore {
 
         public void run() {
             final NodeEngine nodeEngine = mapService.getNodeEngine();
-            System.out.println("MapLoadAllTask.run method");
             try {
                 Map values = mapContainer.getStore().loadAll(keys.values());
                 if (values == null || values.isEmpty()) {

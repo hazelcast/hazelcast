@@ -85,7 +85,6 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 backupEntrySet.add(entry);
             }
         }
-        System.out.println("putall entry size:"+entries.size());
         invalidateNearCaches(keysToInvalidate);
     }
 

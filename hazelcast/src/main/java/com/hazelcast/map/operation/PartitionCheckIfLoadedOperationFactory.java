@@ -23,20 +23,20 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class LoadKeysOperationFactory implements OperationFactory {
+public class PartitionCheckIfLoadedOperationFactory implements OperationFactory {
 
     String name;
 
-    public LoadKeysOperationFactory() {
+    public PartitionCheckIfLoadedOperationFactory() {
     }
 
-    public LoadKeysOperationFactory(String name) {
+    public PartitionCheckIfLoadedOperationFactory(String name) {
         this.name = name;
     }
 
     @Override
     public Operation createOperation() {
-        return new LoadKeysOperation(name);
+        return new PartitionCheckIfLoadedOperation(name);
     }
 
     @Override
