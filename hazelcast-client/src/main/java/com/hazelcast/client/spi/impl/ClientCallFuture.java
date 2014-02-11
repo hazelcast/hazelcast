@@ -62,8 +62,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
     public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
-        this.invocationService = (ClientInvocationServiceImpl)client.getInvocationService();
-        this.executionService = (ClientExecutionServiceImpl)client.getClientExecutionService();
+        this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.serializationService = client.getSerializationService();
         this.request = request;
         this.handler = handler;
@@ -163,6 +163,9 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 throw (InterruptedException) response;
             }
             throw new ExecutionException((Throwable) response);
+        }
+        if (response == null) {
+            throw new TimeoutException();
         }
         return (V) response;
     }

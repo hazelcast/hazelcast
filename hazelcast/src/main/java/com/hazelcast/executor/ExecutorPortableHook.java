@@ -16,8 +16,8 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.executor.client.CancellationRequest;
 import com.hazelcast.executor.client.IsShutdownRequest;
-import com.hazelcast.executor.client.LocalTargetCallableRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.nio.serialization.*;
 
@@ -28,7 +28,7 @@ public final class ExecutorPortableHook implements PortableHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_PORTABLE_FACTORY, -13);
 
     public static final int IS_SHUTDOWN_REQUEST = 1;
-    public static final int LOCAL_TARGET_CALLABLE_REQUEST = 2;
+    public static final int CANCELLATION_REQUEST = 2;
     public static final int TARGET_CALLABLE_REQUEST = 3;
 
     @Override
@@ -44,8 +44,8 @@ public final class ExecutorPortableHook implements PortableHook {
                 switch (classId) {
                     case IS_SHUTDOWN_REQUEST:
                         return new IsShutdownRequest();
-                    case LOCAL_TARGET_CALLABLE_REQUEST:
-                        return new LocalTargetCallableRequest();
+                    case CANCELLATION_REQUEST:
+                        return new CancellationRequest();
                     case TARGET_CALLABLE_REQUEST:
                         return new TargetCallableRequest();
                 }
