@@ -27,18 +27,18 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * This class is the auto registered serializer hook for a {@link java.util.ArrayList}.
+ * This class is the auto registered serializer hook for a {@link java.util.LinkedList}.
  */
-public class ArrayListSerializerHook implements SerializerHook<ArrayList> {
+public class LinkedListSerializerHook implements SerializerHook<LinkedList> {
 
     @Override
-    public Class<ArrayList> getSerializationType() {
-        return ArrayList.class;
+    public Class<LinkedList> getSerializationType() {
+        return LinkedList.class;
     }
 
     @Override
     public Serializer createSerializer() {
-        return new ArrayListStreamSerializer();
+        return new LinkedListStreamSerializer();
     }
 
     @Override
@@ -47,27 +47,28 @@ public class ArrayListSerializerHook implements SerializerHook<ArrayList> {
     }
 
     /**
-     * The {@link java.util.ArrayList} serializer
+     * The {@link java.util.LinkedList} serializer
      */
-    public static class ArrayListStreamSerializer implements StreamSerializer<ArrayList> {
+    public static class LinkedListStreamSerializer implements StreamSerializer<LinkedList> {
 
         @Override
-        public void write(ObjectDataOutput out, ArrayList object) throws IOException {
+        public void write(ObjectDataOutput out, LinkedList object) throws IOException {
             out.writeBoolean(object != null);
             if (object != null) {
                 int size = object.size();
                 out.writeInt(size);
-                for (int i = 0; i < size; i++) {
-                    out.writeObject(object.get(i));
+                Iterator iterator = object.iterator();
+                while (iterator.hasNext()) {
+                    out.writeObject(iterator.next());
                 }
             }
         }
 
         @Override
-        public ArrayList read(ObjectDataInput in) throws IOException {
+        public LinkedList read(ObjectDataInput in) throws IOException {
             if (in.readBoolean()) {
                 int size = in.readInt();
-                ArrayList result = new ArrayList(size);
+                LinkedList result = new LinkedList();
                 for (int i = 0; i < size; i++) {
                     result.add(i, in.readObject());
                 }
@@ -78,7 +79,7 @@ public class ArrayListSerializerHook implements SerializerHook<ArrayList> {
 
         @Override
         public int getTypeId() {
-            return SerializationConstants.AUTO_TYPE_ARRAY_LIST;
+            return SerializationConstants.AUTO_TYPE_LINKED_LIST;
         }
 
         @Override

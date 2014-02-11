@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 /**
  * @author mdogan 30/10/13
@@ -151,6 +153,27 @@ public class SerializationTest {
         Foo foo = (Foo) ss.toObject(data);
 
         Assert.assertTrue("Objects are not identical!", foo == foo.getBar().getFoo());
+    }
+
+    @Test
+    public void testLinkedListSerialization() {
+        SerializationService ss = new SerializationServiceBuilder().build();
+        LinkedList linkedList = new LinkedList();
+        linkedList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
+        linkedList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
+        Data data = ss.toData(linkedList);
+        LinkedList deserialized =  ss.toObject(data);
+        Assert.assertTrue("Objects are not identical!", linkedList.equals(deserialized));
+    }
+    @Test
+    public void testArrayListSerialization() {
+        SerializationService ss = new SerializationServiceBuilder().build();
+        ArrayList arrayList = new ArrayList();
+        arrayList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
+        arrayList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
+        Data data = ss.toData(arrayList);
+        ArrayList deserialized =  ss.toObject(data);
+        Assert.assertTrue("Objects are not identical!", arrayList.equals(deserialized));
     }
 
     /**
