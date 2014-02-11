@@ -20,7 +20,13 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
 
-public class MapReduceSimpleEntry<K, V>
+/**
+ * This class is used to prevent extensive GC pressure while mapping values
+ *
+ * @param <K> type of key
+ * @param <V> type of value
+ */
+class MapReduceSimpleEntry<K, V>
         implements Map.Entry<K, V> {
 
     private Data keyData;

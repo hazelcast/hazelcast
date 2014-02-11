@@ -27,6 +27,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This class is used to store assignment results in {@link com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation}
+ * executions.
+ */
 public class KeysAssignmentResult
         implements IdentifiedDataSerializable {
 
@@ -36,8 +40,7 @@ public class KeysAssignmentResult
     public KeysAssignmentResult() {
     }
 
-    public KeysAssignmentResult(ResultState resultState,
-                                Map<Object, Address> assignment) {
+    public KeysAssignmentResult(ResultState resultState, Map<Object, Address> assignment) {
         this.resultState = resultState;
         this.assignment = assignment;
     }
@@ -51,7 +54,8 @@ public class KeysAssignmentResult
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeBoolean(assignment != null);
         if (assignment != null) {
             out.writeInt(assignment.size());
@@ -64,7 +68,8 @@ public class KeysAssignmentResult
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         if (in.readBoolean()) {
             int size = in.readInt();
             assignment = new HashMap<Object, Address>(size);

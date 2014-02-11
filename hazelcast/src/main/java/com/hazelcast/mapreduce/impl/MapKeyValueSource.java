@@ -32,11 +32,17 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * This {@link com.hazelcast.mapreduce.KeyValueSource} implementation is used in
+ * {@link com.hazelcast.mapreduce.KeyValueSource#fromMap(com.hazelcast.core.IMap)} to generate a default
+ * implementation based on a Hazelcast {@link com.hazelcast.core.IMap}.
+ *
+ * @param <K> type of the key of the IMap
+ * @param <V> type of the value of the IMap
+ */
 public class MapKeyValueSource<K, V>
         extends KeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
-
-    private final static long serialVersionUID = 1;
 
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<K, V> simpleEntry = new MapReduceSimpleEntry<K, V>();
@@ -66,7 +72,8 @@ public class MapKeyValueSource<K, V>
     }
 
     @Override
-    public void close() throws IOException {
+    public void close()
+            throws IOException {
     }
 
     @Override
@@ -113,12 +120,14 @@ public class MapKeyValueSource<K, V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(mapName);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         mapName = in.readUTF();
     }
 

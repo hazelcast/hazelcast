@@ -16,14 +16,16 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
+import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-public class AwaitOperation extends BaseCountDownLatchOperation implements WaitSupport {
+public class AwaitOperation extends BaseCountDownLatchOperation implements WaitSupport, IdentifiedDataSerializable {
 
     private long timeout;
 
@@ -74,5 +76,15 @@ public class AwaitOperation extends BaseCountDownLatchOperation implements WaitS
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         timeout = in.readLong();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CountDownLatchDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CountDownLatchDataSerializerHook.AWAIT_OPERATION;
     }
 }

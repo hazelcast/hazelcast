@@ -26,7 +26,6 @@ import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
@@ -61,8 +60,8 @@ public class MapReplicationOperation extends AbstractOperation {
 
             String name = entry.getKey();
             // adding if initial data is loaded for the only maps that has mapstore behind
-            if(mapContainer.getStore() != null) {
-                mapInitialLoadInfo.put(name, replicaIndex>0 || recordStore.isLoaded());
+            if (mapContainer.getStore() != null) {
+                mapInitialLoadInfo.put(name, replicaIndex > 0 || recordStore.isLoaded());
             }
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>();
@@ -90,10 +89,11 @@ public class MapReplicationOperation extends AbstractOperation {
                     Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
                     mapService.applyRecordInfo(newRecord, mapName, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
+                    updateSizeEstimator(newRecord,recordStore);
                 }
             }
         }
-        if(mapInitialLoadInfo != null) {
+        if (mapInitialLoadInfo != null) {
             for (String mapName : mapInitialLoadInfo.keySet()) {
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
                 recordStore.setLoaded(mapInitialLoadInfo.get(mapName));
@@ -147,4 +147,10 @@ public class MapReplicationOperation extends AbstractOperation {
     public boolean isEmpty() {
         return data == null || data.isEmpty();
     }
+
+    private void updateSizeEstimator(Record record, RecordStore recordStore) {
+        final long cost = recordStore.getSizeEstimator().getCost(record);
+        recordStore.getSizeEstimator().add(cost);
+    }
+
 }

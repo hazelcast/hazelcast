@@ -25,6 +25,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * This operation is used to update the process statistics on the owner node
+ */
 public class ProcessStatsUpdateOperation
         extends ProcessingOperation {
 
@@ -39,7 +42,8 @@ public class ProcessStatsUpdateOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor != null) {
@@ -54,13 +58,15 @@ public class ProcessStatsUpdateOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeInt(processedRecords);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         processedRecords = in.readInt();
     }

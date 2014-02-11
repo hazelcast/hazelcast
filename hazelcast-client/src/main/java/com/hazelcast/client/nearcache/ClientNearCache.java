@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +65,16 @@ public class ClientNearCache<K> {
     public static final Object NULL_OBJECT = new Object();
     String registrationId = null;
     final NearCacheStatsImpl stats;
+    private final Comparator<CacheRecord<K>> comparator = new Comparator<CacheRecord<K>>() {
+        public int compare(CacheRecord<K> o1, CacheRecord<K> o2) {
+            if (EvictionPolicy.LRU.equals(evictionPolicy))
+                return ((Long) o1.lastAccessTime).compareTo((o2.lastAccessTime));
+            else if (EvictionPolicy.LFU.equals(evictionPolicy))
+                return ((Integer) o1.hit.get()).compareTo((o2.hit.get()));
+
+            return 0;
+        }
+    };
 
 
     public ClientNearCache(String mapName, ClientNearCacheType cacheType, ClientContext context, NearCacheConfig nearCacheConfig) {
@@ -141,7 +152,8 @@ public class ClientNearCache<K> {
                 context.getExecutionService().execute(new Runnable() {
                     public void run() {
                         try {
-                            TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(cache.values());
+                            TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(comparator);
+                            records.addAll(cache.values());
                             int evictSize = cache.size() * evictionPercentage / 100;
                             int i=0;
                             for (CacheRecord<K> record : records) {
@@ -247,7 +259,7 @@ public class ClientNearCache<K> {
     }
 
 
-    class CacheRecord<K> implements Comparable<CacheRecord> {
+    class CacheRecord<K> {
         final K key;
         final Object value;
         volatile long lastAccessTime;
@@ -286,20 +298,5 @@ public class ClientNearCache<K> {
             return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis) || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
         }
 
-        public int compareTo(CacheRecord o) {
-            if (EvictionPolicy.LRU.equals(evictionPolicy))
-                return ((Long) this.lastAccessTime).compareTo((o.lastAccessTime));
-            else if (EvictionPolicy.LFU.equals(evictionPolicy))
-                return ((Integer) this.hit.get()).compareTo((o.hit.get()));
-
-            return 0;
-        }
-
-        public boolean equals(Object o){
-            if(o instanceof CacheRecord){
-                return this.compareTo((CacheRecord)o)==0;
-            }
-            return false;
-        }
     }
 }

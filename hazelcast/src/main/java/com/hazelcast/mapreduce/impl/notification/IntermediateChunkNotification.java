@@ -25,6 +25,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Notification that is fired every time the chunk limit is reached and is send to the reducers
+ *
+ * @param <KeyOut> type of the key
+ * @param <Value>  type of the value
+ */
 public class IntermediateChunkNotification<KeyOut, Value>
         extends MemberAwareMapReduceNotification {
 
@@ -34,8 +40,7 @@ public class IntermediateChunkNotification<KeyOut, Value>
     public IntermediateChunkNotification() {
     }
 
-    public IntermediateChunkNotification(Address address, String name, String jobId,
-                                         Map<KeyOut, Value> chunk, int partitionId) {
+    public IntermediateChunkNotification(Address address, String name, String jobId, Map<KeyOut, Value> chunk, int partitionId) {
         super(address, name, jobId);
         this.chunk = chunk;
         this.partitionId = partitionId;
@@ -50,7 +55,8 @@ public class IntermediateChunkNotification<KeyOut, Value>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         super.writeData(out);
         out.writeInt(chunk.size());
         for (Map.Entry<KeyOut, Value> entry : chunk.entrySet()) {
@@ -61,7 +67,8 @@ public class IntermediateChunkNotification<KeyOut, Value>
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         super.readData(in);
         int size = in.readInt();
         chunk = new HashMap<KeyOut, Value>();
@@ -85,9 +92,7 @@ public class IntermediateChunkNotification<KeyOut, Value>
 
     @Override
     public String toString() {
-        return "IntermediateChunkNotification{" +
-                "chunk=" + chunk +
-                '}';
+        return "IntermediateChunkNotification{" + "chunk=" + chunk + '}';
     }
 
 }

@@ -22,11 +22,8 @@ import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionService;
 
-import java.io.IOException;
 import java.util.List;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
@@ -36,6 +33,9 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
+/**
+ * This operation requests a new partition to process by the requester on the job owning node
+ */
 public class RequestPartitionMapping
         extends ProcessingOperation {
 
@@ -54,7 +54,8 @@ public class RequestPartitionMapping
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
         if (supervisor == null) {
@@ -66,7 +67,7 @@ public class RequestPartitionMapping
         List<Integer> memberPartitions = ps.getMemberPartitions(getCallerAddress());
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
 
-        for (; ; ) {
+        while (true) {
             int selectedPartition = searchMemberPartitionToProcess(processInformation, memberPartitions);
             if (selectedPartition == -1) {
                 // All partitions seem to be assigned so give up
@@ -74,8 +75,8 @@ public class RequestPartitionMapping
                 return;
             }
 
-            JobPartitionState.State nextState = stateChange(getCallerAddress(), selectedPartition, WAITING,
-                    processInformation, supervisor.getConfiguration());
+            JobPartitionState.State nextState = stateChange(getCallerAddress(), selectedPartition, WAITING, processInformation,
+                    supervisor.getConfiguration());
 
             if (nextState == MAPPING) {
                 result = new RequestPartitionResult(SUCCESSFUL, selectedPartition);
@@ -84,8 +85,7 @@ public class RequestPartitionMapping
         }
     }
 
-    private int searchMemberPartitionToProcess(JobProcessInformation processInformation,
-                                               List<Integer> memberPartitions) {
+    private int searchMemberPartitionToProcess(JobProcessInformation processInformation, List<Integer> memberPartitions) {
         for (int partitionId : memberPartitions) {
             if (checkState(processInformation, partitionId)) {
                 return partitionId;
@@ -97,8 +97,7 @@ public class RequestPartitionMapping
     private boolean checkState(JobProcessInformation processInformation, int partitionId) {
         JobPartitionState[] partitionStates = processInformation.getPartitionStates();
         JobPartitionState partitionState = partitionStates[partitionId];
-        return partitionState == null
-                || partitionState.getState() == JobPartitionState.State.WAITING;
+        return partitionState == null || partitionState.getState() == JobPartitionState.State.WAITING;
     }
 
     @Override

@@ -34,11 +34,17 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * This {@link com.hazelcast.mapreduce.KeyValueSource} implementation is used in
+ * {@link com.hazelcast.mapreduce.KeyValueSource#fromMultiMap(com.hazelcast.core.MultiMap)} to generate a default
+ * implementation based on a Hazelcast {@link com.hazelcast.core.MultiMap}.
+ *
+ * @param <K> type of the key of the MultiMap
+ * @param <V> type of the value of the MultiMap
+ */
 public class MultiMapKeyValueSource<K, V>
         extends KeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
-
-    private final static long serialVersionUID = 1;
 
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<K, V> simpleEntry = new MapReduceSimpleEntry<K, V>();
@@ -74,7 +80,8 @@ public class MultiMapKeyValueSource<K, V>
     }
 
     @Override
-    public void close() throws IOException {
+    public void close()
+            throws IOException {
     }
 
     @Override
@@ -132,12 +139,14 @@ public class MultiMapKeyValueSource<K, V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(multiMapName);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         multiMapName = in.readUTF();
     }
 

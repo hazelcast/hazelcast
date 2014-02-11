@@ -34,6 +34,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
 
+/**
+ * This operation is used to start the actual processing after all node prepared to execute the map reduce job
+ *
+ * @param <K> type of the key
+ */
 public class StartProcessingJobOperation<K>
         extends AbstractOperation
         implements IdentifiedDataSerializable {
@@ -46,8 +51,7 @@ public class StartProcessingJobOperation<K>
     public StartProcessingJobOperation() {
     }
 
-    public StartProcessingJobOperation(String name, String jobId, Collection<K> keys,
-                                       KeyPredicate<K> predicate) {
+    public StartProcessingJobOperation(String name, String jobId, Collection<K> keys, KeyPredicate<K> predicate) {
         this.name = name;
         this.keys = keys;
         this.jobId = jobId;
@@ -65,7 +69,8 @@ public class StartProcessingJobOperation<K>
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
         if (supervisor == null) {
@@ -86,7 +91,8 @@ public class StartProcessingJobOperation<K>
     }
 
     @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
+    public void writeInternal(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeUTF(jobId);
         out.writeInt(keys == null ? 0 : keys.size());
@@ -99,7 +105,8 @@ public class StartProcessingJobOperation<K>
     }
 
     @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
+    public void readInternal(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         jobId = in.readUTF();
         int size = in.readInt();

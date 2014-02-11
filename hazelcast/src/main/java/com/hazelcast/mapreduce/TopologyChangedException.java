@@ -27,21 +27,22 @@ import com.hazelcast.spi.annotation.Beta;
  * @since 3.2
  */
 @Beta
-public class TopologyChangedException extends HazelcastException {
+public class TopologyChangedException
+        extends HazelcastException {
 
+    /**
+     * Creates a new instance of the TopologyChangedException
+     */
     public TopologyChangedException() {
     }
 
+    /**
+     * Creates a new instance of the TopologyChangedException
+     *
+     * @param message the message to be shown to the user
+     */
     public TopologyChangedException(String message) {
         super(message);
-    }
-
-    public TopologyChangedException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public TopologyChangedException(Throwable cause) {
-        super(cause);
     }
 
 }

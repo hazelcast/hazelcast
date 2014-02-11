@@ -57,21 +57,23 @@ public class ClientJobProcessInformationRequest
         JobProcessInformation processInformation = null;
         if (supervisor != null && supervisor.getJobProcessInformation() != null) {
             JobProcessInformation current = supervisor.getJobProcessInformation();
-            processInformation = new TransferableJobProcessInformation(
-                    current.getPartitionStates(), current.getProcessedRecords());
+            processInformation = new TransferableJobProcessInformation(current.getPartitionStates(),
+                    current.getProcessedRecords());
         }
         endpoint.sendResponse(processInformation, getCallId());
     }
 
     @Override
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         super.write(writer);
         writer.writeUTF("name", name);
         writer.writeUTF("jobId", jobId);
     }
 
     @Override
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         super.read(reader);
         name = reader.readUTF("name");
         jobId = reader.readUTF("jobId");
