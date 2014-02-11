@@ -26,6 +26,9 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * This class is the auto registered serializer hook for a {@link java.util.LinkedList}.
+ */
 public class LinkedListSerializerHook implements SerializerHook<LinkedList> {
 
     @Override
@@ -43,6 +46,9 @@ public class LinkedListSerializerHook implements SerializerHook<LinkedList> {
         return true;
     }
 
+    /**
+     * The {@link java.util.LinkedList} serializer
+     */
     public static class LinkedListStreamSerializer implements StreamSerializer<LinkedList> {
 
         @Override
