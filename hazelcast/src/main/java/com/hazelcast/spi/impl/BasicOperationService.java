@@ -228,7 +228,7 @@ final class BasicOperationService implements InternalOperationService {
     //todo: move to BasicOperationScheduler
     public void runOperation(Operation op) {
         if (isAllowedToRunInCurrentThread(op)) {
-            doRunOperation(op);
+            processOperation(op);
         } else {
             throw new IllegalThreadStateException("Operation: " + op + " cannot be run in current thread! -> " +
                     Thread.currentThread());
@@ -288,10 +288,43 @@ final class BasicOperationService implements InternalOperationService {
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
+    private void processPacket(Packet packet) {
+        final Connection conn = packet.getConn();
+        try {
+            final Address caller = conn.getEndPoint();
+            final Data data = packet.getData();
+            final Object object = nodeEngine.toObject(data);
+            final Operation op = (Operation) object;
+            op.setNodeEngine(nodeEngine);
+            OperationAccessor.setCallerAddress(op, caller);
+            OperationAccessor.setConnection(op, conn);
+
+            ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
+            if (!isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
+                final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
+                        op.getClass().getName(), op.getServiceName());
+                handleOperationError(op, error);
+            } else {
+                String executorName = op.getExecutorName();
+                if (executorName == null) {
+                    processOperation(op);
+                } else {
+                    ManagedExecutorService executor = executionService.getExecutor(executorName);
+                    if (executor == null) {
+                        throw new IllegalStateException("Could not found executor with name: " + executorName);
+                    }
+                    executor.execute(new LocalOperationProcessor(op));
+                }
+            }
+        } catch (Throwable e) {
+            logger.severe(e);
+        }
+    }
+
     /**
      * Runs operation in calling thread.
      */
-    private void doRunOperation(final Operation op) {
+    private void processOperation(final Operation op) {
         executedOperationsCount.incrementAndGet();
 
         RemoteCallKey callKey = null;
@@ -732,21 +765,15 @@ final class BasicOperationService implements InternalOperationService {
         public void process(Object o) {
             if (o == null) {
                 throw new IllegalArgumentException();
-            }
-
-            if (o instanceof Operation) {
-                doRunOperation((Operation) o);
-            }
-
-            if (o instanceof Packet) {
-                doRunPacket((Packet) o);
-            }
-
-            if (o instanceof Runnable) {
+            } else if (o instanceof Operation) {
+                processOperation((Operation) o);
+            } else if (o instanceof Packet) {
+                processPacket((Packet) o);
+            } else if (o instanceof Runnable) {
                 ((Runnable) o).run();
+            } else {
+                throw new IllegalArgumentException("Unrecognized task:" + o);
             }
-
-            throw new IllegalArgumentException("Unrecognized task:" + o);
         }
     }
 
@@ -762,42 +789,10 @@ final class BasicOperationService implements InternalOperationService {
 
         @Override
         public void run() {
-            doRunOperation(op);
+            processOperation(op);
         }
     }
 
-    private void doRunPacket(Packet packet) {
-        final Connection conn = packet.getConn();
-        try {
-            final Address caller = conn.getEndPoint();
-            final Data data = packet.getData();
-            final Object object = nodeEngine.toObject(data);
-            final Operation op = (Operation) object;
-            op.setNodeEngine(nodeEngine);
-            OperationAccessor.setCallerAddress(op, caller);
-            OperationAccessor.setConnection(op, conn);
-
-            ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
-            if (!isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
-                final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
-                        op.getClass().getName(), op.getServiceName());
-                handleOperationError(op, error);
-            } else {
-                String executorName = op.getExecutorName();
-                if (executorName == null) {
-                    doRunOperation(op);
-                } else {
-                    ManagedExecutorService executor = executionService.getExecutor(executorName);
-                    if (executor == null) {
-                        throw new IllegalStateException("Could not found executor with name: " + executorName);
-                    }
-                    executor.execute(new LocalOperationProcessor(op));
-                }
-            }
-        } catch (Throwable e) {
-            logger.severe(e);
-        }
-    }
 
     @Override
     public void notifyBackupCall(long callId) {

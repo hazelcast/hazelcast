@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
 
 import java.util.Queue;
@@ -13,22 +12,40 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
-public class BasicOperationScheduler {
+/**
+ * The BasicOperationProcessor belongs to the BasicOperationService and is responsible for scheduling
+ * operations/packets to the correct threads. They can be assigned to partition specific threads e.g.
+ * a map.put, but they can also be assigned to global threads.
+ * <p/>
+ * The actual processing of the 'task' that is scheduled, is forwarded to the {@link BasicOperationProcessor}. So
+ * this class is purely responsible for assigning a 'task' to a particular thread.
+ * <p/>
+ * The {@link #execute(Object, int, boolean)} accepts an Object instead of a runnable to prevent needing to
+ * create wrapper runnables around tasks. This is done to reduce the amount of object litter and therefor
+ * reduce pressure on the gc.
+ */
+public final class BasicOperationScheduler {
 
     private final ILogger logger;
 
     private final Node node;
     private final Executor globalExecutor;
-    private final ConcurrentLinkedQueue<Runnable> globalExecutorPriorityQueue;
+    private final ConcurrentLinkedQueue globalExecutorPriorityQueue;
     private final int operationThreadCount;
     private final BasicOperationProcessor processor;
     private final PartitionThread[] partitionThreads;
+    private final Runnable triggerTask = new Runnable() {
+        @Override
+        public void run() {
+        }
+    };
 
     public BasicOperationScheduler(Node node, ExecutionService executionService,
                                    int operationThreadCount, BasicOperationProcessor processor) {
-        this.logger = node.getLogger(OperationService.class);
+        this.logger = node.getLogger(BasicOperationScheduler.class);
         this.node = node;
         this.processor = processor;
         this.operationThreadCount = operationThreadCount;
@@ -40,21 +57,19 @@ public class BasicOperationScheduler {
         }
 
         int coreSize = Runtime.getRuntime().availableProcessors();
-        this.globalExecutorPriorityQueue = new ConcurrentLinkedQueue<Runnable>();
+        this.globalExecutorPriorityQueue = new ConcurrentLinkedQueue();
         this.globalExecutor = executionService.register(ExecutionService.OPERATION_EXECUTOR,
                 coreSize * 2, coreSize * 100000);
     }
 
     private PartitionThread createPartitionThread(int operationThreadId) {
-        BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>();
-        ConcurrentLinkedQueue<Runnable> priorityQueue = new ConcurrentLinkedQueue<Runnable>();
-        PartitionThreadFactory threadFactory = new PartitionThreadFactory(operationThreadId, workQueue, priorityQueue);
+        PartitionThreadFactory threadFactory = new PartitionThreadFactory(operationThreadId);
         return threadFactory.createThread(null);
     }
 
     boolean isAllowedToRunInCurrentThread(int partitionId) {
         if (partitionId > -1) {
-            final Thread currentThread = Thread.currentThread();
+            Thread currentThread = Thread.currentThread();
             if (currentThread instanceof PartitionThread) {
                 int threadId = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
                 return toPartitionThreadIndex(partitionId) == threadId;
@@ -65,7 +80,7 @@ public class BasicOperationScheduler {
     }
 
     boolean isInvocationAllowedFromCurrentThread(int partitionId) {
-        final Thread currentThread = Thread.currentThread();
+        Thread currentThread = Thread.currentThread();
         if (currentThread instanceof PartitionThread) {
             if (partitionId > -1) {
                 int threadId = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
@@ -94,62 +109,59 @@ public class BasicOperationScheduler {
 
         if (partitionId > -1) {
             PartitionThread partitionThread = partitionThreads[toPartitionThreadIndex(partitionId)];
+
             if (priority) {
-                partitionThread.priorityQueue.offer(task);
-                partitionThread.workQueue.offer(triggerTask);
+                offerWork(partitionThread.priorityQueue, task);
+                offerWork(partitionThread.workQueue, triggerTask);
             } else {
-                partitionThread.workQueue.offer(task);
+                offerWork(partitionThread.workQueue, task);
             }
         } else {
-            Runnable runnable;
-            if (task instanceof Runnable) {
-                runnable = (Runnable) task;
-            } else {
-                runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        processor.process(task);
-                    }
-                };
-            }
-
             if (priority) {
-
+                offerWork(globalExecutorPriorityQueue, task);
+                globalExecutor.execute(new ProcessTask(null));
             } else {
-
+                globalExecutor.execute(new ProcessTask(task));
             }
-            globalExecutor.execute(runnable);
         }
     }
 
-    private final Runnable triggerTask = new Runnable() {
-        @Override
-        public void run() {
+    private void offerWork(Queue queue, Object task) {
+        //in 3.3 we are going to apply backpressure on overload and then we are going to do something
+        //with the return values of the offer methods.
+        //Currently the queues are all unbound, so this can't happen anyway.
+
+        boolean offer = queue.offer(task);
+        if (!offer) {
+            logger.severe("Failed to offer " + task + " to BasicOperationScheduler due to overload");
         }
-    };
+    }
 
-    public class ProcessPriorityQueueTask implements Runnable {
-        private final ConcurrentLinkedQueue<Runnable> priorityQueue;
-        private final Runnable task;
+    private class ProcessTask implements Runnable {
+        private final Object task;
 
-        public ProcessPriorityQueueTask(ConcurrentLinkedQueue<Runnable> priorityQueue, Runnable task) {
-            this.priorityQueue = priorityQueue;
+        public ProcessTask(Object task) {
             this.task = task;
         }
 
         @Override
         public void run() {
-            for (; ; ) {
-                Runnable task = priorityQueue.poll();
-                if (task == null) {
-                    break;
+            try {
+                for (; ; ) {
+                    Object task = globalExecutorPriorityQueue.poll();
+                    if (task == null) {
+                        break;
+                    }
+
+                    processor.process(task);
                 }
 
-                task.run();
-            }
-
-            if (task != null) {
-                task.run();
+                if (task != null) {
+                    processor.process(task);
+                }
+            } catch (Throwable t) {
+                inspectOutputMemoryError(t);
+                logger.severe(t);
             }
         }
     }
@@ -175,36 +187,30 @@ public class BasicOperationScheduler {
 
         private final String threadName;
         private final int threadId;
-        private final BlockingQueue workQueue;
-        private final Queue priorityQueue;
 
-        public PartitionThreadFactory(int threadId, BlockingQueue workQueue, Queue priorityQueue) {
+        public PartitionThreadFactory(int threadId) {
             super(node.threadGroup, node.getConfigClassLoader());
             String poolNamePrefix = node.getThreadPoolNamePrefix("operation");
             this.threadName = poolNamePrefix + threadId;
             this.threadId = threadId;
-            this.workQueue = workQueue;
-            this.priorityQueue = priorityQueue;
         }
 
         @Override
         protected PartitionThread createThread(Runnable r) {
-            return new PartitionThread(threadName, threadId, workQueue, priorityQueue);
+            return new PartitionThread(threadName, threadId);
         }
     }
 
     public final class PartitionThread extends Thread {
 
         final int threadId;
-        private final BlockingQueue workQueue;
-        private final Queue priorityQueue;
+        private final BlockingQueue workQueue = new LinkedBlockingQueue();
+        private final Queue priorityQueue = new ConcurrentLinkedQueue();
+        private volatile boolean shutdown;
 
-        public PartitionThread(String name, int threadId,
-                               BlockingQueue workQueue, Queue priorityQueue) {
+        public PartitionThread(String name, int threadId) {
             super(node.threadGroup, name);
             this.threadId = threadId;
-            this.workQueue = workQueue;
-            this.priorityQueue = priorityQueue;
         }
 
         @Override
@@ -213,6 +219,8 @@ public class BasicOperationScheduler {
                 doRun();
             } catch (OutOfMemoryError e) {
                 onOutOfMemory(e);
+            } catch (Throwable t) {
+                logger.severe(t);
             }
         }
 
@@ -222,12 +230,16 @@ public class BasicOperationScheduler {
                 try {
                     task = workQueue.take();
                 } catch (InterruptedException e) {
+                    if (shutdown) {
+                        return;
+                    }
                     continue;
                 }
 
-                if (task instanceof PoisonPill) {
+                if (shutdown) {
                     return;
                 }
+
                 processPriorityMessages();
                 process(task);
             }
@@ -253,6 +265,7 @@ public class BasicOperationScheduler {
         }
 
         private void shutdown() {
+            shutdown = true;
             workQueue.add(new PoisonPill());
         }
 
