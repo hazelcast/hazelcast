@@ -140,7 +140,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test (timeout = 60000)
     public void testInitialLoadModeEager() {
         int size = 100000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -161,7 +161,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     }
 
-    @Test
+    @Test (timeout = 60000)
     public void testInitialLoadModeEagerMultipleThread() {
         final int size = 100000;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -172,21 +172,21 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        cfg.getMapConfig("testMapInitialLoad").setMapStoreConfig(mapStoreConfig);
+        cfg.getMapConfig("testInitialLoadModeEagerMultipleThread").setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         Runnable runnable = new Runnable() {
             public void run() {
                 HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-                final IMap<Object, Object> map = instance2.getMap("testMapInitialLoad");
+                final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerMultipleThread");
                 assertEquals(size, map.size());
             }
         };
         new Thread(runnable).start();
-        IMap map = instance1.getMap("testMapInitialLoad");
+        IMap map = instance1.getMap("testInitialLoadModeEagerMultipleThread");
         assertEquals(size, map.size());
     }
-    @Test
+    @Test (timeout = 60000)
     public void testInitialLoadModeEagerWhileStoppigOneNode() {
         final int size = 100000;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -197,7 +197,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        cfg.getMapConfig("testMapInitialLoad").setMapStoreConfig(mapStoreConfig);
+        cfg.getMapConfig("testInitialLoadModeEagerWhileStoppigOneNode").setMapStoreConfig(mapStoreConfig);
 
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -208,7 +208,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                     Thread.sleep(3000);
                     instance1.getLifecycleService().terminate();
                     Thread.sleep(3000);
-                    final IMap<Object, Object> map = instance2.getMap("testMapInitialLoad");
+                    final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
                     assertEquals(size, map.size());
 
                 } catch (InterruptedException e) {
@@ -218,7 +218,7 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
         };
         new Thread(runnable).start();
-        IMap map = instance1.getMap("testMapInitialLoad");
+        IMap map = instance1.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
     }
 
     @Test
