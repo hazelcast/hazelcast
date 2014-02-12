@@ -31,6 +31,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
 
+/**
+ * This task implementation executes the reducing phase. It collects all arriving chunks and processes them
+ * one by one. There is one ReducerTask per job per node to have a clear idea of the resulting load a job
+ * may create.
+ *
+ * @param <Key> type of the emitted key
+ * @param <Chunk> type of the intermediate chunk data
+ */
 public class ReducerTask<Key, Chunk>
         implements Runnable {
 
@@ -120,8 +128,8 @@ public class ReducerTask<Key, Chunk>
         // If partitionId is set this was the last chunk for this partition
         if (reducerChunk.partitionId != -1) {
             MapReduceService mapReduceService = supervisor.getMapReduceService();
-            ReducingFinishedNotification notification = new ReducingFinishedNotification(
-                    mapReduceService.getLocalAddress(), name, jobId, reducerChunk.partitionId);
+            ReducingFinishedNotification notification = new ReducingFinishedNotification(mapReduceService.getLocalAddress(), name,
+                    jobId, reducerChunk.partitionId);
 
             mapReduceService.sendNotification(reducerChunk.sender, notification);
         }

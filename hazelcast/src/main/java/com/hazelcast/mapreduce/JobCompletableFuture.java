@@ -24,11 +24,11 @@ import com.hazelcast.spi.annotation.Beta;
  * id of the submit operation.
  *
  * @param <V> type of the resulting value
- *
  * @since 3.2
  */
 @Beta
-public interface JobCompletableFuture<V> extends ICompletableFuture<V> {
+public interface JobCompletableFuture<V>
+        extends ICompletableFuture<V> {
 
     /**
      * Returns the unique identifier for this mapreduce job. This jobId is used to identify the same

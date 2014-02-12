@@ -25,6 +25,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This notification is used to notify the reducer that this chunk is the last chunk of the
+ * defined partitionId.
+ *
+ * @param <KeyOut> type of the key
+ * @param <Value>  type of the value
+ */
 public class LastChunkNotification<KeyOut, Value>
         extends MemberAwareMapReduceNotification {
 
@@ -35,8 +42,8 @@ public class LastChunkNotification<KeyOut, Value>
     public LastChunkNotification() {
     }
 
-    public LastChunkNotification(Address address, String name, String jobId, Address sender,
-                                 int partitionId, Map<KeyOut, Value> chunk) {
+    public LastChunkNotification(Address address, String name, String jobId, Address sender, int partitionId,
+                                 Map<KeyOut, Value> chunk) {
         super(address, name, jobId);
         this.partitionId = partitionId;
         this.sender = sender;
@@ -56,7 +63,8 @@ public class LastChunkNotification<KeyOut, Value>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         super.writeData(out);
         out.writeInt(chunk.size());
         for (Map.Entry<KeyOut, Value> entry : chunk.entrySet()) {
@@ -68,7 +76,8 @@ public class LastChunkNotification<KeyOut, Value>
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         super.readData(in);
         int size = in.readInt();
         chunk = new HashMap<KeyOut, Value>();
@@ -93,11 +102,7 @@ public class LastChunkNotification<KeyOut, Value>
 
     @Override
     public String toString() {
-        return "LastChunkNotification{" +
-                "chunk=" + chunk +
-                ", partitionId=" + partitionId +
-                ", sender=" + sender +
-                '}';
+        return "LastChunkNotification{" + "chunk=" + chunk + ", partitionId=" + partitionId + ", sender=" + sender + '}';
     }
 
 }

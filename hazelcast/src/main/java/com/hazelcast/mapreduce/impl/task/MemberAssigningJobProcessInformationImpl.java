@@ -25,7 +25,13 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
 
-public class MemberAssigningJobProcessInformationImpl extends JobProcessInformationImpl {
+/**
+ * This {@link com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl} extending class is
+ * used in non partitionId based map reduce tasks where partitions are kind of simulated using
+ * a unique id per member.
+ */
+public class MemberAssigningJobProcessInformationImpl
+        extends JobProcessInformationImpl {
 
     private final ConcurrentMap<String, Integer> memberIds = new ConcurrentHashMap<String, Integer>();
 
@@ -37,8 +43,7 @@ public class MemberAssigningJobProcessInformationImpl extends JobProcessInformat
         JobPartitionState[] partitionStates = getPartitionStates();
         for (int i = 0; i < partitionStates.length; i++) {
             JobPartitionState partitionState = partitionStates[i];
-            if (partitionState == null
-                    || partitionState.getState() == JobPartitionState.State.WAITING) {
+            if (partitionState == null || partitionState.getState() == JobPartitionState.State.WAITING) {
 
                 // Seems unassigned so let try to use it
                 if (stateChange(address, i, WAITING, this, configuration) != null) {

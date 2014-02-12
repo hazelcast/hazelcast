@@ -267,6 +267,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                     case EVICTED:
                         listener.entryEvicted(entryEvent);
                         break;
+                    default:
+                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
             }
         };

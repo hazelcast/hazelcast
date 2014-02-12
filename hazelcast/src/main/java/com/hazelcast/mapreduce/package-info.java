@@ -29,7 +29,6 @@
  *
  * @since 3.2
  */
-@Beta
-package com.hazelcast.mapreduce;
+@Beta package com.hazelcast.mapreduce;
 
 import com.hazelcast.spi.annotation.Beta;

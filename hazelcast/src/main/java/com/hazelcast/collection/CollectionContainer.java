@@ -141,7 +141,7 @@ public abstract class CollectionContainer implements DataSerializable {
 
     protected void addAllBackup(Map<Long, Data> valueMap) {
         Map<Long, CollectionItem> map = new HashMap<Long, CollectionItem>(valueMap.size());
-        for (Map.Entry<Long, CollectionItem> entry : map.entrySet()) {
+        for (Map.Entry<Long, Data> entry : valueMap.entrySet()) {
             final long itemId = entry.getKey();
             map.put(itemId, new CollectionItem(itemId, entry.getValue()));
         }

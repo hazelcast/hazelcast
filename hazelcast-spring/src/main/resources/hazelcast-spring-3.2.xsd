@@ -302,10 +302,10 @@
                     <xs:sequence>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="network" type="network-client" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="security" type="client-security" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
@@ -900,10 +900,11 @@
         <xs:sequence>
             <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="socket-options" type="socket-options" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="xs:boolean" default="false"/>
         <xs:attribute name="redo-operation" use="optional" type="xs:boolean" default="false"/>
-        <xs:attribute name="connection-pool-size" use="optional" type="intMin1" default="100"/>
         <xs:attribute name="connection-timeout" use="optional" type="intMin1" default="60000"/>
         <xs:attribute name="connection-attempt-period" use="optional" type="intMin1" default="3000"/>
         <xs:attribute name="connection-attempt-limit" use="optional" type="intMin1" default="2"/>
@@ -914,7 +915,6 @@
         <xs:attribute name="keep-alive" type="xs:boolean" use="optional" default="true"/>
         <xs:attribute name="reuse-address" type="xs:boolean" use="optional" default="true"/>
         <xs:attribute name="linger-seconds" type="xs:unsignedInt" use="optional" default="3"/>
-        <xs:attribute name="timeout" type="xs:int" use="optional" default="-1"/>
         <xs:attribute name="buffer-size" use="optional" default="32">
             <xs:simpleType>
                 <xs:restriction base="xs:unsignedInt">
@@ -935,7 +935,20 @@
             <xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
-
+    <xs:complexType name="client-security">
+        <xs:sequence>
+            <xs:element name="credentials" type="credentials" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="credentials">
+        <xs:annotation>
+            <xs:documentation>Credentials className
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="non-space-string"/>
+        </xs:simpleContent>
+    </xs:complexType>
     <xs:complexType name="proxy-factories">
         <xs:sequence>
             <xs:element name="proxy-factory" type="proxy-factory" minOccurs="0" maxOccurs="unbounded"/>

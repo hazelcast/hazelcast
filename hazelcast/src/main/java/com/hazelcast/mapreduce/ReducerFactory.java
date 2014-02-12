@@ -28,7 +28,6 @@ import java.io.Serializable;
  * @param <KeyIn>    key type of the resulting keys
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
- *
  * @since 3.2
  */
 @Beta

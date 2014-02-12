@@ -45,9 +45,8 @@ import com.hazelcast.spi.annotation.Beta;
  * </pre>
  * </p>
  *
- * @param <KeyIn>    type of key used as input key type
- * @param <ValueIn>  type of value used as input value type
- *
+ * @param <KeyIn>   type of key used as input key type
+ * @param <ValueIn> type of value used as input value type
  * @since 3.2
  */
 @Beta
@@ -106,7 +105,9 @@ public interface Job<KeyIn, ValueIn> {
      * Defines the mapper for this task. This method is not idempotent and can be callable only one time. Further
      * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
      *
-     * @param mapper tasks mapper
+     * @param mapper     tasks mapper
+     * @param <KeyOut>   type of the emitted key
+     * @param <ValueOut> type of the emitted value
      * @return instance of this Job with generics changed on usage
      */
     <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper);

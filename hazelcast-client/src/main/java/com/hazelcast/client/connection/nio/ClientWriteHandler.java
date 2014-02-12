@@ -45,9 +45,9 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
 
 //    private boolean initialized = false;
 
-    public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector) {
+    public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
-        buffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
+        buffer = ByteBuffer.allocate(bufferSize);
     }
 
     public void handle() {

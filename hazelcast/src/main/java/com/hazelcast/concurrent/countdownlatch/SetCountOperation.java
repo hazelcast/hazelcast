@@ -18,10 +18,11 @@ package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class SetCountOperation extends BackupAwareCountDownLatchOperation {
+public class SetCountOperation extends BackupAwareCountDownLatchOperation implements IdentifiedDataSerializable {
 
     private int count;
     private boolean response = false;
@@ -59,5 +60,15 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         count = in.readInt();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CountDownLatchDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CountDownLatchDataSerializerHook.SET_COUNT_OPERATION;
     }
 }

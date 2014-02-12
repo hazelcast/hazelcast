@@ -53,7 +53,6 @@ import com.hazelcast.spi.annotation.Beta;
  * @param <KeyIn>    key type of the resulting keys
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
- *
  * @since 3.2
  */
 @Beta
@@ -64,7 +63,7 @@ public abstract class Reducer<KeyIn, ValueIn, ValueOut> {
      * It can be used to setup any internal needed state before starting to reduce the
      * actual values.
      *
-     * @param key   key of the mapped values
+     * @param key key of the mapped values
      */
     public void beginReduce(KeyIn key) {
     }

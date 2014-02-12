@@ -37,11 +37,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This {@link com.hazelcast.mapreduce.KeyValueSource} implementation is used in
+ * {@link com.hazelcast.mapreduce.KeyValueSource#fromSet(com.hazelcast.core.ISet)} to generate a default
+ * implementation based on a Hazelcast {@link com.hazelcast.core.ISet}.
+ *
+ * @param <V> type of the values inside the ISet
+ */
 public class SetKeyValueSource<V>
         extends KeyValueSource<String, V>
         implements IdentifiedDataSerializable {
-
-    private final static long serialVersionUID = 1;
 
     // This prevents excessive creation of map entries for a serialized operation
     private final MapReduceSimpleEntry<String, V> simpleEntry = new MapReduceSimpleEntry<String, V>();
@@ -112,18 +117,21 @@ public class SetKeyValueSource<V>
     }
 
     @Override
-    public void close() throws IOException {
+    public void close()
+            throws IOException {
         iterator = null;
         nextElement = null;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(setName);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         setName = in.readUTF();
     }
 

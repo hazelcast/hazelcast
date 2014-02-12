@@ -18,13 +18,14 @@ package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class CountDownLatchReplicationOperation extends AbstractOperation {
+public class CountDownLatchReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     private Collection<CountDownLatchInfo> data;
 
@@ -70,4 +71,15 @@ public class CountDownLatchReplicationOperation extends AbstractOperation {
             }
         }
     }
+
+    @Override
+    public int getFactoryId() {
+        return CountDownLatchDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REPLICATION_OPERATION;
+    }
+
 }

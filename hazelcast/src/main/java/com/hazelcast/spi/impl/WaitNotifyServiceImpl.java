@@ -320,6 +320,12 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             }
         }
 
+        //If you don't think instances of this class will ever be inserted into a HashMap/HashTable, the recommended hashCode implementation to use is:
+        public int hashCode() {
+            assert false : "hashCode not designed";
+            return 42; // any arbitrary constant will do
+        }
+
         public void logError(Throwable e) {
             final ILogger logger = getLogger();
             if (e instanceof RetryableException) {

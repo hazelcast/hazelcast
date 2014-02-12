@@ -45,7 +45,6 @@
         <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
-                    connection-pool-size="300"
                     connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
@@ -56,8 +55,7 @@
                                keep-alive="false"
                                linger-seconds="3"
                                reuse-address="false"
-                               tcp-no-delay="false"
-                               timeout="-1"/>
+                               tcp-no-delay="false"/>
         </hz:network>
     </hz:client>
 

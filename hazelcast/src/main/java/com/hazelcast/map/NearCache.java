@@ -184,6 +184,7 @@ public class NearCache {
             if (record.expired()) {
                 cache.remove(key);
                 updateSizeEstimator(-calculateCost(record));
+                stats.incrementMisses();
                 return null;
             }
             return record.value;
@@ -251,6 +252,19 @@ public class NearCache {
                 return ((Integer) this.hit.get()).compareTo((o.hit.get()));
 
             return 0;
+        }
+
+        public boolean equals(Object o){
+            if(o!=null && o instanceof CacheRecord){
+                return this.compareTo((CacheRecord)o)==0;
+            }
+            return false;
+        }
+
+        //If you don't think instances of this class will ever be inserted into a HashMap/HashTable, the recommended hashCode implementation to use is:
+        public int hashCode() {
+            assert false : "hashCode not designed";
+            return 42; // any arbitrary constant will do
         }
 
         public long getCost() {
