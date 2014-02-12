@@ -1707,6 +1707,52 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
+
+    @Test
+    public void iterated_putOrderTest_repDelay1000() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getReplicatedMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getReplicatedMapConfig("default").setReplicationDelayMillis(1000);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        ReplicatedMapProxy<Object, Object> map1 = (ReplicatedMapProxy) instance1.getReplicatedMap("default");
+        ReplicatedMapProxy<Object, Object> map2 = (ReplicatedMapProxy) instance2.getReplicatedMap("default");
+
+        int failCount=0, totalIterations=400;
+        String errorMsg="";
+
+        for(int i=0; i<totalIterations; i++){
+            if(i%2==0){
+                map1.put(1, 1);
+                map2.put(1, 2);
+            }else{
+                map1.put(1, 8);
+                map2.put(1, 9);
+            }
+
+            int count=0, sleepMil=50;
+
+            while(map1.get(1) != map2.get(1)){
+                count++;
+                Thread.sleep(sleepMil);
+
+                int sec = (sleepMil*count)/1000;
+                if( sec > 60){
+                    failCount++;
+                    errorMsg += "expeted "+map1.get(1)+" == "+map2.get(1)+" map1.get(1) != map2.get(1) at iteration="+i+" after "+sec+" seconds\n";
+                    break;
+                }
+            }
+        }
+        if(!"".equals(errorMsg)){
+            throw new AssertionError("Failed "+failCount+" times of "+totalIterations+"\n"+errorMsg);
+        }
+    }
+
+
     @Test
     public void putTTL_Vs_put_repDelay0_InMemoryFormat_Object() throws Exception {
         putTTL_Vs_put_repDelay0(InMemoryFormat.OBJECT);
