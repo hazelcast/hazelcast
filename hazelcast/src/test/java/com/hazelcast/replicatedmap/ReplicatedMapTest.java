@@ -1721,7 +1721,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         ReplicatedMapProxy<Object, Object> map1 = (ReplicatedMapProxy) instance1.getReplicatedMap("default");
         ReplicatedMapProxy<Object, Object> map2 = (ReplicatedMapProxy) instance2.getReplicatedMap("default");
 
-        int failCount=0, totalIterations=400;
+        int failCount=0, totalIterations=200;
         String errorMsg="";
 
         for(int i=0; i<totalIterations; i++){
@@ -1748,7 +1748,7 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
             }
         }
         if(!"".equals(errorMsg)){
-            throw new AssertionError("Failed "+failCount+" times of "+totalIterations+"\n"+errorMsg);
+            throw new AssertionError("Failed "+failCount+" times from "+totalIterations+"\n"+errorMsg);
         }
     }
 
