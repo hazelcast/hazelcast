@@ -65,7 +65,7 @@ public abstract class ClientProxy implements DistributedObject {
         return context;
     }
 
-    final void setContext(ClientContext context) {
+    protected final void setContext(ClientContext context) {
         this.context = context;
     }
 
