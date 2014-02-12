@@ -16,83 +16,84 @@
 
 package com.hazelcast.executor.client;
 
-import com.hazelcast.client.TargetClientRequest;
+import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.executor.CancellationOperation;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorPortableHook;
-import com.hazelcast.executor.MemberCallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
-public final class TargetCallableRequest extends TargetClientRequest {
+/**
+ * @author ali 11/02/14
+ */
+public class CancellationRequest extends InvocationClientRequest {
 
-    private String name;
+    static final int CANCEL_TRY_COUNT = 50;
+    static final int CANCEL_TRY_PAUSE_MILLIS = 250;
+
     private String uuid;
-    private Callable callable;
     private Address target;
+    private boolean interrupt;
 
-    public TargetCallableRequest() {
+
+    public CancellationRequest() {
     }
 
-    public TargetCallableRequest(String name, String uuid, Callable callable, Address target) {
-        this.name = name;
+    public CancellationRequest(String uuid, Address target, boolean interrupt) {
         this.uuid = uuid;
-        this.callable = callable;
         this.target = target;
+        this.interrupt = interrupt;
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Operation prepareOperation() {
-        SecurityContext securityContext = getClientEngine().getSecurityContext();
-        if (securityContext != null) {
-            callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
+    protected void invoke() {
+        final CancellationOperation op = new CancellationOperation(uuid, interrupt);
+        final InvocationBuilder builder = createInvocationBuilder(getServiceName(), op, target);
+        builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
+        final InternalCompletableFuture future = builder.invoke();
+        boolean result = false;
+        try {
+            result = (Boolean) future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
-        return new MemberCallableTaskOperation(name, uuid, callable);
+        getEndpoint().sendResponse(result, getCallId());
     }
 
-    @Override
-    public Address getTarget() {
-        return target;
-    }
-
-    @Override
     public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
 
-    @Override
     public int getFactoryId() {
         return ExecutorPortableHook.F_ID;
     }
 
-    @Override
     public int getClassId() {
-        return ExecutorPortableHook.TARGET_CALLABLE_REQUEST;
+        return ExecutorPortableHook.CANCELLATION_REQUEST;
     }
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
         writer.writeUTF("u", uuid);
+        writer.writeBoolean("i", interrupt);
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
-        rawDataOutput.writeObject(callable);
         target.writeData(rawDataOutput);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
         uuid = reader.readUTF("u");
+        interrupt = reader.readBoolean("i");
         ObjectDataInput rawDataInput = reader.getRawDataInput();
-        callable = rawDataInput.readObject();
         target = new Address();
         target.readData(rawDataInput);
     }
