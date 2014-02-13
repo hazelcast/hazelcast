@@ -90,7 +90,8 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         final String name = ClusterServiceImpl.SERVICE_NAME;
         endpoint.setListenerRegistration(name, name, registrationId);
-
+        System.out.println("HERE COMES PRINTS");
+        System.err.println("HERE COMES PRINTS");
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
