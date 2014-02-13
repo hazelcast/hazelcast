@@ -8,6 +8,7 @@ import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -19,11 +20,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * date: 11/02/14
- * author: eminn
- */
-public class AwaitRequest extends KeyBasedClientRequest implements Portable,SecureRequest {
+public class AwaitRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
 
     private ObjectNamespace namespace;
@@ -50,7 +47,8 @@ public class AwaitRequest extends KeyBasedClientRequest implements Portable,Secu
 
     @Override
     protected Operation prepareOperation() {
-        return new AwaitOperation(namespace,getClientEngine().toData(name),threadId,timeout,conditionId);
+        final Data key = getClientEngine().toData(name);
+        return new AwaitOperation(namespace, key, threadId, timeout, conditionId);
     }
 
     @Override
@@ -70,7 +68,7 @@ public class AwaitRequest extends KeyBasedClientRequest implements Portable,Secu
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         writer.writeLong("tout", timeout);
         writer.writeLong("tid", threadId);
         writer.writeUTF("cid", conditionId);

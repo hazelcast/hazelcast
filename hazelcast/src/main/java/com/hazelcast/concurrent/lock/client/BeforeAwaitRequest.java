@@ -20,11 +20,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * date: 11/02/14
- * author: eminn
- */
-public class BeforeAwaitRequest extends KeyBasedClientRequest implements Portable,SecureRequest {
+public class BeforeAwaitRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     private ObjectNamespace namespace;
     private Data key;
@@ -48,7 +44,7 @@ public class BeforeAwaitRequest extends KeyBasedClientRequest implements Portabl
 
     @Override
     protected Operation prepareOperation() {
-        return new BeforeAwaitOperation(namespace,key,threadId,conditionId);
+        return new BeforeAwaitOperation(namespace, key, threadId, conditionId);
     }
 
     @Override
@@ -68,7 +64,7 @@ public class BeforeAwaitRequest extends KeyBasedClientRequest implements Portabl
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeLong("tid",threadId);
+        writer.writeLong("tid", threadId);
         writer.writeUTF("cid", conditionId);
         ObjectDataOutput out = writer.getRawDataOutput();
         namespace.writeData(out);

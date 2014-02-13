@@ -17,17 +17,13 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-/**
- * date: 11/02/14
- * author: eminn
- */
 public class ClientConditionProxy extends ClientProxy implements ICondition {
 
     private final String conditionId;
     private final ClientLockProxy lockProxy;
 
     private volatile Data key;
-    private InternalLockNamespace namespace;
+    private final InternalLockNamespace namespace;
 
     public ClientConditionProxy(ClientLockProxy clientLockProxy, String name, ClientContext ctx) {
         super(LockService.SERVICE_NAME, clientLockProxy.getName());
@@ -75,7 +71,8 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
     }
 
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
-        AwaitRequest awaitRequest = new AwaitRequest(namespace, lockProxy.getName(), unit.toMillis(time), threadId, conditionId);
+        final long timeoutInMillis = unit.toMillis(time);
+        AwaitRequest awaitRequest = new AwaitRequest(namespace, lockProxy.getName(), timeoutInMillis, threadId, conditionId);
         return invoke(awaitRequest);
     }
 
@@ -83,7 +80,8 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
     @Override
     public boolean awaitUntil(Date deadline) throws InterruptedException {
         long until = deadline.getTime();
-        return await(until - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        final long timeToDeadline = until - Clock.currentTimeMillis();
+        return await(timeToDeadline, TimeUnit.MILLISECONDS);
     }
 
     @Override

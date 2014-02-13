@@ -8,6 +8,7 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.SignalOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -19,10 +20,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * date: 12/02/14
- * author: eminn
- */
 public class SignalRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
 
@@ -51,7 +48,8 @@ public class SignalRequest extends KeyBasedClientRequest implements Portable, Se
 
     @Override
     protected Operation prepareOperation() {
-        return new SignalOperation(namespace, getClientEngine().toData(name), threadId, conditionId, all);
+        final Data key = getClientEngine().toData(name);
+        return new SignalOperation(namespace, key, threadId, conditionId, all);
     }
 
     @Override
@@ -74,7 +72,7 @@ public class SignalRequest extends KeyBasedClientRequest implements Portable, Se
         writer.writeUTF("name", name);
         writer.writeUTF("cid", conditionId);
         writer.writeLong("tid", threadId);
-        writer.writeBoolean("all",all);
+        writer.writeBoolean("all", all);
         final ObjectDataOutput out = writer.getRawDataOutput();
         namespace.writeData(out);
     }
