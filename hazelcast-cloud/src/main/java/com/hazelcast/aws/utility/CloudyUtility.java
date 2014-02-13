@@ -128,8 +128,8 @@ public class CloudyUtility {
 
                 final NodeHolder nodeHolder = new NodeHolder(node);
                 final String state = getState(nodeHolder);
-                final String publicIp = getIp("privateipaddress", nodeHolder);
-                final String privateIp = getIp("ipaddress", nodeHolder);
+                final String privateIp = getIp("privateipaddress", nodeHolder);
+                final String publicIp = getIp("ipaddress", nodeHolder);
                 final String instanceName = getInstanceName(nodeHolder);
 
                 if (privateIp != null && publicIp != null) {
