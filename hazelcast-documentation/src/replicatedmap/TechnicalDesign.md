@@ -5,7 +5,6 @@ There are several technical design decisions that worth mentioning. We strongly 
 to be aware of the configurable behaviour.
 
 ** Initial fill up **
-* * *
 
 If a new member joins there are two ways of handling the initial fill up that is executed to replicate all existing
 values to the new member.
@@ -20,7 +19,6 @@ The second way is to have a synchronous initial fill up which blocks every read 
 fill up operation is finished. This way should be used caution since it might block your application from operation.
 
 ** Replication delay **
-* * *
 
 By default the replication of values is delayed by 100 millis when no current waiting replication is found. This is used
 to collect multiple updates and to minimize the operations overhead on replication. A hard limit of 1000 replications
@@ -30,7 +28,6 @@ The delay is configurable and a value of 0 means immediate replication. That way
 replication overhead and time for the value to be eventually consistent.
 
 ** Concurrency Level **
-* * *
 
 The concurrency level configuration is used to define the number of mutexes and segments inside the ReplicatedMap storage.
 A mutex / segment is chosen by calculating the hashCode of the key and using module by the concurrency level. If multiple
