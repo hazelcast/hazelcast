@@ -849,7 +849,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (maxSizePolicy != null) {
                     msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size ;
+                int size;
                 if (value.length() < 2) {
                     size = Integer.parseInt(value);
                 } else {
@@ -935,6 +935,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("enabled")) {
                 mapStoreConfig.setEnabled(checkTrue(value));
+            } else if ("initial-mode".equals(att.getNodeName())) {
+                final MapStoreConfig.InitialLoadMode mode = att != null
+                        ? MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(att)))
+                        : MapStoreConfig.InitialLoadMode.LAZY;
+                mapStoreConfig.setInitialLoadMode(mode);
+
             }
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
@@ -1125,16 +1131,16 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 getTextContent(intervalNode), 5) : 5;
 
         final Node securityTokenNode = attrs.getNamedItem("security-token");
-        final String securityToken =getTextContent(securityTokenNode);
+        final String securityToken = getTextContent(securityTokenNode);
 
         if (securityToken != null && enabledNode == null) {
             enabled = true;
         }
 
         final Node clusterIdNode = attrs.getNamedItem("cluster-id");
-        final String clusterId =getTextContent(clusterIdNode);
+        final String clusterId = getTextContent(clusterIdNode);
 
-        final String url =getTextContent(node);
+        final String url = getTextContent(node);
 
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         managementCenterConfig.setEnabled(enabled);

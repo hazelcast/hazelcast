@@ -34,6 +34,11 @@ public class MapStoreConfig {
     private Object factoryImplementation;
     private Properties properties = new Properties();
     private MapStoreConfigReadOnly readOnly;
+    private InitialLoadMode initialLoadMode = InitialLoadMode.LAZY;
+
+    public enum InitialLoadMode {
+        LAZY, EAGER
+    }
 
 
     public MapStoreConfig() {
@@ -46,6 +51,7 @@ public class MapStoreConfig {
         factoryClassName = config.getFactoryClassName();
         factoryImplementation = config.getFactoryImplementation();
         writeDelaySeconds = config.getWriteDelaySeconds();
+        initialLoadMode = config.getInitialLoadMode();
         properties.putAll(config.getProperties());
     }
 
@@ -191,6 +197,28 @@ public class MapStoreConfig {
         return this;
     }
 
+    /**
+     * Returns initial load mode
+     *
+     * @return initial load mode object
+     */
+    public InitialLoadMode getInitialLoadMode() {
+        return initialLoadMode;
+    }
+
+    /**
+     * Sets initial load mode
+     *
+     * LAZY: Default load mode where load is async
+     * EAGER: load mode where load is blocked till all partitions are loaded
+     *
+     * @param initialLoadMode initial load mode object
+     */
+    public void setInitialLoadMode(InitialLoadMode initialLoadMode) {
+        this.initialLoadMode = initialLoadMode;
+    }
+
+
     @Override
     public String toString() {
         return "MapStoreConfig{" +
@@ -199,6 +227,7 @@ public class MapStoreConfig {
                 ", writeDelaySeconds=" + writeDelaySeconds +
                 ", implementation=" + implementation +
                 ", properties=" + properties +
+                ", initialLoadMode=" + initialLoadMode +
                 '}';
     }
 }
