@@ -34,6 +34,7 @@ import com.hazelcast.util.Clock;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -95,6 +96,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private final ConcurrentMap<MemberImpl, Long> masterConfirmationTimes = new ConcurrentHashMap<MemberImpl, Long>();
 
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
+
+    private AwsIpResolver awsIpResolver;
 
     public ClusterServiceImpl(final Node node) {
         this.node = node;
@@ -1032,6 +1035,24 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     //todo: remove since unused?
     public long getClusterTimeFor(long localTime) {
         return localTime + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
+    }
+
+    public void updateAwsIpResolver(){
+        try {
+            Class clazz =  node.getJoiner().getClass();
+            final Method m = clazz.getMethod("updateAwsIpResolver");
+            m.invoke(node.getJoiner());
+        } catch (Exception e) {
+            logger.severe("Error while updating AWSJoiner!", e);
+        }
+    }
+
+    public AwsIpResolver getAwsIpResolver() {
+        return awsIpResolver;
+    }
+
+    public void setAwsIpResolver(AwsIpResolver awsIpResolver) {
+        this.awsIpResolver = awsIpResolver;
     }
 
     public String addMembershipListener(MembershipListener listener) {

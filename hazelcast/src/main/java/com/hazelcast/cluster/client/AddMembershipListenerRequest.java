@@ -20,17 +20,20 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientPortableHook;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.cluster.AwsIpResolver;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.operation.MapOperationType;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -46,12 +49,15 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
     public Object call() throws Exception {
         final ClusterServiceImpl service = getService();
         final ClientEndpoint endpoint = getEndpoint();
+        final boolean awsEnabled = getClientEngine().getConfig().getNetworkConfig().getJoin().getAwsConfig().isEnabled();
 
         final String registrationId = service.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    if (awsEnabled)
+                        resolveAddress(member, true, service);
                     endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
                 }
             }
@@ -60,6 +66,8 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             public void memberRemoved(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    if (awsEnabled)
+                        resolveAddress(member, false, service);
                     endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
                 }
             }
@@ -72,6 +80,8 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
                     final String key = memberAttributeEvent.getKey();
                     final Object value = memberAttributeEvent.getValue();
                     final MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
+                    if (awsEnabled)
+                        resolveAddress(member, false, service);
                     endpoint.sendEvent(new ClientMembershipEvent(member, memberAttributeChange), getCallId());
                 }
             }
@@ -84,9 +94,29 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
         for (MemberImpl member : memberList) {
+            resolveAddress(member, awsEnabled, service);
             response.add(serializationService.toData(member));
         }
         return new SerializableCollection(response);
+    }
+
+    private void resolveAddress(MemberImpl member, boolean newMember, ClusterServiceImpl service) {
+        if (newMember) {
+            service.updateAwsIpResolver();
+        }
+        final AwsIpResolver awsIpResolver = service.getAwsIpResolver();
+        final Address oldAddress = member.getAddress();
+        String host = oldAddress.getHost();
+        host = awsIpResolver.convertToPublic(host);
+        final Address newAddress;
+        try {
+            newAddress = new Address(host, oldAddress.getPort());
+            MemberImpl resolvedMember = new MemberImpl(member);
+            resolvedMember.setAddress(newAddress);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public String getServiceName() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws.utility;
 
+import com.hazelcast.cluster.AwsIpResolver;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -184,7 +185,11 @@ public class CloudyUtilityTest {
         awsConfig.setAccessKey("some-access-key");
         awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        List<AwsIpResolver.PublicPrivatePair> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        for (AwsIpResolver.PublicPrivatePair publicPrivatePair : result) {
+            System.out.println(publicPrivatePair.getPublicIp());
+            System.out.println(publicPrivatePair.getPrivateIp());
+        }
         assertEquals(2, result.size());
     }
 
@@ -197,7 +202,11 @@ public class CloudyUtilityTest {
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("Name1");
         awsConfig.setTagValue("value1");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        List<AwsIpResolver.PublicPrivatePair> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        for (AwsIpResolver.PublicPrivatePair publicPrivatePair : result) {
+            System.out.println(publicPrivatePair.getPublicIp());
+            System.out.println(publicPrivatePair.getPrivateIp());
+        }
         assertEquals(2, result.size());
     }
 
@@ -210,7 +219,11 @@ public class CloudyUtilityTest {
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("name");
         awsConfig.setTagValue("");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        List<AwsIpResolver.PublicPrivatePair> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        for (AwsIpResolver.PublicPrivatePair publicPrivatePair : result) {
+            System.out.println(publicPrivatePair.getPublicIp());
+            System.out.println(publicPrivatePair.getPrivateIp());
+        }
         assertEquals(1, result.size());
     }
 }

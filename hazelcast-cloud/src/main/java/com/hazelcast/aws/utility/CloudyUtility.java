@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws.utility;
 
+import com.hazelcast.cluster.AwsIpResolver;
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.logging.ILogger;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 import static java.lang.String.format;
@@ -41,13 +41,14 @@ import static java.lang.String.format;
 public class CloudyUtility {
     final static ILogger logger = Logger.getLogger(CloudyUtility.class);
 
+
     private CloudyUtility() {
     }
 
     public static String getQueryString(Map<String, String> attributes) {
         StringBuilder query = new StringBuilder();
-        for (Iterator<Map.Entry<String,String>> iterator = attributes.entrySet().iterator(); iterator.hasNext(); ) {
-            final Map.Entry<String,String> entry = iterator.next();
+        for (Iterator<Map.Entry<String, String>> iterator = attributes.entrySet().iterator(); iterator.hasNext(); ) {
+            final Map.Entry<String, String> entry = iterator.next();
             final String value = entry.getValue();
             query.append(AwsURLEncoder.urlEncode(entry.getKey())).append("=").append(AwsURLEncoder.urlEncode(value)).append("&");
         }
@@ -57,32 +58,32 @@ public class CloudyUtility {
         return result;
     }
 
-    public static Object unmarshalTheResponse(InputStream stream, AwsConfig awsConfig) throws IOException {
-        Object o = parse(stream, awsConfig);
+    public static List<AwsIpResolver.PublicPrivatePair> unmarshalTheResponse(InputStream stream, AwsConfig awsConfig) throws IOException {
+        List<AwsIpResolver.PublicPrivatePair> o = parse(stream, awsConfig);
         return o;
     }
 
-    private static Object parse(InputStream in, AwsConfig awsConfig) {
+    private static List<AwsIpResolver.PublicPrivatePair> parse(InputStream in, AwsConfig awsConfig) {
         final DocumentBuilder builder;
         try {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(in);
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
-            List<String> names = new ArrayList<String>();
+            List<AwsIpResolver.PublicPrivatePair> names = new ArrayList<AwsIpResolver.PublicPrivatePair>();
             List<NodeHolder> reservationset = elementNodeHolder.getSubNodes("reservationset");
             for (NodeHolder reservation : reservationset) {
                 List<NodeHolder> items = reservation.getSubNodes("item");
                 for (NodeHolder item : items) {
                     NodeHolder instancesset = item.getSub("instancesset");
-                    names.addAll(instancesset.getList("privateipaddress", awsConfig));
+                    names.addAll(instancesset.getAddresses(awsConfig));
                 }
             }
             return names;
         } catch (Exception e) {
             logger.warning(e);
         }
-        return new ArrayList<String>();
+        return new ArrayList<AwsIpResolver.PublicPrivatePair>();
     }
 
     static class NodeHolder {
@@ -117,8 +118,8 @@ public class CloudyUtility {
             return list;
         }
 
-        public List<String> getList(String name, AwsConfig awsConfig) {
-            List<String> list = new ArrayList<String>();
+        public List<AwsIpResolver.PublicPrivatePair> getAddresses( AwsConfig awsConfig) {
+            List<AwsIpResolver.PublicPrivatePair> list = new ArrayList<AwsIpResolver.PublicPrivatePair>();
             if (node == null) return list;
 
             for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
@@ -127,19 +128,20 @@ public class CloudyUtility {
 
                 final NodeHolder nodeHolder = new NodeHolder(node);
                 final String state = getState(nodeHolder);
-                final String ip = getIp(name, nodeHolder);
+                final String publicIp = getIp("privateipaddress", nodeHolder);
+                final String privateIp = getIp("ipaddress", nodeHolder);
                 final String instanceName = getInstanceName(nodeHolder);
 
-                 if (ip != null) {
+                if (privateIp != null && publicIp != null) {
                     if (!acceptState(state)) {
-                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName, ip, state));
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName, privateIp, state));
                     } else if (!acceptTag(awsConfig, node)) {
-                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match", instanceName, ip));
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match", instanceName, privateIp));
                     } else if (!acceptGroupName(awsConfig, node)) {
-                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName, ip));
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName, privateIp));
                     } else {
-                        list.add(ip);
-                        logger.finest(format("Accepting EC2 instance [%s][%s]",instanceName, ip));
+                        list.add(new AwsIpResolver.PublicPrivatePair(publicIp,privateIp));
+                        logger.finest(format("Accepting EC2 instance [%s][%s]", instanceName, privateIp));
                     }
                 }
 

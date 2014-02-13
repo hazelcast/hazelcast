@@ -86,6 +86,10 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         this.attributes.putAll(member.attributes);
     }
 
+    public void setAddress(Address address) {
+        this.address = address;
+    }
+
     public Address getAddress() {
         return address;
     }
