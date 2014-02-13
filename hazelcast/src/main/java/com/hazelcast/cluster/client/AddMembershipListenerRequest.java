@@ -55,9 +55,9 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    MemberImpl member = (MemberImpl) membershipEvent.getMember();
                     if (awsEnabled)
-                        resolveAddress(member, true, service);
+                        member = resolveMember(member, false, service);
                     endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
                 }
             }
@@ -65,23 +65,24 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    MemberImpl member = (MemberImpl) membershipEvent.getMember();
                     if (awsEnabled)
-                        resolveAddress(member, false, service);
+                        member = resolveMember(member, false, service);
                     endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
                 }
             }
 
             public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
                 if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
+                    MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
                     final String uuid = member.getUuid();
                     final MapOperationType op = memberAttributeEvent.getOperationType();
                     final String key = memberAttributeEvent.getKey();
                     final Object value = memberAttributeEvent.getValue();
                     final MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-                    if (awsEnabled)
-                        resolveAddress(member, false, service);
+                    if (awsEnabled) {
+                        member = resolveMember(member, false, service);
+                    }
                     endpoint.sendEvent(new ClientMembershipEvent(member, memberAttributeChange), getCallId());
                 }
             }
@@ -94,13 +95,13 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
         for (MemberImpl member : memberList) {
-            resolveAddress(member, awsEnabled, service);
-            response.add(serializationService.toData(member));
+            MemberImpl resolvedMember = resolveMember(member, awsEnabled, service);
+            response.add(serializationService.toData(resolvedMember));
         }
         return new SerializableCollection(response);
     }
 
-    private void resolveAddress(MemberImpl member, boolean newMember, ClusterServiceImpl service) {
+    private MemberImpl resolveMember(MemberImpl member, boolean newMember, ClusterServiceImpl service) {
         if (newMember) {
             service.updateAwsIpResolver();
         }
@@ -113,8 +114,10 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             newAddress = new Address(host, oldAddress.getPort());
             MemberImpl resolvedMember = new MemberImpl(member);
             resolvedMember.setAddress(newAddress);
+            return resolvedMember;
         } catch (UnknownHostException e) {
             e.printStackTrace();
+            return member;
         }
 
     }
