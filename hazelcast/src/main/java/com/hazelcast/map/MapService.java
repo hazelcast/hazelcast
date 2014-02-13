@@ -970,19 +970,21 @@ public class MapService implements ManagedService, MigrationAwareService,
             PartitionView partition = partitionService.getPartition(partitionId);
             if (partition.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
-                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                heapCost += recordStore.getHeapCost();
+                RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+                if (recordStore != null) {
+                    heapCost += recordStore.getHeapCost();
 
-                Map<Data, Record> records = recordStore.getReadonlyRecordMap();
-                for (Record record : records.values()) {
-                    RecordStatistics stats = record.getStatistics();
-                    // there is map store and the record is dirty (waits to be stored)
-                    ownedEntryCount++;
-                    ownedEntryMemoryCost += record.getCost();
-                    localMapStats.setLastAccessTime(stats.getLastAccessTime());
-                    hits += stats.getHits();
-                    if (recordStore.isLocked(record.getKey())) {
-                        lockedEntryCount++;
+                    Map<Data, Record> records = recordStore.getReadonlyRecordMap();
+                    for (Record record : records.values()) {
+                        RecordStatistics stats = record.getStatistics();
+                        // there is map store and the record is dirty (waits to be stored)
+                        ownedEntryCount++;
+                        ownedEntryMemoryCost += record.getCost();
+                        localMapStats.setLastAccessTime(stats.getLastAccessTime());
+                        hits += stats.getHits();
+                        if (recordStore.isLocked(record.getKey())) {
+                            lockedEntryCount++;
+                        }
                     }
                 }
             } else {

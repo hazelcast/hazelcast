@@ -47,6 +47,13 @@ public abstract class HazelcastTestSupport {
         return factory = new TestHazelcastInstanceFactory(nodeCount);
     }
 
+    public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
+        for (int k = 0; k < durationSeconds; k++) {
+            task.run();
+            sleepSeconds(1);
+        }
+    }
+
     @After
     public final void shutdownNodeFactory() {
         final TestHazelcastInstanceFactory f = factory;
