@@ -34,9 +34,8 @@ public class MapLoaderTest extends HazelcastTestSupport {
     @Test
     public void test1770() throws InterruptedException {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
         config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl("http://manage.hazelcast.com/mancenter-3.2-SNAPSHOT");
+        config.getManagementCenterConfig().setUrl("http://www.google.com");
 
         MapConfig mapConfig = new MapConfig("foo");
 
