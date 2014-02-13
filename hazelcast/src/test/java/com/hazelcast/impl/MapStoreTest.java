@@ -102,15 +102,10 @@ public class MapStoreTest extends TestUtil {
         migrateKey(key1,h1,h2,0);
         CMap cmap1 = getCMap(h1, "default");
         CMap cmap2 = getCMap(h2, "default");
-        final long dirtyEntryCount1 = map1.getLocalMapStats().getDirtyEntryCount();
-        final long dirtyEntryCount2 = map2.getLocalMapStats().getDirtyEntryCount();
-
-        System.out.println("dirtyEntryCount1 = " + dirtyEntryCount1);
-        System.out.println("dirtyEntryCount2 = " + dirtyEntryCount2);
         final Record record = cmap1.getRecord(toData(key1));
-        System.out.println("record = " + record.isDirty());
+        assertTrue(record.isDirty());
         final Record record2 = cmap2.getRecord(toData(key1));
-        System.out.println("record2 = " + record2.isDirty());
+        assertTrue(record2.isDirty());
         testMapStore.assertAwait(30);
 
     }
