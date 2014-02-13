@@ -500,6 +500,10 @@ public class CMap {
             record.setCreationTime(dataRecordEntry.getCreationTime());
             record.setExpirationTime(dataRecordEntry.getExpirationTime());
             record.setMaxIdle(dataRecordEntry.getRemainingIdle());
+            record.setLastAccessTime(dataRecordEntry.getLastAccessTime());
+            record.setLastUpdateTime(dataRecordEntry.getLastUpdateTime());
+            record.setLastStoredTime(dataRecordEntry.getLastStoredTime());
+            record.setDirty(dataRecordEntry.isDirty());
             record.setIndexes(dataRecordEntry.getIndexes(), dataRecordEntry.getIndexTypes());
             if (dataRecordEntry.getLockAddress() != null && dataRecordEntry.getLockThreadId() != -1) {
                 record.lock(dataRecordEntry.getLockThreadId(), dataRecordEntry.getLockAddress());
