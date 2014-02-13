@@ -126,8 +126,8 @@ public class ClientConditionTest {
         int k = 0;
         final HazelcastInstance keyOwner = Hazelcast.newHazelcastInstance();
         final Member keyOwnerMember = keyOwner.getCluster().getLocalMember();
-        final Member partitionOwnerMember = instance.getPartitionService().getPartition(++k).getOwner();
-        while (!keyOwnerMember.equals(partitionOwnerMember)) {
+        final PartitionService partitionService = instance.getPartitionService();
+        while (!keyOwnerMember.equals(partitionService.getPartition(++k).getOwner())) {
             Thread.sleep(10);
         }
 
