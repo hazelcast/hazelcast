@@ -108,12 +108,15 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final AwsIpResolver awsIpResolver = service.getAwsIpResolver();
         final Address oldAddress = member.getAddress();
         String host = oldAddress.getHost();
+        System.err.println(">>>>>> Private " + host);
         host = awsIpResolver.convertToPublic(host);
+        System.err.println(">>>>>> Public " + host);
         final Address newAddress;
         try {
             newAddress = new Address(host, oldAddress.getPort());
             MemberImpl resolvedMember = new MemberImpl(member);
             resolvedMember.setAddress(newAddress);
+            System.err.println(">>>>>> Resolved Member" + resolvedMember);
             return resolvedMember;
         } catch (UnknownHostException e) {
             e.printStackTrace();
