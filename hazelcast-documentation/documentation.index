@@ -17,6 +17,12 @@ src/Distributed_Data_Structures.md
 		src/MapNearCache.md
 		src/MapEntry.md
 		src/MapInMemoryFormat.md
+    src/replicatedmap/ReplicatedMap.md
+        src/replicatedmap/Considerations.md
+        src/replicatedmap/BreakageMapContract.md
+        src/replicatedmap/TechnicalDesign.md
+        src/replicatedmap/InMemoryFormat.md
+        src/replicatedmap/EntryListener.md
 	src/Queue.md
 	src/MultiMap.md
 	src/Topic.md
