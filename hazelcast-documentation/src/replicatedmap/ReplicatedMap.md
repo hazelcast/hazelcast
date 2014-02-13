@@ -9,7 +9,7 @@ In difference to all other data structures which are partitioned in design, a Re
 This leads to higher memory consumption but faster read and write access since data are available on all notes and
 writes take place on local nodes and eventually being replicated to all other nodes.
 
-It fully implements the `java.util.Map interface but lacks the methods from `java.util.concurrent.ConcurrentMap` since
+It fully implements the `java.util.Map` interface but lacks the methods from `java.util.concurrent.ConcurrentMap` since
 there are no atomic guarantees to writes or reads.
 
 ```java
