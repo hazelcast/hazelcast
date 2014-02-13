@@ -37,9 +37,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 
-/**
- * @author mdogan 4/17/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PartitionStateGeneratorTest {
