@@ -322,8 +322,6 @@ public class Node {
     }
 
     public void start() {
-        System.out.println("NODESTART");
-        System.err.println("NODESTART");
         if(logger.isFinestEnabled()){
             logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         }

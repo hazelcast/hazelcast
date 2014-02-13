@@ -26,6 +26,8 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -36,11 +38,14 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * @author mdogan 5/13/13
  */
 public final class AddMembershipListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
+
+    private static final ILogger logger = Logger.getLogger(AddMembershipListenerRequest.class);
 
     public AddMembershipListenerRequest() {
     }
@@ -90,8 +95,6 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         final String name = ClusterServiceImpl.SERVICE_NAME;
         endpoint.setListenerRegistration(name, name, registrationId);
-        System.out.println("HERE COMES PRINTS");
-        System.err.println("HERE COMES PRINTS");
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
@@ -109,18 +112,15 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final AwsIpResolver awsIpResolver = service.getAwsIpResolver();
         final Address oldAddress = member.getAddress();
         String host = oldAddress.getHost();
-        System.err.println(">>>>>> Private " + host);
-        System.out.println(">>>>>> Private " + host);
+        logger.log(Level.SEVERE,">>>>>> Private " + host);
         host = awsIpResolver.convertToPublic(host);
-        System.err.println(">>>>>> Public " + host);
-        System.out.println(">>>>>> Public " + host);
+        logger.log(Level.SEVERE, ">>>>>> Public " + host);
         final Address newAddress;
         try {
             newAddress = new Address(host, oldAddress.getPort());
             MemberImpl resolvedMember = new MemberImpl(member);
             resolvedMember.setAddress(newAddress);
-            System.err.println(">>>>>> Resolved Member" + resolvedMember);
-            System.out.println(">>>>>> Resolved Member" + resolvedMember);
+            logger.log(Level.SEVERE, ">>>>>> Resolved Member" + resolvedMember);
             return resolvedMember;
         } catch (UnknownHostException e) {
             e.printStackTrace();
