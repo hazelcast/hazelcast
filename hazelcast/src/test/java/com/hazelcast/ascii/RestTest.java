@@ -17,12 +17,16 @@
 package com.hazelcast.ascii;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -45,6 +49,22 @@ public class RestTest {
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testTtl_issue1783() throws IOException, InterruptedException {
+        final Config conf = new Config();
+        final MapConfig mapConfig = conf.getMapConfig("map");
+        mapConfig.setTimeToLiveSeconds(3);
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(conf);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        communicator.put("map", "key", "value");
+        String value = communicator.get("map", "key");
+        Assert.assertNotNull(value);
+        Assert.assertEquals("value", value);
+        Thread.sleep(4000);
+        value = communicator.get("map", "key");
+        Assert.assertTrue(value.isEmpty());
     }
 
     @Test
