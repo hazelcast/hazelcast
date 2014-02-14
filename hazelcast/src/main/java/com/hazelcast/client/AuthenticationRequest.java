@@ -16,9 +16,12 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.cluster.AwsIpResolver;
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -31,6 +34,7 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Level;
@@ -110,11 +114,26 @@ public final class AuthenticationRequest extends CallableClientRequest implement
             }
             endpoint.authenticated(principal, firstConnection);
             clientEngine.bind(endpoint);
-            return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
+
+            Address address = clientEngine.getThisAddress();
+            if (clientEngine.getConfig().getNetworkConfig().getJoin().getAwsConfig().isEnabled()) {
+                address = getResolvedAddress(address);
+            }
+
+            return new SerializableCollection(clientEngine.toData(address), clientEngine.toData(principal));
         } else {
             clientEngine.removeEndpoint(connection);
             return new AuthenticationException("Invalid credentials!");
         }
+    }
+
+    private Address getResolvedAddress(Address address) throws UnknownHostException {
+        final ClusterServiceImpl service = getService();
+        final AwsIpResolver awsIpResolver = service.getAwsIpResolver();
+
+        final String host = awsIpResolver.convertToPublic(address.getHost());
+        return new Address(host, address.getPort());
+
     }
 
     private void reAuthLocal() {
