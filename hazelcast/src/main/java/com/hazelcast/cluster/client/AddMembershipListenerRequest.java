@@ -97,8 +97,10 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
         for (MemberImpl member : memberList) {
-            MemberImpl resolvedMember = resolveMember(member, awsEnabled, service);
-            response.add(serializationService.toData(resolvedMember));
+            if (awsEnabled) {
+                member = resolveMember(member, true, service);
+            }
+            response.add(serializationService.toData(member));
         }
         return new SerializableCollection(response);
     }
