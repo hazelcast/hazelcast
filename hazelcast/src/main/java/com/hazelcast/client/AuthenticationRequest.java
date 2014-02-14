@@ -128,8 +128,9 @@ public final class AuthenticationRequest extends CallableClientRequest implement
     }
 
     private Address getResolvedAddress(Address address) throws UnknownHostException {
-        final ClusterServiceImpl service = getService();
-        final AwsIpResolver awsIpResolver = service.getAwsIpResolver();
+        final ClientEngine clientEngine = getClientEngine();
+        final ClusterServiceImpl clusterService = (ClusterServiceImpl) clientEngine.getClusterService();
+        final AwsIpResolver awsIpResolver = clusterService.getAwsIpResolver();
 
         final String host = awsIpResolver.convertToPublic(address.getHost());
         return new Address(host, address.getPort());
