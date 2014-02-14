@@ -1508,11 +1508,13 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
 
     @Test
     @Repeat(50)
+    @Category(ProblematicTest.class)
     public void sameMap_putTTLandPut_allMostSimil_repDelay0_inMemoryFormat_Object() throws Exception {
         sameMap_putTTLandPut_allMostSimil_repDelay0(InMemoryFormat.OBJECT);
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void sameMap_putTTLandPut_allMostSimil_repDelay0_inMemoryFormat_Binary() throws Exception {
         sameMap_putTTLandPut_allMostSimil_repDelay0(InMemoryFormat.BINARY);
     }
