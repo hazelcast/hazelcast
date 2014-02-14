@@ -57,7 +57,7 @@ public class IdGeneratorService implements ManagedService, RemoteService {
     @Override
     public DistributedObject createDistributedObject(String name) {
         IAtomicLong blockGenerator = getBlockGenerator(name);
-        return new IdGeneratorProxy(blockGenerator, name,nodeEngine,this);
+        return new IdGeneratorProxy(blockGenerator, name, nodeEngine, this);
     }
 
     @Override

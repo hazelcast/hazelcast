@@ -33,7 +33,8 @@ public class IdGeneratorProxy extends AbstractDistributedObject<IdGeneratorServi
     private final AtomicInteger residue = new AtomicInteger(BLOCK_SIZE);
     private final AtomicLong local = new AtomicLong(-1);
 
-    public IdGeneratorProxy(IAtomicLong blockGenerator, String name, NodeEngine nodeEngine, IdGeneratorService service) {
+    public IdGeneratorProxy(IAtomicLong blockGenerator, String name,
+                            NodeEngine nodeEngine, IdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.blockGenerator = blockGenerator;

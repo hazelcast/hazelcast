@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
-import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
-import com.hazelcast.concurrent.atomicreference.GetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.GetOperation;
 import com.hazelcast.spi.Operation;
 
 public class GetRequest extends ReadRequest {

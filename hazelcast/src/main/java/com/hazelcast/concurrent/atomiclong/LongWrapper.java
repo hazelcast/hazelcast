@@ -20,34 +20,34 @@ public class LongWrapper {
 
     private long value;
 
-    public long get(){
+    public long get() {
         return value;
     }
 
-    public long addAndGet(long delta){
+    public long addAndGet(long delta) {
         value += delta;
         return value;
     }
 
-    public void set(long value){
+    public void set(long value) {
         this.value = value;
     }
 
-    public boolean compareAndSet(long expect, long value){
-        if (this.value != expect){
+    public boolean compareAndSet(long expect, long value) {
+        if (this.value != expect) {
             return false;
         }
         this.value = value;
         return true;
     }
 
-    public long getAndAdd(long delta){
+    public long getAndAdd(long delta) {
         long tempValue = value;
         value += delta;
         return tempValue;
     }
 
-    public long getAndSet(long value){
+    public long getAndSet(long value) {
         long tempValue = this.value;
         this.value = value;
         return tempValue;

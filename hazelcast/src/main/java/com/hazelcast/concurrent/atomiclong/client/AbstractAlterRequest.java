@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.atomiclong.client;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;

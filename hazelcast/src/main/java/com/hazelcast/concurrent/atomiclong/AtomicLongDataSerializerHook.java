@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.FactoryIdHelper;
 
 public final class AtomicLongDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_DS_FACTORY, -17);
+    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_DS_FACTORY, -17);
 
     @Override
     public int getFactoryId() {

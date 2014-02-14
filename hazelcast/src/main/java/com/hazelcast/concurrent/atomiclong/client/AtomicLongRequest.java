@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.atomiclong.client;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -68,8 +67,8 @@ public abstract class AtomicLongRequest extends PartitionClientRequest implement
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeLong("d",delta);
+        writer.writeUTF("n", name);
+        writer.writeLong("d", delta);
     }
 
     @Override

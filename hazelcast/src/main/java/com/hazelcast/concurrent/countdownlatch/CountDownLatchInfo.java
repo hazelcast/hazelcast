@@ -25,7 +25,7 @@ import java.io.IOException;
 public class CountDownLatchInfo implements DataSerializable {
 
     private String name;
-    private int count = 0;
+    private int count;
 
     public CountDownLatchInfo() {
     }
@@ -62,16 +62,6 @@ public class CountDownLatchInfo implements DataSerializable {
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("LocalCountDownLatch");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", count=").append(count);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(count);
@@ -81,5 +71,15 @@ public class CountDownLatchInfo implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         count = in.readInt();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("LocalCountDownLatch");
+        sb.append("{name='").append(name).append('\'');
+        sb.append(", count=").append(count);
+        sb.append('}');
+        return sb.toString();
     }
 }
