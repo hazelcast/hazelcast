@@ -162,6 +162,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test (timeout = 60000)
+    @Category(ProblematicTest.class)
     public void testInitialLoadModeEagerMultipleThread() {
         final int size = 100000;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
