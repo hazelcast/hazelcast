@@ -53,7 +53,7 @@ public class ClientNearCacheTest {
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setSmartRouting(false);
+        clientConfig.getNetworkConfig().setSmartRouting(false);
 
         clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(InMemoryFormat.OBJECT));
 

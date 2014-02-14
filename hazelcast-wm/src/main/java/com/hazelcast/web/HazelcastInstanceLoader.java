@@ -16,14 +16,13 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.UrlXmlConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
@@ -68,7 +67,7 @@ final class HazelcastInstanceLoader {
             ClientConfig clientConfig ;
             if (configUrl == null) {
                 clientConfig = new ClientConfig();
-                clientConfig.setConnectionAttemptLimit(3);
+                clientConfig.getNetworkConfig().setConnectionAttemptLimit(3);
             } else {
                 try {
                     clientConfig = new XmlClientConfigBuilder(configUrl).build();

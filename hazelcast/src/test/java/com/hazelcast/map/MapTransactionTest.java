@@ -27,7 +27,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.*;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -270,6 +270,34 @@ public class MapTransactionTest extends HazelcastTestSupport {
         IMap map1 = h1.getMap("default");
         assertEquals("value2", map1.get("1"));
         assertEquals("value2", map2.get("1"));
+    }
+    @Test
+    public void testTxnPutTTL() throws TransactionException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap map2 = h2.getMap("putWithTTL");
+
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap("putWithTTL");
+                txMap.put("1", "value", 5, TimeUnit.SECONDS);
+                assertEquals("value", txMap.get("1"));
+                assertEquals(1, txMap.size());
+                return true;
+            }
+        });
+        assertTrue(b);
+
+        IMap map1 = h2.getMap("putWithTTL");
+        assertEquals("value", map1.get("1"));
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        assertNull(map1.get("1"));
     }
 
 

@@ -16,29 +16,21 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
-
-import java.io.IOException;
 
 /**
  * @author ali 23/12/13
  */
-public class RemoveListenerRequest extends CallableClientRequest {
+public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
 
-    String name;
-
-    String registrationId;
 
     public RemoveListenerRequest() {
     }
 
     public RemoveListenerRequest(String name, String registrationId) {
-        this.name = name;
-        this.registrationId = registrationId;
+        super(name, registrationId);
     }
 
     public Object call() throws Exception {
@@ -58,13 +50,4 @@ public class RemoveListenerRequest extends CallableClientRequest {
         return QueuePortableHook.REMOVE_LISTENER;
     }
 
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        writer.writeUTF("r", registrationId);
-    }
-
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        registrationId = reader.readUTF("r");
-    }
 }

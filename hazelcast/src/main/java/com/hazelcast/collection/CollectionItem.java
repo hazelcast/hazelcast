@@ -18,6 +18,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
@@ -30,7 +31,7 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
 
     protected long itemId;
 
-    protected Object value;
+    protected Data value;
 
     protected final long creationTime;
 
@@ -38,7 +39,7 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         creationTime = Clock.currentTimeMillis();
     }
 
-    public CollectionItem(long itemId, Object value) {
+    public CollectionItem(long itemId, Data value) {
         this();
         this.itemId = itemId;
         this.value = value;
@@ -48,11 +49,11 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         return itemId;
     }
 
-    public Object getValue() {
+    public Data getValue() {
         return value;
     }
 
-    public void setValue(Object value) {
+    public void setValue(Data value) {
         this.value = value;
     }
 
@@ -101,12 +102,13 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
-        out.writeObject(value);
+        value.writeData(out);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
-        value = in.readObject();
+        value = new Data();
+        value.readData(in);
     }
 }

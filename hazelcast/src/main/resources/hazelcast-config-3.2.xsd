@@ -592,6 +592,14 @@
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+        <xs:attribute name="initial-mode">
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="LAZY"/>
+                    <xs:enumeration value="EAGER"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
     <xs:element name="queue-store">
         <xs:complexType>

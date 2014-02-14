@@ -18,6 +18,7 @@ package com.hazelcast.hibernate.instance;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
@@ -60,9 +61,10 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
-            clientConfig.setSmartRouting(true);
-            clientConfig.setRedoOperation(true);
-            clientConfig.setConnectionAttemptLimit(10);
+            final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+            networkConfig.setSmartRouting(true);
+            networkConfig.setRedoOperation(true);
+            networkConfig.setConnectionAttemptLimit(10);
         }
         if (group != null) {
             clientConfig.getGroupConfig().setName(group);
@@ -71,10 +73,10 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             clientConfig.getGroupConfig().setPassword(pass);
         }
         if (address != null) {
-            clientConfig.addAddress(address);
+            clientConfig.getNetworkConfig().addAddress(address);
         }
-        clientConfig.setSmartRouting(true);
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setSmartRouting(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         return (client = HazelcastClient.newHazelcastClient(clientConfig));
     }
 

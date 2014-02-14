@@ -58,7 +58,7 @@ public class ClientSocketInterceptorTest {
 
         ClientConfig clientConfig = new ClientConfig();
         MySocketInterceptor myClientSocketInterceptor = new MySocketInterceptor(true);
-        clientConfig.setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
+        clientConfig.getNetworkConfig().setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
                 .setImplementation(myClientSocketInterceptor));
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -75,6 +75,7 @@ public class ClientSocketInterceptorTest {
         assertEquals(0, myClientSocketInterceptor.getConnectFailureCount());
     }
 
+
     @Test(timeout = 120000)
     public void testFailingSocketInterceptor() {
         Config config = new Config();
@@ -89,7 +90,7 @@ public class ClientSocketInterceptorTest {
 
         ClientConfig clientConfig = new ClientConfig();
         MySocketInterceptor myClientSocketInterceptor = new MySocketInterceptor(false);
-        clientConfig.setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
+        clientConfig.getNetworkConfig().setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
                 .setImplementation(myClientSocketInterceptor));
 
         try {
@@ -98,9 +99,6 @@ public class ClientSocketInterceptorTest {
         } catch (IllegalStateException e) {
             assertTrue(mySocketInterceptor.getAcceptFailureCount() > 0);
             assertTrue(myClientSocketInterceptor.getConnectFailureCount() > 0);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            fail("Unexpected failure -> " + e);
         }
 
     }

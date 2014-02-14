@@ -16,25 +16,21 @@
 
 package com.hazelcast.replicatedmap.client;
 
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
-
-import java.io.IOException;
 
 /**
  * @author ali 23/12/13
  */
-public class ClientReplicatedMapRemoveEntryListenerRequest extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapRemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {
 
-    String registrationId;
 
     public ClientReplicatedMapRemoveEntryListenerRequest() {
     }
 
     public ClientReplicatedMapRemoveEntryListenerRequest(String mapName, String registrationId) {
-        super(mapName);
-        this.registrationId = registrationId;
+        super(mapName, registrationId);
     }
 
     public Object call() throws Exception {
@@ -46,13 +42,18 @@ public class ClientReplicatedMapRemoveEntryListenerRequest extends AbstractRepli
         return ReplicatedMapPortableHook.REMOVE_LISTENER;
     }
 
-    public void write(PortableWriter writer) throws IOException {
-        super.write(writer);
-        writer.writeUTF("r", registrationId);
+    protected ReplicatedRecordStore getReplicatedRecordStore() {
+        ReplicatedMapService replicatedMapService = getService();
+        return replicatedMapService.getReplicatedRecordStore(name, true);
     }
 
-    public void read(PortableReader reader) throws IOException {
-        super.read(reader);
-        registrationId = reader.readUTF("r");
+    @Override
+    public String getServiceName() {
+        return ReplicatedMapService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapPortableHook.F_ID;
     }
 }

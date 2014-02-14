@@ -124,7 +124,7 @@ public final class HazelcastClient implements HazelcastInstance {
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
         }
-        connectionManager = new ClientConnectionManagerImpl(this, loadBalancer, config.isSmartRouting());
+        connectionManager = new ClientConnectionManagerImpl(this, loadBalancer);
         clusterService = new ClientClusterServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();

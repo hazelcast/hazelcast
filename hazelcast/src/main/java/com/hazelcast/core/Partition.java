@@ -24,12 +24,15 @@ public interface Partition {
 
     /**
      * Returns id of the partition.
+     *
      * @return id of the partition
      */
     int getPartitionId();
 
     /**
-     * Returns owner member of the partition.
+     * Returns owner member of the partition. It can be that null is returned if the owner of a partition has not
+     * been established.
+     *
      * @return owner member of the partition
      */
     Member getOwner();

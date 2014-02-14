@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.*;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -45,6 +46,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -163,13 +165,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     public void start() {
         clusterThread.start();
 
-        // TODO: replace with a better wait-notify
-        while (membersRef.get() == null && clusterThread.isAlive()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new HazelcastException(e);
-            }
+        try {
+            clusterThread.await();
+        } catch (InterruptedException e) {
+            throw new HazelcastException(e);
         }
         initMembershipListener();
         // started
@@ -187,6 +186,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
         private volatile ClientConnection conn;
         private final List<MemberImpl> members = new LinkedList<MemberImpl>();
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        public void await() throws InterruptedException {
+            latch.await();
+        }
 
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
@@ -197,6 +201,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         } catch (Exception e) {
                             logger.severe("Error while connecting to cluster!", e);
                             client.getLifecycleService().shutdown();
+                            latch.countDown();
                             return;
                         }
                     }
@@ -217,6 +222,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
+                    latch.countDown();
                     break;
                 }
             }
@@ -266,6 +272,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (MembershipEvent event : events) {
                 fireMembershipEvent(event);
             }
+            latch.countDown();
         }
 
         private void listenMembershipEvents() throws IOException {
@@ -356,8 +363,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private ClientConnection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
-        final int connectionAttemptLimit = getClientConfig().getConnectionAttemptLimit();
-        final int connectionAttemptPeriod = getClientConfig().getConnectionAttemptPeriod();
+        final ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
+        final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+        final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         int attempt = 0;
         Throwable lastError = null;
         while (true) {

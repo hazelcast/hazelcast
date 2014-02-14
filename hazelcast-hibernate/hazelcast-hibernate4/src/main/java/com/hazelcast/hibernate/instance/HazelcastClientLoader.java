@@ -60,7 +60,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
-            clientConfig.setConnectionAttemptLimit(10);
+            clientConfig.getNetworkConfig().setConnectionAttemptLimit(10);
         }
         if (group != null) {
             clientConfig.getGroupConfig().setName(group);
@@ -69,10 +69,10 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             clientConfig.getGroupConfig().setPassword(pass);
         }
         if (address != null) {
-            clientConfig.addAddress(address);
+            clientConfig.getNetworkConfig().addAddress(address);
         }
-        clientConfig.setSmartRouting(true);
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setSmartRouting(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         return (client = HazelcastClient.newHazelcastClient(clientConfig));
     }
 

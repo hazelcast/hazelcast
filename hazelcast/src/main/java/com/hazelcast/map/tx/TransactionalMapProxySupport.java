@@ -38,6 +38,7 @@ import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
@@ -125,6 +126,11 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version), versionedValue.version));
+        return versionedValue.value;
+    }
+    public Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
+        VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, versionedValue.version, getTimeInMillis(ttl,timeUnit)), versionedValue.version));
         return versionedValue.value;
     }
 
@@ -283,6 +289,10 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             throw ExceptionUtil.rethrow(t);
         }
         return result;
+    }
+
+    protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
+        return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
     public String getName() {

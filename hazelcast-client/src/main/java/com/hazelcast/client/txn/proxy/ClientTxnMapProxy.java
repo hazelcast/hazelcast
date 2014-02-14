@@ -28,6 +28,7 @@ import com.hazelcast.query.Predicate;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author ali 6/10/13
@@ -66,6 +67,11 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
 
     public V put(K key, V value) {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT, toData(key), toData(value));
+        return invoke(request);
+    }
+
+    public V put(K key, V value, long ttl, TimeUnit timeunit) {
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT_WITH_TTL, toData(key), toData(value), ttl, timeunit);
         return invoke(request);
     }
 
