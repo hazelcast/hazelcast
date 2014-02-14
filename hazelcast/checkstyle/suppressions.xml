@@ -25,7 +25,6 @@
     <suppress checks="" files="[\\/]logging[\\/]"/>
     <suppress checks="" files="[\\/]management[\\/]"/>
     <suppress checks="" files="[\\/]map[\\/]"/>
-    <!-- suppress checks="" files="[\\/]mapreduce[\\/]"/ -->
     <suppress checks="" files="[\\/]monitor[\\/]"/>
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
@@ -48,8 +47,8 @@
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
-    <!-- suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
-    <suppress checks="JavadocType" files="[\\/]"/>
+    <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
+    <!-- suppress checks="JavadocType" files="[\\/]"/>
     <suppress checks="JavadocMethod" files="[\\/]"/>
     <suppress checks="JavadocVariable" files="[\\/]"/ -->
 
