@@ -76,7 +76,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     /**
-     * It is advised to use this method in a try-catch block to take the offer operations
+     * It is advised to use this method in a try-catch block to take the offer operation
      * full lifecycle control, in a "lost node" scenario you can not be sure
      * offer is succeeded or not so you may want to retry.
      *
