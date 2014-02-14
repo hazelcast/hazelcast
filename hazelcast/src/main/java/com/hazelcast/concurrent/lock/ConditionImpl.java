@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock.proxy;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.AwaitOperation;
-import com.hazelcast.concurrent.lock.BeforeAwaitOperation;
-import com.hazelcast.concurrent.lock.SignalOperation;
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
+import com.hazelcast.concurrent.lock.operations.BeforeAwaitOperation;
+import com.hazelcast.concurrent.lock.operations.SignalOperation;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 
 final class ConditionImpl implements ICondition {
@@ -82,7 +81,8 @@ final class ConditionImpl implements ICondition {
 
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
         try {
-            AwaitOperation op = new AwaitOperation(namespace, lockProxy.key, threadId, unit.toMillis(time), conditionId);
+            long timeout = unit.toMillis(time);
+            AwaitOperation op = new AwaitOperation(namespace, lockProxy.key, threadId, timeout, conditionId);
             Future f = invoke(op);
             return Boolean.TRUE.equals(f.get());
         } catch (Throwable t) {

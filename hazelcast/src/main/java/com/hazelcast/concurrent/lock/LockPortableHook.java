@@ -16,8 +16,16 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.concurrent.lock.client.GetLockCountRequest;
+import com.hazelcast.concurrent.lock.client.GetRemainingLeaseRequest;
+import com.hazelcast.concurrent.lock.client.IsLockedRequest;
+import com.hazelcast.concurrent.lock.client.LockRequest;
+import com.hazelcast.concurrent.lock.client.UnlockRequest;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
@@ -40,7 +48,7 @@ public class LockPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                switch (classId){
+                switch (classId) {
                     case LOCK:
                         return new LockRequest();
                     case UNLOCK:

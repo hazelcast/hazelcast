@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;

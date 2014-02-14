@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.lock.proxy.LockProxy;
+import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;

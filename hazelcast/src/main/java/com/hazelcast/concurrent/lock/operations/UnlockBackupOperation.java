@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -24,33 +25,43 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class LockBackupOperation extends BaseLockOperation implements BackupOperation {
+public class UnlockBackupOperation extends BaseLockOperation implements BackupOperation {
 
+    private boolean force = false;
     private String originalCallerUuid;
 
-    public LockBackupOperation() {
+    public UnlockBackupOperation() {
     }
 
-    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid) {
+    public UnlockBackupOperation(
+            ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid, boolean force) {
         super(namespace, key, threadId);
+        this.force = force;
         this.originalCallerUuid = originalCallerUuid;
     }
 
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.lock(key, originalCallerUuid, threadId, ttl);
+        if (force) {
+            response = lockStore.forceUnlock(key);
+        } else {
+            response = lockStore.unlock(key, originalCallerUuid, threadId);
+        }
+        lockStore.pollExpiredAwaitOp(key);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(originalCallerUuid);
+        out.writeBoolean(force);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         originalCallerUuid = in.readUTF();
+        force = in.readBoolean();
     }
 }

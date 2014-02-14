@@ -16,12 +16,14 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -87,7 +89,7 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
 
     private InternalCompletableFuture invoke(Operation operation, Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
     }
-
 }

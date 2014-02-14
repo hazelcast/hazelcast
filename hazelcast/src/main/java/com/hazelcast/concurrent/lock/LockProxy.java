@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock.proxy;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
@@ -31,9 +28,6 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-/**
- * @author mdogan 2/12/13
- */
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 
     private final String name;

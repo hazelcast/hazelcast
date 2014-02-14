@@ -16,17 +16,11 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.concurrent.lock.UnlockOperation;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.operation.BasePutOperation;
 import com.hazelcast.map.operation.LockAwareOperation;
-import com.hazelcast.map.operation.PutBackupOperation;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
-import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
 

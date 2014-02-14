@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.ConditionKey;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -24,42 +26,43 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class UnlockBackupOperation extends BaseLockOperation implements BackupOperation {
+public class AwaitBackupOperation extends BaseLockOperation
+        implements BackupOperation {
 
-    private boolean force = false;
-    private String originalCallerUuid;
+    private String originalCaller;
+    private String conditionId;
 
-    public UnlockBackupOperation() {
+    public AwaitBackupOperation() {
     }
 
-    public UnlockBackupOperation(ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid, boolean force) {
+    public AwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
+                                String conditionId, String originalCaller) {
         super(namespace, key, threadId);
-        this.force = force;
-        this.originalCallerUuid = originalCallerUuid;
+        this.conditionId = conditionId;
+        this.originalCaller = originalCaller;
     }
 
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        if (force) {
-            response = lockStore.forceUnlock(key);
-        } else {
-            response = lockStore.unlock(key, originalCallerUuid, threadId);
-        }
-        lockStore.pollExpiredAwaitOp(key);
+        lockStore.lock(key, originalCaller, threadId);
+        ConditionKey conditionKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
+        lockStore.removeSignalKey(conditionKey);
+        lockStore.removeAwait(key, conditionId, originalCaller, threadId);
+        response = true;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(originalCallerUuid);
-        out.writeBoolean(force);
+        out.writeUTF(originalCaller);
+        out.writeUTF(conditionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        originalCallerUuid = in.readUTF();
-        force = in.readBoolean();
+        originalCaller = in.readUTF();
+        conditionId = in.readUTF();
     }
 }

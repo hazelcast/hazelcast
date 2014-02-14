@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.LockStoreContainer;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;

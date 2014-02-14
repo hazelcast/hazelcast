@@ -16,12 +16,24 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.proxy.LockProxy;
+import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -41,7 +53,8 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
-    private final ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
+    private final ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors
+            = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
 
     final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
@@ -114,13 +127,13 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
 
     private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor =
             new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
-        @Override
-        public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-            LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-            final ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-            return EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
-        }
-    };
+                @Override
+                public EntryTaskScheduler createNew(ObjectNamespace namespace) {
+                    LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
+                    ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+                    return EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+                }
+            };
 
     void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
         EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(
@@ -244,7 +257,8 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
     public void destroyDistributedObject(String objectId) {
         final Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {
-            final LockStoreImpl lockStore = container.getOrCreateLockStore(new InternalLockNamespace(objectId));
+            InternalLockNamespace namespace = new InternalLockNamespace(objectId);
+            LockStoreImpl lockStore = container.getOrCreateLockStore(namespace);
             lockStore.forceUnlock(key);
         }
     }

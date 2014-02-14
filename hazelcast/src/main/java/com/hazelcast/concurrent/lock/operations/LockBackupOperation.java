@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -24,43 +25,33 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class AwaitBackupOperation extends BaseLockOperation
-        implements BackupOperation {
+public class LockBackupOperation extends BaseLockOperation implements BackupOperation {
 
-    private String originalCaller;
-    private String conditionId;
+    private String originalCallerUuid;
 
-    public AwaitBackupOperation() {
+    public LockBackupOperation() {
     }
 
-    public AwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
-                                String conditionId, String originalCaller) {
+    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid) {
         super(namespace, key, threadId);
-        this.conditionId = conditionId;
-        this.originalCaller = originalCaller;
+        this.originalCallerUuid = originalCallerUuid;
     }
 
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        lockStore.lock(key, originalCaller, threadId);
-        ConditionKey conditionKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
-        lockStore.removeSignalKey(conditionKey);
-        lockStore.removeAwait(key, conditionId, originalCaller, threadId);
-        response = true;
+        response = lockStore.lock(key, originalCallerUuid, threadId, ttl);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(originalCaller);
-        out.writeUTF(conditionId);
+        out.writeUTF(originalCallerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        originalCaller = in.readUTF();
-        conditionId = in.readUTF();
+        originalCallerUuid = in.readUTF();
     }
 }

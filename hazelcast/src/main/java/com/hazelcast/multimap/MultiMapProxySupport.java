@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
+import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.multimap.operations.*;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory.OperationFactoryType;

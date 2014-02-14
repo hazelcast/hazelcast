@@ -14,7 +14,6 @@
     <suppress checks="" files="[\\/]client[\\/]"/>
     <suppress checks="" files="[\\/]cluster[\\/]"/>
     <suppress checks="" files="[\\/]collection[\\/]"/>
-    <suppress checks="" files="[\\/]concurrent.lock[\\/]"/>
     <suppress checks="" files="[\\/]concurrent.semaphore[\\/]"/>
     <suppress checks="" files="[\\/]config[\\/]"/>
     <suppress checks="" files="[\\/]core[\\/]"/>
