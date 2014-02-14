@@ -19,13 +19,16 @@ package com.hazelcast.client.util;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
 
-import java.net.*;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-/**
- * @author mdogan 4/6/12
- */
+import static com.hazelcast.util.AddressUtil.getPossibleInetAddressesFor;
+
 public final class AddressHelper {
 
     private static final int MAX_PORT_TRIES = 3;
@@ -33,8 +36,8 @@ public final class AddressHelper {
     public static Collection<InetSocketAddress> getSocketAddresses(String address) {
         final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         final String scopedAddress = addressHolder.scopeId != null
-                                     ? addressHolder.address + "%" + addressHolder.scopeId
-                                     : addressHolder.address;
+                ? addressHolder.address + "%" + addressHolder.scopeId
+                : addressHolder.address;
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getByName(scopedAddress);
@@ -43,27 +46,27 @@ public final class AddressHelper {
         return getPossibleSocketAddresses(inetAddress, addressHolder.port, scopedAddress);
     }
 
-    public static Collection<InetSocketAddress> getPossibleSocketAddresses(InetAddress inetAddress, int port, String scopedAddress) {
+    public static Collection<InetSocketAddress> getPossibleSocketAddresses(
+            InetAddress inetAddress, int port, String scopedAddress) {
         int portTryCount = 1;
-        if (port == -1){
+        if (port == -1) {
             portTryCount = MAX_PORT_TRIES;
             port = 5701;
         }
         final Collection<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
         if (inetAddress == null) {
-            for (int i=0; i<portTryCount; i++){
-                socketAddresses.add(new InetSocketAddress(scopedAddress, port+i));
+            for (int i = 0; i < portTryCount; i++) {
+                socketAddresses.add(new InetSocketAddress(scopedAddress, port + i));
             }
-        }
-        else if (inetAddress instanceof Inet4Address) {
-            for (int i=0; i<portTryCount; i++){
-                socketAddresses.add(new InetSocketAddress(inetAddress, port+i));
+        } else if (inetAddress instanceof Inet4Address) {
+            for (int i = 0; i < portTryCount; i++) {
+                socketAddresses.add(new InetSocketAddress(inetAddress, port + i));
             }
-        } else if (inetAddress instanceof Inet6Address){
-            final Collection<Inet6Address> addresses = AddressUtil.getPossibleInetAddressesFor((Inet6Address) inetAddress);
+        } else if (inetAddress instanceof Inet6Address) {
+            final Collection<Inet6Address> addresses = getPossibleInetAddressesFor((Inet6Address) inetAddress);
             for (Inet6Address inet6Address : addresses) {
-                for (int i=0; i<portTryCount; i++){
-                    socketAddresses.add(new InetSocketAddress(inet6Address, port+i));
+                for (int i = 0; i < portTryCount; i++) {
+                    socketAddresses.add(new InetSocketAddress(inet6Address, port + i));
                 }
             }
         }
@@ -71,5 +74,6 @@ public final class AddressHelper {
         return socketAddresses;
     }
 
-    private AddressHelper() {}
+    private AddressHelper() {
+    }
 }

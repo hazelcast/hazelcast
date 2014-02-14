@@ -21,7 +21,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
 /**
- * @author mdogan 5/15/13
+ * TODO:
+ * Do we want to keep the router? It can't carry its weight since it only delegates to the LoadBalancer.
  */
 public class Router {
 
@@ -33,6 +34,10 @@ public class Router {
 
     public Address next() {
         final MemberImpl member = (MemberImpl) loadBalancer.next();
-        return member == null ? null : member.getAddress();
+        if (member == null) {
+            return null;
+        }else {
+            return member.getAddress();
+        }
     }
 }

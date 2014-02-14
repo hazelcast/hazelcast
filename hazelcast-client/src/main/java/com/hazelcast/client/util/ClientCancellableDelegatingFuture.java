@@ -27,9 +27,6 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-/**
- * @author ali 11/02/14
- */
 public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture<V> {
 
     private final ClientContext context;

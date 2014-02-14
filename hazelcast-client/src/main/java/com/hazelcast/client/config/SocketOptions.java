@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.config;
 
-/**
- * @author mdogan 5/17/13
- */
 public class SocketOptions {
 
     // socket options

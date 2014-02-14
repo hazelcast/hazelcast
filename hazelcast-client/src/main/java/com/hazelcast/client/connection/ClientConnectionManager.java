@@ -19,18 +19,15 @@ package com.hazelcast.client.connection;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.nio.Address;
 
-/**
- * @author ali 5/27/13
- */
 public interface ClientConnectionManager {
 
-    public void shutdown();
+    void shutdown();
 
-    public void start();
+    void start();
 
-    public ClientConnection tryToConnect(Address address) throws Exception;
+    ClientConnection tryToConnect(Address address) throws Exception;
 
-    public ClientConnection ownerConnection(Address address) throws Exception ;
+    ClientConnection ownerConnection(Address address) throws Exception ;
 
-    public boolean removeEventHandler(Integer callId);
+    boolean removeEventHandler(Integer callId);
 }

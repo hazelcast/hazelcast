@@ -38,9 +38,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-/**
- * @author ali 16/12/13
- */
 public class ClientConnection implements Connection, Closeable {
 
     private volatile boolean live = true;
@@ -59,13 +56,16 @@ public class ClientConnection implements Connection, Closeable {
 
     private volatile Address remoteEndpoint;
 
-    private final ConcurrentMap<Integer, ClientCallFuture> callIdMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
-    private final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap = new ConcurrentHashMap<Integer, ClientCallFuture>();
+    private final ConcurrentMap<Integer, ClientCallFuture> callIdMap
+            = new ConcurrentHashMap<Integer, ClientCallFuture>();
+    private final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap
+            = new ConcurrentHashMap<Integer, ClientCallFuture>();
     private final ByteBuffer readBuffer;
     private final SerializationService serializationService;
     private boolean readFromSocket = true;
 
-    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out, int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
+    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
+                            int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = connectionManager.getSerializationService();
@@ -101,6 +101,7 @@ public class ClientConnection implements Connection, Closeable {
         return future.getHandler();
     }
 
+    @Override
     public boolean write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
@@ -162,42 +163,52 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
+    @Override
     public Address getEndPoint() {
         return remoteEndpoint;
     }
 
+    @Override
     public boolean live() {
         return live;
     }
 
+    @Override
     public long lastReadTime() {
         return readHandler.getLastHandle();
     }
 
+    @Override
     public long lastWriteTime() {
         return writeHandler.getLastHandle();
     }
 
+    @Override
     public void close() {
         close(null);
     }
 
+    @Override
     public ConnectionType getType() {
         return ConnectionType.JAVA_CLIENT;
     }
 
+    @Override
     public boolean isClient() {
         return true;
     }
 
+    @Override
     public InetAddress getInetAddress() {
         return socketChannelWrapper.socket().getInetAddress();
     }
 
+    @Override
     public InetSocketAddress getRemoteSocketAddress() {
         return (InetSocketAddress) socketChannelWrapper.socket().getRemoteSocketAddress();
     }
 
+    @Override
     public int getPort() {
         return socketChannelWrapper.socket().getPort();
     }
@@ -275,6 +286,7 @@ public class ClientConnection implements Connection, Closeable {
         connectionManager.destroyConnection(this);
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ClientConnection)) return false;
@@ -286,10 +298,12 @@ public class ClientConnection implements Connection, Closeable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         return connectionId;
     }
 
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientConnection{");
         sb.append("live=").append(live);
