@@ -45,8 +45,6 @@ import java.util.logging.Level;
  */
 public final class AddMembershipListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    private static final ILogger logger = Logger.getLogger(AddMembershipListenerRequest.class);
-
     public AddMembershipListenerRequest() {
     }
 
@@ -112,15 +110,12 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final AwsIpResolver awsIpResolver = service.getAwsIpResolver();
         final Address oldAddress = member.getAddress();
         String host = oldAddress.getHost();
-        logger.log(Level.WARNING,">>>>>> Private " + host);
         host = awsIpResolver.convertToPublic(host);
-        logger.log(Level.WARNING, ">>>>>> Public " + host);
         final Address newAddress;
         try {
             newAddress = new Address(host, oldAddress.getPort());
             MemberImpl resolvedMember = new MemberImpl(member);
             resolvedMember.setAddress(newAddress);
-            logger.log(Level.WARNING, ">>>>>> Resolved Member" + resolvedMember);
             return resolvedMember;
         } catch (UnknownHostException e) {
             e.printStackTrace();
