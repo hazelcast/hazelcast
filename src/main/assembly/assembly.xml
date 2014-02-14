@@ -113,15 +113,16 @@
         <fileSet>
             <directory>hazelcast/target/classes/</directory>
             <outputDirectory>/bin/</outputDirectory>
+            <fileMode>0755</fileMode>
             <includes>
-                <include>run.bat</include>
-                <include>test.bat</include>
-                <include>client.bat</include>
-                <include>server.bat</include>
-                <include>run.sh</include>
-                <include>test.sh</include>
-                <include>client.sh</include>
-                <include>server.sh</include>
+                <include>*.sh</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast/target/classes/</directory>
+            <outputDirectory>/bin/</outputDirectory>
+            <includes>
+                <include>*.bat</include>
                 <include>keystore</include>
             </includes>
         </fileSet>
@@ -144,6 +145,13 @@
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>*.bat</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-client/target/classes/</directory>
+            <outputDirectory>/bin/</outputDirectory>
+            <fileMode>0755</fileMode>
+            <includes>
                 <include>*.sh</include>
             </includes>
         </fileSet>
