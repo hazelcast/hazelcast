@@ -16,25 +16,24 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipListener;
 
 import java.util.Random;
 
 /**
- * The RandomLB randomly selects a member to route to.
+ * A {@link com.hazelcast.client.LoadBalancer} that selects a random member to route to.
  */
-public class RandomLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
+public class RandomLB extends AbstractLoadBalancer {
 
     private final Random random = new Random();
 
     @Override
     public Member next() {
-        final Member[] members = getMembers();
+        Member[] members = getMembers();
         if (members == null || members.length == 0) {
             return null;
         }
-        return members[random.nextInt(members.length)];
+        int index = random.nextInt(members.length);
+        return members[index];
     }
 }

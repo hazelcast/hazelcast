@@ -24,9 +24,6 @@ import com.hazelcast.nio.SocketChannelWrapper;
 
 import java.nio.channels.SelectionKey;
 
-/**
- * @author ali 14/12/13
- */
 public abstract class ClientAbstractSelectionHandler implements SelectionHandler, Runnable {
 
     protected final ILogger logger;

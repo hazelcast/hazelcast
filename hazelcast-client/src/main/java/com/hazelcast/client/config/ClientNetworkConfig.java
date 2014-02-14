@@ -23,9 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author ali 06/02/14
- */
 public class ClientNetworkConfig {
 
     /**

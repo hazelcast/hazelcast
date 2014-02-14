@@ -25,16 +25,14 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
-/**
- * @author ali 23/12/13
- */
 public final class ListenerUtil {
 
     public static String listen(ClientContext context, ClientRequest request, Object key, EventHandler handler) {
         //TODO callback
         final Future future;
         try {
-            final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) context.getInvocationService();
+            final ClientInvocationServiceImpl invocationService =getClientInvocationService(context);
+
             if (key == null) {
                 future = invocationService.invokeOnRandomTarget(request, handler);
             } else {
@@ -51,7 +49,7 @@ public final class ListenerUtil {
     public static boolean stopListening(ClientContext context,
                                         BaseClientRemoveListenerRequest request, String registrationId) {
         try {
-            ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) context.getInvocationService();
+            ClientInvocationServiceImpl invocationService = getClientInvocationService(context);
             registrationId = invocationService.deRegisterListener(registrationId);
             if (registrationId == null) {
                 return false;
@@ -64,5 +62,7 @@ public final class ListenerUtil {
         }
     }
 
-
+    private static ClientInvocationServiceImpl getClientInvocationService(ClientContext context) {
+        return (ClientInvocationServiceImpl) context.getInvocationService();
+    }
 }

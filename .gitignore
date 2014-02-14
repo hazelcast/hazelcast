@@ -10,3 +10,6 @@ target/
 reports/
 .directory
 atlassian-ide-plugin.xml
+hazelcast-ra/*.log
+hazelcast-ra/*.epoch
+

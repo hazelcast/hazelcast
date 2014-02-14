@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 
 final class HazelcastClientManagedContext implements ManagedContext {
-    
+
     private final HazelcastInstance instance;
     private final ManagedContext externalContext;
     private final boolean hasExternalContext;
@@ -29,9 +29,10 @@ final class HazelcastClientManagedContext implements ManagedContext {
     public HazelcastClientManagedContext(final HazelcastInstance instance, final ManagedContext externalContext) {
         this.instance = instance;
         this.externalContext = externalContext;
-        hasExternalContext = this.externalContext != null;
+        this.hasExternalContext = externalContext != null;
     }
 
+    @Override
     public final Object initialize(Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) obj).setHazelcastInstance(instance);
@@ -42,5 +43,4 @@ final class HazelcastClientManagedContext implements ManagedContext {
         }
         return obj;
     }
-
 }

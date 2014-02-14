@@ -20,9 +20,6 @@ import com.hazelcast.nio.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
-/**
- * @author ali 16/12/13
- */
 public class ClientInSelectorImpl extends ClientAbstractIOSelector {
 
     public ClientInSelectorImpl(ThreadGroup threadGroup) {

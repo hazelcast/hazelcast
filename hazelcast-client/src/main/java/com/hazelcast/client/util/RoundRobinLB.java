@@ -16,22 +16,29 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipListener;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RoundRobinLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
+/**
+ * A {@link com.hazelcast.client.LoadBalancer} implementation that relies on using round robin
+ * to a next member to send a request to.
+ * <p/>
+ * Round robin is done based on best effort basis, the order of members for concurrent calls to
+ * the {@link #next()} is not guaranteed.
+ */
+public class RoundRobinLB extends AbstractLoadBalancer {
 
-    private final AtomicInteger index = new AtomicInteger(0);
+    private final AtomicInteger indexRef = new AtomicInteger(0);
 
+    @Override
     public Member next() {
-        final Member[] members = getMembers();
+        Member[] members = getMembers();
         if (members == null || members.length == 0) {
             return null;
         }
-        final int length = members.length;
-        return members[(index.getAndAdd(1) % length + length) % length];
+        int length = members.length;
+        int index = (indexRef.getAndAdd(1) % length + length) % length;
+        return members[index];
     }
 }

@@ -20,15 +20,13 @@ import com.hazelcast.nio.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
-/**
- * @author ali 16/12/13
- */
 public class ClientOutSelectorImpl extends ClientAbstractIOSelector {
 
     public ClientOutSelectorImpl(ThreadGroup threadGroup) {
         super(threadGroup, "OutSelector");
     }
 
+    @Override
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isWritable()) {
             sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);

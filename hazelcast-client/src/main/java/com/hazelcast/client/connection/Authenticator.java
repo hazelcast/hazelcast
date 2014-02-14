@@ -21,11 +21,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 5/15/13
- */
 public interface Authenticator {
 
     void auth(ClientConnection connection) throws AuthenticationException, IOException;
-
 }
