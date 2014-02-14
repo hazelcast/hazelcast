@@ -25,6 +25,7 @@
     <suppress checks="" files="[\\/]logging[\\/]"/>
     <suppress checks="" files="[\\/]management[\\/]"/>
     <suppress checks="" files="[\\/]map[\\/]"/>
+    <!-- suppress checks="" files="[\\/]mapreduce[\\/]"/ -->
     <suppress checks="" files="[\\/]monitor[\\/]"/>
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
@@ -48,9 +49,9 @@
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
-    <!-- suppress checks="JavadocType" files="[\\/]"/>
+    <suppress checks="JavadocType" files="[\\/]"/>
     <suppress checks="JavadocMethod" files="[\\/]"/>
-    <suppress checks="JavadocVariable" files="[\\/]"/ -->
+    <suppress checks="JavadocVariable" files="[\\/]"/>
 
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
