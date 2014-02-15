@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,7 +38,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
     protected long ttl = DEFAULT_LOCK_TTL;
     protected long timeout = -1;
     protected transient Object response;
-    private transient boolean asyncBackup = false;
+    private transient boolean asyncBackup;
 
     public BaseLockOperation() {
     }

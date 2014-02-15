@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 
-public class GetRemainingLeaseTimeOperation extends BaseLockOperation {
+public class GetLockCountOperation extends BaseLockOperation {
 
-    public GetRemainingLeaseTimeOperation() {
+    public GetLockCountOperation() {
     }
 
-    public GetRemainingLeaseTimeOperation(ObjectNamespace namespace, Data key) {
+    public GetLockCountOperation(ObjectNamespace namespace, Data key) {
         super(namespace, key, -1);
     }
 
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.getRemainingLeaseTime(key);
+        response = lockStore.getLockCount(key);
     }
 }

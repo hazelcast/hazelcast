@@ -13,24 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.concurrent.lock;
-
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
-
-public class GetLockCountOperation extends BaseLockOperation {
-
-    public GetLockCountOperation() {
-    }
-
-    public GetLockCountOperation(ObjectNamespace namespace, Data key) {
-        super(namespace, key, -1);
-    }
-
-    @Override
-    public void run() throws Exception {
-        LockStoreImpl lockStore = getLockStore();
-        response = lockStore.getLockCount(key);
-    }
-}
+/**
+ * <p>This package contains client requests for the ILock.<br/>
+ * This package contains all the client requests object to operate on the
+ * ILock that are send by the client. This is done to reduce tight
+ * coupling between client and server.
+ *
+ * @since 1
+ */
+package com.hazelcast.concurrent.lock.client;

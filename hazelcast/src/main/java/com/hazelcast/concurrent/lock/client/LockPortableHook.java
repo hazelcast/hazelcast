@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.concurrent.lock.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
@@ -40,7 +43,7 @@ public class LockPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                switch (classId){
+                switch (classId) {
                     case LOCK:
                         return new LockRequest();
                     case UNLOCK:

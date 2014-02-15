@@ -25,23 +25,27 @@ import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-final class LockStoreContainer {
+public final class LockStoreContainer {
 
     private final LockServiceImpl lockService;
     private final int partitionId;
-    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
-    private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
-        public LockStoreImpl createNew(ObjectNamespace namespace) {
-            final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor = lockService.constructors.get(namespace.getServiceName());
-            if (ctor != null) {
-                LockStoreInfo info = ctor.createNew(namespace);
-                if (info != null) {
-                    return new LockStoreImpl(lockService, namespace, info.getBackupCount(), info.getAsyncBackupCount());
+    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores =
+            new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
+    private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor =
+            new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
+                public LockStoreImpl createNew(ObjectNamespace namespace) {
+                    final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor =
+                            lockService.getConstructor(namespace.getServiceName());
+                    if (ctor != null) {
+                        LockStoreInfo info = ctor.createNew(namespace);
+                        if (info != null) {
+                            return new LockStoreImpl(
+                                    lockService, namespace, info.getBackupCount(), info.getAsyncBackupCount());
+                        }
+                    }
+                    throw new IllegalArgumentException("No LockStore constructor is registered!");
                 }
-            }
-            throw new IllegalArgumentException("No LockStore constructor is registered!");
-        }
-    };
+            };
 
     public LockStoreContainer(LockServiceImpl lockService, int partitionId) {
         this.lockService = lockService;
@@ -63,7 +67,7 @@ final class LockStoreContainer {
         return lockStores.get(namespace);
     }
 
-    Collection<LockStoreImpl> getLockStores() {
+    public Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 
@@ -78,7 +82,7 @@ final class LockStoreContainer {
         return partitionId;
     }
 
-    void put(LockStoreImpl ls) {
+    public void put(LockStoreImpl ls) {
         ls.setLockService(lockService);
         lockStores.put(ls.getNamespace(), ls);
     }

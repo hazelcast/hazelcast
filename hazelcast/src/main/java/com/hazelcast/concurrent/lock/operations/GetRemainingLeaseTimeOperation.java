@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 
-public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
+public class GetRemainingLeaseTimeOperation extends BaseLockOperation {
 
-    public SignalBackupOperation() {
+    public GetRemainingLeaseTimeOperation() {
     }
 
-    public SignalBackupOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
-        super(namespace, key, threadId, conditionId, all);
+    public GetRemainingLeaseTimeOperation(ObjectNamespace namespace, Data key) {
+        super(namespace, key, -1);
+    }
+
+    @Override
+    public void run() throws Exception {
+        LockStoreImpl lockStore = getLockStore();
+        response = lockStore.getRemainingLeaseTime(key);
     }
 }

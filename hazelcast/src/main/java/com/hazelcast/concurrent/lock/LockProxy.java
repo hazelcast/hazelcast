@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock.proxy;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
@@ -31,17 +28,14 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-/**
- * @author mdogan 2/12/13
- */
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 
     private final String name;
     private final LockProxySupport lockSupport;
-    final Data key;
+    private final Data key;
     private final int partitionId;
 
-    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final String name) {
+    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, String name) {
         super(nodeEngine, lockService);
         this.name = name;
         this.key = getNameAsPartitionAwareData();
@@ -127,6 +121,10 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     @Deprecated
     public Object getKey() {
         return getName();
+    }
+
+    public Data getKeyData() {
+        return key;
     }
 
     int getPartitionId() {

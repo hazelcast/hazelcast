@@ -14,53 +14,51 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-abstract class BaseSignalOperation extends BaseLockOperation {
+public class BeforeAwaitBackupOperation extends BaseLockOperation implements BackupOperation {
 
-    protected boolean all;
-    protected String conditionId;
-    protected transient int awaitCount;
+    private String conditionId;
+    private String originalCaller;
 
-    public BaseSignalOperation() {
+    public BeforeAwaitBackupOperation() {
     }
 
-    public BaseSignalOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
+    public BeforeAwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
+                                      String conditionId, String originalCaller) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
-        this.all = all;
+        this.originalCaller = originalCaller;
     }
 
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        awaitCount = lockStore.getAwaitCount(key, conditionId);
-        int signalCount = awaitCount > 0 ? (all ? awaitCount : 1) : 0;
-        ConditionKey notifiedKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
-        for (int i = 0; i < signalCount; i++) {
-            lockStore.registerSignalKey(notifiedKey);
-        }
+        lockStore.addAwait(key, conditionId, originalCaller, threadId);
+        lockStore.unlock(key, originalCaller, threadId);
         response = true;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(all);
+        out.writeUTF(originalCaller);
         out.writeUTF(conditionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        all = in.readBoolean();
+        originalCaller = in.readUTF();
         conditionId = in.readUTF();
     }
 }

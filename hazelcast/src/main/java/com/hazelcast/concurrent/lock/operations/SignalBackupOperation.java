@@ -14,31 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 
-public class IsLockedOperation extends BaseLockOperation {
+public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
 
-    public IsLockedOperation() {
+    public SignalBackupOperation() {
     }
 
-    public IsLockedOperation(ObjectNamespace namespace, Data key) {
-        super(namespace, key, ANY_THREAD);
-    }
-
-    public IsLockedOperation(ObjectNamespace namespace, Data key, long threadId) {
-        super(namespace, key, threadId);
-    }
-
-    @Override
-    public void run() throws Exception {
-        LockStoreImpl lockStore = getLockStore();
-        if (threadId == ANY_THREAD) {
-            response = lockStore.isLocked(key);
-        } else {
-            response = lockStore.isLockedBy(key, getCallerUuid(), threadId);
-        }
+    public SignalBackupOperation(ObjectNamespace namespace, Data key, long threadId, String conditionId, boolean all) {
+        super(namespace, key, threadId, conditionId, all);
     }
 }

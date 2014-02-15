@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.ConditionKey;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
@@ -27,8 +33,8 @@ public class AwaitOperation extends BaseLockOperation
         implements WaitSupport, BackupAwareOperation {
 
     private String conditionId;
-    private boolean firstRun = false;
-    private boolean expired = false;
+    private boolean firstRun;
+    private boolean expired;
 
     public AwaitOperation() {
     }
@@ -48,7 +54,8 @@ public class AwaitOperation extends BaseLockOperation
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         if (!lockStore.lock(key, getCallerUuid(), threadId)) {
-            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
+            throw new IllegalMonitorStateException(
+                    "Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
         }
 
         if (expired) {
@@ -97,7 +104,8 @@ public class AwaitOperation extends BaseLockOperation
         boolean locked = lockStore.lock(key, getCallerUuid(), threadId);
         if (locked) {
             ResponseHandler responseHandler = getResponseHandler();
-            responseHandler.sendResponse(false); // expired & acquired lock, send FALSE
+            // expired & acquired lock, send FALSE
+            responseHandler.sendResponse(false);
         } else {
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);

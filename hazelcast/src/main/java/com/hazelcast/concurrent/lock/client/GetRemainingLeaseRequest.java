@@ -17,7 +17,9 @@
 package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.concurrent.lock.*;
+import com.hazelcast.concurrent.lock.InternalLockNamespace;
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.operations.GetRemainingLeaseTimeOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

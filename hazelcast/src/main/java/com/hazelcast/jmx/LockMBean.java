@@ -19,7 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.ILock;
 
 @ManagedDescription("ILock")
-public class LockMBean extends  HazelcastMBean<ILock> {
+public class LockMBean extends HazelcastMBean<ILock> {
 
     protected LockMBean(ILock managedObject, ManagementService service) {
         super(managedObject, service);
@@ -35,8 +35,12 @@ public class LockMBean extends  HazelcastMBean<ILock> {
     @ManagedAnnotation("lockObject")
     @ManagedDescription("Lock Object as String")
     public String getLockObject() {
-        Object lockObject = managedObject.getKey();
-        return lockObject == null ? null : lockObject.toString();
+        Object lockObject = managedObject.getName();
+        if (lockObject == null) {
+            return null;
+        } else {
+            return lockObject.toString();
+        }
     }
 
     @ManagedAnnotation("partitionKey")

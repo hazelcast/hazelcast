@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.ConditionKey;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -24,16 +26,17 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class BeforeAwaitBackupOperation extends BaseLockOperation implements BackupOperation {
+public class AwaitBackupOperation extends BaseLockOperation
+        implements BackupOperation {
 
-    private String conditionId;
     private String originalCaller;
+    private String conditionId;
 
-    public BeforeAwaitBackupOperation() {
+    public AwaitBackupOperation() {
     }
 
-    public BeforeAwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
-                                      String conditionId, String originalCaller) {
+    public AwaitBackupOperation(ObjectNamespace namespace, Data key, long threadId,
+                                String conditionId, String originalCaller) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
         this.originalCaller = originalCaller;
@@ -42,8 +45,10 @@ public class BeforeAwaitBackupOperation extends BaseLockOperation implements Bac
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        lockStore.addAwait(key, conditionId, originalCaller, threadId);
-        lockStore.unlock(key, originalCaller, threadId);
+        lockStore.lock(key, originalCaller, threadId);
+        ConditionKey conditionKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
+        lockStore.removeSignalKey(conditionKey);
+        lockStore.removeAwait(key, conditionId, originalCaller, threadId);
         response = true;
     }
 

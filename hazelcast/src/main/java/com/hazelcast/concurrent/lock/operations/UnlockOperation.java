@@ -14,18 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.ConditionKey;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
+import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
 public class UnlockOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
 
-    private boolean force = false;
+    private boolean force;
     private boolean shouldNotify;
 
     public UnlockOperation() {
@@ -96,7 +104,8 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
 
     @Override
     public final WaitNotifyKey getNotifiedKey() {
-        final ConditionKey conditionKey = getLockStore().getSignalKey(key);
+        LockStoreImpl lockStore = getLockStore();
+        ConditionKey conditionKey = lockStore.getSignalKey(key);
         if (conditionKey == null) {
             return new LockWaitNotifyKey(namespace, key);
         } else {
