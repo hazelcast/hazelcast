@@ -42,13 +42,21 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         LockWaitNotifyKey that = (LockWaitNotifyKey) o;
 
-        if (!key.equals(that.key)) return false;
-        if (!namespace.equals(that.namespace)) return false;
+        if (!key.equals(that.key)) {
+            return false;
+        }
+        if (!namespace.equals(that.namespace)) {
+            return false;
+        }
 
         return true;
     }
@@ -62,9 +70,9 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
 
     @Override
     public String toString() {
-        return "LockWaitNotifyKey{" +
-                "namespace=" + namespace +
-                ", key=" + key +
-                '}';
+        return "LockWaitNotifyKey{"
+                + "namespace=" + namespace
+                + ", key=" + key
+                + '}';
     }
 }

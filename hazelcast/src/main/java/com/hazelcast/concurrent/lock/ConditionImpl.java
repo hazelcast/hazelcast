@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.concurrent.lock.operations.BeforeAwaitOperation;
 import com.hazelcast.concurrent.lock.operations.SignalOperation;
 import com.hazelcast.core.ICondition;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
@@ -45,8 +46,8 @@ final class ConditionImpl implements ICondition {
     public ConditionImpl(LockProxy lockProxy, String id) {
         this.lockProxy = lockProxy;
         this.partitionId = lockProxy.getPartitionId();
-        this.conditionId = id;
         this.namespace = lockProxy.getNamespace();
+        this.conditionId = id;
     }
 
     @Override
@@ -82,7 +83,8 @@ final class ConditionImpl implements ICondition {
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
         try {
             long timeout = unit.toMillis(time);
-            AwaitOperation op = new AwaitOperation(namespace, lockProxy.key, threadId, timeout, conditionId);
+            Data key = lockProxy.getKeyData();
+            AwaitOperation op = new AwaitOperation(namespace, key, threadId, timeout, conditionId);
             Future f = invoke(op);
             return Boolean.TRUE.equals(f.get());
         } catch (Throwable t) {
@@ -91,7 +93,8 @@ final class ConditionImpl implements ICondition {
     }
 
     private void beforeAwait(long threadId) {
-        BeforeAwaitOperation op = new BeforeAwaitOperation(namespace, lockProxy.key, threadId, conditionId);
+        Data key = lockProxy.getKeyData();
+        BeforeAwaitOperation op = new BeforeAwaitOperation(namespace, key, threadId, conditionId);
         InternalCompletableFuture f = invoke(op);
         f.getSafely();
     }
@@ -113,7 +116,9 @@ final class ConditionImpl implements ICondition {
     }
 
     private void signal(boolean all) {
-        SignalOperation op = new SignalOperation(namespace, lockProxy.key, ThreadUtil.getThreadId(), conditionId, all);
+        long threadId = ThreadUtil.getThreadId();
+        Data key = lockProxy.getKeyData();
+        SignalOperation op = new SignalOperation(namespace, key, threadId, conditionId, all);
         InternalCompletableFuture f = invoke(op);
         f.getSafely();
     }

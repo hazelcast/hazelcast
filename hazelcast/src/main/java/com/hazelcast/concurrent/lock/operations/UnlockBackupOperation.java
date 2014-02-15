@@ -27,7 +27,7 @@ import java.io.IOException;
 
 public class UnlockBackupOperation extends BaseLockOperation implements BackupOperation {
 
-    private boolean force = false;
+    private boolean force;
     private String originalCallerUuid;
 
     public UnlockBackupOperation() {

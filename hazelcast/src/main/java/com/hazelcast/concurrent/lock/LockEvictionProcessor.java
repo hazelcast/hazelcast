@@ -36,10 +36,12 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
-public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
+public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
-    final NodeEngine nodeEngine;
-    final ObjectNamespace namespace;
+    private static final int AWAIT_COMPLETION_TIMEOUT_SECONDS = 30;
+
+    private final NodeEngine nodeEngine;
+    private final ObjectNamespace namespace;
 
     public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
@@ -78,7 +80,7 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
 
         for (Future future : futures) {
             try {
-                future.get(30, TimeUnit.SECONDS);
+                future.get(AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 logger.finest(e);
             } catch (Exception e) {

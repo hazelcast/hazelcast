@@ -36,11 +36,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public final class LockStoreImpl implements DataSerializable, LockStore {
 
-    private transient final ConstructorFunction<Data, LockResourceImpl> lockConstructor = new ConstructorFunction<Data, LockResourceImpl>() {
-        public LockResourceImpl createNew(Data key) {
-            return new LockResourceImpl(key, LockStoreImpl.this);
-        }
-    };
+    private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
+            new ConstructorFunction<Data, LockResourceImpl>() {
+                @Override
+                public LockResourceImpl createNew(Data key) {
+                    return new LockResourceImpl(key, LockStoreImpl.this);
+                }
+            };
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
     private ObjectNamespace namespace;

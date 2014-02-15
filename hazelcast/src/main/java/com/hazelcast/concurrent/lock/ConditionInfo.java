@@ -89,10 +89,9 @@ final class ConditionInfo implements DataSerializable {
     }
 
     private static class ConditionWaiter {
-        final String caller;
-        final long threadId;
-
-        transient boolean started = false;
+        private final String caller;
+        private final long threadId;
+        private transient boolean started;
 
         ConditionWaiter(String caller, long threadId) {
             this.caller = caller;
@@ -101,13 +100,21 @@ final class ConditionInfo implements DataSerializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             ConditionWaiter that = (ConditionWaiter) o;
 
-            if (threadId != that.threadId) return false;
-            if (caller != null ? !caller.equals(that.caller) : that.caller != null) return false;
+            if (threadId != that.threadId) {
+                return false;
+            }
+            if (caller != null ? !caller.equals(that.caller) : that.caller != null) {
+                return false;
+            }
 
             return true;
         }

@@ -33,8 +33,8 @@ public class AwaitOperation extends BaseLockOperation
         implements WaitSupport, BackupAwareOperation {
 
     private String conditionId;
-    private boolean firstRun = false;
-    private boolean expired = false;
+    private boolean firstRun;
+    private boolean expired;
 
     public AwaitOperation() {
     }
@@ -104,7 +104,8 @@ public class AwaitOperation extends BaseLockOperation
         boolean locked = lockStore.lock(key, getCallerUuid(), threadId);
         if (locked) {
             ResponseHandler responseHandler = getResponseHandler();
-            responseHandler.sendResponse(false); // expired & acquired lock, send FALSE
+            // expired & acquired lock, send FALSE
+            responseHandler.sendResponse(false);
         } else {
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);

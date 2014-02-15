@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.lock.client;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.GetLockCountOperation;
 import com.hazelcast.nio.ObjectDataInput;

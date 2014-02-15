@@ -35,11 +35,8 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
         implements Portable, SecureRequest {
 
     protected Data key;
-
     private long threadId;
-
     private long ttl = -1;
-
     private long timeout = -1;
 
     public AbstractLockRequest() {

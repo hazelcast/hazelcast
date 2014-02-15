@@ -38,7 +38,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
     protected long ttl = DEFAULT_LOCK_TTL;
     protected long timeout = -1;
     protected transient Object response;
-    private transient boolean asyncBackup = false;
+    private transient boolean asyncBackup;
 
     public BaseLockOperation() {
     }

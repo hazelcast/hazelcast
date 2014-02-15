@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.concurrent.lock.client.GetLockCountRequest;
-import com.hazelcast.concurrent.lock.client.GetRemainingLeaseRequest;
-import com.hazelcast.concurrent.lock.client.IsLockedRequest;
-import com.hazelcast.concurrent.lock.client.LockRequest;
-import com.hazelcast.concurrent.lock.client.UnlockRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;

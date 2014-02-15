@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;

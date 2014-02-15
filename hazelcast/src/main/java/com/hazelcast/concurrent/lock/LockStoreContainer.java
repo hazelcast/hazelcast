@@ -29,12 +29,13 @@ public final class LockStoreContainer {
 
     private final LockServiceImpl lockService;
     private final int partitionId;
-    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
+    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores =
+            new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor =
             new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
                 public LockStoreImpl createNew(ObjectNamespace namespace) {
                     final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor =
-                            lockService.constructors.get(namespace.getServiceName());
+                            lockService.getConstructor(namespace.getServiceName());
                     if (ctor != null) {
                         LockStoreInfo info = ctor.createNew(namespace);
                         if (info != null) {

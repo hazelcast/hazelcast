@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,10 +32,10 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     private final String name;
     private final LockProxySupport lockSupport;
-    final Data key;
+    private final Data key;
     private final int partitionId;
 
-    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final String name) {
+    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, String name) {
         super(nodeEngine, lockService);
         this.name = name;
         this.key = getNameAsPartitionAwareData();
@@ -121,6 +121,10 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     @Deprecated
     public Object getKey() {
         return getName();
+    }
+
+    public Data getKeyData() {
+        return key;
     }
 
     int getPartitionId() {

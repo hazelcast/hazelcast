@@ -48,16 +48,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
 public final class LockServiceImpl implements ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, LockService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
-    private final ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors
+    private final ConcurrentMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors
             = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
-
-    final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
+    private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
+    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor =
+            new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
+                @Override
+                public EntryTaskScheduler createNew(ObjectNamespace namespace) {
+                    LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
+                    ScheduledExecutorService scheduledExecutor =
+                            nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+                    return EntryTaskSchedulerFactory
+                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+                }
+            };
 
     public LockServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -107,9 +119,19 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
                                              ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
         boolean put = constructors.putIfAbsent(serviceName, constructorFunction) == null;
         if (!put) {
-            throw new IllegalArgumentException("LockStore constructor for service[" + serviceName + "] " +
-                    "is already registered!");
+            throw new IllegalArgumentException("LockStore constructor for service[" + serviceName + "] "
+                    + "is already registered!");
         }
+    }
+
+    /**
+     * Gets the constructor for the given service, or null if the constructor doesn't exist.
+     *
+     * @param serviceName the name of the constructor to look up.
+     * @return the found ConstructorFunction.
+     */
+    ConstructorFunction<ObjectNamespace, LockStoreInfo> getConstructor(String serviceName) {
+        return constructors.get(serviceName);
     }
 
     @Override
@@ -121,28 +143,18 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
 
     @Override
     public void clearLockStore(int partitionId, ObjectNamespace namespace) {
-        final LockStoreContainer container = getLockContainer(partitionId);
+        LockStoreContainer container = getLockContainer(partitionId);
         container.clearLockStore(namespace);
     }
 
-    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor =
-            new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
-                @Override
-                public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-                    LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-                    ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-                    return EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
-                }
-            };
-
     void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
-        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(
+        EntryTaskScheduler scheduler = getOrPutSynchronized(
                 evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.schedule(delay, key, null);
     }
 
     void cancelEviction(ObjectNamespace namespace, Data key) {
-        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(
+        EntryTaskScheduler scheduler = getOrPutSynchronized(
                 evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.cancel(key);
     }
@@ -165,7 +177,6 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         final String uuid = member.getUuid();
         releaseLocksOf(uuid);
     }
-
 
     @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
@@ -217,9 +228,15 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        LockStoreContainer container = containers[event.getPartitionId()];
-        LockReplicationOperation op = new LockReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
-        return op.isEmpty() ? null : op;
+        int partitionId = event.getPartitionId();
+        LockStoreContainer container = containers[partitionId];
+        int replicaIndex = event.getReplicaIndex();
+        LockReplicationOperation op = new LockReplicationOperation(container, partitionId, replicaIndex);
+        if (op.isEmpty()) {
+            return null;
+        } else {
+            return op;
+        }
     }
 
     @Override
@@ -255,7 +272,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
 
     @Override
     public void destroyDistributedObject(String objectId) {
-        final Data key = nodeEngine.getSerializationService().toData(objectId);
+        Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {
             InternalLockNamespace namespace = new InternalLockNamespace(objectId);
             LockStoreImpl lockStore = container.getOrCreateLockStore(namespace);
@@ -267,4 +284,5 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
     public void clientDisconnected(String clientUuid) {
         releaseLocksOf(clientUuid);
     }
+
 }

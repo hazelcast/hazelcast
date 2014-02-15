@@ -33,7 +33,7 @@ import java.io.IOException;
 
 public class UnlockOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
 
-    private boolean force = false;
+    private boolean force;
     private boolean shouldNotify;
 
     public UnlockOperation() {
@@ -105,7 +105,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
     @Override
     public final WaitNotifyKey getNotifiedKey() {
         LockStoreImpl lockStore = getLockStore();
-        final ConditionKey conditionKey = lockStore.getSignalKey(key);
+        ConditionKey conditionKey = lockStore.getSignalKey(key);
         if (conditionKey == null) {
             return new LockWaitNotifyKey(namespace, key);
         } else {
