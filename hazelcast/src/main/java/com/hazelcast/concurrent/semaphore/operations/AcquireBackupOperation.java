@@ -23,8 +23,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 public class AcquireBackupOperation extends SemaphoreBackupOperation
         implements IdentifiedDataSerializable {
 
-    boolean x = false;
-
     public AcquireBackupOperation() {
     }
 

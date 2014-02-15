@@ -14,6 +14,7 @@
     <suppress checks="" files="[\\/]client[\\/]"/>
     <suppress checks="" files="[\\/]cluster[\\/]"/>
     <suppress checks="" files="[\\/]collection[\\/]"/>
+    <suppress checks="" files="[\\/]concurrent.lock[\\/]"/>
     <suppress checks="" files="[\\/]config[\\/]"/>
     <suppress checks="" files="[\\/]core[\\/]"/>
     <suppress checks="" files="[\\/]examples[\\/]"/>
@@ -61,5 +62,9 @@
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
+
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
 
 </suppressions>
