@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,7 +24,7 @@ import java.io.IOException;
 
 public abstract class SemaphoreBackupOperation extends SemaphoreOperation implements BackupOperation {
 
-    String firstCaller;
+    protected String firstCaller;
 
     protected SemaphoreBackupOperation() {
     }

@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -50,8 +53,8 @@ public class SemaphoreReplicationOperation extends AbstractOperation implements 
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Permit> entry : migrationData.entrySet()) {
             String key = entry.getKey();
-            out.writeUTF(key);
             Permit value = entry.getValue();
+            out.writeUTF(key);
             value.writeData(out);
         }
     }

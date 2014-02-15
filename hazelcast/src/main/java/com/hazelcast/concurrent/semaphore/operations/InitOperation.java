@@ -14,24 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.Operation;
 
-public class DeadMemberBackupOperation extends SemaphoreBackupOperation implements IdentifiedDataSerializable{
+public class InitOperation extends SemaphoreBackupAwareOperation implements IdentifiedDataSerializable {
 
-    public DeadMemberBackupOperation() {
+    public InitOperation() {
     }
 
-    public DeadMemberBackupOperation(String name, String firstCaller) {
-        super(name, -1, firstCaller);
+    public InitOperation(String name, int permitCount) {
+        super(name, permitCount);
     }
 
     @Override
     public void run() throws Exception {
         Permit permit = getPermit();
-        permit.memberRemoved(firstCaller);
-        response = true;
+        response = permit.init(permitCount);
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new InitBackupOperation(name, permitCount);
     }
 
     @Override
@@ -41,6 +53,6 @@ public class DeadMemberBackupOperation extends SemaphoreBackupOperation implemen
 
     @Override
     public int getId() {
-        return SemaphoreDataSerializerHook.DEAD_MEMBER_BACKUP_OPERATION;
+        return SemaphoreDataSerializerHook.INIT_OPERATION;
     }
 }

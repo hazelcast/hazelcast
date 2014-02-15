@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.concurrent.semaphore.AcquireOperation;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
+import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
@@ -52,7 +51,7 @@ public class AcquireRequest extends SemaphoreRequest {
     @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeLong("t",timeout);
+        writer.writeLong("t", timeout);
     }
 
     @Override

@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.concurrent.semaphore.ReduceOperation;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
+import com.hazelcast.concurrent.semaphore.operations.ReduceOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;

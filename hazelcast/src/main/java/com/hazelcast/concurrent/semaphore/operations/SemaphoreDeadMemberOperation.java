@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,9 +28,10 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier, IdentifiedDataSerializable {
+public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
+        implements Notifier, IdentifiedDataSerializable {
 
-    String firstCaller;
+    private String firstCaller;
 
     public SemaphoreDeadMemberOperation() {
     }
