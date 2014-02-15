@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.Permit;
 import com.hazelcast.spi.BackupAwareOperation;
 
 public abstract class SemaphoreBackupAwareOperation extends SemaphoreOperation implements BackupAwareOperation {

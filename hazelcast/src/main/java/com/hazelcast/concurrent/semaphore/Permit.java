@@ -142,7 +142,7 @@ public class Permit implements DataSerializable {
         return asyncBackupCount;
     }
 
-    protected void setInitialized() {
+    public void setInitialized() {
         this.initialized = true;
     }
 

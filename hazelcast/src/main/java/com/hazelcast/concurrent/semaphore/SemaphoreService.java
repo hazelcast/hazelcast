@@ -16,6 +16,8 @@
 
 package com.hazelcast.concurrent.semaphore;
 
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;

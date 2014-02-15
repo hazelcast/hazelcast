@@ -14,34 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
 
-public class DrainOperation extends SemaphoreBackupAwareOperation implements IdentifiedDataSerializable{
+public class AvailableOperation extends SemaphoreOperation implements IdentifiedDataSerializable {
 
-    public DrainOperation() {
+    public AvailableOperation() {
     }
 
-    public DrainOperation(String name) {
+    public AvailableOperation(String name) {
         super(name, -1);
     }
 
     @Override
     public void run() throws Exception {
-        Permit permit = getPermit();
-        response = permit.drain(getCallerUuid());
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return !response.equals(0);
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new DrainBackupOperation(name, permitCount, getCallerUuid());
+        response = getPermit().getAvailable();
     }
 
     @Override
@@ -51,6 +40,6 @@ public class DrainOperation extends SemaphoreBackupAwareOperation implements Ide
 
     @Override
     public int getId() {
-        return SemaphoreDataSerializerHook.DRAIN_OPERATION;
+        return SemaphoreDataSerializerHook.AVAILABLE_OPERATION;
     }
 }

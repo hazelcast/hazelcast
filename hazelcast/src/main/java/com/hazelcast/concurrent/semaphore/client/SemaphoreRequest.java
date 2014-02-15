@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.semaphore.client;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -66,8 +65,8 @@ public abstract class SemaphoreRequest extends PartitionClientRequest
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeInt("p",permitCount);
+        writer.writeUTF("n", name);
+        writer.writeInt("p", permitCount);
     }
 
     @Override

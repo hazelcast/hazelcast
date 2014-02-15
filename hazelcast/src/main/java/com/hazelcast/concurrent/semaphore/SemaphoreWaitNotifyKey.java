@@ -23,20 +23,28 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 
     private final String type;
 
-    protected SemaphoreWaitNotifyKey(String name, String type) {
+    public SemaphoreWaitNotifyKey(String name, String type) {
         super(SemaphoreService.SERVICE_NAME, name);
-        this.type = ValidationUtil.isNotNull(type,"type");
+        this.type = ValidationUtil.isNotNull(type, "type");
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SemaphoreWaitNotifyKey)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SemaphoreWaitNotifyKey)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         SemaphoreWaitNotifyKey that = (SemaphoreWaitNotifyKey) o;
 
-        if (!type.equals(that.type))return false;
+        if (!type.equals(that.type)) {
+            return false;
+        }
 
         return true;
     }
@@ -44,7 +52,7 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result +type.hashCode();
+        result = 31 * result + type.hashCode();
         return result;
     }
 }

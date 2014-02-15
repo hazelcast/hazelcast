@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.concurrent.semaphore.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
 public class SemaphorePortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY, -16);
-    public static final int ACQUIRE = 1;
-    public static final int AVAILABLE = 2;
-    public static final int DRAIN = 3;
-    public static final int INIT = 4;
-    public static final int REDUCE = 5;
-    public static final int RELEASE = 6;
+    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY, -16);
+    static final int ACQUIRE = 1;
+    static final int AVAILABLE = 2;
+    static final int DRAIN = 3;
+    static final int INIT = 4;
+    static final int REDUCE = 5;
+    static final int RELEASE = 6;
 
     @Override
     public int getFactoryId() {
@@ -38,10 +41,10 @@ public class SemaphorePortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        return new PortableFactory(){
+        return new PortableFactory() {
             @Override
             public Portable create(int classId) {
-                switch (classId){
+                switch (classId) {
                     case ACQUIRE:
                         return new AcquireRequest();
                     case AVAILABLE:
@@ -54,8 +57,9 @@ public class SemaphorePortableHook implements PortableHook {
                         return new ReduceRequest();
                     case RELEASE:
                         return new ReleaseRequest();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

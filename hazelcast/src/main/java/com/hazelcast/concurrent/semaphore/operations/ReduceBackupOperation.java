@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class ReduceBackupOperation extends SemaphoreBackupOperation implements IdentifiedDataSerializable {

@@ -16,6 +16,12 @@
 
 package com.hazelcast.concurrent.semaphore;
 
+import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
+import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
+import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
+import com.hazelcast.concurrent.semaphore.operations.InitOperation;
+import com.hazelcast.concurrent.semaphore.operations.ReduceOperation;
+import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;

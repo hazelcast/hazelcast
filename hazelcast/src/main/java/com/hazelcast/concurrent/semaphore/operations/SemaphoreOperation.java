@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -23,10 +25,11 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
-public abstract class SemaphoreOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public abstract class SemaphoreOperation extends AbstractNamedOperation
+        implements PartitionAwareOperation {
 
-    int permitCount;
-    transient Object response;
+    protected int permitCount;
+    protected transient Object response;
 
     protected SemaphoreOperation() {
     }
@@ -41,7 +44,7 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation implemen
         return response;
     }
 
-    public Permit getPermit(){
+    public Permit getPermit() {
         SemaphoreService service = getService();
         return service.getOrCreatePermit(name);
     }
