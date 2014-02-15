@@ -301,28 +301,40 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         out.writeLong(acquireTime);
         out.writeBoolean(transactional);
 
-        int len = conditions == null ? 0 : conditions.size();
-        out.writeInt(len);
-        if (len > 0) {
+        int conditionCount = getConditionCount();
+        out.writeInt(conditionCount);
+        if (conditionCount > 0) {
             for (ConditionInfo condition : conditions.values()) {
                 condition.writeData(out);
             }
         }
-        len = signalKeys == null ? 0 : signalKeys.size();
-        out.writeInt(len);
-        if (len > 0) {
+        int signalCount = getSignalCount();
+        out.writeInt(signalCount);
+        if (signalCount > 0) {
             for (ConditionKey signalKey : signalKeys) {
                 out.writeUTF(signalKey.getObjectName());
                 out.writeUTF(signalKey.getConditionId());
             }
         }
-        len = expiredAwaitOps == null ? 0 : expiredAwaitOps.size();
-        out.writeInt(len);
-        if (len > 0) {
+        int expiredAwaitOpsCount = getExpiredAwaitsOpsCount();
+        out.writeInt(expiredAwaitOpsCount);
+        if (expiredAwaitOpsCount > 0) {
             for (AwaitOperation op : expiredAwaitOps) {
                 op.writeData(out);
             }
         }
+    }
+
+    private int getExpiredAwaitsOpsCount() {
+        return expiredAwaitOps == null ? 0 : expiredAwaitOps.size();
+    }
+
+    private int getSignalCount() {
+        return signalKeys == null ? 0 : signalKeys.size();
+    }
+
+    private int getConditionCount() {
+        return conditions == null ? 0 : conditions.size();
     }
 
     @Override

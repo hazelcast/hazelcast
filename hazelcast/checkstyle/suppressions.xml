@@ -47,13 +47,19 @@
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
-    <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
-    <suppress checks="JavadocType" files="[\\/]"/>
-    <suppress checks="JavadocMethod" files="[\\/]"/>
-    <suppress checks="JavadocVariable" files="[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.concurrent[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.concurrent[\\/]"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.mapreduce[\\/]"/>
 
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
+    <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
 
 </suppressions>

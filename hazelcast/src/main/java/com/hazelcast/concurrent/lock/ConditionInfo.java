@@ -60,7 +60,13 @@ final class ConditionInfo implements DataSerializable {
         if (waiter == null) {
             throw new IllegalStateException();
         }
-        return !waiter.started && (waiter.started = true);
+
+        if (waiter.started) {
+            return false;
+        } else {
+            waiter.started = true;
+            return true;
+        }
     }
 
     @Override

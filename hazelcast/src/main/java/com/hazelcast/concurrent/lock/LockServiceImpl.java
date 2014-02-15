@@ -35,7 +35,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -50,8 +49,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public final class LockServiceImpl implements ManagedService, RemoteService, MembershipAwareService,
-        MigrationAwareService, LockService, ClientAwareService {
+public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
+        MigrationAwareService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
