@@ -8,13 +8,8 @@ com.hazelcast.multimap.MultiMapPortableHook
 com.hazelcast.collection.CollectionPortableHook
 com.hazelcast.executor.ExecutorPortableHook
 com.hazelcast.topic.TopicPortableHook
-<<<<<<< HEAD
 com.hazelcast.concurrent.lock.client.LockPortableHook
-com.hazelcast.concurrent.semaphore.SemaphorePortableHook
-=======
-com.hazelcast.concurrent.lock.LockPortableHook
 com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook
->>>>>>> Initial work on making semaphore module checkstyle compliant
 com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook
 com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook
 com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook
