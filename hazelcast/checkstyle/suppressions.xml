@@ -46,13 +46,14 @@
     <!--Exclude Clover instrumented sources-->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
 
+
+    <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
+
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.concurrent[\\/]"/>
-
-    <suppress checks="JavadocMethod" files="com.hazelcast.mapreduce[\\/]"/>
 
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
