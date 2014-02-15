@@ -30,6 +30,7 @@ public class LockPortableHook implements PortableHook {
     public static final int IS_LOCKED = 3;
     public static final int GET_LOCK_COUNT = 5;
     public static final int GET_REMAINING_LEASE = 6;
+    public static final int GET_LOCK_OWNER = 7;
 
     @Override
     public int getFactoryId() {
@@ -51,6 +52,8 @@ public class LockPortableHook implements PortableHook {
                         return new GetLockCountRequest();
                     case GET_REMAINING_LEASE:
                         return new GetRemainingLeaseRequest();
+                    case GET_LOCK_OWNER:
+                        return new GetLockOwnerRequest();
                 }
                 return null;
             }

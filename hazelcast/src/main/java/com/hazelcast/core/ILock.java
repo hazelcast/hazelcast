@@ -126,4 +126,11 @@ public interface ILock extends Lock, DistributedObject {
      */
     long getRemainingLeaseTime();
 
+    /**
+     * Returns textual description of lock owner.
+     *
+     * @return textual description of lock owner, {@code} null if the lock is not being held by any thread
+     */
+    String getLockOwner();
+
 }

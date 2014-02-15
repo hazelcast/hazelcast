@@ -114,6 +114,19 @@ public final class LockProxySupport {
         f.getSafely();
     }
 
+    public String getLockOwner(NodeEngine nodeEngine, Data key) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        Operation operation = new GetLockOwnerOperation(namespace, key);
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
+            return (String) future.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
     public ObjectNamespace getNamespace() {
         return namespace;
     }
