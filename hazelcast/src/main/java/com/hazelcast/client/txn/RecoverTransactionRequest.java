@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.transaction.impl.SerializableXid;
+import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
@@ -34,12 +34,12 @@ public class RecoverTransactionRequest extends CallableClientRequest implements 
 
     boolean commit;
 
-    SerializableXid sXid;
+    SerializableXID sXid;
 
     public RecoverTransactionRequest() {
     }
 
-    public RecoverTransactionRequest(SerializableXid sXid, boolean commit) {
+    public RecoverTransactionRequest(SerializableXID sXid, boolean commit) {
         this.sXid = sXid;
         this.commit = commit;
     }
@@ -74,7 +74,7 @@ public class RecoverTransactionRequest extends CallableClientRequest implements 
     public void readPortable(PortableReader reader) throws IOException {
         commit = reader.readBoolean("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        sXid = new SerializableXid();
+        sXid = new SerializableXID();
         sXid.readData(in);
 
 

@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.SerializableXid;
+import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionAccessor;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -41,12 +41,12 @@ public class CreateTransactionRequest extends TransactionRequest implements Secu
 
     TransactionOptions options;
 
-    SerializableXid sXid;
+    SerializableXID sXid;
 
     public CreateTransactionRequest() {
     }
 
-    public CreateTransactionRequest(TransactionOptions options, int clientThreadId, SerializableXid sXid) {
+    public CreateTransactionRequest(TransactionOptions options, int clientThreadId, SerializableXID sXid) {
         super(clientThreadId);
         this.options = options;
         this.sXid = sXid;

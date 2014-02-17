@@ -54,7 +54,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private State state = NO_TXN;
     private long startTime = 0L;
     private Address[] backupAddresses;
-    private SerializableXid xid = null;
+    private SerializableXID xid = null;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
@@ -84,11 +84,11 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.checkThreadAccess = false;
     }
 
-    public void setXid(SerializableXid xid){
+    public void setXid(SerializableXID xid){
         this.xid = xid;
     }
 
-    public SerializableXid getXid() {
+    public SerializableXID getXid() {
         return xid;
     }
 
