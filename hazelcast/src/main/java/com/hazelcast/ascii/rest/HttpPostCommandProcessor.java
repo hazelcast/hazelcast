@@ -110,7 +110,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         String key = uri.substring(indexEnd + 1);
         byte[] data = command.getData();
-        textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), 0);
+        textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
         command.setResponse(HttpCommand.RES_204);
     }
 
