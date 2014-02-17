@@ -233,7 +233,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         final List<TransactionLog> txLogs = txnImpl.getTxLogs();
         final long timeoutMillis = txnImpl.getTimeoutMillis();
         final long startTime = txnImpl.getStartTime();
-        TxBackupLog log = new TxBackupLog(txLogs, callerUuid, State.NO_TXN, timeoutMillis, startTime, xid);
+        TxBackupLog log = new TxBackupLog(txLogs, callerUuid, State.COMMITTING, timeoutMillis, startTime, xid);
         txBackupLogs.put(txnImpl.getTxnId(), log);
     }
 

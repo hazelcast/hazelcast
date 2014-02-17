@@ -125,7 +125,7 @@ public class ClientTransactionManager {
             }
             final RecoverAllTransactionsRequest request = new RecoverAllTransactionsRequest();
             final ICompletableFuture<SerializableCollection> future = invocationService.send(request, connection);
-            final SerializableCollection collectionWrapper = future.get();
+            final SerializableCollection collectionWrapper = serializationService.toObject(future.get());
 
             for (Data data : collectionWrapper) {
                 final SerializableXID xid = serializationService.toObject(data);
@@ -150,7 +150,8 @@ public class ClientTransactionManager {
         final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         final RecoverTransactionRequest request = new RecoverTransactionRequest(sXid, commit);
         try {
-            invocationService.send(request, connection);
+            final ICompletableFuture future = invocationService.send(request, connection);
+            future.get();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
         }
