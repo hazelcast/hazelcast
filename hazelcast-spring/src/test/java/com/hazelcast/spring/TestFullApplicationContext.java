@@ -155,6 +155,7 @@ public class TestFullApplicationContext {
         assertEquals("com.hazelcast.spring.DummyStore", testMapStoreConfig.getClassName());
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
+        assertEquals(MapStoreConfig.InitialLoadMode.EAGER,testMapStoreConfig.getInitialLoadMode());
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
         assertNotNull(testNearCacheConfig);
@@ -167,6 +168,7 @@ public class TestFullApplicationContext {
         MapConfig testMapConfig2 = config.getMapConfig("testMap2");
         assertNotNull(testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
+        assertEquals(MapStoreConfig.InitialLoadMode.LAZY, testMapConfig2.getMapStoreConfig().getInitialLoadMode());
         assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
 //        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
