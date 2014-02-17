@@ -27,7 +27,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.impl.SerializableXid;
+import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.transaction.xa.Xid;
@@ -42,8 +42,8 @@ public class ClientTransactionManager {
 
     final HazelcastClient client;
 
-    final ConcurrentMap<SerializableXid, TransactionProxy> managedTransactions = new ConcurrentHashMap<SerializableXid, TransactionProxy>();
-    final ConcurrentMap<SerializableXid, ClientConnection> recoveredTransactions = new ConcurrentHashMap<SerializableXid, ClientConnection>();
+    final ConcurrentMap<SerializableXID, TransactionProxy> managedTransactions = new ConcurrentHashMap<SerializableXID, TransactionProxy>();
+    final ConcurrentMap<SerializableXID, ClientConnection> recoveredTransactions = new ConcurrentHashMap<SerializableXID, ClientConnection>();
 
     public ClientTransactionManager(HazelcastClient client) {
         this.client = client;
@@ -88,20 +88,20 @@ public class ClientTransactionManager {
     }
 
     public void addManagedTransaction(Xid xid, TransactionProxy transaction) {
-        final SerializableXid sXid = new SerializableXid(xid.getFormatId(),
+        final SerializableXID sXid = new SerializableXID(xid.getFormatId(),
                 xid.getGlobalTransactionId(), xid.getBranchQualifier());
         transaction.setXid(sXid);
         managedTransactions.put(sXid, transaction);
     }
 
     public TransactionProxy getManagedTransaction(Xid xid) {
-        final SerializableXid sXid = new SerializableXid(xid.getFormatId(),
+        final SerializableXID sXid = new SerializableXID(xid.getFormatId(),
                 xid.getGlobalTransactionId(), xid.getBranchQualifier());
         return managedTransactions.get(sXid);
     }
 
     public void removeManagedTransaction(Xid xid) {
-        final SerializableXid sXid = new SerializableXid(xid.getFormatId(),
+        final SerializableXID sXid = new SerializableXID(xid.getFormatId(),
                 xid.getGlobalTransactionId(), xid.getBranchQualifier());
         managedTransactions.remove(sXid);
     }
@@ -128,11 +128,11 @@ public class ClientTransactionManager {
             final SerializableCollection collectionWrapper = future.get();
 
             for (Data data : collectionWrapper) {
-                final SerializableXid xid = serializationService.toObject(data);
+                final SerializableXID xid = serializationService.toObject(data);
                 recoveredTransactions.put(xid, connection);
             }
 
-            final Set<SerializableXid> xidSet = recoveredTransactions.keySet();
+            final Set<SerializableXID> xidSet = recoveredTransactions.keySet();
             return xidSet.toArray(new Xid[xidSet.size()]);
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
@@ -141,7 +141,7 @@ public class ClientTransactionManager {
     }
 
     public boolean recover(Xid xid, boolean commit) {
-        final SerializableXid sXid = new SerializableXid(xid.getFormatId(),
+        final SerializableXID sXid = new SerializableXID(xid.getFormatId(),
                 xid.getGlobalTransactionId(), xid.getBranchQualifier());
         final ClientConnection connection = recoveredTransactions.remove(sXid);
         if (connection == null) {

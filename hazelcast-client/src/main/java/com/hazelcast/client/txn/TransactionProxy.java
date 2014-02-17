@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.SerializableXid;
+import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -45,7 +45,7 @@ final class TransactionProxy {
     private final long threadId = Thread.currentThread().getId();
     private final ClientConnection connection;
 
-    private SerializableXid sXid;
+    private SerializableXID sXid;
     private String txnId;
     private State state = NO_TXN;
     private long startTime = 0L;
@@ -143,11 +143,11 @@ final class TransactionProxy {
         }
     }
 
-    SerializableXid getXid() {
+    SerializableXID getXid() {
         return sXid;
     }
 
-    void setXid(SerializableXid xid) {
+    void setXid(SerializableXID xid) {
         this.sXid = xid;
     }
 

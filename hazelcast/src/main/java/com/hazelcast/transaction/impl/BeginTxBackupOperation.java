@@ -32,12 +32,12 @@ public final class BeginTxBackupOperation extends Operation {
 
     private String callerUuid;
     private String txnId;
-    private SerializableXid xid;
+    private SerializableXID xid;
 
     public BeginTxBackupOperation() {
     }
 
-    public BeginTxBackupOperation(String callerUuid, String txnId, SerializableXid xid) {
+    public BeginTxBackupOperation(String callerUuid, String txnId, SerializableXID xid) {
         this.callerUuid = callerUuid;
         this.txnId = txnId;
         this.xid = xid;

@@ -30,7 +30,7 @@ import java.util.List;
 public class RecoveredTransaction implements DataSerializable {
 
     private List<TransactionLog> txLogs;
-    private SerializableXid xid;
+    private SerializableXID xid;
     private String callerUuid;
     private String txnId;
     private long timeoutMillis;
@@ -47,11 +47,11 @@ public class RecoveredTransaction implements DataSerializable {
         this.txLogs = txLogs;
     }
 
-    public SerializableXid getXid() {
+    public SerializableXID getXid() {
         return xid;
     }
 
-    public void setXid(SerializableXid xid) {
+    public void setXid(SerializableXID xid) {
         this.xid = xid;
     }
 

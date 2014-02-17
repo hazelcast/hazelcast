@@ -50,10 +50,10 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     private final ILogger logger;
 
     private final ConcurrentMap<String, TxBackupLog> txBackupLogs = new ConcurrentHashMap<String, TxBackupLog>();
-    private final ConcurrentMap<SerializableXid, Transaction>
-            managedTransactions = new ConcurrentHashMap<SerializableXid, Transaction>();
-    private final ConcurrentMap<SerializableXid, RecoveredTransaction>
-            clientRecoveredTransactions = new ConcurrentHashMap<SerializableXid, RecoveredTransaction>();
+    private final ConcurrentMap<SerializableXID, Transaction>
+            managedTransactions = new ConcurrentHashMap<SerializableXID, Transaction>();
+    private final ConcurrentMap<SerializableXID, RecoveredTransaction>
+            clientRecoveredTransactions = new ConcurrentHashMap<SerializableXID, RecoveredTransaction>();
 
     public TransactionManagerServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -111,7 +111,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         clientRecoveredTransactions.put(rt.getXid(), rt);
     }
 
-    public void recoverClientTransaction(SerializableXid sXid, boolean commit) {
+    public void recoverClientTransaction(SerializableXID sXid, boolean commit) {
         final RecoveredTransaction rt = clientRecoveredTransactions.remove(sXid);
         if (rt == null) {
             return;
@@ -144,20 +144,20 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public void addManagedTransaction(Xid xid, Transaction transaction) {
-        final SerializableXid sXid = new SerializableXid(xid.getFormatId(),
+        final SerializableXID sXid = new SerializableXID(xid.getFormatId(),
                 xid.getGlobalTransactionId(), xid.getBranchQualifier());
         ((TransactionImpl) transaction).setXid(sXid);
         managedTransactions.put(sXid, transaction);
     }
 
     public Transaction getManagedTransaction(Xid xid) {
-        final SerializableXid sXid = new SerializableXid(xid.getFormatId(),
+        final SerializableXID sXid = new SerializableXID(xid.getFormatId(),
                 xid.getGlobalTransactionId(), xid.getBranchQualifier());
         return managedTransactions.get(sXid);
     }
 
     public void removeManagedTransaction(Xid xid) {
-        final SerializableXid sXid = new SerializableXid(xid.getFormatId(),
+        final SerializableXID sXid = new SerializableXID(xid.getFormatId(),
                 xid.getGlobalTransactionId(), xid.getBranchQualifier());
         managedTransactions.remove(sXid);
     }
@@ -229,7 +229,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     public void addTxBackupLogForClientRecovery(Transaction transaction) {
         TransactionImpl txnImpl = (TransactionImpl) transaction;
         final String callerUuid = txnImpl.getOwnerUuid();
-        final SerializableXid xid = txnImpl.getXid();
+        final SerializableXID xid = txnImpl.getXid();
         final List<TransactionLog> txLogs = txnImpl.getTxLogs();
         final long timeoutMillis = txnImpl.getTimeoutMillis();
         final long startTime = txnImpl.getStartTime();
@@ -237,7 +237,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         txBackupLogs.put(txnImpl.getTxnId(), log);
     }
 
-    void beginTxBackupLog(String callerUuid, String txnId, SerializableXid xid) {
+    void beginTxBackupLog(String callerUuid, String txnId, SerializableXID xid) {
         TxBackupLog log = new TxBackupLog(Collections.<TransactionLog>emptyList(), callerUuid, State.ACTIVE, -1, -1, xid);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
@@ -283,13 +283,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                     new RecoverTxnOperation(), member.getAddress()).invoke();
             futures.add(f);
         }
-        Set<SerializableXid> xidSet = new HashSet<SerializableXid>();
+        Set<SerializableXID> xidSet = new HashSet<SerializableXID>();
         for (Future<SerializableCollection> future : futures) {
             try {
                 final SerializableCollection collectionWrapper = future.get(RECOVER_TIMEOUT, TimeUnit.MILLISECONDS);
                 for (Data data : collectionWrapper) {
                     final RecoveredTransaction rt = (RecoveredTransaction) nodeEngine.toObject(data);
-                    final SerializableXid xid = rt.getXid();
+                    final SerializableXID xid = rt.getXid();
                     TransactionImpl tx = new TransactionImpl(this, nodeEngine, rt.getTxnId(), rt.getTxLogs(),
                             rt.getTimeoutMillis(), rt.getStartTime(), rt.getCallerUuid());
                     tx.setXid(xid);
@@ -346,12 +346,12 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         private final String callerUuid;
         private final long timeoutMillis;
         private final long startTime;
-        private final SerializableXid xid;
+        private final SerializableXID xid;
 
 
         private volatile State state;
 
-        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, State state, long timeoutMillis, long startTime, SerializableXid xid) {
+        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, State state, long timeoutMillis, long startTime, SerializableXID xid) {
             this.txLogs = txLogs;
             this.callerUuid = callerUuid;
             this.state = state;

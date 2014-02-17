@@ -27,16 +27,16 @@ import java.util.Arrays;
 /**
  * @author ali 13/02/14
  */
-public class SerializableXid implements Xid, DataSerializable {
+public class SerializableXID implements Xid, DataSerializable {
 
     int formatId;
     byte[] globalTransactionId;
     byte[] branchQualifier;
 
-    public SerializableXid() {
+    public SerializableXID() {
     }
 
-    public SerializableXid(int formatId, byte[] globalTransactionId, byte[] branchQualifier) {
+    public SerializableXID(int formatId, byte[] globalTransactionId, byte[] branchQualifier) {
         this.formatId = formatId;
         this.globalTransactionId = globalTransactionId;
         this.branchQualifier = branchQualifier;
