@@ -25,13 +25,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SimpleQueueTest {
-    public static final int VALUE_SIZE = 1000;
-    public static final int STATS_SECONDS = 10;
+/**
+ * A simple queue test
+ */
+public final class SimpleQueueTest {
+
+    private static final int VALUE_SIZE = 1000;
+    private static final int STATS_SECONDS = 10;
 
     private SimpleQueueTest() {
     }
 
+    /**
+     * Creates a cluster and exercises a queue until stopped
+     * @param args none
+     */
     public static void main(String[] args) {
         int threadCount = 5;
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(null);
@@ -56,6 +64,7 @@ public class SimpleQueueTest {
                 }
             });
         }
+
         Executors.newSingleThreadExecutor().submit(new Runnable() {
             @SuppressWarnings("BusyWait")
             public void run() {
@@ -76,9 +85,13 @@ public class SimpleQueueTest {
         });
     }
 
+    /**
+     * A basic statistics class
+     */
     public static class Stats {
-        public AtomicLong offers = new AtomicLong();
-        public AtomicLong polls = new AtomicLong();
+
+        private AtomicLong offers = new AtomicLong();
+        private AtomicLong polls = new AtomicLong();
 
         public Stats getAndReset() {
             long offersNow = offers.getAndSet(0);

@@ -16,6 +16,11 @@
 
 package com.hazelcast.examples;
 
+/**
+ * Reads a line of input
+ */
 public interface LineReader {
+
     String readLine() throws Exception;
+
 }

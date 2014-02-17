@@ -80,10 +80,10 @@
 
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
-     <module name="Header">
-       <property name="headerFile" value="${basedir}/checkstyle/ClassHeader.txt"/>
-       <property name="fileExtensions" value="java"/>
-     </module>
+     <!--<module name="Header">-->
+       <!--<property name="headerFile" value="${basedir}/checkstyle/ClassHeader.txt"/>-->
+       <!--<property name="fileExtensions" value="java"/>-->
+     <!--</module>-->
 
     <module name="TreeWalker">
         <!-- Activate comment suppression filters -->
@@ -94,7 +94,10 @@
         <!-- All types should have JavaDoc -->
         <module name="JavadocType"/>
         <!-- Only some methods, on public APIs we agreed to JavaDoc. TODO figure out how to do that -->
-        <module name="JavadocMethod"/>
+        <!--<module name="JavadocMethod">-->
+            <!--<property name="scope" value="public"/>-->
+            <!--<property name="allowMissingParamTags" value="true"/>-->
+        <!--</module>-->
 
         <module name="JavadocVariable">
             <property name="scope" value="public"/>
@@ -159,7 +162,7 @@
             <property name="tokens" value="CTOR_DEF"/>
         </module>
         <module name="AnonInnerLength">
-            <property name="max" value="25"/>
+            <property name="max" value="30"/>
         </module>
         <module name="ExecutableStatementCount">
             <property name="max" value="20"/>
@@ -215,9 +218,9 @@
         <module name="FallThrough"/>
         <module name="MultipleVariableDeclarations"/>
         <module name="EmptyStatement"/>
-        <module name="HiddenField">
-            <property name="tokens" value="VARIABLE_DEF"/>
-        </module>
+        <!--<module name="HiddenField">-->
+            <!--<property name="tokens" value="VARIABLE_DEF"/>-->
+        <!--</module>-->
         <module name="IllegalInstantiation">
             <property name="classes" value="java.lang.Boolean"/>
         </module>

@@ -18,9 +18,13 @@ package com.hazelcast.examples;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.*;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
+import com.hazelcast.logging.ILogger;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -28,9 +32,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
-public class SimpleMapTest {
+/**
+ * A simple test of a map.
+ */
+public final class SimpleMapTest {
 
     private static final String NAMESPACE = "default";
     private static final long STATS_SECONDS = 10;
@@ -52,8 +58,8 @@ public class SimpleMapTest {
         System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
-    public SimpleMapTest(final int threadCount, final int entryCount, final int valueSize,
-                         final int getPercentage, final int putPercentage, final boolean load) {
+    private SimpleMapTest(final int threadCount, final int entryCount, final int valueSize,
+                          final int getPercentage, final int putPercentage, final boolean load) {
         this.threadCount = threadCount;
         this.entryCount = entryCount;
         this.valueSize = valueSize;
@@ -67,6 +73,12 @@ public class SimpleMapTest {
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
     }
 
+    /**
+     *
+     * Expects the Management Center to be running.
+     * @param input
+     * @throws InterruptedException
+     */
     public static void main(String[] input) throws InterruptedException {
         int threadCount = 40;
         int entryCount = 10 * 1000;
@@ -130,7 +142,8 @@ public class SimpleMapTest {
                                 stats.removes.incrementAndGet();
                             }
                         }
-                    } catch (HazelcastInstanceNotActiveException ignored) {
+                    } catch (HazelcastInstanceNotActiveException e) {
+                        e.printStackTrace();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -144,7 +157,9 @@ public class SimpleMapTest {
     }
 
     private void load(ExecutorService es) throws InterruptedException {
-        if (!load) return;
+        if (!load) {
+            return;
+        }
 
         final IMap<String, Object> map = instance.getMap(NAMESPACE);
         final Member thisMember = instance.getCluster().getLocalMember();
@@ -169,7 +184,7 @@ public class SimpleMapTest {
     }
 
     private void startPrintStats() {
-        new Thread() {
+        Thread t = new Thread() {
             {
                 setDaemon(true);
                 setName("PrintStats." + instance.getName());
@@ -185,13 +200,18 @@ public class SimpleMapTest {
                     }
                 }
             }
-        }.start();
+        };
+        t.start();
     }
 
+    /**
+     * A basic statistics class
+     */
     private class Stats {
-        public AtomicLong gets = new AtomicLong();
-        public AtomicLong puts = new AtomicLong();
-        public AtomicLong removes = new AtomicLong();
+
+        private AtomicLong gets = new AtomicLong();
+        private AtomicLong puts = new AtomicLong();
+        private AtomicLong removes = new AtomicLong();
 
         public void printAndReset() {
             long getsNow = gets.getAndSet(0);

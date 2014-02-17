@@ -25,23 +25,26 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * A long running test
+ */
 public class LongRunningTest {
 
     private static final int STATS_SECONDS = 10;
-    private static final Logger logger = Logger.getLogger(LongRunningTest.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LongRunningTest.class.getName());
 
     private final List<TheNode> nodes = new CopyOnWriteArrayList<TheNode>();
-    private int nodeIdGen = 0;
-    private int starts, stops, restarts = 0;
+    private int nodeIdGen;
+    private int starts;
+    private int stops;
+    private int restarts;
     private int maxNodeSize = 4;
     private int minNodeSize = 2;
     private int nextActionMin = 90;
@@ -101,6 +104,8 @@ public class LongRunningTest {
                     case 2:
                         restartNode();
                         break;
+                    default:
+                        //noop
                 }
             }
             try {
@@ -115,7 +120,7 @@ public class LongRunningTest {
     }
 
     void log(Object obj) {
-        logger.info(obj.toString());
+        LOGGER.info(obj.toString());
     }
 
     void addNode() {
@@ -137,6 +142,7 @@ public class LongRunningTest {
         try {
             Thread.sleep(random(10) * 1000);
         } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
         addNode();
     }
@@ -157,6 +163,9 @@ public class LongRunningTest {
         return (int) (diff * Math.random() + from);
     }
 
+    /**
+     * A NodeEngine instance
+     */
     class TheNode {
         final int entryCount;
         final int threadCount;
@@ -213,8 +222,9 @@ public class LongRunningTest {
                                     stats.mapRemoves.incrementAndGet();
                                 }
                             } catch (HazelcastInstanceNotActiveException ignored) {
+                                throw new RuntimeException(ignored);
                             } catch (Throwable e) {
-                                e.printStackTrace();
+                                throw new RuntimeException(e);
                             }
                         }
                     }
@@ -230,9 +240,10 @@ public class LongRunningTest {
                             Stats currentStats = stats.getAndReset();
                             logger.info("Cluster size: " + clusterSize + ", Operations per Second: "
                                     + (currentStats.total() / STATS_SECONDS));
-                        } catch (HazelcastInstanceNotActiveException ignored) {
+                        } catch (HazelcastInstanceNotActiveException e) {
+                            throw new RuntimeException(e);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            throw new RuntimeException(e);
                         }
                     }
                 }
@@ -241,21 +252,24 @@ public class LongRunningTest {
 
         @Override
         public String toString() {
-            return "TheNode{" +
-                    "nodeId=" + nodeId +
-                    ", entryCount=" + entryCount +
-                    ", threadCount=" + threadCount +
-                    ", valueSize=" + valueSize +
-                    ", liveSeconds=" + ((System.currentTimeMillis() - createTime) / 1000) +
-                    ", running=" + running +
-                    '}';
+            return "TheNode{"
+                    + "nodeId=" + nodeId
+                    + ", entryCount=" + entryCount
+                    + ", threadCount=" + threadCount
+                    + ", valueSize=" + valueSize
+                    + ", liveSeconds=" + ((System.currentTimeMillis() - createTime) / 1000)
+                    + ", running=" + running + '}';
         }
     }
 
+    /**
+     * Basic statistics value object
+     */
     class Stats {
-        public AtomicLong mapPuts = new AtomicLong();
-        public AtomicLong mapGets = new AtomicLong();
-        public AtomicLong mapRemoves = new AtomicLong();
+
+        private AtomicLong mapPuts = new AtomicLong();
+        private AtomicLong mapGets = new AtomicLong();
+        private AtomicLong mapRemoves = new AtomicLong();
 
         public Stats getAndReset() {
             long mapPutsNow = mapPuts.getAndSet(0);

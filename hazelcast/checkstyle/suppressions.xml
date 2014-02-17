@@ -16,7 +16,25 @@
     <suppress checks="" files="[\\/]collection[\\/]"/>
     <suppress checks="" files="[\\/]config[\\/]"/>
     <suppress checks="" files="[\\/]core[\\/]"/>
-    <suppress checks="" files="[\\/]examples[\\/]"/>
+    <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
+    <suppress checks="MagicNumberCheck" files="[\\/]examples[\\/]"/>
+    <suppress checks="FileLengthCheck" files="TestApp.java"/>
+    <suppress checks="MethodCountCheck" files="TestApp.java"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="TestApp.java"/>
+    <suppress checks="CyclomaticComplexityCheck" files="TestApp.java"/>
+    <suppress checks="NPathComplexityCheck" files="TestApp.java"/>
+    <suppress checks="MethodLengthCheck" files="TestApp.java"/>
+    <suppress checks="MethodLengthCheck" files="AllTest.java"/>
+    <suppress checks="MethodCountCheck" files="AllTest.java"/>
+    <suppress checks="AnonInnerLengthCheck" files="SimpleFunctionalMapTest.java"/>
+    <suppress checks="MethodLengthCheck" files="SimpleFunctionalMapTest.java"/>
+    <suppress checks="CyclomaticComplexityCheck" files="SimpleFunctionalMapTest.java"/>
+    <suppress checks="MethodLengthCheck" files="StartServer.java"/>
+    <suppress checks="CyclomaticComplexityCheck" files="StartServer.java"/>
+    <suppress checks="NPathComplexityCheck" files="StartServer.java"/>
+
+
+
     <suppress checks="" files="[\\/]executor[\\/]"/>
     <suppress checks="" files="[\\/]instance[\\/]"/>
     <suppress checks="" files="[\\/]jmx[\\/]"/>
