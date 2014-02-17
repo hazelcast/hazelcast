@@ -19,6 +19,8 @@ package com.hazelcast.client.util;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Cluster;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -30,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * An abstract {@link com.hazelcast.client.LoadBalancer} implementation.
  */
-public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipListener {
+public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembershipListener {
 
     private final AtomicReference<Member[]> membersRef = new AtomicReference(new Member[]{});
     private volatile Cluster clusterRef;
@@ -42,13 +44,21 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipLi
         cluster.addMembershipListener(this);
     }
 
+    @Override
+    public void init(InitialMembershipEvent event) {
+        setMembersRef(event.getMembers());
+    }
+
     private void setMembersRef() {
         Cluster cluster = clusterRef;
         if (cluster != null) {
-            Set<Member> memberSet = cluster.getMembers();
-            Member[] members = memberSet.toArray(new Member[memberSet.size()]);
-            membersRef.set(members);
+            setMembersRef(cluster.getMembers());
         }
+    }
+
+    private void setMembersRef(Set<Member> memberSet) {
+        Member[] members = memberSet.toArray(new Member[memberSet.size()]);
+        membersRef.set(members);
     }
 
     protected Member[] getMembers() {
