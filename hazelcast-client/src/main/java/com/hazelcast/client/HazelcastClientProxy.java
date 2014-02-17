@@ -40,7 +40,6 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -99,11 +98,6 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getClient().getMultiMap(name);
-    }
-
-    @Override
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
-        return getClient().getReplicatedMap(name);
     }
 
     @Override
