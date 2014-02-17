@@ -28,4 +28,7 @@ public interface MapTxnOperation extends Notifier {
     long getVersion();
 
     void setThreadId(long threadId);
+
+    void setOwnerUuid(String ownerUuid);
+
 }

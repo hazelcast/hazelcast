@@ -37,18 +37,22 @@ import java.util.Map;
  */
 public class TransactionContextProxy implements TransactionContext {
 
+    final ClientTransactionManager transactionManager;
     final HazelcastClient client;
     final TransactionProxy transaction;
     final ClientConnection connection;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+    private XaResourceProxy xaResource;
 
-    public TransactionContextProxy(HazelcastClient client, TransactionOptions options) {
+
+    public TransactionContextProxy(ClientTransactionManager transactionManager, TransactionOptions options) {
+        this.transactionManager = transactionManager;
+        this.client = transactionManager.getClient();
         try {
             this.connection = client.getConnectionManager().tryToConnect(null);
         } catch (Exception e) {
             throw new HazelcastException("Could not obtain Connection!!!", e);
         }
-        this.client = client;
         this.transaction = new TransactionProxy(client, options, connection);
     }
 
@@ -61,7 +65,7 @@ public class TransactionContextProxy implements TransactionContext {
     }
 
     public void commitTransaction() throws TransactionException {
-        transaction.commit();
+        transaction.commit(true);
     }
 
     public void rollbackTransaction() {
@@ -124,12 +128,22 @@ public class TransactionContextProxy implements TransactionContext {
         return client;
     }
 
-    public XAResource getXaResource() {
-        throw new UnsupportedOperationException();
+    public ClientTransactionManager getTransactionManager() {
+        return transactionManager;
     }
 
-    private static class TransactionalObjectKey {
+    public XAResource getXaResource() {
+        if (xaResource == null) {
+            xaResource = new XaResourceProxy(this);
+        }
+        return xaResource;
+    }
 
+    public boolean isXAManaged() {
+        return transaction.getXid() != null;
+    }
+
+    private class TransactionalObjectKey {
         private final String serviceName;
         private final String name;
 

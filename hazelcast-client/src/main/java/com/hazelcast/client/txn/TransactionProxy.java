@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.impl.SerializableXid;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -44,6 +45,7 @@ final class TransactionProxy {
     private final long threadId = Thread.currentThread().getId();
     private final ClientConnection connection;
 
+    private SerializableXid sXid;
     private String txnId;
     private State state = NO_TXN;
     private long startTime = 0L;
@@ -77,26 +79,43 @@ final class TransactionProxy {
             }
             threadFlag.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
-
-            txnId = invoke(new CreateTransactionRequest(options));
-
+            txnId = invoke(new CreateTransactionRequest(options, sXid));
             state = ACTIVE;
-        } catch (Exception e){
+        } catch (Exception e) {
             closeConnection();
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    void commit() {
+    public void prepare() {
         try {
             if (state != ACTIVE) {
                 throw new TransactionNotActiveException("Transaction is not active");
             }
             checkThread();
             checkTimeout();
-            invoke(new CommitTransactionRequest());
+            invoke(new PrepareTransactionRequest());
+            state = PREPARED;
+        } catch (Exception e) {
+            state = ROLLING_BACK;
+            closeConnection();
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    void commit(boolean prepareAndCommit) {
+        try {
+            if (prepareAndCommit && state != ACTIVE) {
+                throw new TransactionNotActiveException("Transaction is not active");
+            }
+            if (!prepareAndCommit && state != PREPARED) {
+                throw new TransactionNotActiveException("Transaction is not prepared");
+            }
+            checkThread();
+            checkTimeout();
+            invoke(new CommitTransactionRequest(prepareAndCommit));
             state = COMMITTED;
-        } catch (Exception e){
+        } catch (Exception e) {
             state = ROLLING_BACK;
             throw ExceptionUtil.rethrow(e);
         } finally {
@@ -109,7 +128,7 @@ final class TransactionProxy {
             if (state == NO_TXN || state == ROLLED_BACK) {
                 throw new IllegalStateException("Transaction is not active");
             }
-            if (state == ROLLING_BACK){
+            if (state == ROLLING_BACK) {
                 state = ROLLED_BACK;
                 return;
             }
@@ -124,7 +143,15 @@ final class TransactionProxy {
         }
     }
 
-    private void closeConnection(){
+    SerializableXid getXid() {
+        return sXid;
+    }
+
+    void setXid(SerializableXid xid) {
+        this.sXid = xid;
+    }
+
+    private void closeConnection() {
         threadFlag.set(null);
 //        try {
 //            connection.release();
@@ -159,4 +186,5 @@ final class TransactionProxy {
             throw ExceptionUtil.rethrow(e);
         }
     }
+
 }
