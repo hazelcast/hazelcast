@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.config;
 
-/**
- * @author mdogan 5/17/13
- */
 public class ProxyFactoryConfig {
 
     private String service;
@@ -48,16 +45,4 @@ public class ProxyFactoryConfig {
     public void setService(String service) {
         this.service = service;
     }
-
-    /*    private final Map<String, ClientProxyFactory> factoryMap = new HashMap<String, ClientProxyFactory>();
-
-    public ProxyFactoryConfig addProxyFactory(String service, ClientProxyFactory factory) {
-        factoryMap.put(service, factory);
-        return this;
-    }
-
-    public Map<String, ClientProxyFactory> getFactories() {
-        return factoryMap;
-    }
-    */
 }

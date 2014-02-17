@@ -22,7 +22,11 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
-import com.hazelcast.client.spi.*;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
@@ -36,11 +40,33 @@ import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.concurrent.lock.proxy.LockProxy;
+import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.PartitionService;
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.LoggingService;
@@ -119,7 +145,8 @@ public final class HazelcastClient implements HazelcastInstance {
             throw ExceptionUtil.rethrow(e);
         }
         proxyManager = new ProxyManager(this);
-        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup, Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
+        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
+                Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
         LoadBalancer loadBalancer = config.getLoadBalancer();
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
@@ -134,7 +161,7 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     public static HazelcastInstance newHazelcastClient() {
-         return newHazelcastClient(new XmlClientConfigBuilder().build());
+        return newHazelcastClient(new XmlClientConfigBuilder().build());
     }
 
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
@@ -144,7 +171,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
-        try{
+        try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             final HazelcastClient client = new HazelcastClient(config);
             client.start();
@@ -172,12 +199,12 @@ public final class HazelcastClient implements HazelcastInstance {
         CLIENTS.clear();
     }
 
-    private void start(){
+    private void start() {
         lifecycleService.setStarted();
         connectionManager.start();
-        try{
+        try {
             clusterService.start();
-        }catch(IllegalStateException e){
+        } catch (IllegalStateException e) {
             //there was an authentication failure (todo: perhaps use an AuthenticationException
             // ??)
             lifecycleService.shutdown();
@@ -245,7 +272,8 @@ public final class HazelcastClient implements HazelcastInstance {
     @Deprecated
     public ILock getLock(Object key) {
         //this method will be deleted in the near future.
-        return getDistributedObject(LockServiceImpl.SERVICE_NAME, LockProxy.convertToStringKey(key, serializationService));
+        String name = LockProxy.convertToStringKey(key, serializationService);
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
     }
 
     @Override
@@ -264,7 +292,7 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask <T> task) throws TransactionException {
+    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
         return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
@@ -333,7 +361,7 @@ public final class HazelcastClient implements HazelcastInstance {
             final Future<SerializableCollection> future = invocationService.invokeOnRandomTarget(request);
             final SerializableCollection serializableCollection = serializationService.toObject(future.get());
             for (Data data : serializableCollection) {
-                final DistributedObjectInfo o = (DistributedObjectInfo) serializationService.toObject(data);
+                final DistributedObjectInfo o = serializationService.toObject(data);
                 getDistributedObject(o.getServiceName(), o.getName());
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
@@ -347,6 +375,7 @@ public final class HazelcastClient implements HazelcastInstance {
         return proxyManager.addDistributedObjectListener(distributedObjectListener);
     }
 
+    @Override
     public boolean removeDistributedObjectListener(String registrationId) {
         return proxyManager.removeDistributedObjectListener(registrationId);
     }

@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
-import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
-import com.hazelcast.concurrent.atomicreference.CompareAndSetOperation;
+import com.hazelcast.concurrent.atomicreference.operations.CompareAndSetOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

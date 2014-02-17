@@ -64,6 +64,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testExecutorOneNodeFailsUnexpectedly() throws InterruptedException {
         final int executions = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();

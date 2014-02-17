@@ -21,19 +21,27 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 
 /**
- *
  * {@link LoadBalancer} allows you to send operations to one of a number of endpoints(Members).
- * It is up to the implementation to use different load balancing policies. If Client is {@link ClientConfig#smart},
- * only the operations that are not key based will be router to the endpoint returned by the Load Balancer.
- * If it is not {@link ClientConfig#smart}, {@link LoadBalancer} will not be used.
+ * It is up to the implementation to use different load balancing policies.
+ * <p/>
+ * If Client is configured with {@link com.hazelcast.client.config.ClientConfig#isSmartRouting()},
+ * only the operations that are not key based will be router to the endpoint returned by the LoadBalancer. If it is
+ * not {@link com.hazelcast.client.config.ClientConfig#isSmartRouting()}, {@link LoadBalancer} will not be used.
  */
 public interface LoadBalancer {
 
-    public void init(Cluster cluster, ClientConfig config);
+    /**
+     * Initializes the LoadBalancer.
+     *
+     * @param cluster the Cluster this LoadBalancer uses to select members from.
+     * @param config  the ClientConfig.
+     */
+    void init(Cluster cluster, ClientConfig config);
 
     /**
-     * Returns the next member to route to
+     * Returns the next member to route to.
+     *
      * @return Returns the next member or null if no member is available
      */
-    public Member next();
+    Member next();
 }

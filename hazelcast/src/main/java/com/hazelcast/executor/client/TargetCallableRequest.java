@@ -23,7 +23,6 @@ import com.hazelcast.executor.MemberCallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
@@ -32,17 +31,19 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public final class TargetCallableRequest extends TargetClientRequest implements Portable {
+public final class TargetCallableRequest extends TargetClientRequest {
 
     private String name;
+    private String uuid;
     private Callable callable;
     private Address target;
 
     public TargetCallableRequest() {
     }
 
-    public TargetCallableRequest(String name, Callable callable, Address target) {
+    public TargetCallableRequest(String name, String uuid, Callable callable, Address target) {
         this.name = name;
+        this.uuid = uuid;
         this.callable = callable;
         this.target = target;
     }
@@ -54,7 +55,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
         if (securityContext != null) {
             callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
         }
-        return new MemberCallableTaskOperation(name, null, callable);
+        return new MemberCallableTaskOperation(name, uuid, callable);
     }
 
     @Override
@@ -80,6 +81,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeUTF("u", uuid);
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
         rawDataOutput.writeObject(callable);
         target.writeData(rawDataOutput);
@@ -88,6 +90,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        uuid = reader.readUTF("u");
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         callable = rawDataInput.readObject();
         target = new Address();

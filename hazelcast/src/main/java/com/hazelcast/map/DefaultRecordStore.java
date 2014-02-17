@@ -952,7 +952,6 @@ public class DefaultRecordStore implements RecordStore {
 
         public void run() {
             final NodeEngine nodeEngine = mapService.getNodeEngine();
-
             try {
                 Map values = mapContainer.getStore().loadAll(keys.values());
                 if (values == null || values.isEmpty()) {

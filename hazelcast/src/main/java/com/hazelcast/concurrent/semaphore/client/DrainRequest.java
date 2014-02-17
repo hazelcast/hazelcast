@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.concurrent.semaphore.DrainOperation;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
+import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;

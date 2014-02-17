@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
-import com.hazelcast.concurrent.atomiclong.GetAndAlterOperation;
+import com.hazelcast.concurrent.atomiclong.operations.GetAndAlterOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
@@ -32,7 +31,7 @@ public class GetAndAlterRequest extends AbstractAlterRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new GetAndAlterOperation(name,getFunction());
+        return new GetAndAlterOperation(name, getFunction());
     }
 
     @Override

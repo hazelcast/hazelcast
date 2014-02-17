@@ -21,9 +21,6 @@ import com.hazelcast.core.ClientType;
 
 import java.net.InetSocketAddress;
 
-/**
- * @author mdogan 25/10/13
- */
 public class ClientImpl implements Client {
 
     private final String uuid;

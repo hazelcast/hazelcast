@@ -24,11 +24,20 @@ import com.hazelcast.core.IMap;
 import java.io.IOException;
 import java.io.Serializable;
 
+/**
+ * A Chat Application.
+ */
 public class ChatApplication {
 
     private String username;
     private final IMap<String, ChatMessage> map = Hazelcast.newHazelcastInstance(null).getMap("chat-application");
 
+
+    /**
+     * Starts a simple chat application
+     *
+     * @param args your username
+     */
     public static void main(String[] args) {
         ChatApplication application = new ChatApplication();
         String username = (args != null && args.length > 0) ? args[0] : null;
@@ -37,8 +46,9 @@ public class ChatApplication {
             int input;
             StringBuilder u = new StringBuilder();
             try {
-                while ((input = System.in.read()) != '\n')
+                while ((input = System.in.read()) != '\n') {
                     u.append((char) input);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -62,8 +72,9 @@ public class ChatApplication {
             StringBuilder message = new StringBuilder();
             ChatMessage chat;
             try {
-                while ((input = System.in.read()) != '\n')
+                while ((input = System.in.read()) != '\n') {
                     message.append((char) input);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -78,6 +89,9 @@ public class ChatApplication {
         }
     }
 
+    /**
+     * A Chat Message class
+     */
     private static class ChatMessage implements Serializable {
         private String username;
         private String message;
@@ -96,6 +110,9 @@ public class ChatApplication {
         }
     }
 
+    /**
+     * Notifies entry changes to Chat
+     */
     private class ChatCallback implements EntryListener {
         public ChatCallback() {
         }

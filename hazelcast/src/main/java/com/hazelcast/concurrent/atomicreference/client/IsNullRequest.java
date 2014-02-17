@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
-import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
-import com.hazelcast.concurrent.atomicreference.IsNullOperation;
+import com.hazelcast.concurrent.atomicreference.operations.IsNullOperation;
 import com.hazelcast.spi.Operation;
 
 public class IsNullRequest extends ReadRequest {

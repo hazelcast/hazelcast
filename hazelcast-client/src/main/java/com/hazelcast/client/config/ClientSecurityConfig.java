@@ -18,9 +18,6 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.security.Credentials;
 
-/**
- * @author ali 06/02/14
- */
 public class ClientSecurityConfig {
 
     private Credentials credentials;

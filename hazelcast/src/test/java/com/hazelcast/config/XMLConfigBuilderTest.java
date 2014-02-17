@@ -254,6 +254,34 @@ public class XMLConfigBuilderTest {
         assertNull(manCenterCfg.getClusterId());
         assertNull(manCenterCfg.getUrl());
     }
+    @Test
+    public void testMapStoreInitialModeLazy() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"mymap\">"+
+                        "<map-store enabled=\"true\" initial-mode=\"LAZY\"></map-store>"+
+                        "</map>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+        assertTrue(mapStoreConfig.isEnabled());
+        assertEquals(MapStoreConfig.InitialLoadMode.LAZY, mapStoreConfig.getInitialLoadMode());
+    }
+    @Test
+    public void testMapStoreInitialModeEager() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"mymap\">"+
+                        "<map-store enabled=\"true\" initial-mode=\"EAGER\"></map-store>"+
+                        "</map>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+        assertTrue(mapStoreConfig.isEnabled());
+        assertEquals(MapStoreConfig.InitialLoadMode.EAGER, mapStoreConfig.getInitialLoadMode());
+    }
 
     @Test(expected = HazelcastException.class)
     public void testParseExceptionIsNotSwallowed() {

@@ -17,8 +17,7 @@
 package com.hazelcast.concurrent.semaphore.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.concurrent.semaphore.AvailableOperation;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
+import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;

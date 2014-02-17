@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,17 +26,23 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-final class LockStoreImpl implements DataSerializable, LockStore {
+public final class LockStoreImpl implements DataSerializable, LockStore {
 
-    private transient final ConstructorFunction<Data, LockResourceImpl> lockConstructor = new ConstructorFunction<Data, LockResourceImpl>() {
-        public LockResourceImpl createNew(Data key) {
-            return new LockResourceImpl(key, LockStoreImpl.this);
-        }
-    };
+    private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
+            new ConstructorFunction<Data, LockResourceImpl>() {
+                @Override
+                public LockResourceImpl createNew(Data key) {
+                    return new LockResourceImpl(key, LockStoreImpl.this);
+                }
+            };
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
     private ObjectNamespace namespace;
@@ -211,32 +218,32 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return backupCount + asyncBackupCount;
     }
 
-    boolean addAwait(Data key, String conditionId, String caller, long threadId) {
+    public boolean addAwait(Data key, String conditionId, String caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         return lock.addAwait(conditionId, caller, threadId);
     }
 
-    boolean removeAwait(Data key, String conditionId, String caller, long threadId) {
+    public boolean removeAwait(Data key, String conditionId, String caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         return lock.removeAwait(conditionId, caller, threadId);
     }
 
-    boolean startAwaiting(Data key, String conditionId, String caller, long threadId) {
+    public boolean startAwaiting(Data key, String conditionId, String caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         return lock.startAwaiting(conditionId, caller, threadId);
     }
 
-    int getAwaitCount(Data key, String conditionId) {
+    public int getAwaitCount(Data key, String conditionId) {
         LockResourceImpl lock = getLock(key);
         return lock.getAwaitCount(conditionId);
     }
 
-    void registerSignalKey(ConditionKey conditionKey) {
+    public void registerSignalKey(ConditionKey conditionKey) {
         LockResourceImpl lock = getLock(conditionKey.getKey());
         lock.registerSignalKey(conditionKey);
     }
 
-    ConditionKey getSignalKey(Data key) {
+    public ConditionKey getSignalKey(Data key) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return null;
@@ -245,20 +252,20 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         }
     }
 
-    void removeSignalKey(ConditionKey conditionKey) {
+    public void removeSignalKey(ConditionKey conditionKey) {
         LockResourceImpl lock = locks.get(conditionKey.getKey());
         if (lock != null) {
             lock.removeSignalKey(conditionKey);
         }
     }
 
-    void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
+    public void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
         Data key = awaitResponse.getKey();
         LockResourceImpl lock = getLock(key);
         lock.registerExpiredAwaitOp(awaitResponse);
     }
 
-    AwaitOperation pollExpiredAwaitOp(Data key) {
+    public AwaitOperation pollExpiredAwaitOp(Data key) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return null;

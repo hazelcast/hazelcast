@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -23,30 +24,26 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 final class LockResourceImpl implements DataSerializable, LockResource {
 
-    private static boolean isNullOrEmpty(Collection c) {
-        return c == null || c.isEmpty();
-    }
-
-    private static boolean isNullOrEmpty(Map m) {
-        return m == null || m.isEmpty();
-    }
-
     private Data key;
-    private String owner = null;
+    private String owner;
     private long threadId;
     private int lockCount;
     private long expirationTime = -1;
     private long acquireTime = -1L;
-    private boolean transactional = false;
-
+    private boolean transactional;
     private Map<String, ConditionInfo> conditions;
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
-
     private LockStoreImpl lockStore;
 
     public LockResourceImpl() {
@@ -231,9 +228,9 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             return null;
         }
 
-        Iterator<AwaitOperation> iter = ops.iterator();
-        AwaitOperation awaitResponse = iter.next();
-        iter.remove();
+        Iterator<AwaitOperation> iterator = ops.iterator();
+        AwaitOperation awaitResponse = iterator.next();
+        iterator.remove();
         return awaitResponse;
     }
 
@@ -284,29 +281,14 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     @Override
     public long getRemainingLeaseTime() {
         long now = Clock.currentTimeMillis();
-        if (now >= expirationTime) return 0;
+        if (now >= expirationTime) {
+            return 0;
+        }
         return expirationTime - now;
     }
 
     void setLockStore(LockStoreImpl lockStore) {
         this.lockStore = lockStore;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LockResourceImpl that = (LockResourceImpl) o;
-        if (threadId != that.threadId) return false;
-        if (owner != null ? !owner.equals(that.owner) : that.owner != null) return false;
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = owner != null ? owner.hashCode() : 0;
-        result = 31 * result + (int) (threadId ^ (threadId >>> 32));
-        return result;
     }
 
     @Override
@@ -319,28 +301,40 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         out.writeLong(acquireTime);
         out.writeBoolean(transactional);
 
-        int len = conditions == null ? 0 : conditions.size();
-        out.writeInt(len);
-        if (len > 0) {
+        int conditionCount = getConditionCount();
+        out.writeInt(conditionCount);
+        if (conditionCount > 0) {
             for (ConditionInfo condition : conditions.values()) {
                 condition.writeData(out);
             }
         }
-        len = signalKeys == null ? 0 : signalKeys.size();
-        out.writeInt(len);
-        if (len > 0) {
-            for (ConditionKey key : signalKeys) {
-                out.writeUTF(key.getObjectName());
-                out.writeUTF(key.getConditionId());
+        int signalCount = getSignalCount();
+        out.writeInt(signalCount);
+        if (signalCount > 0) {
+            for (ConditionKey signalKey : signalKeys) {
+                out.writeUTF(signalKey.getObjectName());
+                out.writeUTF(signalKey.getConditionId());
             }
         }
-        len = expiredAwaitOps == null ? 0 : expiredAwaitOps.size();
-        out.writeInt(len);
-        if (len > 0) {
+        int expiredAwaitOpsCount = getExpiredAwaitsOpsCount();
+        out.writeInt(expiredAwaitOpsCount);
+        if (expiredAwaitOpsCount > 0) {
             for (AwaitOperation op : expiredAwaitOps) {
                 op.writeData(out);
             }
         }
+    }
+
+    private int getExpiredAwaitsOpsCount() {
+        return expiredAwaitOps == null ? 0 : expiredAwaitOps.size();
+    }
+
+    private int getSignalCount() {
+        return signalKeys == null ? 0 : signalKeys.size();
+    }
+
+    private int getConditionCount() {
+        return conditions == null ? 0 : conditions.size();
     }
 
     @Override
@@ -384,6 +378,31 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        LockResourceImpl that = (LockResourceImpl) o;
+        if (threadId != that.threadId) {
+            return false;
+        }
+        if (owner != null ? !owner.equals(that.owner) : that.owner != null) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = owner != null ? owner.hashCode() : 0;
+        result = 31 * result + (int) (threadId ^ (threadId >>> 32));
+        return result;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("LockResource");
@@ -394,5 +413,13 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         sb.append(", expirationTime=").append(expirationTime);
         sb.append('}');
         return sb.toString();
+    }
+
+    private static boolean isNullOrEmpty(Collection c) {
+        return c == null || c.isEmpty();
+    }
+
+    private static boolean isNullOrEmpty(Map m) {
+        return m == null || m.isEmpty();
     }
 }

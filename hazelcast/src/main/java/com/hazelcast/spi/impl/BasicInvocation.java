@@ -329,10 +329,11 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 OperationAccessor.setCallId(op, callId);
             }
             ResponseHandlerFactory.setLocalResponseHandler(op, this);
-            if (!operationService.isAllowedToRunInCurrentThread(op)) {
-                operationService.executeOperation(op);
-            } else {
+            //todo: should move to the operationService.
+            if (operationService.isAllowedToRunInCurrentThread(op)) {
                 operationService.runOperation(op);
+            } else {
+                operationService.executeOperation(op);
             }
         }
     }

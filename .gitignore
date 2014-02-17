@@ -6,7 +6,12 @@ target/
 .idea/
 .patch
 *.iml
+*.ipr
+*.iws
 .DS_Store
 reports/
 .directory
 atlassian-ide-plugin.xml
+hazelcast-ra/*.log
+hazelcast-ra/*.epoch
+

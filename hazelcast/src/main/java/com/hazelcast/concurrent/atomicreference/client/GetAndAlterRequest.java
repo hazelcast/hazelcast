@@ -16,12 +16,11 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
-import com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook;
-import com.hazelcast.concurrent.atomicreference.GetAndAlterOperation;
+import com.hazelcast.concurrent.atomicreference.operations.GetAndAlterOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
-public class GetAndAlterRequest  extends AbstractAlterRequest {
+public class GetAndAlterRequest extends AbstractAlterRequest {
 
     public GetAndAlterRequest() {
     }
@@ -32,7 +31,7 @@ public class GetAndAlterRequest  extends AbstractAlterRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new GetAndAlterOperation(name,function);
+        return new GetAndAlterOperation(name, function);
     }
 
     @Override

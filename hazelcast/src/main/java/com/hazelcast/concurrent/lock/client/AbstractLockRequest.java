@@ -18,8 +18,8 @@ package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.concurrent.lock.LockOperation;
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,18 +31,12 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 5/3/13
- */
 public abstract class AbstractLockRequest extends KeyBasedClientRequest
         implements Portable, SecureRequest {
 
     protected Data key;
-
     private long threadId;
-
     private long ttl = -1;
-
     private long timeout = -1;
 
     public AbstractLockRequest() {
@@ -81,6 +75,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
         return LockService.SERVICE_NAME;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeLong("tid", threadId);
         writer.writeLong("ttl", ttl);
@@ -90,6 +85,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
         key.writeData(out);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         threadId = reader.readLong("tid");
         ttl = reader.readLong("ttl");

@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-/**
- * @author ali 16/12/13
- */
 public class ClientReadHandler extends ClientAbstractSelectionHandler {
 
     private final ByteBuffer buffer;
@@ -41,10 +38,12 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
         buffer = ByteBuffer.allocate(bufferSize);
     }
 
+    @Override
     public void run() {
         registerOp(SelectionKey.OP_READ);
     }
 
+    @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
