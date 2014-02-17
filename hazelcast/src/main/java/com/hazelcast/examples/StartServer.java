@@ -18,10 +18,20 @@ package com.hazelcast.examples;
 
 import com.hazelcast.core.Hazelcast;
 
-public class StartServer {
+/**
+ * Starts a Hazelcast server
+ */
+public final class StartServer {
+
+
     private StartServer() {
     }
 
+    /**
+     * Creates a server instance of Hazelcast
+     *
+     * @param args none
+     */
     public static void main(String[] args) {
         Hazelcast.newHazelcastInstance(null);
     }

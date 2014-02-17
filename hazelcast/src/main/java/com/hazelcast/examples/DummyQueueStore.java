@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author ali 12/14/12
+ * A Dummy Queue Store
  */
 public class DummyQueueStore implements QueueStore<Object> {
 
@@ -46,7 +46,7 @@ public class DummyQueueStore implements QueueStore<Object> {
     }
 
     public void deleteAll(Collection<Long> keys) {
-        for (Long key: keys){
+        for (Long key : keys) {
             map.remove(key);
         }
     }
@@ -57,7 +57,7 @@ public class DummyQueueStore implements QueueStore<Object> {
 
     public Map<Long, Object> loadAll(Collection<Long> keys) {
         Map<Long, Object> temp = new HashMap<Long, Object>(keys.size());
-        for (Long key: keys){
+        for (Long key : keys) {
             temp.put(key, map.get(key));
         }
         return temp;

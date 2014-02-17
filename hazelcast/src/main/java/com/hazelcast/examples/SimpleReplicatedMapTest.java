@@ -28,7 +28,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SimpleReplicatedMapTest {
+/**
+ * A simple ReplicatedMap test
+ */
+public final class SimpleReplicatedMapTest {
 
     private static final String NAMESPACE = "default";
     private static final long STATS_SECONDS = 10;
@@ -49,7 +52,7 @@ public class SimpleReplicatedMapTest {
         System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
-    public SimpleReplicatedMapTest(final int threadCount, final int entryCount, final int valueSize,
+    private SimpleReplicatedMapTest(final int threadCount, final int entryCount, final int valueSize,
                                    final int getPercentage, final int putPercentage) {
         this.threadCount = threadCount;
         this.entryCount = entryCount;
@@ -63,6 +66,10 @@ public class SimpleReplicatedMapTest {
         logger = instance.getLoggingService().getLogger("SimpleReplicatedMapTest");
     }
 
+    /**
+     * @param input
+     * @throws InterruptedException
+     */
     public static void main(String[] input) throws InterruptedException {
         int threadCount = 40;
         int entryCount = 10 * 1000;
@@ -92,7 +99,8 @@ public class SimpleReplicatedMapTest {
             System.out.println();
         }
 
-        SimpleReplicatedMapTest test = new SimpleReplicatedMapTest(threadCount, entryCount, valueSize, getPercentage, putPercentage);
+        SimpleReplicatedMapTest test = new SimpleReplicatedMapTest(threadCount, entryCount, valueSize, getPercentage,
+                putPercentage);
         test.start();
     }
 
@@ -123,7 +131,8 @@ public class SimpleReplicatedMapTest {
                                 stats.removes.incrementAndGet();
                             }
                         }
-                    } catch (HazelcastInstanceNotActiveException ignored) {
+                    } catch (HazelcastInstanceNotActiveException e) {
+                        e.printStackTrace();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -137,7 +146,7 @@ public class SimpleReplicatedMapTest {
     }
 
     private void startPrintStats() {
-        new Thread() {
+        Thread t = new Thread() {
             {
                 setDaemon(true);
                 setName("PrintStats." + instance.getName());
@@ -153,13 +162,18 @@ public class SimpleReplicatedMapTest {
                     }
                 }
             }
-        }.start();
+        };
+        t.start();
     }
 
+    /**
+     * A simple stats class
+     */
     private class Stats {
-        public AtomicLong gets = new AtomicLong();
-        public AtomicLong puts = new AtomicLong();
-        public AtomicLong removes = new AtomicLong();
+
+        private AtomicLong gets = new AtomicLong();
+        private AtomicLong puts = new AtomicLong();
+        private AtomicLong removes = new AtomicLong();
 
         public void printAndReset() {
             long getsNow = gets.getAndSet(0);

@@ -16,18 +16,43 @@
 
 package com.hazelcast.examples;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.util.Clock;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+/**
+ * A test of queues, topics, Maps, AtomicInteger etc.
+ */
 public class AllTest {
 
+    private static final int ONE_SECOND = 1000;
+    private static final int STATS_SECONDS = 10;
+    private static final int SIZE = 10000;
+    final Logger logger = Logger.getLogger("All-test");
+    final HazelcastInstance hazelcast;
     private volatile boolean running = true;
     private final int nThreads;
     private final List<Runnable> operations = new ArrayList<Runnable>();
@@ -36,12 +61,24 @@ public class AllTest {
     private final AtomicInteger messagesReceived = new AtomicInteger(0);
     private final AtomicInteger messagesSend = new AtomicInteger(0);
 
-    private final static int size = 10000;
-    private static final int STATS_SECONDS = 10;
 
-    final Logger logger = Logger.getLogger("All-test");
-    final HazelcastInstance hazelcast;
+    AllTest(int nThreads) {
+        this.nThreads = nThreads;
+        ex = Executors.newFixedThreadPool(nThreads);
+        hazelcast = Hazelcast.newHazelcastInstance(null);
+        List<Runnable> mapOperations = loadMapOperations();
+        List<Runnable> qOperations = loadQOperations();
+        List<Runnable> topicOperations = loadTopicOperations();
+        this.operations.addAll(mapOperations);
+        this.operations.addAll(qOperations);
+        this.operations.addAll(topicOperations);
+        Collections.shuffle(operations);
+    }
 
+    /**
+     * Starts the test
+     * @param args the number of threads to start
+     */
     public static void main(String[] args) {
         int nThreads = (args.length == 0) ? 10 : new Integer(args[0]);
         final AllTest allTest = new AllTest(nThreads);
@@ -52,8 +89,8 @@ public class AllTest {
                 while (true) {
                     try {
                         //noinspection BusyWait
-                        Thread.sleep(STATS_SECONDS * 1000);
-                        System.out.println("cluster size:"
+                        Thread.sleep(STATS_SECONDS * ONE_SECOND);
+                        System.out.println("cluster SIZE:"
                                 + allTest.hazelcast.getCluster().getMembers().size());
                         allTest.mapStats();
                         allTest.qStats();
@@ -73,7 +110,8 @@ public class AllTest {
 //            return;
 //        }
 //        log(qOpStats);
-//        log("Q Operations per Second : " + (qOpStats.getOfferOperationCount() + qOpStats.getEmptyPollOperationCount() + qOpStats.getEmptyPollOperationCount() + qOpStats.getRejectedOfferOperationCount()) / period);
+//        log("Q Operations per Second : " + (qOpStats.getOfferOperationCount() + qOpStats.getEmptyPollOperationCount() +
+// qOpStats.getEmptyPollOperationCount() + qOpStats.getRejectedOfferOperationCount()) / period);
     }
 
     private void log(Object message) {
@@ -93,21 +131,10 @@ public class AllTest {
     }
 
     private void topicStats() {
-        log("Topic Messages Sent : " + messagesSend.getAndSet(0) / STATS_SECONDS + "::: Messages Received: " + messagesReceived.getAndSet(0) / STATS_SECONDS);
+        log("Topic Messages Sent : " + messagesSend.getAndSet(0) / STATS_SECONDS + "::: Messages Received: " + messagesReceived
+                .getAndSet(0) / STATS_SECONDS);
     }
 
-    AllTest(int nThreads) {
-        this.nThreads = nThreads;
-        ex = Executors.newFixedThreadPool(nThreads);
-        hazelcast = Hazelcast.newHazelcastInstance(null);
-        List<Runnable> mapOperations = loadMapOperations();
-        List<Runnable> qOperations = loadQOperations();
-        List<Runnable> topicOperations = loadTopicOperations();
-        this.operations.addAll(mapOperations);
-        this.operations.addAll(qOperations);
-        this.operations.addAll(topicOperations);
-        Collections.shuffle(operations);
-    }
 
     private void addOperation(List<Runnable> operations, Runnable runnable, int priority) {
         for (int i = 0; i < priority; i++) {
@@ -134,6 +161,9 @@ public class AllTest {
         running = false;
     }
 
+    /**
+     * An example customer class
+     */
     public static class Customer implements Serializable {
         private int year;
         private String name;
@@ -177,7 +207,7 @@ public class AllTest {
                 try {
                     q.offer(new byte[100], 10, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 }
             }
         }, 10);
@@ -229,7 +259,7 @@ public class AllTest {
                 try {
                     q.take();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 }
             }
         }, 10);
@@ -258,25 +288,25 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.evict(random.nextInt(size));
+                map.evict(random.nextInt(SIZE));
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 try {
-                    map.getAsync(random.nextInt(size)).get();
+                    map.getAsync(random.nextInt(SIZE)).get();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 } catch (ExecutionException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 }
             }
         }, 1);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.containsKey(random.nextInt(size));
+                map.containsKey(random.nextInt(SIZE));
             }
         }, 2);
         addOperation(operations, new Runnable() {
@@ -288,11 +318,12 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                int key = random.nextInt(size);
+                int key = random.nextInt(SIZE);
                 map.lock(key);
                 try {
                     Thread.sleep(1);
                 } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 } finally {
                     map.unlock(key);
                 }
@@ -301,7 +332,7 @@ public class AllTest {
 //        addOperation(operations, new Runnable() {
 //            public void run() {
 //                IMap map = hazelcast.getMap("myMap");
-//                int key = random.nextInt(size);
+//                int key = random.nextInt(SIZE);
 //                map.lockMap(10, TimeUnit.MILLISECONDS);
 //                try {
 //                    Thread.sleep(1);
@@ -314,12 +345,13 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                int key = random.nextInt(size);
+                int key = random.nextInt(SIZE);
                 boolean locked = map.tryLock(key);
                 if (locked) {
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     } finally {
                         map.unlock(key);
                     }
@@ -329,16 +361,18 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                int key = random.nextInt(size);
+                int key = random.nextInt(SIZE);
                 boolean locked = false;
                 try {
                     locked = map.tryLock(key, 10, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
                 if (locked) {
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     } finally {
                         map.unlock(key);
                     }
@@ -357,7 +391,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.getEntryView(random.nextInt(size));
+                map.getEntryView(random.nextInt(SIZE));
             }
         }, 2);
         addOperation(operations, new Runnable() {
@@ -369,43 +403,47 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.put(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
+                map.put(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 50);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.tryPut(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10, TimeUnit.MILLISECONDS);
+                map.tryPut(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10,
+                        TimeUnit.MILLISECONDS);
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 try {
-                    map.putAsync(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000)))).get();
+                    map.putAsync(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000)))
+                    ).get();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 } catch (ExecutionException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 }
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.put(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10, TimeUnit.MILLISECONDS);
+                map.put(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10,
+                        TimeUnit.MILLISECONDS);
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.putIfAbsent(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), 10, TimeUnit.MILLISECONDS);
+                map.putIfAbsent(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))),
+                        10, TimeUnit.MILLISECONDS);
             }
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.putIfAbsent(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
+                map.putIfAbsent(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 5);
         addOperation(operations, new Runnable() {
@@ -413,7 +451,7 @@ public class AllTest {
                 IMap map = hazelcast.getMap("myMap");
                 Map localMap = new HashMap();
                 for (int i = 0; i < 10; i++) {
-                    localMap.put(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
+                    localMap.put(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
                 }
                 map.putAll(localMap);
             }
@@ -421,43 +459,44 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.get(random.nextInt(size));
+                map.get(random.nextInt(SIZE));
             }
         }, 100);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.remove(random.nextInt(size));
+                map.remove(random.nextInt(SIZE));
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.tryRemove(random.nextInt(size), 10, TimeUnit.MILLISECONDS);
+                map.tryRemove(random.nextInt(SIZE), 10, TimeUnit.MILLISECONDS);
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.removeAsync(random.nextInt(size));
+                map.removeAsync(random.nextInt(SIZE));
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.remove(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
+                map.remove(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 10);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.replace(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
+                map.replace(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 4);
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                map.replace(random.nextInt(size), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
+                map.replace(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))),
+                        new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
         }, 5);
         addOperation(operations, new Runnable() {
@@ -536,7 +575,7 @@ public class AllTest {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 }
                 map.removeEntryListener(id);
             }
@@ -572,7 +611,7 @@ public class AllTest {
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    throw new RuntimeException(e);
                 }
                 map.removeEntryListener(id);
             }
