@@ -25,6 +25,9 @@ import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionAccessor;
+import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -36,6 +39,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 
 public final class ClientEndpoint implements Client {
 
@@ -165,11 +170,18 @@ public final class ClientEndpoint implements Client {
             lc.logout();
         }
         for (TransactionContext context : transactionContextMap.values()) {
-            try {
-                context.rollbackTransaction();
-            } catch (HazelcastInstanceNotActiveException ignored) {
-            } catch (Exception e) {
-                getLogger().warning(e);
+            final Transaction transaction = TransactionAccessor.getTransaction(context);
+            if (context.isXAManaged() && transaction.getState() == PREPARED) {
+                final TransactionManagerServiceImpl transactionManager =
+                        (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
+                transactionManager.addTxBackupLogForClientRecovery(transaction);
+            } else {
+                try {
+                    context.rollbackTransaction();
+                } catch (HazelcastInstanceNotActiveException ignored) {
+                } catch (Exception e) {
+                    getLogger().warning(e);
+                }
             }
         }
         authenticated = false;

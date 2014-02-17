@@ -30,6 +30,7 @@ import java.io.IOException;
 public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation{
 
     private long version;
+    private String ownerUuid;
 
     public TxnUnlockOperation() {
     }
@@ -42,7 +43,11 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     @Override
     public void run() {
         System.out.println( "Owner tid:" + getThreadId() + " pid:"+getPartitionId());
-        recordStore.unlock(dataKey, getCallerUuid(), getThreadId());
+        recordStore.unlock(dataKey, ownerUuid, getThreadId());
+    }
+
+    public boolean shouldWait() {
+        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
     }
 
     public long getVersion() {
@@ -82,6 +87,11 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     @Override
+    public void setOwnerUuid(String ownerUuid) {
+        this.ownerUuid = ownerUuid;
+    }
+
+    @Override
     public boolean shouldBackup() {
         return true;
     }
@@ -94,11 +104,13 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
+        out.writeUTF(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
+        ownerUuid = in.readUTF();
     }
 }

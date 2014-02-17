@@ -28,12 +28,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +54,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private State state = NO_TXN;
     private long startTime = 0L;
     private Address[] backupAddresses;
+    private SerializableXID xid = null;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
@@ -88,6 +84,14 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.checkThreadAccess = false;
     }
 
+    public void setXid(SerializableXID xid) {
+        this.xid = xid;
+    }
+
+    public SerializableXID getXid() {
+        return xid;
+    }
+
     public String getTxnId() {
         return txnId;
     }
@@ -105,7 +109,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         if (transactionLog instanceof KeyAwareTransactionLog) {
             KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
             TransactionLog removed = txLogMap.remove(keyAwareTransactionLog.getKey());
-            if (removed != null){
+            if (removed != null) {
                 txLogs.remove(removed);
             }
         }
@@ -119,6 +123,10 @@ final class TransactionImpl implements Transaction, TransactionSupport {
 
     public TransactionLog getTransactionLog(Object key) {
         return txLogMap.get(key);
+    }
+
+    public List<TransactionLog> getTxLogs() {
+        return txLogs;
     }
 
     public void removeTransactionLog(Object key) {
@@ -152,7 +160,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new BeginTxBackupOperation(txOwnerUuid, txnId), backupAddress);
+                            new BeginTxBackupOperation(txOwnerUuid, txnId, xid), backupAddress);
                     futures.add(f);
                 }
             }
@@ -326,6 +334,14 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 }
             }
         }
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public String getOwnerUuid() {
+        return txOwnerUuid;
     }
 
     public State getState() {
