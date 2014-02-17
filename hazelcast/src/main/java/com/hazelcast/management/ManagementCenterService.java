@@ -471,7 +471,8 @@ public class ManagementCenterService {
     }
 
     private class TaskPollThread extends Thread {
-        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests = new HashMap<Integer, Class<? extends ConsoleRequest>>();
+        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests =
+                new HashMap<Integer, Class<? extends ConsoleRequest>>();
         private final Random rand = new Random();
 
         TaskPollThread() {
