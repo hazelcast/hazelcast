@@ -6,6 +6,8 @@ target/
 .idea/
 .patch
 *.iml
+*.ipr
+*.iws
 .DS_Store
 reports/
 .directory
