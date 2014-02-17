@@ -39,12 +39,13 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     String name;
     Data key;
     int threadId = ThreadUtil.getThreadId();
+    String ownerUuid;
     Operation op;
 
     public MapTransactionLog() {
     }
 
-    public MapTransactionLog(String name, Data key, Operation op, long version) {
+    public MapTransactionLog(String name, Data key, Operation op, long version, String ownerUuid) {
         this.name = name;
         this.key = key;
         this.version = version;
@@ -52,11 +53,12 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
             throw new IllegalArgumentException();
         }
         this.op = op;
+        this.ownerUuid = ownerUuid;
     }
 
     @Override
     public Future prepare(NodeEngine nodeEngine) throws TransactionException {
-        TxnPrepareOperation operation = new TxnPrepareOperation(name, key);
+        TxnPrepareOperation operation = new TxnPrepareOperation(name, key, ownerUuid);
         operation.setThreadId(threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -73,6 +75,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         MapTxnOperation txnOp = (MapTxnOperation) op;
         txnOp.setThreadId(threadId);
         txnOp.setVersion(version);
+        txnOp.setOwnerUuid(ownerUuid);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
@@ -106,6 +109,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
             key.writeData(out);
         }
         out.writeInt(threadId);
+        out.writeUTF(ownerUuid);
         out.writeObject(op);
     }
 
@@ -119,6 +123,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
             key.readData(in);
         }
         threadId = in.readInt();
+        ownerUuid = in.readUTF();
         op = in.readObject();
     }
 

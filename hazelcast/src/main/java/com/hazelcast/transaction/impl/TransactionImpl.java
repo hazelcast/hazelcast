@@ -54,6 +54,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private State state = NO_TXN;
     private long startTime = 0L;
     private Address[] backupAddresses;
+    private SerializableXid xid = null;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
@@ -81,6 +82,14 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.state = PREPARED;
         this.txOwnerUuid = txOwnerUuid;
         this.checkThreadAccess = false;
+    }
+
+    public void setXid(SerializableXid xid){
+        this.xid = xid;
+    }
+
+    public SerializableXid getXid() {
+        return xid;
     }
 
     public String getTxnId() {
@@ -116,6 +125,10 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         return txLogMap.get(key);
     }
 
+    public List<TransactionLog> getTxLogs() {
+        return txLogs;
+    }
+
     public void removeTransactionLog(Object key) {
         TransactionLog removed = txLogMap.remove(key);
         if (removed != null) {
@@ -147,7 +160,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new BeginTxBackupOperation(txOwnerUuid, txnId), backupAddress).build();
+                            new BeginTxBackupOperation(txOwnerUuid, txnId, xid), backupAddress).build();
                     futures.add(inv.invoke());
                 }
             }
@@ -322,6 +335,14 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 }
             }
         }
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public String getOwnerUuid() {
+        return txOwnerUuid;
     }
 
     public State getState() {

@@ -29,7 +29,6 @@ import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
 
 import javax.transaction.xa.XAResource;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,15 +37,18 @@ import java.util.Map;
  */
 public class TransactionContextProxy implements TransactionContext {
 
-    final int CONNECTION_TRY_COUNT = 5;
+    final ClientTransactionManager transactionManager;
     final HazelcastClient client;
     final TransactionProxy transaction;
     final Connection connection;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+    private XaResourceProxy xaResource;
 
-    public TransactionContextProxy(HazelcastClient client, TransactionOptions options) {
-        this.client = client;
-        this.connection = connect();
+
+    public TransactionContextProxy(ClientTransactionManager transactionManager, TransactionOptions options) {
+        this.transactionManager = transactionManager;
+        this.client = transactionManager.getClient();
+        this.connection = transactionManager.connect();
         if (connection == null) {
             throw new HazelcastException("Could not obtain Connection!!!");
         }
@@ -62,7 +64,7 @@ public class TransactionContextProxy implements TransactionContext {
     }
 
     public void commitTransaction() throws TransactionException {
-        transaction.commit();
+        transaction.commit(true);
     }
 
     public void rollbackTransaction() {
@@ -125,23 +127,19 @@ public class TransactionContextProxy implements TransactionContext {
         return client;
     }
 
-    public XAResource getXaResource() {
-        throw new UnsupportedOperationException();
+    public ClientTransactionManager getTransactionManager() {
+        return transactionManager;
     }
 
-    private Connection connect() {
-        Connection conn = null;
-        for (int i = 0; i < CONNECTION_TRY_COUNT; i++) {
-            try {
-                conn = client.getConnectionManager().getRandomConnection();
-            } catch (IOException e) {
-                continue;
-            }
-            if (conn != null) {
-                break;
-            }
+    public XAResource getXaResource() {
+        if (xaResource == null) {
+            xaResource = new XaResourceProxy(this);
         }
-        return conn;
+        return xaResource;
+    }
+
+    public boolean isXAManaged() {
+        return transaction.getXid() != null;
     }
 
     private class TransactionalObjectKey {

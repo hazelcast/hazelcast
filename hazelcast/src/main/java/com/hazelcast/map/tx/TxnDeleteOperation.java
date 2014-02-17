@@ -35,6 +35,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     private long version;
     private boolean successful = false;
+    private String ownerUuid;
 
     public TxnDeleteOperation() {
     }
@@ -46,12 +47,17 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public void run() {
-        recordStore.unlock(dataKey, getCallerUuid(), getThreadId());
+        recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()){
             dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey));
             successful = dataOldValue != null;
         }
+    }
+
+    @Override
+    public boolean shouldWait() {
+        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
     }
 
     public void afterRun() {
@@ -87,6 +93,11 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     @Override
+    public void setOwnerUuid(String ownerUuid) {
+        this.ownerUuid = ownerUuid;
+    }
+
+    @Override
     public boolean shouldBackup() {
         return true;
     }
@@ -99,11 +110,13 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
+        out.writeUTF(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
+        ownerUuid = in.readUTF();
     }
 }

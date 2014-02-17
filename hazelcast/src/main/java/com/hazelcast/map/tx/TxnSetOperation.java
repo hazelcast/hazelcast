@@ -34,7 +34,8 @@ import java.io.IOException;
 public class TxnSetOperation extends BasePutOperation implements MapTxnOperation {
 
     private long version;
-    private boolean shouldBackup = false;
+    private transient boolean shouldBackup;
+    private String ownerUuid;
 
     public TxnSetOperation() {
     }
@@ -45,8 +46,13 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     @Override
+    public boolean shouldWait() {
+        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
+    }
+
+    @Override
     public void run() {
-        recordStore.unlock(dataKey, getCallerUuid(), getThreadId());
+        recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()){
             recordStore.set(dataKey, dataValue, ttl);
@@ -60,6 +66,11 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     public void setVersion(long version) {
         this.version = version;
+    }
+
+    @Override
+    public void setOwnerUuid(String ownerUuid) {
+        this.ownerUuid = ownerUuid;
     }
 
     @Override
@@ -93,11 +104,14 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
+        out.writeUTF(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
+        ownerUuid = in.readUTF();
+
     }
 }
