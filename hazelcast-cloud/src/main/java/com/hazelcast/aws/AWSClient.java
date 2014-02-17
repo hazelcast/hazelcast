@@ -17,6 +17,8 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.aws.impl.DescribeInstances;
+import com.hazelcast.aws.utility.CloudyUtility;
+import com.hazelcast.cluster.AwsIpResolver;
 import com.hazelcast.config.AwsConfig;
 
 import java.util.List;
@@ -40,7 +42,7 @@ public class AWSClient {
         endpoint = awsConfig.getHostHeader();
     }
 
-    public List<String> getPrivateIpAddresses() throws Exception {
+    public List<AwsIpResolver.PublicPrivatePair> getAwsAddressPairs() throws Exception {
         return new DescribeInstances(awsConfig).execute(endpoint);
     }
 

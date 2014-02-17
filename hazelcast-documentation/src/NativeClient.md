@@ -4,11 +4,11 @@
 
 Native Client enables you to do almost all Hazelcast operations without being a member of the cluster. It connects to one of the cluster members and delegates all cluster wide operations to it or connects to all of them and delegate operations smartly. When the relied cluster member dies, client will transparently switch to another live member.
 
-There can be hundreds, even thousands of clients connected to the cluster. But by default there is 40 threads on server side that will handle all the requests. You may want to increase hazelcast.executor.client.thread.count property for better performance.
+There can be hundreds, even thousands of clients connected to the cluster. We have two types of client, dummy and smart client. Where a dummy client will maintain a connection to only one member, whereas the smart client can route the operations to the Node that owns the data. Clients are smart by default.
 
 Imagine a trading application where all the trading data stored and managed in a 10 node Hazelcast cluster. Swing/Web applications at traders' desktops can use Native Java Client to access and modify the data in the Hazelcast cluster.
 
-Currently Hazelcast has Native Java and C\# Client available. C\# Client implementation has not yet finished as of version 3.
+Currently Hazelcast has Native Java , C\# Client and C++ client available.
 
 ### Java Client
 

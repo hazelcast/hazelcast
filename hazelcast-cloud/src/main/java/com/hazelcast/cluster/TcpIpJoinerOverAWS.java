@@ -22,9 +22,9 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
 
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
@@ -41,22 +41,34 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         }
     }
 
+    public List<AwsIpResolver.PublicPrivatePair> updateAwsIpResolver() throws Exception {
+        final List<AwsIpResolver.PublicPrivatePair> list = aws.getAwsAddressPairs();
+
+        if (list.isEmpty()) {
+            logger.warning("No EC2 instances found!");
+        } else {
+            if (logger.isFinestEnabled()) {
+                StringBuilder sb = new StringBuilder("Found the following EC2 instances:\n");
+                for (AwsIpResolver.PublicPrivatePair pair : list) {
+                    sb.append("    ").append(pair.getPrivateIp()).append("\n");
+                }
+                logger.finest(sb.toString());
+            }
+        }
+        node.getClusterService().setAwsIpResolver(new AwsIpResolver(list));
+        return list;
+
+    }
+
     @Override
     protected Collection<String> getMembers() {
         try {
-            List<String> list = aws.getPrivateIpAddresses();
-            if(list.isEmpty()){
-                logger.warning("No EC2 instances found!");
-            }else{
-                if(logger.isFinestEnabled()){
-                    StringBuilder sb = new StringBuilder("Found the following EC2 instances:\n");
-                    for(String ip: list){
-                        sb.append("    ").append(ip).append("\n");
-                    }
-                    logger.finest(sb.toString());
-                }
+            final List<AwsIpResolver.PublicPrivatePair> list = updateAwsIpResolver();
+            final ArrayList<String> members = new ArrayList<String>(list.size());
+            for (AwsIpResolver.PublicPrivatePair pair : list) {
+                members.add(pair.getPrivateIp());
             }
-            return list;
+            return members;
         } catch (Exception e) {
             logger.warning(e);
             throw ExceptionUtil.rethrow(e);

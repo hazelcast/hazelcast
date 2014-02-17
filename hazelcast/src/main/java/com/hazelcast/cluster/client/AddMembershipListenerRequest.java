@@ -20,19 +20,25 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientPortableHook;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.cluster.AwsIpResolver;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.operation.MapOperationType;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * @author mdogan 5/13/13
@@ -46,12 +52,15 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
     public Object call() throws Exception {
         final ClusterServiceImpl service = getService();
         final ClientEndpoint endpoint = getEndpoint();
+        final boolean awsEnabled = getClientEngine().getConfig().getNetworkConfig().getJoin().getAwsConfig().isEnabled();
 
         final String registrationId = service.addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    if (awsEnabled)
+                        member = resolveMember(member, false, service);
                     endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
                 }
             }
@@ -59,19 +68,24 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    if (awsEnabled)
+                        member = resolveMember(member, false, service);
                     endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
                 }
             }
 
             public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
                 if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
+                    MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
                     final String uuid = member.getUuid();
                     final MapOperationType op = memberAttributeEvent.getOperationType();
                     final String key = memberAttributeEvent.getKey();
                     final Object value = memberAttributeEvent.getValue();
                     final MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
+                    if (awsEnabled) {
+                        member = resolveMember(member, false, service);
+                    }
                     endpoint.sendEvent(new ClientMembershipEvent(member, memberAttributeChange), getCallId());
                 }
             }
@@ -79,14 +93,37 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         final String name = ClusterServiceImpl.SERVICE_NAME;
         endpoint.setListenerRegistration(name, name, registrationId);
-
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
         final SerializationService serializationService = getClientEngine().getSerializationService();
         for (MemberImpl member : memberList) {
+            if (awsEnabled) {
+                member = resolveMember(member, true, service);
+            }
             response.add(serializationService.toData(member));
         }
         return new SerializableCollection(response);
+    }
+
+    private MemberImpl resolveMember(MemberImpl member, boolean newMember, ClusterServiceImpl service) {
+        if (newMember) {
+            service.updateAwsIpResolver();
+        }
+        final AwsIpResolver awsIpResolver = service.getAwsIpResolver();
+        final Address oldAddress = member.getAddress();
+        String host = oldAddress.getHost();
+        host = awsIpResolver.convertToPublic(host);
+        final Address newAddress;
+        try {
+            newAddress = new Address(host, oldAddress.getPort());
+            MemberImpl resolvedMember = new MemberImpl(member);
+            resolvedMember.setAddress(newAddress);
+            return resolvedMember;
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return member;
+        }
+
     }
 
     public String getServiceName() {
