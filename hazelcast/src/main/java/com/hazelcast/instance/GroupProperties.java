@@ -223,7 +223,7 @@ public class GroupProperties {
         HOSTED_MANAGEMENT_ENABLED = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_ENABLED, "false");
 
         //todo: we need to pull out the version.
-        HOSTED_MANAGEMENT_URL = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_URL, "http://manage.hazelcast.com/mancenter-3.2-SNAPSHOT");
+        HOSTED_MANAGEMENT_URL = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_URL, "http://manage.hazelcast.com/3.2");
 
         HEALTH_MONITORING_LEVEL = new GroupProperty(config,PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
         HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
