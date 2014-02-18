@@ -76,7 +76,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public ICondition newCondition(String name) {
-        throw new UnsupportedOperationException();
+        return new ClientConditionProxy(this, name, getContext());
     }
 
     public void lock() {
