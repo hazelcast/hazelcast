@@ -3,31 +3,49 @@
 
 Starting with version 3.0, Hazelcast supports entry processing. The interface EntryProcessor gives you the ability to execute your code on an entry in an atomic way. You do not need any explicit lock on entry. Practically, hazelcast locks the entry runs the EntryProcessor, then unlocks the entry. If entry processing is the major operation for a map and the map consists of complex objects then using Object type as in-memory-format is recommended to minimize serialization cost.
 
-There are two methods in IMap interface for entry processing:
+There are below methods in IMap interface for entry processing:
 
 ```
 /**
  	* Applies the user defined EntryProcessor to the entry mapped by the key.
  	* Returns the the object which is result of the process() method of EntryProcessor.
- 	* 
- 	*
- 	* @return result of entry process.
  	*/
  	
 	Object executeOnKey(K key, EntryProcessor entryProcessor);
 
-	/**
+/**
+     * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.
+     * the results mapped by each key in the collection.
+     */
+    
+    Map<K,Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
+
+/**
+     * Applies the user defined EntryProcessor to the entry mapped by the key with
+     * specified ExecutionCallback to listen event status and returns immediately.
+     */
+
+    void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
+
+/**
+     * Applies the user defined EntryProcessor to the entry mapped by the key.
+     * Returns immediately with a Future representing that task. EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the operation of EntryProcessor.
+     */
+
+    Future submitToKey(K key, EntryProcessor entryProcessor);
+
+/**
  	* Applies the user defined EntryProcessor to the all entries in the map.
  	* Returns the results mapped by each key in the map.
- 	* 
- 	*
  	*/
-	Map<K,Object> executeOnAllKeys(EntryProcessor entryProcessor);
+ 	
+	Map<K,Object> executeOnEntries(EntryProcessor entryProcessor);
+	
 ```
 
-Using executeOnAllKeys method, if the number of entries is high and you do need the results then returing null in process(..) method is a good practice.
+Using executeOnEntries method, if the number of entries is high and you do need the results then returing null in process(..) method is a good practice.
 
-Here EntryProcessor interface:
+Here is the EntryProcessor interface:
 
 ```
 public interface EntryProcessor<K, V> extends Serializable {
@@ -37,7 +55,8 @@ public interface EntryProcessor<K, V> extends Serializable {
     EntryBackupProcessor<K, V> getBackupProcessor();
 }
 ```
-If your code is modifying the data then you should also provide a processor for backup entries:
+
+If your code is modifying the data, then you should also provide a processor for backup entries:
 
 ```
 public interface EntryBackupProcessor<K, V> extends Serializable {
@@ -78,7 +97,7 @@ public class EntryProcessorTest {
             map.put(i, i);
         }
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        Map<Integer, Object> res = map.executeOnAllKeys(entryProcessor);
+        Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), (Object) (i+1));
         }
