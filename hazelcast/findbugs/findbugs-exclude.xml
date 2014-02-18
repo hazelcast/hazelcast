@@ -106,9 +106,5 @@
     <Match>
         <Package name="com.hazelcast.ascii" />
     </Match>
-    <Match>
-        <Package name="com.hazelcast.query.impl" />
-    </Match>
-
 
 </FindBugsFilter>
