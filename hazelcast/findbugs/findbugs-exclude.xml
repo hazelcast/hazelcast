@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
 
-    <Match>
-        <Package name="com.hazelcast.examples" />
-    </Match>
+    <!--comment out packages as they pass findbugs. e.g. examples now passes-->
+
+    <!--<Match>-->
+        <!--<Package name="com.hazelcast.examples" />-->
+    <!--</Match>-->
 
     <Match>
         <Package name="com.hazelcast.ascii.rest" />
