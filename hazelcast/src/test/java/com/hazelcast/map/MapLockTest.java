@@ -18,7 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -197,5 +199,63 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue(latch.await(60, TimeUnit.SECONDS));
     }
 
+
+    @Test(timeout = 1000*15, expected = IllegalMonitorStateException.class)
+    public void testLockOwnership() throws Exception {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final Config config = new Config();
+
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
+        final IMap map1 = node1.getMap("map");
+
+        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance(config);
+        final IMap map2 = node2.getMap("map");
+
+        map1.lock(1);
+
+        map2.unlock(1);
+    }
+
+    @Test(timeout = 10000*15)
+    public void testLockAbsentKey() throws Exception {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final Config config = new Config();
+
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
+        final IMap map1 = node1.getMap("map");
+
+        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance(config);
+        final IMap map2 = node2.getMap("map");
+
+        map1.lock("A");
+
+        final CountDownLatch putlatch = new CountDownLatch(1);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                map2.put("A", 2);
+                putlatch.countDown();
+            }
+        });
+        t.start();
+
+        map1.put("A", 1);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                Assert.assertEquals(1, map1.get("A"));
+                Assert.assertEquals(1, map2.get("A"));
+            }
+        });
+
+        map1.unlock("A");
+        Assert.assertTrue(putlatch.await(10, TimeUnit.SECONDS));
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                Assert.assertEquals(2, map1.get("A"));
+                Assert.assertEquals(2, map2.get("A"));
+            }
+        });
+    }
 
 }
