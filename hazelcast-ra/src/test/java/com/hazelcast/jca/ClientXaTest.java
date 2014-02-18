@@ -17,6 +17,7 @@
 package com.hazelcast.jca;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -25,7 +26,6 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.TransactionAccessor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,11 +48,11 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 /**
- * @author ali 30/01/14
+ * @author ali 14/02/14
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
-public class HazelcastXaTest {
+public class ClientXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
 
@@ -80,6 +80,7 @@ public class HazelcastXaTest {
     @Before
     public void init() throws SystemException, NotSupportedException {
         cleanAtomikosLogs();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
         tm = new UserTransactionManager();
         tm.setTransactionTimeout(60);
@@ -87,65 +88,42 @@ public class HazelcastXaTest {
 
     @After
     public void cleanup() {
-        cleanAtomikosLogs();
         tm.close();
-    }
-
-
-    @Test
-    public void testCommit() throws InterruptedException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-
-
-        final TransactionContext context = instance1.newTransactionContext();
-        context.beginTransaction();
-        context.getMap("map").put("key", "value");
-        final com.hazelcast.transaction.impl.Transaction transaction = TransactionAccessor.getTransaction(context);
-        transaction.prepare();
-
-        instance1.getLifecycleService().shutdown();
-
-        assertEquals("value", instance2.getMap("map").get("key"));
-
-        try {
-            transaction.rollback(); //For setting ThreadLocal of unfinished transaction
-        } catch (Throwable ignored) {
-        }
+        cleanAtomikosLogs();
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
     public void testRecovery() throws Exception {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance();
 
-        TransactionContext context1 = instance1.newTransactionContext(TransactionOptions.getDefault().setDurability(2));
-        XAResource xaResource = context1.getXaResource();
+        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
+
+        final TransactionContext context1 = client1.newTransactionContext(TransactionOptions.getDefault().setDurability(2));
+        final XAResource xaResource1 = context1.getXaResource();
         final MyXid myXid = new MyXid();
-        xaResource.start(myXid, 0);
+        xaResource1.start(myXid, 0);
         final TransactionalMap<Object, Object> map = context1.getMap("map");
         map.put("key", "value");
-        xaResource.prepare(myXid);
-        instance1.getLifecycleService().shutdown();
+        xaResource1.prepare(myXid);
+        client1.getLifecycleService().shutdown();
 
-        assertNull(instance2.getMap("map").get("key"));
+        assertNull(instance1.getMap("map").get("key"));
 
-        instance1 = Hazelcast.newHazelcastInstance();
-        TransactionContext context2 = instance1.newTransactionContext();
-        xaResource = context2.getXaResource();
-        final Xid[] recover = xaResource.recover(0);
+        final HazelcastInstance client2 = HazelcastClient.newHazelcastClient();
+        final TransactionContext context2 = client2.newTransactionContext();
+        final XAResource xaResource2 = context2.getXaResource();
+        final Xid[] recover = xaResource2.recover(0);
         for (Xid xid : recover) {
-            xaResource.commit(xid, false);
+            xaResource2.commit(xid, false);
         }
 
-        assertEquals("value", instance2.getMap("map").get("key"));
+        assertEquals("value", instance1.getMap("map").get("key"));
 
-        try {
-            context1.rollbackTransaction(); //For setting ThreadLocal of unfinished transaction
-        } catch (Exception ignored) {
-        }
-
+        context1.rollbackTransaction(); //For setting ThreadLocal of unfinished transaction
     }
 
     public static class MyXid implements Xid {
@@ -165,18 +143,20 @@ public class HazelcastXaTest {
         }
     }
 
+
     @Test
     public void testParallel() throws Exception {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        final int size = 300;
+        final int size = 150;
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(size);
         for (int i = 0; i < size; i++) {
             executorService.execute(new Runnable() {
                 public void run() {
                     try {
-                        txn(instance);
+                        txn(client);
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
@@ -186,7 +166,7 @@ public class HazelcastXaTest {
             });
         }
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        final IMap m = instance.getMap("m");
+        final IMap m = client.getMap("m");
         for (int i = 0; i < 10; i++) {
             assertFalse(m.isLocked(i));
         }
@@ -195,9 +175,10 @@ public class HazelcastXaTest {
     @Test
     public void testSequential() throws Exception {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        txn(instance);
-        txn(instance);
-        txn(instance);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        txn(client);
+        txn(client);
+        txn(client);
     }
 
     private void txn(HazelcastInstance instance) throws Exception {
@@ -238,5 +219,4 @@ public class HazelcastXaTest {
             tm.commit();
 
     }
-
 }

@@ -127,7 +127,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -136,7 +136,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (versionedValue.value != null)
             return versionedValue.value;
 
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -144,7 +144,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value == null)
             return null;
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -152,13 +152,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (!getService().compare(name, oldValue, versionedValue.value))
             return false;
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, newValue, -1, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, newValue, -1, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -167,7 +167,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (!getService().compare(name, versionedValue.value, value)) {
             return false;
         }
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
@@ -177,7 +177,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             return versionedValue;
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, timeout);
+        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, timeout, tx.getOwnerUuid());
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);

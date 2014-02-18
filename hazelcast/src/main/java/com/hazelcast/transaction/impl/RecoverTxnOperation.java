@@ -14,54 +14,64 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.tx;
+package com.hazelcast.transaction.impl;
 
-import com.hazelcast.map.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
-public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+/**
+ * @author ali 13/02/14
+ */
+public class RecoverTxnOperation extends Operation {
 
-    private String lockOwner;
-    private int lockThreadId;
+    transient SerializableCollection response;
 
-    protected TxnPrepareBackupOperation(String name, Data dataKey, String lockOwner, int lockThreadId) {
-        super(name, dataKey);
-        this.lockOwner = lockOwner;
-        this.lockThreadId = lockThreadId;
+    public RecoverTxnOperation() {
     }
 
-    public TxnPrepareBackupOperation() {
+    @Override
+    public void beforeRun() throws Exception {
     }
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.txnLock(getKey(), lockOwner, lockThreadId, 10000L)) {
-            throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
+        TransactionManagerServiceImpl txManagerService = getService();
+        final Set<RecoveredTransaction> recovered = txManagerService.recoverLocal();
+        final Set<Data> recoveredData = new HashSet<Data>(recovered.size());
+        final NodeEngine nodeEngine = getNodeEngine();
+        for (RecoveredTransaction rt : recovered) {
+            recoveredData.add(nodeEngine.toData(rt));
         }
+        response = new SerializableCollection(recoveredData);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return response;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(lockOwner);
-        out.writeInt(lockThreadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        lockOwner = in.readUTF();
-        lockThreadId = in.readInt();
     }
 }

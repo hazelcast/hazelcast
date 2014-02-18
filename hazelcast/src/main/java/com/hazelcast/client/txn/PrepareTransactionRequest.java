@@ -20,38 +20,39 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionAccessor;
 
 import java.io.IOException;
 
 /**
- * @author ali 6/7/13
+ * @author ali 14/02/14
  */
-public class CommitTransactionRequest extends TransactionRequest {
+public class PrepareTransactionRequest extends TransactionRequest {
 
-    boolean prepareAndCommit = false;
-
-    public CommitTransactionRequest() {
+    public PrepareTransactionRequest() {
     }
 
-    public CommitTransactionRequest(int clientThreadId, boolean prepareAndCommit) {
+    public PrepareTransactionRequest(int clientThreadId) {
         super(clientThreadId);
-        this.prepareAndCommit = prepareAndCommit;
     }
 
-    public Object innerCall() throws Exception {
+    @Override
+    protected Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final TransactionContext transactionContext = endpoint.getTransactionContext();
-        if (prepareAndCommit) {
-            transactionContext.commitTransaction();
-        } else {
-            final Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
-            transaction.commit();
-        }
-        endpoint.setTransactionContext(null);
+        final Transaction transaction = TransactionAccessor.getTransaction(endpoint.getTransactionContext());
+        transaction.prepare();
         return null;
+    }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+
+    }
+
+    @Override
+    public void read(PortableReader reader) throws IOException {
+
     }
 
     public String getServiceName() {
@@ -63,14 +64,6 @@ public class CommitTransactionRequest extends TransactionRequest {
     }
 
     public int getClassId() {
-        return ClientTxnPortableHook.COMMIT;
-    }
-
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeBoolean("pc", prepareAndCommit);
-    }
-
-    public void read(PortableReader reader) throws IOException {
-        prepareAndCommit =  reader.readBoolean("pc");
+        return ClientTxnPortableHook.PREPARE;
     }
 }

@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
