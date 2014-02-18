@@ -6,11 +6,6 @@
     </Match>
 
     <Match>
-        <Package name="com.hazelcast.ascii" />
-        <Package name="com.hazelcast.ascii.rest" />
-        <Package name="com.hazelcast.ascii.memcache" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.ascii.rest" />
     </Match>
     <Match>
@@ -99,9 +94,6 @@
     </Match>
     <Match>
         <Package name="com.hazelcast.replicatedmap.record" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.wan" />
     </Match>
     <Match>
         <Package name="com.hazelcast.ascii" />
