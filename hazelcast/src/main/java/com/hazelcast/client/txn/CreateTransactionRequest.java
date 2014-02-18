@@ -55,7 +55,7 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
         ClientEngineImpl clientEngine = getService();
         final ClientEndpoint endpoint = getEndpoint();
         final TransactionManagerServiceImpl transactionManager =
-                (TransactionManagerServiceImpl)clientEngine.getTransactionManagerService();
+                (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
         final TransactionContext context = transactionManager.newClientTransactionContext(options, endpoint.getUuid());
         if (sXid != null) {
             final Transaction transaction = TransactionAccessor.getTransaction(context);
@@ -79,16 +79,25 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
     }
 
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         options.writeData(out);
-        out.writeObject(sXid);
+        out.writeBoolean(sXid != null);
+        if (sXid != null) {
+            sXid.writeData(out);
+        }
     }
 
     public void read(PortableReader reader) throws IOException {
-        options = new TransactionOptions();
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
+        options = new TransactionOptions();
         options.readData(in);
-        sXid = in.readObject();
+        final boolean sXidNotNull = in.readBoolean();
+        if (sXidNotNull) {
+            sXid = new SerializableXID();
+            sXid.readData(in);
+        }
 
     }
 
