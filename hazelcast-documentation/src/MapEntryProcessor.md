@@ -5,7 +5,7 @@ Starting with version 3.0, Hazelcast supports entry processing. The interface En
 
 There are below methods in IMap interface for entry processing:
 
-```
+```java
 /**
  	* Applies the user defined EntryProcessor to the entry mapped by the key.
  	* Returns the the object which is result of the process() method of EntryProcessor.
@@ -40,14 +40,13 @@ There are below methods in IMap interface for entry processing:
  	*/
  	
 	Map<K,Object> executeOnEntries(EntryProcessor entryProcessor);
-	
-```
+	```
 
 Using executeOnEntries method, if the number of entries is high and you do need the results then returing null in process(..) method is a good practice.
 
 Here is the EntryProcessor interface:
 
-```
+```java
 public interface EntryProcessor<K, V> extends Serializable {
 
     Object process(Map.Entry<K, V> entry);
@@ -66,7 +65,7 @@ public interface EntryBackupProcessor<K, V> extends Serializable {
 ```
 **Example Usage:**
 
-```
+```java
 public class EntryProcessorTest {
 
     @Test
