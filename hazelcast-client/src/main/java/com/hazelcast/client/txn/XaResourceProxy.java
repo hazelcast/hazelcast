@@ -130,6 +130,9 @@ public class XaResourceProxy implements XAResource {
             if(transactionManager.recover(xid, true)){
                 return;
             }
+            final XAException xaException = new XAException(XAException.XAER_NOTA);
+            logger.severe("Transaction is not available!!!", xaException);
+            throw xaException;
         }
 
         validateTx(transaction, onePhase ? ACTIVE : PREPARED);
@@ -150,6 +153,9 @@ public class XaResourceProxy implements XAResource {
             if(transactionManager.recover(xid, false)){
                 return;
             }
+            final XAException xaException = new XAException(XAException.XAER_NOTA);
+            logger.severe("Transaction is not available!!!", xaException);
+            throw xaException;
         }
         validateTx(transaction, Transaction.State.NO_TXN); //NO_TXN means do not validate state
         try {
