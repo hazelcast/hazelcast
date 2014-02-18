@@ -101,9 +101,6 @@
         <Package name="com.hazelcast.replicatedmap.record" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.wan" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.ascii" />
     </Match>
     <Match>
