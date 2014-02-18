@@ -30,23 +30,29 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
 
     private long timeout;
     private VersionedValue response;
+    private String ownerUuid;
 
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl) {
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid) {
         super(name, dataKey, ttl);
         this.timeout = timeout;
+        this.ownerUuid = ownerUuid;
     }
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.txnLock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
+        if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), ttl)) {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
         Record record = recordStore.getRecord(dataKey);
         Data value = record == null ? null : mapService.toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());
+    }
+
+    public boolean shouldWait() {
+        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
     }
 
     @Override
@@ -69,12 +75,14 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(timeout);
+        out.writeUTF(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         timeout = in.readLong();
+        ownerUuid = in.readUTF();
     }
 
 

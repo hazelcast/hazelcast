@@ -442,14 +442,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
     }
 
-    class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+    static class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
         @Override
         public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
             return new DefaultSocketChannelWrapper(socketChannel);
         }
     }
 
-    class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+    static class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
         final SSLContextFactory sslContextFactory;
 
         SSLSocketChannelWrapperFactory(SSLConfig sslConfig) {

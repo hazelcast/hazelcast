@@ -5,24 +5,24 @@ Hazelcast Management Center enables you to monitor and manage your servers runni
 
 ### Installation
 
-It is important to understand how it actually works. Basically you will deploy `mancenter.war` application into your Java web server and then tell Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
+It is important to understand how it actually works. Basically you will deploy `mancenter`-*version*`.war` application into your Java web server and then tell Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
 
 Here are the steps:
 
--   Download the latest Hazelcast zip from [hazelcast.com](http://www.hazelcast.com/downloads.jsp)
+-   Download the latest Hazelcast zip from [hazelcast.org](http://www.hazelcast.org/download/)
 
--   Zip contains `mancenter.war` file. Deploy it to your web server (Tomcat, Jetty etc.) Let's say it is running at`http://localhost:8080/mancenter`.
+-   Zip contains `mancenter`-*version*`.war` file. Deploy it to your web server (Tomcat, Jetty etc.) Let's say it is running at`http://localhost:8080/mancenter-`*version*
 
--   Start your web server and make sure `http://localhost:8080/mancenter` is up.
+-   Start your web server and make sure `http://localhost:8080/mancenter`-*version*` is up.
 
 -   Configure your Hazelcast nodes by adding the URL of your web app to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
 
 ```xml
-<management-center enabled="true">http://localhost:8080/mancenter</management-center>
+<management-center enabled="true">http://localhost:8080/mancenter-```*version*```</management-center>
 ```
--   Start your hazelcast cluster.
+-   Start your Hazelcast cluster.
 
--   Browse to `http://localhost:8080/mancenter` and login. **Initial login username/passwords is `admin/admin`**
+-   Browse to `http://localhost:8080/mancenter`-*version* and login. **Initial login username/passwords is `admin/admin`**
 
 *Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory setting "hazelcast.mancenter.home" system property.*
 

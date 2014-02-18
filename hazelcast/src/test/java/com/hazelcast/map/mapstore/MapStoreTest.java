@@ -140,7 +140,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test (timeout = 60000)
+    @Test (timeout = 120000)
     public void testInitialLoadModeEager() {
         int size = 100000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -161,7 +161,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     }
 
-    @Test (timeout = 60000)
+    @Test (timeout = 120000)
     @Category(ProblematicTest.class)
     public void testInitialLoadModeEagerMultipleThread() {
         final int size = 100000;
@@ -187,7 +187,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         IMap map = instance1.getMap("testInitialLoadModeEagerMultipleThread");
         assertEquals(size, map.size());
     }
-    @Test (timeout = 60000)
+    @Test (timeout = 120000)
     public void testInitialLoadModeEagerWhileStoppigOneNode() {
         final int size = 100000;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);

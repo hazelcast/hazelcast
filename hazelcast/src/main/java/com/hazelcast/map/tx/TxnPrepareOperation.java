@@ -17,15 +17,22 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.operation.KeyBasedMapOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
 
+import java.io.IOException;
+
 public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupAwareOperation {
 
-    protected TxnPrepareOperation(String name, Data dataKey) {
+    String ownerUuid;
+
+    protected TxnPrepareOperation(String name, Data dataKey, String ownerUuid) {
         super(name, dataKey);
+        this.ownerUuid = ownerUuid;
     }
 
     public TxnPrepareOperation() {
@@ -33,7 +40,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.extendLock(getKey(), getCallerUuid(), getThreadId(), 10000L)) {
+        if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), 10000L)) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }
@@ -48,7 +55,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     }
 
     public final Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(name, dataKey, getCallerUuid(), getThreadId());
+        return new TxnPrepareBackupOperation(name, dataKey, ownerUuid, getThreadId());
     }
 
     public final int getAsyncBackupCount() {
@@ -57,5 +64,16 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
 
     public final int getSyncBackupCount() {
         return mapContainer.getBackupCount();
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(ownerUuid);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        ownerUuid = in.readUTF();
     }
 }
