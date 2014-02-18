@@ -45,7 +45,7 @@ import java.util.Map;
  */
 @Beta
 public abstract class KeyValueSource<K, V>
-        implements Closeable, Serializable {
+        implements Closeable {
 
     /**
      * This method is called before accessing the key-value pairs of this KeyValueSource

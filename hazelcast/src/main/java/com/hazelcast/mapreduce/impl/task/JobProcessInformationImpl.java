@@ -20,6 +20,8 @@ import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.ValidationUtil;
+import edu.umd.cs.findbugs.annotations.*;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,6 +51,11 @@ public class JobProcessInformationImpl
     }
 
     @Override
+    // Expose warning suppressed, this exposed array is used a lot on internals
+    // and is explicitly exposed for speed / object creation reasons.
+    // It is never exposed to the end user (either through serialization cycle
+    // or by hiding in through a wrapper class
+    @SuppressWarnings({"EI_EXPOSE_REP"})
     public JobPartitionState[] getPartitionStates() {
         return partitionStates;
     }

@@ -24,9 +24,6 @@
         <Package name="com.hazelcast.management.request" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.mapreduce.impl.task" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.instance" />
     </Match>
     <Match>
