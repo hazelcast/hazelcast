@@ -26,12 +26,14 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.File;
@@ -53,9 +55,9 @@ public class ClientXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
 
-    @BeforeClass
-    @AfterClass
-    public static void cleanAtomikosLogs() {
+    UserTransactionManager tm = null;
+
+    public void cleanAtomikosLogs() {
         try {
             File currentDir = new File(".");
             final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {
@@ -75,8 +77,18 @@ public class ClientXaTest {
     }
 
     @Before
+    public void init() throws SystemException {
+        cleanAtomikosLogs();
+        tm = new UserTransactionManager();
+        tm.setTransactionTimeout(60);
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
+
     @After
     public void cleanup() {
+        tm.close();
+        cleanAtomikosLogs();
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -109,6 +121,11 @@ public class ClientXaTest {
         }
 
         assertEquals("value", instance1.getMap("map").get("key"));
+
+        try {
+            context1.rollbackTransaction(); //for setting ThreadLocal of unfinished transaction
+        } catch (Throwable ignored) {
+        }
     }
 
     public static class MyXid implements Xid {
@@ -167,8 +184,6 @@ public class ClientXaTest {
     }
 
     private void txn(HazelcastInstance instance) throws Exception {
-        final TransactionManager tm = new UserTransactionManager();
-        tm.setTransactionTimeout(60);
         tm.begin();
 
         final TransactionContext context = instance.newTransactionContext();
@@ -191,8 +206,6 @@ public class ClientXaTest {
     private void close(boolean error, XAResource... xaResource) throws Exception {
 
         int flag = XAResource.TMSUCCESS;
-        // retrieve or construct a TM handle
-        TransactionManager tm = new UserTransactionManager();
 
         // get the current tx
         Transaction tx = tm.getTransaction();

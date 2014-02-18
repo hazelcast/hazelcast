@@ -26,12 +26,14 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.TransactionAccessor;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.File;
@@ -50,9 +52,9 @@ public class HazelcastXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
 
-    @BeforeClass
-    @AfterClass
-    public static void cleanAtomikosLogs(){
+    UserTransactionManager tm = null;
+
+    public void cleanAtomikosLogs(){
         try {
             File currentDir = new File(".");
             final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {
@@ -72,8 +74,17 @@ public class HazelcastXaTest {
     }
 
     @Before
+    public void init() throws SystemException {
+        cleanAtomikosLogs();
+        tm = new UserTransactionManager();
+        tm.setTransactionTimeout(60);
+        Hazelcast.shutdownAll();
+    }
+
     @After
     public void cleanup() {
+        tm.close();
+        cleanAtomikosLogs();
         Hazelcast.shutdownAll();
     }
 
@@ -92,6 +103,11 @@ public class HazelcastXaTest {
         instance1.getLifecycleService().shutdown();
 
         assertEquals("value", instance2.getMap("map").get("key"));
+
+        try {
+            transaction.rollback(); //for setting ThreadLocal of unfinished transaction
+        } catch (Throwable ignored) {
+        }
     }
 
     @Test
@@ -100,11 +116,11 @@ public class HazelcastXaTest {
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
         HazelcastInstance instance3 = Hazelcast.newHazelcastInstance();
 
-        TransactionContext context = instance1.newTransactionContext(TransactionOptions.getDefault().setDurability(2));
-        XAResource xaResource = context.getXaResource();
+        TransactionContext context1 = instance1.newTransactionContext(TransactionOptions.getDefault().setDurability(2));
+        XAResource xaResource = context1.getXaResource();
         final MyXid myXid = new MyXid();
         xaResource.start(myXid, 0);
-        final TransactionalMap<Object, Object> map = context.getMap("map");
+        final TransactionalMap<Object, Object> map = context1.getMap("map");
         map.put("key", "value");
         xaResource.prepare(myXid);
         instance1.getLifecycleService().shutdown();
@@ -112,14 +128,19 @@ public class HazelcastXaTest {
         assertNull(instance2.getMap("map").get("key"));
 
         instance1 = Hazelcast.newHazelcastInstance();
-        context = instance1.newTransactionContext();
-        xaResource = context.getXaResource();
+        TransactionContext context2 = instance1.newTransactionContext();
+        xaResource = context2.getXaResource();
         final Xid[] recover = xaResource.recover(0);
         for (Xid xid : recover) {
             xaResource.commit(xid, false);
         }
 
         assertEquals("value", instance2.getMap("map").get("key"));
+
+        try {
+            context1.rollbackTransaction(); //for setting ThreadLocal of unfinished transaction
+        } catch (Throwable ignored) {
+        }
     }
 
     public static class MyXid implements Xid {
@@ -175,8 +196,6 @@ public class HazelcastXaTest {
     }
 
     private void txn(HazelcastInstance instance) throws Exception {
-        final TransactionManager tm = new UserTransactionManager();
-        tm.setTransactionTimeout(60);
         tm.begin();
 
         final TransactionContext context = instance.newTransactionContext();
@@ -199,8 +218,6 @@ public class HazelcastXaTest {
     private void close(boolean error, XAResource... xaResource) throws Exception {
 
         int flag = XAResource.TMSUCCESS;
-        // retrieve or construct a TM handle
-        TransactionManager tm = new UserTransactionManager();
 
         // get the current tx
         Transaction tx = tm.getTransaction();
