@@ -45,7 +45,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
@@ -94,12 +93,6 @@ public final class ProxyManager {
         register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 return new ClientMultiMapProxy(MultiMapService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(ReplicatedMapService.SERVICE_NAME, new ClientProxyFactory() {
-            @Override
-            public ClientProxy create(String id) {
-                return new ClientReplicatedMapProxy(ReplicatedMapService.SERVICE_NAME, id);
             }
         });
         register(ListService.SERVICE_NAME, new ClientProxyFactory() {
