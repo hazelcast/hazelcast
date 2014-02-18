@@ -23,11 +23,15 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.EOFException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -76,7 +80,7 @@ public class ClientConnection implements Connection, Closeable {
         this.readBuffer = ByteBuffer.allocate(socket.getReceiveBufferSize());
     }
 
-    public void registerCallId(ClientCallFuture future){
+    public void registerCallId(ClientCallFuture future) {
         final int callId = connectionManager.newCallId();
         future.getRequest().setCallId(callId);
         callIdMap.put(callId, future);
@@ -85,11 +89,11 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
-    public ClientCallFuture deRegisterCallId(int callId){
+    public ClientCallFuture deRegisterCallId(int callId) {
         return callIdMap.remove(callId);
     }
 
-    public ClientCallFuture deRegisterEventHandler(int callId){
+    public ClientCallFuture deRegisterEventHandler(int callId) {
         return eventHandlerMap.remove(callId);
     }
 
@@ -141,7 +145,7 @@ public class ClientConnection implements Connection, Closeable {
 
     public Data read() throws IOException {
         ClientPacket packet = new ClientPacket(serializationService.getSerializationContext());
-        while (true){
+        while (true) {
             if (readFromSocket) {
                 int readBytes = socketChannelWrapper.read(readBuffer);
                 if (readBytes == -1) {
@@ -283,7 +287,9 @@ public class ClientConnection implements Connection, Closeable {
         }
 
         logger.warning(message);
-        connectionManager.destroyConnection(this);
+        if (!socketChannelWrapper.isBlocking()) {
+            connectionManager.destroyConnection(this);
+        }
     }
 
     @Override
