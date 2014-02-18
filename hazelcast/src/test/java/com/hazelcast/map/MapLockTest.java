@@ -36,7 +36,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -256,6 +258,33 @@ public class MapLockTest extends HazelcastTestSupport {
                 Assert.assertEquals(2, map2.get("A"));
             }
         });
+    }
+
+
+    @Test
+    public void testLockTTLKey() throws InterruptedException {
+
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final Config config = new Config();
+
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
+        final IMap map1 = node1.getMap("map");
+
+        map1.put(1, "A", 1, TimeUnit.SECONDS);
+
+        map1.lock(1);
+
+        Thread.sleep(1000 * 2);
+
+        assertEquals("A", map1.get(1));
+        assertTrue(map1.containsKey(1));
+
+        map1.unlock(1);
+
+        Thread.sleep(1000 * 2);
+
+        assertEquals(null, map1.get(1));
+        assertFalse(map1.containsKey(1));
     }
 
 }
