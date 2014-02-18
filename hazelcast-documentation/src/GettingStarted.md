@@ -5,11 +5,9 @@
 
 In this short tutorial, we will create simple Java application using Hazelcast distributed map and queue. Then we will run our application twice to have two nodes (JVMs) clustered and finalize this tutorial with connecting to our cluster from another Java application by using Hazelcast Native Java Client API.
 
--   Download the latest [Hazelcast zip](http://www.hazelcast.com/downloads.jsp).
+-   Download the latest [Hazelcast zip](http://www.hazelcast.org/download/).
 
 -   Unzip it and add the `lib/hazelcast.jar` to your class path.
-
--   Create a Java class and import Hazelcast libraries.
 
 -   Following code will start the first node and create and use `customers` map and queue.
 

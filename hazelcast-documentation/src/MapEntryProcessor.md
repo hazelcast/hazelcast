@@ -5,29 +5,31 @@ Starting with version 3.0, Hazelcast supports entry processing. The interface En
 
 There are two methods in IMap interface for entry processing:
 
-```java
-/**
- * Applies the user defined EntryProcessor to the entry mapped by the key.
- * Returns the the object which is result of the process() method of EntryProcessor.
- * 
- *
- * @return result of entry process.
- */
-Object executeOnKey(K key, EntryProcessor entryProcessor);
-
-/**
- * Applies the user defined EntryProcessor to the all entries in the map.
- * Returns the results mapped by each key in the map.
- * 
- *
- */
-Map<K,Object> executeOnAllKeys(EntryProcessor entryProcessor);
 ```
+/**
+ 	* Applies the user defined EntryProcessor to the entry mapped by the key.
+ 	* Returns the the object which is result of the process() method of EntryProcessor.
+ 	* 
+ 	*
+ 	* @return result of entry process.
+ 	*/
+ 	
+	Object executeOnKey(K key, EntryProcessor entryProcessor);
+
+	/**
+ 	* Applies the user defined EntryProcessor to the all entries in the map.
+ 	* Returns the results mapped by each key in the map.
+ 	* 
+ 	*
+ 	*/
+	Map<K,Object> executeOnAllKeys(EntryProcessor entryProcessor);
+```
+
 Using executeOnAllKeys method, if the number of entries is high and you do need the results then returing null in process(..) method is a good practice.
 
 Here EntryProcessor interface:
 
-```java
+```
 public interface EntryProcessor<K, V> extends Serializable {
 
     Object process(Map.Entry<K, V> entry);
@@ -37,7 +39,7 @@ public interface EntryProcessor<K, V> extends Serializable {
 ```
 If your code is modifying the data then you should also provide a processor for backup entries:
 
-```java
+```
 public interface EntryBackupProcessor<K, V> extends Serializable {
 
     void processBackup(Map.Entry<K, V> entry);
@@ -45,7 +47,7 @@ public interface EntryBackupProcessor<K, V> extends Serializable {
 ```
 **Example Usage:**
 
-```java
+```
 public class EntryProcessorTest {
 
     @Test
