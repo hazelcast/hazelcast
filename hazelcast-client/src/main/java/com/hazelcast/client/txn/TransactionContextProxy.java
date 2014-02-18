@@ -143,7 +143,7 @@ public class TransactionContextProxy implements TransactionContext {
         return transaction.getXid() != null;
     }
 
-    private class TransactionalObjectKey {
+    private static class TransactionalObjectKey {
         private final String serviceName;
         private final String name;
 
