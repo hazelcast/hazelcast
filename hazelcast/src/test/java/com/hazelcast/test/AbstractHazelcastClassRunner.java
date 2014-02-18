@@ -23,6 +23,8 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -61,6 +63,13 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
      */
     public AbstractHazelcastClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
+    }
+
+    @Override
+    protected List<FrameworkMethod> getChildren() {
+        final List<FrameworkMethod> children = super.getChildren();
+        Collections.shuffle(children);
+        return children;
     }
 
     @Override
