@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.IOException;
 
@@ -43,11 +44,16 @@ public class TransferableJobProcessInformation
     }
 
     public TransferableJobProcessInformation(JobPartitionState[] partitionStates, int processedRecords) {
-        this.partitionStates = partitionStates;
+        this.partitionStates = new JobPartitionState[partitionStates.length];
+        System.arraycopy(partitionStates, 0, this.partitionStates, 0, partitionStates.length);
         this.processedRecords = processedRecords;
     }
 
     @Override
+    // This field is explicitly exposed since it is guarded by a serialization cycle
+    // or by a copy inside the constructor. This class is only used for transfer of
+    // the states and user can change it without breaking anything.
+    @SuppressWarnings("EI_EXPOSE_REP")
     public JobPartitionState[] getPartitionStates() {
         return partitionStates;
     }

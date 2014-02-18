@@ -29,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,7 +96,8 @@ public class CustomDataSourceMapReduceTest
     }
 
     public static class CustomKeyValueSource
-            extends KeyValueSource<String, Integer> {
+            extends KeyValueSource<String, Integer>
+            implements Serializable {
 
         private transient List<Map.Entry<String, Integer>> entries;
 
