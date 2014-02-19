@@ -9,7 +9,9 @@ In this short tutorial, we will create simple Java application using Hazelcast d
 
 -   Unzip it and add the `lib/hazelcast.jar` to your class path.
 
--   Following code will start the first node and create and use `customers` map and queue.
+-	Deploy the `mancenter-`*version*`.war` included in the ZIP file to your web server, to be able to use the Management Center.
+
+-	Following code will start the first node and create and use `customers` map and queue.
 
 ```java
 import com.hazelcast.config.Config;
@@ -52,7 +54,11 @@ Members [2] {
     Member [127.0.0.1:5702] this
 }                              
 ```
+
+-	Now, you can use the **Management Center** to monitor and configure your maps, topics, queues and members, and also the see the logs.
+
 **Connecting Hazelcast Cluster with Java Client API**
+
 
 -   Besides `hazelcast.jar` you should also add `hazelcast-client.jar` to your classpath.
 

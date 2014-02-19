@@ -9,7 +9,7 @@ It is important to understand how it actually works. Basically you will deploy `
 
 Here are the steps:
 
--   Download the latest Hazelcast zip from [hazelcast.org](http://www.hazelcast.org/download/)
+-   Download the latest Hazelcast zip from [hazelcast.org](http://www.hazelcast.org/download/).
 
 -   Zip contains `mancenter`-*version*`.war` file. Deploy it to your web server (Tomcat, Jetty etc.) Let's say it is running at`http://localhost:8080/mancenter-`*version*
 
