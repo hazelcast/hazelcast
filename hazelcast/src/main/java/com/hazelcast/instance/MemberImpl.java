@@ -172,6 +172,8 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             case REMOVE:
                 attributes.remove(key);
                 break;
+            default:
+                throw new IllegalArgumentException("Not a known OperationType " + operationType);
         }
     }
 
