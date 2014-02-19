@@ -158,8 +158,8 @@ fi
 function init {
 	version=$1
 	OUTPUT_DIR="target"
-	MULTI_HTML_OUTPUT_DIR="multi_html"
-	SINGLE_HTML_OUTPUT_DIR="single_html"
+	MULTI_HTML_OUTPUT_DIR="html"
+	SINGLE_HTML_OUTPUT_DIR="html-single"
 	NOHEADER_HTML_OUTPUT_DIR="no_header"
 	PDF_OUTPUT_DIR="pdf"
 	PDF_FILE_NAME="hazelcast-documentation-$version.pdf"
