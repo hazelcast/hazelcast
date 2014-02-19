@@ -3,9 +3,9 @@
 
     <!--comment out packages as they pass findbugs. e.g. examples now passes-->
 
-    <!--<Match>-->
-        <!--<Package name="com.hazelcast.examples" />-->
-    <!--</Match>-->
+    <Match>
+        <Package name="com.hazelcast.examples" />
+    </Match>
 
     <Match>
         <Package name="com.hazelcast.ascii.rest" />
