@@ -27,12 +27,6 @@ There are below methods in IMap interface for entry processing:
 
     void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
 
-/**
-     * Applies the user defined EntryProcessor to the entry mapped by the key.
-     * Returns immediately with a Future representing that task. EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the operation of EntryProcessor.
-     */
-
-    Future submitToKey(K key, EntryProcessor entryProcessor);
 
 /**
  	* Applies the user defined EntryProcessor to the all entries in the map.
@@ -40,6 +34,13 @@ There are below methods in IMap interface for entry processing:
  	*/
  	
 	Map<K,Object> executeOnEntries(EntryProcessor entryProcessor);
+	 
+/**
+     * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
+     * Returns the results mapped by each key in the map.
+     */
+
+    Map<K,Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 	```
 
 Using executeOnEntries method, if the number of entries is high and you do need the results then returing null in process(..) method is a good practice.
@@ -57,7 +58,7 @@ public interface EntryProcessor<K, V> extends Serializable {
 
 If your code is modifying the data, then you should also provide a processor for backup entries:
 
-```
+```java
 public interface EntryBackupProcessor<K, V> extends Serializable {
 
     void processBackup(Map.Entry<K, V> entry);
