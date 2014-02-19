@@ -1133,7 +1133,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         final Node securityTokenNode = attrs.getNamedItem("security-token");
         final String securityToken = getTextContent(securityTokenNode);
 
-        if (securityToken != null && enabledNode == null) {
+        if ((securityToken != null && !"".equals(securityToken)) && enabledNode == null) {
             enabled = true;
         }
 
