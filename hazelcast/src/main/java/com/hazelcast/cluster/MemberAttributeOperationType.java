@@ -14,21 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.cluster;
 
-import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.instance.MemberImpl;
+/**
+ * @author ali 19/02/14
+ */
+public enum MemberAttributeOperationType {
 
-public class MemberAttributeServiceEvent extends MemberAttributeEvent {
+    PUT(1), REMOVE(2);
 
-    public MemberAttributeServiceEvent() {
-        super();
+    public final int id;
+
+    MemberAttributeOperationType(int i) {
+        this.id = i;
     }
 
-    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType, String key, Object value) {
-        super(cluster, member, operationType, key, value);
+    public static MemberAttributeOperationType getValue(int id){
+        for (MemberAttributeOperationType operationType : values()) {
+            if (operationType.id == id) {
+                return operationType;
+            }
+        }
+        throw new IllegalArgumentException("No OperationType for id: " + id);
     }
+
 
 }

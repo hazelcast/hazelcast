@@ -21,11 +21,11 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientPortableHook;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -68,7 +68,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
                 if (endpoint.live()) {
                     final MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
                     final String uuid = member.getUuid();
-                    final MapOperationType op = memberAttributeEvent.getOperationType();
+                    final MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
                     final String key = memberAttributeEvent.getKey();
                     final Object value = memberAttributeEvent.getValue();
                     final MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);

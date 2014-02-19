@@ -16,28 +16,23 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
+
 public class MemberAttributeChangedOperation extends AbstractClusterOperation {
 
-    public static final byte DELTA_MEMBER_PROPERTIES_OP_PUT = 2;
-    public static final byte DELTA_MEMBER_PROPERTIES_OP_REMOVE = 3;
-
-    private MapOperationType operationType;
+    private MemberAttributeOperationType operationType;
     private String key;
     private Object value;
 
     public MemberAttributeChangedOperation() {
     }
 
-    public MemberAttributeChangedOperation(MapOperationType operationType, String key, Object value) {
-        if (operationType != MapOperationType.PUT && operationType != MapOperationType.REMOVE) {
-            throw new IllegalArgumentException("Only PUT / REMOVE operations are allowed for attribute updates");
-        }
+    public MemberAttributeChangedOperation(MemberAttributeOperationType operationType, String key, Object value) {
         this.operationType = operationType;
         this.key = key;
         this.value = value;
@@ -53,16 +48,9 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(key);
-        switch (operationType) {
-            case PUT:
-                out.writeByte(DELTA_MEMBER_PROPERTIES_OP_PUT);
-                out.writeObject(value);
-                break;
-            case REMOVE:
-                out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
-                break;
-            default:
-                throw new IllegalStateException("Unhandeled operationType:" + operationType);
+        out.writeByte(operationType.id);
+        if (operationType == PUT) {
+            out.writeObject(value);
         }
     }
 
@@ -70,17 +58,9 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         key = in.readUTF();
-        int operation = in.readByte();
-        switch (operation) {
-            case DELTA_MEMBER_PROPERTIES_OP_PUT:
-                operationType = MapOperationType.PUT;
-                value = in.readObject();
-                break;
-            case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
-                operationType = MapOperationType.REMOVE;
-                break;
-            default:
-                throw new IllegalStateException("Unhandeled operationType:" + operationType);
+        operationType = MemberAttributeOperationType.getValue(in.readByte());
+        if (operationType == PUT) {
+            value = in.readObject();
         }
     }
 
