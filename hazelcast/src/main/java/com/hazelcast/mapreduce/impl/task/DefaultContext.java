@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This is the internal default implementation of a map reduce context mappers emit values to. It controls the emitted
@@ -43,8 +44,9 @@ public class DefaultContext<KeyIn, ValueIn>
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
 
+    private final AtomicInteger collected = new AtomicInteger(0);
+
     private volatile int partitionId;
-    private volatile int collected;
 
     protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory, MapCombineTask mapCombineTask) {
         this.mapCombineTask = mapCombineTask;
@@ -59,7 +61,7 @@ public class DefaultContext<KeyIn, ValueIn>
     public void emit(KeyIn key, ValueIn value) {
         Combiner<KeyIn, ValueIn, ?> combiner = getOrCreateCombiner(key);
         combiner.combine(key, value);
-        collected++;
+        collected.incrementAndGet();
         mapCombineTask.onEmit(this, partitionId);
     }
 
@@ -69,12 +71,12 @@ public class DefaultContext<KeyIn, ValueIn>
             Chunk chunk = (Chunk) entry.getValue().finalizeChunk();
             chunkMap.put(entry.getKey(), chunk);
         }
-        collected = 0;
+        collected.set(0);
         return chunkMap;
     }
 
     public int getCollected() {
-        return collected;
+        return collected.get();
     }
 
     public <Chunk> Map<KeyIn, Chunk> finish() {

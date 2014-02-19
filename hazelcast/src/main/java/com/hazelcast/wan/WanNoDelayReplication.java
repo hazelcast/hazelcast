@@ -40,7 +40,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     private String password;
     private final LinkedBlockingQueue<String> addressQueue = new LinkedBlockingQueue<String>();
     private final LinkedList<WanReplicationEvent> failureQ = new LinkedList<WanReplicationEvent>();
-    private final BlockingQueue<WanReplicationEvent> q = new ArrayBlockingQueue<WanReplicationEvent>(100000);
+    private final BlockingQueue<WanReplicationEvent> eventQueue = new ArrayBlockingQueue<WanReplicationEvent>(100000);
     private volatile boolean running = true;
 
     public void init(Node node, String groupName, String password, String... targets) {
@@ -55,9 +55,19 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     @Override
     public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
         WanReplicationEvent replicationEvent = new WanReplicationEvent(serviceName, eventObject);
-        if (!q.offer(replicationEvent)) {
-            q.poll();
-            q.offer(replicationEvent);
+
+        //if the replication event is published, we are done.
+        if(eventQueue.offer(replicationEvent)){
+            return;
+        }
+
+        //the replication event could not be published because the eventQueue is full. So we are going
+        //to drain one item and then offer it again.
+        //todo: isn't it dangerous to drop a ReplicationEvent?
+        eventQueue.poll();
+
+        if(!eventQueue.offer(replicationEvent)){
+            logger.warning("Could not publish replication event: "+replicationEvent);
         }
     }
 
@@ -69,7 +79,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         Connection conn = null;
         while (running) {
             try {
-                WanReplicationEvent event = (failureQ.size() > 0) ? failureQ.removeFirst() : q.take();
+                WanReplicationEvent event = (failureQ.size() > 0) ? failureQ.removeFirst() : eventQueue.take();
                 if (conn == null) {
                     conn = getConnection();
                     if (conn != null) {

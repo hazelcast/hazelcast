@@ -30,6 +30,9 @@ public class ClientTxnPortableHook implements PortableHook{
     public static final int CREATE = 1;
     public static final int COMMIT = 2;
     public static final int ROLLBACK = 3;
+    public static final int PREPARE = 4;
+    public static final int RECOVER_ALL = 5;
+    public static final int RECOVER = 6;
 
     public int getFactoryId() {
         return F_ID;
@@ -45,8 +48,15 @@ public class ClientTxnPortableHook implements PortableHook{
                         return new CommitTransactionRequest();
                     case ROLLBACK:
                         return new RollbackTransactionRequest();
+                    case PREPARE:
+                        return new PrepareTransactionRequest();
+                    case RECOVER_ALL:
+                        return new RecoverAllTransactionsRequest();
+                    case RECOVER:
+                        return new RecoverTransactionRequest();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
         return factory;

@@ -31,7 +31,7 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
@@ -39,8 +39,8 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.lock.LockProxy;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -66,7 +66,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.LoggingService;
@@ -80,7 +79,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
@@ -118,6 +116,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientPartitionServiceImpl partitionService;
     private final ClientInvocationServiceImpl invocationService;
     private final ClientExecutionServiceImpl executionService;
+    private final ClientTransactionManager transactionManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
 
@@ -147,6 +146,7 @@ public final class HazelcastClient implements HazelcastInstance {
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
                 Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
+        transactionManager = new ClientTransactionManager(this);
         LoadBalancer loadBalancer = config.getLoadBalancer();
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
@@ -254,11 +254,6 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
-        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
-    }
-
-    @Override
     public JobTracker getJobTracker(String name) {
         return getDistributedObject(MapReduceService.SERVICE_NAME, name);
     }
@@ -291,42 +286,23 @@ public final class HazelcastClient implements HazelcastInstance {
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
-    @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        return executeTransaction(TransactionOptions.getDefault(), task);
+        return transactionManager.executeTransaction(task);
     }
 
     @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        final TransactionContext context = newTransactionContext(options);
-        context.beginTransaction();
-        try {
-            final T value = task.execute(context);
-            context.commitTransaction();
-            return value;
-        } catch (Throwable e) {
-            context.rollbackTransaction();
-            if (e instanceof TransactionException) {
-                throw (TransactionException) e;
-            }
-            if (e.getCause() instanceof TransactionException) {
-                throw (TransactionException) e.getCause();
-            }
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new TransactionException(e);
-        }
+        return transactionManager.executeTransaction(options, task);
     }
 
     @Override
     public TransactionContext newTransactionContext() {
-        return newTransactionContext(TransactionOptions.getDefault());
+        return transactionManager.newTransactionContext();
     }
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        return new TransactionContextProxy(this, options);
+        return transactionManager.newTransactionContext(options);
     }
 
     @Override
@@ -461,6 +437,7 @@ public final class HazelcastClient implements HazelcastInstance {
         executionService.shutdown();
         partitionService.stop();
         clusterService.stop();
+        transactionManager.shutdown();
         connectionManager.shutdown();
         proxyManager.destroy();
     }

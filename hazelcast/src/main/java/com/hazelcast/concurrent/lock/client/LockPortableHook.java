@@ -33,6 +33,9 @@ public class LockPortableHook implements PortableHook {
     public static final int IS_LOCKED = 3;
     public static final int GET_LOCK_COUNT = 5;
     public static final int GET_REMAINING_LEASE = 6;
+    public static final int CONDITION_BEFORE_AWAIT = 7;
+    public static final int CONDITION_AWAIT = 8;
+    public static final int CONDITION_SIGNAL = 9;
 
     @Override
     public int getFactoryId() {
@@ -54,6 +57,12 @@ public class LockPortableHook implements PortableHook {
                         return new GetLockCountRequest();
                     case GET_REMAINING_LEASE:
                         return new GetRemainingLeaseRequest();
+                    case CONDITION_BEFORE_AWAIT:
+                        return new BeforeAwaitRequest();
+                    case CONDITION_AWAIT:
+                        return new AwaitRequest();
+                    case CONDITION_SIGNAL:
+                        return new SignalRequest();
                 }
                 return null;
             }

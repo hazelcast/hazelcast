@@ -1,7 +1,7 @@
 ## Upgrading from 2.x versions
 
 
-In this section, we list the changes what users should take into account before upgrading to Hazelcast 3.0 from earlier versions of Hazelcast.
+In this section, we list the changes what users should take into account before upgrading to latest Hazelcast from earlier versions.
 
 -   Removal of deprecated static methods:
     The static methods of Hazelcast class reaching hazelcast data components have been removed. The functionality of these methods can be reached from HazelcastInstance interface. Namely you should replace following:
