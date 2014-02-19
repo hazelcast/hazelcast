@@ -105,6 +105,7 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
+            Assert.assertEquals(i, communicator.size(name));
             communicator.offer(name, String.valueOf(i));
         }
 
@@ -125,22 +126,14 @@ public class RestTest {
 
         public String poll(String queueName, long timeout) {
             String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
-            String result = null;
-            try {
-                HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-                // Get the response
-                BufferedReader rd = new BufferedReader(new InputStreamReader(httpUrlConnection.getInputStream()));
-                StringBuilder data = new StringBuilder(150);
-                String line;
-                while ((line = rd.readLine()) != null) data.append(line);
-                rd.close();
-                result = data.toString();
-                httpUrlConnection.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            String result = doGet(url);
             return result;
+        }
 
+        public int size(String queueName) {
+            String url = address + "queues/" + queueName + "/size";
+            Integer result = Integer.parseInt(doGet(url));
+            return result;
         }
 
         public boolean offer(String queueName, String data) throws IOException {
@@ -176,20 +169,7 @@ public class RestTest {
 
         public String get(String mapName, String key) {
             String url = address + "maps/" + mapName + "/" + key;
-            String result = null;
-            try {
-                HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-                // Get the response
-                BufferedReader rd = new BufferedReader(new InputStreamReader(httpUrlConnection.getInputStream()));
-                StringBuilder data = new StringBuilder(150);
-                String line;
-                while ((line = rd.readLine()) != null) data.append(line);
-                rd.close();
-                result = data.toString();
-                httpUrlConnection.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            String result = doGet(url);
             return result;
         }
 
@@ -272,5 +252,21 @@ public class RestTest {
             return builder.toString();
         }
 
+        private String doGet(final String url) {
+            String result = null;
+            try {
+                HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+                BufferedReader rd = new BufferedReader(new InputStreamReader(httpUrlConnection.getInputStream()));
+                StringBuilder data = new StringBuilder(150);
+                String line;
+                while ((line = rd.readLine()) != null) data.append(line);
+                rd.close();
+                result = data.toString();
+                httpUrlConnection.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return result;
+        }
     }
 }
