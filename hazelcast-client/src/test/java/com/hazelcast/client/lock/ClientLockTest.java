@@ -20,13 +20,19 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionContext;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -182,4 +188,78 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
+
+
+    @Test
+    public void testObtainLockTwice() throws InterruptedException {
+
+        final HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
+
+        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance client2 = HazelcastClient.newHazelcastClient();
+
+        ILock lock = client1.getLock("a");
+        lock.lock();
+
+        lock = client2.getLock("a");
+
+        if ( lock.tryLock(6, TimeUnit.SECONDS) ) {
+
+            fail("Failed same Lock was obtained by 2 diffrent clients");
+        }
+    }
+
+    @Test
+    public void testLockOnClientCrash() throws InterruptedException {
+
+        final HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
+
+        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance client2 = HazelcastClient.newHazelcastClient();
+
+
+        ILock lock = client1.getLock("a");
+        lock.lock();
+
+        client1.getLifecycleService().terminate();
+
+        lock = client2.getLock("a");
+
+        if ( lock.tryLock(6, TimeUnit.SECONDS) ) {
+
+            lock.unlock();
+
+        } else {
+            fail("Failed to obtain lock after 5 seconds lock should be released on client1 crash");
+        }
+    }
+
+
+
+    @Test
+    public void testLockOnClient_withNodeCrash() throws InterruptedException {
+
+        final HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
+
+
+        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance client2 = HazelcastClient.newHazelcastClient();
+
+
+        ILock lock = client1.getLock("a");
+        lock.lock();
+
+        node2.getLifecycleService().terminate();
+
+        lock = client2.getLock("a");
+
+        if ( lock.tryLock(6, TimeUnit.SECONDS) ) {
+
+            fail("Failed same Lock was obtained by 2 diffrent clients");
+
+        }
+    }
+
+
 }
