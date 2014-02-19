@@ -44,20 +44,30 @@
 <body>
     <div id="page">
         <a name="top" />
+         <div id="sitebar">
+    <div class="content">
+      <p><a href="http://hazelcast.org/documentation">Go to <span style="font-weight:bold">hazelcast.org/documentation</span></a></p>
+      </div>
+  </div>
+
         <header id="header">
+			<div class="content">
 			<div style="overflow:hidden">
 				<div style="float:left">
-                    <img src="<%= @baseUrl %>assets/img/logo.png" style="width: 240px;padding-top: 10px"/>
+                    <a href="http://www.hazelcast.org"><img src="<%= @baseUrl %>assets/img/logo.png" style="width: 199px;padding-top: 18px"/></a>
 					
 				</div>	
 				<div style="float:left;padding-top: 15px;padding-left: 30px;">
 <h1><a href="<%= @baseUrl %>"><%= @manifest.title or @title %> <span style="font-size:12px"> Version: <%= @manifest.options.version %> - Publication Date : <%= @manifest.options.date %> </span></a></h1>
 				</div>
 			</div>
+			</div>
         </header>
+        <div class="content" style="width:1200px; margin: 0 auto">
 	        <%- @include "_sidebar.html" %>
 	        <div id="content">
 	            <%- @content %>
+	        </div>
 	        </div>			
     </div>
 </body>
