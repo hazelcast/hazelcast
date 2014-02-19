@@ -24,13 +24,9 @@ import com.hazelcast.spi.UrgentSystemOperation;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * @author mdogan 5/7/13
- */
 public class ClientReAuthOperation extends AbstractOperation implements UrgentSystemOperation {
 
     private String clientUuid;
-
     private boolean firstConnection;
 
     public ClientReAuthOperation() {
@@ -45,18 +41,22 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
         ClientEngineImpl service = getService();
         final Set<ClientEndpoint> endpoints = service.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
-            endpoint.authenticated(new ClientPrincipal(clientUuid, getCallerUuid()), firstConnection);
+            ClientPrincipal principal = new ClientPrincipal(clientUuid, getCallerUuid());
+            endpoint.authenticated(principal, firstConnection);
         }
     }
 
+    @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
+    @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }
 
+    @Override
     public String getServiceName() {
         return ClientEngineImpl.SERVICE_NAME;
     }
