@@ -411,7 +411,7 @@ public class DefaultRecordStore implements RecordStore {
         keysToDelete.removeAll(lockedRecords.keySet());
 
         final MapStoreWrapper store = mapContainer.getStore();
-        Set<Object> keysObject = new HashSet<Object>();
+        Collection<Object> keysObject = new ArrayList<Object>();
         for (Data key : keysToDelete) {
             // todo ea have a clear(Keys) method for optimizations
             removeIndex(key);
