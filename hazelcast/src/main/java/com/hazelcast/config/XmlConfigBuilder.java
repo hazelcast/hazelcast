@@ -99,7 +99,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
             if (configurationFile == null) {
                 configFile = "hazelcast.xml";
-                configurationFile = new File("hazelcast.xml");
+                configurationFile = new File(configFile);
                 if (!configurationFile.exists()) {
                     configurationFile = null;
                 }
@@ -120,7 +120,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
             if (in == null) {
                 logger.info("Looking for hazelcast.xml config file in classpath.");
-                configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
+                configurationUrl = Config.class.getClassLoader().getResource(configFile);
                 if (configurationUrl == null) {
                     configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
                     logger.warning(
