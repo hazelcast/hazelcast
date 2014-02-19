@@ -96,7 +96,6 @@ public final class ProxyManager {
                 return new ClientMultiMapProxy(instanceName, MultiMapService.SERVICE_NAME, String.valueOf(id));
             }
         });
-        });
         register(ListService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 return new ClientListProxy(instanceName, ListService.SERVICE_NAME, String.valueOf(id));
