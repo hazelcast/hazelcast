@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author ali 6/10/13
@@ -48,6 +49,10 @@ public class TxnMapRequest extends AbstractTxnMapRequest {
     public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value) {
         this(name, requestType, key);
         this.value = value;
+    }
+
+    public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, long ttl, TimeUnit timeUnit) {
+        super(name, requestType, key, value, ttl, timeUnit);
     }
 
     public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, Data newValue) {

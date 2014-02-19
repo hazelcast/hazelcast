@@ -36,20 +36,26 @@ final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
+    private final TransactionManagerServiceImpl transactionManager;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
     private XAResourceImpl xaResource;
 
     TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
                            TransactionOptions options, String ownerUuid) {
+        this.transactionManager = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid);
     }
 
     public XAResourceImpl getXaResource() {
         if (xaResource == null) {
-            xaResource = new XAResourceImpl(this, nodeEngine);
+            xaResource = new XAResourceImpl(transactionManager, this, nodeEngine);
         }
         return xaResource;
+    }
+
+    public boolean isXAManaged(){
+        return transaction.getXid() != null;
     }
 
     public String getTxnId() {

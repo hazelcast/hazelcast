@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
-import com.hazelcast.concurrent.atomiclong.GetAndSetOperation;
+import com.hazelcast.concurrent.atomiclong.operations.GetAndSetOperation;
 import com.hazelcast.spi.Operation;
 
 public class GetAndSetRequest extends AtomicLongRequest {

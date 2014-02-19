@@ -26,9 +26,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * @author ali 16/12/13
- */
 public class ClientWriteHandler extends ClientAbstractSelectionHandler implements Runnable {
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
@@ -45,11 +42,12 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
 
 //    private boolean initialized = false;
 
-    public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector) {
+    public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
-        buffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
+        buffer = ByteBuffer.allocate(bufferSize);
     }
 
+    @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
@@ -114,6 +112,7 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
         return writeQueue.poll();
     }
 
+    @Override
     public void run() {
         informSelector.set(true);
         if (ready) {
@@ -128,6 +127,7 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
         registerOp(SelectionKey.OP_WRITE);
     }
 
+    @Override
     public void shutdown() {
         writeQueue.clear();
         while (poll() != null) ;

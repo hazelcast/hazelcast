@@ -44,18 +44,6 @@ public final class InternalLockNamespace implements ObjectNamespace {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return getServiceName().hashCode();
-    }
-
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }
@@ -63,5 +51,23 @@ public final class InternalLockNamespace implements ObjectNamespace {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        //todo: we don't include the name in the equals?
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        //todo: we don't include the name in the hash?
+        return getServiceName().hashCode();
     }
 }

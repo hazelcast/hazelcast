@@ -211,6 +211,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     // V topo config 1 passive replicar, 2 producers
     @Test
+    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_PassThroughMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -243,6 +244,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void Vtopo_TTL_Replication_Issue254(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -302,6 +304,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_PutIfAbsentMapMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PutIfAbsentMapMergePolicy.class.getName());
@@ -328,6 +331,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_LatestUpdateMapMergePolicy (){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", LatestUpdateMapMergePolicy.class.getName());
@@ -406,6 +410,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_Test(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -434,6 +439,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_Threading_Test() throws InterruptedException, BrokenBarrierException {
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -484,6 +490,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_2clusters_Test_HigherHitsMapMergePolicy(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", HigherHitsMapMergePolicy.class.getName());

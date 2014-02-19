@@ -16,9 +16,17 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
+import com.hazelcast.concurrent.countdownlatch.operations.AwaitOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.CountDownOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.spi.*;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -34,7 +42,8 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     public CountDownLatchProxy(String name, NodeEngine nodeEngine) {
         super(nodeEngine, null);
         this.name = name;
-        partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+        Data nameAsPartitionAwareData = getNameAsPartitionAwareData();
+        partitionId = nodeEngine.getPartitionService().getPartitionId(nameAsPartitionAwareData);
     }
 
     @Override
@@ -81,7 +90,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     private InternalCompletableFuture invoke(Operation op) {
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(CountDownLatchService.SERVICE_NAME,op, partitionId);
+        return operationService.invokeOnPartition(CountDownLatchService.SERVICE_NAME, op, partitionId);
     }
 
     @Override

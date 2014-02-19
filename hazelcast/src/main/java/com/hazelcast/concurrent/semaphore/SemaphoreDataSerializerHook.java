@@ -16,12 +16,28 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.nio.serialization.*;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.concurrent.semaphore.operations.AcquireBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
+import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
+import com.hazelcast.concurrent.semaphore.operations.DeadMemberBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.DrainBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
+import com.hazelcast.concurrent.semaphore.operations.InitBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.InitOperation;
+import com.hazelcast.concurrent.semaphore.operations.ReduceBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.ReduceOperation;
+import com.hazelcast.concurrent.semaphore.operations.ReleaseBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class SemaphoreDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_DS_FACTORY, -16);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_DS_FACTORY, -16);
 
     public static final int ACQUIRE_BACKUP_OPERATION = 0;
     public static final int ACQUIRE_OPERATION = 1;

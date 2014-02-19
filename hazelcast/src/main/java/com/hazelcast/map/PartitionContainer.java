@@ -52,7 +52,7 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this,recordStoreConstructor);
     }
 
     public RecordStore getExistingRecordStore(String mapName) {

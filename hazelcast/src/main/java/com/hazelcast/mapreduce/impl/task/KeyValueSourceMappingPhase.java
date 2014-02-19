@@ -24,6 +24,14 @@ import com.hazelcast.mapreduce.Mapper;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * This class executes the mapping phase for a given {@link com.hazelcast.mapreduce.KeyValueSource} scope.
+ *
+ * @param <KeyIn>    type of the input key
+ * @param <ValueIn>  type of the input value
+ * @param <KeyOut>   type of the emitted key
+ * @param <ValueOut> type of the emitted value
+ */
 public class KeyValueSourceMappingPhase<KeyIn, ValueIn, KeyOut, ValueOut>
         extends MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
@@ -33,8 +41,7 @@ public class KeyValueSourceMappingPhase<KeyIn, ValueIn, KeyOut, ValueOut>
 
     @Override
     public void executeMappingPhase(KeyValueSource<KeyIn, ValueIn> keyValueSource,
-                                    Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper,
-                                    Context<KeyOut, ValueOut> context) {
+                                    Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper, Context<KeyOut, ValueOut> context) {
 
         while (keyValueSource.hasNext()) {
             if (matches(keyValueSource.key())) {

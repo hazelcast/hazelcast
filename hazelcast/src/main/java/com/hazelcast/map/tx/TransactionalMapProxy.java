@@ -28,6 +28,7 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 2/26/13
@@ -92,6 +93,20 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapService service = getService();
         final Object valueBeforeTxn = service.toObject(putInternal(service.toData(key, partitionStrategy),
                 service.toData(value)));
+        TxnValueWrapper currentValue = txMap.get(key);
+        if (value != null) {
+            TxnValueWrapper wrapper = valueBeforeTxn == null ?
+                    new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) :
+                    new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
+            txMap.put(key, wrapper);
+        }
+        return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
+    }
+    public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+        checkTransactionState();
+        MapService service = getService();
+        final Object valueBeforeTxn = service.toObject(putInternal(service.toData(key, partitionStrategy),
+                service.toData(value), ttl, timeUnit));
         TxnValueWrapper currentValue = txMap.get(key);
         if (value != null) {
             TxnValueWrapper wrapper = valueBeforeTxn == null ?

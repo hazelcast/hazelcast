@@ -28,6 +28,9 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
+/**
+ * This class is the auto registered serializer hook for a {@link com.hazelcast.mapreduce.JobPartitionState} array.
+ */
 public class JobPartitionStateArraySerializerHook
         implements SerializerHook<JobPartitionState[]> {
 
@@ -46,11 +49,15 @@ public class JobPartitionStateArraySerializerHook
         return false;
     }
 
+    /**
+     * The {@link com.hazelcast.mapreduce.JobPartitionState} array serializer itself
+     */
     private static class JobPartitionStateArraySerializer
             implements StreamSerializer<JobPartitionState[]> {
 
         @Override
-        public void write(ObjectDataOutput out, JobPartitionState[] partitionStates) throws IOException {
+        public void write(ObjectDataOutput out, JobPartitionState[] partitionStates)
+                throws IOException {
             out.writeBoolean(partitionStates != null);
             if (partitionStates != null) {
                 out.writeInt(partitionStates.length);
@@ -65,7 +72,8 @@ public class JobPartitionStateArraySerializerHook
         }
 
         @Override
-        public JobPartitionState[] read(ObjectDataInput in) throws IOException {
+        public JobPartitionState[] read(ObjectDataInput in)
+                throws IOException {
             if (in.readBoolean()) {
                 int length = in.readInt();
                 JobPartitionState[] partitionStates = new JobPartitionState[length];

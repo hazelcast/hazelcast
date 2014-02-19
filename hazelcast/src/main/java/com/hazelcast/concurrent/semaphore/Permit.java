@@ -27,12 +27,14 @@ import java.util.Map;
 
 public class Permit implements DataSerializable {
 
+    public static final int INITIAL_CAPACITY = 10;
+
     private int available;
     private int partitionId;
     private Map<String, Integer> attachMap;
     private int backupCount;
     private int asyncBackupCount;
-    private boolean initialized = false;
+    private boolean initialized;
 
     public Permit() {
     }
@@ -42,7 +44,7 @@ public class Permit implements DataSerializable {
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
         this.available = config.getInitialPermits();
-        this.attachMap = new HashMap<String, Integer>(10);
+        this.attachMap = new HashMap<String, Integer>(INITIAL_CAPACITY);
     }
 
     private void attach(String caller, int permitCount) {
@@ -142,7 +144,7 @@ public class Permit implements DataSerializable {
         return asyncBackupCount;
     }
 
-    protected void setInitialized() {
+    public void setInitialized() {
         this.initialized = true;
     }
 

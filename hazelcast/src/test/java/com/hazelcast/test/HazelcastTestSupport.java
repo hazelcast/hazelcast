@@ -38,8 +38,8 @@ public abstract class HazelcastTestSupport {
 
     static {
         System.setProperty("hazelcast.repmap.hooks.allowed", "true");
-        ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout","120"));
-        System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = "+ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout", "120"));
+        System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     private TestHazelcastInstanceFactory factory;
@@ -48,6 +48,13 @@ public abstract class HazelcastTestSupport {
         try {
             Thread.sleep(seconds * 1000);
         } catch (InterruptedException e) {
+        }
+    }
+
+    public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
+        for (int k = 0; k < durationSeconds; k++) {
+            task.run();
+            sleepSeconds(1);
         }
     }
 
@@ -126,16 +133,16 @@ public abstract class HazelcastTestSupport {
         return String.valueOf(k);
     }
 
-    public final class DummyUncheckedHazelcastTestException extends RuntimeException{
+    public final class DummyUncheckedHazelcastTestException extends RuntimeException {
 
     }
 
     public static void printAllStackTraces() {
         Map liveThreads = Thread.getAllStackTraces();
         for (Iterator i = liveThreads.keySet().iterator(); i.hasNext(); ) {
-            Thread key = (Thread)i.next();
+            Thread key = (Thread) i.next();
             System.err.println("Thread " + key.getName());
-            StackTraceElement[] trace = (StackTraceElement[])liveThreads.get(key);
+            StackTraceElement[] trace = (StackTraceElement[]) liveThreads.get(key);
             for (int j = 0; j < trace.length; j++) {
                 System.err.println("\tat " + trace[j]);
             }

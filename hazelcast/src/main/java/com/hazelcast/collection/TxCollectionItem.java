@@ -18,6 +18,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
@@ -38,7 +39,7 @@ public class TxCollectionItem extends CollectionItem {
         super(item.itemId, item.value);
     }
 
-    public TxCollectionItem(long itemId, Object value, String transactionId, boolean removeOperation) {
+    public TxCollectionItem(long itemId, Data value, String transactionId, boolean removeOperation) {
         super(itemId, value);
         this.transactionId = transactionId;
         this.removeOperation = removeOperation;

@@ -18,7 +18,28 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -31,9 +52,6 @@ import com.hazelcast.transaction.TransactionalTask;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @author mdogan 5/16/13
- */
 public final class HazelcastClientProxy implements HazelcastInstance {
 
     volatile HazelcastClient client;
@@ -42,126 +60,152 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         this.client = client;
     }
 
+    @Override
     public Config getConfig() {
         return getClient().getConfig();
     }
 
+    @Override
     public String getName() {
         return getClient().getName();
     }
 
+    @Override
     public <E> IQueue<E> getQueue(String name) {
         return getClient().getQueue(name);
     }
 
+    @Override
     public <E> ITopic<E> getTopic(String name) {
         return getClient().getTopic(name);
     }
 
+    @Override
     public <E> ISet<E> getSet(String name) {
         return getClient().getSet(name);
     }
 
+    @Override
     public <E> IList<E> getList(String name) {
         return getClient().getList(name);
     }
 
+    @Override
     public <K, V> IMap<K, V> getMap(String name) {
         return getClient().getMap(name);
     }
 
+    @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getClient().getMultiMap(name);
     }
 
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
-        return getClient().getReplicatedMap(name);
-    }
-
+    @Override
     public JobTracker getJobTracker(String name) {
         return getClient().getJobTracker(name);
     }
 
+    @Override
     public ILock getLock(Object key) {
         return getClient().getLock(key);
     }
 
+    @Override
     public ILock getLock(String key) {
         return getClient().getLock(key);
     }
 
+    @Override
     public Cluster getCluster() {
         return getClient().getCluster();
     }
 
+    @Override
     public Client getLocalEndpoint() {
         return getClient().getLocalEndpoint();
     }
 
+    @Override
     public IExecutorService getExecutorService(String name) {
         return getClient().getExecutorService(name);
     }
 
+    @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
         return getClient().executeTransaction(task);
     }
 
+    @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         return getClient().executeTransaction(options, task);
     }
 
+    @Override
     public TransactionContext newTransactionContext() {
         return getClient().newTransactionContext();
     }
 
+    @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
         return getClient().newTransactionContext(options);
     }
 
+    @Override
     public IdGenerator getIdGenerator(String name) {
         return getClient().getIdGenerator(name);
     }
 
+    @Override
     public IAtomicLong getAtomicLong(String name) {
         return getClient().getAtomicLong(name);
     }
 
+    @Override
     public <E> IAtomicReference<E> getAtomicReference(String name) {
         return getClient().getAtomicReference(name);
     }
 
+    @Override
     public ICountDownLatch getCountDownLatch(String name) {
         return getClient().getCountDownLatch(name);
     }
 
+    @Override
     public ISemaphore getSemaphore(String name) {
         return getClient().getSemaphore(name);
     }
 
+    @Override
     public Collection<DistributedObject> getDistributedObjects() {
         return getClient().getDistributedObjects();
     }
 
+    @Override
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         return getClient().addDistributedObjectListener(distributedObjectListener);
     }
 
+    @Override
     public boolean removeDistributedObjectListener(String registrationId) {
         return getClient().removeDistributedObjectListener(registrationId);
     }
 
+    @Override
     public PartitionService getPartitionService() {
         return getClient().getPartitionService();
     }
 
+    @Override
     public ClientService getClientService() {
         return getClient().getClientService();
     }
 
+    @Override
     public LoggingService getLoggingService() {
         return getClient().getLoggingService();
     }
 
+    @Override
     public LifecycleService getLifecycleService() {
         final HazelcastClient hz = client;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
@@ -172,10 +216,12 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getDistributedObject(serviceName, id);
     }
 
+    @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return getClient().getDistributedObject(serviceName, name);
     }
 
+    @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return getClient().getUserContext();
     }
@@ -184,6 +230,7 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getClientConfig();
     }
 
+    @Override
     public final void shutdown() {
         getLifecycleService().shutdown();
     }

@@ -18,17 +18,55 @@ package com.hazelcast.examples;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.Partition;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.lang.management.ManagementFactory;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.*;
+import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import static java.lang.String.format;
@@ -41,32 +79,38 @@ import static java.lang.String.format;
  */
 public class TestApp implements EntryListener, ItemListener, MessageListener {
 
-    public static final int LOAD_EXECUTORS_COUNT = 16;
-    private IQueue<Object> queue = null;
+    private static final int LOAD_EXECUTORS_COUNT = 16;
+    private static final int ONE_KB = 1024;
+    private static final int ONE_THOUSAND = 1000;
+    private static final int ONE_HUNDRED = 100;
+    private static final int ONE_MINUTE = 60;
+    private static final int ONE_HOUR = 3600;
 
-    private ITopic<Object> topic = null;
+    private IQueue<Object> queue;
 
-    private IMap<Object, Object> map = null;
+    private ITopic<Object> topic;
 
-    private MultiMap<Object, Object> multiMap = null;
+    private IMap<Object, Object> map;
 
-    private ISet<Object> set = null;
+    private MultiMap<Object, Object> multiMap;
 
-    private IList<Object> list = null;
+    private ISet<Object> set;
+
+    private IList<Object> list;
 
     private IAtomicLong atomicNumber;
 
     private String namespace = "default";
 
-    private boolean silent = false;
+    private boolean silent;
 
-    private boolean echo = false;
+    private boolean echo;
 
     private volatile HazelcastInstance hazelcast;
 
     private volatile LineReader lineReader;
 
-    private volatile boolean running = false;
+    private volatile boolean running;
 
     public TestApp(HazelcastInstance hazelcast) {
         this.hazelcast = hazelcast;
@@ -117,7 +161,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         topic = null;
     }
 
-     public void stop() {
+    public void stop() {
         running = false;
     }
 
@@ -129,8 +173,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         getTopic().getLocalTopicStats();
         getMultiMap().size();
         hazelcast.getExecutorService("default").getLocalExecutorStats();
-        for(int k=1;k<=LOAD_EXECUTORS_COUNT;k++){
-            hazelcast.getExecutorService("e"+k).getLocalExecutorStats();
+        for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
+            hazelcast.getExecutorService("e" + k).getLocalExecutorStats();
         }
 
         if (lineReader == null) {
@@ -148,6 +192,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    /**
+     * A line reader
+     */
     static class DefaultLineReader implements LineReader {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -157,17 +204,29 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    protected void handleCommand(String command) {
-        if(command.contains("__")) {
+
+    //CECKSTYLE:OFF
+
+    /**
+     * Handle a command
+     *
+     * @param commandInputted
+     */
+    protected void handleCommand(String commandInputted) {
+
+        String command = commandInputted;
+
+        if (command.contains("__")) {
             namespace = command.split("__")[0];
-            command = command.substring(command.indexOf("__")+2);
+            command = command.substring(command.indexOf("__") + 2);
         }
 
         if (echo) {
             handleEcho(command);
         }
-        if (command == null || command.startsWith("//"))
+        if (command == null || command.startsWith("//")) {
             return;
+        }
         command = command.trim();
         if (command == null || command.length() == 0) {
             return;
@@ -190,8 +249,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             for (int i = 0; i < repeat; i++) {
                 handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
             }
-            println("ops/s = " + repeat * 1000 / (Clock.currentTimeMillis() - t0));
-            return;
+            println("ops/s = " + repeat * ONE_THOUSAND / (Clock.currentTimeMillis() - t0));
         } else if (first.startsWith("&") && first.length() > 1) {
             final int fork = Integer.parseInt(first.substring(1));
             ExecutorService pool = Executors.newFixedThreadPool(fork);
@@ -216,7 +274,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             }
             pool.shutdown();
             try {
-                pool.awaitTermination(60 * 60, TimeUnit.SECONDS);// wait 1h
+                // wait 1h
+                pool.awaitTermination(ONE_HOUR, TimeUnit.SECONDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -224,7 +283,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleAt(first);
         } else if (command.indexOf(';') != -1) {
             handleColon(command);
-            return;
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
         } else if ("shutdown".equals(first)) {
@@ -376,16 +434,16 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             executeOnMember(args);
         } else if (first.equalsIgnoreCase("executeOnMembers")) {
             executeOnMembers(args);
-       // } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
-       //     executeLongTaskOnOtherMember(args);
-        //} else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
-        //    executeLong(args);
+            // } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
+            //     executeLongTaskOnOtherMember(args);
+            //} else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
+            //    executeLong(args);
         } else if (first.equalsIgnoreCase("instances")) {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
-        }else if(first.startsWith("e")&&first.endsWith(".simulateLoad")){
-             handleExecutorSimulate(args);
+        } else if (first.startsWith("e") && first.endsWith(".simulateLoad")) {
+            handleExecutorSimulate(args);
         } else {
             println("type 'help' for help");
         }
@@ -394,7 +452,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private void handleExecutorSimulate(String[] args) {
         String first = args[0];
         int threadCount = Integer.parseInt(first.substring(1, first.indexOf(".")));
-        if(threadCount<1||threadCount>16){
+        if (threadCount < 1 || threadCount > 16) {
             throw new RuntimeException("threadcount can't be smaller than 1 or larger than 16");
         }
 
@@ -403,25 +461,25 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
         long startMs = System.currentTimeMillis();
 
-        IExecutorService executor = hazelcast.getExecutorService("e"+threadCount);
+        IExecutorService executor = hazelcast.getExecutorService("e" + threadCount);
         List<Future> futures = new LinkedList<Future>();
         List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
 
-        int totalThreadCount = hazelcast.getCluster().getMembers().size()*threadCount;
+        int totalThreadCount = hazelcast.getCluster().getMembers().size() * threadCount;
 
         int latchId = 0;
-        for(int k=0;k<taskCount;k++){
-            Member member = members.get(k%members.size());
-            if(taskCount%totalThreadCount==0){
-                latchId = taskCount/totalThreadCount;
-                hazelcast.getCountDownLatch("latch"+latchId).trySetCount(totalThreadCount);
+        for (int k = 0; k < taskCount; k++) {
+            Member member = members.get(k % members.size());
+            if (taskCount % totalThreadCount == 0) {
+                latchId = taskCount / totalThreadCount;
+                hazelcast.getCountDownLatch("latch" + latchId).trySetCount(totalThreadCount);
 
             }
             Future f = executor.submitToMember(new SimulateLoadTask(durationSec, k + 1, "latch" + latchId), member);
             futures.add(f);
         }
 
-        for(Future f: futures){
+        for (Future f : futures) {
             try {
                 f.get();
             } catch (InterruptedException e) {
@@ -431,18 +489,22 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             }
         }
 
-        long durationMs = System.currentTimeMillis()-startMs;
-        println(format("Executed %s tasks in %s ms", taskCount,durationMs));
+        long durationMs = System.currentTimeMillis() - startMs;
+        println(format("Executed %s tasks in %s ms", taskCount, durationMs));
     }
 
-    private static class SimulateLoadTask implements Callable,Serializable, HazelcastInstanceAware{
+    /**
+     * A simulated load test
+     */
+    private static final class SimulateLoadTask implements Callable, Serializable, HazelcastInstanceAware {
 
-        private final static long serialVersionUID = 1;
+        private static final long serialVersionUID = 1;
 
         private final int delay;
         private final int taskId;
         private final String latchId;
-         private transient HazelcastInstance hz;
+        private transient HazelcastInstance hz;
+
         private SimulateLoadTask(int delay, int taskId, String latchId) {
             this.delay = delay;
             this.taskId = taskId;
@@ -457,12 +519,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         @Override
         public Object call() throws Exception {
             try {
-                Thread.sleep(delay*1000);
+                Thread.sleep(delay * ONE_THOUSAND);
             } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
 
             hz.getCountDownLatch(latchId).countDown();
-            System.out.println("Finished task:"+taskId);
+            System.out.println("Finished task:" + taskId);
             return null;
         }
     }
@@ -499,10 +562,11 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     private void handleEcho(String command) {
-        if (!Thread.currentThread().getName().toLowerCase().contains("main"))
+        if (!Thread.currentThread().getName().toLowerCase().contains("main")) {
             println(" [" + Thread.currentThread().getName() + "] " + command);
-        else
+        } else {
             println(command);
+        }
     }
 
     private void handleNamespace(String[] args) {
@@ -515,18 +579,18 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handleJvm() {
         System.gc();
-        println("Memory max: " + Runtime.getRuntime().maxMemory() / 1024 / 1024
+        println("Memory max: " + Runtime.getRuntime().maxMemory() / ONE_KB / ONE_KB
                 + "M");
         println("Memory free: "
                 + Runtime.getRuntime().freeMemory()
-                / 1024
-                / 1024
+                / ONE_KB
+                / ONE_KB
                 + "M "
                 + (int) (Runtime.getRuntime().freeMemory() * 100 / Runtime.getRuntime()
                 .maxMemory()) + "%");
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
-        println("Used Memory:" + ((total - free) / 1024 / 1024) + "MB");
+        println("Used Memory:" + ((total - free) / ONE_KB / ONE_KB) + "MB");
         println("# procs: " + Runtime.getRuntime().availableProcessors());
         println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
                 + " " + ManagementFactory.getOperatingSystemMXBean().getName() + " "
@@ -560,8 +624,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handleAtomicNumberSet(String[] args) {
         long v = 0;
-        if (args.length > 1)
+        if (args.length > 1) {
             v = Long.valueOf(args[1]);
+        }
         getAtomicNumber().set(v);
         println(getAtomicNumber().get());
     }
@@ -613,7 +678,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         try {
             index = Integer.parseInt(args[1]);
         } catch (NumberFormatException e) {
-            // NOP
+            throw new RuntimeException(e);
         }
         if (index >= 0) {
             println(getList().remove(index));
@@ -639,18 +704,20 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     protected void handleListAddMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
+        }
         int successCount = 0;
         long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getList().add("obj" + i);
-            if (success)
+            if (success) {
                 successCount++;
+            }
         }
         long t1 = Clock.currentTimeMillis();
         println("Added " + successCount + " objects.");
-        println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
+        println("size = " + list.size() + ", " + successCount * ONE_THOUSAND / (t1 - t0)
                 + " evt/s");
     }
 
@@ -706,9 +773,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     protected void handleMapPutMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
-        int b = 100;
+        }
+        int b = ONE_HUNDRED;
         byte[] value = new byte[b];
         if (args.length > 2) {
             b = Integer.parseInt(args[2]);
@@ -726,16 +794,17 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         getMap().putAll(theMap);
         long t1 = Clock.currentTimeMillis();
         if (t1 - t0 > 1) {
-            println("size = " + getMap().size() + ", " + count * 1000 / (t1 - t0)
-                    + " evt/s, " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
-                    + count * b / 1024 + " KB added");
+            println("size = " + getMap().size() + ", " + count * ONE_THOUSAND / (t1 - t0)
+                    + " evt/s, " + (count * ONE_THOUSAND / (t1 - t0)) * (b * 8) / ONE_KB + " Kbit/s, "
+                    + count * b / ONE_KB + " KB added");
         }
     }
 
     protected void handleMapGetMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
+        }
         for (int i = 0; i < count; i++) {
             println(getMap().get("key" + i));
         }
@@ -743,17 +812,19 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     protected void handleMapRemoveMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
+        }
         int start = 0;
-        if (args.length > 2)
+        if (args.length > 2) {
             start = Integer.parseInt(args[2]);
+        }
         long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             getMap().remove("key" + (start + i));
         }
         long t1 = Clock.currentTimeMillis();
-        println("size = " + getMap().size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
+        println("size = " + getMap().size() + ", " + count * ONE_THOUSAND / (t1 - t0) + " evt/s");
     }
 
     protected void handleMapLock(String[] args) {
@@ -765,14 +836,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         String key = args[1];
         long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
         boolean locked;
-        if (time == 0)
+        if (time == 0) {
             locked = getMap().tryLock(key);
-        else
+        } else {
             try {
                 locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 locked = false;
             }
+        }
         println(locked);
     }
 
@@ -843,6 +915,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     protected void handleMultiMapRemove(String[] args) {
         println(getMultiMap().remove(args[1]));
     }
+
     protected void handleMultiMapKeys() {
         Set set = getMultiMap().keySet();
         Iterator it = set.iterator();
@@ -886,14 +959,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         String key = args[1];
         long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
         boolean locked;
-        if (time == 0)
+        if (time == 0) {
             locked = getMultiMap().tryLock(key);
-        else
+        } else {
             try {
                 locked = getMultiMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 locked = false;
             }
+        }
         println(locked);
     }
 
@@ -906,17 +980,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private void handStats(String[] args) {
         String iteratorStr = args[0];
-        if (iteratorStr.startsWith("s.")) {
-        } else if (iteratorStr.startsWith("m.")) {
+        if (iteratorStr.startsWith("m.")) {
             println(getMap().getLocalMapStats());
         } else if (iteratorStr.startsWith("mm.")) {
             println(getMultiMap().getLocalMultiMapStats());
         } else if (iteratorStr.startsWith("q.")) {
             println(getQueue().getLocalQueueStats());
         }
-        //if l then ??
-        //else if (iteratorStr.startsWith("l.")) {
-        //}
     }
 
     @SuppressWarnings("LockAcquiredButNotSafelyReleased")
@@ -944,7 +1014,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             }
         }
     }
-  protected void handleAddListener(String[] args) {
+
+    protected void handleAddListener(String[] args) {
         String first = args[0];
         if (first.startsWith("s.")) {
             getSet().addItemListener(this, true);
@@ -999,35 +1070,39 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     protected void handleSetAddMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
+        }
         int successCount = 0;
         long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().add("obj" + i);
-            if (success)
+            if (success) {
                 successCount++;
+            }
         }
         long t1 = Clock.currentTimeMillis();
         println("Added " + successCount + " objects.");
-        println("size = " + getSet().size() + ", " + successCount * 1000 / (t1 - t0)
+        println("size = " + getSet().size() + ", " + successCount * ONE_THOUSAND / (t1 - t0)
                 + " evt/s");
     }
 
     protected void handleSetRemoveMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
+        }
         int successCount = 0;
         long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
             boolean success = getSet().remove("obj" + i);
-            if (success)
+            if (success) {
                 successCount++;
+            }
         }
         long t1 = Clock.currentTimeMillis();
         println("Removed " + successCount + " objects.");
-        println("size = " + getSet().size() + ", " + successCount * 1000 / (t1 - t0)
+        println("size = " + getSet().size() + ", " + successCount * ONE_THOUSAND / (t1 - t0)
                 + " evt/s");
     }
 
@@ -1179,33 +1254,37 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     protected void handleQOfferMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
+        }
         Object value = null;
-        if (args.length > 2)
+        if (args.length > 2) {
             value = new byte[Integer.parseInt(args[2])];
+        }
         long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
-            if (value == null)
+            if (value == null) {
                 getQueue().offer("obj");
-            else
+            } else {
                 getQueue().offer(value);
+            }
         }
         long t1 = Clock.currentTimeMillis();
-        print("size = " + getQueue().size() + ", " + count * 1000 / (t1 - t0) + " evt/s");
+        print("size = " + getQueue().size() + ", " + count * ONE_THOUSAND / (t1 - t0) + " evt/s");
         if (value == null) {
             println("");
         } else {
             int b = Integer.parseInt(args[2]);
-            println(", " + (count * 1000 / (t1 - t0)) * (b * 8) / 1024 + " Kbit/s, "
-                    + count * b / 1024 + " KB added");
+            println(", " + (count * ONE_THOUSAND / (t1 - t0)) * (b * 8) / ONE_KB + " Kbit/s, "
+                    + count * b / ONE_KB + " KB added");
         }
     }
 
     protected void handleQPollMany(String[] args) {
         int count = 1;
-        if (args.length > 1)
+        if (args.length > 1) {
             count = Integer.parseInt(args[1]);
+        }
         int c = 1;
         for (int i = 0; i < count; i++) {
             Object obj = getQueue().poll();
@@ -1248,15 +1327,16 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             Future<String> future;
             if (onKey) {
                 String key = args[2];
-                future = executorService.submitToKeyOwner(callable,key);
+                future = executorService.submitToKeyOwner(callable, key);
             } else if (onMember) {
                 int memberIndex = Integer.parseInt(args[2]);
                 List<Member> members = new LinkedList(hazelcast.getCluster().getMembers());
-                if(memberIndex>=members.size()){
-                    throw new IndexOutOfBoundsException("Member index: "+memberIndex+" must be smaller than "+members.size());
+                if (memberIndex >= members.size()) {
+                    throw new IndexOutOfBoundsException("Member index: " + memberIndex + " must be smaller than " + members
+                            .size());
                 }
                 Member member = members.get(memberIndex);
-                future = executorService.submitToMember(callable,member);
+                future = executorService.submitToMember(callable, member);
             } else {
                 future = executorService.submit(callable);
             }
@@ -1273,7 +1353,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         try {
             IExecutorService executorService = hazelcast.getExecutorService("default");
             Echo task = new Echo(args[1]);
-            Map<Member,Future<String>> results = executorService.submitToAllMembers(task);
+            Map<Member, Future<String>> results = executorService.submitToAllMembers(task);
 
             for (Future f : results.values()) {
                 println(f.get());
@@ -1320,8 +1400,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Topic received = " + msg.getMessageObject());
     }
 
+    /**
+     * Echoes to screen
+     */
     public static class Echo extends HazelcastInstanceAwareObject implements Callable<String>, DataSerializable {
-        String input = null;
+
+        String input;
 
         public Echo() {
         }
@@ -1347,6 +1431,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    /**
+     * A Hazelcast instance aware object
+     */
     private static class HazelcastInstanceAwareObject implements HazelcastInstanceAware {
 
         HazelcastInstance hazelcastInstance;
@@ -1361,34 +1448,62 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    /**
+     * Handled the help command
+     * @param command
+     */
     protected void handleHelp(String command) {
         boolean silentBefore = silent;
         silent = false;
         println("Commands:");
+
+        printGeneralCommands();
+        printQueueCommands();
+        printSetCommands();
+        printLockCommands();
+        printMapCommands();
+        printMulitiMapCommands();
+        printListCommands();
+        printAtomicLongCommands();
+        printExecutorServiceCommands();
+
+        silent = silentBefore;
+    }
+
+    private void printGeneralCommands() {
         println("-- General commands");
         println("echo true|false                      //turns on/off echo of commands (default false)");
         println("silent true|false                    //turns on/off silent of command output (default false)");
-        println("#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current iteration (0..<number-1>)");
-        println("&<number> <command>                  //forks <number> threads to execute <command>, replace $t in <command> with current thread number (0..<number-1>");
+        println("#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current "
+                + "iteration (0..<number-1>)");
+        println("&<number> <command>                  //forks <number> threads to execute <command>, "
+                + "replace $t in <command> with current thread number (0..<number-1>");
         println("     When using #x or &x, is is advised to use silent true as well.");
-        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key index is specified");
+        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a "
+                + "start key index is specified");
         println("jvm                                  //displays info about the runtime");
         println("who                                  //displays info about the cluster");
         println("whoami                               //displays info about this cluster member");
-        println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list <string> (defaults to \"default\"");
+        println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list "
+                + "<string> (defaults to \"default\"");
         println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
         println("");
+    }
 
+    private void printQueueCommands() {
         println("-- Queue commands");
         println("q.offer <string>                     //adds a string object to the queue");
         println("q.poll                               //takes an object from the queue");
-        println("q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or byte[<size>]) ");
+        println("q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or "
+                + "byte[<size>]) ");
         println("q.pollmany <number>                  //takes indicated number of objects from the queue");
         println("q.iterator [remove]                  //iterates the queue, remove if specified");
         println("q.size                               //size of the queue");
         println("q.clear                              //clears the queue");
         println("");
+    }
 
+    private void printSetCommands() {
         println("-- Set commands");
         println("s.add <string>                       //adds a string object to the set");
         println("s.remove <string>                    //removes the string object from the set");
@@ -1398,21 +1513,28 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("s.size                               //size of the set");
         println("s.clear                              //clears the set");
         println("");
+    }
 
+    private void printLockCommands() {
         println("-- Lock commands");
         println("lock <key>                           //same as Hazelcast.getLock(key).lock()");
         println("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
         println("tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds");
         println("unlock <key>                         //same as Hazelcast.getLock(key).unlock()");
         println("");
+    }
 
+    private void printMapCommands() {
         println("-- Map commands");
         println("m.put <key> <value>                  //puts an entry to the map");
         println("m.remove <key>                       //removes the entry of given key from the map");
         println("m.get <key>                          //returns the value of given key from the map");
-        println("m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], <index>+(0..<number>)");
-        println("m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', <index>+(0..<number>)");
-        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key <index> is specified");
+        println("m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], "
+                + "<index>+(0..<number>)");
+        println("m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', "
+                + "<index>+(0..<number>)");
+        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a "
+                + "start key <index> is specified");
         println("m.keys                               //iterates the keys of the map");
         println("m.values                             //iterates the values of the map");
         println("m.entries                            //iterates the entries of the map");
@@ -1427,7 +1549,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("m.unlock <key>                       //unlocks the key");
         println("m.stats                              //shows the local stats of the map");
         println("");
+    }
 
+    private void printMulitiMapCommands() {
         println("-- MultiMap commands");
         println("mm.put <key> <value>                  //puts an entry to the multimap");
         println("mm.get <key>                          //returns the value of given key from the multimap");
@@ -1445,7 +1569,30 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("mm.unlock <key>                       //unlocks the key");
         println("mm.stats                              //shows the local stats of the multimap");
         println("");
+    }
 
+    private void printExecutorServiceCommands() {
+        println("-- Executor Service commands:");
+        println("execute <echo-input>                            //executes an echo task on random member");
+        println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
+        println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
+        println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
+        println("e<threadcount>.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with given number "
+                + "of thread (e1..e16)");
+
+        println("");
+    }
+
+    private void printAtomicLongCommands() {
+        println("-- IAtomicLong commands:");
+        println("a.get");
+        println("a.set <long>");
+        println("a.inc");
+        println("a.dec");
+        print("");
+    }
+
+    private void printListCommands() {
         println("-- List commands:");
         println("l.add <string>");
         println("l.add <index> <string>");
@@ -1457,44 +1604,34 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("l.size");
         println("l.clear");
         print("");
-
-        println("-- IAtomicLong commands:");
-        println("a.get");
-        println("a.set <long>");
-        println("a.inc");
-        println("a.dec");
-        print("");
-
-        println("-- Executor Service commands:");
-        println("execute <echo-input>                            //executes an echo task on random member");
-        println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
-        println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
-        println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
-        println("e<threadcount>.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with given number of thread (e1..e16)");
-
-        println("");
-        silent = silentBefore;
     }
 
     public void println(Object obj) {
-        if (!silent)
+        if (!silent) {
             System.out.println(obj);
+        }
     }
 
     public void print(Object obj) {
-        if (!silent)
+        if (!silent) {
             System.out.print(obj);
+        }
     }
 
+    /**
+     * Starts the test application. Management Center is expected to be running on localhost:8080
+     * @param args none
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         String version = getVersion();
 
         Config config = new Config();
         config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl("http://localhost:8080/mancenter-"+version);
+        config.getManagementCenterConfig().setUrl("http://localhost:8080/mancenter-" + version);
 
-        for(int k=1;k<= LOAD_EXECUTORS_COUNT;k++){
-            config.addExecutorConfig(new ExecutorConfig("e"+k).setPoolSize(k));
+        for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
+            config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
         }
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
         testApp.start(args);

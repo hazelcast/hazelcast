@@ -24,6 +24,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * This operation is used to transport and execute a notification on a remote node since
+ * the current event service is not capable of reliable transmission so this is a fallback
+ * to sync operations which is hopefully only a temporary workaround!
+ */
 public class FireNotificationOperation
         extends ProcessingOperation {
 
@@ -43,19 +48,22 @@ public class FireNotificationOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         MapReduceService mapReduceService = getService();
         mapReduceService.dispatchEvent(notification);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(notification);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         notification = in.readObject();
     }

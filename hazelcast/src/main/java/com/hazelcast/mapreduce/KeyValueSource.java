@@ -28,7 +28,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Closeable;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -41,12 +40,11 @@ import java.util.Map;
  *
  * @param <K> key type
  * @param <V> value type
- *
  * @since 3.2
  */
 @Beta
 public abstract class KeyValueSource<K, V>
-        implements Closeable, Serializable {
+        implements Closeable {
 
     /**
      * This method is called before accessing the key-value pairs of this KeyValueSource
@@ -110,7 +108,6 @@ public abstract class KeyValueSource<K, V>
      * </p>
      *
      * @return a collection of all clusterwide available keys
-     * @throws java.lang.UnsupportedOperationException is {@link #isAllKeysSupported()} returns false
      */
     public final Collection<K> getAllKeys() {
         if (!isAllKeysSupported()) {

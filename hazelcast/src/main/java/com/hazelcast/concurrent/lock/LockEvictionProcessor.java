@@ -16,12 +16,14 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -34,10 +36,12 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
-public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
+public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
-    final NodeEngine nodeEngine;
-    final ObjectNamespace namespace;
+    private static final int AWAIT_COMPLETION_TIMEOUT_SECONDS = 30;
+
+    private final NodeEngine nodeEngine;
+    private final ObjectNamespace namespace;
 
     public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
@@ -76,7 +80,7 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
 
         for (Future future : futures) {
             try {
-                future.get(30, TimeUnit.SECONDS);
+                future.get(AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 logger.finest(e);
             } catch (Exception e) {
@@ -87,7 +91,7 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
 
     private InternalCompletableFuture invoke(Operation operation, Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
     }
-
 }

@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
+
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -490,16 +492,22 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             final String implAttrName = "implementation";
             final String factoryImplAttrName = "factory-implementation";
-            fillAttributeValues(node, mapStoreConfigBuilder, implAttrName, factoryImplAttrName);
+            final String initialModeAttrName = "initial-mode";
+            fillAttributeValues(node, mapStoreConfigBuilder, implAttrName, factoryImplAttrName, "initialMode");
             final NamedNodeMap attrs = node.getAttributes();
             final Node implRef = attrs.getNamedItem(implAttrName);
             final Node factoryImplRef = attrs.getNamedItem(factoryImplAttrName);
+            final Node initialMode = attrs.getNamedItem(initialModeAttrName);
             if (factoryImplRef != null) {
                 mapStoreConfigBuilder
                         .addPropertyReference(xmlToJavaName(factoryImplAttrName), getTextContent(factoryImplRef));
             }
             if (implRef != null) {
                 mapStoreConfigBuilder.addPropertyReference(xmlToJavaName(implAttrName), getTextContent(implRef));
+            }
+            if (initialMode != null) {
+                final MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(initialMode)));
+                mapStoreConfigBuilder.addPropertyValue("initialLoadMode",mode);
             }
             mapConfigBuilder.addPropertyValue("mapStoreConfig", beanDefinition);
             mapStoreConfigBuilder = null;

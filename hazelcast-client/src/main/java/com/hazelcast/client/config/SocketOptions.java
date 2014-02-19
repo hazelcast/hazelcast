@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.config;
 
-/**
- * @author mdogan 5/17/13
- */
 public class SocketOptions {
 
     // socket options
@@ -31,9 +28,7 @@ public class SocketOptions {
 
     private int lingerSeconds = 3;
 
-    private int timeout = -1;
-
-    private int bufferSize = 32; // in kb
+    private int bufferSize = -1; // in kb
 
     public boolean isTcpNoDelay() {
         return tcpNoDelay;
@@ -68,15 +63,6 @@ public class SocketOptions {
 
     public SocketOptions setLingerSeconds(int lingerSeconds) {
         this.lingerSeconds = lingerSeconds;
-        return this;
-    }
-
-    public int getTimeout() {
-        return timeout;
-    }
-
-    public SocketOptions setTimeout(int timeout) {
-        this.timeout = timeout;
         return this;
     }
 

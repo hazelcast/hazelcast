@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.ClientDestroyRequest;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.util.ListenerUtil;
@@ -55,7 +56,7 @@ public abstract class ClientProxy implements DistributedObject {
         return ListenerUtil.listen(context, registrationRequest, null, handler);
     }
 
-    protected final boolean stopListening(ClientRequest request, String registrationId){
+    protected final boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId){
         return ListenerUtil.stopListening(context, request, registrationId);
     }
 
@@ -67,7 +68,7 @@ public abstract class ClientProxy implements DistributedObject {
         return context;
     }
 
-    final void setContext(ClientContext context) {
+    protected final void setContext(ClientContext context) {
         this.context = context;
     }
 

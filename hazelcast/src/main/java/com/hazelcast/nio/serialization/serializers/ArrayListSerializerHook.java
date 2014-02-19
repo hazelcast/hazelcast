@@ -24,8 +24,11 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
 
+/**
+ * This class is the auto registered serializer hook for a {@link java.util.ArrayList}.
+ */
 public class ArrayListSerializerHook implements SerializerHook<ArrayList> {
 
     @Override
@@ -43,6 +46,9 @@ public class ArrayListSerializerHook implements SerializerHook<ArrayList> {
         return true;
     }
 
+    /**
+     * The {@link java.util.ArrayList} serializer
+     */
     public static class ArrayListStreamSerializer implements StreamSerializer<ArrayList> {
 
         @Override

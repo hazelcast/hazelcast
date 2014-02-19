@@ -16,7 +16,6 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -26,37 +25,40 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import static com.hazelcast.transaction.impl.Transaction.State;
+
 @Beta
 public class XAResourceImpl implements XAResource {
 
+    private final TransactionManagerServiceImpl transactionManager;
+
     private final TransactionContextImpl transactionContext;
-    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
     private int transactionTimeoutSeconds;
 
-    private Xid xid = null;
-
-    public XAResourceImpl(TransactionContextImpl transactionContext, NodeEngineImpl nodeEngine) {
+    public XAResourceImpl(TransactionManagerServiceImpl transactionManager,
+                          TransactionContextImpl transactionContext, NodeEngineImpl nodeEngine) {
+        this.transactionManager = transactionManager;
         this.transactionContext = transactionContext;
-        this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(XAResourceImpl.class);
     }
 
     //XAResource --START
     @Override
     public synchronized void start(Xid xid, int flags) throws XAException {
-        validateXID(xid);
+        nullCheck(xid);
         switch (flags) {
             case TMNOFLAGS:
-                if (this.xid != null) {
+                if (getTransaction(xid) != null) {
                     final XAException xaException = new XAException(XAException.XAER_DUPID);
-                    logger.severe("Duplicate xid: " + xid + ", this.xid: " + this.xid, xaException);
+                    logger.severe("Duplicate xid: " + xid, xaException);
                     throw xaException;
                 }
-                this.xid = xid;
                 try {
-                    transactionContext.beginTransaction();
+                    final Transaction transaction = getTransaction();
+                    transactionManager.addManagedTransaction(xid, transaction);
+                    transaction.begin();
                 } catch (IllegalStateException e) {
                     throw new XAException(XAException.XAER_INVAL);
                 }
@@ -71,8 +73,13 @@ public class XAResourceImpl implements XAResource {
 
     @Override
     public synchronized void end(Xid xid, int flags) throws XAException {
-        validateXID(xid);
-        validateTx(xid, Transaction.State.ACTIVE);
+        nullCheck(xid);
+        final TransactionImpl transaction = (TransactionImpl)getTransaction();
+        final SerializableXID sXid = transaction.getXid();
+        if (sXid == null || !sXid.equals(xid)) {
+            logger.severe("started xid: " + sXid + " and given xid : " + xid + " not equal!!!");
+        }
+        validateTx(transaction, State.ACTIVE);
 
         switch (flags) {
             case XAResource.TMSUCCESS:
@@ -80,7 +87,8 @@ public class XAResourceImpl implements XAResource {
                 break;
             case XAResource.TMFAIL:
                 try {
-                    transactionContext.rollbackTransaction();
+                    transaction.rollback();
+                    transactionManager.removeManagedTransaction(xid);
                 } catch (IllegalStateException e) {
                     throw new XAException(XAException.XAER_RMERR);
                 }
@@ -94,13 +102,16 @@ public class XAResourceImpl implements XAResource {
 
     @Override
     public synchronized int prepare(Xid xid) throws XAException {
-        validateXID(xid);
+        nullCheck(xid);
+        final TransactionImpl transaction = (TransactionImpl)getTransaction();
+        final SerializableXID sXid = transaction.getXid();
+        if (sXid == null || !sXid.equals(xid)) {
+            logger.severe("started xid: " + sXid + " and given xid : " + xid + " not equal!!!");
+        }
+        validateTx(transaction, State.ACTIVE);
 
-        validateTx(xid, Transaction.State.ACTIVE);
-
-        final Transaction tx = getTransaction();
         try {
-            tx.prepare();
+            transaction.prepare();
         } catch (TransactionException e) {
             throw new XAException(XAException.XAER_RMERR);
         }
@@ -109,19 +120,20 @@ public class XAResourceImpl implements XAResource {
 
     @Override
     public synchronized void commit(Xid xid, boolean onePhase) throws XAException {
-        validateXID(xid);
+        nullCheck(xid);
 
-        final Transaction tx = getTransaction();
+        final Transaction transaction = getTransaction(xid);
 
         if (onePhase) {
-            validateTx(xid, Transaction.State.ACTIVE);
-            tx.prepare();
+            validateTx(transaction, State.ACTIVE);
+            transaction.prepare();
         }
 
-        validateTx(xid, Transaction.State.PREPARED);
+        validateTx(transaction, State.PREPARED);
 
         try {
-            tx.commit();
+            transaction.commit();
+            transactionManager.removeManagedTransaction(xid);
         } catch (TransactionException e) {
             throw new XAException(XAException.XAER_RMERR);
         }
@@ -129,10 +141,12 @@ public class XAResourceImpl implements XAResource {
 
     @Override
     public synchronized void rollback(Xid xid) throws XAException {
-        validateXID(xid);
-        validateTx(xid, Transaction.State.NO_TXN);
+        nullCheck(xid);
+        final Transaction transaction = getTransaction(xid);
+        validateTx(transaction, State.NO_TXN); //NO_TXN means do not validate state
         try {
-            transactionContext.rollbackTransaction();
+            transaction.rollback();
+            transactionManager.removeManagedTransaction(xid);
         } catch (TransactionException e) {
             throw new XAException(XAException.XAER_RMERR);
         }
@@ -147,19 +161,14 @@ public class XAResourceImpl implements XAResource {
     public synchronized boolean isSameRM(XAResource xaResource) throws XAException {
         if (xaResource instanceof XAResourceImpl) {
             XAResourceImpl other = (XAResourceImpl) xaResource;
-            final HazelcastInstance otherInstance = other.nodeEngine.getHazelcastInstance();
-            return nodeEngine.getHazelcastInstance().equals(otherInstance);
+            return transactionManager.equals(other.transactionManager);
         }
         return false;
     }
 
     @Override
     public synchronized Xid[] recover(int flag) throws XAException {
-        final Transaction tx = getTransaction();
-        if (this.xid != null && tx.getState() == Transaction.State.PREPARED) {
-            return new Xid[]{this.xid};
-        }
-        return new Xid[0];
+        return transactionManager.recover();
     }
 
     @Override
@@ -175,11 +184,7 @@ public class XAResourceImpl implements XAResource {
 
     //XAResource --END
 
-    private Transaction getTransaction() {
-        return transactionContext.getTransaction();
-    }
-
-    private void validateXID(Xid xid) throws XAException {
+    private void nullCheck(Xid xid) throws XAException {
         if (xid == null) {
             final XAException xaException = new XAException(XAException.XAER_INVAL);
             logger.severe("Xid cannot be null!!!", xaException);
@@ -187,38 +192,39 @@ public class XAResourceImpl implements XAResource {
         }
     }
 
-    private void validateTx(Xid xid, Transaction.State state) throws XAException {
-        final Transaction tx = getTransaction();
-        if (this.xid == null) {
+    private void validateTx(Transaction tx, State state) throws XAException {
+        if (tx == null) {
             final XAException xaException = new XAException(XAException.XAER_NOTA);
-            logger.severe("Not yet started!!! xid: " + xid, xaException);
+            logger.severe("Transaction is not available!!!", xaException);
             throw xaException;
         }
-        if (!this.xid.equals(xid)) {
-            final XAException xaException = new XAException(XAException.XAER_DUPID);
-            logger.severe("Duplicate xid: " + xid + ", this.xid: " + this.xid, xaException);
-            throw xaException;
-        }
-        final Transaction.State txState = tx.getState();
+        final State txState = tx.getState();
         switch (state) {
             case ACTIVE:
-                if (txState != Transaction.State.ACTIVE) {
+                if (txState != State.ACTIVE) {
                     final XAException xaException = new XAException(XAException.XAER_NOTA);
                     logger.severe("Transaction is not active!!! state: " + txState, xaException);
                     throw xaException;
                 }
                 break;
             case PREPARED:
-                if (txState != Transaction.State.PREPARED) {
+                if (txState != State.PREPARED) {
                     final XAException xaException = new XAException(XAException.XAER_INVAL);
                     logger.severe("Transaction is not prepared!!! state: " + txState, xaException);
                     throw xaException;
                 }
                 break;
-            case NO_TXN:
-                //this means do not check state
+            default:
                 break;
         }
+    }
+
+    private Transaction getTransaction(Xid xid) {
+        return transactionManager.getManagedTransaction(xid);
+    }
+
+    private Transaction getTransaction() {
+        return transactionContext.getTransaction();
     }
 
     @Override
@@ -227,7 +233,6 @@ public class XAResourceImpl implements XAResource {
         final StringBuilder sb = new StringBuilder("XAResourceImpl{");
         sb.append("txdId=").append(txnId);
         sb.append(", transactionTimeoutSeconds=").append(transactionTimeoutSeconds);
-        sb.append(", xid=").append(xid);
         sb.append('}');
         return sb.toString();
     }

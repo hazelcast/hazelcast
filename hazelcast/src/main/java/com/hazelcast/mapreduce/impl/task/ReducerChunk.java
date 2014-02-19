@@ -20,6 +20,13 @@ import com.hazelcast.nio.Address;
 
 import java.util.Map;
 
+/**
+ * This class represents a chunk of emitted values (maybe already pre-combined) and offered
+ * for reducing to the {@link com.hazelcast.mapreduce.impl.task.ReducerTask}.
+ *
+ * @param <Key>   type of the emitted key
+ * @param <Chunk> type of the intermediate chunk data
+ */
 class ReducerChunk<Key, Chunk> {
 
     final Map<Key, Chunk> chunk;

@@ -51,13 +51,21 @@ public final class ConditionKey implements WaitNotifyKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ConditionKey that = (ConditionKey) o;
 
-        if (key != null ? !key.equals(that.key) : that.key != null) return false;
-        if (conditionId != null ? !conditionId.equals(that.conditionId) : that.conditionId != null) return false;
+        if (key != null ? !key.equals(that.key) : that.key != null) {
+            return false;
+        }
+        if (conditionId != null ? !conditionId.equals(that.conditionId) : that.conditionId != null) {
+            return false;
+        }
 
         return true;
     }

@@ -1120,20 +1120,24 @@ public class MapService implements ManagedService, MigrationAwareService,
                 //no-op because no owner is set yet. Therefor we don't know anything about the map
             }else if (owner.equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
-                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                heapCost += recordStore.getHeapCost();
+                RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
 
-                Map<Data, Record> records = recordStore.getReadonlyRecordMap();
-                for (Record record : records.values()) {
-                    RecordStatistics stats = record.getStatistics();
-                    // there is map store and the record is dirty (waits to be stored)
-                    ownedEntryCount++;
-                    ownedEntryMemoryCost += record.getCost();
-                    localMapStats.setLastAccessTime(stats.getLastAccessTime());
-                    localMapStats.setLastUpdateTime(stats.getLastUpdateTime());
-                    hits += stats.getHits();
-                    if (recordStore.isLocked(record.getKey())) {
-                        lockedEntryCount++;
+                //we don't want to force loading the record store because we are loading statistics. So that is why
+                //we ask for 'getExistingRecordStore' instead of 'getRecordStore' which does the load.
+                if (recordStore != null) {
+                    heapCost += recordStore.getHeapCost();
+                    Map<Data, Record> records = recordStore.getReadonlyRecordMap();
+                    for (Record record : records.values()) {
+                        RecordStatistics stats = record.getStatistics();
+                        // there is map store and the record is dirty (waits to be stored)
+                        ownedEntryCount++;
+                        ownedEntryMemoryCost += record.getCost();
+                        localMapStats.setLastAccessTime(stats.getLastAccessTime());
+                        localMapStats.setLastUpdateTime(stats.getLastUpdateTime());
+                        hits += stats.getHits();
+                        if (recordStore.isLocked(record.getKey())) {
+                            lockedEntryCount++;
+                        }
                     }
                 }
             } else {

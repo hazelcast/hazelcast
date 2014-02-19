@@ -24,57 +24,145 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.impl.TransactionAccessor;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastXaTest {
 
-    static {
-        System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.wait.seconds.before.join", "1");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-
-        // randomize multicast group...
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
-    }
-
-    static HazelcastInstance instance;
     static final Random random = new Random(System.currentTimeMillis());
 
-    @BeforeClass
-    public static void beforeClass() {
-        instance = Hazelcast.newHazelcastInstance();
+    UserTransactionManager tm = null;
+
+    public void cleanAtomikosLogs(){
+        try {
+            File currentDir = new File(".");
+            final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    if (name.endsWith(".epoch") || name.startsWith("tmlog")) {
+                        return true;
+                    }
+                    return false;
+                }
+            });
+            for (File tmLog : tmLogs) {
+                tmLog.delete();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    @AfterClass
-    public static void afterClass() {
+    @Before
+    public void init() throws SystemException {
+        cleanAtomikosLogs();
+        tm = new UserTransactionManager();
+        tm.setTransactionTimeout(60);
+        Hazelcast.shutdownAll();
+    }
+
+    @After
+    public void cleanup() {
+        tm.close();
+        cleanAtomikosLogs();
         Hazelcast.shutdownAll();
     }
 
     @Test
+    public void testCommit() throws InterruptedException {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+
+        final TransactionContext context = instance1.newTransactionContext();
+        context.beginTransaction();
+        context.getMap("map").put("key", "value");
+        final com.hazelcast.transaction.impl.Transaction transaction = TransactionAccessor.getTransaction(context);
+        transaction.prepare();
+
+        instance1.getLifecycleService().shutdown();
+
+        assertEquals("value", instance2.getMap("map").get("key"));
+
+        try {
+            transaction.rollback(); //for setting ThreadLocal of unfinished transaction
+        } catch (Throwable ignored) {
+        }
+    }
+
+    @Test
+    public void testRecovery() throws Exception {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance();
+
+        TransactionContext context1 = instance1.newTransactionContext(TransactionOptions.getDefault().setDurability(2));
+        XAResource xaResource = context1.getXaResource();
+        final MyXid myXid = new MyXid();
+        xaResource.start(myXid, 0);
+        final TransactionalMap<Object, Object> map = context1.getMap("map");
+        map.put("key", "value");
+        xaResource.prepare(myXid);
+        instance1.getLifecycleService().shutdown();
+
+        assertNull(instance2.getMap("map").get("key"));
+
+        instance1 = Hazelcast.newHazelcastInstance();
+        TransactionContext context2 = instance1.newTransactionContext();
+        xaResource = context2.getXaResource();
+        final Xid[] recover = xaResource.recover(0);
+        for (Xid xid : recover) {
+            xaResource.commit(xid, false);
+        }
+
+        assertEquals("value", instance2.getMap("map").get("key"));
+
+        try {
+            context1.rollbackTransaction(); //for setting ThreadLocal of unfinished transaction
+        } catch (Throwable ignored) {
+        }
+    }
+
+    public static class MyXid implements Xid {
+
+        public int getFormatId() {
+            return 42;
+        }
+
+        @Override
+        public byte[] getGlobalTransactionId() {
+            return "GlobalTransactionId".getBytes();
+        }
+
+        @Override
+        public byte[] getBranchQualifier() {
+            return "BranchQualifier".getBytes();
+        }
+    }
+
+    @Test
     public void testParallel() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 
         final int size = 300;
         ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -83,7 +171,7 @@ public class HazelcastXaTest {
             executorService.execute(new Runnable() {
                 public void run() {
                     try {
-                        txn();
+                        txn(instance);
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
@@ -101,14 +189,13 @@ public class HazelcastXaTest {
 
     @Test
     public void testSequential() throws Exception {
-        txn();
-        txn();
-        txn();
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        txn(instance);
+        txn(instance);
+        txn(instance);
     }
 
-    private void txn() throws Exception {
-        final TransactionManager tm = new UserTransactionManager();
-        tm.setTransactionTimeout(60);
+    private void txn(HazelcastInstance instance) throws Exception {
         tm.begin();
 
         final TransactionContext context = instance.newTransactionContext();
@@ -131,8 +218,6 @@ public class HazelcastXaTest {
     private void close(boolean error, XAResource... xaResource) throws Exception {
 
         int flag = XAResource.TMSUCCESS;
-        // retrieve or construct a TM handle
-        TransactionManager tm = new UserTransactionManager();
 
         // get the current tx
         Transaction tx = tm.getTransaction();

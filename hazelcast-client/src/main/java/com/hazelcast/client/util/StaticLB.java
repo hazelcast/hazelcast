@@ -21,6 +21,10 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 
+/**
+ * The StaticLB is a {@link com.hazelcast.client.LoadBalancer} that always returns the same member. This can
+ * be useful for testing if you want to hit a specific member.
+ */
 public class StaticLB implements LoadBalancer {
 
     private final Member member;

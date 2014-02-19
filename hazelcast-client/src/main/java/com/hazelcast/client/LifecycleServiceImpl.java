@@ -31,13 +31,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
-/**
- * @author mdogan 5/16/13
- */
 public final class LifecycleServiceImpl implements LifecycleService {
 
     private final HazelcastClient client;
-    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners = new ConcurrentHashMap<String, LifecycleListener>();
+    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
+            = new ConcurrentHashMap<String, LifecycleListener>();
     private final Object lifecycleLock = new Object();
     private final AtomicBoolean active = new AtomicBoolean(false);
 

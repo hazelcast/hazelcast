@@ -70,10 +70,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getMultiMap(name);
     }
 
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
-        return getOriginal().getReplicatedMap(name);
-    }
-
     public JobTracker getJobTracker(String name) {
         return getOriginal().getJobTracker(name);
     }

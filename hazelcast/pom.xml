@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.2-SNAPSHOT</version>
+        <version>3.2-RC2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -152,6 +152,51 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>checkstyle</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <configLocation>${basedir}/checkstyle/checkstyle.xml</configLocation>
+                    <suppressionsLocation>${basedir}/checkstyle/suppressions.xml</suppressionsLocation>
+                    <headerLocation>${basedir}/checkstyle/ClassHeader.txt</headerLocation>
+                    <enableRSS>false</enableRSS>
+                    <linkXRef>true</linkXRef>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <failOnViolation>true</failOnViolation>
+                    <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                    <enableRulesSummary>true</enableRulesSummary>
+                    <propertyExpansion>basedir=${basedir}</propertyExpansion>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>${findbugs.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnError>true</failOnError>
+                    <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>${maven.antrun.plugin.version}</version>
                 <executions>
@@ -233,6 +278,37 @@
             <version>${h2.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>net.sourceforge.findbugs</groupId>
+            <artifactId>annotations</artifactId>
+            <version>1.3.2</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <!--Only releases need to be signed. Use mvn -Pfindbugs clean compile site -->
+            <id>findbugs</id>
+            <build>
+                <plugins>
+
+                    <!--Use mvn compile site to generate this-->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>findbugs-maven-plugin</artifactId>
+                        <version>2.5.4</version>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Low</threshold>
+                            <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml
+                            </excludeFilterFile>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

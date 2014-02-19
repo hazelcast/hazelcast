@@ -17,28 +17,31 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.ObjectDataInputStream;
-import com.hazelcast.nio.serialization.ObjectDataOutputStream;
+import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.util.ExceptionUtil;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.Closeable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.channels.SocketChannel;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-/**
- * @author ali 16/12/13
- */
 public class ClientConnection implements Connection, Closeable {
 
     private volatile boolean live = true;
@@ -53,32 +56,56 @@ public class ClientConnection implements Connection, Closeable {
 
     private final int connectionId;
 
-    private final SocketChannel socketChannel;
+    private final SocketChannelWrapper socketChannelWrapper;
 
     private volatile Address remoteEndpoint;
 
-    private final ObjectDataOutputStream out;
+    private final ConcurrentMap<Integer, ClientCallFuture> callIdMap
+            = new ConcurrentHashMap<Integer, ClientCallFuture>();
+    private final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap
+            = new ConcurrentHashMap<Integer, ClientCallFuture>();
+    private final ByteBuffer readBuffer;
+    private final SerializationService serializationService;
+    private boolean readFromSocket = true;
 
-    private final ObjectDataInputStream in;
-
-    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out, int connectionId, SocketChannel socketChannel) throws IOException {
+    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
+                            int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
+        final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
-        this.socketChannel = socketChannel;
+        this.serializationService = connectionManager.getSerializationService();
+        this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
-        this.readHandler = new ClientReadHandler(this, in);
-        this.writeHandler = new ClientWriteHandler(this, out);
-        final SerializationService ss = connectionManager.getSerializationService();
-        final Socket socket = socketChannel.socket();
-        try {
-            this.out = ss.createObjectDataOutputStream(
-                    new BufferedOutputStream(socket.getOutputStream(), connectionManager.socketSendBufferSize));
-            this.in = ss.createObjectDataInputStream(
-                    new BufferedInputStream(socket.getInputStream(), connectionManager.socketReceiveBufferSize));
-        } catch (IOException e) {
-            throw e;
+        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
+        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
+        this.readBuffer = ByteBuffer.allocate(socket.getReceiveBufferSize());
+    }
+
+    public void registerCallId(ClientCallFuture future) {
+        final int callId = connectionManager.newCallId();
+        future.getRequest().setCallId(callId);
+        callIdMap.put(callId, future);
+        if (future.getHandler() != null) {
+            eventHandlerMap.put(callId, future);
         }
     }
 
+    public ClientCallFuture deRegisterCallId(int callId) {
+        return callIdMap.remove(callId);
+    }
+
+    public ClientCallFuture deRegisterEventHandler(int callId) {
+        return eventHandlerMap.remove(callId);
+    }
+
+    public EventHandler getEventHandler(int callId) {
+        final ClientCallFuture future = eventHandlerMap.get(callId);
+        if (future == null) {
+            return null;
+        }
+        return future.getHandler();
+    }
+
+    @Override
     public boolean write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
@@ -91,76 +118,111 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void init() throws IOException {
-        out.write(stringToBytes(Protocols.CLIENT_BINARY));
-        out.write(stringToBytes(ClientTypes.JAVA));
-        out.flush();
+        final ByteBuffer buffer = ByteBuffer.allocate(6);
+        buffer.put(stringToBytes(Protocols.CLIENT_BINARY));
+        buffer.put(stringToBytes(ClientTypes.JAVA));
+        buffer.flip();
+        socketChannelWrapper.write(buffer);
     }
 
     public void write(Data data) throws IOException {
-        data.writeData(out);
-        out.flush();
+        final int totalSize = data.totalSize();
+        final int bufferSize = ClientConnectionManagerImpl.BUFFER_SIZE;
+        final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
+        final DataAdapter packet = new DataAdapter(data);
+        boolean complete = false;
+        while (!complete) {
+            complete = packet.writeTo(buffer);
+            buffer.flip();
+            try {
+                socketChannelWrapper.write(buffer);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+            buffer.clear();
+        }
     }
 
     public Data read() throws IOException {
-        Data data = new Data();
-        data.readData(in);
-        return data;
+        ClientPacket packet = new ClientPacket(serializationService.getSerializationContext());
+        while (true) {
+            if (readFromSocket) {
+                int readBytes = socketChannelWrapper.read(readBuffer);
+                if (readBytes == -1) {
+                    throw new EOFException("Remote socket closed!");
+                }
+                readBuffer.flip();
+            }
+            boolean complete = packet.readFrom(readBuffer);
+            if (complete) {
+                if (readBuffer.hasRemaining()) {
+                    readFromSocket = false;
+                } else {
+                    readBuffer.compact();
+                }
+                return packet.getData();
+            }
+            readFromSocket = true;
+            readBuffer.clear();
+        }
     }
 
+    @Override
     public Address getEndPoint() {
         return remoteEndpoint;
     }
 
+    @Override
     public boolean live() {
         return live;
     }
 
+    @Override
     public long lastReadTime() {
         return readHandler.getLastHandle();
     }
 
+    @Override
     public long lastWriteTime() {
         return writeHandler.getLastHandle();
     }
 
+    @Override
     public void close() {
         close(null);
     }
 
+    @Override
     public ConnectionType getType() {
         return ConnectionType.JAVA_CLIENT;
     }
 
+    @Override
     public boolean isClient() {
         return true;
     }
 
+    @Override
     public InetAddress getInetAddress() {
-        return socketChannel.socket().getInetAddress();
+        return socketChannelWrapper.socket().getInetAddress();
     }
 
+    @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
+        return (InetSocketAddress) socketChannelWrapper.socket().getRemoteSocketAddress();
     }
 
+    @Override
     public int getPort() {
-        return socketChannel.socket().getPort();
+        return socketChannelWrapper.socket().getPort();
     }
 
-    public SocketChannel getSocketChannel() {
-        return socketChannel;
+    public SocketChannelWrapper getSocketChannelWrapper() {
+        return socketChannelWrapper;
     }
 
     public ClientConnectionManagerImpl getConnectionManager() {
         return connectionManager;
-    }
-
-    public int getConnectionId() {
-        return connectionId;
-    }
-
-    public ClientWriteHandler getWriteHandler() {
-        return writeHandler;
     }
 
     public ClientReadHandler getReadHandler() {
@@ -176,7 +238,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) socketChannel.socket().getLocalSocketAddress();
+        return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
     }
 
     private void innerClose() throws IOException {
@@ -184,13 +246,28 @@ public class ClientConnection implements Connection, Closeable {
             return;
         }
         live = false;
-        if (socketChannel != null && socketChannel.isOpen()) {
-            socketChannel.close();
+        if (socketChannelWrapper != null && socketChannelWrapper.isOpen()) {
+            socketChannelWrapper.close();
         }
         readHandler.shutdown();
         writeHandler.shutdown();
-        in.close();
-        out.close();
+
+        final HazelcastException response;
+        if (connectionManager.isLive()) {
+            response = new TargetDisconnectedException(remoteEndpoint);
+        } else {
+            response = new HazelcastException("Client is shutting down!!!");
+        }
+
+        for (Map.Entry<Integer, ClientCallFuture> entry : callIdMap.entrySet()) {
+            entry.getValue().notify(response);
+            eventHandlerMap.remove(entry.getKey());
+        }
+        callIdMap.clear();
+        for (ClientCallFuture future : eventHandlerMap.values()) {
+            future.notify(response);
+        }
+        eventHandlerMap.clear();
     }
 
     public void close(Throwable t) {
@@ -202,7 +279,7 @@ public class ClientConnection implements Connection, Closeable {
         } catch (Exception e) {
             logger.warning(e);
         }
-        String message = "Connection [" + socketChannel.socket().getRemoteSocketAddress() + "] lost. Reason: ";
+        String message = "Connection [" + socketChannelWrapper.socket().getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
         } else {
@@ -210,9 +287,12 @@ public class ClientConnection implements Connection, Closeable {
         }
 
         logger.warning(message);
-        connectionManager.destroyConnection(this);
+        if (!socketChannelWrapper.isBlocking()) {
+            connectionManager.destroyConnection(this);
+        }
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ClientConnection)) return false;
@@ -224,19 +304,22 @@ public class ClientConnection implements Connection, Closeable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         return connectionId;
     }
 
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientConnection{");
         sb.append("live=").append(live);
         sb.append(", writeHandler=").append(writeHandler);
         sb.append(", readHandler=").append(readHandler);
         sb.append(", connectionId=").append(connectionId);
-        sb.append(", socketChannel=").append(socketChannel);
+        sb.append(", socketChannel=").append(socketChannelWrapper);
         sb.append(", remoteEndpoint=").append(remoteEndpoint);
         sb.append('}');
         return sb.toString();
     }
+
 }

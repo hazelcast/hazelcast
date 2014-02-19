@@ -21,9 +21,11 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.*;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.security.UsernamePasswordCredentials;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class ClientConfig {
 
@@ -31,14 +33,20 @@ public class ClientConfig {
      * The Group Configuration properties like:
      * Name and Password that is used to connect to the cluster.
      */
-
     private GroupConfig groupConfig = new GroupConfig();
 
     /**
-     * List of the initial set of addresses.
-     * Client will use this list to find a running Member, connect to it.
+     * The Security Configuration for custom Credentials:
+     * Name and Password that is used to connect to the cluster.
      */
-    private final List<String> addressList = new ArrayList<String>(10);
+    private ClientSecurityConfig securityConfig = new ClientSecurityConfig();
+
+    /**
+     * The Network Configuration properties like:
+     * addresses to connect, smart-routing, socket-options...
+     */
+    private ClientNetworkConfig networkConfig = new ClientNetworkConfig();
+
     /**
      * Used to distribute the operations to multiple Endpoints.
      */
@@ -51,73 +59,42 @@ public class ClientConfig {
     private List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
 
     /**
-     * If true, client will route the key based operations to owner of the key at the best effort.
-     * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
-     * guarantee that the operation will always be executed on the owner. The cached table is updated every second.
-     */
-    private boolean smartRouting = true;
-
-    /**
-     * If true, client will redo the operations that were executing on the server and client lost the connection.
-     * This can be because of network, or simply because the member died. However it is not clear whether the
-     * application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
-     * retrying can cause to undesirable effects. Note that the redo can perform on any member.
-     * <p/>
-     * If false, the operation will throw {@link RuntimeException} that is wrapping {@link java.io.IOException}.
-     */
-    private boolean redoOperation = false;
-
-    /**
-     * limit for the Pool size that is used to pool the connections to the members.
-     */
-    private int connectionPoolSize = 100;
-
-    /**
-     * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
-     * passing between client and member within the {@link ClientConfig#connectionTimeout} milliseconds the connection
-     * will be closed.
-     */
-    private int connectionTimeout = 60000;
-
-    /**
-     * While client is trying to connect initially to one of the members in the {@link ClientConfig#addressList},
-     * all might be not available. Instead of giving up, throwing Exception and stopping client, it will
-     * attempt to retry as much as {@link ClientConfig#connectionAttemptLimit} times.
-     */
-    private int connectionAttemptLimit = 2;
-
-    /**
-     * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
-     */
-    private int connectionAttemptPeriod = 3000;
-
-    /**
-     * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
+     * pool-size for internal ExecutorService which handles responses etc.
      */
     private int executorPoolSize = -1;
-
-
-    private SocketOptions socketOptions = new SocketOptions();
 
     private SerializationConfig serializationConfig = new SerializationConfig();
     
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
-    /**
-     * Will be called with the Socket, each time client creates a connection to any Member.
-     */
-    private SocketInterceptorConfig socketInterceptorConfig = null;
 
     private ManagedContext managedContext = null;
     
     private ClassLoader classLoader = null;
     
-    /**
-     * Can be used instead of {@link GroupConfig} in Hazelcast EE.
-     */
-    private Credentials credentials;
-
     private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
+
+
+
+
+
+
+
+    public ClientSecurityConfig getSecurityConfig() {
+        return securityConfig;
+    }
+
+    public void setSecurityConfig(ClientSecurityConfig securityConfig) {
+        this.securityConfig = securityConfig;
+    }
+
+    public ClientNetworkConfig getNetworkConfig() {
+        return networkConfig;
+    }
+
+    public void setNetworkConfig(ClientNetworkConfig networkConfig) {
+        this.networkConfig = networkConfig;
+    }
 
     public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig){
         nearCacheConfigMap.put(mapName, nearCacheConfig);
@@ -148,90 +125,124 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#isSmartRouting} instead
+     */
+    @Deprecated
     public boolean isSmartRouting() {
-        return smartRouting;
+        return networkConfig.isSmartRouting();
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#setSmartRouting} instead
+     */
+    @Deprecated
     public ClientConfig setSmartRouting(boolean smartRouting) {
-        this.smartRouting = smartRouting;
+        networkConfig.setSmartRouting(smartRouting);
         return this;
     }
 
-    public int getConnectionPoolSize() {
-        return connectionPoolSize;
-    }
-
-    public ClientConfig setConnectionPoolSize(int connectionPoolSize) {
-        this.connectionPoolSize = connectionPoolSize;
-        return this;
-    }
-
+    /**
+     * Use {@link ClientNetworkConfig#getSocketInterceptorConfig} instead
+     */
+    @Deprecated
     public SocketInterceptorConfig getSocketInterceptorConfig() {
-        return socketInterceptorConfig;
+        return networkConfig.getSocketInterceptorConfig();
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#setSocketInterceptorConfig} instead
+     */
+    @Deprecated
     public ClientConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
-        this.socketInterceptorConfig = socketInterceptorConfig;
+        networkConfig.setSocketInterceptorConfig(socketInterceptorConfig);
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#getConnectionAttemptPeriod} instead
+     */
+    @Deprecated
     public int getConnectionAttemptPeriod() {
-        return connectionAttemptPeriod;
+        return networkConfig.getConnectionAttemptPeriod();
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#setConnectionAttemptPeriod} instead
+     */
+    @Deprecated
     public ClientConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
-        this.connectionAttemptPeriod = connectionAttemptPeriod;
+        networkConfig.setConnectionAttemptPeriod(connectionAttemptPeriod);
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#getConnectionAttemptLimit} instead
+     */
+    @Deprecated
     public int getConnectionAttemptLimit() {
-        return connectionAttemptLimit;
+        return networkConfig.getConnectionAttemptLimit();
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#setConnectionAttemptLimit} instead
+     */
+    @Deprecated
     public ClientConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
-        this.connectionAttemptLimit = connectionAttemptLimit;
+        networkConfig.setConnectionAttemptLimit(connectionAttemptLimit);
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#getConnectionTimeout} instead
+     */
+    @Deprecated
     public int getConnectionTimeout() {
-        return connectionTimeout;
+        return networkConfig.getConnectionTimeout();
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#setConnectionTimeout} instead
+     */
+    @Deprecated
     public ClientConfig setConnectionTimeout(int connectionTimeout) {
-        this.connectionTimeout = connectionTimeout;
+        networkConfig.setConnectionTimeout(connectionTimeout);
         return this;
     }
 
     public Credentials getCredentials() {
-        if (credentials == null) {
-            setCredentials(new UsernamePasswordCredentials(getGroupConfig().getName(),
-                    getGroupConfig().getPassword()));
-        }
-        return credentials;
+        return securityConfig.getCredentials();
     }
 
     public ClientConfig setCredentials(Credentials credentials) {
-        this.credentials = credentials;
+        securityConfig.setCredentials(credentials);
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#addAddress} instead
+     */
+    @Deprecated
     public ClientConfig addAddress(String... addresses) {
-        Collections.addAll(addressList, addresses);
+        networkConfig.addAddress(addresses);
         return this;
     }
 
-    // required for spring module
+    /**
+     * Use {@link ClientNetworkConfig#setAddresses} instead
+     */
+    @Deprecated
     public ClientConfig setAddresses(List<String> addresses) {
-        addressList.clear();
-        addressList.addAll(addresses);
+        networkConfig.setAddresses(addresses);
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#getAddresses} instead
+     */
+    @Deprecated
     public List<String> getAddresses() {
-        if (addressList.size() == 0) {
-            addAddress("localhost");
-        }
-        return addressList;
+        return networkConfig.getAddresses();
     }
 
     public GroupConfig getGroupConfig() {
@@ -261,21 +272,37 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#isRedoOperation} instead
+     */
+    @Deprecated
     public boolean isRedoOperation() {
-        return redoOperation;
+        return networkConfig.isRedoOperation();
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#setRedoOperation} instead
+     */
+    @Deprecated
     public ClientConfig setRedoOperation(boolean redoOperation) {
-        this.redoOperation = redoOperation;
+        networkConfig.setRedoOperation(redoOperation);
         return this;
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#getSocketOptions} instead
+     */
+    @Deprecated
     public SocketOptions getSocketOptions() {
-        return socketOptions;
+        return networkConfig.getSocketOptions();
     }
 
+    /**
+     * Use {@link ClientNetworkConfig#setSocketOptions} instead
+     */
+    @Deprecated
     public ClientConfig setSocketOptions(SocketOptions socketOptions) {
-        this.socketOptions = socketOptions;
+        networkConfig.setSocketOptions(socketOptions);
         return this;
     }
 

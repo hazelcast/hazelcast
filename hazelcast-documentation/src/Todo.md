@@ -5,7 +5,7 @@ Random order of planned features.
 
 -   Ready-to-go Hazelcast Cache Server Image for Amazon EC2
 
--   Symmetric Encryption and SSL support for Java Client
+-   Symmetric Encryption for Java Client
 
 -   Distributed `java.util.concurrent.DelayQueue` implementation.
 

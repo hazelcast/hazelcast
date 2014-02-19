@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.concurrent.atomicreference.proxy.AtomicReferenceProxy;
+import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionService;
@@ -41,15 +41,19 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class AtomicReferenceService implements ManagedService, RemoteService, MigrationAwareService {
 
+    /**
+     * The name of the AtomicReferenceService.
+     */
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, ReferenceWrapper> references = new ConcurrentHashMap<String, ReferenceWrapper>();
-    private final ConstructorFunction<String, ReferenceWrapper> atomicReferenceConstructorFunction = new ConstructorFunction<String, ReferenceWrapper>() {
-        public ReferenceWrapper createNew(String key) {
-            return new ReferenceWrapper();
-        }
-    };
+    private final ConstructorFunction<String, ReferenceWrapper> atomicReferenceConstructorFunction =
+            new ConstructorFunction<String, ReferenceWrapper>() {
+                public ReferenceWrapper createNew(String key) {
+                    return new ReferenceWrapper();
+                }
+            };
 
     public AtomicReferenceService() {
     }

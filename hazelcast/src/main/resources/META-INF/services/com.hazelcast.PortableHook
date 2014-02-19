@@ -8,10 +8,9 @@ com.hazelcast.multimap.MultiMapPortableHook
 com.hazelcast.collection.CollectionPortableHook
 com.hazelcast.executor.ExecutorPortableHook
 com.hazelcast.topic.TopicPortableHook
-com.hazelcast.concurrent.lock.LockPortableHook
-com.hazelcast.concurrent.semaphore.SemaphorePortableHook
-com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook
-com.hazelcast.concurrent.countdownlatch.CountDownLatchPortableHook
-com.hazelcast.concurrent.atomicreference.AtomicReferencePortableHook
-com.hazelcast.replicatedmap.client.ReplicatedMapPortableHook
+com.hazelcast.concurrent.lock.client.LockPortableHook
+com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook
+com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook
+com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook
+com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook
 com.hazelcast.mapreduce.impl.MapReducePortableHook

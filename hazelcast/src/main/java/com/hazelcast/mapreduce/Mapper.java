@@ -49,7 +49,6 @@ import java.io.Serializable;
  * @param <ValueIn>  The type of value used in the {@link KeyValueSource}
  * @param <KeyOut>   The key type for mapped results
  * @param <ValueOut> The value type for mapped results
- *
  * @since 3.2
  */
 @Beta
@@ -64,8 +63,8 @@ public interface Mapper<KeyIn, ValueIn, KeyOut, ValueOut>
      * If you want to know more about the implementation of MapReduce algorithms read the {@see <a
      * href="http://research.google.com/archive/mapreduce-osdi04.pdf">Google Whitepaper on MapReduce</a>}.
      *
-     * @param key key to map
-     * @param value value to map
+     * @param key     key to map
+     * @param value   value to map
      * @param context Context to be used for emitting values
      */
     void map(KeyIn key, ValueIn value, Context<KeyOut, ValueOut> context);

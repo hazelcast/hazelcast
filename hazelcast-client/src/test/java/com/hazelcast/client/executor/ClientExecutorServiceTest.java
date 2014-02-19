@@ -26,14 +26,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 5/27/13
@@ -43,30 +42,72 @@ import static org.junit.Assert.assertTrue;
 public class ClientExecutorServiceTest {
 
     static final String name = "test1";
-    static HazelcastInstance hz;
-    static HazelcastInstance server;
-    static HazelcastInstance second;
-    static HazelcastInstance third;
+    static HazelcastInstance client;
+    static HazelcastInstance instance1;
+    static HazelcastInstance instance2;
+    static HazelcastInstance instance3;
     static IExecutorService service;
 
     @BeforeClass
-    public static void init(){
-        server = Hazelcast.newHazelcastInstance();
-        second = Hazelcast.newHazelcastInstance();
-        third = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
-        service = hz.getExecutorService(name);
+    public static void init() {
+        instance1 = Hazelcast.newHazelcastInstance();
+        instance2 = Hazelcast.newHazelcastInstance();
+        instance3 = Hazelcast.newHazelcastInstance();
+        client = HazelcastClient.newHazelcastClient();
+        service = client.getExecutorService(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        client.getLifecycleService().shutdown();
         Hazelcast.shutdownAll();
     }
 
     @Test
+    public void testCancellationAwareTask() {
+        CancellationAwareTask task = new CancellationAwareTask(5000);
+        Future future = service.submit(task);
+        try {
+            future.get(2, TimeUnit.SECONDS);
+            fail("Should throw TimeoutException!");
+        } catch (TimeoutException expected) {
+        } catch (Exception e) {
+            fail("No other Exception!! -> " + e);
+        }
+        assertFalse(future.isDone());
+        assertTrue(future.cancel(true));
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+
+        try {
+            future.get();
+            fail("Should not complete the task successfully");
+        } catch (CancellationException expected) {
+        } catch (Exception e) {
+            fail("Unexpected exception " + e);
+        }
+    }
+
+    public static class CancellationAwareTask implements Callable<Boolean>, Serializable {
+
+        long sleepTime = 10000;
+
+        public CancellationAwareTask() {
+        }
+
+        public CancellationAwareTask(long sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
+        public Boolean call() throws InterruptedException {
+            Thread.sleep(sleepTime);
+            return Boolean.TRUE;
+        }
+    }
+
+    @Test
     public void testSubmitWithResult() throws ExecutionException, InterruptedException {
-        final Integer res = new Integer(5);
+        final Integer res = 5;
         final Future<Integer> future = service.submit(new RunnableTask("task"), res);
         final Integer integer = future.get();
         assertEquals(res, integer);
@@ -75,21 +116,22 @@ public class ClientExecutorServiceTest {
     @Test
     public void submitCallable1() throws Exception {
 
-        final Future<String> future = service.submitToKeyOwner(new CallableTask("naber"), "key");
+        final Future<String> future = service.submitToKeyOwner(new CallableTask("foo"), "key");
         String result = future.get();
-        assertEquals("naber:result", result);
+        assertEquals("foo:result", result);
     }
 
     @Test
     public void submitCallable2() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);
-        service.submitToKeyOwner(new CallableTask("naber"), "key", new ExecutionCallback<String>() {
+        service.submitToKeyOwner(new CallableTask("foo"), "key", new ExecutionCallback<String>() {
             public void onResponse(String response) {
-                if (response.equals("naber:result")){
+                if (response.equals("foo:result")) {
                     latch.countDown();
                 }
             }
+
             public void onFailure(Throwable t) {
             }
         });
@@ -110,9 +152,9 @@ public class ClientExecutorServiceTest {
     @Test
     public void submitCallable4() throws Exception {
         final CountDownLatch latch = new CountDownLatch(4);
-        service.submitToAllMembers(new CallableTask("asd"),new MultiExecutionCallback() {
+        service.submitToAllMembers(new CallableTask("asd"), new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
-                if (value.equals("asd:result")){
+                if (value.equals("asd:result")) {
                     latch.countDown();
                 }
             }
@@ -120,7 +162,7 @@ public class ClientExecutorServiceTest {
             public void onComplete(Map<Member, Object> values) {
                 for (Member member : values.keySet()) {
                     Object value = values.get(member);
-                    if (value.equals("asd:result")){
+                    if (value.equals("asd:result")) {
                         latch.countDown();
                     }
                 }

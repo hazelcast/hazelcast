@@ -31,7 +31,6 @@
         </cluster-members>
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
-        <connection-pool-size>30</connection-pool-size>
 
         <socket-interceptor enabled="false">
             <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
@@ -46,8 +45,7 @@
 
 
     <security>
-        <username>USER_NAME</username>
-        <password>PASSWORD</password>
+        <credentials>com.hazelcast.security.UsernamePasswordCredentials</credentials>
     </security>
 
     <listeners>

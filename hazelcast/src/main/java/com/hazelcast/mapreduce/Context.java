@@ -24,7 +24,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @param <K> key type of the resulting keys
  * @param <V> value type of the resulting values
- *
  * @since 3.2
  */
 @Beta

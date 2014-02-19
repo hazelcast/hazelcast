@@ -26,6 +26,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -117,7 +118,6 @@ public class AtomicLongTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
-    @Category(ProblematicTest.class)
     public void testAtomicLongSpawnNodeInParallel() throws InterruptedException {
         int total = 6;
         int parallel = 2;

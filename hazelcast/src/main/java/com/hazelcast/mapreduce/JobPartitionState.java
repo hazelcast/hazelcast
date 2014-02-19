@@ -71,8 +71,7 @@ public interface JobPartitionState {
         /**
          * Partition calculation cancelled due to an internal exception
          */
-        CANCELLED,
-        ;
+        CANCELLED;
 
         /**
          * Returns an processing state by its given ordinal

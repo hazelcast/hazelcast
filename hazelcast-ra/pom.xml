@@ -29,7 +29,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.2-SNAPSHOT</version>
+        <version>3.2-RC2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -68,6 +68,12 @@
             <artifactId>geronimo-jta_1.1_spec</artifactId>
             <scope>test</scope>
             <version>1.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <!--<dependency>-->

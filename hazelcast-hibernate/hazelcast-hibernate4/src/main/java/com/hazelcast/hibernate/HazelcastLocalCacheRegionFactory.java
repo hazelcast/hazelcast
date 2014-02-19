@@ -31,7 +31,9 @@ import java.util.Properties;
 
 public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
-    private CleanupService cleanupService;
+    public static final int serialVersionUID = 1;
+
+    private transient CleanupService cleanupService;
 
     public HazelcastLocalCacheRegionFactory() {
     }

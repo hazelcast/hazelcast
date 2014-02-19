@@ -28,15 +28,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SimpleFunctionalMapTest {
+/**
+ * A simple functinoal Map test
+ */
+public final class SimpleFunctionalMapTest {
 
-    public static final int ENTRY_COUNT = 1000;
-    public static final int KB = 10240;
-    public static final int STATS_SECONDS = 10;
+    private static final int ENTRY_COUNT = 1000;
+    private static final int KB = 10240;
+    private static final int STATS_SECONDS = 10;
 
-    private SimpleFunctionalMapTest(){}
+    private SimpleFunctionalMapTest() {
+    }
 
-
+    /**
+     * This test runs continuously until an exception is thrown.
+     * No args
+     */
     public static void main(String[] args) {
         int threadCount = 40;
         final Stats stats = new Stats();
@@ -72,16 +79,19 @@ public class SimpleFunctionalMapTest {
                         } else if (operation < 7) {
                             Collection col = map.values();
                             for (Object o : col) {
+                                int i = 0;
                             }
                             stats.increment("values");
                         } else if (operation < 8) {
                             Collection col = map.keySet();
                             for (Object o : col) {
+                                int i = 0;
                             }
                             stats.increment("keySet");
                         } else if (operation < 9) {
                             Collection col = map.entrySet();
                             for (Object o : col) {
+                                int i = 0;
                             }
                             stats.increment("entrySet");
                         } else {
@@ -115,8 +125,11 @@ public class SimpleFunctionalMapTest {
         return new byte[numberOfK * KB];
     }
 
+    /**
+     * Map statistics class
+     */
     public static class Stats {
-        Map<String, AtomicLong> mapStats = new ConcurrentHashMap(10);
+        Map<String, AtomicLong> mapStats = new ConcurrentHashMap<String, AtomicLong>(10);
 
         public Stats() {
             mapStats.put("put", new AtomicLong(0));

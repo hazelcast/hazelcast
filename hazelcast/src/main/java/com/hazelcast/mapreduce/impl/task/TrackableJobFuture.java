@@ -38,6 +38,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * This is the node based implementation of the job's reactive {@link com.hazelcast.core.ICompletableFuture}
+ * and is returned to the users codebase. It hides the exposed JobPartitionState array from
+ * {@link com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl} by wrapping it into an adapter
+ * that creates a full copy prior to returning it to the end user.
+ *
+ * @param <V> type of the resulting value
+ */
 public class TrackableJobFuture<V>
         extends AbstractCompletableFuture<V>
         implements TrackableJob<V>, JobCompletableFuture<V> {
@@ -51,8 +59,7 @@ public class TrackableJobFuture<V>
 
     private volatile boolean cancelled;
 
-    public TrackableJobFuture(String name, String jobId, JobTracker jobTracker,
-                              NodeEngine nodeEngine, Collator collator) {
+    public TrackableJobFuture(String name, String jobId, JobTracker jobTracker, NodeEngine nodeEngine, Collator collator) {
         super(nodeEngine, nodeEngine.getLogger(TrackableJobFuture.class));
         this.name = name;
         this.jobId = jobId;
@@ -64,14 +71,15 @@ public class TrackableJobFuture<V>
 
     @Override
     public void setResult(Object result) {
+        Object finalResult = result;
         // If collator is available we need to execute it now
         if (collator != null) {
-            result = collator.collate(((Map) result).entrySet());
+            finalResult = collator.collate(((Map) finalResult).entrySet());
         }
-        if (result instanceof Throwable && !(result instanceof CancellationException)) {
-            result = new ExecutionException((Throwable) result);
+        if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
+            finalResult = new ExecutionException((Throwable) finalResult);
         }
-        super.setResult(result);
+        super.setResult(finalResult);
         latch.countDown();
     }
 
@@ -96,10 +104,10 @@ public class TrackableJobFuture<V>
     }
 
     @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public V get(long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException {
         ValidationUtil.isNotNull(unit, "unit");
-        latch.await(timeout, unit);
-        if (!isDone()) {
+        if (!latch.await(timeout, unit) || !isDone()) {
             throw new TimeoutException("timeout reached");
         }
         return getResult();
@@ -135,10 +143,15 @@ public class TrackableJobFuture<V>
         if (supervisor == null || !supervisor.isOwnerNode()) {
             return null;
         }
-        return supervisor.getJobProcessInformation();
+        return new JobProcessInformationAdapter(supervisor.getJobProcessInformation());
     }
 
-    private static class JobProcessInformationAdapter implements JobProcessInformation {
+    /**
+     * This class is just an adapter for retrieving the JobProcess information
+     * from user codebase to prevent exposing the internal array.
+     */
+    private static final class JobProcessInformationAdapter
+            implements JobProcessInformation {
         private final JobProcessInformation processInformation;
 
         private JobProcessInformationAdapter(JobProcessInformation processInformation) {

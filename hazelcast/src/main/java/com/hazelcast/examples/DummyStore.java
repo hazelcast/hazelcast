@@ -24,6 +24,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A dummy store
+ */
 public class DummyStore implements MapLoader, MapStore {
 
     public Set loadAllKeys() {

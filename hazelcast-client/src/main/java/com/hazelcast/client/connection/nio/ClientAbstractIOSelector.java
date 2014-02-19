@@ -30,9 +30,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 14/12/13
- */
 public abstract class ClientAbstractIOSelector extends Thread implements IOSelector {
 
     protected final ILogger logger;
@@ -110,7 +107,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                 processSelectionQueue();
                 if (!live || isInterrupted()) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( getName() + " is interrupted!");
+                        logger.finest(getName() + " is interrupted!");
                     }
                     live = false;
                     return;
@@ -142,7 +139,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         } finally {
             try {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Closing selector " + getName());
+                    logger.finest("Closing selector " + getName());
                 }
                 selector.close();
             } catch (final Exception ignored) {

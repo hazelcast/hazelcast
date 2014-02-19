@@ -19,6 +19,9 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 
+/**
+ * This class holds information about the current processing state and the owner of a partition
+ */
 public class JobPartitionStateImpl
         implements JobPartitionState {
 
@@ -42,11 +45,7 @@ public class JobPartitionStateImpl
 
     @Override
     public String toString() {
-        return "JobPartitionStateImpl{" +
-                "state=" + state +
-                ", address=" + address +
-                '}';
+        return "JobPartitionStateImpl{" + "state=" + state + ", address=" + address + '}';
     }
-
 
 }

@@ -39,8 +39,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -343,5 +345,62 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         assertTrue(map.getLocalMapStats().getGetOperationCount() < size*2);
     }
+    @Test
+    public void testGetAll() throws Exception {
+        final String mapName = "testGetAllWithNearCache";
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
+        final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = hazelcastInstanceFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = hazelcastInstanceFactory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance1.getMap(mapName);
+        HashSet keys = new HashSet();
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            map.put(i,i);
+            keys.add(i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        final Map<Integer, Integer> all = map.getAll(keys);
+        NearCacheStats stats2 =   map.getLocalMapStats().getNearCacheStats();
+        assertTrue("hits", 400 < stats2.getHits());
+    }
+ @Test
+    public void testGetAsync() throws Exception {
+        final String mapName = "testGetAsyncWithNearCache";
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
+        final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = hazelcastInstanceFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = hazelcastInstanceFactory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance1.getMap(mapName);
+        HashSet keys = new HashSet();
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            map.put(i,i);
+            keys.add(i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+
+
+        for (int i = 0; i < size; i++) {
+            final Future<Integer> async = map.getAsync(i);
+            System.out.println(async.get());
+        }
+
+        NearCacheStats stats2 =   map.getLocalMapStats().getNearCacheStats();
+        assertTrue("hits", 400 < stats2.getHits());
+
+    }
+
+
 
 }

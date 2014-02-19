@@ -19,20 +19,15 @@ package com.hazelcast.client.connection;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.nio.Address;
 
-import java.io.IOException;
-
-/**
- * @author ali 5/27/13
- */
 public interface ClientConnectionManager {
 
-    public void shutdown();
+    void shutdown();
 
-    public void start();
+    void start();
 
-    public ClientConnection getRandomConnection() throws IOException;
+    ClientConnection tryToConnect(Address address) throws Exception;
 
-    public ClientConnection getOrConnect(Address address) throws IOException ;
+    ClientConnection ownerConnection(Address address) throws Exception ;
 
-    public ClientConnection ownerConnection(Address address, Authenticator authenticator) throws IOException ;
+    boolean removeEventHandler(Integer callId);
 }

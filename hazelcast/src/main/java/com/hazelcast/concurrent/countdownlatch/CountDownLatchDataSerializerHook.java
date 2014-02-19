@@ -16,13 +16,27 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
+import com.hazelcast.concurrent.countdownlatch.operations.AwaitOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchBackupOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchReplicationOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.CountDownOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
+import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class CountDownLatchDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
+
+    public static final int AWAIT_OPERATION = 0;
+    public static final int COUNT_DOWN_LATCH_BACKUP_OPERATION = 1;
+    public static final int COUNT_DOWN_LATCH_REPLICATION_OPERATION = 2;
+    public static final int COUNT_DOWN_OPERATION = 3;
+    public static final int GET_COUNT_OPERATION = 4;
+    public static final int SET_COUNT_OPERATION = 5;
 
     @Override
     public int getFactoryId() {
@@ -31,6 +45,26 @@ public final class CountDownLatchDataSerializerHook implements DataSerializerHoo
 
     @Override
     public DataSerializableFactory createFactory() {
-        return null;
+        return new DataSerializableFactory() {
+            @Override
+            public IdentifiedDataSerializable create(int typeId) {
+                switch (typeId) {
+                    case AWAIT_OPERATION:
+                        return new AwaitOperation();
+                    case COUNT_DOWN_LATCH_BACKUP_OPERATION:
+                        return new CountDownLatchBackupOperation();
+                    case COUNT_DOWN_LATCH_REPLICATION_OPERATION:
+                        return new CountDownLatchReplicationOperation();
+                    case COUNT_DOWN_OPERATION:
+                        return new CountDownOperation();
+                    case GET_COUNT_OPERATION:
+                        return new GetCountOperation();
+                    case SET_COUNT_OPERATION:
+                        return new SetCountOperation();
+                    default:
+                        return null;
+                }
+            }
+        };
     }
 }

@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.2-SNAPSHOT</version>
+    <version>3.2-RC2-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -58,7 +58,8 @@
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
-        <findbugs.maven.plugin.version>2.5.2</findbugs.maven.plugin.version>
+        <checkstyle.maven.plugin.version>2.11</checkstyle.maven.plugin.version>
+        <findbugs.maven.plugin.version>2.5.3</findbugs.maven.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <junit.version>4.11</junit.version>
         <junit-benchmarks.version>0.7.2</junit-benchmarks.version>
@@ -144,6 +145,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>

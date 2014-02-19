@@ -24,9 +24,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.IOException;
 
+/**
+ * This implementation of {@link com.hazelcast.mapreduce.JobProcessInformation} is used to
+ * transmit the currently processed number of records and the partition states to a requesting
+ * client. This information can only be requested by the job emitting client and by requesting
+ * it at the job owner.
+ */
 public class TransferableJobProcessInformation
         implements JobProcessInformation, Portable {
 
@@ -37,11 +44,16 @@ public class TransferableJobProcessInformation
     }
 
     public TransferableJobProcessInformation(JobPartitionState[] partitionStates, int processedRecords) {
-        this.partitionStates = partitionStates;
+        this.partitionStates = new JobPartitionState[partitionStates.length];
+        System.arraycopy(partitionStates, 0, this.partitionStates, 0, partitionStates.length);
         this.processedRecords = processedRecords;
     }
 
     @Override
+    // This field is explicitly exposed since it is guarded by a serialization cycle
+    // or by a copy inside the constructor. This class is only used for transfer of
+    // the states and user can change it without breaking anything.
+    @SuppressWarnings("EI_EXPOSE_REP")
     public JobPartitionState[] getPartitionStates() {
         return partitionStates;
     }
@@ -52,14 +64,16 @@ public class TransferableJobProcessInformation
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void writePortable(PortableWriter writer)
+            throws IOException {
         writer.writeInt("processedRecords", processedRecords);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(partitionStates);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
+    public void readPortable(PortableReader reader)
+            throws IOException {
         processedRecords = reader.readInt("processedRecords");
         ObjectDataInput in = reader.getRawDataInput();
         partitionStates = in.readObject();

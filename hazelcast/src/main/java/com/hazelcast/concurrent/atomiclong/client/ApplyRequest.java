@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.concurrent.atomiclong.ApplyOperation;
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
+import com.hazelcast.concurrent.atomiclong.operations.ApplyOperation;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

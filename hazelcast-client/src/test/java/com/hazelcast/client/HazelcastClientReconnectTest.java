@@ -59,7 +59,7 @@ public class HazelcastClientReconnectTest {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(h1.getConfig().getGroupConfig().getName(), h1.getConfig().getGroupConfig().getPassword()));
-        clientConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         final HazelcastInstance client1 = HazelcastClient.newHazelcastClient(clientConfig);
 
         h1.getLifecycleService().shutdown();
@@ -92,9 +92,9 @@ public class HazelcastClientReconnectTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(h1.getConfig().getGroupConfig().getName(), h1.getConfig().getGroupConfig().getPassword()));
-        clientConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         //this test depends on connection timeout and adapted to run with 30000 value, which is also default
-        clientConfig.setConnectionTimeout(30000);
+        clientConfig.getNetworkConfig().setConnectionTimeout(30000);
         final HazelcastInstance client1 = HazelcastClient.newHazelcastClient(clientConfig);
         //add 35 listeners to make sure OutRunnable.checkOnReconnect will spend 35 * 100 ms
         //this will make it impossible to send command in 3 sec window before ConnecitonManager.hearbeatTimer will terminate the connection
