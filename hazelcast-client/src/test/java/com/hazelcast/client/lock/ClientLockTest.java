@@ -182,4 +182,5 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
+
 }
