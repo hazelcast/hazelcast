@@ -17,6 +17,10 @@ import java.util.Set;
 
 import static org.junit.Assert.fail;
 
+/**
+ * This test fails sporadically. It seems to indicate a problem within the core because there is not much logic
+ * in the atomicwrapper that can fail (just increment).
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class AtomicLongUpdateStressTest extends StressTestSupport {
@@ -33,7 +37,7 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
         super.setUp();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         client = HazelcastClient.newHazelcastClient(clientConfig);
         references = new IAtomicLong[REFERENCE_COUNT];
         for (int k = 0; k < references.length; k++) {
