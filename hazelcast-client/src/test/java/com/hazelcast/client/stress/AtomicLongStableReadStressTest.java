@@ -55,12 +55,12 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
     }
 
     @Test
-    public void testWithClusterChangeEnabled() {
+    public void testChangingCluster() {
         test(true);
     }
 
     @Test
-    public void testWithClusterChangeDisabled() {
+    public void testFixedCluster() {
         test(false);
     }
 

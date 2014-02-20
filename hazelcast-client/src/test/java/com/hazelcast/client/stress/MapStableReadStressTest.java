@@ -4,6 +4,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.client.MapQueryRequest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -56,13 +57,13 @@ public class MapStableReadStressTest extends StressTestSupport {
         }
     }
 
-    @Test
-    public void testWithClusterChangeEnabled() {
+    //@Test
+    public void testChangingCluster() {
         test(true);
     }
 
     @Test
-    public void testWithClusterChangeDisabled() {
+    public void testFixedCluster() {
         test(false);
     }
 

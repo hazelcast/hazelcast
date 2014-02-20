@@ -57,13 +57,13 @@ public class MapUpdateStressTest extends StressTestSupport {
         }
     }
 
-    @Test
-    public void testWithClusterChangeEnabled() {
+    //@Test
+    public void testChangingCluster() {
         test(true);
     }
 
     @Test
-    public void testWithClusterChangeDisabled() {
+    public void testFixedCluster() {
         test(false);
     }
 

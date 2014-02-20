@@ -18,13 +18,13 @@ import static org.junit.Assert.assertNull;
 
 public abstract class StressTestSupport extends HazelcastTestSupport {
     //todo: should be system property
-    public static final int RUNNING_TIME_SECONDS = 60;
+    public static final int RUNNING_TIME_SECONDS = 180;
     //todo: should be system property
     public static final int CLUSTER_SIZE = 6;
     //todo: should be system property
     public static final int KILL_DELAY_SECONDS = 10;
 
-    private final List<HazelcastInstance> instances = new CopyOnWriteArrayList();
+    private final List<HazelcastInstance> instances = new CopyOnWriteArrayList<HazelcastInstance>();
     private CountDownLatch startLatch;
     private KillMemberThread killMemberThread;
     private volatile boolean stopOnError = true;
@@ -38,7 +38,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
             HazelcastInstance hz = newHazelcastInstance(createClusterConfig());
             instances.add(hz);
         }
-
     }
 
     public void setClusterChangeEnabled(boolean membershutdownEnabled) {
@@ -131,7 +130,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
                 }
                 throw new RuntimeException("Could not join thread:" + t + ", thread is still alive");
             }
-
         }
 
         assertNoErrors(threads);
@@ -161,7 +159,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
             }
         }
 
-        public void assertNoError() {
+        public final void assertNoError() {
             assertNull(getName() + " encountered an error", error);
         }
 
