@@ -97,14 +97,19 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                }
 
                for(Connection connection: endpoints.keySet()){
-                   if(!connection.live()){
-                        long dieTime = connection.getFirstDeadTime();
-                        if(dieTime == -1){
-                            connection.setFirstDeadTime(System.currentTimeMillis());
-                        }else if(System.currentTimeMillis()>dieTime+TimeUnit.MINUTES.toMillis(5)){
-                            logger.severe("ClientEngine cleanup thread removed endpoint for dead connection: "+connection);
-                            removeEndpoint(connection, true);
-                        }
+                   try {
+
+                       if (!connection.live()) {
+                           long dieTime = connection.getFirstDeadTime();
+                           if (dieTime == -1) {
+                               connection.setFirstDeadTime(System.currentTimeMillis());
+                           } else if (System.currentTimeMillis() > dieTime + TimeUnit.MINUTES.toMillis(5)) {
+                               logger.severe("ClientEngine cleanup thread removed endpoint for dead connection: " + connection);
+                               removeEndpoint(connection, true);
+                           }
+                       }
+                   } catch(Exception e){
+                        logger.severe(e);
                    }
                }
            }
