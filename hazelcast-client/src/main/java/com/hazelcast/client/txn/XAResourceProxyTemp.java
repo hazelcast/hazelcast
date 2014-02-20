@@ -33,7 +33,7 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 /**
  * @author ali 14/02/14
  */
-public class XAResourceProxy implements XAResource {
+public class XAResourceProxyTemp implements XAResource {
 
     private final TransactionContextProxy transactionContext;
     private final ClientTransactionManager transactionManager;
@@ -42,10 +42,10 @@ public class XAResourceProxy implements XAResource {
 
     private int transactionTimeoutSeconds;
 
-    public XAResourceProxy(TransactionContextProxy transactionContext) {
+    public XAResourceProxyTemp(TransactionContextProxy transactionContext) {
         this.transactionContext = transactionContext;
         this.transactionManager = transactionContext.getTransactionManager();
-        logger = Logger.getLogger(XAResourceProxy.class);
+        logger = Logger.getLogger(XAResourceProxyTemp.class);
     }
 
     @Override
@@ -176,8 +176,8 @@ public class XAResourceProxy implements XAResource {
         if (this == xaResource) {
             return true;
         }
-        if (xaResource instanceof XAResourceProxy) {
-            XAResourceProxy other = (XAResourceProxy) xaResource;
+        if (xaResource instanceof XAResourceProxyTemp) {
+            XAResourceProxyTemp other = (XAResourceProxyTemp) xaResource;
             return transactionManager.equals(other.transactionManager);
         }
         return false;
