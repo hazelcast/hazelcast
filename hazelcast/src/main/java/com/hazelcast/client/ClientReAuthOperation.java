@@ -49,7 +49,7 @@ public class ClientReAuthOperation extends AbstractOperation {
     }
 
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     public Object getResponse() {
