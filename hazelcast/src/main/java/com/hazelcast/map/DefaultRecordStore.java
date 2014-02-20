@@ -331,7 +331,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey,true);
+            record = getRecordInternal(dataKey, true);
         } else {
             accessRecord(record);
         }
@@ -343,7 +343,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
-            record = getRecordInternal(dataKey,false);
+            record = getRecordInternal(dataKey, false);
         } else {
             accessRecord(record);
         }
@@ -617,19 +617,13 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             final Object oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            //check if putting the same value again.
-            if (mapService.compare(name, oldValue, value)) {
-                accessRecord(record);
-            }//otherwise this is a full update operation.
-            else {
-                mapStoreWrite(record, dataKey, value);
-                // if key exists before, first reduce size
-                updateSizeEstimator(-calculateRecordSize(record));
-                setRecordValue(record, value);
-                // then increase size
-                updateSizeEstimator(calculateRecordSize(record));
-                saveIndex(record);
-            }
+            mapStoreWrite(record, dataKey, value);
+            // if key exists before, first reduce size
+            updateSizeEstimator(-calculateRecordSize(record));
+            setRecordValue(record, value);
+            // then increase size
+            updateSizeEstimator(calculateRecordSize(record));
+            saveIndex(record);
         }
 
     }
@@ -651,21 +645,14 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            //check if putting the same value again.
-            if (mapService.compare(name, oldValue, value)) {
-                accessRecord(record);
-                updateTtl(record, ttl);
-            }//otherwise this is a full update operation.
-            else {
-                mapStoreWrite(record, dataKey, value);
-                // if key exists before, first reduce size
-                updateSizeEstimator(-calculateRecordSize(record));
-                setRecordValue(record, value);
-                // then increase size.
-                updateSizeEstimator(calculateRecordSize(record));
-                updateTtl(record, ttl);
-                saveIndex(record);
-            }
+            mapStoreWrite(record, dataKey, value);
+            // if key exists before, first reduce size
+            updateSizeEstimator(-calculateRecordSize(record));
+            setRecordValue(record, value);
+            // then increase size.
+            updateSizeEstimator(calculateRecordSize(record));
+            updateTtl(record, ttl);
+            saveIndex(record);
         }
         return oldValue;
     }
