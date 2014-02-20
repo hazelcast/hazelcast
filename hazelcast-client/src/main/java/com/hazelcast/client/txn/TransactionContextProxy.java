@@ -42,7 +42,7 @@ public class TransactionContextProxy implements TransactionContext {
     final TransactionProxy transaction;
     final Connection connection;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
-    private XaResourceProxy xaResource;
+    private XAResourceProxy xaResource;
 
 
     public TransactionContextProxy(ClientTransactionManager transactionManager, TransactionOptions options) {
@@ -133,7 +133,7 @@ public class TransactionContextProxy implements TransactionContext {
 
     public XAResource getXaResource() {
         if (xaResource == null) {
-            xaResource = new XaResourceProxy(this);
+            xaResource = new XAResourceProxy(this);
         }
         return xaResource;
     }
