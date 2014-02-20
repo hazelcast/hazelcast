@@ -34,13 +34,16 @@ import java.util.concurrent.Future;
  */
 public abstract class ClientProxy implements DistributedObject {
 
+    protected final String instanceName;
+
     private final String serviceName;
 
     private final String objectName;
 
     private volatile ClientContext context;
 
-    protected ClientProxy(String serviceName, String objectName) {
+    protected ClientProxy(String instanceName, String serviceName, String objectName) {
+        this.instanceName = instanceName;
         this.serviceName = serviceName;
         this.objectName = objectName;
     }
@@ -140,4 +143,27 @@ public abstract class ClientProxy implements DistributedObject {
             throw new NullPointerException("Object is null");
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ClientProxy that = (ClientProxy) o;
+
+        if (!instanceName.equals(that.instanceName)) return false;
+        if (!objectName.equals(that.objectName)) return false;
+        if (!serviceName.equals(that.serviceName)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = instanceName.hashCode();
+        result = 31 * result + serviceName.hashCode();
+        result = 31 * result + objectName.hashCode();
+        return result;
+    }
+
 }

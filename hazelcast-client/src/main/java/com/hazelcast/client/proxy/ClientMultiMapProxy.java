@@ -39,8 +39,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     private final String name;
 
-    public ClientMultiMapProxy(String serviceName, String name) {
-        super(serviceName, name);
+    public ClientMultiMapProxy(String instanceName, String serviceName, String name) {
+        super(instanceName, serviceName, name);
         this.name = name;
     }
 
