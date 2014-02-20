@@ -31,6 +31,10 @@ public interface Connection {
 
     long lastWriteTime();
 
+    void setFirstDeadTime(long firstDeadTime);
+
+    long getFirstDeadTime();
+
     void close();
 
     ConnectionType getType();

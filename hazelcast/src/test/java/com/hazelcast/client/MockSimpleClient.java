@@ -97,6 +97,16 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
+        public void setFirstDeadTime(long firstDeadTime) {
+
+        }
+
+        @Override
+        public long getFirstDeadTime() {
+            return 0;
+        }
+
+        @Override
         public Address getEndPoint() {
             return null;
         }

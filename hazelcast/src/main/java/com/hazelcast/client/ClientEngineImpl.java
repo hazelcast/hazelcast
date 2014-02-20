@@ -60,6 +60,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     private final SerializationService serializationService;
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints = new ConcurrentHashMap<Connection, ClientEndpoint>();
     private final ILogger logger;
+    private  CleanupDeadConnectionsThread cleanupThread;
 
     public ClientEngineImpl(Node node) {
         this.node = node;
@@ -67,11 +68,61 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         nodeEngine = node.nodeEngine;
         executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.CLIENT_EXECUTOR);
         logger = node.getLogger(ClientEngine.class);
+
+        if (System.getProperty("clientenginecleanup") != null) {
+            logger.severe("ClientEngine Cleanup Thread has been enabled");
+            this.cleanupThread = new CleanupDeadConnectionsThread();
+            this.cleanupThread.start();
+        }
     }
 
     @Override
     public int getClientEndpointCount() {
         return endpoints.size();
+    }
+
+    private class CleanupDeadConnectionsThread extends Thread{
+        private volatile boolean stop;
+
+        public CleanupDeadConnectionsThread(){
+            super("ClientEngineImpl-CleanupThread");
+        }
+
+        public void run(){
+           while(!stop){
+               try {
+                   Thread.sleep(10000);
+               } catch (InterruptedException e) {
+                   e.printStackTrace();
+               }
+
+               for(Connection connection: endpoints.keySet()){
+                   if(!connection.live()){
+                        long dieTime = connection.getFirstDeadTime();
+                        if(dieTime == -1){
+                            connection.setFirstDeadTime(System.currentTimeMillis());
+                        }else if(System.currentTimeMillis()>dieTime+TimeUnit.MINUTES.toMillis(5)){
+                            logger.severe("ClientEngine cleanup thread removed endpoint for dead connection: "+connection);
+                            removeEndpoint(connection, true);
+                        }
+                   }
+               }
+           }
+        }
+
+        public void die() {
+            stop = true;
+        }
+    }
+
+    public int getDeadConnectionCount(){
+        int result = 0;
+        for(Connection c: endpoints.keySet()){
+            if(!c.live()){
+                result+=1;
+            }
+        }
+        return result;
     }
 
     public void handlePacket(ClientPacket packet) {
@@ -403,6 +454,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     }
 
     public void shutdown() {
+        if(cleanupThread!=null){
+            cleanupThread.die();
+        }
+
         for (ClientEndpoint endpoint : endpoints.values()) {
             try {
                 endpoint.destroy();

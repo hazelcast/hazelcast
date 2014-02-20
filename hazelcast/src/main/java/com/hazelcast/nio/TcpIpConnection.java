@@ -49,6 +49,8 @@ public final class TcpIpConnection implements Connection {
 
     private ConnectionMonitor monitor;
 
+    private volatile long firstDeadTime = -1;
+
     public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
                            int connectionId, SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
@@ -58,6 +60,16 @@ public final class TcpIpConnection implements Connection {
         this.socketChannel = socketChannel;
         this.readHandler = new ReadHandler(this, in);
         this.writeHandler = new WriteHandler(this, out);
+    }
+
+    @Override
+    public void setFirstDeadTime(long firstDeadTime) {
+        this.firstDeadTime = firstDeadTime;
+    }
+
+    @Override
+    public long getFirstDeadTime() {
+        return firstDeadTime;
     }
 
     public SystemLogService getSystemLogService() {
