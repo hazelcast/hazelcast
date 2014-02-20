@@ -36,6 +36,8 @@ public interface ClientEngine {
 
     int getClientEndpointCount();
 
+    int getDeadConnectionCount();
+
     PartitionService getPartitionService();
 
     ClusterService getClusterService();

@@ -138,6 +138,7 @@ public class HealthMonitor extends Thread {
         private final int activeConnectionCount;
         private final int connectionCount;
         private final int ioExecutorQueueSize;
+        private final int deadClientEngineConnectionCount;
 
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
@@ -167,6 +168,7 @@ public class HealthMonitor extends Thread {
             clientEndpointCount = clientEngine.getClientEndpointCount();
             activeConnectionCount = connectionManager.getActiveConnectionCount();
             connectionCount = connectionManager.getConnectionCount();
+            deadClientEngineConnectionCount = clientEngine.getDeadConnectionCount();
         }
 
         public boolean exceedsTreshold() {
@@ -215,7 +217,8 @@ public class HealthMonitor extends Thread {
             sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
             sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
             sb.append("proxy.count=").append(proxyCount).append(", ");
-            sb.append("clientEndpoint.count=").append(clientEndpointCount).append(", ");
+            sb.append("clientEndpoint.connection.count=").append(clientEndpointCount).append(", ");
+            sb.append("clientEndpoint.deadconnection.count=").append(deadClientEngineConnectionCount).append(", ");
             sb.append("connection.active.count=").append(activeConnectionCount).append(", ");
             sb.append("connection.count=").append(connectionCount);
             return sb.toString();

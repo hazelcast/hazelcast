@@ -198,6 +198,16 @@ final class TestNodeRegistry {
                     return true;
                 }
 
+                @Override
+                public void setFirstDeadTime(long firstDeadTime) {
+
+                }
+
+                @Override
+                public long getFirstDeadTime() {
+                    return 0;
+                }
+
                 public boolean write(SocketWritable socketWritable) {
                     final Packet packet = (Packet) socketWritable;
                     if (nodeEngine.getNode().isActive()) {
