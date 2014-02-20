@@ -17,7 +17,10 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;

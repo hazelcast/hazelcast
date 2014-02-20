@@ -291,6 +291,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleSemaphore(node);
             } else if ("listeners".equals(nodeName)) {
                 handleListeners(node);
+            } else if ("attributes".equals(nodeName)) {
+                handleMemberAttributes(node);
             } else if ("partition-group".equals(nodeName)) {
                 handlePartitionGroup(node);
             } else if ("serialization".equals(nodeName)) {
@@ -1026,6 +1028,27 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
     }
+
+    private void handleMemberAttributes(final Node node) {
+        for (Node child : new IterableNodeList(node.getChildNodes())) {
+
+
+            String attributeName = getTextContent(child.getAttributes().getNamedItem("name")).trim();
+            String attributeValue;
+            Node valueAttribute = child.getAttributes().getNamedItem("name");
+            if (null != valueAttribute) {
+                attributeValue = getTextContent(valueAttribute).trim();
+            } else {
+                attributeValue = System.getProperty(attributeName);
+            }
+
+            if (null != attributeName && null != attributeValue) {
+                config.getMemberAttributeConfigs().put(attributeName, new MemberAttributeConfig(attributeName, attributeValue));
+            }
+
+        }
+    }
+
 
     private void handleMemberGroup(Node node) {
         MemberGroupConfig memberGroupConfig = new MemberGroupConfig();

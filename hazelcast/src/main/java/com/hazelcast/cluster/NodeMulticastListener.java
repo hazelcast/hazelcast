@@ -20,10 +20,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.MemberAttributes;
 import com.hazelcast.util.AddressUtil;
 
 import java.util.Set;
-import java.util.logging.Level;
 
 import static java.lang.String.format;
 
@@ -57,7 +57,7 @@ public class NodeMulticastListener implements MulticastListener {
                                 JoinRequest request = (JoinRequest) joinMessage;
                                 final JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
                                         node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
-                                        node.getClusterService().getSize());
+                                        node.getClusterService().getSize(), new MemberAttributes(node.getConfig().getMemberAttributeConfigs().values()));
                                 node.multicastService.send(response);
 
                             } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {

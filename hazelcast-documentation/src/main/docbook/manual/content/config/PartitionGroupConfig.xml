@@ -35,7 +35,7 @@
         We call these groups <literal>partition groups</literal>. This way partitions are assigned to those partition groups instead of single nodes. And backups of these partitions are located in another partition group.
     </para>
 
-    <para>When you enable partition grouping, Hazelcast presents three choices to configure partition groups at the moments.
+    <para>When you enable partition grouping, Hazelcast offers four choices to configure partition groups at the moment.
         <itemizedlist>
 
             <listitem>
@@ -94,6 +94,68 @@ partitionGroupConfig.addMemberGroupConfig(memberGroupConfig2);</programlisting>
                         partitionGroupConfig.setEnabled(true).setGroupType(MemberGroupType.PER_MEMBER);</programlisting>
                 </para>
             </listitem>
+            <listitem>
+                <para>
+                    The fourth option is to allow Hazelcast to automatically configure itself based on your network topology.
+                    This is done by telling Hazelcast through member attributes the site, rack, host and process the cache node
+                    is running on.
+                </para>
+                <para>
+                    There are 2 configuration items when setting up the toplogy aware configuration. Firstly set the member
+                    attributes for each member and then enable the topology aware group-type on the partition-group configuration.
+                    <programlisting language="xml"><![CDATA[
+<config>
+   ...
+   <attributes>
+      <attribute name="hazelcast.address.site" value="site1"/>
+      <attribute name="hazelcast.address.rack" value="rack1"/>
+      <attribute name="hazelcast.address.host" value="host1"/>
+      <attribute name="hazelcast.address.process" value="process1" />
+   </hz:attributes>
+   ...
+   <partition-group enabled="true" group-type="TOPOLOGY_AWARE" />
+</config>
+
+   ]]></programlisting>
+                    <programlisting language="java">
+Config config = ...;
+
+config.getMemberAttributeConfigs().put(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_SITE,
+        new MemberAttributeConfig(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_SITE, "site1"));
+config.getMemberAttributeConfigs().put(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_RACK,
+        new MemberAttributeConfig(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_RACK, "rack1"));
+config.getMemberAttributeConfigs().put(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_HOST,
+        new MemberAttributeConfig(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_HOST, "host1"));
+config.getMemberAttributeConfigs().put(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_PROCESS,
+        new MemberAttributeConfig(TopologyAwareMemberGroupFactory.HAZELCAST_ADDRESS_PROCESS, "process1"));
+
+config.getPartitionGroupConfig().setEnabled(true).setGroupType(PartitionGroupConfig.MemberGroupType.TOPOLOGY_AWARE);
+                    </programlisting>
+Or via Spring configuration
+
+                    <programlisting language="xml"><![CDATA[
+
+<hz:config>
+    ...
+    <hz:attributes>
+        <hz:attribute name="hazelcast.address.site" value="site1"/>
+        <hz:attribute name="hazelcast.address.rack" value="rack1"/>
+        <hz:attribute name="hazelcast.address.host" value="host1"/>
+        <hz:attribute name="hazelcast.address.process" value="process1" />
+    </hz:attributes>
+    ...
+
+    <hz:partition-group enabled="true" group-type="TOPOLOGY_AWARE"/>
+    ...
+
+                   ]]></programlisting>
+                </para>
+                <para>
+                    Using Spring configuration is it also possible to set the values for site, rack, host and process by
+                    using property replacement. This makes it easier to configure the options based on environment variables.
+                </para>
+            </listitem>
+
         </itemizedlist>
     </para>
 </sect1>

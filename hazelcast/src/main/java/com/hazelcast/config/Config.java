@@ -45,6 +45,8 @@ public class Config {
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
+//    private MemberAttributesConfig memberAttributesConfig;
+
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
     private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
@@ -63,6 +65,8 @@ public class Config {
 
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
+    private final Map<String, MemberAttributeConfig> memberAttributeConfigs = new ConcurrentHashMap<String, MemberAttributeConfig>();
+
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
@@ -78,6 +82,7 @@ public class Config {
     private ManagedContext managedContext;
 
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
+
 
     private String licenseKey;
 
@@ -583,6 +588,7 @@ public class Config {
         return this;
     }
 
+
     /**
      * @return the configurationUrl
      */
@@ -652,6 +658,17 @@ public class Config {
         }
     }
 
+    public Map<String, MemberAttributeConfig> getMemberAttributeConfigs() {
+        return memberAttributeConfigs;
+    }
+
+    public Config setMemberAttributeConfigs(Map<String, MemberAttributeConfig> memberAttributeConfigs) {
+        this.memberAttributeConfigs.clear();
+        this.memberAttributeConfigs.putAll(memberAttributeConfigs);
+        return this;
+    }
+
+
     /**
      * @param config
      * @return true if config is compatible with this one,
@@ -693,6 +710,7 @@ public class Config {
         sb.append("{groupConfig=").append(groupConfig);
         sb.append(", properties=").append(properties);
         sb.append(", networkConfig=").append(networkConfig);
+        sb.append(", memberAttributesConfig=").append(memberAttributeConfigs);
         sb.append(", mapConfigs=").append(mapConfigs);
         sb.append(", topicConfigs=").append(topicConfigs);
         sb.append(", queueConfigs=").append(queueConfigs);

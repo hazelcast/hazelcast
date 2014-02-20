@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.MemberAttributes;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -35,17 +36,19 @@ public class JoinMessage implements DataSerializable {
     protected String uuid;
     protected ConfigCheck configCheck;
     protected int memberCount;
+    protected MemberAttributes memberAttributes;
 
     public JoinMessage() {
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck configCheck, int memberCount) {
+    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck configCheck, int memberCount, MemberAttributes memberAttributes) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.address = address;
         this.uuid = uuid;
         this.configCheck = configCheck;
         this.memberCount = memberCount;
+        this.memberAttributes = memberAttributes;
     }
 
     public byte getPacketVersion() {
@@ -81,6 +84,10 @@ public class JoinMessage implements DataSerializable {
         configCheck = new ConfigCheck();
         configCheck.readData(in);
         memberCount = in.readInt();
+        if (in.readBoolean()) {
+            memberAttributes = new MemberAttributes();
+            memberAttributes.readData(in);
+        }
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -90,6 +97,10 @@ public class JoinMessage implements DataSerializable {
         out.writeUTF(uuid);
         configCheck.writeData(out);
         out.writeInt(memberCount);
+        out.writeBoolean(memberAttributes != null);
+        if (null != memberAttributes) {
+            memberAttributes.writeData(out);
+        }
     }
 
     @Override
@@ -99,8 +110,13 @@ public class JoinMessage implements DataSerializable {
         sb.append("{packetVersion=").append(packetVersion);
         sb.append(", buildNumber=").append(buildNumber);
         sb.append(", address=").append(address);
+        sb.append(", memberAttributes=").append(memberAttributes);
         sb.append(", uuid='").append(uuid).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public MemberAttributes getMemberAttributes() {
+        return memberAttributes;
     }
 }

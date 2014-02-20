@@ -50,6 +50,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap multiMapManagedMap;
         private ManagedMap executorManagedMap;
         private ManagedMap wanReplicationManagedMap;
+        private ManagedMap memberAttributesMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -62,6 +63,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.multiMapManagedMap = new ManagedMap();
             this.executorManagedMap = new ManagedMap();
             this.wanReplicationManagedMap = new ManagedMap();
+            this.memberAttributesMap = new ManagedMap();
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
             this.configBuilder.addPropertyValue("queueConfigs", queueManagedMap);
             this.configBuilder.addPropertyValue("listConfigs", listManagedMap);
@@ -70,6 +72,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
             this.configBuilder.addPropertyValue("executorConfigs", executorManagedMap);
             this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
+            this.configBuilder.addPropertyValue("memberAttributeConfigs", memberAttributesMap);
 
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
             this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
@@ -90,6 +93,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleGroup(node);
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node);
+                } else if ("attributes".equals(nodeName)) {
+                    handleMemberAttributes(node);
                 } else if ("executor-service".equals(nodeName)) {
                     handleExecutor(node);
                 } else if ("queue".equals(nodeName)) {
@@ -150,6 +155,38 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
         }
 
+        private void handleMemberAttributes(final Node node) {
+
+
+            for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("attribute".equals(nodeName)) {
+
+                    BeanDefinitionBuilder builder = createBeanBuilder(MemberAttributeConfig.class);
+                    final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
+                    final Node attName = child.getAttributes().getNamedItem("name");
+                    final String name = getTextContent(attName);
+                    builder.addPropertyValue("name", name);
+
+
+                    //If the value is null, try and set it from System properties to match
+                    //XmlConfigBuilder
+                    final Node attValue = child.getAttributes().getNamedItem("value");
+                    if (null == attValue) {
+                        String value = System.getProperty(name);
+                        if (null != value) {
+                            builder.addPropertyValue("value", value);
+                        }
+                    } else {
+                        builder.addPropertyValue("value", getTextContent(attValue));
+                    }
+
+
+                    memberAttributesMap.put(name, beanDefinition);
+                }
+            }
+        }
+
 /*
         protected void handleViaReflection(org.w3c.dom.Node child) {
             final String methodName = xmlToJavaName("handle-" + cleanNodeName(child));
@@ -175,6 +212,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         public void handleProperties(Node node) {
             handleProperties(node, configBuilder);
         }
+
 
         public void handleInterfaces(Node node, final BeanDefinitionBuilder networkConfigBuilder) {
             BeanDefinitionBuilder builder = createBeanBuilder(InterfacesConfig.class);

@@ -21,10 +21,7 @@ import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -462,7 +459,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     sendMasterAnswer(joinMessage);
                 }
                 if (node.isMaster() && node.joined() && node.isActive()) {
-                    final MemberInfo newMemberInfo = new MemberInfo(joinMessage.getAddress(), joinMessage.getUuid());
+                    final MemberInfo newMemberInfo = new MemberInfo(joinMessage.getAddress(), joinMessage.getUuid(), joinMessage.getMemberAttributes());
                     if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
                         final Credentials cr = joinMessage.getCredentials();
                         ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
@@ -670,7 +667,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members) {
         final Collection<MemberInfo> memberInfos = new LinkedList<MemberInfo>();
         for (MemberImpl member : members) {
-            memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid()));
+            memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid(), member.getMemberAttributes()));
         }
         return memberInfos;
     }
@@ -701,7 +698,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             for (MemberInfo memberInfo : members) {
                 MemberImpl member = oldMemberMap.get(memberInfo.address);
                 if (member == null) {
-                    member = createMember(memberInfo.address, memberInfo.uuid, thisAddress.getScopeId());
+                    member = createMember(memberInfo.address, memberInfo.uuid, thisAddress.getScopeId(), memberInfo.getMemberAttributes());
                 }
                 newMembers[k++] = member;
                 member.didRead();
@@ -857,9 +854,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId) {
+    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, MemberAttributes memberAttributes) {
         address.setScopeId(ipV6ScopeId);
-        return new MemberImpl(address, thisAddress.equals(address), nodeUuid);
+        return new MemberImpl(address, thisAddress.equals(address), nodeUuid, memberAttributes);
     }
 
     public MemberImpl getMember(Address address) {

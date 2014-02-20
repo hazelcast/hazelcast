@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.MemberAttributes;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -31,13 +32,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
     private boolean localMember;
     private Address address;
     private String uuid;
+    private MemberAttributes memberAttributes;
 
     private transient volatile long lastRead = 0;
     private transient volatile long lastWrite = 0;
@@ -48,16 +49,26 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public MemberImpl(Address address, boolean localMember) {
-        this(address, localMember, null);
+        this(address, localMember, null, null);
     }
 
     public MemberImpl(Address address, boolean localMember, String uuid) {
+        this(address, localMember, uuid, null);
+    }
+
+    public MemberImpl(Address address, boolean localMember, MemberAttributes memberAttributes) {
+        this(address, localMember, null, memberAttributes);
+    }
+
+    public MemberImpl(Address address, boolean localMember, String uuid, MemberAttributes memberAttributes) {
         this();
         this.localMember = localMember;
         this.address = address;
         this.lastRead = Clock.currentTimeMillis();
         this.uuid = uuid;
+        this.memberAttributes = memberAttributes;
     }
+
 
     public Address getAddress() {
         return address;
@@ -133,15 +144,29 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
+    @Override
+    public MemberAttributes getMemberAttributes() {
+        return memberAttributes;
+    }
+
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
+        if (in.readBoolean()) {
+            memberAttributes = new MemberAttributes();
+            memberAttributes.readData(in);
+        }
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(uuid);
+        out.writeBoolean(memberAttributes != null);
+        if (null != memberAttributes) {
+            memberAttributes.writeData(out);
+        }
+
     }
 
     @Override
@@ -154,6 +179,10 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         if (localMember) {
             sb.append(" this");
         }
+        if (memberAttributes != null && memberAttributes.size() > 0) {
+            sb.append(" ");
+            sb.append(memberAttributes);
+        }
         return sb.toString();
     }
 
@@ -162,6 +191,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         final int PRIME = 31;
         int result = 1;
         result = PRIME * result + ((address == null) ? 0 : address.hashCode());
+        result = PRIME * result + ((memberAttributes == null) ? 0 : memberAttributes.hashCode());
         return result;
     }
 
@@ -179,6 +209,12 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
                 return false;
         } else if (!address.equals(other.address))
             return false;
+        if (memberAttributes == null) {
+            if (other.memberAttributes != null)
+                return false;
+        } else if (!memberAttributes.equals(other.memberAttributes)) {
+            return false;
+        }
         return true;
     }
 

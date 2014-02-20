@@ -187,9 +187,9 @@ public class MemberListTest {
 
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid()));
-        members.add(new MemberInfo(m3.getAddress(), m3.getUuid()));
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), m2.getMemberAttributes()));
+        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), m2.getMemberAttributes()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), m2.getMemberAttributes()));
         n2.clusterService.updateMembers(members);
         n2.setMasterAddress(m2.getAddress());
 
@@ -239,8 +239,8 @@ public class MemberListTest {
         final Node n2 = TestUtil.getNode(h2);
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid()));
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), m1.getMemberAttributes()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), m2.getMemberAttributes()));
         n2.clusterService.updateMembers(members);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point

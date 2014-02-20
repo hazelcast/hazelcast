@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.MemberAttributes;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -34,8 +35,8 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
-                       Credentials credentials, int memberCount, int tryCount) {
-        super(packetVersion, buildNumber, address, uuid, config, memberCount);
+                       Credentials credentials, int memberCount, int tryCount, MemberAttributes memberAttributes) {
+        super(packetVersion, buildNumber, address, uuid, config, memberCount, memberAttributes);
         this.credentials = credentials;
         this.tryCount = tryCount;
     }

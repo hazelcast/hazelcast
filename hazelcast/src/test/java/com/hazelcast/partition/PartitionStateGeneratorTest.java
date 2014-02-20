@@ -243,7 +243,7 @@ public class PartitionStateGeneratorTest {
             count++;
             port++;
             MemberImpl m = new MemberImpl(new Address(InetAddress.getByAddress(new byte[]{ip[0], ip[1], ip[2], ip[3]})
-                    , port), false);
+                    , port), false, null, null);
             members.add(m);
             if (ip[3] == 255) {
                 ip[2] = ++ip[2];
@@ -272,7 +272,7 @@ public class PartitionStateGeneratorTest {
                 set.add(owner);
                 MemberGroup group = null;
                 for (MemberGroup g : groups) {
-                    if (g.hasMember(new MemberImpl(owner, true))) {
+                    if (g.hasMember(new MemberImpl(owner, true, null, null))) {
                         group = g;
                         break;
                     }

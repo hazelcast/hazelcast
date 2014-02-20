@@ -37,7 +37,7 @@ public final class PartitionStateOperation extends AbstractOperation implements 
                                    final long masterTime, int version) {
         final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
         for (MemberImpl member : members) {
-            memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid()));
+            memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid(), member.getMemberAttributes()));
         }
         partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfos, masterTime, version);
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.MemberAttributes;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -26,6 +27,7 @@ import java.io.IOException;
 public class MemberInfo implements DataSerializable {
     Address address = null;
     String uuid;
+    MemberAttributes memberAttributes;
 
     public MemberInfo() {
     }
@@ -34,11 +36,25 @@ public class MemberInfo implements DataSerializable {
         super();
         this.address = address;
     }
+//
+//    public MemberInfo(Address address, String uuid) {
+//        super();
+//        this.address = address;
+//        this.uuid = uuid;
+//    }
 
-    public MemberInfo(Address address, String uuid) {
+
+    public MemberInfo(Address address, MemberAttributes memberAttributes) {
+        super();
+        this.address = address;
+        this.memberAttributes = memberAttributes;
+    }
+
+    public MemberInfo(Address address, String uuid, MemberAttributes memberAttributes) {
         super();
         this.address = address;
         this.uuid = uuid;
+        this.memberAttributes = memberAttributes;
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -46,6 +62,10 @@ public class MemberInfo implements DataSerializable {
         address.readData(in);
         if (in.readBoolean()) {
             uuid = in.readUTF();
+        }
+        if (in.readBoolean()) {
+            memberAttributes = new MemberAttributes();
+            memberAttributes.readData(in);
         }
     }
 
@@ -56,10 +76,19 @@ public class MemberInfo implements DataSerializable {
         if (hasUuid) {
             out.writeUTF(uuid);
         }
+        boolean hasMemberAttributes = memberAttributes != null;
+        out.writeBoolean(hasMemberAttributes);
+        if (hasMemberAttributes) {
+            memberAttributes.writeData(out);
+        }
     }
 
     public Address getAddress() {
         return address;
+    }
+
+    public MemberAttributes getMemberAttributes() {
+        return memberAttributes;
     }
 
     @Override
@@ -67,6 +96,7 @@ public class MemberInfo implements DataSerializable {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((address == null) ? 0 : address.hashCode());
+        result = prime * result + ((memberAttributes == null) ? 0 : memberAttributes.hashCode());
         return result;
     }
 
@@ -84,6 +114,12 @@ public class MemberInfo implements DataSerializable {
                 return false;
         } else if (!address.equals(other.address))
             return false;
+        if (memberAttributes == null) {
+            if (other.memberAttributes != null)
+                return false;
+        } else if (!memberAttributes.equals(other.memberAttributes)) {
+            return false;
+        }
         return true;
     }
 

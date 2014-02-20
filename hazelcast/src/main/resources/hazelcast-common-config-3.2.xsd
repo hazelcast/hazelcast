@@ -141,10 +141,26 @@
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
+
+    <xs:complexType name="attribute">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="name" use="required" type="non-space-string"/>
+                <xs:attribute name="value" use="optional" type="non-space-string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
     <xs:complexType name="properties">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="property" type="property"/>
         </xs:sequence>
     </xs:complexType>
+    <xs:complexType name="attributes">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="attribute" type="attribute"/>
+        </xs:sequence>
+    </xs:complexType>
+
 
 </xs:schema>

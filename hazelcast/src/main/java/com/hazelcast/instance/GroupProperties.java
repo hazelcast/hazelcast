@@ -84,6 +84,11 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
+    public static final String PROP_PARTITION_ADDRESS_SITE = "hazelcast.address.site";
+    public static final String PROP_PARTITION_ADDRESS_RACK = "hazelcast.address.rack";
+    public static final String PROP_PARTITION_ADDRESS_HOST = "hazelcast.address.host";
+    public static final String PROP_PARTITION_ADDRESS_PROCESS = "hazelcast.address.process";
+
 
     public final GroupProperty OPERATION_THREAD_COUNT;
 
@@ -209,6 +214,14 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
+    public final GroupProperty PARTITION_ADDRESS_SITE;
+
+    public final GroupProperty PARTITION_ADDRESS_RACK;
+
+    public final GroupProperty PARTITION_ADDRESS_HOST;
+
+    public final GroupProperty PARTITION_ADDRESS_PROCESS;
+
     public GroupProperties(Config config) {
         HEALTH_MONITORING_LEVEL = new GroupProperty(config,PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
         HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
@@ -273,6 +286,10 @@ public class GroupProperties {
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
         ELASTIC_MEMORY_UNSAFE_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_UNSAFE_ENABLED, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
+        PARTITION_ADDRESS_SITE = new GroupProperty(config, PROP_PARTITION_ADDRESS_SITE);
+        PARTITION_ADDRESS_RACK = new GroupProperty(config, PROP_PARTITION_ADDRESS_RACK);
+        PARTITION_ADDRESS_HOST = new GroupProperty(config, PROP_PARTITION_ADDRESS_HOST);
+        PARTITION_ADDRESS_PROCESS = new GroupProperty(config, PROP_PARTITION_ADDRESS_PROCESS);
     }
 
     public static class GroupProperty {

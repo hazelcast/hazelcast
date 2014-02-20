@@ -26,10 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
@@ -150,7 +147,7 @@ public class Node {
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
-        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address));
+        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), new MemberAttributes(getConfig().getMemberAttributeConfigs().values()));
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
         logger = loggingService.getLogger(Node.class.getName());
@@ -501,7 +498,7 @@ public class Node {
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
         return new JoinRequest(Packet.VERSION, buildNumber, address,
-                localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0);
+                localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0, new MemberAttributes(getConfig().getMemberAttributeConfigs().values()));
     }
 
     public ConfigCheck createConfigCheck() {

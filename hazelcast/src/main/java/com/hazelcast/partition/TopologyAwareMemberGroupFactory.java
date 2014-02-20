@@ -24,36 +24,59 @@ import java.util.*;
 
 public class TopologyAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
+    public static final String HAZELCAST_ADDRESS_SITE = "hazelcast.address.site";
+    public static final String HAZELCAST_ADDRESS_RACK = "hazelcast.address.rack";
+    public static final String HAZELCAST_ADDRESS_HOST = "hazelcast.address.host";
+    public static final String HAZELCAST_ADDRESS_PROCESS = "hazelcast.address.process";
+
     protected Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) {
         final Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         Map<String, MemberGroup> hostsMaps = new HashMap<String, MemberGroup>();
 
-        //Firstly try and create MemberGroups by site
+
         for (Member member : allMembers) {
             Address address = ((MemberImpl) member).getAddress();
 
-            if (address.getSite() != null) {
-                MemberGroup group = groups.get("Site:" + address.getSite());
-                if (group == null) {
-                    group = new DefaultMemberGroup();
-                    groups.put("Site:" + address.getSite(), group);
-                }
-                group.addMember(member);
+            String siteAddress = null;
+            String rackAddress = null;
+            String hostAddress = null;
+            if (null != member.getMemberAttributes()) {
+                siteAddress = (null == member.getMemberAttributes()) ? null : (String)member.getMemberAttributes().getValue(HAZELCAST_ADDRESS_SITE);
+                rackAddress = (null == member.getMemberAttributes()) ? null : (String)member.getMemberAttributes().getValue(HAZELCAST_ADDRESS_RACK);
+                hostAddress = (null == member.getMemberAttributes()) ? null : (String)member.getMemberAttributes().getValue(HAZELCAST_ADDRESS_HOST);
             }
-            else if (address.getRack() != null) {
-                MemberGroup group = groups.get("Rack:" + address.getRack());
-                if (group == null) {
-                    group = new DefaultMemberGroup();
-                    groups.put("Rack:" + address.getRack(), group);
-                }
-                group.addMember(member);
-            }
-            else {
 
-                MemberGroup group = hostsMaps.get("Host:" + address.getHost());
+
+            //Try and create MemberGroups by site
+            if (null != siteAddress) {
+                MemberGroup group = groups.get("Site:" + siteAddress);
                 if (group == null) {
                     group = new DefaultMemberGroup();
-                    hostsMaps.put("Host:" + address.getHost(), group);
+                    groups.put("Site:" + siteAddress, group);
+                }
+                group.addMember(member);
+            }
+            //Try and create MemberGroups by rack
+            else if (null != rackAddress) {
+                MemberGroup group = groups.get("Rack:" + rackAddress);
+                if (group == null) {
+                    group = new DefaultMemberGroup();
+                    groups.put("Rack:" + rackAddress, group);
+                }
+                group.addMember(member);
+            }
+            //Try and create MemberGroups by host
+            else {
+                //Lets try and get the HOST member attribute first. If that fails fall back to the IP address. We use
+                //host member attribute first as this should be common to the host, where as a single host can actually
+                //have multiple IP addresses.
+                if (null == hostAddress) {
+                    hostAddress = address.getHost();
+                }
+                MemberGroup group = hostsMaps.get("Host:" + hostAddress);
+                if (group == null) {
+                    group = new DefaultMemberGroup();
+                    hostsMaps.put("Host:" + hostAddress, group);
                 }
                 group.addMember(member);
             }
@@ -69,19 +92,23 @@ public class TopologyAwareMemberGroupFactory extends BackupSafeMemberGroupFactor
             Iterator<Member> members = hostsMaps.entrySet().iterator().next().getValue().iterator();
             Map<String, MemberGroup> processesMap = new HashMap<String, MemberGroup>();
             while (members.hasNext()) {
+
                 Member member = members.next();
-                Address address = ((MemberImpl) member).getAddress();
-                MemberGroup group = processesMap.get("Process:" + address.getProcess());
-                if (group == null) {
-                    group = new DefaultMemberGroup();
-                    processesMap.put("Process:" + address.getProcess(), group);
+                String processAddress = (null == member.getMemberAttributes()) ? null : (String)member.getMemberAttributes().getValue(HAZELCAST_ADDRESS_PROCESS);
+                if (processAddress != null) {
+                    MemberGroup group = processesMap.get("Process:" + processAddress);
+                    if (group == null) {
+                        group = new DefaultMemberGroup();
+                        processesMap.put("Process:" + processAddress, group);
+                    }
+                    group.addMember(member);
                 }
-                group.addMember(member);
             }
             groups.putAll(processesMap);
         } else {
             groups.putAll(hostsMaps);
         }
+
         return new HashSet<MemberGroup>(groups.values());
     }
 }

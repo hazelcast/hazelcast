@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.MemberAttributes;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.net.InetSocketAddress;
@@ -51,4 +52,6 @@ public interface Member extends DataSerializable {
      * @return UUID of this member.
      */
     public String getUuid();
+
+    MemberAttributes getMemberAttributes();
 }

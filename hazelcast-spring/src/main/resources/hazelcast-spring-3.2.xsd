@@ -31,6 +31,7 @@
                         <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="attributes" type="attributes" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
@@ -529,10 +530,25 @@
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
-
     <xs:complexType name="properties">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="property" type="property"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="attributeNameString">
+        <xs:restriction base="non-space-string"/>
+    </xs:simpleType>
+    <xs:complexType name="attribute">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="name" use="required" type="xs:string"/>
+                <xs:attribute name="value" use="optional" type="xs:string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="attributes">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="attribute" type="attribute"/>
         </xs:sequence>
     </xs:complexType>
 
