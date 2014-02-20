@@ -36,19 +36,6 @@ public class MemberInfo implements DataSerializable {
         super();
         this.address = address;
     }
-//
-//    public MemberInfo(Address address, String uuid) {
-//        super();
-//        this.address = address;
-//        this.uuid = uuid;
-//    }
-
-
-    public MemberInfo(Address address, MemberAttributes memberAttributes) {
-        super();
-        this.address = address;
-        this.memberAttributes = memberAttributes;
-    }
 
     public MemberInfo(Address address, String uuid, MemberAttributes memberAttributes) {
         super();

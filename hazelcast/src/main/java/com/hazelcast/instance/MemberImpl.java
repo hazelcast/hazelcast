@@ -179,10 +179,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         if (localMember) {
             sb.append(" this");
         }
-        if (memberAttributes != null && memberAttributes.size() > 0) {
-            sb.append(" ");
-            sb.append(memberAttributes);
-        }
         return sb.toString();
     }
 

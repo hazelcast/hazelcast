@@ -304,24 +304,5 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             beanDefinitionBuilder.addPropertyValue("properties", properties);
         }
 
-//        protected void handleAttributes(final Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
-//            MemberAttributesConfig attributes = new MemberAttributesConfig();
-//            for (Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-//                final String name = cleanNodeName(n.getNodeName());
-//                final String propertyName;
-//                if (!"attribute".equals(name)) {
-//                    continue;
-//                }
-//
-//                BeanDefinitionBuilder attributesBeanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition();
-//                attributesBeanDefinitionBuilder.addPropertyValue(getTextContent(n.getAttributes().getNamedItem("name")).trim(), getTextContent(n.getAttributes().getNamedItem("value")).trim());
-//
-//                propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-//                final String value = getTextContent(n.getAttributes().getNamedItem("value")).trim();
-//                attributes.addAttribute(propertyName, value);
-//            }
-//            beanDefinitionBuilder.addPropertyValue("memberAttributesConfig", attributes);
-//        }
-
     }
 }
