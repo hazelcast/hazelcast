@@ -101,13 +101,12 @@ public class ListKeyValueSource<V>
 
     @Override
     public Map.Entry<String, V> element() {
-
-        Data valueObj = nextElement.getValue();
-        if (valueObj != null) {
-            valueObj = ss.toObject(valueObj);
+        Data value = nextElement.getValue();
+        if (value != null) {
+            value = ss.toObject(value);
         }
         simpleEntry.setKey(listName);
-        simpleEntry.setValue((V) valueObj);
+        simpleEntry.setValue((V) value);
         return simpleEntry;
     }
 
