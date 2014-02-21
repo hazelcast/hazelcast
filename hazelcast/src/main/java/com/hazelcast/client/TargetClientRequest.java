@@ -21,17 +21,17 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author mdogan 5/3/13
- */
 public abstract class TargetClientRequest extends ClientRequest {
 
+    private static final int TRY_COUNT = 100;
+
+    @Override
     final void process() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
         final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getTarget())
-                .setTryCount(100)
+                .setTryCount(TRY_COUNT)
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
                         endpoint.sendResponse(filter(object), getCallId());
@@ -47,5 +47,4 @@ public abstract class TargetClientRequest extends ClientRequest {
     protected Object filter(Object response) {
         return response;
     }
-
 }

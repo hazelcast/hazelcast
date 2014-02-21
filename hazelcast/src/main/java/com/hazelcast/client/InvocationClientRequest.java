@@ -20,23 +20,20 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author mdogan 5/13/13
- */
 public abstract class InvocationClientRequest extends ClientRequest {
 
+    @Override
     final void process() throws Exception {
         invoke();
     }
 
     protected abstract void invoke();
 
-    protected final InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
+    protected final InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         return clientEngine.createInvocationBuilder(serviceName, op, partitionId);
     }
 
     protected final InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         return clientEngine.createInvocationBuilder(serviceName, op, target);
     }
-
 }

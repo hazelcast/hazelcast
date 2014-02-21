@@ -20,28 +20,24 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author mdogan 5/3/13
- */
 public abstract class PartitionClientRequest extends ClientRequest {
 
-    protected void beforeProcess(){};
+    private static final int TRY_COUNT = 100;
 
-    protected void afterResponse(){};
+    protected void beforeProcess() {
+    }
+
+    protected void afterResponse() {
+    }
 
     final void process() {
         beforeProcess();
         final ClientEndpoint endpoint = getEndpoint();
-        final Operation op = prepareOperation();
+        Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getPartition())
-                .setReplicaIndex(getReplicaIndex()).setTryCount(100)
-                .setCallback(new Callback<Object>() {
-                    public void notify(Object object) {
-                        endpoint.sendResponse(filter(object), getCallId());
-                        afterResponse();
-                    }
-                });
+        InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getPartition())
+                .setReplicaIndex(getReplicaIndex()).setTryCount(TRY_COUNT)
+                .setCallback(new CallbackImpl(endpoint));
         builder.invoke();
     }
 
@@ -55,4 +51,16 @@ public abstract class PartitionClientRequest extends ClientRequest {
         return response;
     }
 
+    private class CallbackImpl implements Callback<Object> {
+        private final ClientEndpoint endpoint;
+
+        public CallbackImpl(ClientEndpoint endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        public void notify(Object object) {
+            endpoint.sendResponse(filter(object), getCallId());
+            afterResponse();
+        }
+    }
 }

@@ -21,27 +21,28 @@ import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-/**
- * @author mdogan 5/13/13
- */
 public final class ClientDataSerializerHook implements DataSerializerHook {
 
     public static final int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_DS_FACTORY, -3);
 
     public static final int CLIENT_RESPONSE = 1;
 
+    @Override
     public int getFactoryId() {
         return ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         return new DataSerializableFactory() {
+            @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
                     case CLIENT_RESPONSE:
                         return new ClientResponse();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

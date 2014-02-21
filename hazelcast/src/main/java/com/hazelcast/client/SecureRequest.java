@@ -18,11 +18,7 @@ package com.hazelcast.client;
 
 import java.security.Permission;
 
-/**
- * @ali 10/3/13
- */
 public interface SecureRequest {
 
     Permission getRequiredPermission();
-
 }

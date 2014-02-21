@@ -16,8 +16,5 @@
 
 package com.hazelcast.client;
 
-/**
- * @author ali 5/27/13
- */
 public interface RetryableRequest {
 }

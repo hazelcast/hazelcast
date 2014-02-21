@@ -27,14 +27,10 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
 
-/**
- * @author ali 17/02/14
- */
 public class RecoverTransactionRequest extends CallableClientRequest implements Portable {
 
-    boolean commit;
-
-    SerializableXID sXid;
+    private boolean commit;
+    private SerializableXID sXid;
 
     public RecoverTransactionRequest() {
     }
@@ -46,19 +42,22 @@ public class RecoverTransactionRequest extends CallableClientRequest implements 
 
     @Override
     public Object call() throws Exception {
-        final TransactionManagerServiceImpl service = getService();
+        TransactionManagerServiceImpl service = getService();
         service.recoverClientTransaction(sXid, commit);
         return null;
     }
 
+    @Deprecated
     public String getServiceName() {
         return TransactionManagerServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientTxnPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientTxnPortableHook.RECOVER;
     }
@@ -66,17 +65,15 @@ public class RecoverTransactionRequest extends CallableClientRequest implements 
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeBoolean("c", commit);
-        final ObjectDataOutput out = writer.getRawDataOutput();
+        ObjectDataOutput out = writer.getRawDataOutput();
         sXid.writeData(out);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         commit = reader.readBoolean("c");
-        final ObjectDataInput in = reader.getRawDataInput();
+        ObjectDataInput in = reader.getRawDataInput();
         sXid = new SerializableXID();
         sXid.readData(in);
-
-
     }
 }

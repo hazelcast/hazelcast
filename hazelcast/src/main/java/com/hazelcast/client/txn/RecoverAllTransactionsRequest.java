@@ -32,16 +32,17 @@ import com.hazelcast.transaction.impl.RecoveredTransaction;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.TransactionManagerServiceImpl.RECOVER_TIMEOUT;
 
-/**
- * @author ali 14/02/14
- */
 public class RecoverAllTransactionsRequest extends InvocationClientRequest implements Portable {
 
     public RecoverAllTransactionsRequest() {
@@ -49,53 +50,73 @@ public class RecoverAllTransactionsRequest extends InvocationClientRequest imple
 
     @Override
     public void invoke() {
-        final ClientEngine clientEngine = getClientEngine();
-        final ClusterService clusterService = clientEngine.getClusterService();
-        final Collection<MemberImpl> memberList = clusterService.getMemberList();
-        final TransactionManagerServiceImpl service = getService();
+        ClientEngine clientEngine = getClientEngine();
+        ClusterService clusterService = clientEngine.getClusterService();
+        Collection<MemberImpl> memberList = clusterService.getMemberList();
+        TransactionManagerServiceImpl service = getService();
 
-        List<Future<SerializableCollection>> futures = new ArrayList<Future<SerializableCollection>>(memberList.size());
-        for (MemberImpl member : memberList) {
-            final Future<SerializableCollection> f = createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                    new RecoverTxnOperation(), member.getAddress()).invoke();
-            futures.add(f);
-        }
+        List<Future<SerializableCollection>> futures = recoverTransactions(memberList);
         Set<Data> xids = new HashSet<Data>();
         for (Future<SerializableCollection> future : futures) {
             try {
-                final SerializableCollection collectionWrapper = future.get(RECOVER_TIMEOUT, TimeUnit.MILLISECONDS);
+                SerializableCollection collectionWrapper = future.get(RECOVER_TIMEOUT, TimeUnit.MILLISECONDS);
                 for (Data data : collectionWrapper) {
-                    final RecoveredTransaction rt = (RecoveredTransaction)clientEngine.toObject(data);
+                    RecoveredTransaction rt = (RecoveredTransaction) clientEngine.toObject(data);
                     service.addClientRecoveredTransaction(rt);
                     xids.add(clientEngine.toData(rt.getXid()));
                 }
             } catch (MemberLeftException e) {
-                final ILogger logger = clientEngine.getLogger(RecoverAllTransactionsRequest.class);
+                ILogger logger = clientEngine.getLogger(RecoverAllTransactionsRequest.class);
                 logger.warning("Member left while recovering: " + e);
             } catch (Throwable e) {
-                if (e instanceof ExecutionException) {
-                    e = e.getCause() != null ? e.getCause() : e;
-                }
-                if (e instanceof TargetNotMemberException) {
-                    final ILogger logger = clientEngine.getLogger(RecoverAllTransactionsRequest.class);
-                    logger.warning("Member left while recovering: " + e);
-                } else {
-                    throw ExceptionUtil.rethrow(e);
-                }
+                handleException(clientEngine, e);
             }
         }
-        final ClientEndpoint endpoint = getEndpoint();
+        ClientEndpoint endpoint = getEndpoint();
         endpoint.sendResponse(new SerializableCollection(xids), getCallId());
     }
 
+    private List<Future<SerializableCollection>> recoverTransactions(Collection<MemberImpl> memberList) {
+        List<Future<SerializableCollection>> futures = new ArrayList<Future<SerializableCollection>>(memberList.size());
+        for (MemberImpl member : memberList) {
+            RecoverTxnOperation op = new RecoverTxnOperation();
+            Future<SerializableCollection> f = createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
+                    op, member.getAddress()).invoke();
+            futures.add(f);
+        }
+        return futures;
+    }
+
+    private void handleException(ClientEngine clientEngine, Throwable e) {
+        Throwable cause = getCause(e);
+        if (cause instanceof TargetNotMemberException) {
+            ILogger logger = clientEngine.getLogger(RecoverAllTransactionsRequest.class);
+            logger.warning("Member left while recovering: " + cause);
+        } else {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private Throwable getCause(Throwable e) {
+        if (e instanceof ExecutionException) {
+            if (e.getCause() != null) {
+                return e.getCause();
+            }
+        }
+        return e;
+    }
+
+    @Deprecated
     public String getServiceName() {
         return TransactionManagerServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientTxnPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientTxnPortableHook.RECOVER_ALL;
     }
