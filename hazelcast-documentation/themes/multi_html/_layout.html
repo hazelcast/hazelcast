@@ -27,19 +27,27 @@
 		$("#sidebar").stick_in_parent()
 	});
     </script>
+    <script type="text/javascript">
 
-    <% if @manifest.options.googleAnalytics: %>
-        <script type="text/javascript">
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', '<%= @manifest.options.googleAnalytics %>']);
-          _gaq.push(['_trackPageview']);
-          (function() {
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-3921306-1']);
+        _gaq.push(['_setDomainName', 'hazelcast.com']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
             var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        </script>
-    <% end %>
+        })();
+
+    </script>
+    <script type="text/javascript">
+        setTimeout(function(){var a=document.createElement("script");
+            var b=document.getElementsByTagName("script")[0];
+            a.src=document.location.protocol+"//dnn506yrbagrg.cloudfront.net/pages/scripts/0020/7413.js?"+Math.floor(new Date().getTime()/3600000);
+            a.async=true;a.type="text/javascript";b.parentNode.insertBefore(a,b)}, 1);
+    </script>
+
 </head>
 <body>
     <div id="page">
