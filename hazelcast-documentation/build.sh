@@ -143,16 +143,53 @@ else
   exit -1
   delete
 fi 
-echo "Creating no_header documentation"
-createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR )
+}
+
+function createMancenterDocumentation {
+MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
+\"rootDir\": \".\",
+\"date\": \"$date\",
+\"version\": \"$version\",
+\"maxTocLevel\":3,
+\"files\":"
+MANIFEST_FILE_BODY+="["
+echo "Building manifest file for $1"
+if [ "$1" = "mancenter" ] ; then
+	for file in $MANCENTER_INDEX
+	do
+	MANIFEST_FILE_BODY+="\"$file\","
+	done
+else
+	for file in $HOSTED_MANCENTER_INDEX
+	do
+	MANIFEST_FILE_BODY+="\"$file\","
+	done
+fi
+MANIFEST_FILE_BODY=${MANIFEST_FILE_BODY:0: ${#MANIFEST_FILE_BODY}-1}
+MANIFEST_FILE_BODY+="]}"
+
+if [[ -e "./$MANIFEST_FILE_NAME" ]]; then
+	$(rm -rf "./$MANIFEST_FILE_NAME")
+fi
+writeManifest=$( echo $MANIFEST_FILE_BODY >> "./"$MANIFEST_FILE_NAME)
+if [[ $? -ge 0 ]]; then
+  echo "Manifest file succesfully written."
+else
+  echo "Error writing manifest file"
+  delete
+  exit -1
+fi
+echo "Creating $1 documentation"
+createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$2 )
 if [[ $? -eq 0 ]]; then
   echo "No Header HTML created succesfully "
   
 else
-  echo "Error creating No Header HTML documentation"
+  echo "Error creating $1 HTML documentation"
   exit -1
   delete
 fi 
+
 }
 
 function init {
@@ -160,7 +197,8 @@ function init {
 	OUTPUT_DIR="target"
 	MULTI_HTML_OUTPUT_DIR="html"
 	SINGLE_HTML_OUTPUT_DIR="html-single"
-	NOHEADER_HTML_OUTPUT_DIR="no_header"
+	MANCENTER_OUTPUT_DIR="mancenter"
+	HOSTED_MANCENTER_OUTPUT_DIR="hostedmancenter"
 	PDF_OUTPUT_DIR="pdf"
 	PDF_FILE_NAME="hazelcast-documentation-$version.pdf"
 	MANIFEST_FILE_NAME="manifest.json"
@@ -169,7 +207,8 @@ function init {
 	date=`date +%b\ %d\,\ %Y`
 	year=`date +%Y`
 	INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' documentation.index`
-	
+	MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' mancenter.index`
+	HOSTED_MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' hostedmancenter.index`
 }
 
 function cleanIfExists {
@@ -183,8 +222,10 @@ function cleanIfExists {
 	mkdir $OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR	
 	echo "Creating $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR
-	echo "Creating $OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR"
-	mkdir $OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR
+	echo "Creating $OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"
+	mkdir $OUTPUT_DIR/$MANCENTER_OUTPUT_DIR
+	echo "Creating $OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"
+	mkdir $OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$PDF_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$PDF_OUTPUT_DIR	
 		
@@ -202,13 +243,17 @@ mv $MERGED_FILE_NAME ./src/$MERGED_FILE_NAME
 mkdir ./src/images
 cp -a ./images/*.jpg ./src/images/
 mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
-mkdir ./$OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR"/images/"
+mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
+mkdir ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
 createSingleHTML
+createMancenterDocumentation "mancenter" $MANCENTER_OUTPUT_DIR
+createMancenterDocumentation "hostedmancenter" $HOSTED_MANCENTER_OUTPUT_DIR
 
 # Move images manually, BeautifulDocs is not working reliable when copying images. Bug reported about that.
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
-cp -a ./images/*.jpg ./$OUTPUT_DIR/$NOHEADER_HTML_OUTPUT_DIR"/images/"
+cp -a ./images/*.jpg ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
+cp -a ./images/*.jpg ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
 delete
 
 echo "Done"
