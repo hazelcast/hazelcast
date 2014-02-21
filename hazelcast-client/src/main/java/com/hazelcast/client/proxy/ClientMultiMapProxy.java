@@ -154,7 +154,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean removeEntryListener(String registrationId) {
-        final RemoveEntryListenerRequest request = new RemoveEntryListenerRequest();
+        final RemoveEntryListenerRequest request = new RemoveEntryListenerRequest(name, registrationId);
         return stopListening(request, registrationId);
     }
 
