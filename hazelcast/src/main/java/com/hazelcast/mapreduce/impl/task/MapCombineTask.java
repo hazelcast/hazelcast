@@ -271,6 +271,9 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     }
                 } catch (Throwable t) {
                     notifyRemoteException(supervisor, t);
+                    if (t instanceof Error) {
+                        ExceptionUtil.sneakyThrow(t);
+                    }
                 }
             }
         }
