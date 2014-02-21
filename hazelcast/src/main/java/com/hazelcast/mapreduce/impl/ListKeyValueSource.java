@@ -98,11 +98,12 @@ public class ListKeyValueSource<V>
         return listName;
     }
 
+
     @Override
     public Map.Entry<String, V> element() {
-        Object value = nextElement.getValue();
-        if (value instanceof Data) {
-            value = ss.toObject((Data) value);
+        Data value = nextElement.getValue();
+        if (value != null) {
+            value = ss.toObject(value);
         }
         simpleEntry.setKey(listName);
         simpleEntry.setValue((V) value);
