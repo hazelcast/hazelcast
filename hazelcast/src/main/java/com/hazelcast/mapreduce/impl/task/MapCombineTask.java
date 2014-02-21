@@ -227,6 +227,13 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
+    private void handleProcessorThrowable(Throwable t) {
+        notifyRemoteException(supervisor, t);
+        if (t instanceof Error) {
+            ExceptionUtil.sneakyThrow(t);
+        }
+    }
+
     /**
      * This class implements the partitionId based mapping phase
      */
@@ -270,10 +277,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                         postponePartitionProcessing(partitionId);
                     }
                 } catch (Throwable t) {
-                    notifyRemoteException(supervisor, t);
-                    if (t instanceof Error) {
-                        ExceptionUtil.sneakyThrow(t);
-                    }
+                    handleProcessorThrowable(t);
                 }
             }
         }
@@ -337,10 +341,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     postponePartitionProcessing(partitionId);
                 }
             } catch (Throwable t) {
-                notifyRemoteException(supervisor, t);
-                if (t instanceof Error) {
-                    ExceptionUtil.sneakyThrow(t);
-                }
+                handleProcessorThrowable(t);
             }
         }
     }
