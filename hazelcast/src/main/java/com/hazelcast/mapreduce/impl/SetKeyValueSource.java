@@ -101,8 +101,8 @@ public class SetKeyValueSource<V>
     @Override
     public Map.Entry<String, V> element() {
         Object value = nextElement.getValue();
-        if (value instanceof Data) {
-            value = ss.toObject((Data) value);
+        if (value != null) {
+            value = ss.toObject(value);
         }
         simpleEntry.setKey(setName);
         simpleEntry.setValue((V) value);
