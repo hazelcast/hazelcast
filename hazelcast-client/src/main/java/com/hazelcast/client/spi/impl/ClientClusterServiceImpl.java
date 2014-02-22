@@ -385,6 +385,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         } catch (Exception e) {
                             logger.severe("Error while connecting to cluster!", e);
                             client.getLifecycleService().shutdown();
+                            latch.countDown();
                             return;
                         }
                     }
