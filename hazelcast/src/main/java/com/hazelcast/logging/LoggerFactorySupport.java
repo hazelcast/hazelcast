@@ -33,6 +33,7 @@ public abstract class LoggerFactorySupport implements LoggerFactory {
         }
     };
 
+    @Override
     public final ILogger getLogger(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(mapLoggers, name, loggerConstructor);
     }
