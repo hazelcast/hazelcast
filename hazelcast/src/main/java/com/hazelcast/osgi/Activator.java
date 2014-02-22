@@ -35,6 +35,8 @@ import javax.script.ScriptEngineManager;
  */
 public class Activator implements BundleActivator {
 
+    private static final String HAZELCAST_OSGI_START = "hazelcast.osgi.start";
+
     private HazelcastInstance hazelcastInstance;
 
     private final ILogger logger = Logger.getLogger(Activator.class);
@@ -45,13 +47,13 @@ public class Activator implements BundleActivator {
 
         if (logger.isFinestEnabled()) {
             StringBuilder msg = new StringBuilder("Available script engines are:");
-            for (ScriptEngineFactory sef : scriptEngineManager.getEngineFactories()) {
-                msg.append(sef.getEngineName()).append('\n');
+            for (ScriptEngineFactory scriptEngineFactory : scriptEngineManager.getEngineFactories()) {
+                msg.append(scriptEngineFactory.getEngineName()).append('\n');
             }
             logger.finest(msg.toString());
         }
 
-        if (System.getProperty("hazelcast.osgi.start") != null) {
+        if (System.getProperty(HAZELCAST_OSGI_START) != null) {
             hazelcastInstance = Hazelcast.newHazelcastInstance();
         }
     }
