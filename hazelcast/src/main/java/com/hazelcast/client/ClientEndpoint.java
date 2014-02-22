@@ -21,7 +21,6 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.SocketChannelWrapper;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
@@ -35,22 +34,22 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
-import static java.util.Collections.synchronizedList;
 
 public final class ClientEndpoint implements Client {
 
     private final ClientEngineImpl clientEngine;
     private final Connection conn;
-    private final SocketAddress socketAddress;
     private final ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
-    private final List<Runnable> destroyActions = synchronizedList(new LinkedList<Runnable>());
+    private final List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
+    private final SocketAddress socketAddress;
 
     private String uuid;
     private LoginContext loginContext;
@@ -61,7 +60,12 @@ public final class ClientEndpoint implements Client {
     ClientEndpoint(ClientEngineImpl clientEngine, Connection conn, String uuid) {
         this.clientEngine = clientEngine;
         this.conn = conn;
-        this.socketAddress = getAddress(conn);
+        if (conn instanceof TcpIpConnection) {
+            TcpIpConnection tcpIpConnection = (TcpIpConnection) conn;
+            socketAddress = tcpIpConnection.getSocketChannelWrapper().socket().getRemoteSocketAddress();
+        } else {
+            socketAddress = null;
+        }
         this.uuid = uuid;
     }
 
@@ -83,11 +87,7 @@ public final class ClientEndpoint implements Client {
     }
 
     public Subject getSubject() {
-        if (loginContext == null) {
-            return null;
-        } else {
-            return loginContext.getSubject();
-        }
+        return loginContext != null ? loginContext.getSubject() : null;
     }
 
     public boolean isFirstConnection() {
@@ -109,7 +109,7 @@ public final class ClientEndpoint implements Client {
         return principal;
     }
 
-    @Deprecated
+    @Override
     public InetSocketAddress getSocketAddress() {
         return (InetSocketAddress) socketAddress;
     }
@@ -148,8 +148,9 @@ public final class ClientEndpoint implements Client {
 
     public void setListenerRegistration(final String service, final String topic, final String id) {
         destroyActions.add(new Runnable() {
+            @Override
             public void run() {
-                final EventService eventService = clientEngine.getEventService();
+                EventService eventService = clientEngine.getEventService();
                 eventService.deregisterListener(service, topic, id);
             }
         });
@@ -157,6 +158,7 @@ public final class ClientEndpoint implements Client {
 
     public void setDistributedObjectListener(final String id) {
         destroyActions.add(new Runnable() {
+            @Override
             public void run() {
                 clientEngine.getProxyService().removeProxyListener(id);
             }
@@ -164,46 +166,6 @@ public final class ClientEndpoint implements Client {
     }
 
     void destroy() throws LoginException {
-        runDestroyActions();
-        logout();
-        addTransactionBackupLogForClients();
-        authenticated = false;
-    }
-
-    private void addTransactionBackupLogForClients() {
-        for (TransactionContext context : transactionContextMap.values()) {
-            addTransactionBackupLogForClients(context);
-        }
-    }
-
-    private void addTransactionBackupLogForClients(TransactionContext context) {
-        Transaction transaction = TransactionAccessor.getTransaction(context);
-        if (context.isXAManaged() && transaction.getState() == PREPARED) {
-            TransactionManagerServiceImpl transactionManager =
-                    (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
-            transactionManager.addTxBackupLogForClientRecovery(transaction);
-        } else {
-            ILogger logger = getLogger();
-            try {
-                context.rollbackTransaction();
-            } catch (HazelcastInstanceNotActiveException ignored) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(ignored);
-                }
-            } catch (Exception e) {
-                logger.warning(e);
-            }
-        }
-    }
-
-    private void logout() throws LoginException {
-        LoginContext lc = loginContext;
-        if (lc != null) {
-            lc.logout();
-        }
-    }
-
-    private void runDestroyActions() {
         for (Runnable destroyAction : destroyActions) {
             try {
                 destroyAction.run();
@@ -211,24 +173,47 @@ public final class ClientEndpoint implements Client {
                 getLogger().warning("Exception during destroy action", e);
             }
         }
+
+        LoginContext lc = loginContext;
+        if (lc != null) {
+            lc.logout();
+        }
+        for (TransactionContext context : transactionContextMap.values()) {
+            Transaction transaction = TransactionAccessor.getTransaction(context);
+            if (context.isXAManaged() && transaction.getState() == PREPARED) {
+                TransactionManagerServiceImpl transactionManager =
+                        (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
+                transactionManager.addTxBackupLogForClientRecovery(transaction);
+            } else {
+                try {
+                    context.rollbackTransaction();
+                } catch (HazelcastInstanceNotActiveException e) {
+                    getLogger().finest(e);
+                } catch (Exception e) {
+                    getLogger().warning(e);
+                }
+            }
+        }
+        authenticated = false;
     }
 
     private ILogger getLogger() {
         return clientEngine.getLogger(getClass());
     }
 
-    public void sendResponse(final Object response, int callId) {
+    public void sendResponse(Object response, int callId) {
+        boolean isError = false;
+        Object clientResponseObject;
         if (response == null) {
-            sendClientResponse(ClientEngineImpl.NULL, callId, false);
+            clientResponseObject = ClientEngineImpl.NULL;
         } else if (response instanceof Throwable) {
+            isError = true;
             ClientExceptionConverter converter = ClientExceptionConverters.get(getClientType());
-            Object clientResponse = converter.convert((Throwable) response);
-            sendClientResponse(clientResponse, callId, true);
+            clientResponseObject = converter.convert((Throwable) response);
+        } else {
+            clientResponseObject = response;
         }
-    }
-
-    private void sendClientResponse(Object response, int callId, boolean isError) {
-        ClientResponse clientResponse = new ClientResponse(clientEngine.toData(response), isError, callId);
+        ClientResponse clientResponse = new ClientResponse(clientEngine.toData(clientResponseObject), isError, callId);
         clientEngine.sendResponse(this, clientResponse);
     }
 
@@ -239,21 +224,12 @@ public final class ClientEndpoint implements Client {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClientEndpoint{");
+        StringBuilder sb = new StringBuilder("ClientEndpoint{");
         sb.append("conn=").append(conn);
         sb.append(", uuid='").append(uuid).append('\'');
         sb.append(", firstConnection=").append(firstConnection);
         sb.append(", authenticated=").append(authenticated);
         sb.append('}');
         return sb.toString();
-    }
-
-    private static SocketAddress getAddress(Connection conn) {
-        if (conn instanceof TcpIpConnection) {
-            SocketChannelWrapper socketChannelWrapper = ((TcpIpConnection) conn).getSocketChannelWrapper();
-            return socketChannelWrapper.socket().getRemoteSocketAddress();
-        } else {
-            return null;
-        }
     }
 }
