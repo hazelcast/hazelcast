@@ -63,8 +63,9 @@ public class LockPortableHook implements PortableHook {
                         return new AwaitRequest();
                     case CONDITION_SIGNAL:
                         return new SignalRequest();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

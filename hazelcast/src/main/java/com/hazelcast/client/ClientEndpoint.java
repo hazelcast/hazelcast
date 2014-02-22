@@ -46,22 +46,26 @@ public final class ClientEndpoint implements Client {
 
     private final ClientEngineImpl clientEngine;
     private final Connection conn;
-    private String uuid;
-    private LoginContext loginContext = null;
-    private ClientPrincipal principal;
-    private boolean firstConnection = false;
+    private final ConcurrentMap<String, TransactionContext> transactionContextMap
+            = new ConcurrentHashMap<String, TransactionContext>();
+    private final List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
     private final SocketAddress socketAddress;
 
-    private volatile boolean authenticated = false;
-    private ConcurrentMap<String, TransactionContext> transactionContextMap = new ConcurrentHashMap<String, TransactionContext>();
-    private List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
-
+    private String uuid;
+    private LoginContext loginContext;
+    private ClientPrincipal principal;
+    private boolean firstConnection;
+    private volatile boolean authenticated;
 
     ClientEndpoint(ClientEngineImpl clientEngine, Connection conn, String uuid) {
         this.clientEngine = clientEngine;
         this.conn = conn;
-        socketAddress = conn instanceof TcpIpConnection ?
-                ((TcpIpConnection) conn).getSocketChannelWrapper().socket().getRemoteSocketAddress() : null;
+        if (conn instanceof TcpIpConnection) {
+            TcpIpConnection tcpIpConnection = (TcpIpConnection) conn;
+            socketAddress = tcpIpConnection.getSocketChannelWrapper().socket().getRemoteSocketAddress();
+        } else {
+            socketAddress = null;
+        }
         this.uuid = uuid;
     }
 
@@ -69,6 +73,7 @@ public final class ClientEndpoint implements Client {
         return conn;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -93,7 +98,7 @@ public final class ClientEndpoint implements Client {
         this.principal = principal;
         this.uuid = principal.getUuid();
         this.firstConnection = firstConnection;
-        authenticated = true;
+        this.authenticated = true;
     }
 
     public boolean isAuthenticated() {
@@ -104,10 +109,12 @@ public final class ClientEndpoint implements Client {
         return principal;
     }
 
+    @Override
     public InetSocketAddress getSocketAddress() {
         return (InetSocketAddress) socketAddress;
     }
 
+    @Override
     public ClientType getClientType() {
         switch (conn.getType()) {
             case JAVA_CLIENT:
@@ -141,8 +148,9 @@ public final class ClientEndpoint implements Client {
 
     public void setListenerRegistration(final String service, final String topic, final String id) {
         destroyActions.add(new Runnable() {
+            @Override
             public void run() {
-                final EventService eventService = clientEngine.getEventService();
+                EventService eventService = clientEngine.getEventService();
                 eventService.deregisterListener(service, topic, id);
             }
         });
@@ -150,6 +158,7 @@ public final class ClientEndpoint implements Client {
 
     public void setDistributedObjectListener(final String id) {
         destroyActions.add(new Runnable() {
+            @Override
             public void run() {
                 clientEngine.getProxyService().removeProxyListener(id);
             }
@@ -165,20 +174,21 @@ public final class ClientEndpoint implements Client {
             }
         }
 
-        final LoginContext lc = loginContext;
+        LoginContext lc = loginContext;
         if (lc != null) {
             lc.logout();
         }
         for (TransactionContext context : transactionContextMap.values()) {
-            final Transaction transaction = TransactionAccessor.getTransaction(context);
+            Transaction transaction = TransactionAccessor.getTransaction(context);
             if (context.isXAManaged() && transaction.getState() == PREPARED) {
-                final TransactionManagerServiceImpl transactionManager =
+                TransactionManagerServiceImpl transactionManager =
                         (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
                 transactionManager.addTxBackupLogForClientRecovery(transaction);
             } else {
                 try {
                     context.rollbackTransaction();
-                } catch (HazelcastInstanceNotActiveException ignored) {
+                } catch (HazelcastInstanceNotActiveException e) {
+                    getLogger().finest(e);
                 } catch (Exception e) {
                     getLogger().warning(e);
                 }
@@ -193,22 +203,28 @@ public final class ClientEndpoint implements Client {
 
     public void sendResponse(Object response, int callId) {
         boolean isError = false;
+        Object clientResponseObject;
         if (response == null) {
-            response = ClientEngineImpl.NULL;
+            clientResponseObject = ClientEngineImpl.NULL;
         } else if (response instanceof Throwable) {
             isError = true;
-            response = ClientExceptionConverters.get(getClientType()).convert((Throwable) response);
+            ClientExceptionConverter converter = ClientExceptionConverters.get(getClientType());
+            clientResponseObject = converter.convert((Throwable) response);
+        } else {
+            clientResponseObject = response;
         }
-        clientEngine.sendResponse(this, new ClientResponse(clientEngine.toData(response), isError, callId));
+        ClientResponse clientResponse = new ClientResponse(clientEngine.toData(clientResponseObject), isError, callId);
+        clientEngine.sendResponse(this, clientResponse);
     }
 
     public void sendEvent(Object event, int callId) {
-        final Data data = clientEngine.toData(event);
+        Data data = clientEngine.toData(event);
         clientEngine.sendResponse(this, new ClientResponse(data, callId, true));
     }
 
+    @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClientEndpoint{");
+        StringBuilder sb = new StringBuilder("ClientEndpoint{");
         sb.append("conn=").append(conn);
         sb.append(", uuid='").append(uuid).append('\'');
         sb.append(", firstConnection=").append(firstConnection);

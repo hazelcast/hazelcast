@@ -68,9 +68,6 @@
         <Package name="com.hazelcast.mapreduce.impl" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.replicatedmap.messages" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.cluster" />
     </Match>
     <Match>
@@ -87,12 +84,6 @@
     </Match>
     <Match>
         <Package name="com.hazelcast.map.proxy" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.replicatedmap.operation" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.replicatedmap.record" />
     </Match>
     <Match>
         <Package name="com.hazelcast.ascii" />

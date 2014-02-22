@@ -19,14 +19,13 @@ package com.hazelcast.client;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-/**
- * @author mdogan 7/3/13
- */
 final class GenericClientExceptionConverter implements ClientExceptionConverter {
 
+    @Override
     public Object convert(Throwable t) {
         StringWriter s = new StringWriter();
         t.printStackTrace(new PrintWriter(s));
-        return new GenericError(t.getClass().getName(),t.getMessage(), s.toString(), 0);
+        String clazzName = t.getClass().getName();
+        return new GenericError(clazzName, t.getMessage(), s.toString(), 0);
     }
 }

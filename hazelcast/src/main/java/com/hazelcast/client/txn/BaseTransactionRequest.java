@@ -24,13 +24,9 @@ import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
 
-/**
- * @author ali 02/01/14
- */
 public abstract class BaseTransactionRequest extends CallableClientRequest implements Portable {
 
     protected String txnId;
-
     protected long clientThreadId;
 
     public BaseTransactionRequest() {
@@ -38,6 +34,7 @@ public abstract class BaseTransactionRequest extends CallableClientRequest imple
 
     protected abstract Object innerCall() throws Exception;
 
+    @Override
     public final Object call() throws Exception {
         ThreadUtil.setThreadId(clientThreadId);
         try {
@@ -55,11 +52,13 @@ public abstract class BaseTransactionRequest extends CallableClientRequest imple
         this.clientThreadId = clientThreadId;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("tId", txnId);
         writer.writeLong("cti", clientThreadId);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         txnId = reader.readUTF("tId");
         clientThreadId = reader.readLong("cti");

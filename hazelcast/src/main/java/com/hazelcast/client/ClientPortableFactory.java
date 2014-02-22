@@ -22,49 +22,37 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 
-/**
- * @author mdogan 3/11/13
- */
 public class ClientPortableFactory implements PortableFactory {
 
+    @Override
     public Portable create(int classId) {
         switch (classId) {
             case ClientPortableHook.GENERIC_ERROR:
                 return new GenericError();
-
             case ClientPortableHook.AUTH:
                 return new AuthenticationRequest();
-
             case ClientPortableHook.PRINCIPAL:
                 return new ClientPrincipal();
-
             case ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO:
                 return new GetDistributedObjectsRequest();
-
             case ClientPortableHook.DISTRIBUTED_OBJECT_INFO:
                 return new DistributedObjectInfo();
-
             case ClientPortableHook.CREATE_PROXY:
                 return new ClientCreateRequest();
-
             case ClientPortableHook.DESTROY_PROXY:
                 return new ClientDestroyRequest();
-
             case ClientPortableHook.LISTENER:
                 return new DistributedObjectListenerRequest();
-
             case ClientPortableHook.MEMBERSHIP_LISTENER:
                 return new AddMembershipListenerRequest();
-
             case ClientPortableHook.CLIENT_PING:
                 return new ClientPingRequest();
-
             case ClientPortableHook.GET_PARTITIONS:
                 return new GetPartitionsRequest();
-
             case ClientPortableHook.REMOVE_LISTENER:
                 return new RemoveDistributedObjectListenerRequest();
+            default:
+                return null;
         }
-        return null;
     }
 }

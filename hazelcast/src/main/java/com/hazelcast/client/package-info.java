@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/**
+ * <p>This package contains the serverside client functionality</p>
+ */
 package com.hazelcast.client;
-
-final class JavaClientExceptionConverter implements ClientExceptionConverter {
-
-    @Override
-    public Object convert(Throwable t) {
-        return t;
-    }
-}

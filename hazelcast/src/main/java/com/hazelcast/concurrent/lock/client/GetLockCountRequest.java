@@ -34,9 +34,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author mdogan 5/3/13
- */
 public final class GetLockCountRequest extends KeyBasedClientRequest
         implements Portable, SecureRequest {
 
@@ -50,18 +47,18 @@ public final class GetLockCountRequest extends KeyBasedClientRequest
     }
 
     @Override
-    protected final Operation prepareOperation() {
+    protected Operation prepareOperation() {
         String name = (String) getClientEngine().toObject(key);
         return new GetLockCountOperation(new InternalLockNamespace(name), key);
     }
 
     @Override
-    protected final Object getKey() {
+    protected Object getKey() {
         return key;
     }
 
     @Override
-    public final String getServiceName() {
+    public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 

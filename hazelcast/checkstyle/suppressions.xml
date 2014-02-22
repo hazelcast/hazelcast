@@ -11,7 +11,6 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
     <suppress checks="" files="[\\/]ascii[\\/]"/>
-    <suppress checks="" files="[\\/]client[\\/]"/>
     <suppress checks="" files="[\\/]cluster[\\/]"/>
     <suppress checks="" files="[\\/]collection[\\/]"/>
     <suppress checks="" files="[\\/]config[\\/]"/>
@@ -72,16 +71,43 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.concurrent[\\/]"/>
 
+
+    <!-- chris you need to look at this, this package is causing checkstyle issues even though they are excluded -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
+    <suppress checks="ParameterAssignmentCheck" files="com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest"/>
+    <suppress checks="IllegalType" files="com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest"/>
+
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook.java"/>
+
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>
+
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook"/>
+
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.client.LockPortableHook.java"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
 
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
-    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.client.txn.ClientTxnPortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.client.ClientPortableFactory"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.client.ClientEndpoint"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.ClientPortableFactory"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.ClientEngineImpl"/>
 
 </suppressions>

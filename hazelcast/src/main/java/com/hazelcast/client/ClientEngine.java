@@ -29,9 +29,6 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.transaction.TransactionManagerService;
 
-/**
- * @author mdogan 4/25/13
- */
 public interface ClientEngine {
 
     int getClientEndpointCount();

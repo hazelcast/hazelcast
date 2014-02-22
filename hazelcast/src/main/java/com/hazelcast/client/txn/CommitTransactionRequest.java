@@ -27,12 +27,9 @@ import com.hazelcast.transaction.impl.TransactionAccessor;
 
 import java.io.IOException;
 
-/**
- * @author ali 6/7/13
- */
 public class CommitTransactionRequest extends BaseTransactionRequest implements Portable {
 
-    boolean prepareAndCommit = false;
+    private boolean prepareAndCommit;
 
     public CommitTransactionRequest() {
     }
@@ -41,38 +38,44 @@ public class CommitTransactionRequest extends BaseTransactionRequest implements 
         this.prepareAndCommit = prepareAndCommit;
     }
 
+    @Override
     public Object innerCall() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
-        final TransactionContext transactionContext = endpoint.getTransactionContext(txnId);
+        ClientEndpoint endpoint = getEndpoint();
+        TransactionContext transactionContext = endpoint.getTransactionContext(txnId);
         if (prepareAndCommit) {
             transactionContext.commitTransaction();
         } else {
-            final Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
+            Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
             transaction.commit();
         }
         endpoint.removeTransactionContext(txnId);
         return null;
     }
 
+    @Override
     public String getServiceName() {
         return ClientEngineImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientTxnPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientTxnPortableHook.COMMIT;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeBoolean("pc", prepareAndCommit);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
-        prepareAndCommit =  reader.readBoolean("pc");
+        prepareAndCommit = reader.readBoolean("pc");
     }
 }

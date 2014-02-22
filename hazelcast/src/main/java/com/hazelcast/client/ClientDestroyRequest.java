@@ -20,17 +20,16 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.spi.ProxyService;
 
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @ali 10/7/13
- */
-public class ClientDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest, SecureRequest{
+import static com.hazelcast.security.permission.ActionConstants.getPermission;
+
+public class ClientDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private String name;
-
     private String serviceName;
 
     public ClientDestroyRequest() {
@@ -41,34 +40,42 @@ public class ClientDestroyRequest extends CallableClientRequest implements Porta
         this.serviceName = serviceName;
     }
 
+    @Override
     public Object call() throws Exception {
-        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
+        ProxyService proxyService = getClientEngine().getProxyService();
+        proxyService.destroyDistributedObject(getServiceName(), name);
         return null;
     }
 
+    @Override
     public String getServiceName() {
         return serviceName;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientPortableHook.DESTROY_PROXY;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         writer.writeUTF("s", serviceName);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         serviceName = reader.readUTF("s");
     }
 
+    @Override
     public Permission getRequiredPermission() {
-        return ActionConstants.getPermission(name, serviceName, ActionConstants.ACTION_DESTROY);
+        return getPermission(name, serviceName, ActionConstants.ACTION_DESTROY);
     }
 }

@@ -22,17 +22,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 8/16/13
- * Time: 11:42 AM
- */
 public class DistributedObjectInfo implements Portable {
 
     private String serviceName;
     private String name;
 
-    DistributedObjectInfo(){
+    DistributedObjectInfo() {
 
     }
 
@@ -73,13 +68,21 @@ public class DistributedObjectInfo implements Portable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DistributedObjectInfo that = (DistributedObjectInfo) o;
 
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) {
+            return false;
+        }
 
         return true;
     }

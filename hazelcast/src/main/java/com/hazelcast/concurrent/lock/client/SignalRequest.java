@@ -21,7 +21,6 @@ import java.security.Permission;
 
 public class SignalRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
-
     private ObjectNamespace namespace;
     private String name;
     private long threadId;
