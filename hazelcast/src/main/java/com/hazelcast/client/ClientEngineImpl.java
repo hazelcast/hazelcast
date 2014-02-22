@@ -53,7 +53,6 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -73,6 +72,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+
+import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
 
 public class ClientEngineImpl implements ClientEngine, CoreService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEndpoint, ClientListener> {
@@ -510,15 +511,18 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             }
             NodeEngine nodeEngine = node.nodeEngine;
             Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
+            OperationService operationService = nodeEngine.getOperationService();
             for (MemberImpl member : memberList) {
                 ClientDisconnectionOperation op = new ClientDisconnectionOperation(endpoint.getUuid());
-                op.setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME).setService(this)
-                        .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                op.setNodeEngine(nodeEngine)
+                        .setServiceName(SERVICE_NAME)
+                        .setService(ClientEngineImpl.this)
+                        .setResponseHandler(createEmptyResponseHandler());
 
                 if (member.localMember()) {
-                    nodeEngine.getOperationService().runOperation(op);
+                    operationService.runOperation(op);
                 } else {
-                    nodeEngine.getOperationService().send(op, member.getAddress());
+                    operationService.send(op, member.getAddress());
                 }
             }
         }
