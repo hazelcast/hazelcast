@@ -24,6 +24,9 @@ import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * @author mdogan 5/24/13
  */
@@ -85,8 +88,20 @@ public abstract class HazelcastTestSupport {
         throw error;
     }
 
+    public static void assertTrueDelayed5sec(AssertTask task) {
+        assertTrueDelayed(5, task);
+    }
 
-    public static Node getNode(HazelcastInstance hz) {
+    public static void assertTrueDelayed(int delaySeconds, AssertTask task) {
+        sleepSeconds(delaySeconds);
+        task.run();
+    }
+
+    public HazelcastInstance createHazelcastInstance() {
+        return createHazelcastInstanceFactory(1).newHazelcastInstance();
+    }
+
+     public static Node getNode(HazelcastInstance hz) {
         return TestUtil.getNode(hz);
     }
 
@@ -122,7 +137,19 @@ public abstract class HazelcastTestSupport {
         return String.valueOf(k);
     }
 
-    public final class DummyUncheckedHazelcastTestException extends RuntimeException{
+    public final class DummyUncheckedHazelcastTestException extends RuntimeException {
 
+    }
+
+    public static void printAllStackTraces() {
+        Map liveThreads = Thread.getAllStackTraces();
+        for (Iterator i = liveThreads.keySet().iterator(); i.hasNext(); ) {
+            Thread key = (Thread) i.next();
+            System.err.println("Thread " + key.getName());
+            StackTraceElement[] trace = (StackTraceElement[]) liveThreads.get(key);
+            for (int j = 0; j < trace.length; j++) {
+                System.err.println("\tat " + trace[j]);
+            }
+        }
     }
 }

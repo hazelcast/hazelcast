@@ -20,7 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -30,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,6 +50,65 @@ import static org.junit.Assert.fail;
 public class InvocationTest extends HazelcastTestSupport {
 
     @Test
+    public void whenPartitionTargetMemberDiesThenOperationSendToNewPartitionOwner() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance();
+        HazelcastInstance remote = factory.newHazelcastInstance();
+        warmUpPartitions(local, remote);
+
+        Node localNode = getNode(local);
+        OperationService service = localNode.nodeEngine.getOperationService();
+        Operation op = new PartitionTargetOperation();
+        String partitionKey = generateKeyOwnedBy(remote);
+        int partitionid = localNode.nodeEngine.getPartitionService().getPartitionId(partitionKey);
+        Future f = service.createInvocationBuilder(null, op, partitionid).setCallTimeout(30000).build().invoke();
+        sleepSeconds(1);
+
+        remote.shutdown();
+
+        //the get should work without a problem because the operation should be re-targeted at the newest owner
+        //for that given partition
+        f.get();
+    }
+
+    @Test
+    public void whenTargetMemberDiesThenOperationAbortedWithMembersLeftException() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance();
+        HazelcastInstance remote = factory.newHazelcastInstance();
+        warmUpPartitions(local, remote);
+
+        OperationService service = getNode(local).nodeEngine.getOperationService();
+        Operation op = new TargetOperation();
+        Address address = new Address(remote.getCluster().getLocalMember().getInetSocketAddress());
+        Future f = service.createInvocationBuilder(null, op, address).build().invoke();
+        sleepSeconds(1);
+
+        remote.shutdown();
+
+        try {
+            f.get();
+            fail();
+        } catch (MemberLeftException expected) {
+
+        }
+    }
+
+    private static class TargetOperation extends AbstractOperation {
+        public void run() throws InterruptedException {
+            Thread.sleep(5000);
+        }
+    }
+
+
+    private static class PartitionTargetOperation extends AbstractOperation implements PartitionAwareOperation {
+
+        public void run() throws InterruptedException {
+            Thread.sleep(5000);
+        }
+    }
+
+    @Test
     public void testTimeoutDuringBlocking() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz = factory.newHazelcastInstance(new Config());
@@ -53,18 +116,19 @@ public class InvocationTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Thread thread = new Thread(){
+        Thread thread = new Thread() {
             @Override
-            public void run(){
+            public void run() {
                 try {
                     Object poll = q.poll(1, TimeUnit.SECONDS);
                     assertNull(poll);
-                    latch.countDown();;
+                    latch.countDown();
+                    ;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-         };
+        };
         thread.start();
 
         assertTrue(latch.await(1, TimeUnit.MINUTES));
@@ -108,7 +172,7 @@ public class InvocationTest extends HazelcastTestSupport {
 
         hz.getLock("testWaitingInfinitelyForTryLock").lock();
 
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     hz.getLock("testWaitingInfinitelyForTryLock").tryLock(5, TimeUnit.SECONDS);
