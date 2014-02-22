@@ -978,6 +978,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
             case PER_MEMBER:
                 return new SingleMemberGroupFactory();
+            case TOPOLOGY_AWARE:
+                return new TopologyAwareMemberGroupFactory();
             default:
                 throw new RuntimeException("Unknown MemberGroupType:"+memberGroupType);
         }

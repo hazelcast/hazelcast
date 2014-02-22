@@ -263,6 +263,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         node.setNodeValue(sb.toString());
     }
 
+
     private void handleConfig(final Element docElement) throws Exception {
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
@@ -272,6 +273,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleGroup(node);
             } else if ("properties".equals(nodeName)) {
                 fillProperties(node, config.getProperties());
+            } else if ("attributes".equals(nodeName)) {
+                handleMemberAttributes(node, config.getMemberAttributeConfig());
             } else if ("wan-replication".equals(nodeName)) {
                 handleWanReplication(node);
             } else if ("executor-service".equals(nodeName)) {
@@ -1313,4 +1316,43 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
     }
+
+    private void handleMemberAttributes(final Node node, MemberAttributeConfig memberAttributeConfig) {
+
+
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("attribute".equals(nodeName)) {
+
+                final Node attName = child.getAttributes().getNamedItem("key");
+                final String key = getTextContent(attName);
+                //If the value is null, try and set it from System properties to match
+                //XmlConfigBuilder
+
+                //There should only be one child with the value in it
+                for (org.w3c.dom.Node valueChild : new IterableNodeList(child.getChildNodes())) {
+                    final String valueNodeName = cleanNodeName(valueChild.getNodeName());
+                    if ("string-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setStringAttribute(key, String.valueOf(getTextContent(valueChild)));
+                    } else if ("int-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setFloatAttribute(key, Integer.valueOf(getTextContent(valueChild)));
+                    } else if ("double-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setDoubleAttribute(key, Double.valueOf(getTextContent(valueChild)));
+                    } else if ("float-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setFloatAttribute(key, Float.valueOf(getTextContent(valueChild)));
+                    } else if ("boolean-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setBooleanAttribute(key, Boolean.valueOf(getTextContent(valueChild)));
+                    } else if ("long-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setLongAttribute(key, Long.valueOf(getTextContent(valueChild)));
+                    } else if ("short-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setShortAttribute(key, Short.valueOf(getTextContent(valueChild)));
+                    } else if ("byte-value".equals(valueNodeName)) {
+                        memberAttributeConfig.setByteAttribute(key, Byte.valueOf(getTextContent(valueChild)));
+                    }
+                }
+            }
+        }
+
+    }
+
 }

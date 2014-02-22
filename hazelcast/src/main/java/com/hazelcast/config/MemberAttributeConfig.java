@@ -114,4 +114,8 @@ public class MemberAttributeConfig {
         attributes.put(key, value);
     }
 
+    public void setAttributes(Map<String, Object> attributes) {
+        this.attributes.putAll(attributes);
+    }
+
 }
