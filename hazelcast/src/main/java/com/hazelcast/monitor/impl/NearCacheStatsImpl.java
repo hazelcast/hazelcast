@@ -83,16 +83,15 @@ public class NearCacheStatsImpl implements NearCacheStats {
         this.misses.set(in.readLong());
     }
 
-
     @Override
     public String toString() {
-        return "NearCacheStatsImpl{" +
-                "ownedEntryCount=" + ownedEntryCount +
-                ", ownedEntryMemoryCost=" + ownedEntryMemoryCost +
-                ", creationTime=" + creationTime +
-                ", hits=" + hits +
-                ", misses=" + misses +
-                ", ratio=" + getRatio() +
-                '}';
+        return "NearCacheStatsImpl{"
+                + "ownedEntryCount=" + ownedEntryCount
+                + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
+                + ", creationTime=" + creationTime
+                + ", hits=" + hits
+                + ", misses=" + misses
+                + ", ratio=" + getRatio()
+                + '}';
     }
 }

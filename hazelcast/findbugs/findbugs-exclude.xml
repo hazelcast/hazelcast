@@ -17,9 +17,6 @@
         <Package name="com.hazelcast.util" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.monitor" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.transaction.impl" />
     </Match>
     <Match>

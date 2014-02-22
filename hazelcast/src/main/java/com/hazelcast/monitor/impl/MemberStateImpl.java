@@ -16,11 +16,15 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.*;
+import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.MemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +34,8 @@ import java.util.Map;
 
 public class MemberStateImpl implements MemberState {
 
+    public static final int DEFAULT_PARTITION_COUNT = 271;
+
     Address address = new Address();
     Map<String, Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
@@ -37,7 +43,7 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
-    List<Integer> partitions = new ArrayList<Integer>(271);
+    List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -82,35 +88,38 @@ public class MemberStateImpl implements MemberState {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         address.readData(in);
-        DataSerializable impl;
-        String name;
         for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalMapStatsImpl()).readData(in);
-            mapStats.put(name, (LocalMapStatsImpl) impl);
+            String name = in.readUTF();
+            LocalMapStatsImpl impl = new LocalMapStatsImpl();
+            impl.readData(in);
+            mapStats.put(name, impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalMultiMapStatsImpl()).readData(in);
-            multiMapStats.put(name, (LocalMultiMapStatsImpl) impl);
+            String name = in.readUTF();
+            LocalMultiMapStatsImpl impl = new LocalMultiMapStatsImpl();
+            impl.readData(in);
+            multiMapStats.put(name, impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalQueueStatsImpl()).readData(in);
-            queueStats.put(name, (LocalQueueStatsImpl) impl);
+            String name = in.readUTF();
+            LocalQueueStatsImpl impl = new LocalQueueStatsImpl();
+            impl.readData(in);
+            queueStats.put(name, impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalTopicStatsImpl()).readData(in);
-            topicStats.put(name, (LocalTopicStatsImpl) impl);
+            String name = in.readUTF();
+            LocalTopicStatsImpl impl = new LocalTopicStatsImpl();
+            impl.readData(in);
+            topicStats.put(name, impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            (impl = new LocalExecutorStatsImpl()).readData(in);
-            executorStats.put(name, (LocalExecutorStatsImpl) impl);
+            String name = in.readUTF();
+            LocalExecutorStatsImpl impl = new LocalExecutorStatsImpl();
+            impl.readData(in);
+            executorStats.put(name, impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
+            String name = in.readUTF();
             runtimeProps.put(name, in.readLong());
         }
         for (int i = in.readInt(); i > 0; i--) {
@@ -131,38 +140,6 @@ public class MemberStateImpl implements MemberState {
         return partitions;
     }
 
-    @Override
-    public int hashCode() {
-        int result = address != null ? address.hashCode() : 0;
-        result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
-        result = 31 * result + (multiMapStats != null ? multiMapStats.hashCode() : 0);
-        result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
-        result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
-        result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
-        result = 31 * result + (partitions != null ? partitions.hashCode() : 0);
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        MemberStateImpl that = (MemberStateImpl) o;
-
-        if (address != null ? !address.equals(that.address) : that.address != null) return false;
-        if (executorStats != null ? !executorStats.equals(that.executorStats) : that.executorStats != null)
-            return false;
-        if (mapStats != null ? !mapStats.equals(that.mapStats) : that.mapStats != null) return false;
-        if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null)
-            return false;
-        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) return false;
-        if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) return false;
-        if (runtimeProps != null ? !runtimeProps.equals(that.runtimeProps) : that.runtimeProps != null) return false;
-        if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) return false;
-
-        return true;
-    }
 
     @Override
     public Map<String, Long> getRuntimeProps() {
@@ -228,16 +205,67 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
+        result = 31 * result + (multiMapStats != null ? multiMapStats.hashCode() : 0);
+        result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
+        result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
+        result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
+        result = 31 * result + (partitions != null ? partitions.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MemberStateImpl that = (MemberStateImpl) o;
+
+        if (address != null ? !address.equals(that.address) : that.address != null) {
+            return false;
+        }
+        if (executorStats != null ? !executorStats.equals(that.executorStats) : that.executorStats != null) {
+            return false;
+        }
+        if (mapStats != null ? !mapStats.equals(that.mapStats) : that.mapStats != null) {
+            return false;
+        }
+        if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null) {
+            return false;
+        }
+        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) {
+            return false;
+        }
+        if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) {
+            return false;
+        }
+        if (runtimeProps != null ? !runtimeProps.equals(that.runtimeProps) : that.runtimeProps != null) {
+            return false;
+        }
+        if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     public String toString() {
-        return "MemberStateImpl{" +
-                "address=" + address +
-                ", runtimeProps=" + runtimeProps +
-                ", mapStats=" + mapStats +
-                ", multiMapStats=" + multiMapStats +
-                ", queueStats=" + queueStats +
-                ", topicStats=" + topicStats +
-                ", executorStats=" + executorStats +
-                ", partitions=" + partitions +
-                '}';
+        return "MemberStateImpl{"
+                + "address=" + address
+                + ", runtimeProps=" + runtimeProps
+                + ", mapStats=" + mapStats
+                + ", multiMapStats=" + multiMapStats
+                + ", queueStats=" + queueStats
+                + ", topicStats=" + topicStats
+                + ", executorStats=" + executorStats
+                + ", partitions=" + partitions
+                + '}';
     }
 }

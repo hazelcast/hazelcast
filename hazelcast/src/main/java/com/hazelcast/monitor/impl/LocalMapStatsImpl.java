@@ -85,8 +85,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(heapCost);
         boolean hasNearCache = nearCacheStats != null;
         out.writeBoolean(hasNearCache);
-        if(hasNearCache)
-        {
+        if (hasNearCache) {
             nearCacheStats.writeData(out);
         }
     }
@@ -117,8 +116,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxRemoveLatency.set(in.readLong());
         heapCost = in.readLong();
         boolean hasNearCache = in.readBoolean();
-        if(hasNearCache)
-        {
+        if (hasNearCache) {
             nearCacheStats = new NearCacheStatsImpl();
             nearCacheStats.readData(in);
         }
@@ -324,32 +322,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     }
 
     @Override
-    public String toString() {
-        return "LocalMapStatsImpl{" +
-                "lastAccessTime=" + lastAccessTime +
-                ", lastUpdateTime=" + lastUpdateTime +
-                ", hits=" + hits +
-                ", numberOfOtherOperations=" + numberOfOtherOperations +
-                ", numberOfEvents=" + numberOfEvents +
-                ", getCount=" + getCount +
-                ", putCount=" + putCount +
-                ", removeCount=" + removeCount +
-                ", totalGetLatencies=" + totalGetLatencies +
-                ", totalPutLatencies=" + totalPutLatencies +
-                ", totalRemoveLatencies=" + totalRemoveLatencies +
-                ", ownedEntryCount=" + ownedEntryCount +
-                ", backupEntryCount=" + backupEntryCount +
-                ", backupCount=" + backupCount +
-                ", ownedEntryMemoryCost=" + ownedEntryMemoryCost +
-                ", backupEntryMemoryCost=" + backupEntryMemoryCost +
-                ", creationTime=" + creationTime +
-                ", lockedEntryCount=" + lockedEntryCount +
-                ", dirtyEntryCount=" + dirtyEntryCount +
-                ", heapCost=" + heapCost +
-                '}';
-    }
-
-    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
@@ -357,5 +329,31 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_STATS;
+    }
+
+    @Override
+    public String toString() {
+        return "LocalMapStatsImpl{"
+                + "lastAccessTime=" + lastAccessTime
+                + ", lastUpdateTime=" + lastUpdateTime
+                + ", hits=" + hits
+                + ", numberOfOtherOperations=" + numberOfOtherOperations
+                + ", numberOfEvents=" + numberOfEvents
+                + ", getCount=" + getCount
+                + ", putCount=" + putCount
+                + ", removeCount=" + removeCount
+                + ", totalGetLatencies=" + totalGetLatencies
+                + ", totalPutLatencies=" + totalPutLatencies
+                + ", totalRemoveLatencies=" + totalRemoveLatencies
+                + ", ownedEntryCount=" + ownedEntryCount
+                + ", backupEntryCount=" + backupEntryCount
+                + ", backupCount=" + backupCount
+                + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
+                + ", backupEntryMemoryCost=" + backupEntryMemoryCost
+                + ", creationTime=" + creationTime
+                + ", lockedEntryCount=" + lockedEntryCount
+                + ", dirtyEntryCount=" + dirtyEntryCount
+                + ", heapCost=" + heapCost
+                + '}';
     }
 }

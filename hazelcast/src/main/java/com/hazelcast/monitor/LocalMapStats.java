@@ -42,9 +42,9 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Returns the number of backups per entry.
      *
-     * @return  the number of backups per entry.
+     * @return the number of backups per entry.
      */
-    int getBackupCount() ;
+    int getBackupCount();
 
     /**
      * Returns memory cost (number of bytes) of owned entries in this member.
@@ -109,14 +109,14 @@ public interface LocalMapStats extends LocalInstanceStats {
      *
      * @return number of put operations
      */
-    public long getPutOperationCount();
+    long getPutOperationCount();
 
     /**
      * Returns the number of get operations
      *
      * @return number of get operations
      */
-    public long getGetOperationCount();
+    long getGetOperationCount();
 
 
     /**
@@ -124,7 +124,7 @@ public interface LocalMapStats extends LocalInstanceStats {
      *
      * @return number of remove operations
      */
-    public long getRemoveOperationCount();
+    long getRemoveOperationCount();
 
 
     /**
@@ -132,80 +132,78 @@ public interface LocalMapStats extends LocalInstanceStats {
      *
      * @return
      */
-    public long getTotalPutLatency();
+    long getTotalPutLatency();
 
     /**
      * Returns the total latency of get operations. To get the average latency, divide to number of gets
      *
      * @return
      */
-    public long getTotalGetLatency();
+    long getTotalGetLatency();
 
     /**
      * Returns the total latency of remove operations. To get the average latency, divide to number of gets
      *
      * @return
      */
-    public long getTotalRemoveLatency();
+    long getTotalRemoveLatency();
 
     /**
      * Returns the maximum latency of put operations. To get the average latency, divide to number of puts
      *
      * @return
      */
-    public long getMaxPutLatency();
+    long getMaxPutLatency();
 
     /**
      * Returns the maximum latency of get operations. To get the average latency, divide to number of gets
      *
      * @return
      */
-    public long getMaxGetLatency();
+    long getMaxGetLatency();
 
     /**
      * Returns the maximum latency of remove operations. To get the average latency, divide to number of gets
      *
      * @return
      */
-    public long getMaxRemoveLatency();
+    long getMaxRemoveLatency();
 
     /**
      * Returns the number of Events Received
      *
      * @return number of events received
      */
-    public long getEventOperationCount();
+    long getEventOperationCount();
 
     /**
      * Returns the total number of Other Operations
      *
      * @return number of other operations
      */
-    public long getOtherOperationCount();
+    long getOtherOperationCount();
 
     /**
      * Returns the total number of total operations
      *
      * @return number of total operations
      */
-    public long total();
+    long total();
 
     /**
-     *
      * Cost of map & near cache  & backup
      * todo in object mode object size is zero.
      *
      * @return heap cost
      */
-    public long getHeapCost();
+    long getHeapCost();
 
     /**
-     *
      * Returns statistics related to the Near Cache.
      *
      * @return statistics object for the Near Cache
      */
-    public NearCacheStats getNearCacheStats();
+    NearCacheStats getNearCacheStats();
 
 
 }

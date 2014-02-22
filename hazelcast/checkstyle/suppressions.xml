@@ -41,7 +41,6 @@
     <suppress checks="" files="[\\/]management[\\/]"/>
     <suppress checks="" files="[\\/]map[\\/]"/>
     <!-- suppress checks="" files="[\\/]mapreduce[\\/]"/ -->
-    <suppress checks="" files="[\\/]monitor[\\/]"/>
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
     <suppress checks="" files="[\\/]partition[\\/]"/>
@@ -99,6 +98,16 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.ClientPortableFactory"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.ClientEngineImpl"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.monitor[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.monitor[\\/]"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
 
     <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
