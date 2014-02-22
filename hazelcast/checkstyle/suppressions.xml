@@ -45,7 +45,6 @@
     <suppress checks="" files="[\\/]monitor[\\/]"/>
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
-    <suppress checks="" files="[\\/]osgi[\\/]"/>
     <suppress checks="" files="[\\/]partition[\\/]"/>
     <suppress checks="" files="[\\/]query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
@@ -83,5 +82,12 @@
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
     <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.osgi[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.osgi[\\/]"/>
+
 
 </suppressions>
