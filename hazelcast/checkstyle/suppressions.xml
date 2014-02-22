@@ -62,7 +62,7 @@
     <!--Exclude Clover instrumented sources-->
     <suppress checks="" files="[\\/]src-instrumented[\\/]"/>
 
-
+    <!-- Exclude implementation packages from JavaDoc on public methods checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
@@ -70,15 +70,6 @@
     <suppress checks="JavadocType" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.concurrent[\\/]"/>
-
-
-    <!-- chris you need to look at this, this package is causing checkstyle issues even though they are excluded -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.mapreduce.impl.client[\\/]"/>
-    <suppress checks="ParameterAssignmentCheck" files="com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest"/>
-    <suppress checks="IllegalType" files="com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest"/>
 
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook.java"/>

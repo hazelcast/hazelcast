@@ -28,6 +28,10 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
+/**
+ * This class is used to retrieve current processed records and other statistics from
+ * emitting client to the job owning node.
+ */
 public class ClientJobProcessInformationRequest
         extends InvocationClientRequest {
 

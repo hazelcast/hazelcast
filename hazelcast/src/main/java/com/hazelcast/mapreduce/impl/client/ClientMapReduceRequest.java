@@ -24,6 +24,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
@@ -49,6 +50,13 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
+/**
+ * This class is used to prepare and start a map reduce job emitted by a client
+ * on a random node in the cluster (making it the job owner).
+ *
+ * @param <KeyIn>   type of the input key
+ * @param <ValueIn> type of the input value
+ */
 public class ClientMapReduceRequest<KeyIn, ValueIn>
         extends InvocationClientRequest {
 
@@ -109,10 +117,11 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
 
                     @Override
                     public void onFailure(Throwable t) {
-                        if (t instanceof ExecutionException) {
-                            t = t.getCause();
+                        Throwable throwable = t;
+                        if (throwable instanceof ExecutionException) {
+                            throwable = throwable.getCause();
                         }
-                        endpoint.sendResponse(t, getCallId());
+                        endpoint.sendResponse(throwable, getCallId());
                     }
                 });
             }
@@ -122,9 +131,9 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
     }
 
     private <T> ICompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture, MapReduceService mapReduceService,
-                                                           NodeEngine nodeEngine, AbstractJobTracker jobTracker) {
+                                                           NodeEngine nodeEngine, JobTracker jobTracker) {
 
-        JobTrackerConfig config = jobTracker.getJobTrackerConfig();
+        JobTrackerConfig config = ((AbstractJobTracker) jobTracker).getJobTrackerConfig();
         boolean communicateStats = config.isCommunicateStats();
         if (chunkSize == -1) {
             chunkSize = config.getChunkSize();
