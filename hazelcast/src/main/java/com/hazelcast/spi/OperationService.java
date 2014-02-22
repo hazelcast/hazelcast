@@ -39,6 +39,8 @@ public interface OperationService {
 
     int getOperationExecutorQueueSize();
 
+    int getPriorityOperationExecutorQueueSize();
+
     int getRunningOperationsCount();
 
     int getRemoteOperationsCount();
