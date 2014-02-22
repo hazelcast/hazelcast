@@ -29,6 +29,9 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
     private String message;
     private String type;
 
+    public SystemLogRecord() {
+    }
+
     public SystemLogRecord(long date, String message, String type) {
         this.date = date;
         this.message = message;
@@ -41,9 +44,6 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
 
     public void setNode(String node) {
         this.node = node;
-    }
-
-    public SystemLogRecord() {
     }
 
     public long getDate() {
@@ -70,10 +70,15 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
         this.type = type;
     }
 
+    @Override
     public int compareTo(SystemLogRecord o) {
         long thisVal = this.date;
         long anotherVal = o.getDate();
-        return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
+        if (thisVal < anotherVal) {
+            return -1;
+        } else {
+            return thisVal == anotherVal ? 0 : 1;
+        }
     }
 
     @Override
@@ -82,19 +87,21 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
     }
 
     @Override
-    public boolean equals(Object o){
-        if(o!=null && o instanceof SystemLogRecord){
-            return this.compareTo((SystemLogRecord)o)==0;
+    public boolean equals(Object o) {
+        if (o != null && o instanceof SystemLogRecord) {
+            return this.compareTo((SystemLogRecord) o) == 0;
         }
         return false;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(date);
         out.writeUTF(message);
         out.writeUTF(type);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         date = in.readLong();
         message = in.readUTF();
@@ -103,11 +110,11 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
 
     @Override
     public String toString() {
-        return "SystemLogRecord{" +
-                "date=" + date +
-                ", node='" + node + '\'' +
-                ", message='" + message + '\'' +
-                ", type='" + type + '\'' +
-                '}';
+        return "SystemLogRecord{"
+                + "date=" + date
+                + ", node='" + node + '\''
+                + ", message='" + message + '\''
+                + ", type='" + type + '\''
+                + '}';
     }
 }

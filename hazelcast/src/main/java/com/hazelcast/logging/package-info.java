@@ -14,21 +14,11 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains logging functionality for Hazelcast.<br/>
+ * Since Hazelcast has a zero dependency policy, Hazelcast provides a logging abstraction like commongs logging,
+ * so that different logging frameworks like log4j, can be hooked in.
+ *
+ * @since 1
+ */
 package com.hazelcast.logging;
-
-public class SystemObjectLog extends SystemLog {
-    final Object obj;
-
-    public SystemObjectLog(Object obj) {
-        this.obj = obj;
-    }
-
-    @Override
-    public String toString() {
-        if (obj == null) {
-            return "NULL";
-        } else {
-            return obj.toString();
-        }
-    }
-}
