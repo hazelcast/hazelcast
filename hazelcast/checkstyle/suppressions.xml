@@ -38,7 +38,6 @@
     <suppress checks="" files="[\\/]executor[\\/]"/>
     <suppress checks="" files="[\\/]instance[\\/]"/>
     <suppress checks="" files="[\\/]jmx[\\/]"/>
-    <suppress checks="" files="[\\/]logging[\\/]"/>
     <suppress checks="" files="[\\/]management[\\/]"/>
     <suppress checks="" files="[\\/]map[\\/]"/>
     <!-- suppress checks="" files="[\\/]mapreduce[\\/]"/ -->
@@ -84,4 +83,11 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
     <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
 
+    <suppress checks="JavadocMethod" files="com.hazelcast.logging[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.logging[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.logging[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.logging[\\/]"/>
+
+
+    <suppress checks="ReturnCount" files="com.hazelcast.logging.Slf4jFactory"/>
 </suppressions>
