@@ -20,12 +20,13 @@ import com.hazelcast.nio.ClassLoaderUtil;
 
 public final class Logger {
 
-    private Logger(){}
+    private static volatile LoggerFactory loggerFactory;
+    private static final Object FACTORY_LOCK = new Object();
 
-    private static volatile LoggerFactory loggerFactory = null;
-    private static final Object factoryLock = new Object();
+    private Logger() {
+    }
 
-    public static ILogger getLogger(Class clazz){
+    public static ILogger getLogger(Class clazz) {
         return getLogger(clazz.getName());
     }
 
@@ -33,7 +34,7 @@ public final class Logger {
         //noinspection DoubleCheckedLocking
         if (loggerFactory == null) {
             //noinspection SynchronizationOnStaticField
-            synchronized (factoryLock) {
+            synchronized (FACTORY_LOCK) {
                 if (loggerFactory == null) {
                     String loggerType = System.getProperty("hazelcast.logging.type");
                     loggerFactory = newLoggerFactory(loggerType);
@@ -47,26 +48,15 @@ public final class Logger {
         LoggerFactory loggerFactory = null;
         String loggerClass = System.getProperty("hazelcast.logging.class");
         if (loggerClass != null) {
-            try {
-                loggerFactory = ClassLoaderUtil.newInstance(null, loggerClass);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            loggerFactory = loadLoggerFactory(loggerClass);
         }
+
         if (loggerFactory == null) {
             if (loggerType != null) {
                 if ("log4j".equals(loggerType)) {
-                    try {
-                        loggerFactory = ClassLoaderUtil.newInstance(null, "com.hazelcast.logging.Log4jFactory");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    loggerFactory = loadLoggerFactory("com.hazelcast.logging.Log4jFactory");
                 } else if ("slf4j".equals(loggerType)) {
-                    try {
-                        loggerFactory = ClassLoaderUtil.newInstance(null, "com.hazelcast.logging.Slf4jFactory");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    loggerFactory = loadLoggerFactory("com.hazelcast.logging.Slf4jFactory");
                 } else if ("jdk".equals(loggerType)) {
                     loggerFactory = new StandardLoggerFactory();
                 } else if ("none".equals(loggerType)) {
@@ -74,9 +64,20 @@ public final class Logger {
                 }
             }
         }
+
         if (loggerFactory == null) {
             loggerFactory = new StandardLoggerFactory();
         }
         return loggerFactory;
+    }
+
+    private static LoggerFactory loadLoggerFactory(String className) {
+        try {
+            return ClassLoaderUtil.newInstance(null, className);
+        } catch (Exception e) {
+            //since we don't have a logger available, lets log it to the System.err
+            e.printStackTrace();
+            return null;
+        }
     }
 }

@@ -34,14 +34,10 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 6/6/13
- */
 public class CreateTransactionRequest extends BaseTransactionRequest implements SecureRequest {
 
-    TransactionOptions options;
-
-    SerializableXID sXid;
+    private TransactionOptions options;
+    private SerializableXID sXid;
 
     public CreateTransactionRequest() {
     }
@@ -51,14 +47,15 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
         this.sXid = sXid;
     }
 
+    @Override
     public Object innerCall() throws Exception {
         ClientEngineImpl clientEngine = getService();
-        final ClientEndpoint endpoint = getEndpoint();
-        final TransactionManagerServiceImpl transactionManager =
+        ClientEndpoint endpoint = getEndpoint();
+        TransactionManagerServiceImpl transactionManager =
                 (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
-        final TransactionContext context = transactionManager.newClientTransactionContext(options, endpoint.getUuid());
+        TransactionContext context = transactionManager.newClientTransactionContext(options, endpoint.getUuid());
         if (sXid != null) {
-            final Transaction transaction = TransactionAccessor.getTransaction(context);
+            Transaction transaction = TransactionAccessor.getTransaction(context);
             transactionManager.addManagedTransaction(sXid, transaction);
         }
         context.beginTransaction();
@@ -66,21 +63,25 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
         return context.getTxnId();
     }
 
+    @Override
     public String getServiceName() {
         return ClientEngineImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientTxnPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientTxnPortableHook.CREATE;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        final ObjectDataOutput out = writer.getRawDataOutput();
+        ObjectDataOutput out = writer.getRawDataOutput();
         options.writeData(out);
         out.writeBoolean(sXid != null);
         if (sXid != null) {
@@ -88,12 +89,13 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
         }
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
-        final ObjectDataInput in = reader.getRawDataInput();
+        ObjectDataInput in = reader.getRawDataInput();
         options = new TransactionOptions();
         options.readData(in);
-        final boolean sXidNotNull = in.readBoolean();
+        boolean sXidNotNull = in.readBoolean();
         if (sXidNotNull) {
             sXid = new SerializableXID();
             sXid.readData(in);
@@ -101,6 +103,7 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
 
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new TransactionPermission();
     }

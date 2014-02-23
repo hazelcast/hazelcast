@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,19 +18,17 @@ package com.hazelcast.client;
 
 import java.util.concurrent.Callable;
 
-/**
- * @author mdogan 5/6/13
- */
 public abstract class CallableClientRequest extends ClientRequest implements Callable {
 
+    @Override
     final void process() throws Exception {
-        final Object result;
+        ClientEndpoint endpoint = getEndpoint();
         try {
-            result = call();
-            getEndpoint().sendResponse(result, getCallId());
+            Object result = call();
+            endpoint.sendResponse(result, getCallId());
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
-            getEndpoint().sendResponse(e, getCallId());
+            endpoint.sendResponse(e, getCallId());
         }
     }
 }

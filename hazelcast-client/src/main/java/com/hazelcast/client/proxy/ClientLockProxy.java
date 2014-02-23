@@ -34,8 +34,8 @@ public class ClientLockProxy extends ClientProxy implements ILock {
 
     private volatile Data key;
 
-    public ClientLockProxy(String serviceName, String objectId) {
-        super(serviceName, objectId);
+    public ClientLockProxy(String instanceName, String serviceName, String objectId) {
+        super(instanceName, serviceName, objectId);
     }
 
     @Deprecated
@@ -76,7 +76,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public ICondition newCondition(String name) {
-        return new ClientConditionProxy(this, name, getContext());
+        return new ClientConditionProxy(instanceName, this, name, getContext());
     }
 
     public void lock() {

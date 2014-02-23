@@ -28,6 +28,10 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
+/**
+ * This class is used to request a map reduce job cancellation on the job owning
+ * node from the emitting client.
+ */
 public class ClientCancellationRequest
         extends InvocationClientRequest {
 

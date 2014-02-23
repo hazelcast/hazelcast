@@ -178,8 +178,8 @@ public class ClientMultiMapTest {
             }
         };
 
-        mm.addEntryListener(listener1, true);
-        mm.addEntryListener(listener2, "key3", true);
+        final String firstRegId = mm.addEntryListener(listener1, true);
+        final String secondRegId = mm.addEntryListener(listener2, "key3", true);
 
         mm.put("key1", "value1");
         mm.put("key1", "value2");
@@ -200,6 +200,9 @@ public class ClientMultiMapTest {
 
         assertTrue(latch2Add.await(20, TimeUnit.SECONDS));
         assertTrue(latch2Remove.await(20, TimeUnit.SECONDS));
+
+        assertTrue(mm.removeEntryListener(firstRegId));
+        assertTrue(mm.removeEntryListener(secondRegId));
     }
 
 

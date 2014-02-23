@@ -20,7 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,11 +36,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mdogan 9/16/13
@@ -45,6 +50,65 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class InvocationTest extends HazelcastTestSupport {
+
+    @Test
+    public void whenPartitionTargetMemberDiesThenOperationSendToNewPartitionOwner() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance();
+        HazelcastInstance remote = factory.newHazelcastInstance();
+        warmUpPartitions(local, remote);
+
+        Node localNode = getNode(local);
+        OperationService service = localNode.nodeEngine.getOperationService();
+        Operation op = new PartitionTargetOperation();
+        String partitionKey = generateKeyOwnedBy(remote);
+        int partitionid = localNode.nodeEngine.getPartitionService().getPartitionId(partitionKey);
+        Future f = service.createInvocationBuilder(null, op, partitionid).setCallTimeout(30000).invoke();
+        sleepSeconds(1);
+
+        remote.shutdown();
+
+        //the get should work without a problem because the operation should be re-targeted at the newest owner
+        //for that given partition
+        f.get();
+    }
+
+    @Test
+    public void whenTargetMemberDiesThenOperationAbortedWithMembersLeftException() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance();
+        HazelcastInstance remote = factory.newHazelcastInstance();
+        warmUpPartitions(local, remote);
+
+        OperationService service = getNode(local).nodeEngine.getOperationService();
+        Operation op = new TargetOperation();
+        Address address = new Address(remote.getCluster().getLocalMember().getSocketAddress());
+        Future f = service.createInvocationBuilder(null, op, address).invoke();
+        sleepSeconds(1);
+
+        remote.shutdown();
+
+        try {
+            f.get();
+            fail();
+        } catch (MemberLeftException expected) {
+
+        }
+    }
+
+    private static class TargetOperation extends AbstractOperation {
+        public void run() throws InterruptedException {
+            Thread.sleep(5000);
+        }
+    }
+
+
+    private static class PartitionTargetOperation extends AbstractOperation implements PartitionAwareOperation {
+
+        public void run() throws InterruptedException {
+            Thread.sleep(5000);
+        }
+    }
 
     @Test
     @Category(ProblematicTest.class)

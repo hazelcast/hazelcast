@@ -22,28 +22,21 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 4/29/13
- */
 public final class GenericError implements Portable {
 
-
     private String name;
-
     private String message;
-
     private String details;
-
     private int type;
 
     public GenericError() {
     }
 
-    public GenericError(String name,String message, int type) {
-        this(name,message,null,type);
+    public GenericError(String name, String message, int type) {
+        this(name, message, null, type);
     }
 
-    public GenericError(String name,String message, String details, int type) {
+    public GenericError(String name, String message, String details, int type) {
         this.name = name;
         this.message = message;
         this.details = details;
@@ -55,11 +48,14 @@ public final class GenericError implements Portable {
         return ClientPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientPortableHook.GENERIC_ERROR;
     }
 
-    public String getName() { return name;    }
+    public String getName() {
+        return name;
+    }
 
     public String getMessage() {
         return message;
@@ -73,6 +69,7 @@ public final class GenericError implements Portable {
         return type;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeUTF("m", message);
@@ -80,6 +77,7 @@ public final class GenericError implements Portable {
         writer.writeInt("t", type);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         message = reader.readUTF("m");

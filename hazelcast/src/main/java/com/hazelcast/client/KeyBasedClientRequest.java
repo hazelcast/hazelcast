@@ -16,21 +16,21 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.partition.PartitionService;
 
-/**
- * @author mdogan 5/3/13
- */
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
+
 public abstract class KeyBasedClientRequest extends PartitionClientRequest {
 
     protected abstract Object getKey();
 
     protected final int getPartition() {
-        final Object key = getKey();
-        if (key instanceof String){
-            return clientEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey((String)key));
+        Object key = getKey();
+        PartitionService partitionService = clientEngine.getPartitionService();
+        if (key instanceof String) {
+            return partitionService.getPartitionId(getPartitionKey((String) key));
         }
-        return clientEngine.getPartitionService().getPartitionId(key);
+        return partitionService.getPartitionId(key);
     }
 
     protected int getReplicaIndex() {

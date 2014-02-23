@@ -16,14 +16,15 @@
 
 package com.hazelcast.client.txn;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
-/**
- * @author ali 6/6/13
- */
-public class ClientTxnPortableHook implements PortableHook{
+public class ClientTxnPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_TXN_PORTABLE_FACTORY, -19);
 
@@ -34,6 +35,7 @@ public class ClientTxnPortableHook implements PortableHook{
     public static final int RECOVER_ALL = 5;
     public static final int RECOVER = 6;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
@@ -41,7 +43,7 @@ public class ClientTxnPortableHook implements PortableHook{
     public PortableFactory createFactory() {
         final PortableFactory factory = new PortableFactory() {
             public Portable create(int classId) {
-                switch (classId){
+                switch (classId) {
                     case CREATE:
                         return new CreateTransactionRequest();
                     case COMMIT:
@@ -62,6 +64,7 @@ public class ClientTxnPortableHook implements PortableHook{
         return factory;
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

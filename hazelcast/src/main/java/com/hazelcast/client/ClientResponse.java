@@ -23,18 +23,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-/**
- * @author ali 20/12/13
- */
 public class ClientResponse implements IdentifiedDataSerializable {
 
-    Data response;
-
-    int callId;
-
-    boolean isEvent;
-
-    boolean isError;
+    private Data response;
+    private int callId;
+    private boolean isEvent;
+    private boolean isError;
 
     public ClientResponse() {
     }
@@ -67,14 +61,17 @@ public class ClientResponse implements IdentifiedDataSerializable {
         return isError;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientDataSerializerHook.ID;
     }
 
+    @Override
     public int getId() {
         return ClientDataSerializerHook.CLIENT_RESPONSE;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(callId);
         out.writeBoolean(isEvent);
@@ -82,6 +79,7 @@ public class ClientResponse implements IdentifiedDataSerializable {
         response.writeData(out);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         callId = in.readInt();
         isEvent = in.readBoolean();

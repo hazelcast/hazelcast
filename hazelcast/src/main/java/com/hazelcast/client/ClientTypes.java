@@ -16,9 +16,6 @@
 
 package com.hazelcast.client;
 
-/**
- * @author mdogan 7/3/13
- */
 public final class ClientTypes {
 
     public static final String JAVA = "JVM";

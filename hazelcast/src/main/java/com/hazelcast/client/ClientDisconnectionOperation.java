@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -27,9 +28,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
-/**
- * @author mdogan 2/11/13
- */
 public class ClientDisconnectionOperation extends AbstractOperation implements UrgentSystemOperation {
 
     private String clientUuid;
@@ -41,16 +39,18 @@ public class ClientDisconnectionOperation extends AbstractOperation implements U
         this.clientUuid = clientUuid;
     }
 
+    @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
-        final Set<ClientEndpoint> endpoints = engine.getEndpoints(clientUuid);
+        Set<ClientEndpoint> endpoints = engine.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
-            engine.removeEndpoint(endpoint.getConnection(), true);
+            Connection connection = endpoint.getConnection();
+            engine.removeEndpoint(connection, true);
         }
 
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         nodeEngine.onClientDisconnected(clientUuid);
-        final Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
+        Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
         for (ClientAwareService service : services) {
             service.clientDisconnected(clientUuid);
         }
