@@ -31,6 +31,7 @@
                         <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="attributes" type="attributes" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
@@ -573,6 +574,28 @@
     <xs:complexType name="properties">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="property" type="property"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="attribute">
+        <xs:sequence>
+            <xs:choice>
+                <xs:element name="string-value" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="double-value" type="xs:double" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="float-value" type="xs:float" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="short-value" type="xs:short" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="int-value" type="xs:int" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="long-value" type="xs:long" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="boolean-value" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="byte-value" type="xs:byte" minOccurs="0" maxOccurs="1"/>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="key" use="required" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="attributes">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="attribute" type="attribute"/>
         </xs:sequence>
     </xs:complexType>
 

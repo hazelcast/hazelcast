@@ -98,6 +98,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleGroup(node);
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(node);
+                } else if ("attributes".equals(nodeName)) {
+                    handleMemberAttributes(node);
                 } else if ("executor-service".equals(nodeName)) {
                     handleExecutor(node);
                 } else if ("queue".equals(nodeName)) {
@@ -744,6 +746,62 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     actions.add(getTextContent(child));
                 }
             }
+        }
+
+        public void handleMemberAttributes(Node node) {
+            handleMemberAttributes(node, configBuilder);
+        }
+
+
+        private void handleMemberAttributes(final Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
+
+
+            final BeanDefinitionBuilder attributesConfigBuilder = createBeanBuilder(MemberAttributeConfig.class);
+            final AbstractBeanDefinition beanDefinition = attributesConfigBuilder.getBeanDefinition();
+            ManagedMap attributes = new ManagedMap();
+
+            for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("attribute".equals(nodeName)) {
+
+                    final Node attName = child.getAttributes().getNamedItem("key");
+                    final String key = getTextContent(attName);
+                    //If the value is null, try and set it from System properties to match
+                    //XmlConfigBuilder
+
+                    //Now get the children
+                    Object value = null;
+                    //There should only be one child with the value in it
+                    for (org.w3c.dom.Node valueChild : new IterableNodeList(child.getChildNodes())) {
+                        final String valueNodeName = cleanNodeName(valueChild.getNodeName());
+                        if ("string-value".equals(valueNodeName)) {
+                            value = String.valueOf(getTextContent(valueChild));
+                        } else if ("int-value".equals(valueNodeName)) {
+                            value = Integer.valueOf(getTextContent(valueChild));
+                        } else if ("double-value".equals(valueNodeName)) {
+                            value = Double.valueOf(getTextContent(valueChild));
+                        } else if ("float-value".equals(valueNodeName)) {
+                            value = Float.valueOf(getTextContent(valueChild));
+                        } else if ("boolean-value".equals(valueNodeName)) {
+                            value = Boolean.valueOf(getTextContent(valueChild));
+                        } else if ("long-value".equals(valueNodeName)) {
+                            value = Long.valueOf(getTextContent(valueChild));
+                        } else if ("short-value".equals(valueNodeName)) {
+                            value = Long.valueOf(getTextContent(valueChild));
+                        } else if ("byte-value".equals(valueNodeName)) {
+                            value = Byte.valueOf(getTextContent(valueChild));
+                        }
+                    }
+                    if (value == null) {
+                        throw new IllegalStateException("No value defined for attribute with key " + key);
+                    }
+
+                    attributes.put(key, value);
+                }
+            }
+            attributesConfigBuilder.addPropertyValue("attributes", attributes);
+            beanDefinitionBuilder.addPropertyValue("memberAttributeConfig", beanDefinition);
+
         }
 
     }
