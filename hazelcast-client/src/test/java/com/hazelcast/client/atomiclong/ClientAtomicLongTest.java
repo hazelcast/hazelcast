@@ -47,7 +47,7 @@ public class ClientAtomicLongTest {
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient(null);
+        client = HazelcastClient.newHazelcastClient();
         l = client.getAtomicLong(name);
     }
 
