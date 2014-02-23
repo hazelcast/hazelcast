@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
-
-public interface LocalReplicatedMapStats extends LocalMapStats {
-
-    long getReplicationEventCount();
-
-}
+/**
+ * Contains Hazelcast statistics implementations related to map, queue, topic, multimap, executor service etc.
+ */
+package com.hazelcast.monitor.impl;
