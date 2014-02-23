@@ -20,8 +20,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
-import java.util.logging.Level;
-
 /**
  * @author mdogan 9/28/12
  */
@@ -44,7 +42,7 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
             }
         } else {
             logger.warning("MasterConfirmation has been received from " + endpoint
-                                      + ", but it is not a member of this cluster!");
+                    + ", but it is not a member of this cluster!");
             getNodeEngine().getOperationService().send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
         }
     }

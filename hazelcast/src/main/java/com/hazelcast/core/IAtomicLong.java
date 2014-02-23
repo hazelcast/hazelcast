@@ -123,7 +123,7 @@ public interface IAtomicLong extends DistributedObject {
      * Alters the currently stored value by applying a function on it on and gets the old value.
      *
      * @param function the function
-     * @return  the old value
+     * @return the old value
      * @throws IllegalArgumentException if function is null.
      * @since 3.2
      */
@@ -133,7 +133,7 @@ public interface IAtomicLong extends DistributedObject {
      * Applies a function on the value, the actual stored value will not change.
      *
      * @param function the function
-     * @return  the result of the function application
+     * @return the result of the function application
      * @throws IllegalArgumentException if function is null.
      * @since 3.2
      */

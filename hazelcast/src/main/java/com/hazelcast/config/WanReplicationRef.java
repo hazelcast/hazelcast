@@ -37,7 +37,7 @@ public class WanReplicationRef {
     }
 
     public WanReplicationRefReadOnly getAsReadOnly() {
-        if (readOnly == null ) {
+        if (readOnly == null) {
             readOnly = new WanReplicationRefReadOnly(this);
         }
         return readOnly;

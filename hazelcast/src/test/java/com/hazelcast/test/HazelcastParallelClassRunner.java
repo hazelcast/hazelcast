@@ -49,13 +49,13 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
-                System.err.println ("Interrupted: " + method.getName());
+                System.err.println("Interrupted: " + method.getName());
                 e.printStackTrace();
                 return; // The user may have interrupted us; this won't happen normally
             }
         }
         numThreads.incrementAndGet();
-        new Thread (new TestRunner(method, notifier)).start();
+        new Thread(new TestRunner(method, notifier)).start();
     }
 
     @Override
@@ -82,7 +82,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         }
 
         @Override
-        public void run () {
+        public void run() {
             long start = System.currentTimeMillis();
             String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
             System.out.println("Started Running Test: " + testName);

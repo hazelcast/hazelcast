@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 public class ManagedContextInstanceAwareTest extends HazelcastTestSupport {
 
     @Test
-    public void test(){
+    public void test() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
         Config config = new Config();
@@ -44,7 +43,7 @@ public class ManagedContextInstanceAwareTest extends HazelcastTestSupport {
         config.setManagedContext(managedContext);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
-        assertNotNull("hazelcastInstance should have been set",managedContext.hz);
+        assertNotNull("hazelcastInstance should have been set", managedContext.hz);
     }
 
     private class ManagedContextImpl implements ManagedContext, HazelcastInstanceAware {
@@ -52,7 +51,7 @@ public class ManagedContextInstanceAwareTest extends HazelcastTestSupport {
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hz= hazelcastInstance;
+            this.hz = hazelcastInstance;
         }
 
         @Override

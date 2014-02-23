@@ -32,8 +32,8 @@
     <properties>
         <hibernate.core.version>4.1.0.Final</hibernate.core.version>
     </properties>
-    
-    
+
+
     <build>
         <plugins>
             <plugin>

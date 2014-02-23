@@ -25,6 +25,7 @@ public interface TransactionalList<E> extends TransactionalObject {
 
     /**
      * Add new item to transactional list
+     *
      * @param e item
      * @return true if item is added successfully
      */
@@ -32,6 +33,7 @@ public interface TransactionalList<E> extends TransactionalObject {
 
     /**
      * Add item from transactional list
+     *
      * @param e item
      * @return true if item is remove successfully
      */
@@ -39,6 +41,7 @@ public interface TransactionalList<E> extends TransactionalObject {
 
     /**
      * Returns the size of the list
+     *
      * @return size
      */
     int size();

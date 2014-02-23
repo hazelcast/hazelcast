@@ -34,8 +34,8 @@ public interface DistributedObject {
     /**
      * Returns the unique id for this object.
      *
-     * @deprecated use {@link #getName()} instead
      * @return id the of this instance
+     * @deprecated use {@link #getName()} instead
      */
     @Deprecated
     Object getId();

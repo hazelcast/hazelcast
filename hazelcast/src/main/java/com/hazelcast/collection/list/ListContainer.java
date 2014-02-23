@@ -22,7 +22,12 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 /**
  * @ali 8/30/13
@@ -41,15 +46,15 @@ public class ListContainer extends CollectionContainer {
 
     @Override
     public ListConfig getConfig() {
-        if (config == null){
+        if (config == null) {
             config = nodeEngine.getConfig().findListConfig(name);
         }
         return config;
     }
 
-    protected CollectionItem add(int index, Data value){
+    protected CollectionItem add(int index, Data value) {
         final CollectionItem item = new CollectionItem(nextId(), value);
-        if (index < 0){
+        if (index < 0) {
             return getCollection().add(item) ? item : null;
         } else {
             getCollection().add(index, item);
@@ -57,33 +62,33 @@ public class ListContainer extends CollectionContainer {
         }
     }
 
-    protected CollectionItem get(int index){
+    protected CollectionItem get(int index) {
         return getCollection().get(index);
     }
 
-    protected CollectionItem set(int index, long itemId, Data value){
+    protected CollectionItem set(int index, long itemId, Data value) {
         return getCollection().set(index, new CollectionItem(itemId, value));
     }
 
-    protected void setBackup(long oldItemId, long itemId, Data value){
+    protected void setBackup(long oldItemId, long itemId, Data value) {
         getMap().remove(oldItemId);
         getMap().put(itemId, new CollectionItem(itemId, value));
 
     }
 
-    protected CollectionItem remove(int index){
+    protected CollectionItem remove(int index) {
         return getCollection().remove(index);
     }
 
-    protected int indexOf(boolean last, Data value){
+    protected int indexOf(boolean last, Data value) {
         final List<CollectionItem> list = getCollection();
-        if (last){
+        if (last) {
             int index = list.size();
             final ListIterator<CollectionItem> iterator = list.listIterator(index);
-            while (iterator.hasPrevious()){
+            while (iterator.hasPrevious()) {
                 final CollectionItem item = iterator.previous();
                 index--;
-                if (value.equals(item.getValue())){
+                if (value.equals(item.getValue())) {
                     return index;
                 }
             }
@@ -113,24 +118,24 @@ public class ListContainer extends CollectionContainer {
         return map;
     }
 
-    protected List<Data> sub(int from, int to){
+    protected List<Data> sub(int from, int to) {
         final List<CollectionItem> list;
-        if (from == -1 && to == -1){
+        if (from == -1 && to == -1) {
             list = getCollection();
         } else {
             list = getCollection().subList(from, to);
         }
         final ArrayList<Data> sub = new ArrayList<Data>(list.size());
         for (CollectionItem item : list) {
-            sub.add((Data)item.getValue());
+            sub.add((Data) item.getValue());
         }
         return sub;
     }
 
     @Override
-    public List<CollectionItem> getCollection(){
-        if(itemList == null){
-            if (itemMap != null && !itemMap.isEmpty()){
+    public List<CollectionItem> getCollection() {
+        if (itemList == null) {
+            if (itemMap != null && !itemMap.isEmpty()) {
                 itemList = new ArrayList<CollectionItem>(itemMap.values());
                 Collections.sort(itemList);
                 itemMap.clear();
@@ -143,9 +148,9 @@ public class ListContainer extends CollectionContainer {
     }
 
     @Override
-    protected Map<Long, CollectionItem> getMap(){
-        if (itemMap == null){
-            if (itemList != null && !itemList.isEmpty()){
+    protected Map<Long, CollectionItem> getMap() {
+        if (itemMap == null) {
+            if (itemList != null && !itemList.isEmpty()) {
                 itemMap = new HashMap<Long, CollectionItem>(itemList.size());
                 for (CollectionItem item : itemList) {
                     itemMap.put(item.getItemId(), item);
@@ -161,10 +166,10 @@ public class ListContainer extends CollectionContainer {
 
     @Override
     protected void onDestroy() {
-        if (itemList != null){
+        if (itemList != null) {
             itemList.clear();
         }
-        if (itemMap != null){
+        if (itemMap != null) {
             itemMap.clear();
         }
     }

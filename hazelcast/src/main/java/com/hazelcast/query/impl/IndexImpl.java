@@ -143,7 +143,7 @@ public class IndexImpl implements Index {
         }
 
         @Override
-        public int hashCode(){
+        public int hashCode() {
             return 0;
         }
 

@@ -25,7 +25,6 @@ import com.hazelcast.queue.client.TxnPeekRequest;
 import com.hazelcast.queue.client.TxnPollRequest;
 import com.hazelcast.queue.client.TxnSizeRequest;
 
-
 import java.util.concurrent.TimeUnit;
 
 /**

@@ -70,8 +70,8 @@ public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation
 
     @Override
     public void afterRun() throws Exception {
-        if (item != null){
-            publishEvent(ItemEventType.REMOVED, (Data)item.getValue());
+        if (item != null) {
+            publishEvent(ItemEventType.REMOVED, (Data) item.getValue());
         }
     }
 

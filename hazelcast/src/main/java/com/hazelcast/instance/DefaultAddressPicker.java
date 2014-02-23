@@ -17,16 +17,32 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.TcpIpJoiner;
-import com.hazelcast.config.*;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
-import java.net.*;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 
@@ -107,7 +123,7 @@ class DefaultAddressPicker implements AddressPicker {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
                         logger.severe(msg, e);
-                        throw new HazelcastException(msg,error);
+                        throw new HazelcastException(msg, error);
                     }
                 }
             }
@@ -196,7 +212,7 @@ class DefaultAddressPicker implements AddressPicker {
                             addressDomainMap.put(address, s);
                         }
                     } catch (UnknownHostException e) {
-                        logger.severe( "Could not resolve address: " + s);
+                        logger.severe("Could not resolve address: " + s);
                     }
                 }
             }

@@ -16,7 +16,14 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -28,15 +35,40 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -125,7 +157,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
         executionService.scheduleWithFixedDelay(executorName, new SplitBrainHandler(node),
-                                                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
+                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
         long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
@@ -239,7 +271,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (deadAddresses != null) {
                 for (Address address : deadAddresses) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "No heartbeat should remove " + address);
+                        logger.finest("No heartbeat should remove " + address);
                     }
                     removeAddress(address);
                 }
@@ -272,7 +304,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         sendHeartbeat(address);
                     } else {
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Could not connect to " + address + " to send heartbeat");
+                            logger.finest("Could not connect to " + address + " to send heartbeat");
                         }
                     }
                 }
@@ -314,7 +346,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
         } catch (Exception e) {
             if (logger.isFinestEnabled()) {
-                logger.finest( "Error while sending heartbeat -> "
+                logger.finest("Error while sending heartbeat -> "
                         + e.getClass().getName() + "[" + e.getMessage() + "]");
             }
         }
@@ -326,16 +358,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         final Address masterAddress = getMasterAddress();
         if (masterAddress == null) {
-            logger.finest( "Could not send MasterConfirmation, master is null!");
+            logger.finest("Could not send MasterConfirmation, master is null!");
             return;
         }
         final MemberImpl masterMember = getMember(masterAddress);
         if (masterMember == null) {
-            logger.finest( "Could not send MasterConfirmation, master is null!");
+            logger.finest("Could not send MasterConfirmation, master is null!");
             return;
         }
         if (logger.isFinestEnabled()) {
-            logger.finest( "Sending MasterConfirmation to " + masterMember);
+            logger.finest("Sending MasterConfirmation to " + masterMember);
         }
         nodeEngine.getOperationService().send(new MasterConfirmationOperation(), masterAddress);
     }
@@ -431,8 +463,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         } else {
             node.setMasterAddress(null);
         }
-        if(logger.isFinestEnabled()){
-            logger.finest( "Now Master " + node.getMasterAddress());
+        if (logger.isFinestEnabled()) {
+            logger.finest("Now Master " + node.getMasterAddress());
         }
     }
 
@@ -544,7 +576,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         try {
             if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Handling master response: " + this);
+                    logger.finest("Handling master response: " + this);
                 }
                 final Address currentMaster = node.getMasterAddress();
                 if (currentMaster != null && !currentMaster.equals(masterAddress)) {
@@ -569,7 +601,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     void acceptMasterConfirmation(MemberImpl member) {
         if (member != null) {
             if (logger.isFinestEnabled()) {
-                logger.finest( "MasterConfirmation has been received from " + member);
+                logger.finest("MasterConfirmation has been received from " + member);
             }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());
         }
@@ -728,7 +760,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
                 if (same) {
-                    logger.finest( "No need to process member update...");
+                    logger.finest("No need to process member update...");
                     return;
                 }
             }
@@ -793,7 +825,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Override
     public void connectionRemoved(Connection connection) {
         if (logger.isFinestEnabled()) {
-            logger.finest( "Connection is removed " + connection.getEndPoint());
+            logger.finest("Connection is removed " + connection.getEndPoint());
         }
         if (!node.joined()) {
             final Address masterAddress = node.getMasterAddress();
@@ -804,7 +836,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private Future invokeClusterOperation(Operation op, Address target) {
-       return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
+        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(50).invoke();
     }
 
@@ -867,7 +899,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 sendMembershipEventNotifications(deadMember, unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false); // async events
                 if (node.isMaster()) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( deadMember + " is dead. Sending remove to all other members.");
+                        logger.finest(deadMember + " is dead. Sending remove to all other members.");
                     }
                     invokeMemberRemoveOperation(deadMember.getAddress());
                 }
@@ -984,7 +1016,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public Set<Member> getMembers() {
-        return (Set)membersRef.get();
+        return (Set) membersRef.get();
     }
 
     @Override
@@ -1044,7 +1076,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             } finally {
                 lock.unlock();
             }
-        }  else {
+        } else {
             final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
             return registration.getId();
         }
@@ -1056,7 +1088,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
-        switch (event.getEventType()){
+        switch (event.getEventType()) {
             case MembershipEvent.MEMBER_ADDED:
                 listener.memberAdded(event);
                 break;
@@ -1067,7 +1099,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 listener.memberAttributeChanged((MemberAttributeEvent) event);
                 break;
             default:
-                throw new IllegalArgumentException("Unhandled event:"+event);
+                throw new IllegalArgumentException("Unhandled event:" + event);
         }
     }
 

@@ -86,7 +86,6 @@ public class ClientNetworkConfig {
     private SSLConfig sslConfig = null;
 
 
-
     public boolean isSmartRouting() {
         return smartRouting;
     }

@@ -36,7 +36,7 @@ import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
  * one by one. There is one ReducerTask per job per node to have a clear idea of the resulting load a job
  * may create.
  *
- * @param <Key> type of the emitted key
+ * @param <Key>   type of the emitted key
  * @param <Chunk> type of the intermediate chunk data
  */
 public class ReducerTask<Key, Chunk>

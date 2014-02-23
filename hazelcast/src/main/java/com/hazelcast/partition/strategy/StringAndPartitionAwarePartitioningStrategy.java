@@ -27,7 +27,8 @@ public class StringAndPartitionAwarePartitioningStrategy implements Partitioning
             = new StringAndPartitionAwarePartitioningStrategy();
 
     //we don't want instance.
-    private StringAndPartitionAwarePartitioningStrategy(){}
+    private StringAndPartitionAwarePartitioningStrategy() {
+    }
 
     @Override
     public Object getPartitionKey(Object key) {

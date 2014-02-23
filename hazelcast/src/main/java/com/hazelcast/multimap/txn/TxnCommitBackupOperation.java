@@ -48,7 +48,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
     }
 
     public void run() throws Exception {
-        for (Operation op: opList){
+        for (Operation op : opList) {
             op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
             op.beforeRun();
             op.run();
@@ -60,7 +60,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(opList.size());
-        for (Operation op: opList){
+        for (Operation op : opList) {
             out.writeObject(op);
         }
         out.writeUTF(caller);
@@ -71,8 +71,8 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
         super.readInternal(in);
         int size = in.readInt();
         opList = new ArrayList<Operation>(size);
-        for (int i=0; i<size; i++){
-            opList.add((Operation)in.readObject());
+        for (int i = 0; i < size; i++) {
+            opList.add((Operation) in.readObject());
         }
         caller = in.readUTF();
         threadId = in.readLong();

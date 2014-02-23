@@ -30,11 +30,11 @@ public class StringPartitioningStrategy implements PartitioningStrategy {
         return null;
     }
 
-    public static String getBaseName(String name){
-        if(name == null)return null;
+    public static String getBaseName(String name) {
+        if (name == null) return null;
         int indexOf = name.indexOf('@');
-        if(indexOf == -1) return name;
-        return name.substring(0,indexOf);
+        if (indexOf == -1) return name;
+        return name.substring(0, indexOf);
     }
 
     public static String getPartitionKey(String key) {

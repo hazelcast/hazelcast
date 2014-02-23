@@ -30,8 +30,6 @@ import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.List;
-
 abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
     private final String name;

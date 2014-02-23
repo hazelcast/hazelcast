@@ -16,7 +16,11 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
@@ -42,7 +46,7 @@ public class TopicPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                switch (classId){
+                switch (classId) {
                     case PUBLISH:
                         return new PublishRequest();
                     case ADD_LISTENER:

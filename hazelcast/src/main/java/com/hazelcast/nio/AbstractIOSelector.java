@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 abstract class AbstractIOSelector extends Thread implements IOSelector {
 
@@ -102,7 +101,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 processSelectionQueue();
                 if (!live || isInterrupted()) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( getName() + " is interrupted!");
+                        logger.finest(getName() + " is interrupted!");
                     }
                     live = false;
                     return;
@@ -136,7 +135,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         } finally {
             try {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Closing selector " + getName());
+                    logger.finest("Closing selector " + getName());
                 }
                 selector.close();
             } catch (final Exception ignored) {

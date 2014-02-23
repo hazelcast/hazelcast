@@ -1450,6 +1450,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     /**
      * Handled the help command
+     *
      * @param command
      */
     protected void handleHelp(String command) {
@@ -1620,6 +1621,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     /**
      * Starts the test application. Management Center is expected to be running on localhost:8080
+     *
      * @param args none
      * @throws Exception
      */

@@ -19,10 +19,18 @@ package com.hazelcast.client.queue;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -34,7 +42,11 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/19/13
@@ -49,7 +61,7 @@ public class ClientQueueTest {
     static IQueue q;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         Config config = new Config();
         QueueConfig queueConfig = config.getQueueConfig(queueName);
         queueConfig.setMaxSize(6);
@@ -89,10 +101,10 @@ public class ClientQueueTest {
 
         Thread.sleep(500);
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<5; i++){
-                    if(!q.offer("event_item" + i)){
+                for (int i = 0; i < 5; i++) {
+                    if (!q.offer("event_item" + i)) {
                         throw new RuntimeException();
                     }
                 }
@@ -104,12 +116,11 @@ public class ClientQueueTest {
 
     @Test
     public void testOfferPoll() throws IOException, InterruptedException {
-        for (int i=0; i<10; i++){
+        for (int i = 0; i < 10; i++) {
             boolean result = q.offer("item");
-            if (i<6){
+            if (i < 6) {
                 assertTrue(result);
-            }
-            else {
+            } else {
                 assertFalse(result);
             }
         }
@@ -127,16 +138,15 @@ public class ClientQueueTest {
         };
         t1.start();
 
-        boolean result = q.offer("item",5, TimeUnit.SECONDS);
+        boolean result = q.offer("item", 5, TimeUnit.SECONDS);
         assertTrue(result);
 
 
-        for (int i=0; i<10; i++){
+        for (int i = 0; i < 10; i++) {
             Object o = q.poll();
-            if (i<6){
+            if (i < 6) {
                 assertNotNull(o);
-            }
-            else {
+            } else {
                 assertNull(o);
             }
         }
@@ -231,41 +241,41 @@ public class ClientQueueTest {
     }
 
     @Test
-    public void testIterator(){
+    public void testIterator() {
         assertTrue(q.offer("item1"));
         assertTrue(q.offer("item2"));
         assertTrue(q.offer("item3"));
         assertTrue(q.offer("item4"));
         assertTrue(q.offer("item5"));
 
-        int i=0;
+        int i = 0;
         for (Object o : q) {
             i++;
-            assertEquals("item"+i, o);
+            assertEquals("item" + i, o);
         }
 
     }
 
     @Test
-    public void testToArray(){
+    public void testToArray() {
         assertTrue(q.offer("item1"));
         assertTrue(q.offer("item2"));
         assertTrue(q.offer("item3"));
         assertTrue(q.offer("item4"));
         assertTrue(q.offer("item5"));
 
-        Object[] array =  q.toArray();
-        int i=0;
+        Object[] array = q.toArray();
+        int i = 0;
         for (Object o : array) {
             i++;
-            assertEquals("item"+i, o);
+            assertEquals("item" + i, o);
         }
 
         Object[] objects = q.toArray(new Object[2]);
-        i=0;
+        i = 0;
         for (Object o : objects) {
             i++;
-            assertEquals("item"+i, o);
+            assertEquals("item" + i, o);
         }
     }
 
@@ -314,7 +324,7 @@ public class ClientQueueTest {
     }
 
     @Test
-    public void testClear(){
+    public void testClear() {
         assertTrue(q.offer("item1"));
         assertTrue(q.offer("item2"));
         assertTrue(q.offer("item3"));

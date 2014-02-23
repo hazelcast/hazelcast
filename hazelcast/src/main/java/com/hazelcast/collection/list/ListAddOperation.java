@@ -46,11 +46,11 @@ public class ListAddOperation extends CollectionAddOperation {
     public void run() throws Exception {
         final ListContainer container = getOrCreateListContainer();
         response = false;
-        if (!hasEnoughCapacity(1)){
+        if (!hasEnoughCapacity(1)) {
             return;
         }
         final CollectionItem item = container.add(index, value);
-        if (item != null){
+        if (item != null) {
             itemId = item.getItemId();
             response = true;
         }

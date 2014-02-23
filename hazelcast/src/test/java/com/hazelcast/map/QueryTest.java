@@ -20,7 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -32,32 +36,52 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.query.SampleObjects.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.query.SampleObjects.Employee;
+import static com.hazelcast.query.SampleObjects.State;
+import static com.hazelcast.query.SampleObjects.Value;
+import static com.hazelcast.query.SampleObjects.ValueType;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 //TODO
 public class QueryTest extends HazelcastTestSupport {
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void issue393() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -81,7 +105,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(names.toString(), expectedValues, array);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void issue393Fail() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -97,7 +121,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void negativeDouble() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -116,7 +140,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(2, values.size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void issue393SqlEq() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -140,7 +164,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(names.toString(), expectedValues, array);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void issue685RemoveIndexesOnClear() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -157,7 +181,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void issue393SqlIn() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -181,7 +205,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(names.toString(), expectedValues, array);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void issue393SqlInInteger() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -205,7 +229,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(names.toString(), expectedValues, array);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testInPredicate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -225,7 +249,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testInstanceofPredicate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -235,16 +259,16 @@ public class QueryTest extends HazelcastTestSupport {
         LinkedList linkedList = new LinkedList();
 
         final Predicate linkedListPredicate = Predicates.instanceOf(LinkedList.class);
-        map.put("1","somestring");
-        map.put("2",new ArrayList());
-        map.put("3",linkedList);
+        map.put("1", "somestring");
+        map.put("2", new ArrayList());
+        map.put("3", linkedList);
 
         Collection<Object> values = map.values(linkedListPredicate);
         assertEquals(1, values.size());
         assertTrue(values.contains(linkedList));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIteratorContract() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -276,7 +300,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertFalse(it.hasNext());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testInPredicateWithEmptyArray() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -294,7 +318,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(values.size(), 0);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testInnerIndex() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -318,7 +342,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(typeNames.toString(), new String[]{"type6", "type8"}, array);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testInnerIndexSql() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -340,7 +364,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(typeNames.toString(), new String[]{"type1"}, typeNames.toArray(new String[0]));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     // TODO: fails @mm - Test fails randomly!
     @Category(ProblematicTest.class)
     public void testQueryWithTTL() throws Exception {
@@ -371,7 +395,7 @@ public class QueryTest extends HazelcastTestSupport {
         for (Employee employee : values) {
             assertTrue(employee.isActive());
         }
-        final  CountDownLatch latch =  new CountDownLatch(1000);
+        final CountDownLatch latch = new CountDownLatch(1000);
         imap.addEntryListener(new EntryListener() {
             @Override
             public void entryAdded(EntryEvent event) {
@@ -394,9 +418,9 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(0, imap.size());
         values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
         assertEquals(0, values.size());
-        }
+    }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testOneIndexedFieldsWithTwoCriteriaField() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -412,7 +436,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(1, actual.size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryDuringAndAfterMigration() throws Exception {
         Config cfg = new Config();
@@ -433,7 +457,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = new Config();
@@ -461,7 +485,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryWithIndexesWhileMigrating() throws Exception {
         Config cfg = new Config();
@@ -493,7 +517,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoNodesWithPartialIndexes() throws Exception {
         Config cfg = new Config();
@@ -535,7 +559,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoNodesWithIndexes() throws Exception {
         Config cfg = new Config();
@@ -580,7 +604,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testOneMemberWithoutIndex() {
         Config cfg = new Config();
@@ -590,7 +614,7 @@ public class QueryTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testOneMemberWithIndex() {
         Config cfg = new Config();
@@ -603,7 +627,7 @@ public class QueryTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testOneMemberSQLWithoutIndex() {
         Config cfg = new Config();
@@ -615,7 +639,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(27, entries.size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testOneMemberSQLWithIndex() {
         Config cfg = new Config();
@@ -628,7 +652,7 @@ public class QueryTest extends HazelcastTestSupport {
         doFunctionalSQLQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexSQLPerformance() {
         Config cfg = new Config();
@@ -667,7 +691,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
@@ -726,7 +750,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexPerformance() {
         Config cfg = new Config();
@@ -769,10 +793,10 @@ public class QueryTest extends HazelcastTestSupport {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
-        assertTrue("tookWithIndex: " + tookWithIndex + ", tookWithoutIndex: " + tookWithout,  tookWithIndex < (tookWithout / 2));
+        assertTrue("tookWithIndex: " + tookWithIndex + ", tookWithoutIndex: " + tookWithout, tookWithIndex < (tookWithout / 2));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testNullIndexing() {
         Config cfg = new Config();
@@ -826,7 +850,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertTrue("WithIndex: " + tookWithIndex + ", without: " + tookWithout, tookWithIndex < tookWithout);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexPerformanceUsingPredicate() {
         Config cfg = new Config();
@@ -869,7 +893,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoMembers() {
         Config cfg = new Config();
@@ -880,7 +904,7 @@ public class QueryTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexes() {
         Config cfg = new Config();
@@ -894,7 +918,7 @@ public class QueryTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown() {
         Config cfg = new Config();
@@ -918,7 +942,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown2() {
         Config cfg = new Config();
@@ -943,7 +967,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown3() {
         Config cfg = new Config();
@@ -969,7 +993,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testSecondMemberAfterAddingIndexes() {
         Config cfg = new Config();
@@ -983,7 +1007,7 @@ public class QueryTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testWithDashInTheNameAndSqlPredicate() {
         Config cfg = new Config();
@@ -1003,7 +1027,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void queryWithThis() {
         Config cfg = new Config();
@@ -1023,7 +1047,7 @@ public class QueryTest extends HazelcastTestSupport {
     /**
      * Test for issue 711
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateWithEntryKeyObject() {
         Config cfg = new Config();
@@ -1044,7 +1068,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(4, map.keySet(predicate).size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testShutDown() {
         Config cfg = new Config();
@@ -1057,10 +1081,10 @@ public class QueryTest extends HazelcastTestSupport {
         int allsize = 10000;
         int targetSize = 3000;
         for (int i = 0; i < allsize; i++) {
-            map.put(i, new ValueType("type"+i));
+            map.put(i, new ValueType("type" + i));
         }
 
-        for (int i = allsize; i < allsize+targetSize; i++) {
+        for (int i = allsize; i < allsize + targetSize; i++) {
             map.put(i, new ValueType("typex"));
         }
         assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
@@ -1076,7 +1100,7 @@ public class QueryTest extends HazelcastTestSupport {
     /**
      * Github issues 98 and 131
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateStringAttribute() {
         Config cfg = new Config();
@@ -1089,7 +1113,7 @@ public class QueryTest extends HazelcastTestSupport {
     /**
      * Github issues 98 and 131
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateStringAttributesWithIndex() {
         Config cfg = new Config();
@@ -1120,7 +1144,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(6, map.values(new PredicateBuilder().getEntryObject().get("name").greaterEqual("gh")).size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateDateAttribute() {
         Config cfg = new Config();
@@ -1130,7 +1154,7 @@ public class QueryTest extends HazelcastTestSupport {
         testPredicateDateAttribute(map);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateDateAttributeWithIndex() {
         Config cfg = new Config();
@@ -1167,7 +1191,7 @@ public class QueryTest extends HazelcastTestSupport {
                 " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateEnumAttribute() {
         Config cfg = new Config();
@@ -1177,7 +1201,7 @@ public class QueryTest extends HazelcastTestSupport {
         testPredicateEnumAttribute(map);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateEnumAttributeWithIndex() {
         Config cfg = new Config();
@@ -1236,7 +1260,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateCustomAttribute() {
         Config cfg = new Config();
@@ -1326,7 +1350,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testPredicateNotEqualWithIndex() {
         Config cfg = new Config();
@@ -1430,7 +1454,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testInvalidSqlPredicate() {
         Config cfg = new Config();
@@ -1475,7 +1499,7 @@ public class QueryTest extends HazelcastTestSupport {
     /**
      * test for issue #359
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
@@ -1537,7 +1561,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexingEnumAttributeIssue597() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1564,7 +1588,7 @@ public class QueryTest extends HazelcastTestSupport {
     /**
      * see pull request 616
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexingEnumAttributeWithSqlIssue597() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1589,7 +1613,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     // issue 1404 "to be fixed by issue 1404"
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryAfterInitialLoad() {
         String name = "testQueryAfterInitialLoad";
@@ -1626,7 +1650,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(size, values.size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testMultipleOrPredicatesIssue885WithoutIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -1636,7 +1660,7 @@ public class QueryTest extends HazelcastTestSupport {
         testMultipleOrPredicates(map);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testMultipleOrPredicatesIssue885WithIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -1647,7 +1671,7 @@ public class QueryTest extends HazelcastTestSupport {
         testMultipleOrPredicates(map);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testMultipleOrPredicatesIssue885WithIndex2() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -1701,7 +1725,7 @@ public class QueryTest extends HazelcastTestSupport {
     /**
      * see zendesk ticket #82
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";

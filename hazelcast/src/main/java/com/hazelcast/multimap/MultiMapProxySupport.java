@@ -18,10 +18,19 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.multimap.operations.*;
+import com.hazelcast.multimap.operations.CountOperation;
+import com.hazelcast.multimap.operations.GetAllOperation;
+import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory.OperationFactoryType;
+import com.hazelcast.multimap.operations.MultiMapResponse;
+import com.hazelcast.multimap.operations.PutOperation;
+import com.hazelcast.multimap.operations.RemoveAllOperation;
+import com.hazelcast.multimap.operations.RemoveOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -98,7 +107,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                     continue;
                 }
                 MultiMapResponse response = nodeEngine.toObject(result);
-                if (response.getCollection() != null){
+                if (response.getCollection() != null) {
                     keySet.addAll(response.getCollection());
                 }
             }

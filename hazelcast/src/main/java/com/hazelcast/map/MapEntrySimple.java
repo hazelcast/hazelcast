@@ -17,14 +17,13 @@
 package com.hazelcast.map;
 
 import java.util.AbstractMap;
-import java.util.Map;
 
 /**
  * User: ahmetmircik
  * Date: 10/11/13
  * Time: 7:33 AM
  */
-public class MapEntrySimple<K,V> extends AbstractMap.SimpleEntry<K,V> {
+public class MapEntrySimple<K, V> extends AbstractMap.SimpleEntry<K, V> {
 
     private boolean modified = false;
 

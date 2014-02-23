@@ -45,5 +45,6 @@ public final class ReplicaErrorLogger {
         }
     }
 
-    private ReplicaErrorLogger() {}
+    private ReplicaErrorLogger() {
+    }
 }

@@ -21,9 +21,11 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import static com.hazelcast.cluster.MemberAttributeChangedOperation.*;
 
 import java.io.IOException;
+
+import static com.hazelcast.cluster.MemberAttributeChangedOperation.DELTA_MEMBER_PROPERTIES_OP_PUT;
+import static com.hazelcast.cluster.MemberAttributeChangedOperation.DELTA_MEMBER_PROPERTIES_OP_REMOVE;
 
 public class MemberAttributeChange implements DataSerializable {
 

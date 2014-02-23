@@ -27,7 +27,6 @@ import com.hazelcast.monitor.LocalTopicStats;
  * will process the messages in the order they are actually published. If cluster member M publishes messages
  * m1, m2, m3...mn to a topic T, then Hazelcast makes sure that all of the subscribers of topic T will receive
  * and process m1, m2, m3...mn in order.
- *
  */
 public interface ITopic<E> extends DistributedObject {
 
@@ -51,7 +50,6 @@ public interface ITopic<E> extends DistributedObject {
      * added on one instance.
      *
      * @param listener
-     *
      * @return returns registration id.
      */
     String addMessageListener(MessageListener<E> listener);
@@ -61,10 +59,9 @@ public interface ITopic<E> extends DistributedObject {
      * this method does nothing.
      *
      * @param registrationId Id of listener registration.
-     *
      * @return true if registration is removed, false otherwise
      */
-    boolean removeMessageListener(final String registrationId );
+    boolean removeMessageListener(final String registrationId);
 
     /**
      * Returns statistics of this topic,like total number of publishes/receives

@@ -25,7 +25,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import java.io.IOException;
 import java.util.Map;
 
-public class QueryEventFilter extends EntryEventFilter  {
+public class QueryEventFilter extends EntryEventFilter {
 
     Predicate predicate = null;
 
@@ -45,7 +45,7 @@ public class QueryEventFilter extends EntryEventFilter  {
     public boolean eval(Object arg) {
         final QueryEntry entry = (QueryEntry) arg;
         final Data keyData = entry.getKeyData();
-        return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry)arg);
+        return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
     }
 
     @Override

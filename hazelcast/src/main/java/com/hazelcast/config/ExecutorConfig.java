@@ -51,7 +51,7 @@ public class ExecutorConfig {
     }
 
     public ExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new ExecutorConfigReadOnly(this);
         }
         return readOnly;

@@ -31,7 +31,12 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
-import static com.hazelcast.transaction.impl.Transaction.State.*;
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
+import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
+import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 
 /**
  * @author ali 6/6/13
@@ -178,10 +183,10 @@ final class TransactionProxy {
             ((BaseTransactionRequest) request).setClientThreadId(threadId);
         }
         final SerializationService ss = client.getSerializationService();
-        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)client.getInvocationService();
+        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         try {
             final Future f = invocationService.send(request, connection);
-            return ss.toObject(f.get()) ;
+            return ss.toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

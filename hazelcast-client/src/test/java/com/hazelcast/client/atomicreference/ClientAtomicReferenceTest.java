@@ -17,17 +17,24 @@
 package com.hazelcast.client.atomicreference;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -184,15 +191,15 @@ public class ClientAtomicReferenceTest {
 
     @Test
     public void apply() {
-        assertEquals("null",clientReference.apply(new AppendFunction("")));
-        assertEquals(null,clientReference.get());
+        assertEquals("null", clientReference.apply(new AppendFunction("")));
+        assertEquals(null, clientReference.get());
 
         clientReference.set("foo");
         assertEquals("foobar", clientReference.apply(new AppendFunction("bar")));
-        assertEquals("foo",clientReference.get());
+        assertEquals("foo", clientReference.get());
 
         assertEquals(null, clientReference.apply(new NullFunction()));
-        assertEquals("foo",clientReference.get());
+        assertEquals("foo", clientReference.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -203,14 +210,14 @@ public class ClientAtomicReferenceTest {
     @Test
     public void alter() {
         clientReference.alter(new NullFunction());
-        assertEquals(null,clientReference.get());
+        assertEquals(null, clientReference.get());
 
         clientReference.set("foo");
         clientReference.alter(new AppendFunction("bar"));
-        assertEquals("foobar",clientReference.get());
+        assertEquals("foobar", clientReference.get());
 
         clientReference.alter(new NullFunction());
-        assertEquals(null,clientReference.get());
+        assertEquals(null, clientReference.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -221,14 +228,14 @@ public class ClientAtomicReferenceTest {
     @Test
     public void alterAndGet() {
         assertNull(clientReference.alterAndGet(new NullFunction()));
-        assertEquals(null,clientReference.get());
+        assertEquals(null, clientReference.get());
 
         clientReference.set("foo");
-        assertEquals("foobar",clientReference.alterAndGet(new AppendFunction("bar")));
-        assertEquals("foobar",clientReference.get());
+        assertEquals("foobar", clientReference.alterAndGet(new AppendFunction("bar")));
+        assertEquals("foobar", clientReference.get());
 
-        assertEquals(null,clientReference.alterAndGet(new NullFunction()));
-        assertEquals(null,clientReference.get());
+        assertEquals(null, clientReference.alterAndGet(new NullFunction()));
+        assertEquals(null, clientReference.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -239,17 +246,17 @@ public class ClientAtomicReferenceTest {
     @Test
     public void getAndAlter() {
         assertNull(clientReference.getAndAlter(new NullFunction()));
-        assertEquals(null,clientReference.get());
+        assertEquals(null, clientReference.get());
 
         clientReference.set("foo");
-        assertEquals("foo",clientReference.getAndAlter(new AppendFunction("bar")));
-        assertEquals("foobar",clientReference.get());
+        assertEquals("foo", clientReference.getAndAlter(new AppendFunction("bar")));
+        assertEquals("foobar", clientReference.get());
 
-        assertEquals("foobar",clientReference.getAndAlter(new NullFunction()));
-        assertEquals(null,clientReference.get());
+        assertEquals("foobar", clientReference.getAndAlter(new NullFunction()));
+        assertEquals(null, clientReference.get());
     }
 
-    private static class AppendFunction implements IFunction<String,String> {
+    private static class AppendFunction implements IFunction<String, String> {
         private String add;
 
         private AppendFunction(String add) {
@@ -258,11 +265,11 @@ public class ClientAtomicReferenceTest {
 
         @Override
         public String apply(String input) {
-            return input+add;
+            return input + add;
         }
     }
 
-    private static class NullFunction implements IFunction<String,String> {
+    private static class NullFunction implements IFunction<String, String> {
         @Override
         public String apply(String input) {
             return null;

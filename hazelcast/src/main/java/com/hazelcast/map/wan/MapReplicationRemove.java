@@ -24,7 +24,7 @@ import com.hazelcast.wan.ReplicationEventObject;
 
 import java.io.IOException;
 
-public class MapReplicationRemove implements ReplicationEventObject,DataSerializable {
+public class MapReplicationRemove implements ReplicationEventObject, DataSerializable {
 
     String mapName;
     Data key;

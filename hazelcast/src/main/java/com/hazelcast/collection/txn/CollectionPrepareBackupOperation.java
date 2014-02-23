@@ -56,7 +56,7 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
 
     @Override
     public void run() throws Exception {
-        if (removeOperation){
+        if (removeOperation) {
             getOrCreateContainer().reserveRemoveBackup(itemId, transactionId);
         } else {
             getOrCreateContainer().reserveAddBackup(itemId, transactionId);

@@ -114,8 +114,8 @@ public class PredicatesTest {
 
     @Test
     public void testAnd() {
-        assertTrue(Predicates.and(greaterThan(null,4), lessThan(null,6)).apply(new DummyEntry(5)));
-        assertFalse(Predicates.and(greaterThan(null,5), lessThan(null,6)).apply(new DummyEntry(4)));
+        assertTrue(Predicates.and(greaterThan(null, 4), lessThan(null, 6)).apply(new DummyEntry(5)));
+        assertFalse(Predicates.and(greaterThan(null, 5), lessThan(null, 6)).apply(new DummyEntry(4)));
     }
 
     @Test

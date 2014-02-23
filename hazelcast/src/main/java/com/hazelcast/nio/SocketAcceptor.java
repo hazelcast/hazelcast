@@ -20,7 +20,11 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
-import java.nio.channels.*;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
@@ -76,7 +80,7 @@ public class SocketAcceptor implements Runnable {
         if (selector != null) {
             try {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Closing selector " + Thread.currentThread().getName());
+                    logger.finest("Closing selector " + Thread.currentThread().getName());
                 }
                 selector.close();
             } catch (final Exception ignored) {
@@ -97,10 +101,10 @@ public class SocketAcceptor implements Runnable {
                 // ClosedChannelException
                 // or AsynchronousCloseException
                 // or ClosedByInterruptException
-                logger.finest( "Terminating socket acceptor thread...", e);
+                logger.finest("Terminating socket acceptor thread...", e);
             } else {
                 String error = "Unexpected error while accepting connection! "
-                               + e.getClass().getName() + ": " + e.getMessage();
+                        + e.getClass().getName() + ": " + e.getMessage();
                 log(Level.WARNING, error);
                 try {
                     serverSocketChannel.close();

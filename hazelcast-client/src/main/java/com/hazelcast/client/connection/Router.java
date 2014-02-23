@@ -36,7 +36,7 @@ public class Router {
         final MemberImpl member = (MemberImpl) loadBalancer.next();
         if (member == null) {
             return null;
-        }else {
+        } else {
             return member.getAddress();
         }
     }

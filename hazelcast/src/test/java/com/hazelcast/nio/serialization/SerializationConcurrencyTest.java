@@ -116,7 +116,7 @@ public class SerializationConcurrencyTest {
 
         private String street;
 
-        private int no ;
+        private int no;
 
         public Address() {
         }
@@ -228,9 +228,9 @@ public class SerializationConcurrencyTest {
 
     static class PortableAddress implements Portable {
 
-        private String street ;
+        private String street;
 
-        private int no ;
+        private int no;
 
         public PortableAddress() {
         }

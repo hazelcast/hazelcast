@@ -66,7 +66,7 @@ public class ConfigXmlGenerator {
      * @return the XML string.
      */
     public String generate(Config config) {
-        isNotNull(config,"Config");
+        isNotNull(config, "Config");
 
         final StringBuilder xml = new StringBuilder();
         xml.append("<hazelcast ")
@@ -371,8 +371,8 @@ public class ConfigXmlGenerator {
             try {
                 transformerFactory.setAttribute("indent-number", indent);
             } catch (IllegalArgumentException e) {
-                if(logger.isFinestEnabled()){
-                    logger.finest( "Failed to set indent-number attribute; cause: " + e.getMessage());
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Failed to set indent-number attribute; cause: " + e.getMessage());
                 }
             }
             Transformer transformer = transformerFactory.newTransformer();
@@ -385,8 +385,8 @@ public class ConfigXmlGenerator {
             try {
                 transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
             } catch (IllegalArgumentException e) {
-                if(logger.isFinestEnabled()){
-                    logger.finest( "Failed to set indent-amount property; cause: " + e.getMessage());
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Failed to set indent-amount property; cause: " + e.getMessage());
                 }
             }
             transformer.transform(xmlInput, xmlOutput);

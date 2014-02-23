@@ -127,7 +127,7 @@ public class XAResourceProxy implements XAResource {
 
         final TransactionProxy transaction = getTransaction(xid);
         if (transaction == null) {
-            if(transactionManager.recover(xid, true)){
+            if (transactionManager.recover(xid, true)) {
                 return;
             }
             final XAException xaException = new XAException(XAException.XAER_NOTA);
@@ -150,7 +150,7 @@ public class XAResourceProxy implements XAResource {
         nullCheck(xid);
         final TransactionProxy transaction = getTransaction(xid);
         if (transaction == null) {
-            if(transactionManager.recover(xid, false)){
+            if (transactionManager.recover(xid, false)) {
                 return;
             }
             final XAException xaException = new XAException(XAException.XAER_NOTA);

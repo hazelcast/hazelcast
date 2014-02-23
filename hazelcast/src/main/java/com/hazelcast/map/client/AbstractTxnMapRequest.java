@@ -77,6 +77,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
         this(name, requestType, key, value);
         this.newValue = newValue;
     }
+
     public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, long ttl, TimeUnit timeUnit) {
         this(name, requestType, key, value);
         this.ttl = timeUnit == null ? ttl : timeUnit.toMillis(ttl);
@@ -227,12 +228,12 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest imple
             case REPLACE:
             case REPLACE_IF_SAME:
             case SET:
-                action =  ActionConstants.ACTION_PUT;
+                action = ActionConstants.ACTION_PUT;
                 break;
             case REMOVE:
             case DELETE:
             case REMOVE_IF_SAME:
-                action =  ActionConstants.ACTION_REMOVE;
+                action = ActionConstants.ACTION_REMOVE;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + requestType);

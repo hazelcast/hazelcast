@@ -17,7 +17,6 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

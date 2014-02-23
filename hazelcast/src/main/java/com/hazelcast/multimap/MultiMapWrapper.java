@@ -37,7 +37,7 @@ public class MultiMapWrapper {
         return collection;
     }
 
-    public void incrementHit(){
+    public void incrementHit() {
         hits++;
     }
 
@@ -45,9 +45,9 @@ public class MultiMapWrapper {
         return hits;
     }
 
-    public boolean containsRecordId(long recordId){
-        for (MultiMapRecord record: collection){
-            if (record.getRecordId() == recordId){
+    public boolean containsRecordId(long recordId) {
+        for (MultiMapRecord record : collection) {
+            if (record.getRecordId() == recordId) {
                 return true;
             }
         }
@@ -62,7 +62,7 @@ public class MultiMapWrapper {
         this.version = version;
     }
 
-    public long incrementAndGetVersion(){
+    public long incrementAndGetVersion() {
         return ++version;
     }
 

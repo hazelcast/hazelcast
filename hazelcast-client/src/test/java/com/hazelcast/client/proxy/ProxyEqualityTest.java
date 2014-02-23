@@ -72,8 +72,8 @@ public class ProxyEqualityTest {
     private HazelcastInstance createClient(String serverInstanceGroupName) {
 
         HazelcastInstance serverInstance = testInstancesCache.get(serverInstanceGroupName);
-        
-        if(serverInstance == null) {
+
+        if (serverInstance == null) {
             Config config = new Config();
             config.getGroupConfig().setName(serverInstanceGroupName);
             serverInstance = Hazelcast.newHazelcastInstance(config);

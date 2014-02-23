@@ -29,11 +29,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.logging.Level;
 
 public class VersionCheck {
 
-    private VersionCheck(){}
+    private VersionCheck() {
+    }
 
     public static void check(final Node hazelcastNode, final String buildDate, final String version) {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {

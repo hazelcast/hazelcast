@@ -20,9 +20,34 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.nio.*;
-import com.hazelcast.nio.serialization.ConstantSerializers.*;
-import com.hazelcast.nio.serialization.DefaultSerializers.*;
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ConstantSerializers.BooleanSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.ByteSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.CharArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.CharSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.DoubleArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.DoubleSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.FloatArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.FloatSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.IntegerArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.IntegerSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.LongArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.LongSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.ShortArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.ShortSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.StringSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.TheByteArraySerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.BigDecimalSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.BigIntegerSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.ClassSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.DateSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.EnumSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.Externalizer;
+import com.hazelcast.nio.serialization.DefaultSerializers.ObjectSerializer;
 
 import java.io.Externalizable;
 import java.io.InputStream;
@@ -31,7 +56,15 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -197,8 +230,8 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public <T> T toObject(final Object object) {
-        if ( !(object instanceof Data)) {
-            return (T)object;
+        if (!(object instanceof Data)) {
+            return (T) object;
         }
 
         Data data = (Data) object;

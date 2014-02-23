@@ -21,7 +21,7 @@
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
-     <xs:element name="hazelcast">
+    <xs:element name="hazelcast">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
@@ -174,7 +174,7 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -416,7 +416,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1" default="CANCEL_RUNNING_OPERATION">
+            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1"
+                        default="CANCEL_RUNNING_OPERATION">
                 <xs:annotation>
                     <xs:documentation>
                         The topology-changed-strategy defines how the map reduce framework will react on topology
@@ -536,7 +537,7 @@
     </xs:complexType>
     <xs:complexType name="interfaces">
         <xs:sequence>
-            <xs:element name="interface" type="xs:string" default="127.0.0.1"  minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="interface" type="xs:string" default="127.0.0.1" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
@@ -691,8 +692,8 @@
             <xs:extension base="xs:string">
                 <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
                 <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional"/>
-                <xs:attribute name="cluster-id" type="xs:string"  use="optional"/>
-                <xs:attribute name="security-token" type="xs:string"  use="optional"/>
+                <xs:attribute name="cluster-id" type="xs:string" use="optional"/>
+                <xs:attribute name="security-token" type="xs:string" use="optional"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -982,7 +983,7 @@
 
     <xs:simpleType name="topology-changed-strategy">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="CANCEL_RUNNING_OPERATION" />
+            <xs:enumeration value="CANCEL_RUNNING_OPERATION"/>
             <xs:enumeration value="DISCARD_AND_RESTART"/>
         </xs:restriction>
     </xs:simpleType>

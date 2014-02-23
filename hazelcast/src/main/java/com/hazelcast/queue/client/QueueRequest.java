@@ -69,8 +69,8 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeoutMillis);
+        writer.writeUTF("n", name);
+        writer.writeLong("t", timeoutMillis);
     }
 
     public void read(PortableReader reader) throws IOException {

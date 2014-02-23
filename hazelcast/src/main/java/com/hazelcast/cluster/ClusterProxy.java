@@ -29,7 +29,9 @@ public class ClusterProxy implements Cluster {
 
     private final ClusterServiceImpl clusterService;
 
-    public ClusterProxy(final ClusterServiceImpl clusterService) {this.clusterService = clusterService;}
+    public ClusterProxy(final ClusterServiceImpl clusterService) {
+        this.clusterService = clusterService;
+    }
 
     @Override
     public Member getLocalMember() {

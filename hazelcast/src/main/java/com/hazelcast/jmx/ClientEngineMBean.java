@@ -39,7 +39,7 @@ public class ClientEngineMBean extends HazelcastMBean<ClientEngine> {
 
     @ManagedAnnotation("clientEndpointCount")
     @ManagedDescription("The number of client endpoints")
-     public int getClientEndpointCount() {
+    public int getClientEndpointCount() {
         return managedObject.getClientEndpointCount();
     }
 }

@@ -21,7 +21,7 @@ import com.hazelcast.client.spi.ClientProxy;
 /**
  * @author asimarslan
  */
-public class DummyProxyFactory implements com.hazelcast.client.spi.ClientProxyFactory{
+public class DummyProxyFactory implements com.hazelcast.client.spi.ClientProxyFactory {
     @Override
     public ClientProxy create(String id) {
         throw new UnsupportedOperationException("not implemented yet");

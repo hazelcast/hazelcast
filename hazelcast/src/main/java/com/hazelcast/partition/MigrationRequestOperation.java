@@ -23,7 +23,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -133,11 +141,11 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                     success = true;
                 }
             } catch (Throwable e) {
-                getLogger().warning( e);
+                getLogger().warning(e);
                 success = false;
             } finally {
 //                if (returnResponse) {
-                    migrationInfo.doneProcessing();
+                migrationInfo.doneProcessing();
 //                }
             }
         } else {

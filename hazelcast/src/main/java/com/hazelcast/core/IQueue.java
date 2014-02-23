@@ -26,11 +26,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * Concurrent, blocking, distributed, observable queue.
  *
+ * @param <E>
  * @see BaseQueue
  * @see java.util.Queue
  * @see BlockingQueue
  * @see TransactionalQueue
- * @param <E>
  */
 public interface IQueue<E> extends BlockingQueue<E>, BaseQueue<E>, ICollection<E> {
 

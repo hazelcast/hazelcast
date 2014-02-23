@@ -19,7 +19,14 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,19 +36,32 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/22/13
@@ -453,21 +473,22 @@ public class ClientMapTest {
 
     @Test
     public void testSubmitToKey() throws Exception {
-        map.put(1,1);
+        map.put(1, 1);
         Future f = map.submitToKey(1, new IncrementorEntryProcessor());
-        assertEquals(2,f.get());
-        assertEquals(2,map.get(1));
+        assertEquals(2, f.get());
+        assertEquals(2, map.get(1));
     }
+
     @Test
     public void testSubmitToNonExistentKey() throws Exception {
         Future f = map.submitToKey(11, new IncrementorEntryProcessor());
-        assertEquals(1,f.get());
-        assertEquals(1,map.get(11));
+        assertEquals(1, f.get());
+        assertEquals(1, map.get(11));
     }
+
     @Test
-    public void testSubmitToKeyWithCallback() throws  Exception
-    {
-        map.put(1,1);
+    public void testSubmitToKeyWithCallback() throws Exception {
+        map.put(1, 1);
         final CountDownLatch latch = new CountDownLatch(1);
         ExecutionCallback executionCallback = new ExecutionCallback() {
             @Override
@@ -480,9 +501,9 @@ public class ClientMapTest {
             }
         };
 
-        map.submitToKey(1,new IncrementorEntryProcessor(),executionCallback);
+        map.submitToKey(1, new IncrementorEntryProcessor(), executionCallback);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertEquals(2,map.get(1));
+        assertEquals(2, map.get(1));
     }
 
     @Test
@@ -562,7 +583,7 @@ public class ClientMapTest {
         final AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
         tradeMap.put(key2, 1);
         assertFalse(countDownLatch.await(15, TimeUnit.SECONDS));
-        assertEquals(0,atomicInteger.get());
+        assertEquals(0, atomicInteger.get());
     }
 
     @Test
@@ -622,7 +643,7 @@ public class ClientMapTest {
         IMap<Integer, Integer> map2 = client.getMap("testMapMultipleEntryProcessor");
 
         for (int i = 0; i < 10; i++) {
-            map.put(i,0);
+            map.put(i, 0);
         }
         Set keys = new HashSet();
         keys.add(1);
@@ -630,10 +651,10 @@ public class ClientMapTest {
         keys.add(7);
         keys.add(9);
         final Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
-        assertEquals(1,resultMap.get(1));
-        assertEquals(1,resultMap.get(4));
-        assertEquals(1,resultMap.get(7));
-        assertEquals(1,resultMap.get(9));
+        assertEquals(1, resultMap.get(1));
+        assertEquals(1, resultMap.get(4));
+        assertEquals(1, resultMap.get(7));
+        assertEquals(1, resultMap.get(9));
         assertEquals(1, (int) map.get(1));
         assertEquals(0, (int) map.get(2));
         assertEquals(0, (int) map.get(3));
@@ -731,6 +752,7 @@ public class ClientMapTest {
             this.id = id;
         }
     }
+
     private static class IncrementorEntryProcessor extends AbstractEntryProcessor implements DataSerializable {
         IncrementorEntryProcessor() {
             super(true);
@@ -775,11 +797,11 @@ public class ClientMapTest {
             map.remove(i);
         }
 
-        assertEquals("put count",operationCount,localMapStats.getPutOperationCount());
-        assertEquals("get count",operationCount,localMapStats.getGetOperationCount());
-        assertEquals("remove count",operationCount,localMapStats.getRemoveOperationCount());
-        assertTrue("put latency",  0 < localMapStats.getTotalPutLatency());
+        assertEquals("put count", operationCount, localMapStats.getPutOperationCount());
+        assertEquals("get count", operationCount, localMapStats.getGetOperationCount());
+        assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
+        assertTrue("put latency", 0 < localMapStats.getTotalPutLatency());
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
-        assertTrue("remove latency",0 < localMapStats.getTotalRemoveLatency());
+        assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());
     }
 }

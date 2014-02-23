@@ -11,12 +11,12 @@ import org.junit.runner.RunWith;
 public class IdGeneratorStressTest {
 
     @Test
-    public void testMultipleThreadsInSameHazelcastInstance(){
+    public void testMultipleThreadsInSameHazelcastInstance() {
 
     }
 
     @Test
-    public void testMultipleThreadsInDifferentInstances(){
+    public void testMultipleThreadsInDifferentInstances() {
 
     }
 }

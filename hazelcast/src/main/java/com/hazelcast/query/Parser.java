@@ -16,7 +16,12 @@
 
 package com.hazelcast.query;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 
 class Parser {
@@ -155,19 +160,19 @@ class Parser {
     *
     * */
     private String alignINClause(String in) {
-        final int indexLowerIn = in.indexOf( IN_LOWER );
-        final int indexLowerInWithParentheses = in.indexOf( IN_LOWER_P );
-        final int indexUpperIn = in.indexOf( IN_UPPER );
-        final int indexUpperInWithParentheses = in.indexOf( IN_UPPER_P );
+        final int indexLowerIn = in.indexOf(IN_LOWER);
+        final int indexLowerInWithParentheses = in.indexOf(IN_LOWER_P);
+        final int indexUpperIn = in.indexOf(IN_UPPER);
+        final int indexUpperInWithParentheses = in.indexOf(IN_UPPER_P);
         // find first occurrence of in clause.
-        final int indexIn = findMinIfNot( indexUpperInWithParentheses,
+        final int indexIn = findMinIfNot(indexUpperInWithParentheses,
                 findMinIfNot(indexUpperIn,
-                        findMinIfNot(indexLowerIn, indexLowerInWithParentheses, NO_INDEX),NO_INDEX),NO_INDEX);
+                        findMinIfNot(indexLowerIn, indexLowerInWithParentheses, NO_INDEX), NO_INDEX), NO_INDEX);
 
-        if( indexIn > NO_INDEX && (indexIn == indexLowerInWithParentheses || indexIn == indexUpperInWithParentheses) ){
+        if (indexIn > NO_INDEX && (indexIn == indexLowerInWithParentheses || indexIn == indexUpperInWithParentheses)) {
             // 3 is the size of param in ending with a parentheses.
             // add SPLIT_EXPRESSION
-            in = in.substring(0,indexIn+3) + SPLIT_EXPRESSION + in.substring(indexIn+3);
+            in = in.substring(0, indexIn + 3) + SPLIT_EXPRESSION + in.substring(indexIn + 3);
         }
         String sql = in;
         if (indexIn != NO_INDEX) {
@@ -176,7 +181,7 @@ class Parser {
             String sub = in.substring(indexOpen, indexClose + 1);
             sub = sub.replaceAll(" ", "");
             sql = in.substring(0, indexOpen) + sub
-                    + alignINClause(in.substring(indexClose + 1) );
+                    + alignINClause(in.substring(indexClose + 1));
 
         }
         return sql;
@@ -184,15 +189,15 @@ class Parser {
 
     /**
      * finds min choosing a lower bound.
-     * @param a first number
-     * @param b second number
-     * @param notMin lower bound
      *
-     * */
-    private int findMinIfNot(int a, int b, int notMin){
-        if( a <= notMin ) return b;
-        if( b <= notMin ) return a;
-        return Math.min( a, b);
+     * @param a      first number
+     * @param b      second number
+     * @param notMin lower bound
+     */
+    private int findMinIfNot(int a, int b, int notMin) {
+        if (a <= notMin) return b;
+        if (b <= notMin) return a;
+        return Math.min(a, b);
     }
 }
 

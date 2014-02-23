@@ -16,9 +16,13 @@
 
 package com.hazelcast.multimap.txn;
 
-import com.hazelcast.multimap.*;
-import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.MultiMapWrapper;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -52,7 +56,7 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
         MultiMapContainer container = getOrCreateContainer();
         MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
         response = true;
-        if (wrapper.containsRecordId(recordId)){
+        if (wrapper.containsRecordId(recordId)) {
             response = false;
             return;
         }
@@ -62,7 +66,7 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
+        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         final MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementPuts(elapsed);
         if (Boolean.TRUE.equals(response)) {

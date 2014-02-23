@@ -72,7 +72,7 @@ public final class PartitionsResponse implements IdentifiedDataSerializable {
             a.readData(in);
             members[i] = a;
         }
-        len =  in.readInt();
+        len = in.readInt();
         ownerIndexes = new int[len];
         for (int i = 0; i < len; i++) {
             ownerIndexes[i] = in.readInt();

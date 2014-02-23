@@ -81,7 +81,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return key;
     }
 
-    protected  <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 

@@ -54,10 +54,10 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
         long step = (id / BLOCK_SIZE);
 
         synchronized (this) {
-            boolean init = atomicLong.compareAndSet(0, step+1);
-            if (init){
+            boolean init = atomicLong.compareAndSet(0, step + 1);
+            if (init) {
                 local.set(step);
-                residue.set((int)(id % BLOCK_SIZE)+1);
+                residue.set((int) (id % BLOCK_SIZE) + 1);
             }
             return init;
         }

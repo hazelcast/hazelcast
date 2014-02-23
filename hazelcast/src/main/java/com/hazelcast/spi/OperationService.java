@@ -17,7 +17,6 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.Response;
 
 import java.util.Collection;
@@ -25,10 +24,10 @@ import java.util.Map;
 
 /**
  * The OperationService is responsible for executing operations.
- *
+ * <p/>
  * A single operation can be executed locally using {@link #runOperation(Operation)} and {@link #executeOperation(Operation)}.
  * Or it can executed remotely using the one of the send methods.
- *
+ * <p/>
  * It also is possible to execute multiple operation one multiple partitions using one of the invoke methods.
  *
  * @author mdogan 12/14/12
@@ -45,7 +44,7 @@ public interface OperationService {
 
     int getOperationThreadCount();
 
-    long  getExecutedOperationCount();
+    long getExecutedOperationCount();
 
     /**
      * Runs operation in calling thread.
@@ -85,7 +84,7 @@ public interface OperationService {
      *
      * @param serviceName
      * @param operationFactory the factory responsible creating operations
-     * @param partitions the partitions the operation should be executed on.
+     * @param partitions       the partitions the operation should be executed on.
      * @return a Map with partitionId as key and outcome of the operation as value.
      * @throws Exception
      */
@@ -94,11 +93,11 @@ public interface OperationService {
 
     /**
      * Executes an operation remotely.
-     *
+     * <p/>
      * It isn't allowed
      *
-     * @param op  the operation to send and execute.
-     * @param target  the address of that target member.
+     * @param op     the operation to send and execute.
+     * @param target the address of that target member.
      * @return
      */
     boolean send(Operation op, Address target);

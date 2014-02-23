@@ -94,8 +94,8 @@ public class NearCache {
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
     }
-    public NearCacheStatsImpl getNearCacheStats()
-    {
+
+    public NearCacheStatsImpl getNearCacheStats() {
         return createNearCacheStats();
     }
 
@@ -103,8 +103,7 @@ public class NearCache {
         long ownedEntryCount = 0;
         long ownedEntryMemoryCost = 0;
         long hits = 0;
-        for (CacheRecord record : cache.values())
-        {
+        for (CacheRecord record : cache.values()) {
             ownedEntryCount++;
             ownedEntryMemoryCost += record.getCost();
             hits += record.hit.get();
@@ -254,9 +253,9 @@ public class NearCache {
             return 0;
         }
 
-        public boolean equals(Object o){
-            if(o!=null && o instanceof CacheRecord){
-                return this.compareTo((CacheRecord)o)==0;
+        public boolean equals(Object o) {
+            if (o != null && o instanceof CacheRecord) {
+                return this.compareTo((CacheRecord) o) == 0;
             }
             return false;
         }

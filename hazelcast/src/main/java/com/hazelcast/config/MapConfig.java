@@ -114,8 +114,8 @@ public class MapConfig {
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
     }
 
-    public MapConfigReadOnly getAsReadOnly(){
-        if (readOnly == null){
+    public MapConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
             readOnly = new MapConfigReadOnly(this);
         }
         return readOnly;
@@ -154,7 +154,7 @@ public class MapConfig {
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat,"inMemoryFormat");
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
         return this;
     }
 

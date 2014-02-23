@@ -28,13 +28,26 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
-import static com.hazelcast.transaction.impl.Transaction.State.*;
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMIT_FAILED;
+import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
+import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
+import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 
 final class TransactionImpl implements Transaction, TransactionSupport {
 

@@ -15,12 +15,8 @@
  */
 
 package com.hazelcast.util;
+
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jmx.InstanceMBean;
@@ -81,7 +77,7 @@ public class HealthMonitor extends Thread {
     }
 
     public void run() {
-        if(logLevel == HealthMonitorLevel.OFF){
+        if (logLevel == HealthMonitorLevel.OFF) {
             return;
         }
 
@@ -109,6 +105,7 @@ public class HealthMonitor extends Thread {
             }
         }
     }
+
     public class HealthMetrics {
         private final long memoryFree;
         private final long memoryTotal;
@@ -158,7 +155,7 @@ public class HealthMonitor extends Thread {
             scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).queueSize();
             systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).queueSize();
             ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).queueSize();
-             eventQueueSize = eventService.getEventQueueSize();
+            eventQueueSize = eventService.getEventQueueSize();
             operationServiceOperationExecutorQueueSize = operationService.getOperationExecutorQueueSize();
             operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
             runningOperationsCount = operationService.getRunningOperationsCount();

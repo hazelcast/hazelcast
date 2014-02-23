@@ -37,7 +37,7 @@ public class DefaultPortableWriter implements PortableWriter {
     private final Set<String> writtenFields;
     private boolean raw = false;
 
-    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)throws IOException {
+    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) throws IOException {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;

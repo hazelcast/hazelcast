@@ -71,16 +71,16 @@ public final class PortableCollection implements Portable {
     public void readPortable(PortableReader reader) throws IOException {
         boolean list = reader.readBoolean("l");
         int size = reader.readInt("s");
-        if (size == -1){
+        if (size == -1) {
             return;
         }
-        if (list){
+        if (list) {
             collection = new ArrayList<Data>(size);
         } else {
             collection = new HashSet<Data>(size);
         }
         final ObjectDataInput in = reader.getRawDataInput();
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
             collection.add(data);

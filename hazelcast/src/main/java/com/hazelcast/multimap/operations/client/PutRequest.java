@@ -60,7 +60,7 @@ public class PutRequest extends MultiMapKeyBasedRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeInt("i",index);
+        writer.writeInt("i", index);
         writer.writeLong("t", threadId);
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();

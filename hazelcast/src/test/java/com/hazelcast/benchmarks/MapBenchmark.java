@@ -24,7 +24,12 @@ import com.carrotsearch.junitbenchmarks.annotation.LabelType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestRule;
 
 @AxisRange(min = 0, max = 1)
@@ -43,12 +48,12 @@ public class MapBenchmark {
     }
 
     @Before
-    public void before(){
+    public void before() {
         map = hazelcastInstance.getMap("exampleMap");
     }
 
     @After
-    public void after(){
+    public void after() {
         map.destroy();
     }
 
@@ -62,15 +67,15 @@ public class MapBenchmark {
         long startMs = System.currentTimeMillis();
         int iterations = 10000000;
 
-        map.put("foo","");
-        for(int k=0;k<iterations;k++){
-            if(k%1000000==0){
-                System.out.println("At: "+k);
+        map.put("foo", "");
+        for (int k = 0; k < iterations; k++) {
+            if (k % 1000000 == 0) {
+                System.out.println("At: " + k);
             }
             map.get("foo");
         }
-        long durationMs = System.currentTimeMillis()-startMs;
-        double performance = (iterations*1000d)/durationMs;
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
         System.out.println("Performance: " + performance);
     }
 
@@ -79,15 +84,15 @@ public class MapBenchmark {
         long startMs = System.currentTimeMillis();
         int iterations = 10000000;
 
-        map.put("foo","");
-        for(int k=0;k<iterations;k++){
-            if(k%1000000==0){
-                System.out.println("At: "+k);
+        map.put("foo", "");
+        for (int k = 0; k < iterations; k++) {
+            if (k % 1000000 == 0) {
+                System.out.println("At: " + k);
             }
-            map.put("foo","");
+            map.put("foo", "");
         }
-        long durationMs = System.currentTimeMillis()-startMs;
-        double performance = (iterations*1000d)/durationMs;
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
         System.out.println("Performance: " + performance);
     }
 }

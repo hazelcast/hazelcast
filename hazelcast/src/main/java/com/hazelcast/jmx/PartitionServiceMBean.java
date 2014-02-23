@@ -26,7 +26,7 @@ import java.util.Hashtable;
 import static com.hazelcast.jmx.ManagementService.quote;
 
 @ManagedDescription("HazelcastInstance.PartitionServiceMBean")
-public class PartitionServiceMBean  extends HazelcastMBean<PartitionService> {
+public class PartitionServiceMBean extends HazelcastMBean<PartitionService> {
 
     private final HazelcastInstanceImpl hazelcastInstance;
 

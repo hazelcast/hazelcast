@@ -22,9 +22,9 @@ package com.hazelcast.config;
 public class ManagementCenterConfig {
 
     private boolean enabled = false;
-    
+
     private String url;
-    
+
     private int updateInterval = 5;
 
     private String clusterId;

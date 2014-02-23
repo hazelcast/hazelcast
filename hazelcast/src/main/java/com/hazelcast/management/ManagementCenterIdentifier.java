@@ -16,7 +16,12 @@
 
 package com.hazelcast.management;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +46,7 @@ public class ManagementCenterIdentifier implements Serializable {
             }
             return version;
         }
-        throw new IllegalArgumentException(format("version string '%s' is not valid",versionString));
+        throw new IllegalArgumentException(format("version string '%s' is not valid", versionString));
     }
 
     public static String convertVersionToString(int version) {

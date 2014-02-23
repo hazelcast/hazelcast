@@ -24,10 +24,10 @@ import java.util.concurrent.Future;
 /**
  * A Future where one can asynchronously listen on completion. This functionality is needed for the
  * reactive programming model.
- *
+ * <p/>
  * For more information see:
  * http://download.java.net/jdk8/docs/api/java/util/concurrent/CompletableFuture.html
- *
+ * <p/>
  * This class can be dropped once Hazelcast relies on Java8+. It is added to make Hazelcast compatible
  * with Java6/7.
  *

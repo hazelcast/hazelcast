@@ -16,8 +16,23 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.serialization.*;
-import com.hazelcast.queue.tx.*;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.tx.QueueTransactionRollbackOperation;
+import com.hazelcast.queue.tx.TxnOfferBackupOperation;
+import com.hazelcast.queue.tx.TxnOfferOperation;
+import com.hazelcast.queue.tx.TxnPeekOperation;
+import com.hazelcast.queue.tx.TxnPollBackupOperation;
+import com.hazelcast.queue.tx.TxnPollOperation;
+import com.hazelcast.queue.tx.TxnPrepareBackupOperation;
+import com.hazelcast.queue.tx.TxnPrepareOperation;
+import com.hazelcast.queue.tx.TxnReserveOfferOperation;
+import com.hazelcast.queue.tx.TxnReservePollOperation;
+import com.hazelcast.queue.tx.TxnRollbackBackupOperation;
+import com.hazelcast.queue.tx.TxnRollbackOperation;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
@@ -50,10 +65,10 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     static final int QUEUE_REPLICATION = 18;
     static final int REMOVE_BACKUP = 19;
     static final int REMOVE = 20;
-//    static final int EMPTY_ID = 21;
+    //    static final int EMPTY_ID = 21;
     static final int SIZE = 22;
 
-    public static final int TXN_OFFER_BACKUP= 23;
+    public static final int TXN_OFFER_BACKUP = 23;
     public static final int TXN_OFFER = 24;
     public static final int TXN_POLL_BACKUP = 25;
     public static final int TXN_POLL = 26;
@@ -77,13 +92,13 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[TXN_PEEK+1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[TXN_PEEK + 1];
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferOperation();
             }
         };
-        
+
         constructors[OFFER_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferBackupOperation();

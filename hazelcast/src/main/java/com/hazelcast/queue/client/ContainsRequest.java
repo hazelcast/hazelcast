@@ -55,9 +55,9 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeInt("s",dataList.size());
+        writer.writeInt("s", dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
-        for (Data data: dataList){
+        for (Data data : dataList) {
             data.writeData(out);
         }
     }
@@ -67,7 +67,7 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         int size = reader.readInt("s");
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
             dataList.add(data);

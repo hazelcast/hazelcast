@@ -24,7 +24,7 @@ import com.hazelcast.spi.Operation;
 /**
  * @ali 9/4/13
  */
-public class CollectionGetAllRequest extends CollectionRequest{
+public class CollectionGetAllRequest extends CollectionRequest {
 
     public CollectionGetAllRequest() {
     }

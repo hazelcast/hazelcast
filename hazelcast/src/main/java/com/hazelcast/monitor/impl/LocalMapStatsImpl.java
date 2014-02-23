@@ -85,8 +85,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(heapCost);
         boolean hasNearCache = nearCacheStats != null;
         out.writeBoolean(hasNearCache);
-        if(hasNearCache)
-        {
+        if (hasNearCache) {
             nearCacheStats.writeData(out);
         }
     }
@@ -117,8 +116,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxRemoveLatency.set(in.readLong());
         heapCost = in.readLong();
         boolean hasNearCache = in.readBoolean();
-        if(hasNearCache)
-        {
+        if (hasNearCache) {
             nearCacheStats = new NearCacheStatsImpl();
             nearCacheStats.readData(in);
         }

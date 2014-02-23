@@ -26,8 +26,8 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
-* @author ali 4/16/13
-*/
+ * @author ali 4/16/13
+ */
 public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionProxy<SetService, E>
         implements TransactionalSet<E> {
 

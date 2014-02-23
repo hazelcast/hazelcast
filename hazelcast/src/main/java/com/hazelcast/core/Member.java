@@ -43,7 +43,6 @@ public interface Member extends DataSerializable, Endpoint {
      * Returns the InetSocketAddress of this member.
      *
      * @return InetSocketAddress of this member
-     *
      * @deprecated use {@link #getSocketAddress()} instead
      */
     @Deprecated
@@ -86,7 +85,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair string attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */
@@ -106,7 +105,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair boolean attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */
@@ -126,7 +125,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair byte attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */
@@ -146,7 +145,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair short attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */
@@ -166,7 +165,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair int attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */
@@ -186,7 +185,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair long attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */
@@ -206,7 +205,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair float attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */
@@ -226,7 +225,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Defines a key-value pair double attribute for this member available
      * to other cluster members.
      *
-     * @param key The key for this property.
+     * @param key   The key for this property.
      * @param value The value corresponds to this attribute and this member.
      * @since 3.2
      */

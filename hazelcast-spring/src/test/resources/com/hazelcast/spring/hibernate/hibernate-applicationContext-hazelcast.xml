@@ -55,15 +55,15 @@
             <hz:executor-service name="testExec"
                                  pool-size="2"
                                  queue-capacity="100"
-                                 />
+                    />
         </hz:config>
     </hz:hazelcast>
 
     <hz:hibernate-region-factory id="regionFactory" instance-ref="instance"/>
-    <hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL" />
+    <hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL"/>
 
     <bean id="localRegionFactory2" class="com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory">
-        <constructor-arg ref="instance" />
+        <constructor-arg ref="instance"/>
     </bean>
 
 </beans>

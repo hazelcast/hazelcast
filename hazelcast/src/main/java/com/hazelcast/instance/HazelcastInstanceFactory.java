@@ -25,7 +25,15 @@ import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,9 +65,9 @@ public final class HazelcastInstanceFactory {
             return null;
         }
 
-        try{
+        try {
             return instanceFuture.get();
-        }catch(IllegalStateException t){
+        } catch (IllegalStateException t) {
             return null;
         }
     }
@@ -261,14 +269,14 @@ public final class HazelcastInstanceFactory {
                 Thread.currentThread().interrupt();
             }
 
-            if(hz != null){
+            if (hz != null) {
                 return hz;
             }
 
             throw new IllegalStateException(throwable);
         }
 
-       void set(HazelcastInstanceProxy proxy) {
+        void set(HazelcastInstanceProxy proxy) {
             synchronized (this) {
                 this.hz = proxy;
                 notifyAll();

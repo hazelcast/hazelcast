@@ -225,7 +225,7 @@ public class MapReduceService
 
         String executorName = MapReduceUtil.buildExecutorName(name);
         InvocationBuilder invocation = nodeEngine.getOperationService()
-                                                 .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
+                .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
 
         Future<R> future = invocation.setExecutorName(executorName).invoke();
         return future.get();

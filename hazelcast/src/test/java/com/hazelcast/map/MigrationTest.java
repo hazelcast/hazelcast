@@ -43,7 +43,7 @@ public class MigrationTest extends HazelcastTestSupport {
 
         Map map = instance1.getMap("testMapMigration");
         for (int i = 0; i < size; i++) {
-            map.put(i,i);
+            map.put(i, i);
         }
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -59,8 +59,6 @@ public class MigrationTest extends HazelcastTestSupport {
         }
 
     }
-
-
 
 
 }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -60,12 +60,11 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
         return MultiMapPortableHook.TXN_MM_GET;
     }
 
-    private Collection<Data> createCollection(int size){
+    private Collection<Data> createCollection(int size) {
         final MultiMapConfig config = getClientEngine().getConfig().findMultiMapConfig(name);
-        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
+        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
             return new HashSet<Data>(size);
-        }
-        else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)){
+        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
             return new ArrayList<Data>(size);
         }
         return null;

@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 public final class SimpleMultiMapTest {
 
 
-
     private static Logger logger = Logger.getLogger(SimpleMapTest.class.getName());
     private static HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
     private static final int STATS_SECONDS = 10;

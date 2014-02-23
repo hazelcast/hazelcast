@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.TimedMemberStateFactory;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -33,10 +32,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;

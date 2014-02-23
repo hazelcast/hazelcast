@@ -16,7 +16,10 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author mdogan 2/6/13

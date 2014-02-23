@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
-* @author mdogan 06/16/13
-*/
+ * @author mdogan 06/16/13
+ */
 final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     UnsafeObjectDataOutput(int size, SerializationService service) {
@@ -33,7 +33,7 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     public void writeChar(final int v) throws IOException {
         ensureAvailable(2);
         UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (char) v);
-        pos +=2;
+        pos += 2;
     }
 
     public void writeChar(int position, final int v) throws IOException {

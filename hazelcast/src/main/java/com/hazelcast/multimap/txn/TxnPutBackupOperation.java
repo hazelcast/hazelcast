@@ -49,7 +49,7 @@ public class TxnPutBackupOperation extends MultiMapKeyBasedOperation {
         MultiMapContainer container = getOrCreateContainer();
         MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
         response = true;
-        if (wrapper.containsRecordId(recordId)){
+        if (wrapper.containsRecordId(recordId)) {
             response = false;
             return;
         }

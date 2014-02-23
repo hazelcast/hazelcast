@@ -47,7 +47,7 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
 
     @Override
     public void run() throws Exception {
-        if (!hasEnoughCapacity(valueList.size())){
+        if (!hasEnoughCapacity(valueList.size())) {
             response = false;
             return;
         }

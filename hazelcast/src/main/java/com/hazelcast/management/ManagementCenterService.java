@@ -19,14 +19,35 @@ package com.hazelcast.management;
 import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.operation.UpdateManagementCenterUrlOperation;
-import com.hazelcast.management.request.*;
+import com.hazelcast.management.request.ClusterPropsRequest;
+import com.hazelcast.management.request.ConsoleCommandRequest;
+import com.hazelcast.management.request.ConsoleRequest;
+import com.hazelcast.management.request.EvictLocalMapRequest;
+import com.hazelcast.management.request.ExecuteScriptRequest;
+import com.hazelcast.management.request.GetLogsRequest;
+import com.hazelcast.management.request.GetMapEntryRequest;
+import com.hazelcast.management.request.GetMemberSystemPropertiesRequest;
+import com.hazelcast.management.request.GetSystemWarningsRequest;
+import com.hazelcast.management.request.MapConfigRequest;
+import com.hazelcast.management.request.MemberConfigRequest;
+import com.hazelcast.management.request.RunGcRequest;
+import com.hazelcast.management.request.RuntimeStateRequest;
+import com.hazelcast.management.request.ShutdownMemberRequest;
+import com.hazelcast.management.request.ThreadDumpRequest;
+import com.hazelcast.management.request.VersionMismatchLogRequest;
 import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
@@ -37,9 +58,21 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -124,7 +157,7 @@ public class ManagementCenterService {
     }
 
     private void registerListeners() {
-        if(!managementCenterConfig.isEnabled()){
+        if (!managementCenterConfig.isEnabled()) {
             return;
         }
 
@@ -163,7 +196,7 @@ public class ManagementCenterService {
     private String getClusterId() {
         String clusterId = managementCenterConfig.getClusterId();
 
-        if(!isNullOrEmpty(clusterId)){
+        if (!isNullOrEmpty(clusterId)) {
             return clusterId;
         }
 

@@ -47,7 +47,6 @@ public interface ICollection<E> extends Collection<E>, DistributedObject {
      * Returns silently if the specified listener is not added before.
      *
      * @param registrationId Id of listener registration.
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeItemListener(String registrationId);

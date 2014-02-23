@@ -3,7 +3,17 @@ package com.hazelcast.client.io;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ProblematicTest;
@@ -66,7 +76,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     }
 
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     //we destroy all the nodes and clients and then init them again but this time with the client init-ed between the nodes.
     //the test hangs at client.getMap("map");  again only if the pool size is 1
@@ -96,7 +106,7 @@ public class ClientIOExecutorPoolSizeLowTest {
         });
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
     public void entryListenerWithMapOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
 
@@ -104,7 +114,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
-            if(i==500){
+            if (i == 500) {
                 server2.getLifecycleService().terminate();
             }
         }
@@ -116,15 +126,16 @@ public class ClientIOExecutorPoolSizeLowTest {
         });
     }
 
-    @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)//the client Throws com.hazelcast.spi.exception.TargetDisconnectedException: Target[Address[127.0.0.1]:5702] disconnected. client seems to connect to server1 every time ?
+    @Test(timeout = 1000 * 60)
+    @Category(ProblematicTest.class)
+//the client Throws com.hazelcast.spi.exception.TargetDisconnectedException: Target[Address[127.0.0.1]:5702] disconnected. client seems to connect to server1 every time ?
     public void entryListenerWithMapOps_WithClientConnectedNodeTerminate() throws InterruptedException, ExecutionException {
 
         final IMap<Object, Object> map = client.getMap("map");
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
-            if(i==500){
+            if (i == 500) {
                 server1.getLifecycleService().terminate();
             }
         }
@@ -136,7 +147,7 @@ public class ClientIOExecutorPoolSizeLowTest {
         });
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
     public void entryListenerWithMapAsyncOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
 
@@ -144,7 +155,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
         for (int i = 0; i < 1000; i++) {
             map.putAsync(i, i);
-            if(i==500){
+            if (i == 500) {
                 server2.getLifecycleService().terminate();
             }
         }
@@ -157,7 +168,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     }
 
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)//the client hangs which executeOnKeyOwner pool size of 1
     public void entryListenerWithAsyncMapOps_WithNodeTerminate() throws InterruptedException, ExecutionException {
 
@@ -179,7 +190,7 @@ public class ClientIOExecutorPoolSizeLowTest {
             Future f = map.getAsync(i);
             assertEquals(i, f.get());
 
-            if(i==500){
+            if (i == 500) {
                 server2.getLifecycleService().terminate();
             }
         }

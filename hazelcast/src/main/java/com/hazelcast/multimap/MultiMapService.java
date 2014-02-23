@@ -17,7 +17,6 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.multimap.txn.TransactionalMultiMapProxy;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
@@ -27,19 +26,36 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
+import com.hazelcast.multimap.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.spi.*;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.*;
+import java.util.EventListener;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -255,9 +271,9 @@ public class MultiMapService implements ManagedService, RemoteService,
                 continue;
             }
             Address owner = partition.getOwner();
-            if(owner == null){
+            if (owner == null) {
                 //no-op because the owner is not yet set.
-            }else if (owner.equals(thisAddress)) {
+            } else if (owner.equals(thisAddress)) {
                 lockedEntryCount += multiMapContainer.getLockedCount();
                 for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
                     hits += wrapper.getHits();

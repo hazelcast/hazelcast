@@ -60,7 +60,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         final Connection conn = getConnection();
         final Address masterAddress = conn != null ? conn.getEndPoint() : null;
         return conn == null ||  // which means this is a local call.
-                               (masterAddress != null && masterAddress.equals(clusterService.getMasterAddress()));
+                (masterAddress != null && masterAddress.equals(clusterService.getMasterAddress()));
     }
 
     @Override

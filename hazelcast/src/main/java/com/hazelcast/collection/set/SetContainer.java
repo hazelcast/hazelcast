@@ -18,12 +18,16 @@ package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionItem;
-import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @ali 9/3/13
@@ -42,7 +46,7 @@ public class SetContainer extends CollectionContainer {
 
     @Override
     protected SetConfig getConfig() {
-        if (config == null){
+        if (config == null) {
             config = nodeEngine.getConfig().findSetConfig(name);
         }
         return config;
@@ -56,7 +60,7 @@ public class SetContainer extends CollectionContainer {
         for (Data value : valueList) {
             final long itemId = nextId();
             final CollectionItem item = new CollectionItem(itemId, value);
-            if (!getCollection().contains(item)){
+            if (!getCollection().contains(item)) {
                 list.add(item);
                 map.put(itemId, value);
             }
@@ -67,9 +71,9 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    public Set<CollectionItem> getCollection(){
-        if(itemSet == null){
-            if (itemMap != null && !itemMap.isEmpty()){
+    public Set<CollectionItem> getCollection() {
+        if (itemSet == null) {
+            if (itemMap != null && !itemMap.isEmpty()) {
                 itemSet = new HashSet<CollectionItem>(itemMap.values());
                 itemMap.clear();
             } else {
@@ -81,9 +85,9 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    protected Map<Long, CollectionItem> getMap(){
-        if (itemMap == null){
-            if (itemSet != null && !itemSet.isEmpty()){
+    protected Map<Long, CollectionItem> getMap() {
+        if (itemMap == null) {
+            if (itemSet != null && !itemSet.isEmpty()) {
                 itemMap = new HashMap<Long, CollectionItem>(itemSet.size());
                 for (CollectionItem item : itemSet) {
                     itemMap.put(item.getItemId(), item);
@@ -99,7 +103,7 @@ public class SetContainer extends CollectionContainer {
 
     @Override
     protected void onDestroy() {
-        if (itemSet != null){
+        if (itemSet != null) {
             itemSet.clear();
         }
     }

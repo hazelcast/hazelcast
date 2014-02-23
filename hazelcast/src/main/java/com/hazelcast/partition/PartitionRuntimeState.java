@@ -24,7 +24,13 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author mdogan 5/7/12
@@ -85,7 +91,7 @@ public class PartitionRuntimeState implements DataSerializable {
         for (ShortPartitionInfo partitionInfo : partitionInfos) {
             Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
             int partitionId = partitionInfo.partitionId;
-            result[partitionId] = new PartitionInfo(partitionId,replicas);
+            result[partitionId] = new PartitionInfo(partitionId, replicas);
             int[] addressIndexes = partitionInfo.addressIndexes;
             for (int c = 0; c < addressIndexes.length; c++) {
                 int index = addressIndexes[c];

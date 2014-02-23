@@ -18,15 +18,23 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.test.*;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -209,8 +217,8 @@ public class ListenerTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
         }, false);
-        map.set(1,1);
-        map.set(1,2);
+        map.set(1, 1);
+        map.set(1, 2);
         assertTrue(addLatch.await(5, TimeUnit.SECONDS));
         assertTrue(updateLatch.await(5, TimeUnit.SECONDS));
     }
@@ -227,7 +235,7 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         checkCountWithExpected(count, 0, 0);
     }
@@ -244,7 +252,7 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), nonMatchingPredicate(), includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         checkCountWithExpected(0, 0, 0);
     }
@@ -261,14 +269,14 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         final int eventPerPartitionMin = count / instanceCount - count / 10;
         final int eventPerPartitionMax = count / instanceCount + count / 10;
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue( globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax);
+                assertTrue(globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax);
             }
         });
     }
@@ -285,12 +293,12 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), "key500", includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue( globalCount.get() == 1);
+                assertTrue(globalCount.get() == 1);
             }
         });
     }

@@ -18,10 +18,18 @@ package com.hazelcast.client.collections;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -32,8 +40,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/20/13
@@ -48,7 +57,7 @@ public class ClientSetTest {
     static ISet set;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         Config config = new Config();
         server = Hazelcast.newHazelcastInstance(config);
         hz = HazelcastClient.newHazelcastClient(null);
@@ -98,22 +107,22 @@ public class ClientSetTest {
     }
 
     @Test
-    public void testIterator(){
+    public void testIterator() {
         assertTrue(set.add("item1"));
         assertTrue(set.add("item2"));
         assertTrue(set.add("item3"));
         assertTrue(set.add("item4"));
 
         Iterator iter = set.iterator();
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
         assertFalse(iter.hasNext());
     }
 
     @Test
-    public void testContains(){
+    public void testContains() {
         assertTrue(set.add("item1"));
         assertTrue(set.add("item2"));
         assertTrue(set.add("item3"));
@@ -132,7 +141,7 @@ public class ClientSetTest {
     }
 
     @Test
-    public void removeRetainAll(){
+    public void removeRetainAll() {
         assertTrue(set.add("item1"));
         assertTrue(set.add("item2"));
         assertTrue(set.add("item3"));
@@ -178,9 +187,9 @@ public class ClientSetTest {
         };
         String registrationId = tempSet.addItemListener(listener, true);
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<5; i++){
+                for (int i = 0; i < 5; i++) {
                     tempSet.add("item" + i);
                 }
                 tempSet.add("done");

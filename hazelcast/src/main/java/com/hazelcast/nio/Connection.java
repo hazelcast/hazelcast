@@ -33,14 +33,14 @@ public interface Connection {
      *
      * @param packet the packet to write.
      * @return false if the packet was not accepted to be written, e.g. because the Connection was
-     * not alive.
+     *         not alive.
      * @throws NullPointerException if packet is null.
      */
     boolean write(SocketWritable packet);
 
     /**
      * Checks if the Connection is still alive.
-     *
+     * <p/>
      * todo: rename to isAlive?
      *
      * @return true if alive, false otherwise.
@@ -96,8 +96,8 @@ public interface Connection {
      * <code>null</code> if it is unconnected.
      *
      * @return address of the endpoint.
-     * <p/>
-     * todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
+     *         <p/>
+     *         todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
      */
     InetSocketAddress getRemoteSocketAddress();
 
@@ -117,7 +117,7 @@ public interface Connection {
      * which includes port. It is only used in testing
      *
      * @return the remote port number to which this Connection is connected, or
-     * 0 if the socket is not connected yet.
+     *         0 if the socket is not connected yet.
      */
     int getPort();
 }

@@ -61,7 +61,7 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        if (hasEnoughCapacity(1)){
+        if (hasEnoughCapacity(1)) {
             itemId = getOrCreateContainer().add(value);
         }
         response = itemId != -1;
@@ -69,7 +69,7 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     @Override
     public void afterRun() throws Exception {
-        if (itemId != -1){
+        if (itemId != -1) {
             publishEvent(ItemEventType.ADDED, value);
         }
     }

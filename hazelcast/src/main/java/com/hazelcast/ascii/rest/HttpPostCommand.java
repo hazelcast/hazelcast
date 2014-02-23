@@ -74,7 +74,7 @@ public class HttpPostCommand extends HttpCommand {
     public byte[] getContentType() {
         if (contentType == null) {
             return null;
-        }else {
+        } else {
             return stringToBytes(contentType);
         }
     }

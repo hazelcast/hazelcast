@@ -18,7 +18,15 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.*;
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -110,7 +118,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 if (configurationUrl == null) {
                     throw new IllegalStateException("Cannot find hazelcast-client.xml in classpath, giving up.");
                 }
-                logger.info( "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
+                logger.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
                 in = configurationUrl.openStream();
                 if (in == null) {
                     throw new IllegalStateException("Cannot read configuration file, giving up.");
@@ -177,24 +185,24 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         }
     }
 
-    private void handleNearCache(Node node){
+    private void handleNearCache(Node node) {
         final String name = getAttribute(node, "name");
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child);
             if ("max-size".equals(nodeName)) {
                 nearCacheConfig.setMaxSize(Integer.parseInt(getTextContent(child)));
-            } else if ("time-to-live-seconds".equals(nodeName)){
+            } else if ("time-to-live-seconds".equals(nodeName)) {
                 nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
-            } else if ("max-idle-seconds".equals(nodeName)){
+            } else if ("max-idle-seconds".equals(nodeName)) {
                 nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
-            } else if ("eviction-policy".equals(nodeName)){
+            } else if ("eviction-policy".equals(nodeName)) {
                 nearCacheConfig.setEvictionPolicy(getTextContent(child));
-            } else if ("in-memory-format".equals(nodeName)){
+            } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(getTextContent(child)));
-            } else if ("invalidate-on-change".equals(nodeName)){
+            } else if ("invalidate-on-change".equals(nodeName)) {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
-            } else if ("cache-local-entries".equals(nodeName)){
+            } else if ("cache-local-entries".equals(nodeName)) {
                 nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
             }
         }

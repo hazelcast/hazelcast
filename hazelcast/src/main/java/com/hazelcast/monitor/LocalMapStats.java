@@ -42,9 +42,9 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Returns the number of backups per entry.
      *
-     * @return  the number of backups per entry.
+     * @return the number of backups per entry.
      */
-    int getBackupCount() ;
+    int getBackupCount();
 
     /**
      * Returns memory cost (number of bytes) of owned entries in this member.
@@ -191,7 +191,6 @@ public interface LocalMapStats extends LocalInstanceStats {
     public long total();
 
     /**
-     *
      * Cost of map & near cache  & backup
      * todo in object mode object size is zero.
      *
@@ -200,7 +199,6 @@ public interface LocalMapStats extends LocalInstanceStats {
     public long getHeapCost();
 
     /**
-     *
      * Returns statistics related to the Near Cache.
      *
      * @return statistics object for the Near Cache

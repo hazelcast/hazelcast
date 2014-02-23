@@ -22,7 +22,12 @@ import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 5/16/13
@@ -33,7 +38,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ScheduledExecutorService scheduledExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
-        if (poolSize <= 0){
+        if (poolSize <= 0) {
             final int cores = Runtime.getRuntime().availableProcessors();
             poolSize = cores * 5;
         }

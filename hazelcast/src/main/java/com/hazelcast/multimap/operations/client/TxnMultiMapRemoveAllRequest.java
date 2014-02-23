@@ -37,7 +37,7 @@ public class TxnMultiMapRemoveAllRequest extends TxnMultiMapRequest {
 
     public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
-        final TransactionalMultiMap<Object,Object> multiMap = context.getMultiMap(name);
+        final TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(name);
         final Collection<Object> objects = multiMap.remove(key);
         Collection<Data> coll = createCollection(objects.size());
         for (Object object : objects) {
@@ -51,12 +51,11 @@ public class TxnMultiMapRemoveAllRequest extends TxnMultiMapRequest {
         return MultiMapPortableHook.TXN_MM_REMOVEALL;
     }
 
-    private Collection<Data> createCollection(int size){
+    private Collection<Data> createCollection(int size) {
         final MultiMapConfig config = getClientEngine().getConfig().findMultiMapConfig(name);
-        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
+        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
             return new HashSet<Data>(size);
-        }
-        else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)){
+        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
             return new ArrayList<Data>(size);
         }
         return null;

@@ -64,8 +64,8 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest i
         MapService mapService = getService();
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet)mapService.toObject(o);
-                Set<Map.Entry<Data,Data>> entries = entrySet.getEntrySet();
+                MapEntrySet entrySet = (MapEntrySet) mapService.toObject(o);
+                Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
                     result.add(entry);
                 }

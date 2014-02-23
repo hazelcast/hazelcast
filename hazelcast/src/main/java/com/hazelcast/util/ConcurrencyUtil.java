@@ -27,7 +27,7 @@ public class ConcurrencyUtil {
     private ConcurrencyUtil() {
     }
 
-    public static <K,V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, final Object mutex, ConstructorFunction<K,V> func) {
+    public static <K, V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, final Object mutex, ConstructorFunction<K, V> func) {
         if (mutex == null) {
             throw new NullPointerException();
         }
@@ -44,7 +44,7 @@ public class ConcurrencyUtil {
         return value;
     }
 
-    public static <K,V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K,V> func) {
+    public static <K, V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K, V> func) {
         V value = map.get(key);
         if (value == null) {
             value = func.createNew(key);

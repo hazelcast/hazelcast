@@ -108,7 +108,7 @@ public class TestCacheManager {
         final AtomicBoolean firstCall = new AtomicBoolean(false);
 
         @Cacheable("map-with-ttl")
-        public String getNameWithTTL(){
+        public String getNameWithTTL() {
             if (firstCall.compareAndSet(false, true)) {
                 return "ali";
             }

@@ -74,7 +74,7 @@ public class XAResourceImpl implements XAResource {
     @Override
     public synchronized void end(Xid xid, int flags) throws XAException {
         nullCheck(xid);
-        final TransactionImpl transaction = (TransactionImpl)getTransaction();
+        final TransactionImpl transaction = (TransactionImpl) getTransaction();
         final SerializableXID sXid = transaction.getXid();
         if (sXid == null || !sXid.equals(xid)) {
             logger.severe("started xid: " + sXid + " and given xid : " + xid + " not equal!!!");
@@ -103,7 +103,7 @@ public class XAResourceImpl implements XAResource {
     @Override
     public synchronized int prepare(Xid xid) throws XAException {
         nullCheck(xid);
-        final TransactionImpl transaction = (TransactionImpl)getTransaction();
+        final TransactionImpl transaction = (TransactionImpl) getTransaction();
         final SerializableXID sXid = transaction.getXid();
         if (sXid == null || !sXid.equals(xid)) {
             logger.severe("started xid: " + sXid + " and given xid : " + xid + " not equal!!!");

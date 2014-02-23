@@ -43,7 +43,7 @@ public class XAResourceWrapper implements XAResource {
     public void start(Xid xid, int flags) throws XAException {
         managedConnection.log(Level.FINEST, "XA start: " + xid);
 
-        switch (flags){
+        switch (flags) {
             case TMNOFLAGS:
                 validateInner(false);
                 setInner();
@@ -116,7 +116,7 @@ public class XAResourceWrapper implements XAResource {
 
     @Override
     public boolean setTransactionTimeout(int seconds) throws XAException {
-        this.transactionTimeoutSeconds=seconds;
+        this.transactionTimeoutSeconds = seconds;
         return false;
     }
 
