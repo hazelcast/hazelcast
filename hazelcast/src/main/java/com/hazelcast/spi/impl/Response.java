@@ -26,12 +26,12 @@ import java.io.IOException;
  * A {@link com.hazelcast.spi.impl.Response} is a result of an {@link com.hazelcast.spi.Operation} being executed.
  * There are different types of responses:
  * <ol>
- *     <li>
- *          {@link com.hazelcast.spi.impl.NormalResponse} the result of a regular Operation result, e.g. Map.put
- *     </li>
- *     <li>
- *          {@link com.hazelcast.spi.impl.BackupResponse} the result of a completed {@link com.hazelcast.spi.impl.Backup}.
- *     </li>
+ * <li>
+ * {@link com.hazelcast.spi.impl.NormalResponse} the result of a regular Operation result, e.g. Map.put
+ * </li>
+ * <li>
+ * {@link com.hazelcast.spi.impl.BackupResponse} the result of a completed {@link com.hazelcast.spi.impl.Backup}.
+ * </li>
  * </ol>
  */
 abstract public class Response implements IdentifiedDataSerializable {
@@ -42,7 +42,7 @@ abstract public class Response implements IdentifiedDataSerializable {
     public Response() {
     }
 
-    public Response(long callId,boolean urgent) {
+    public Response(long callId, boolean urgent) {
         this.callId = callId;
         this.urgent = urgent;
     }

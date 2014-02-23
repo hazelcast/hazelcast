@@ -31,7 +31,7 @@ public class TestPredicate implements IndexAwarePredicate {
     public TestPredicate(String value) {
         this.value = value;
     }
-    
+
     public boolean apply(Map.Entry mapEntry) {
         didApply = true;
         System.out.println("matching entry " + mapEntry.getValue() + " with " + value);

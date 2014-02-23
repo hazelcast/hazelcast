@@ -18,24 +18,45 @@ package com.hazelcast.instance;
 
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.lock.LockProxy;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
+import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.ProxyService;
@@ -109,14 +130,14 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
 
         HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(node.getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
-        if(healthLevel!=HealthMonitorLevel.OFF){
+        if (healthLevel != HealthMonitorLevel.OFF) {
             logger.finest("Starting health monitor");
             int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
-            new HealthMonitor(this,healthLevel,delaySeconds).start();
+            new HealthMonitor(this, healthLevel, delaySeconds).start();
         }
     }
 
-    public ManagementService getManagementService(){
+    public ManagementService getManagementService() {
         return managementService;
     }
 

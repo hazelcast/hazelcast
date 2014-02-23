@@ -35,7 +35,8 @@ public class ReflectionHelper {
     private final static ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
     private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
 
-    private ReflectionHelper(){}
+    private ReflectionHelper() {
+    }
 
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
@@ -143,15 +144,15 @@ public class ReflectionHelper {
                     }
                 }
                 if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '" + name + "' on class '"+clazz+"'");
+                    throw new IllegalArgumentException("There is no suitable accessor for '" + name + "' on class '" + clazz + "'");
                 }
                 parent = localGetter;
             }
             getter = parent;
             if (getter.isCacheable()) {
                 Getter foundGetter = getterCache.putIfAbsent(cacheKey, getter);
-                if(foundGetter != null){
-                     getter = foundGetter;
+                if (foundGetter != null) {
+                    getter = foundGetter;
                 }
             }
             return getter;

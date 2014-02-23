@@ -21,8 +21,14 @@ import com.hazelcast.core.ManagedContext;
 
 import java.io.File;
 import java.net.URL;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -32,7 +38,7 @@ import static java.text.MessageFormat.format;
 /**
  * Contains all the configuration to start a {@link com.hazelcast.core.HazelcastInstance}. A Config
  * can be created programmatically, but can also be configured using XML, see {@link com.hazelcast.config.XmlConfigBuilder}.
- *
+ * <p/>
  * Config instances can be shared between threads, but should not be modified after they are used to
  * create HazelcastInstances.
  */
@@ -97,7 +103,7 @@ public class Config {
     public Config() {
     }
 
-    public Config(String instanceName){
+    public Config(String instanceName) {
         this.instanceName = instanceName;
     }
 
@@ -114,12 +120,12 @@ public class Config {
     /**
      * Sets the class-loader to be used during de-serialization
      * and as context class-loader of Hazelcast internal threads.
-     *
-     * <p>
+     * <p/>
+     * <p/>
      * If not set (or set to null); thread context class-loader
      * will be used in required places.
-     *
-     * <p>
+     * <p/>
+     * <p/>
      * Default value is null.
      *
      * @param classLoader class-loader to be used during de-serialization
@@ -184,7 +190,7 @@ public class Config {
         return this;
     }
 
-    public MapConfig findMapConfig(String name){
+    public MapConfig findMapConfig(String name) {
         name = getBaseName(name);
         MapConfig config;
         if ((config = lookupByPattern(mapConfigs, name)) != null) return config.getAsReadOnly();
@@ -231,7 +237,7 @@ public class Config {
         return this;
     }
 
-    public QueueConfig findQueueConfig(String name){
+    public QueueConfig findQueueConfig(String name) {
         name = getBaseName(name);
         QueueConfig config;
         if ((config = lookupByPattern(queueConfigs, name)) != null) return config.getAsReadOnly();
@@ -272,7 +278,7 @@ public class Config {
         return this;
     }
 
-    public ListConfig findListConfig(String name){
+    public ListConfig findListConfig(String name) {
         name = getBaseName(name);
         ListConfig config;
         if ((config = lookupByPattern(listConfigs, name)) != null) return config.getAsReadOnly();
@@ -313,7 +319,7 @@ public class Config {
         return this;
     }
 
-    public SetConfig findSetConfig(String name){
+    public SetConfig findSetConfig(String name) {
         name = getBaseName(name);
         SetConfig config;
         if ((config = lookupByPattern(setConfigs, name)) != null) return config.getAsReadOnly();
@@ -354,7 +360,7 @@ public class Config {
         return this;
     }
 
-    public MultiMapConfig findMultiMapConfig(String name){
+    public MultiMapConfig findMultiMapConfig(String name) {
         name = getBaseName(name);
         MultiMapConfig config;
         if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config.getAsReadOnly();
@@ -395,7 +401,7 @@ public class Config {
         return this;
     }
 
-    public ReplicatedMapConfig findReplicatedMapConfig(String name){
+    public ReplicatedMapConfig findReplicatedMapConfig(String name) {
         ReplicatedMapConfig config;
         if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) return config.getAsReadOnly();
         return getReplicatedMapConfig("default").getAsReadOnly();
@@ -434,7 +440,7 @@ public class Config {
         return this;
     }
 
-    public TopicConfig findTopicConfig(String name){
+    public TopicConfig findTopicConfig(String name) {
         name = getBaseName(name);
         TopicConfig config;
         if ((config = lookupByPattern(topicConfigs, name)) != null) return config.getAsReadOnly();
@@ -483,7 +489,7 @@ public class Config {
         return this;
     }
 
-    public ExecutorConfig findExecutorConfig(String name){
+    public ExecutorConfig findExecutorConfig(String name) {
         name = getBaseName(name);
         ExecutorConfig config;
         if ((config = lookupByPattern(executorConfigs, name)) != null) return config.getAsReadOnly();
@@ -536,7 +542,7 @@ public class Config {
         return this;
     }
 
-    public SemaphoreConfig findSemaphoreConfig(String name){
+    public SemaphoreConfig findSemaphoreConfig(String name) {
         name = getBaseName(name);
         SemaphoreConfig config;
         if ((config = lookupByPattern(semaphoreConfigs, name)) != null) return config.getAsReadOnly();
@@ -729,7 +735,7 @@ public class Config {
     }
 
     public Config setUserContext(ConcurrentMap<String, Object> userContext) {
-        if(userContext == null){
+        if (userContext == null) {
             throw new IllegalArgumentException("userContext can't be null");
         }
         this.userContext = userContext;
@@ -778,7 +784,7 @@ public class Config {
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
-            for (Map.Entry<String,T> entry : map.entrySet()) {
+            for (Map.Entry<String, T> entry : map.entrySet()) {
                 String pattern = entry.getKey();
                 T value = entry.getValue();
                 if (nameMatches(name, pattern)) {

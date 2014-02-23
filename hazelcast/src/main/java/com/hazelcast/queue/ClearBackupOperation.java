@@ -47,7 +47,7 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(itemIdSet.size());
-        for (Long itemId: itemIdSet){
+        for (Long itemId : itemIdSet) {
             out.writeLong(itemId);
         }
     }
@@ -56,7 +56,7 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
         super.readInternal(in);
         int size = in.readInt();
         itemIdSet = new HashSet<Long>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             itemIdSet.add(in.readLong());
         }
     }

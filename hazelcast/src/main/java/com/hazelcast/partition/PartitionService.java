@@ -30,7 +30,6 @@ import java.util.Map;
 public interface PartitionService extends CoreService {
 
     /**
-     *
      * @param partitionId
      * @return
      */
@@ -38,7 +37,7 @@ public interface PartitionService extends CoreService {
 
     /**
      * Returns the InternalPartition for a given partitionId.
-     *
+     * <p/>
      * The InternalPartition for a given partitionId wil never change; so it can be cached safely.
      *
      * @param partitionId the partitionId

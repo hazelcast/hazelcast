@@ -17,19 +17,25 @@
 package com.hazelcast.client.atomiclong;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -45,7 +51,7 @@ public class ClientAtomicLongTest {
     static IAtomicLong l;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
         l = client.getAtomicLong(name);
@@ -205,7 +211,7 @@ public class ClientAtomicLongTest {
     private static class AddOneFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
-            return input+1;
+            return input + 1;
         }
     }
 

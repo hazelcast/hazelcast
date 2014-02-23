@@ -57,14 +57,14 @@ final class HazelcastInstanceLoader {
         URL configUrl = null;
         if (useClient && !isEmpty(clientConfigLocation)) {
             configUrl = getConfigURL(filterConfig, clientConfigLocation);
-        } else if(!isEmpty(configLocation)) {
+        } else if (!isEmpty(configLocation)) {
             configUrl = getConfigURL(filterConfig, configLocation);
         }
 
-        if(useClient) {
+        if (useClient) {
             logger.warning(
                     "Creating HazelcastClient for session replication, make sure this client has access to an already running cluster...");
-            ClientConfig clientConfig ;
+            ClientConfig clientConfig;
             if (configUrl == null) {
                 clientConfig = new ClientConfig();
                 clientConfig.getNetworkConfig().setConnectionAttemptLimit(3);
@@ -90,8 +90,8 @@ final class HazelcastInstanceLoader {
         }
 
         if (!isEmpty(instanceName)) {
-            if(logger.isLoggable(Level.INFO)){
-                logger.info(format("Getting an existing or creating a new HazelcastInstance for session replication, using name '%s'",instanceName));
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info(format("Getting an existing or creating a new HazelcastInstance for session replication, using name '%s'", instanceName));
             }
             config.setInstanceName(instanceName);
             return Hazelcast.getOrCreateHazelcastInstance(config);
@@ -121,5 +121,6 @@ final class HazelcastInstanceLoader {
         return s == null || s.trim().length() == 0;
     }
 
-    private HazelcastInstanceLoader(){}
+    private HazelcastInstanceLoader() {
+    }
 }

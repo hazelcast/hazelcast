@@ -57,14 +57,14 @@ public class LongRunningQueueTest {
 
     public static void test1() throws Exception {
 
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     byte[] data = new byte[1024];
                     int a = System.in.read(data);
-                    while (a != -1){
+                    while (a != -1) {
                         String s = new String(data, 0, a);
-                        if (s.startsWith("done")){
+                        if (s.startsWith("done")) {
                             System.out.println("finishing test");
                             done = true;
                             break;
@@ -78,19 +78,18 @@ public class LongRunningQueueTest {
         }.start();
 
 
-
-        while (!done){
+        while (!done) {
             addRemoveInstance();
             Thread.sleep(10 * 1000);
         }
         System.out.println("stopping servers");
         Iterator<Server> iter = servers.iterator();
         Server server = null;
-        while (iter.hasNext()){
+        while (iter.hasNext()) {
             server = iter.next();
             server.stop(false);
         }
-        Thread.sleep(10*1000);
+        Thread.sleep(10 * 1000);
         int queueSize = server.size();
         System.out.println("Total Put       : " + totalOffer.get());
         System.out.println("Total Remove    : " + totalPoll.get());
@@ -102,24 +101,23 @@ public class LongRunningQueueTest {
 
 
     private static void addRemoveInstance() throws Exception {
-        if (done){
+        if (done) {
             return;
         }
         boolean create = rnd.nextInt(100) % 2 == 0;
         int size = servers.size();
-        if (size < minNode || (size != maxNode && create)){
+        if (size < minNode || (size != maxNode && create)) {
             System.out.println("size: " + size + ", creating instance");
             Server server = new Server();
             server.run();
             servers.add(server);
 
-        }
-        else if (size == maxNode || !create){
+        } else if (size == maxNode || !create) {
             System.out.println("size: " + size + ", removing instance");
             Iterator<Server> iter = servers.iterator();
             Server server = iter.next();
             iter.remove();
-            if(!server.stop(true)){
+            if (!server.stop(true)) {
                 throw new Exception("server did not stop properly");
             }
         }
@@ -129,27 +127,26 @@ public class LongRunningQueueTest {
 
         final HazelcastInstance ins;
         volatile boolean running = true;
-        final CountDownLatch latch = new CountDownLatch(threadCount+1);
+        final CountDownLatch latch = new CountDownLatch(threadCount + 1);
 
         Server() {
             ins = Hazelcast.newHazelcastInstance();
         }
 
-        int size(){
+        int size() {
             return ins.getQueue(name).size();
         }
 
         boolean stop(boolean shutdown) throws Exception {
             running = false;
-            if(latch.await(30, TimeUnit.SECONDS)){
-                Thread.sleep(2*1000);
-                if (shutdown){
+            if (latch.await(30, TimeUnit.SECONDS)) {
+                Thread.sleep(2 * 1000);
+                if (shutdown) {
                     ins.getLifecycleService().shutdown();
                 }
                 System.out.println("successfully stopped");
                 return true;
-            }
-            else {
+            } else {
                 System.out.println("latch not finished properly");
                 return false;
             }
@@ -157,18 +154,17 @@ public class LongRunningQueueTest {
 
         public void run() throws Exception {
             final IQueue q = ins.getQueue(name);
-            for (int i=0; i < threadCount; i++){
-                new Thread(){
+            for (int i = 0; i < threadCount; i++) {
+                new Thread() {
                     public void run() {
-                        while (running){
+                        while (running) {
                             int random = rnd.nextInt(100);
-                            if(random > 45){
-                                if (q.offer("item")){
+                            if (random > 45) {
+                                if (q.offer("item")) {
                                     totalOffer.incrementAndGet();
                                 }
-                            }
-                            else {
-                                if(q.poll() != null){
+                            } else {
+                                if (q.poll() != null) {
                                     totalPoll.incrementAndGet();
                                 }
                             }
@@ -178,21 +174,20 @@ public class LongRunningQueueTest {
                 }.start();
             }
 
-            new Thread(){
+            new Thread() {
                 public void run() {
-                    while (running){
+                    while (running) {
                         int size = q.size();
-                        if (size > limit){
+                        if (size > limit) {
                             System.out.println("cleaning a little size: " + size);
-                            for (int i=0; i < limit/2; i++){
-                                if(q.poll() != null){
+                            for (int i = 0; i < limit / 2; i++) {
+                                if (q.poll() != null) {
                                     totalPoll.incrementAndGet();
                                 }
                             }
-                        }
-                        else{
+                        } else {
                             try {
-                                Thread.sleep(10*1000);
+                                Thread.sleep(10 * 1000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }

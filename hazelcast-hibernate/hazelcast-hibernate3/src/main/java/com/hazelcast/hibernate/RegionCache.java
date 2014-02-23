@@ -30,8 +30,8 @@ public interface RegionCache {
     boolean put(final Object key, final Object value, final Object currentVersion);
 
     boolean update(final Object key, final Object value,
-                final Object currentVersion, final Object previousVersion,
-                final SoftLock lock);
+                   final Object currentVersion, final Object previousVersion,
+                   final SoftLock lock);
 
     boolean remove(final Object key);
 

@@ -98,9 +98,9 @@ public class ClientQueuePerformanceTest {
             }
         }.start();
 
-        while (true){
+        while (true) {
             long sleepTime = 10;
-            Thread.sleep(sleepTime*1000);
+            Thread.sleep(sleepTime * 1000);
             long totalOfferVal = totalOffer.getAndSet(0);
             long totalPollVal = totalPoll.getAndSet(0);
             long totalPeekVal = totalPeek.getAndSet(0);
@@ -108,7 +108,7 @@ public class ClientQueuePerformanceTest {
 
             System.err.println("_______________________________________________________________________________________");
             System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal + ",\t peek: " + totalPeekVal);
-            System.err.println(" size: " + q.size() + " \t speed: " + ((totalOfferVal+totalPollVal+totalPeekVal)/sleepTime));
+            System.err.println(" size: " + q.size() + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
             System.err.println("---------------------------------------------------------------------------------------");
             System.err.println("");
         }
@@ -118,10 +118,10 @@ public class ClientQueuePerformanceTest {
 
         final CountDownLatch latch = new CountDownLatch(100);
         final CountDownLatch latch1 = new CountDownLatch(1000);
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<1000; i++){
-                    q.offer("item"+i);
+                for (int i = 0; i < 1000; i++) {
+                    q.offer("item" + i);
                     latch.countDown();
                     latch1.countDown();
                 }

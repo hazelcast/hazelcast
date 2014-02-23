@@ -23,9 +23,25 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static com.hazelcast.query.Predicates.*;
+import static com.hazelcast.query.Predicates.AbstractPredicate;
+import static com.hazelcast.query.Predicates.and;
+import static com.hazelcast.query.Predicates.between;
+import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.query.Predicates.greaterEqual;
+import static com.hazelcast.query.Predicates.greaterThan;
+import static com.hazelcast.query.Predicates.ilike;
+import static com.hazelcast.query.Predicates.lessEqual;
+import static com.hazelcast.query.Predicates.lessThan;
+import static com.hazelcast.query.Predicates.like;
+import static com.hazelcast.query.Predicates.notEqual;
+import static com.hazelcast.query.Predicates.or;
+import static com.hazelcast.query.Predicates.regex;
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
 
@@ -79,15 +95,15 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         int i = str.indexOf("'", start);
         int j = str.indexOf("'", i + 1);
         //ignore doubles
-        while(i == j-1){
-            i = str.indexOf("'", j+1);
-            j = str.indexOf("'", i+1);
+        while (i == j - 1) {
+            i = str.indexOf("'", j + 1);
+            j = str.indexOf("'", i + 1);
         }
         return i;
     }
 
     private String removeEscapes(String phrase) {
-        return (phrase.length() > 2) ? phrase.replace("''","'") : phrase;
+        return (phrase.length() > 2) ? phrase.replace("''", "'") : phrase;
     }
 
     private Predicate createPredicate(String sql) {
@@ -267,7 +283,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     }
 
     private void readObject(java.io.ObjectInputStream in)
-            throws IOException, ClassNotFoundException{
+            throws IOException, ClassNotFoundException {
         predicate = createPredicate(sql);
     }
 

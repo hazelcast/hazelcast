@@ -485,7 +485,7 @@
             </build>
         </profile>
 
-   </profiles>
+    </profiles>
 
     <distributionManagement>
         <repository>

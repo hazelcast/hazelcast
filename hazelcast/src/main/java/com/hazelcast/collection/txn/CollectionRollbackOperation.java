@@ -63,10 +63,9 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        if (removeOperation){
+        if (removeOperation) {
             getOrCreateContainer().rollbackRemove(itemId);
-        }
-        else {
+        } else {
             getOrCreateContainer().rollbackAdd(itemId);
         }
     }

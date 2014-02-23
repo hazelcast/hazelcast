@@ -68,7 +68,7 @@ public class RestValue implements DataSerializable {
         String contentTypeStr;
         if (contentType == null) {
             contentTypeStr = "unknown-content-type";
-        }else {
+        } else {
             contentTypeStr = bytesToString(contentType);
         }
 

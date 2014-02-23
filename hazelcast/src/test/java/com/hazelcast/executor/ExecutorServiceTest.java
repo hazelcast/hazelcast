@@ -18,8 +18,15 @@ package com.hazelcast.executor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -29,7 +36,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -38,12 +46,33 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -64,15 +93,15 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testManagedContextAndLocal()throws Exception{
+    public void testManagedContextAndLocal() throws Exception {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
-        config.setManagedContext(new ManagedContext(){
+        config.setManagedContext(new ManagedContext() {
             @Override
             public Object initialize(Object obj) {
-                if(obj instanceof RunnableWithManagedContext){
-                    RunnableWithManagedContext task = (RunnableWithManagedContext)obj;
-                    task.initializeCalled=true;
+                if (obj instanceof RunnableWithManagedContext) {
+                    RunnableWithManagedContext task = (RunnableWithManagedContext) obj;
+                    task.initializeCalled = true;
                 }
                 return obj;
             }
@@ -83,10 +112,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         RunnableWithManagedContext task = new RunnableWithManagedContext();
         executor.submit(task).get();
-        assertTrue("The task should have been initialized by the ManagedContext",task.initializeCalled);
+        assertTrue("The task should have been initialized by the ManagedContext", task.initializeCalled);
     }
 
-    static class RunnableWithManagedContext implements Runnable{
+    static class RunnableWithManagedContext implements Runnable {
         private volatile boolean initializeCalled = false;
 
         @Override
@@ -95,7 +124,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void hazelcastInstanceAwareAndLocal()throws Exception{
+    public void hazelcastInstanceAwareAndLocal() throws Exception {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
         final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
@@ -103,10 +132,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
         executor.submit(task).get();
-        assertTrue("The setHazelcastInstance should have been called",task.initializeCalled);
+        assertTrue("The setHazelcastInstance should have been called", task.initializeCalled);
     }
 
-    static class HazelcastInstanceAwareRunnable implements Runnable,HazelcastInstanceAware{
+    static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware {
         private volatile boolean initializeCalled = false;
 
         @Override
@@ -614,6 +643,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
         }
     }
+
     @Test
     public void testInvokeAllTimeoutCancelled() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
@@ -645,6 +675,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         }
     }
+
     @Test
     public void testInvokeAllTimeoutSuccess() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");

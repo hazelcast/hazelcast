@@ -22,7 +22,11 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -59,7 +63,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
             if (data != null) {
                 final ILogger logger = nodeEngine.getLogger(getClass());
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
+                    logger.finest("Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
                 }
                 final byte[] taskData = IOUtil.decompress(data);
                 in = serializationService.createObjectDataInput(taskData);
@@ -87,7 +91,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         }
     }
 
-    private static  class ErrorLoggingResponseHandler implements ResponseHandler {
+    private static class ErrorLoggingResponseHandler implements ResponseHandler {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {

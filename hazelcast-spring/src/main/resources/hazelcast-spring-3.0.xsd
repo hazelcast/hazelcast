@@ -164,7 +164,7 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="data-serializable-factories" >
+    <xs:element name="data-serializable-factories">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
@@ -172,7 +172,7 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="portable-factories" >
+    <xs:element name="portable-factories">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="portable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
@@ -180,7 +180,7 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="serializers" >
+    <xs:element name="serializers">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1"/>
@@ -814,9 +814,9 @@
 
     <xs:complexType name="serialization">
         <xs:sequence>
-            <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1" />
-            <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
-            <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
+            <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="use-native-byte-order" use="optional" type="xs:string" default="false"/>
         <xs:attribute name="byte-order" use="optional" default="BIG_ENDIAN">
@@ -836,7 +836,7 @@
 
     <xs:complexType name="network-client">
         <xs:sequence>
-            <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="xs:boolean" default="false"/>
@@ -870,7 +870,7 @@
 
     <xs:complexType name="listeners">
         <xs:sequence>
-            <xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 

@@ -110,7 +110,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
 
         @Override
         public String toString() {
-            return "Partition [" + + partitionId + "], owner=" + getOwner();
+            return "Partition [" + +partitionId + "], owner=" + getOwner();
         }
     }
 }

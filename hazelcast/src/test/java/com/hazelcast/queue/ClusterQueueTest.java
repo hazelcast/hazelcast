@@ -18,14 +18,16 @@ package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +38,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -173,16 +179,16 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
-        final CountDownLatch offerLatch = new CountDownLatch(2*100);
+        final CountDownLatch offerLatch = new CountDownLatch(2 * 100);
         new Thread(new Runnable() {
             public void run() {
                 try {
                     Thread.sleep(3000);
                     for (int i = 0; i < 100; i++) {
-                        if(q1.offer("item")){
+                        if (q1.offer("item")) {
                             offerLatch.countDown();
                         }
-                        if(q2.offer("item")){
+                        if (q2.offer("item")) {
                             offerLatch.countDown();
                         }
                     }
@@ -198,7 +204,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q1.take())){
+                        if ("item".equals(q1.take())) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -209,7 +215,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q2.take())){
+                        if ("item".equals(q2.take())) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -231,15 +237,15 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
-        final CountDownLatch offerLatch = new CountDownLatch(2*100);
+        final CountDownLatch offerLatch = new CountDownLatch(2 * 100);
         Thread.sleep(1000);
         new Thread(new Runnable() {
             public void run() {
                 for (int i = 0; i < 100; i++) {
-                    if(q1.offer("item")){
+                    if (q1.offer("item")) {
                         offerLatch.countDown();
                     }
-                    if(q2.offer("item")){
+                    if (q2.offer("item")) {
                         offerLatch.countDown();
                     }
                 }
@@ -253,7 +259,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q1.poll(5, TimeUnit.SECONDS))){
+                        if ("item".equals(q1.poll(5, TimeUnit.SECONDS))) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -264,7 +270,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q2.poll(5, TimeUnit.SECONDS))){
+                        if ("item".equals(q2.poll(5, TimeUnit.SECONDS))) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -301,10 +307,10 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 try {
                     Thread.sleep(3000);
                     for (int i = 0; i < 100; i++) {
-                        if (("item" + i).equals(q1.poll(2, TimeUnit.SECONDS))){
+                        if (("item" + i).equals(q1.poll(2, TimeUnit.SECONDS))) {
                             pollLatch.countDown();
                         }
-                        if (("item" + i).equals(q2.poll(2, TimeUnit.SECONDS))){
+                        if (("item" + i).equals(q2.poll(2, TimeUnit.SECONDS))) {
                             pollLatch.countDown();
                         }
                     }
@@ -320,7 +326,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if(q1.offer("item", 30, TimeUnit.SECONDS)){
+                        if (q1.offer("item", 30, TimeUnit.SECONDS)) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -331,7 +337,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if(q2.offer("item", 30, TimeUnit.SECONDS)){
+                        if (q2.offer("item", 30, TimeUnit.SECONDS)) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {

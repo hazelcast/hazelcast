@@ -77,6 +77,7 @@ public class AllTest {
 
     /**
      * Starts the test
+     *
      * @param args the number of threads to start
      */
     public static void main(String[] args) {

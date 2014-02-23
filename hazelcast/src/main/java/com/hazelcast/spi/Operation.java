@@ -60,7 +60,7 @@ public abstract class Operation implements DataSerializable {
     private transient ResponseHandler responseHandler;
     private transient long startTime;
 
-    public boolean isUrgent(){
+    public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
     }
 
@@ -154,7 +154,7 @@ public abstract class Operation implements DataSerializable {
                     throw new HazelcastException("Service with name '" + name + "' not found!");
                 } else {
                     throw new RetryableHazelcastException("HazelcastInstance[" + nodeEngine.getThisAddress()
-                        + "] is not active!");
+                            + "] is not active!");
                 }
             }
         }

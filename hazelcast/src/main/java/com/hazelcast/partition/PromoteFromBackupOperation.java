@@ -33,7 +33,7 @@ import java.util.Collection;
  */
 
 // runs locally...
-final class PromoteFromBackupOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation{
+final class PromoteFromBackupOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation {
 
     @Override
     public void run() throws Exception {

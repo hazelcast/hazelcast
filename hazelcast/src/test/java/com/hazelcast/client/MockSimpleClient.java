@@ -17,7 +17,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -63,7 +67,7 @@ public class MockSimpleClient implements SimpleClient {
     public Object receive() throws IOException {
         DataAdapter adapter = null;
         try {
-            adapter = (DataAdapter)connection.q.take();
+            adapter = (DataAdapter) connection.q.take();
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }

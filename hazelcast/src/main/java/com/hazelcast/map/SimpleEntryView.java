@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSerializable {
+public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
 
     private K key;
     private V value;

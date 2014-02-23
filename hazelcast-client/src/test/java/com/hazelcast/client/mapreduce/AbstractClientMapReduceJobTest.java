@@ -23,8 +23,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 
 public abstract class AbstractClientMapReduceJobTest {
 
-    protected ClientConfig buildClientConfig()
-    {
+    protected ClientConfig buildClientConfig() {
         ClientConfig config = new XmlClientConfigBuilder().build();
         return config;
     }

@@ -17,22 +17,22 @@
 package com.hazelcast.security.permission;
 
 public class MapPermission extends InstancePermission {
-	
-	private final static int PUT 			= 0x4;
-	private final static int REMOVE 		= 0x8;
-	private final static int READ 			= 0x16;
-	private final static int LISTEN 		= 0x32;
-	private final static int LOCK	 		= 0x64;
-	private final static int INDEX	 		= 0x128;
-    private final static int INTERCEPT	 	= 0x256;
-	private final static int ALL 			= CREATE | DESTROY | PUT | REMOVE | READ | LISTEN | LOCK | INDEX | INTERCEPT;
 
-	public MapPermission(String name, String... actions) {
-		super(name, actions);
-	}
+    private final static int PUT = 0x4;
+    private final static int REMOVE = 0x8;
+    private final static int READ = 0x16;
+    private final static int LISTEN = 0x32;
+    private final static int LOCK = 0x64;
+    private final static int INDEX = 0x128;
+    private final static int INTERCEPT = 0x256;
+    private final static int ALL = CREATE | DESTROY | PUT | REMOVE | READ | LISTEN | LOCK | INDEX | INTERCEPT;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+    public MapPermission(String name, String... actions) {
+        super(name, actions);
+    }
+
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -58,7 +58,7 @@ public class MapPermission extends InstancePermission {
                 mask |= INTERCEPT;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 
 }

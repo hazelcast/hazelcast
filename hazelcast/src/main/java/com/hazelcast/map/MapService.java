@@ -22,11 +22,27 @@ import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.merge.*;
-import com.hazelcast.map.operation.*;
+import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
+import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
+import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.map.operation.EvictKeysOperation;
+import com.hazelcast.map.operation.InvalidateNearCacheOperation;
+import com.hazelcast.map.operation.MapReplicationOperation;
+import com.hazelcast.map.operation.MergeOperation;
+import com.hazelcast.map.operation.NearCacheKeySetInvalidationOperation;
+import com.hazelcast.map.operation.PostJoinMapOperation;
+import com.hazelcast.map.operation.WanOriginatedDeleteOperation;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
@@ -41,29 +57,59 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.ReplicationSupportingService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.*;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.SortingUtil;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 /**
  * The SPI Service for the Map.
@@ -211,7 +257,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 // add your owned entries to the map so they will be merged
                 if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
                     Collection<Record> records = recordMap.get(mapContainer);
-                    if(records == null){
+                    if (records == null) {
                         records = new ArrayList<Record>();
                         recordMap.put(mapContainer, records);
                     }
@@ -521,8 +567,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public void destroyDistributedObject(String name) {
         MapContainer mapContainer = mapContainers.remove(name);
         if (mapContainer != null) {
-            if(mapContainer.isNearCacheEnabled())
-            {
+            if (mapContainer.isNearCacheEnabled()) {
                 NearCache nearCache = nearCacheMap.remove(name);
                 if (nearCache != null) {
                     nearCache.clear();
@@ -1060,7 +1105,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         RecordStore recordStore = container.getRecordStore(mapName);
         Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate)predicate : null;
+        final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
         for (Record record : records.values()) {
             Data key = record.getKey();
@@ -1073,7 +1118,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 if (pagingPredicate != null) {
                     Map.Entry anchor = pagingPredicate.getAnchor();
                     if (anchor != null &&
-                            SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), anchor, queryEntry) >= 0 ) {
+                            SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
                         continue;
                     }
                 }
@@ -1116,9 +1161,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId);
             Address owner = partition.getOwner();
-            if(owner == null){
+            if (owner == null) {
                 //no-op because no owner is set yet. Therefor we don't know anything about the map
-            }else if (owner.equals(thisAddress)) {
+            } else if (owner.equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
 
@@ -1185,9 +1230,8 @@ public class MapService implements ManagedService, MigrationAwareService,
         // add near cache heap cost.
         heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
         localMapStats.setHeapCost(heapCost);
-        if(mapContainer.getMapConfig().isNearCacheEnabled())
-        {
-            NearCacheStatsImpl nearCacheStats =  getNearCache(mapName).getNearCacheStats();
+        if (mapContainer.getMapConfig().isNearCacheEnabled()) {
+            NearCacheStatsImpl nearCacheStats = getNearCache(mapName).getNearCacheStats();
             localMapStats.setNearCacheStats(nearCacheStats);
         }
 

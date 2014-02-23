@@ -33,7 +33,6 @@
     <suppress checks="NPathComplexityCheck" files="StartServer.java"/>
 
 
-
     <suppress checks="" files="[\\/]executor[\\/]"/>
     <suppress checks="" files="[\\/]instance[\\/]"/>
     <suppress checks="" files="[\\/]jmx[\\/]"/>

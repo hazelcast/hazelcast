@@ -29,8 +29,8 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
-* @author ali 6/11/13
-*/
+ * @author ali 6/11/13
+ */
 public abstract class TxnCollectionRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;
@@ -55,7 +55,7 @@ public abstract class TxnCollectionRequest extends BaseTransactionRequest implem
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         IOUtil.writeNullableData(writer.getRawDataOutput(), value);
     }
 

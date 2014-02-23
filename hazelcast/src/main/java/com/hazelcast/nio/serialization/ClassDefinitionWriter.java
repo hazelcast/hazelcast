@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
-* @author mdogan 7/29/13
-*/
+ * @author mdogan 7/29/13
+ */
 final class ClassDefinitionWriter implements PortableWriter {
 
     private final SerializationContext context;

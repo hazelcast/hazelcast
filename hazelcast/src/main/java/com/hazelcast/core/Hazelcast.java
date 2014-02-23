@@ -65,16 +65,16 @@ public final class Hazelcast {
      * <p/>
      * To shutdown all running HazelcastInstances (all members on this JVM)
      * call {@link #shutdownAll()}.
-     *
+     * <p/>
      * Hazelcast will look into two places for the configuration file:
      * <ol>
-     *     <li>
-     *         System property: Hazelcast will first check if "hazelcast.config" system property is set to a file path.
-     *         Example: -Dhazelcast.config=C:/myhazelcast.xml.
-     *     </li>
-     *     <li>
-     *         Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
-     *     </li>
+     * <li>
+     * System property: Hazelcast will first check if "hazelcast.config" system property is set to a file path.
+     * Example: -Dhazelcast.config=C:/myhazelcast.xml.
+     * </li>
+     * <li>
+     * Classpath: If config file is not set as a system property, Hazelcast will check classpath for hazelcast.xml file.
+     * </li>
      * </ol>
      * If Hazelcast doesn't find any config file, it will happily start with default configuration (hazelcast-default.xml)
      * located in hazelcast.jar.
@@ -104,12 +104,12 @@ public final class Hazelcast {
 
     /**
      * Gets or creates the HazelcastInstance with a certain name.
-     *
+     * <p/>
      * If a Hazelcast with the same name as the configuration exists, then it is returned, otherwise it is created.
      *
      * @param config the Config.
      * @return the HazelcastInstance
-     * @throws NullPointerException if config is null.
+     * @throws NullPointerException     if config is null.
      * @throws IllegalArgumentException if the instancename of the config is null or empty.
      */
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
@@ -135,7 +135,7 @@ public final class Hazelcast {
     /**
      * Sets <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
      * is caught by Hazelcast threads.
-     *
+     * <p/>
      * <p>
      * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
      * <tt>OutOfMemoryError</tt>.
@@ -144,7 +144,6 @@ public final class Hazelcast {
      * </p>
      *
      * @param outOfMemoryHandler
-     *
      * @see OutOfMemoryError
      * @see OutOfMemoryHandler
      */

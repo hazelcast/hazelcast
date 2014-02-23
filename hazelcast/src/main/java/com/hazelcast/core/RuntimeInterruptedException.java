@@ -24,7 +24,7 @@ package com.hazelcast.core;
  * Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces
  * that don't have InterruptedException in their signatures. Users should be able to catch and handle
  * <tt>RuntimeInterruptedException</tt> in such cases as if their threads are interrupted on
- a blocking operation.
+ * a blocking operation.
  * </p>
  *
  * @see InterruptedException

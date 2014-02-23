@@ -43,6 +43,6 @@ abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
         return groups;
     }
 
-    protected abstract Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) ;
+    protected abstract Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers);
 
 }

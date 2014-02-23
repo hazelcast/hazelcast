@@ -19,7 +19,10 @@ package com.hazelcast.wan;
 import com.hazelcast.cluster.AuthorizationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.AddressUtil;
@@ -57,7 +60,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         WanReplicationEvent replicationEvent = new WanReplicationEvent(serviceName, eventObject);
 
         //if the replication event is published, we are done.
-        if(eventQueue.offer(replicationEvent)){
+        if (eventQueue.offer(replicationEvent)) {
             return;
         }
 
@@ -66,8 +69,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         //todo: isn't it dangerous to drop a ReplicationEvent?
         eventQueue.poll();
 
-        if(!eventQueue.offer(replicationEvent)){
-            logger.warning("Could not publish replication event: "+replicationEvent);
+        if (!eventQueue.offer(replicationEvent)) {
+            logger.warning("Could not publish replication event: " + replicationEvent);
         }
     }
 

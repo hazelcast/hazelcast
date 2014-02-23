@@ -36,14 +36,12 @@ public interface ClientService {
 
     /**
      * @param clientListener ClientListener
-     *
      * @return returns registration id.
      */
     String addClientListener(ClientListener clientListener);
 
     /**
      * @param registrationId Id of listener registration.
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeClientListener(String registrationId);

@@ -80,7 +80,7 @@ public final class TcpIpConnection implements Connection {
     public boolean write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
-                logger.finest( "Connection is closed, won't write packet -> " + packet);
+                logger.finest("Connection is closed, won't write packet -> " + packet);
             }
             return false;
         }
@@ -196,7 +196,7 @@ public final class TcpIpConnection implements Connection {
         try {
             close0();
         } catch (Exception e) {
-            logger.warning( e);
+            logger.warning(e);
         }
         Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
         String message = "Connection [" + connAddress + "] lost. Reason: ";

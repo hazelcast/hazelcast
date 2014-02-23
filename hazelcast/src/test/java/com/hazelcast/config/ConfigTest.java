@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 public class ConfigTest {
 
     @Test
-    public void test(){
+    public void test() {
         Config config = new Config();
         QueueConfig queueConfig = new QueueConfig().setName("somequeue");
         config.addQueueConfig(queueConfig);

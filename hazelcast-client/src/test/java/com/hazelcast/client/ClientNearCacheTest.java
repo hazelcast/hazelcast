@@ -47,6 +47,7 @@ public class ClientNearCacheTest {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
+
     @Test
     public void testNearCache() {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
@@ -96,7 +97,7 @@ public class ClientNearCacheTest {
         HashSet keys = new HashSet();
         int size = 1000;
         for (int i = 0; i < size; i++) {
-            map.put(i,i);
+            map.put(i, i);
             keys.add(i);
         }
         //populate near cache
@@ -104,7 +105,7 @@ public class ClientNearCacheTest {
             map.get(i);
         }
         map.getAll(keys);
-        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(1000, stats.getHits());
     }
 
@@ -121,7 +122,7 @@ public class ClientNearCacheTest {
         HashSet keys = new HashSet();
         int size = 1000;
         for (int i = 0; i < size; i++) {
-            map.put(i,i);
+            map.put(i, i);
             keys.add(i);
         }
         //populate near cache
@@ -132,7 +133,7 @@ public class ClientNearCacheTest {
             Future<Integer> async = map.getAsync(i);
             async.get();
         }
-        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(1000, stats.getHits());
 
     }

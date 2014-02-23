@@ -124,7 +124,7 @@ public class MapContainer {
             loadInitialKeys();
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
-                final ExecutionService executionService =  nodeEngine.getExecutionService();
+                final ExecutionService executionService = nodeEngine.getExecutionService();
                 executionService.register(mapStoreScheduledExecutorName, 1, 100000);
                 mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(mapStoreScheduledExecutorName), new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
                 mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(mapStoreScheduledExecutorName), new MapStoreDeleteProcessor(this, mapService), ScheduleType.SCHEDULE_IF_NEW);
@@ -188,10 +188,11 @@ public class MapContainer {
             }
         }, 20, TimeUnit.MINUTES);
     }
-    public void shutDownMapStoreScheduledExecutor()
-    {
+
+    public void shutDownMapStoreScheduledExecutor() {
         mapService.getNodeEngine().getExecutionService().shutdownExecutor(mapStoreScheduledExecutorName);
     }
+
     public Map<Data, Object> getInitialKeys() {
         return initialKeys;
     }
@@ -285,7 +286,7 @@ public class MapContainer {
         return partitioningStrategy;
     }
 
-    public SizeEstimator getNearCacheSizeEstimator(){
+    public SizeEstimator getNearCacheSizeEstimator() {
         return nearCacheSizeEstimator;
     }
 

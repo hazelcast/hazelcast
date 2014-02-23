@@ -40,7 +40,7 @@ public class QueueConfigReadOnly extends QueueConfig {
 
     public QueueStoreConfig getQueueStoreConfig() {
         final QueueStoreConfig queueStoreConfig = super.getQueueStoreConfig();
-        if (queueStoreConfig == null ){
+        if (queueStoreConfig == null) {
             return null;
         }
         return queueStoreConfig.getAsReadOnly();

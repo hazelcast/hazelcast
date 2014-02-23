@@ -18,13 +18,9 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-
-import java.io.IOException;
 
 public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, DataSerializable {
 

@@ -28,7 +28,7 @@ public class ListConfig extends CollectionConfig<ListConfig> {
     }
 
     public ListConfig getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new ListConfigReadOnly(this);
         }
         return readOnly;

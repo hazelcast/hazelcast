@@ -25,8 +25,8 @@ import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
 
 /**
-* @author ali 6/11/13
-*/
+ * @author ali 6/11/13
+ */
 public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalList<E> {
 
     public ClientTxnListProxy(String name, TransactionContextProxy proxy) {

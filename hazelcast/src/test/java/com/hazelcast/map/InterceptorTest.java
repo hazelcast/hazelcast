@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -130,22 +129,22 @@ public class InterceptorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("map");
         for (int i = 0; i < 100; i++) {
-            map.put(i,i);
+            map.put(i, i);
         }
         map.addInterceptor(new NegativeInterceptor());
         for (int i = 0; i < 100; i++) {
-            assertEquals(i*-1, map.get(i));
+            assertEquals(i * -1, map.get(i));
         }
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         for (int i = 0; i < 100; i++) {
-            assertEquals(i*-1, map.get(i));
+            assertEquals(i * -1, map.get(i));
         }
     }
 
     static class NegativeInterceptor implements MapInterceptor, Serializable {
         @Override
         public Object interceptGet(Object value) {
-            return ((Integer)value)*-1;
+            return ((Integer) value) * -1;
         }
 
         @Override

@@ -20,7 +20,12 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -79,9 +84,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     @Override
     public TopicProxy createDistributedObject(String name) {
-        if (isGlobalOrderingEnabled(name)){
+        if (isGlobalOrderingEnabled(name)) {
             return new TotalOrderedTopicProxy(name, nodeEngine, this);
-        }else{
+        } else {
             return new TopicProxy(name, nodeEngine, this);
         }
     }
@@ -123,7 +128,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, name.hashCode());
     }
 
-    public String addMessageListener(String name, MessageListener listener){
+    public String addMessageListener(String name, MessageListener listener) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
         return eventRegistration.getId();

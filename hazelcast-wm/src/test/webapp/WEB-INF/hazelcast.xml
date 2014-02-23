@@ -15,9 +15,10 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd"
-           xmlns="http://www.hazelcast.com/schema/config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hazelcast
+        xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd"
+        xmlns="http://www.hazelcast.com/schema/config"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
         <name>dev</name>
         <password>dev-pass</password>
@@ -47,8 +48,8 @@
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
         </interfaces>
-        <ssl enabled="false" />
-        <socket-interceptor enabled="false" />
+        <ssl enabled="false"/>
+        <socket-interceptor enabled="false"/>
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as

@@ -23,7 +23,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author ali 1/18/13
@@ -59,7 +64,7 @@ public class MultiMapMigrationOperation extends AbstractOperation {
                 Collection<MultiMapRecord> coll = wrapper.getCollection();
                 out.writeInt(coll.size());
                 String collectionType = MultiMapConfig.ValueCollectionType.SET.name();
-                if (coll instanceof List){
+                if (coll instanceof List) {
                     collectionType = MultiMapConfig.ValueCollectionType.LIST.name();
                 }
                 out.writeUTF(collectionType);
@@ -83,7 +88,7 @@ public class MultiMapMigrationOperation extends AbstractOperation {
                 int collSize = in.readInt();
                 String collectionType = in.readUTF();
                 Collection<MultiMapRecord> coll;
-                if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())){
+                if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())) {
                     coll = new HashSet<MultiMapRecord>();
                 } else {
                     coll = new LinkedList<MultiMapRecord>();

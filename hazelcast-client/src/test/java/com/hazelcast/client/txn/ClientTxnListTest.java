@@ -30,7 +30,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 6/11/13
@@ -45,7 +47,7 @@ public class ClientTxnListTest {
     static HazelcastInstance second;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         server = Hazelcast.newHazelcastInstance();
 //        second = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);

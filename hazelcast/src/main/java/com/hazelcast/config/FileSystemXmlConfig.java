@@ -24,7 +24,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
 
 
 /**
@@ -40,9 +39,10 @@ public class FileSystemXmlConfig extends Config {
      * variables in the XML.
      *
      * @param configFilename the path of the file.
-     * @throws NullPointerException if configFilename is null.
+     * @throws NullPointerException  if configFilename is null.
      * @throws FileNotFoundException fi the file is not found.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                               if the XML content is invalid
      */
     public FileSystemXmlConfig(String configFilename) throws FileNotFoundException {
         this(configFilename, System.getProperties());
@@ -53,11 +53,12 @@ public class FileSystemXmlConfig extends Config {
      * Creates a Config based on some Hazelcast xml file.
      *
      * @param configFilename the path of the file.
-     * @param properties the Properties to use to resolve variables in the XML.
-     * @throws FileNotFoundException fi the file is not found.
-     * @throws NullPointerException if configFilename is null.
+     * @param properties     the Properties to use to resolve variables in the XML.
+     * @throws FileNotFoundException    fi the file is not found.
+     * @throws NullPointerException     if configFilename is null.
      * @throws IllegalArgumentException if properties is null.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public FileSystemXmlConfig(String configFilename, Properties properties) throws FileNotFoundException {
         this(new File(configFilename), properties);
@@ -69,7 +70,8 @@ public class FileSystemXmlConfig extends Config {
      *
      * @param configFile the configuration file.
      * @throws FileNotFoundException if the file doesn't exist.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                               if the XML content is invalid
      */
     public FileSystemXmlConfig(File configFile) throws FileNotFoundException {
         this(configFile, System.getProperties());
@@ -81,15 +83,16 @@ public class FileSystemXmlConfig extends Config {
      * @param configFile the configuration file.
      * @param properties the Properties to resolve variables in the XML.
      * @throws IllegalArgumentException if configFile or properties is null.
-     * @throws FileNotFoundException if the file doesn't exist.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws FileNotFoundException    if the file doesn't exist.
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public FileSystemXmlConfig(File configFile, Properties properties) throws FileNotFoundException {
-        if(configFile == null){
+        if (configFile == null) {
             throw new IllegalArgumentException("configFile can't be null");
         }
 
-        if(properties == null){
+        if (properties == null) {
             throw new IllegalArgumentException("properties can't be null");
         }
 

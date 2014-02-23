@@ -61,7 +61,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private Config config;
 
     @After
-    public  void tearDown() throws IOException {
+    public void tearDown() throws IOException {
         Hazelcast.shutdownAll();
     }
 
@@ -244,7 +244,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
                 for (; ; ) {
                     Integer value = map.get(key);
                     if (value == null) value = 0;
-                    if(map.replace(key, value,value + increment)){
+                    if (map.replace(key, value, value + increment)) {
                         break;
                     }
                 }

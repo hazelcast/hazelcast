@@ -35,7 +35,16 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -190,11 +199,11 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private DummyInternalPartition[] toPartitionView(Address[][] state){
+    private DummyInternalPartition[] toPartitionView(Address[][] state) {
         DummyInternalPartition[] result = new DummyInternalPartition[state.length];
-        for(int partitionId=0;partitionId<state.length;partitionId++){
+        for (int partitionId = 0; partitionId < state.length; partitionId++) {
             DummyInternalPartition partitionView = new DummyInternalPartition(state[partitionId]);
-            result[partitionId]=partitionView;
+            result[partitionId] = partitionView;
         }
         return result;
     }
@@ -223,7 +232,7 @@ public class PartitionStateGeneratorTest {
 
         @Override
         public Address getReplicaAddress(int replicaIndex) {
-           return replicas[replicaIndex];
+            return replicas[replicaIndex];
         }
 
         @Override
@@ -237,7 +246,7 @@ public class PartitionStateGeneratorTest {
         for (Member member : members) {
             addresses.add(((MemberImpl) member).getAddress());
         }
-        for (int partitionId=0;partitionId<state.length;partitionId++) {
+        for (int partitionId = 0; partitionId < state.length; partitionId++) {
             Address[] replicas = state[partitionId];
             for (int i = 0; i < replicas.length; i++) {
                 if (replicas[i] != null && !addresses.contains(replicas[i])) {
@@ -250,10 +259,10 @@ public class PartitionStateGeneratorTest {
                         }
                     }
                     for (int a = 0; a < k; a++) {
-                        replicas[i+a]=validAddresses[a];
+                        replicas[i + a] = validAddresses[a];
                     }
                     for (int a = i + k; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
-                        replicas[a]=null;
+                        replicas[a] = null;
                     }
                     break;
                 }
@@ -313,7 +322,7 @@ public class PartitionStateGeneratorTest {
         final Map<MemberGroup, GroupPartitionState> groupPartitionStates = new HashMap<MemberGroup, GroupPartitionState>();
         final Set<Address> set = new HashSet<Address>();
         final int avgPartitionPerGroup = partitionCount / groups.size();
-        for(int partitionId=0;partitionId<partitionCount;partitionId++){
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address[] replicas = state[partitionId];
             for (int i = 0; i < replicaCount; i++) {
                 Address owner = replicas[i];
@@ -401,11 +410,11 @@ public class PartitionStateGeneratorTest {
         }
         final float r = 2f;
         Assert.assertTrue("Too low partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: "+ partitionCount +  ", Replica: " + replica +
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
                 ", \nOwner: " + owner, count >= (float) (average) / r);
 
         Assert.assertTrue("Too high partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: "+ partitionCount +  ", Replica: " + replica +
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
                 ", \nOwner: " + owner, count <= (float) (average) * r);
     }
 

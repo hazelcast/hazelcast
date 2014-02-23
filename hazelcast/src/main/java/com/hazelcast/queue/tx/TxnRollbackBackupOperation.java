@@ -43,10 +43,9 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
     }
 
     public void run() throws Exception {
-        if (pollOperation){
+        if (pollOperation) {
             response = getOrCreateContainer().txnRollbackPoll(itemId, true);
-        }
-        else {
+        } else {
             response = getOrCreateContainer().txnRollbackOfferBackup(itemId);
         }
     }

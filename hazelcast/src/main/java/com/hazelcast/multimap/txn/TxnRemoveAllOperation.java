@@ -16,9 +16,13 @@
 
 package com.hazelcast.multimap.txn;
 
-import com.hazelcast.multimap.*;
-import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.MultiMapWrapper;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -47,7 +51,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
     public TxnRemoveAllOperation(String name, Data dataKey, Collection<MultiMapRecord> records) {
         super(name, dataKey);
         this.recordIds = new ArrayList<Long>();
-        for (MultiMapRecord record: records){
+        for (MultiMapRecord record : records) {
             recordIds.add(record.getRecordId());
         }
     }
@@ -57,19 +61,19 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         MultiMapContainer container = getOrCreateContainer();
         MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
         response = true;
-        for (Long recordId: recordIds){
-            if(!wrapper.containsRecordId(recordId)){
+        for (Long recordId : recordIds) {
+            if (!wrapper.containsRecordId(recordId)) {
                 response = false;
                 return;
             }
         }
         Collection<MultiMapRecord> coll = wrapper.getCollection();
         removed = new LinkedList<MultiMapRecord>();
-        for (Long recordId: recordIds){
+        for (Long recordId : recordIds) {
             Iterator<MultiMapRecord> iter = coll.iterator();
-            while (iter.hasNext()){
+            while (iter.hasNext()) {
                 MultiMapRecord record = iter.next();
-                if (record.getRecordId() == recordId){
+                if (record.getRecordId() == recordId) {
                     iter.remove();
                     removed.add(record);
                     break;
@@ -83,7 +87,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
+        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         final MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoves(elapsed);
         if (removed != null) {
@@ -109,7 +113,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(recordIds.size());
-        for (Long recordId: recordIds){
+        for (Long recordId : recordIds) {
             out.writeLong(recordId);
         }
     }
@@ -118,7 +122,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         super.readInternal(in);
         int size = in.readInt();
         recordIds = new ArrayList<Long>();
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             recordIds.add(in.readLong());
         }
     }

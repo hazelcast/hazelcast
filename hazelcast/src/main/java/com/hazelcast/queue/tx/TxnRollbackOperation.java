@@ -45,10 +45,9 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     }
 
     public void run() throws Exception {
-        if (pollOperation){
+        if (pollOperation) {
             response = getOrCreateContainer().txnRollbackPoll(itemId, false);
-        }
-        else {
+        } else {
             response = getOrCreateContainer().txnRollbackOffer(itemId);
         }
     }
@@ -82,7 +81,7 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     }
 
     public WaitNotifyKey getNotifiedKey() {
-        if (pollOperation){
+        if (pollOperation) {
             return getOrCreateContainer().getPollWaitNotifyKey();
         }
         return getOrCreateContainer().getOfferWaitNotifyKey();

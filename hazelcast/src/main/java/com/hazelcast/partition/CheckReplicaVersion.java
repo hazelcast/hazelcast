@@ -22,7 +22,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 4/11/13

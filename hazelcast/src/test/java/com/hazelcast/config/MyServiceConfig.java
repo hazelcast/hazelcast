@@ -17,8 +17,8 @@
 package com.hazelcast.config;
 
 /**
-* @author mdogan 6/24/13
-*/
+ * @author mdogan 6/24/13
+ */
 
 class MyServiceConfig {
 

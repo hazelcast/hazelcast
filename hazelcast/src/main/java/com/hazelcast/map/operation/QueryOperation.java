@@ -39,7 +39,14 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -55,7 +62,7 @@ public class QueryOperation extends AbstractMapOperation {
         super(mapName);
         this.predicate = predicate;
         if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate)predicate;
+            pagingPredicate = (PagingPredicate) predicate;
         }
     }
 
@@ -126,7 +133,7 @@ public class QueryOperation extends AbstractMapOperation {
             toMerge.addAll(collection);
         }
         Collections.sort(toMerge, wrapperComparator);
-        if (toMerge.size() > pagingPredicate.getPageSize() ) {
+        if (toMerge.size() > pagingPredicate.getPageSize()) {
             toMerge = toMerge.subList(0, pagingPredicate.getPageSize());
         }
         for (QueryableEntry entry : toMerge) {
@@ -205,7 +212,7 @@ public class QueryOperation extends AbstractMapOperation {
                         Map.Entry anchor = pagingPredicate.getAnchor();
                         final Comparator comparator = pagingPredicate.getComparator();
                         if (anchor != null &&
-                                SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry)  >= 0) {
+                                SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
                             continue;
                         }
                     }

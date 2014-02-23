@@ -93,7 +93,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         retain = in.readBoolean();
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final Data value = new Data();
             value.readData(in);
             valueSet.add(value);

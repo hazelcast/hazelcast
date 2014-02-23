@@ -31,7 +31,10 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -44,7 +47,7 @@ import static org.junit.Assert.*;
 public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test
-    public void testAcquire(){
+    public void testAcquire() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -66,7 +69,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRelease(){
+    public void testRelease() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -83,7 +86,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMultipleAcquire(){
+    public void testMultipleAcquire() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -104,7 +107,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMultipleRelease(){
+    public void testMultipleRelease() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -120,7 +123,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDrain(){
+    public void testDrain() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -140,7 +143,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testReduce(){
+    public void testReduce() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -158,7 +161,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTryAcquire(){
+    public void testTryAcquire() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -176,7 +179,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTryAcquireMultiple(){
+    public void testTryAcquireMultiple() {
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -204,8 +207,14 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
         class Counter {
             int count = 0;
-            void inc() {count++;}
-            int get() {return count;}
+
+            void inc() {
+                count++;
+            }
+
+            int get() {
+                return count;
+            }
         }
         final Counter counter = new Counter();
 
@@ -315,7 +324,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSemaphoreInit(){
+    public void testSemaphoreInit() {
         final Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
 

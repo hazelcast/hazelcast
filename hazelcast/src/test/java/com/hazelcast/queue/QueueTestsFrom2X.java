@@ -17,7 +17,11 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -28,12 +32,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 6/3/13
@@ -260,7 +274,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final long sleep = 2000;
         final String name = "listenerLifecycle";
         IQueue q = instance.getQueue(name);
-        final CountDownLatch qLatch = new CountDownLatch(3) ;
+        final CountDownLatch qLatch = new CountDownLatch(3);
         final ItemListener ql = new ItemListener() {
             public void itemAdded(ItemEvent itemEvent) {
                 qLatch.countDown();
@@ -469,6 +483,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
             public void itemAdded(ItemEvent<String> item) {
                 offerLatch.countDown();
             }
+
             public void itemRemoved(ItemEvent<String> item) {
                 pollLatch.countDown();
             }

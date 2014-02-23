@@ -87,8 +87,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     } catch (ExecutionException e) {
                         final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Error while executing post-join operations -> "
-                                    + e.getClass().getSimpleName() + "[" +e.getMessage() + "]");
+                            logger.finest("Error while executing post-join operations -> "
+                                    + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
                         }
                     }
                 }

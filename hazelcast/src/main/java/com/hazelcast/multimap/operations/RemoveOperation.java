@@ -16,14 +16,15 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.*;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Collection;

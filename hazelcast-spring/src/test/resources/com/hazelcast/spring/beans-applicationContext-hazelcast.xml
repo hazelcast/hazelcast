@@ -42,7 +42,7 @@
     </hz:hazelcast>
 
     <hz:client id="client" lazy-init="true" scope="prototype">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"

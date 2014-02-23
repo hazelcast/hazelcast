@@ -22,14 +22,25 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
-import com.hazelcast.client.proxy.*;
+import com.hazelcast.client.proxy.ClientAtomicLongProxy;
+import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
+import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
+import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
+import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
+import com.hazelcast.client.proxy.ClientListProxy;
+import com.hazelcast.client.proxy.ClientLockProxy;
+import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.proxy.ClientMapReduceProxy;
+import com.hazelcast.client.proxy.ClientMultiMapProxy;
+import com.hazelcast.client.proxy.ClientQueueProxy;
+import com.hazelcast.client.proxy.ClientSemaphoreProxy;
+import com.hazelcast.client.proxy.ClientSetProxy;
+import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
@@ -43,6 +54,8 @@ import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -51,7 +64,9 @@ import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -69,7 +84,7 @@ public final class ProxyManager {
     public ProxyManager(HazelcastClient client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 if (listenerConfig.getImplementation() instanceof DistributedObjectListener) {
                     addDistributedObjectListener((DistributedObjectListener) listenerConfig.getImplementation());
@@ -155,10 +170,10 @@ public final class ProxyManager {
             }
         });
 
-        for (ProxyFactoryConfig proxyFactoryConfig:config.getProxyFactoryConfigs()){
+        for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
             try {
                 ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(config.getClassLoader(), proxyFactoryConfig.getClassName());
-                register(proxyFactoryConfig.getService(),clientProxyFactory);
+                register(proxyFactoryConfig.getService(), clientProxyFactory);
             } catch (Exception e) {
                 logger.severe(e);
             }
@@ -184,7 +199,7 @@ public final class ProxyManager {
         final ClientProxy clientProxy = factory.create(id);
         initialize(clientProxy);
         final ClientProxy current = proxies.putIfAbsent(ns, clientProxy);
-        if (current != null){
+        if (current != null) {
             return current;
         }
         return clientProxy;
@@ -206,7 +221,7 @@ public final class ProxyManager {
                 client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig()));
     }
 
-    public Collection<? extends DistributedObject> getDistributedObjects(){
+    public Collection<? extends DistributedObject> getDistributedObjects() {
         return Collections.unmodifiableCollection(proxies.values());
     }
 
@@ -219,17 +234,17 @@ public final class ProxyManager {
         ClientContext context = new ClientContext(client.getSerializationService(), client.getClientClusterService(),
                 client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig());
 
-        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>(){
+        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>() {
             public void handle(PortableDistributedObjectEvent e) {
                 final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
                 ClientProxy proxy = proxies.get(ns);
-                if (proxy == null){
+                if (proxy == null) {
                     proxy = getProxy(e.getServiceName(), e.getName());
                 }
                 final DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
-                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())){
+                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())) {
                     listener.distributedObjectCreated(event);
-                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())){
+                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())) {
                     listener.distributedObjectDestroyed(event);
                 }
             }

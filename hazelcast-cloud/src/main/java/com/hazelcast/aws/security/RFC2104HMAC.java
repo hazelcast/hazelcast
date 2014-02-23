@@ -27,7 +27,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class RFC2104HMAC {
 
-    private RFC2104HMAC(){}
+    private RFC2104HMAC() {
+    }
 
     public static String calculateRFC2104HMAC(String data, String key)
             throws SignatureException {

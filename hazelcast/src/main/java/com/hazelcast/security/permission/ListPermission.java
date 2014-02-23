@@ -17,19 +17,19 @@
 package com.hazelcast.security.permission;
 
 public class ListPermission extends InstancePermission {
-	
-	private final static int ADD 			= 0x4;
-	private final static int READ 			= 0x8;
-	private final static int REMOVE			= 0x16;
-	private final static int LISTEN 		= 0x32;
-	private final static int ALL 			= ADD | REMOVE | READ | CREATE | DESTROY | LISTEN ;
 
-	public ListPermission(String name, String... actions) {
-		super(name, actions);
-	}
+    private final static int ADD = 0x4;
+    private final static int READ = 0x8;
+    private final static int REMOVE = 0x16;
+    private final static int LISTEN = 0x32;
+    private final static int ALL = ADD | REMOVE | READ | CREATE | DESTROY | LISTEN;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+    public ListPermission(String name, String... actions) {
+        super(name, actions);
+    }
+
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -49,6 +49,6 @@ public class ListPermission extends InstancePermission {
                 mask |= LISTEN;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 }

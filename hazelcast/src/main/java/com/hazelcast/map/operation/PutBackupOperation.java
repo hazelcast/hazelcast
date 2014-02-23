@@ -59,7 +59,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             updateSizeEstimator(calculateRecordSize(record));
         }
 
-        if(recordInfo != null) {
+        if (recordInfo != null) {
             mapService.applyRecordInfo(record, name, recordInfo);
         }
 
@@ -99,11 +99,11 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return MapDataSerializerHook.PUT_BACKUP;
     }
 
-    private void updateSizeEstimator( long recordSize ) {
-        recordStore.getSizeEstimator().add( recordSize );
+    private void updateSizeEstimator(long recordSize) {
+        recordStore.getSizeEstimator().add(recordSize);
     }
 
-    private long calculateRecordSize( Record record ) {
+    private long calculateRecordSize(Record record) {
         return recordStore.getSizeEstimator().getCost(record);
     }
 

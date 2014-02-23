@@ -16,9 +16,8 @@
 
 package com.hazelcast.map.record;
 
-import com.hazelcast.nio.serialization.Data;
-
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * TODO: need a better name than RecordFactory!

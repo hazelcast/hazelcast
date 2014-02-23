@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.HazelcastUtil;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -85,7 +83,7 @@ public final class UTFEncoderDecoder {
                                byte[] buffer) throws IOException {
         int utfLength = 0;
         int c, count = 0;
-            /* use charAt instead of copying String to char array */
+        /* use charAt instead of copying String to char array */
         for (int i = beginIndex; i < endIndex; i++) {
             c = str.charAt(i);
             if ((c >= 0x0001) && (c <= 0x007F)) {

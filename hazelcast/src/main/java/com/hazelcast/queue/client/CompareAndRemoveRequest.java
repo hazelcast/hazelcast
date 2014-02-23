@@ -60,10 +60,10 @@ public class CompareAndRemoveRequest extends QueueRequest {
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeBoolean("r",retain);
-        writer.writeInt("s",dataList.size());
+        writer.writeBoolean("r", retain);
+        writer.writeInt("s", dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
-        for (Data data: dataList){
+        for (Data data : dataList) {
             data.writeData(out);
         }
     }
@@ -74,7 +74,7 @@ public class CompareAndRemoveRequest extends QueueRequest {
         int size = reader.readInt("s");
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
             dataList.add(data);

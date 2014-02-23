@@ -25,8 +25,8 @@ import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
 
 /**
-* @author ali 6/11/13
-*/
+ * @author ali 6/11/13
+ */
 public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalSet<E> {
 
     public ClientTxnSetProxy(String name, TransactionContextProxy proxy) {

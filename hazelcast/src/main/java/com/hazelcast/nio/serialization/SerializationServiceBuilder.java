@@ -18,7 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
@@ -26,7 +25,10 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author mdogan 6/4/13
@@ -127,7 +129,7 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
-    public SerializationServiceBuilder setHazelcastInstance(HazelcastInstance hazelcastInstance){
+    public SerializationServiceBuilder setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         return this;
     }
@@ -161,7 +163,7 @@ public final class SerializationServiceBuilder {
     }
 
     public SerializationService build() {
-            if (version < 0) {
+        if (version < 0) {
             version = 0;
         }
         if (config != null) {
@@ -187,7 +189,7 @@ public final class SerializationServiceBuilder {
                 serializer = (Serializer) value;
             }
             if (value instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware)value).setHazelcastInstance(hazelcastInstance);
+                ((HazelcastInstanceAware) value).setHazelcastInstance(hazelcastInstance);
             }
             if (ClassLoaderUtil.isInternalType(value.getClass())) {
                 ss.safeRegister(serializationType, serializer);
@@ -208,8 +210,8 @@ public final class SerializationServiceBuilder {
                     }
                 }
 
-                if(serializer instanceof HazelcastInstanceAware){
-                    ((HazelcastInstanceAware)serializer).setHazelcastInstance(hazelcastInstance);
+                if (serializer instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) serializer).setHazelcastInstance(hazelcastInstance);
                 }
 
                 ss.registerGlobal(serializer);
@@ -235,12 +237,12 @@ public final class SerializationServiceBuilder {
     }
 
     private void addConfigDataSerializableFactories(final Map<Integer, DataSerializableFactory> dataSerializableFactories,
-                                                           SerializationConfig config, ClassLoader cl) {
+                                                    SerializationConfig config, ClassLoader cl) {
 
         for (Map.Entry<Integer, DataSerializableFactory> entry : config.getDataSerializableFactories().entrySet()) {
             Integer factoryId = entry.getKey();
             DataSerializableFactory factory = entry.getValue();
-            if (factoryId <= 0 ) {
+            if (factoryId <= 0) {
                 throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + factory);
             }
             if (dataSerializableFactories.containsKey(factoryId)) {
@@ -252,7 +254,7 @@ public final class SerializationServiceBuilder {
         for (Map.Entry<Integer, String> entry : config.getDataSerializableFactoryClasses().entrySet()) {
             Integer factoryId = entry.getKey();
             String factoryClassName = entry.getValue();
-            if (factoryId <= 0 ) {
+            if (factoryId <= 0) {
                 throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + factoryClassName);
             }
             if (dataSerializableFactories.containsKey(factoryId)) {
@@ -268,20 +270,20 @@ public final class SerializationServiceBuilder {
             dataSerializableFactories.put(factoryId, factory);
         }
 
-        for(DataSerializableFactory f: dataSerializableFactories.values()){
-            if(f instanceof HazelcastInstanceAware){
-                ((HazelcastInstanceAware)f).setHazelcastInstance(hazelcastInstance);
+        for (DataSerializableFactory f : dataSerializableFactories.values()) {
+            if (f instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) f).setHazelcastInstance(hazelcastInstance);
             }
         }
     }
 
     private void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories,
-                                                   SerializationConfig config, ClassLoader cl) {
+                                            SerializationConfig config, ClassLoader cl) {
 
         for (Map.Entry<Integer, PortableFactory> entry : config.getPortableFactories().entrySet()) {
             Integer factoryId = entry.getKey();
             PortableFactory factory = entry.getValue();
-            if (factoryId <= 0 ) {
+            if (factoryId <= 0) {
                 throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factory);
             }
             if (portableFactories.containsKey(factoryId)) {
@@ -294,7 +296,7 @@ public final class SerializationServiceBuilder {
         for (Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
             Integer factoryId = entry.getKey();
             String factoryClassName = entry.getValue();
-            if (factoryId <= 0 ) {
+            if (factoryId <= 0) {
                 throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factoryClassName);
             }
             if (portableFactories.containsKey(factoryId)) {
@@ -309,9 +311,9 @@ public final class SerializationServiceBuilder {
             portableFactories.put(factoryId, factory);
         }
 
-        for(PortableFactory f: portableFactories.values()){
-            if(f instanceof HazelcastInstanceAware){
-                ((HazelcastInstanceAware)f).setHazelcastInstance(hazelcastInstance);
+        for (PortableFactory f : portableFactories.values()) {
+            if (f instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) f).setHazelcastInstance(hazelcastInstance);
             }
         }
     }

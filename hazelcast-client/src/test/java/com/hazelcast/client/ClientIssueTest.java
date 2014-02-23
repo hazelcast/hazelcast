@@ -20,7 +20,21 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
@@ -39,7 +53,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @ali 7/3/13

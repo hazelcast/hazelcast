@@ -17,16 +17,24 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 4/11/13
@@ -84,7 +92,7 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
             syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             final Address target = getCallerAddress();
             if (logger.isFinestEnabled()) {
-                logger.finest( "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
+                logger.finest("Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
             }
             final OperationService operationService = nodeEngine.getOperationService();
             operationService.send(syncResponse, target);

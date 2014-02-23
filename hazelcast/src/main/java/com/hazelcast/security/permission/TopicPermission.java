@@ -17,17 +17,17 @@
 package com.hazelcast.security.permission;
 
 public class TopicPermission extends InstancePermission {
-	
-	private final static int PUBLISH 		= 0x4;
-	private final static int LISTEN 		= 0x8;
-	private final static int ALL 			= CREATE | DESTROY | LISTEN | PUBLISH ;
 
-	public TopicPermission(String name, String... actions) {
-		super(name, actions);
-	}
+    private final static int PUBLISH = 0x4;
+    private final static int LISTEN = 0x8;
+    private final static int ALL = CREATE | DESTROY | LISTEN | PUBLISH;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+    public TopicPermission(String name, String... actions) {
+        super(name, actions);
+    }
+
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -43,6 +43,6 @@ public class TopicPermission extends InstancePermission {
                 mask |= LISTEN;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 }

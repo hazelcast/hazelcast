@@ -23,13 +23,34 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.multimap.operations.client.*;
+import com.hazelcast.multimap.operations.client.AddEntryListenerRequest;
+import com.hazelcast.multimap.operations.client.ClearRequest;
+import com.hazelcast.multimap.operations.client.ContainsEntryRequest;
+import com.hazelcast.multimap.operations.client.CountRequest;
+import com.hazelcast.multimap.operations.client.EntrySetRequest;
+import com.hazelcast.multimap.operations.client.GetAllRequest;
+import com.hazelcast.multimap.operations.client.KeySetRequest;
+import com.hazelcast.multimap.operations.client.MultiMapIsLockedRequest;
+import com.hazelcast.multimap.operations.client.MultiMapLockRequest;
+import com.hazelcast.multimap.operations.client.MultiMapUnlockRequest;
+import com.hazelcast.multimap.operations.client.PortableEntrySetResponse;
+import com.hazelcast.multimap.operations.client.PutRequest;
+import com.hazelcast.multimap.operations.client.RemoveAllRequest;
+import com.hazelcast.multimap.operations.client.RemoveEntryListenerRequest;
+import com.hazelcast.multimap.operations.client.RemoveRequest;
+import com.hazelcast.multimap.operations.client.SizeRequest;
+import com.hazelcast.multimap.operations.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -81,7 +102,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<K> keySet() {
         KeySetRequest request = new KeySetRequest(name);
         PortableCollection result = invoke(request);
-        return (Set)toObjectCollection(result, false);
+        return (Set) toObjectCollection(result, false);
     }
 
     public Collection<V> values() {
@@ -94,10 +115,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         EntrySetRequest request = new EntrySetRequest(name);
         PortableEntrySetResponse result = invoke(request);
         Set<Map.Entry> dataEntrySet = result.getEntrySet();
-        Set<Map.Entry<K,V>> entrySet = new HashSet<Map.Entry<K, V>>(dataEntrySet.size());
+        Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>(dataEntrySet.size());
         for (Map.Entry entry : dataEntrySet) {
-            Object key = toObject((Data)entry.getKey());
-            Object val = toObject((Data)entry.getValue());
+            Object key = toObject((Data) entry.getKey());
+            Object val = toObject((Data) entry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry(key, val));
         }
         return entrySet;
@@ -223,12 +244,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     private Collection toObjectCollection(PortableCollection result, boolean list) {
         Collection<Data> coll = result.getCollection();
         Collection collection;
-        if (list){
+        if (list) {
             collection = new ArrayList(coll == null ? 0 : coll.size());
         } else {
             collection = new HashSet(coll == null ? 0 : coll.size());
         }
-        if (coll == null){
+        if (coll == null) {
             return collection;
         }
         for (Data data : coll) {
@@ -241,20 +262,20 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K,V> listener, final boolean includeValue){
+    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
         return new EventHandler<PortableEntryEvent>() {
             public void handle(PortableEntryEvent event) {
                 V value = null;
                 V oldValue = null;
-                if (includeValue){
-                    value = (V)toObject(event.getValue());
-                    oldValue = (V)toObject(event.getOldValue());
+                if (includeValue) {
+                    value = (V) toObject(event.getValue());
+                    oldValue = (V) toObject(event.getOldValue());
                 }
-                K key = (K)toObject(event.getKey());
+                K key = (K) toObject(event.getKey());
                 Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K,V> entryEvent = new EntryEvent<K, V>(name, member,
+                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member,
                         event.getEventType().getType(), key, oldValue, value);
-                switch (event.getEventType()){
+                switch (event.getEventType()) {
                     case ADDED:
                         listener.entryAdded(entryEvent);
                         break;

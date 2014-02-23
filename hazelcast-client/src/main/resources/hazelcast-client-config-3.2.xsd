@@ -39,7 +39,7 @@
         </xs:complexType>
     </xs:element>
     <!--NETWORK-->
-   <xs:complexType name="network">
+    <xs:complexType name="network">
         <xs:sequence>
             <xs:element ref="cluster-members" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1"/>
@@ -162,7 +162,7 @@
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="proxy-factory">
-        <xs:attribute name="service" >
+        <xs:attribute name="service">
             <xs:simpleType>
                 <xs:restriction base="non-space-string"/>
             </xs:simpleType>

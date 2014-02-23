@@ -20,8 +20,8 @@ import com.hazelcast.core.ClientType;
 
 final class ClientExceptionConverters {
 
-    private static final  JavaClientExceptionConverter JAVA = new JavaClientExceptionConverter();
-    private static final  GenericClientExceptionConverter GENERIC = new GenericClientExceptionConverter();
+    private static final JavaClientExceptionConverter JAVA = new JavaClientExceptionConverter();
+    private static final GenericClientExceptionConverter GENERIC = new GenericClientExceptionConverter();
 
     private ClientExceptionConverters() {
     }

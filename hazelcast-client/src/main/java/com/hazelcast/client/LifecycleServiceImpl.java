@@ -29,7 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 public final class LifecycleServiceImpl implements LifecycleService {
 
@@ -42,7 +45,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
     public LifecycleServiceImpl(HazelcastClient client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 if (listenerConfig.getImplementation() instanceof LifecycleListener) {
                     addLifecycleListener((LifecycleListener) listenerConfig.getImplementation());

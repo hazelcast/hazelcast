@@ -16,7 +16,10 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.*;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
 
 /**

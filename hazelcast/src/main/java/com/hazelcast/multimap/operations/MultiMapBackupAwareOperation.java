@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

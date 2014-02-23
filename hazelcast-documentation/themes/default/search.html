@@ -8,14 +8,14 @@ layout: _layout.html
     function getParameterByName(name) {
         name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
         var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-            results = regex.exec(location.search);
+                results = regex.exec(location.search);
         return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
     }
 
-    $(function() {
-        var q = getParameterByName('q'), 
-            ul = $('#search-results').empty(),
-            results = index.search(q);
+    $(function () {
+        var q = getParameterByName('q'),
+                ul = $('#search-results').empty(),
+                results = index.search(q);
 
         $('#search-q').text(q);
         if (results.length > 0) {

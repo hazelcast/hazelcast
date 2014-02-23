@@ -23,7 +23,7 @@ public class AtomicLongMBean extends HazelcastMBean<IAtomicLong> {
 
     public AtomicLongMBean(IAtomicLong managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IAtomicLong",managedObject.getName());
+        objectName = service.createObjectName("IAtomicLong", managedObject.getName());
     }
 
     @ManagedAnnotation("name")
@@ -76,7 +76,7 @@ public class AtomicLongMBean extends HazelcastMBean<IAtomicLong> {
 
     @ManagedAnnotation(value = "getAndSet", operation = true)
     @ManagedDescription("get the current value then set")
-    public long  getAndSet(long value) {
+    public long getAndSet(long value) {
         return managedObject.getAndSet(value);
     }
 

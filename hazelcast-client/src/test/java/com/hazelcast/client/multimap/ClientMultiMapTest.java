@@ -19,10 +19,18 @@ package com.hazelcast.client.multimap;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -248,10 +256,10 @@ public class ClientMultiMapTest {
 
         assertTrue(mm.tryLock("key1", 2, TimeUnit.SECONDS));
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(!mm.tryLock("key1", 2, TimeUnit.SECONDS)){
+                    if (!mm.tryLock("key1", 2, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -264,10 +272,10 @@ public class ClientMultiMapTest {
         assertTrue(mm.isLocked("key1"));
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(mm.tryLock("key1", 20, TimeUnit.SECONDS)){
+                    if (mm.tryLock("key1", 20, TimeUnit.SECONDS)) {
                         latch2.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -286,7 +294,7 @@ public class ClientMultiMapTest {
     public void testForceUnlock() throws Exception {
         mm.lock("key1");
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 mm.forceUnlock("key1");
                 latch.countDown();

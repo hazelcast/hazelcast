@@ -18,9 +18,9 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
 public class GetEntryViewOperation extends KeyBasedMapOperation {
@@ -38,7 +38,7 @@ public class GetEntryViewOperation extends KeyBasedMapOperation {
         MapService mapService = (MapService) getService();
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Record record = recordStore.getRecord(dataKey);
-        if (record != null){
+        if (record != null) {
             result = new SimpleEntryView(record.getKey(), mapService.toData(record.getValue()), record.getStatistics(), record.getCost(), record.getVersion());
         }
     }

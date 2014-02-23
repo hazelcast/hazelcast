@@ -26,7 +26,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * Contains the configuration for a single member group.
- *
+ * <p/>
  * See the {@link PartitionGroupConfig} for more information.
  */
 public class MemberGroupConfig {
@@ -49,7 +49,7 @@ public class MemberGroupConfig {
 
     /**
      * Removes all interfaces from the member group.
-     *
+     * <p/>
      * If no members are in the group, the call is ignored.
      *
      * @return the updated MemberGroupConfig
@@ -71,17 +71,17 @@ public class MemberGroupConfig {
 
     /**
      * Sets the interfaces that are part of a group.
-     *
+     * <p/>
      * If the interfaces is empty, it will have the same effect as calling {@link #clear()}.
      *
      * @param interfaces the interfaces to set.
      * @return the updated MemberGroupConfig
+     * @throws IllegalArgumentException if interfaces is null.
      * @see #getInterfaces()
      * @see #clear()
-     * @throws IllegalArgumentException if interfaces is null.
      */
     public MemberGroupConfig setInterfaces(final Collection<String> interfaces) {
-        isNotNull(interfaces,"interfaces");
+        isNotNull(interfaces, "interfaces");
         clear();
         this.interfaces.addAll(interfaces);
         return this;

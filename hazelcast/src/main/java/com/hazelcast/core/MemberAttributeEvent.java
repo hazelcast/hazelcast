@@ -86,8 +86,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         member = new MemberImpl();
         member.readData(in);
         int operation = in.readByte();
-        switch (operation)
-        {
+        switch (operation) {
             case DELTA_MEMBER_PROPERTIES_OP_PUT:
                 operationType = MapOperationType.PUT;
                 value = IOUtil.readAttributeValue(in);

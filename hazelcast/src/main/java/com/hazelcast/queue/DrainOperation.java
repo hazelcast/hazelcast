@@ -35,7 +35,7 @@ import java.util.Map;
 public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 
     int maxSize;
-   Map<Long, Data> dataMap;
+    Map<Long, Data> dataMap;
 
     public DrainOperation() {
     }

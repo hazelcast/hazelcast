@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientMapIssueTest {
 
     @After
-    public void reset(){
+    public void reset() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -72,7 +72,7 @@ public class ClientMapIssueTest {
         instance2.getLifecycleService().terminate();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     m.get("ali");
@@ -105,7 +105,7 @@ public class ClientMapIssueTest {
         final PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
 
-        final Set<Map.Entry<Integer,Integer>> entries = map.entrySet(predicate);
+        final Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
         assertEquals(pageSize, entries.size());
 
 
@@ -160,7 +160,6 @@ public class ClientMapIssueTest {
 
 
     }
-
 
 
 }

@@ -41,8 +41,8 @@ public class SizeRequest extends MultiMapAllPartitionRequest implements Retryabl
 
     protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
-        for (Object obj: map.values()){
-            total += (Integer)obj;
+        for (Object obj : map.values()) {
+            total += (Integer) obj;
         }
         return total;
     }

@@ -23,7 +23,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SerializableCollection;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * @ali 8/30/13
@@ -77,7 +81,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         return indexOfInternal(true, o);
     }
 
-    private int indexOfInternal(boolean last, Object o){
+    private int indexOfInternal(boolean last, Object o) {
         throwExceptionIfNull(o);
         final Data value = getNodeEngine().toData(o);
         final ListIndexOfOperation operation = new ListIndexOfOperation(name, last, value);
@@ -136,7 +140,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     @Override
     public <T> T[] toArray(T[] a) {
         throwExceptionIfNull(a);
-        return subList(-1,-1).toArray(a);
+        return subList(-1, -1).toArray(a);
     }
 
     @Override

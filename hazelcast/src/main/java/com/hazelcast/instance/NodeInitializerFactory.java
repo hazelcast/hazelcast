@@ -41,7 +41,7 @@ public final class NodeInitializerFactory {
             }
         } catch (Exception e) {
             logger.warning("NodeInitializer could not be instantiated! => "
-                                      + e.getClass().getName() + ": " + e.getMessage());
+                    + e.getClass().getName() + ": " + e.getMessage());
         }
         return new DefaultNodeInitializer();
     }

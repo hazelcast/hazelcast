@@ -73,8 +73,8 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeout);
+        writer.writeUTF("n", name);
+        writer.writeLong("t", timeout);
         data.writeData(writer.getRawDataOutput());
     }
 

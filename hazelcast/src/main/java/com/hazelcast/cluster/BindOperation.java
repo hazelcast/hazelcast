@@ -16,7 +16,11 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.nio.TcpIpConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;

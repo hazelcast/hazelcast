@@ -61,7 +61,7 @@ public final class TestUtil {
         node.shutdown(true);
     }
 
-    public static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {
+    public static void warmUpPartitions(HazelcastInstance... instances) throws InterruptedException {
         for (HazelcastInstance instance : instances) {
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {

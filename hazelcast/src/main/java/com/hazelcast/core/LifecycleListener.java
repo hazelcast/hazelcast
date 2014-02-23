@@ -23,13 +23,12 @@ import java.util.EventListener;
  *
  * @see com.hazelcast.core.LifecycleEvent
  * @see HazelcastInstance#getLifecycleService()
- *
  */
 public interface LifecycleListener extends EventListener {
     /**
      * Called when instance's state changes
-     * @param event Lifecycle event
      *
+     * @param event Lifecycle event
      */
     void stateChanged(LifecycleEvent event);
 }

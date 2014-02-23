@@ -106,9 +106,9 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         IMap<Integer, Id> hazelcastLookupMap = hz.getMap("somemap");
 
-        hazelcastLookupMap.put(1,new Id("10"));
-        hazelcastLookupMap.put(2,new Id("20"));
-        hazelcastLookupMap.put(3,new Id("30"));
+        hazelcastLookupMap.put(1, new Id("10"));
+        hazelcastLookupMap.put(2, new Id("20"));
+        hazelcastLookupMap.put(3, new Id("30"));
 
         Collection<Id> result = hazelcastLookupMap.values(predicate);
         assertEquals(1, result.size());

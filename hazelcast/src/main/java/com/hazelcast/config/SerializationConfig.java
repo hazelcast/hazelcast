@@ -21,7 +21,12 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -118,8 +123,8 @@ public class SerializationConfig {
     }
 
     public SerializationConfig addDataSerializableFactoryClass(int factoryId, Class<? extends DataSerializableFactory> dataSerializableFactoryClass) {
-       String factoryClassName = isNotNull(dataSerializableFactoryClass, "dataSerializableFactoryClass").getName();
-       return addDataSerializableFactoryClass(factoryId, factoryClassName);
+        String factoryClassName = isNotNull(dataSerializableFactoryClass, "dataSerializableFactoryClass").getName();
+        return addDataSerializableFactoryClass(factoryId, factoryClassName);
     }
 
     public Map<Integer, DataSerializableFactory> getDataSerializableFactories() {
@@ -186,8 +191,8 @@ public class SerializationConfig {
     }
 
     public SerializationConfig addClassDefinition(ClassDefinition classDefinition) {
-        if(!getClassDefinitions().add(classDefinition)) {
-            throw new IllegalArgumentException("ClassDefinition for class-id[" +classDefinition.getClassId()
+        if (!getClassDefinitions().add(classDefinition)) {
+            throw new IllegalArgumentException("ClassDefinition for class-id[" + classDefinition.getClassId()
                     + "] already exists!");
         }
         return this;

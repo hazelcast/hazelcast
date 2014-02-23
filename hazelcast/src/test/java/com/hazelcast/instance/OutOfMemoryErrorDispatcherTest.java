@@ -11,7 +11,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertArrayEquals;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -25,7 +24,7 @@ public class OutOfMemoryErrorDispatcherTest {
     }
 
     @Test
-    public void onOutOfMemoryOutOfMemory(){
+    public void onOutOfMemoryOutOfMemory() {
         OutOfMemoryHandler handler = mock(OutOfMemoryHandler.class);
         OutOfMemoryError oome = new OutOfMemoryError();
         HazelcastInstance hz1 = mock(HazelcastInstance.class);
@@ -41,7 +40,7 @@ public class OutOfMemoryErrorDispatcherTest {
         verify(handler).onOutOfMemory(oome, registeredInstances);
         //make sure that the registered instances are removed.
         assertArrayEquals(new HazelcastInstance[]{}, OutOfMemoryErrorDispatcher.current());
-     }
+    }
 
     @Test
     public void register() {

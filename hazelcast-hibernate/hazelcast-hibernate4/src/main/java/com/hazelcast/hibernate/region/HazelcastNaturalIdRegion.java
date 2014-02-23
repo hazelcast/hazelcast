@@ -61,6 +61,6 @@ public class HazelcastNaturalIdRegion extends AbstractTransactionalDataRegion<IM
             throw new CacheException("Transactional access is not currently supported by Hazelcast.");
         }
         throw new CacheException("Got unknown AccessType \"" + accessType
-                                 + "\" while attempting to build EntityRegionAccessStrategy.");
+                + "\" while attempting to build EntityRegionAccessStrategy.");
     }
 }

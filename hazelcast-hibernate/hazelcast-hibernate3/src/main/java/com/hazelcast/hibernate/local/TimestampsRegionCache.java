@@ -43,7 +43,7 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
                 final Timestamp ts = (Timestamp) message.getMessageObject();
                 final Object key = ts.getKey();
 
-                for (;;) {
+                for (; ; ) {
                     final Value value = cache.get(key);
                     final Long current = value != null ? (Long) value.getValue() : null;
                     if (current != null) {

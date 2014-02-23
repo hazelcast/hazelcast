@@ -19,9 +19,28 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.cluster.*;
-import com.hazelcast.config.*;
-import com.hazelcast.core.*;
+import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.ConfigCheck;
+import com.hazelcast.cluster.JoinRequest;
+import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cluster.MulticastJoiner;
+import com.hazelcast.cluster.MulticastService;
+import com.hazelcast.cluster.NodeMulticastListener;
+import com.hazelcast.cluster.TcpIpJoiner;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.MigrationListener;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
@@ -39,15 +58,23 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
-import com.hazelcast.util.*;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.HazelcastUtil;
+import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.VersionCheck;
 
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -262,7 +289,7 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        if(logger.isFinestEnabled()){
+        if (logger.isFinestEnabled()) {
             logger.finest(getThisAddress() + " failed connecting to " + address);
         }
         failedConnections.add(address);
@@ -314,7 +341,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            if(logger.isFinestEnabled()){
+            if (logger.isFinestEnabled()) {
                 logger.finest("** setting master address to " + master);
             }
         }
@@ -322,7 +349,7 @@ public class Node {
     }
 
     public void start() {
-        if(logger.isFinestEnabled()){
+        if (logger.isFinestEnabled()) {
             logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         }
         if (completelyShutdown) return;
@@ -359,7 +386,7 @@ public class Node {
 
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
-        if(logger.isFinestEnabled()){
+        if (logger.isFinestEnabled()) {
             logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
         }
         if (!terminate && isActive()) {
@@ -406,7 +433,7 @@ public class Node {
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
                 if (thread.isAlive()) {
-                    if(logger.isFinestEnabled()){
+                    if (logger.isFinestEnabled()) {
                         logger.finest("Shutting down thread " + thread.getName());
                     }
                     thread.interrupt();
@@ -422,7 +449,7 @@ public class Node {
         joined.set(false);
         joiner.reset();
         final String uuid = UuidUtil.createMemberUuid(address);
-        if(logger.isFinestEnabled()){
+        if (logger.isFinestEnabled()) {
             logger.finest("Generated new UUID for local member: " + uuid);
         }
         localMember.setUuid(uuid);
@@ -550,10 +577,10 @@ public class Node {
             } catch (Exception e) {
                 rejoinCount++;
                 if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                    logger.warning("Trying to rejoin for the "+rejoinCount+" time: " + e.getMessage());
+                    logger.warning("Trying to rejoin for the " + rejoinCount + " time: " + e.getMessage());
                     prepareForRejoin();
                 } else {
-                    logger.severe("Could not join cluster after "+rejoinCount+" attempts, shutting down!", e);
+                    logger.severe("Could not join cluster after " + rejoinCount + " attempts, shutting down!", e);
                     shutdown(true);
                     return;
                 }

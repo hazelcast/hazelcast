@@ -23,7 +23,11 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
@@ -81,7 +85,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         }
     }
 
-    private void doRun()throws Exception {
+    private void doRun() throws Exception {
         if (startMigration()) {
             try {
                 migrate();
