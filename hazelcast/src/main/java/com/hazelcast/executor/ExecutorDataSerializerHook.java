@@ -46,8 +46,9 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
                         return new MemberCallableTaskOperation();
                     case RUNNABLE_ADAPTER:
                         return new RunnableAdapter();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }
