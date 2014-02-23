@@ -41,7 +41,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     private final Lock[] orderingLocks = new Lock[ORDERING_LOCKS_LENGTH];
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
+    final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
 
     private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction = new ConstructorFunction<String, LocalTopicStatsImpl>() {
         public LocalTopicStatsImpl createNew(String mapName) {
