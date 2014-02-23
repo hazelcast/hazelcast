@@ -47,9 +47,6 @@
         <Package name="com.hazelcast.config" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.osgi" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.map" />
     </Match>
     <Match>
