@@ -17,7 +17,8 @@
 package com.hazelcast.cluster;
 
 /**
- * @author ali 19/02/14
+ * Used to identify the type of member attribute change, either PUT or REMOVED
+ * @since 3.2.RC-2
  */
 public enum MemberAttributeOperationType {
 
