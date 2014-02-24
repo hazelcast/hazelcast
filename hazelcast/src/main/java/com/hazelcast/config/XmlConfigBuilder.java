@@ -933,7 +933,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("enabled")) {
+            if ("enabled".equals(att.getNodeName())) {
                 mapStoreConfig.setEnabled(checkTrue(value));
             } else if ("initial-mode".equals(att.getNodeName())) {
                 final MapStoreConfig.InitialLoadMode mode = att != null
