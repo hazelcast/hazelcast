@@ -24,6 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.RandomPicker;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
