@@ -26,53 +26,65 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.Partition;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class PartitionControlledIdTest extends HazelcastTestSupport {
 
-    private HazelcastInstance[] instances;
+    private static HazelcastInstance[] instances;
 
     @BeforeClass
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() throws Exception {
         Hazelcast.shutdownAll();
-    }
 
-    @Before
-    public void setUp() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         Config config = new Config();
         PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         config.getMapConfig("default")
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig(partitioningStrategy));
-        instances = factory.newInstances(config);
+
+        TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(4);
+        instances = instanceFactory.newInstances(config);
+
         warmUpPartitions(instances);
     }
 
@@ -101,9 +113,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        ILock lock = hz.getLock("s@" + partitionKey);
+        ILock lock = hz.getLock("lock@" + partitionKey);
         lock.lock();
-        assertEquals("s@" + partitionKey, lock.getName());
+        assertEquals("lock@" + partitionKey, lock.getName());
         assertEquals(partitionKey, lock.getPartitionKey());
 
         Node node = getNode(hz);
@@ -119,9 +131,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        ISemaphore semaphore = hz.getSemaphore("s@" + partitionKey);
+        ISemaphore semaphore = hz.getSemaphore("semaphore@" + partitionKey);
         semaphore.release();
-        assertEquals("s@" + partitionKey, semaphore.getName());
+        assertEquals("semaphore@" + partitionKey, semaphore.getName());
         assertEquals(partitionKey, semaphore.getPartitionKey());
 
         SemaphoreService service = getNodeEngine(hz).getService(SemaphoreService.SERVICE_NAME);
@@ -133,9 +145,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        IdGenerator idGenerator = hz.getIdGenerator("s@" + partitionKey);
+        IdGenerator idGenerator = hz.getIdGenerator("idgenerator@" + partitionKey);
         idGenerator.newId();
-        assertEquals("s@" + partitionKey, idGenerator.getName());
+        assertEquals("idgenerator@" + partitionKey, idGenerator.getName());
         assertEquals(partitionKey, idGenerator.getPartitionKey());
 
         AtomicLongService service = getNodeEngine(hz).getService(AtomicLongService.SERVICE_NAME);
@@ -147,9 +159,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        IAtomicLong atomicLong = hz.getAtomicLong("s@" + partitionKey);
+        IAtomicLong atomicLong = hz.getAtomicLong("atomiclong@" + partitionKey);
         atomicLong.incrementAndGet();
-        assertEquals("s@" + partitionKey, atomicLong.getName());
+        assertEquals("atomiclong@" + partitionKey, atomicLong.getName());
         assertEquals(partitionKey, atomicLong.getPartitionKey());
 
         AtomicLongService service = getNodeEngine(hz).getService(AtomicLongService.SERVICE_NAME);
@@ -161,9 +173,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        IQueue queue = hz.getQueue("s@" + partitionKey);
+        IQueue queue = hz.getQueue("queue@" + partitionKey);
         queue.add("");
-        assertEquals("s@" + partitionKey, queue.getName());
+        assertEquals("queue@" + partitionKey, queue.getName());
         assertEquals(partitionKey, queue.getPartitionKey());
 
         QueueService service = getNodeEngine(hz).getService(QueueService.SERVICE_NAME);
@@ -175,9 +187,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        IList list = hz.getList("s@" + partitionKey);
+        IList list = hz.getList("list@" + partitionKey);
         list.add("");
-        assertEquals("s@" + partitionKey, list.getName());
+        assertEquals("list@" + partitionKey, list.getName());
         assertEquals(partitionKey, list.getPartitionKey());
 
         ListService service = getNodeEngine(hz).getService(ListService.SERVICE_NAME);
@@ -189,9 +201,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        ISet set = hz.getSet("s@" + partitionKey);
+        ISet set = hz.getSet("set@" + partitionKey);
         set.add("");
-        assertEquals("s@" + partitionKey, set.getName());
+        assertEquals("set@" + partitionKey, set.getName());
         assertEquals(partitionKey, set.getPartitionKey());
 
         SetService service = getNodeEngine(hz).getService(SetService.SERVICE_NAME);
@@ -203,9 +215,9 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         String partitionKey = "hazelcast";
         HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-        ICountDownLatch countDownLatch = hz.getCountDownLatch("s@" + partitionKey);
+        ICountDownLatch countDownLatch = hz.getCountDownLatch("countdownlatch@" + partitionKey);
         countDownLatch.trySetCount(1);
-        assertEquals("s@" + partitionKey, countDownLatch.getName());
+        assertEquals("countdownlatch@" + partitionKey, countDownLatch.getName());
         assertEquals(partitionKey, countDownLatch.getPartitionKey());
 
         CountDownLatchService service = getNodeEngine(hz).getService(CountDownLatchService.SERVICE_NAME);
@@ -217,7 +229,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         HazelcastInstance instance = instances[0];
         IExecutorService executorServices = instance.getExecutorService("executor");
         String partitionKey = "hazelcast";
-        ISemaphore semaphore = instance.getSemaphore("s@" + partitionKey);
+        ISemaphore semaphore = instance.getSemaphore("foobar@" + partitionKey);
         semaphore.release();
         ContainsSemaphoreTask task = new ContainsSemaphoreTask(semaphore.getName());
         Future<Boolean> f = executorServices.submitToKeyOwner(task, semaphore.getPartitionKey());
