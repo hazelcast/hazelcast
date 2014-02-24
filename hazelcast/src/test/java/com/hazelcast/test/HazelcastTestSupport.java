@@ -23,11 +23,13 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -42,6 +44,19 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
+    public static void assertSizeEventually(int expectedSize, Collection c){
+        assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds){
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+               assertEquals("the size of the collection is correct",expectedSize, c.size());
+            }
+        },timeoutSeconds);
+    }
 
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
@@ -66,11 +81,11 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void assertOpen(CountDownLatch latch) {
-        assertOpen(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    public static void assertOpenEventually(CountDownLatch latch) {
+        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertOpen(CountDownLatch latch, long timeoutSeconds) {
+    public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
             assertTrue("CountDownLatch failed to complete within " + timeoutSeconds + " seconds", completed);
@@ -93,9 +108,9 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void assertTrueEventually(AssertTask task) {
+    public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
-        for (int k = 0; k < ASSERT_TRUE_EVENTUALLY_TIMEOUT; k++) {
+        for (int k = 0; k < timeoutSeconds; k++) {
             try {
                 task.run();
                 return;
@@ -107,6 +122,10 @@ public abstract class HazelcastTestSupport {
 
         printAllStackTraces();
         throw error;
+    }
+
+    public static void assertTrueEventually(AssertTask task) {
+        assertTrueEventually(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     public static void assertTrueDelayed5sec(AssertTask task) {
@@ -174,12 +193,12 @@ public abstract class HazelcastTestSupport {
 
     public static void printAllStackTraces() {
         Map liveThreads = Thread.getAllStackTraces();
-        for (Iterator i = liveThreads.keySet().iterator(); i.hasNext(); ) {
-            Thread key = (Thread) i.next();
+        for (Object o : liveThreads.keySet()) {
+            Thread key = (Thread) o;
             System.err.println("Thread " + key.getName());
             StackTraceElement[] trace = (StackTraceElement[]) liveThreads.get(key);
-            for (int j = 0; j < trace.length; j++) {
-                System.err.println("\tat " + trace[j]);
+            for (StackTraceElement aTrace : trace) {
+                System.err.println("\tat " + aTrace);
             }
         }
     }

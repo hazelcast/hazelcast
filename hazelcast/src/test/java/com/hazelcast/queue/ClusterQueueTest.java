@@ -18,14 +18,18 @@ package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +40,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -173,16 +181,16 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
-        final CountDownLatch offerLatch = new CountDownLatch(2*100);
+        final CountDownLatch offerLatch = new CountDownLatch(2 * 100);
         new Thread(new Runnable() {
             public void run() {
                 try {
                     Thread.sleep(3000);
                     for (int i = 0; i < 100; i++) {
-                        if(q1.offer("item")){
+                        if (q1.offer("item")) {
                             offerLatch.countDown();
                         }
-                        if(q2.offer("item")){
+                        if (q2.offer("item")) {
                             offerLatch.countDown();
                         }
                     }
@@ -191,14 +199,16 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 }
             }
         }).start();
-        assertTrue(offerLatch.await(100, TimeUnit.SECONDS));
+
+        assertOpenEventually(offerLatch);
+
         final ExecutorService es = Executors.newFixedThreadPool(50);
         final CountDownLatch latch = new CountDownLatch(200);
         for (int i = 0; i < 100; i++) {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q1.take())){
+                        if ("item".equals(q1.take())) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -209,7 +219,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q2.take())){
+                        if ("item".equals(q2.take())) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -218,7 +228,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 }
             });
         }
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
+
+        assertOpenEventually(latch);
         es.shutdown();
     }
 
@@ -231,21 +242,21 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
-        final CountDownLatch offerLatch = new CountDownLatch(2*100);
+        final CountDownLatch offerLatch = new CountDownLatch(2 * 100);
         Thread.sleep(1000);
         new Thread(new Runnable() {
             public void run() {
                 for (int i = 0; i < 100; i++) {
-                    if(q1.offer("item")){
+                    if (q1.offer("item")) {
                         offerLatch.countDown();
                     }
-                    if(q2.offer("item")){
+                    if (q2.offer("item")) {
                         offerLatch.countDown();
                     }
                 }
             }
         }).start();
-        assertTrue(offerLatch.await(100, TimeUnit.SECONDS));
+        assertOpenEventually(offerLatch);
         final ExecutorService es = Executors.newFixedThreadPool(50);
         final CountDownLatch latch = new CountDownLatch(200);
         Thread.sleep(3000);
@@ -253,7 +264,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q1.poll(5, TimeUnit.SECONDS))){
+                        if ("item".equals(q1.poll(5, TimeUnit.SECONDS))) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -264,7 +275,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if("item".equals(q2.poll(5, TimeUnit.SECONDS))){
+                        if ("item".equals(q2.poll(5, TimeUnit.SECONDS))) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -273,7 +284,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 }
             });
         }
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         es.shutdown();
     }
 
@@ -301,10 +312,10 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 try {
                     Thread.sleep(3000);
                     for (int i = 0; i < 100; i++) {
-                        if (("item" + i).equals(q1.poll(2, TimeUnit.SECONDS))){
+                        if (("item" + i).equals(q1.poll(2, TimeUnit.SECONDS))) {
                             pollLatch.countDown();
                         }
-                        if (("item" + i).equals(q2.poll(2, TimeUnit.SECONDS))){
+                        if (("item" + i).equals(q2.poll(2, TimeUnit.SECONDS))) {
                             pollLatch.countDown();
                         }
                     }
@@ -313,14 +324,14 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 }
             }
         }).start();
-        assertTrue(pollLatch.await(100, TimeUnit.SECONDS));
+        assertOpenEventually(pollLatch);
         final ExecutorService es = Executors.newFixedThreadPool(50);
         final CountDownLatch latch = new CountDownLatch(200);
         for (int i = 0; i < 100; i++) {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if(q1.offer("item", 30, TimeUnit.SECONDS)){
+                        if (q1.offer("item", 30, TimeUnit.SECONDS)) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -331,7 +342,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        if(q2.offer("item", 30, TimeUnit.SECONDS)){
+                        if (q2.offer("item", 30, TimeUnit.SECONDS)) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -340,7 +351,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 }
             });
         }
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         es.shutdown();
     }
 
@@ -402,8 +413,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
-        Queue<String> q1 = h1.getQueue("q");
-        Queue<String> q2 = h2.getQueue("q");
+        final Queue<String> q1 = h1.getQueue("q");
+        final Queue<String> q2 = h2.getQueue("q");
         for (int i = 0; i < 5; i++) {
             q1.offer("item" + i);
         }
@@ -412,12 +423,13 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         assertEquals("item0", q2.poll());
         assertEquals("item1", q2.poll());
         assertEquals("item2", q2.poll());
-        Thread.sleep(10000);
-        assertEquals(2, q1.size());
-        assertEquals(2, q2.size());
+
+        assertSizeEventually(2, q1);
+        assertSizeEventually(2, q2);
+
         h1.getLifecycleService().shutdown();
-        Thread.sleep(5000);
-        assertEquals(2, q2.size());
+
+        assertSizeEventually(2, q2);
     }
 
     @Test
@@ -427,8 +439,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
-        Queue<String> q1 = h1.getQueue("q");
-        Queue<String> q2 = h2.getQueue("q");
+        final Queue<String> q1 = h1.getQueue("q");
+        final Queue<String> q2 = h2.getQueue("q");
         for (int i = 0; i < 5; i++) {
             q1.offer("item" + i);
         }
@@ -437,12 +449,13 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         assertEquals("item0", q1.poll());
         assertEquals("item1", q1.poll());
         assertEquals("item2", q1.poll());
-        Thread.sleep(10000);
-        assertEquals(2, q1.size());
-        assertEquals(2, q2.size());
+
+        assertSizeEventually(2, q1);
+        assertSizeEventually(2, q2);
+
         h1.getLifecycleService().shutdown();
-        Thread.sleep(5000);
-        assertEquals(2, q2.size());
+
+        assertSizeEventually(2, q2);
     }
 
 }
