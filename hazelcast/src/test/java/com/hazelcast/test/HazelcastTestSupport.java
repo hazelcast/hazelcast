@@ -26,6 +26,7 @@ import org.junit.After;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -101,6 +102,18 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static String randomString(){
+        return UUID.randomUUID().toString();
+    }
+
+
+    public static void sleepMillis(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+        }
+    }
+
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
         for (int k = 0; k < durationSeconds; k++) {
             task.run();
@@ -110,14 +123,18 @@ public abstract class HazelcastTestSupport {
 
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
-        for (int k = 0; k < timeoutSeconds; k++) {
+
+        //we are going to check 5 times a second.
+        long iterations = timeoutSeconds * 5;
+        int sleepMillis = 200;
+        for (int k = 0; k < iterations; k++) {
             try {
                 task.run();
                 return;
             } catch (AssertionError e) {
                 error = e;
             }
-            sleepSeconds(1);
+            sleepMillis(sleepMillis);
         }
 
         printAllStackTraces();
