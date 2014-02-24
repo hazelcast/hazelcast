@@ -292,7 +292,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
             while (urls.hasMoreElements()) {
                 URL u = (URL) urls.nextElement();
                 BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(u.openStream()));
+                        new InputStreamReader(u.openStream(), "UTF-8"));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
