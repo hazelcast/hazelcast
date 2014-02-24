@@ -20,6 +20,7 @@ import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.executor.CancellationOperation;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorPortableHook;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,9 +32,6 @@ import com.hazelcast.spi.InvocationBuilder;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-/**
- * @author ali 11/02/14
- */
 public class CancellationRequest extends InvocationClientRequest {
 
     static final int CANCEL_TRY_COUNT = 50;
@@ -42,7 +40,6 @@ public class CancellationRequest extends InvocationClientRequest {
     private String uuid;
     private Address target;
     private boolean interrupt;
-
 
     public CancellationRequest() {
     }
@@ -53,30 +50,36 @@ public class CancellationRequest extends InvocationClientRequest {
         this.interrupt = interrupt;
     }
 
+    @Override
     protected void invoke() {
-        final CancellationOperation op = new CancellationOperation(uuid, interrupt);
-        final InvocationBuilder builder = createInvocationBuilder(getServiceName(), op, target);
+        CancellationOperation op = new CancellationOperation(uuid, interrupt);
+        InvocationBuilder builder = createInvocationBuilder(getServiceName(), op, target);
         builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
-        final InternalCompletableFuture future = builder.invoke();
+        InternalCompletableFuture future = builder.invoke();
         boolean result = false;
         try {
             result = (Boolean) future.get();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
+            logger.warning(e);
         } catch (ExecutionException e) {
-            e.printStackTrace();
+            ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
+            logger.warning(e);
         }
         getEndpoint().sendResponse(result, getCallId());
     }
 
+    @Override
     public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ExecutorPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ExecutorPortableHook.CANCELLATION_REQUEST;
     }

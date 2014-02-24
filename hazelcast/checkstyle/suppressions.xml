@@ -32,9 +32,6 @@
     <suppress checks="CyclomaticComplexityCheck" files="StartServer.java"/>
     <suppress checks="NPathComplexityCheck" files="StartServer.java"/>
 
-
-
-    <suppress checks="" files="[\\/]executor[\\/]"/>
     <suppress checks="" files="[\\/]instance[\\/]"/>
     <suppress checks="" files="[\\/]jmx[\\/]"/>
     <suppress checks="" files="[\\/]management[\\/]"/>
@@ -124,6 +121,14 @@
     <suppress checks="JavadocType" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.topic[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.executor[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.executor[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.executor.ExecutorServiceProxy"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.executor.ExecutorServiceProxy"/>
+    <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
+    <suppress checks="" files="com.hazelcast.executor.ExecutorServiceProxy"/>
 
     <suppress checks="ReturnCount" files="com.hazelcast.logging.Slf4jFactory"/>
 </suppressions>

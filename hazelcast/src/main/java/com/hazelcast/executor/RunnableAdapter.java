@@ -51,9 +51,10 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
     }
 
     @Override
-    public final void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         if (task instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) task).setHazelcastInstance(hazelcastInstance);
+            HazelcastInstanceAware instanceAwareTask = (HazelcastInstanceAware) task;
+            instanceAwareTask.setHazelcastInstance(hazelcastInstance);
         }
     }
 
@@ -68,11 +69,6 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
     }
 
     @Override
-    public String toString() {
-        return "RunnableAdapter" + "{task=" + task + '}';
-    }
-
-    @Override
     public int getFactoryId() {
         return ExecutorDataSerializerHook.F_ID;
     }
@@ -80,5 +76,10 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
     @Override
     public int getId() {
         return ExecutorDataSerializerHook.RUNNABLE_ADAPTER;
+    }
+
+    @Override
+    public String toString() {
+        return "RunnableAdapter" + "{task=" + task + '}';
     }
 }
