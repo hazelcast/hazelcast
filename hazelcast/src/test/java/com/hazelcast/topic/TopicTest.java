@@ -59,6 +59,19 @@ import static org.junit.Assert.*;
 public class TopicTest extends HazelcastTestSupport {
 
     @Test
+    public void testDestroyTopicRemovesStatistics(){
+        HazelcastInstance instance = createHazelcastInstance();
+        ITopic topic = instance.getTopic("foo");
+        topic.publish("foobar");
+        topic.destroy();
+
+        TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
+
+        boolean containsStats = topicService.statsMap.containsKey(topic.getName());
+        assertFalse(containsStats);
+    }
+
+    @Test
     public void testTopicPublishingMember() {
         final Config config = new Config();
         config.getTopicConfig("default").setGlobalOrderingEnabled(true);
@@ -79,11 +92,12 @@ public class TopicTest extends HazelcastTestSupport {
                     ITopic<Long> topic = instance.getTopic(name);
                     topic.addMessageListener(new MessageListener<Long>() {
                         public void onMessage(Message<Long> message) {
-                            if (message.getPublishingMember().equals(instance.getCluster().getLocalMember()))
+                            Member publishingMember = message.getPublishingMember();
+                            if (publishingMember.equals(instance.getCluster().getLocalMember()))
                                 count.incrementAndGet();
-                            if (message.getPublishingMember().equals(message.getMessageObject()))
+                            if (publishingMember.equals(message.getMessageObject()))
                                 count1.incrementAndGet();
-                            if (message.getPublishingMember().localMember())
+                            if (publishingMember.localMember())
                                 count2.incrementAndGet();
                         }
                     });
@@ -95,19 +109,20 @@ public class TopicTest extends HazelcastTestSupport {
         try {
             mainLatch.await(1, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            fail();
         }
+
         for (int i = 0; i < k; i++) {
-            final HazelcastInstance instance = instances[i];
+            HazelcastInstance instance = instances[i];
             instance.getTopic(name).publish(instance.getCluster().getLocalMember());
         }
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                Assert.assertEquals(k, count.get());
-                Assert.assertEquals(k * k, count1.get());
-                Assert.assertEquals(k, count2.get());
+                assertEquals(k, count.get());
+                assertEquals(k * k, count1.get());
+                assertEquals(k, count2.get());
             }
         });
     }
@@ -476,7 +491,7 @@ public class TopicTest extends HazelcastTestSupport {
         cp.await();
         topic.publish(message + "2");
         Thread.sleep(100);
-        Assert.assertEquals(1, latch.getCount());
+        assertEquals(1, latch.getCount());
     }
 
     /**
@@ -543,7 +558,7 @@ public class TopicTest extends HazelcastTestSupport {
         assertTrue(latch2.await(1, TimeUnit.MINUTES));
 
         LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
-        Assert.assertEquals(1000, stats.getPublishOperationCount());
-        Assert.assertEquals(2000, stats.getReceiveOperationCount());
+        assertEquals(1000, stats.getPublishOperationCount());
+        assertEquals(2000, stats.getReceiveOperationCount());
     }
 }
