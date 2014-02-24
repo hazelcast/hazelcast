@@ -120,6 +120,10 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.logging[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.logging[\\/]"/>
 
+    <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.topic[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.topic[\\/]"/>
 
     <suppress checks="ReturnCount" files="com.hazelcast.logging.Slf4jFactory"/>
 </suppressions>

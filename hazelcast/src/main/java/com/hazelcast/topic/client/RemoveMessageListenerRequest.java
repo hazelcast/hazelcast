@@ -22,7 +22,6 @@ import com.hazelcast.topic.TopicService;
 
 public class RemoveMessageListenerRequest extends BaseClientRemoveListenerRequest {
 
-
     public RemoveMessageListenerRequest() {
     }
 
