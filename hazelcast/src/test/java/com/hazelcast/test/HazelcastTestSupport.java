@@ -22,16 +22,15 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import org.junit.After;
-import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-/**
- * @author mdogan 5/24/13
- */
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
 public abstract class HazelcastTestSupport {
 
     private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
@@ -43,6 +42,42 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
+    public static void assertJoinable(Thread... threads) {
+        assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
+    }
+
+    public static void assertJoinable(long timeoutSeconds, Thread... threads) {
+        try {
+            long remainingTimeoutMs = TimeUnit.SECONDS.toMillis(timeoutSeconds);
+            for (Thread t : threads) {
+                long startMs = System.currentTimeMillis();
+                t.join(remainingTimeoutMs);
+
+                if (t.isAlive()) {
+                    fail("Timeout waiting for thread " + t.getName() + " to terminate");
+                }
+
+                long durationMs = System.currentTimeMillis() - startMs;
+                remainingTimeoutMs -= durationMs;
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void assertOpen(CountDownLatch latch) {
+        assertOpen(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertOpen(CountDownLatch latch, long timeoutSeconds) {
+        try {
+            boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
+            assertTrue("CountDownLatch failed to complete within " + timeoutSeconds + " seconds", completed);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static void sleepSeconds(int seconds) {
         try {
