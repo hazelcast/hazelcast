@@ -26,12 +26,12 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -171,12 +171,15 @@ public class ListenerTest extends HazelcastTestSupport {
         }
     }
 
-    private void checkCountWithExpected(int expectedGlobal, int expectedLocal, int expectedValue) throws InterruptedException {
-        // wait for entry listener execution
-        Thread.sleep(1000 * 3);
-        Assert.assertEquals(expectedLocal, localCount.get());
-        Assert.assertEquals(expectedGlobal, globalCount.get());
-        Assert.assertEquals(expectedValue, valueCount.get());
+    private void checkCountWithExpected(final int expectedGlobal, final int expectedLocal, final int expectedValue)  {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(expectedLocal, localCount.get());
+                assertEquals(expectedGlobal, globalCount.get());
+                assertEquals(expectedValue, valueCount.get());
+            }
+        });
     }
 
     /**
