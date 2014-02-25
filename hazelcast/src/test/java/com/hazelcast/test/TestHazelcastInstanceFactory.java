@@ -69,7 +69,11 @@ public final class TestHazelcastInstanceFactory {
             NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex.getAndIncrement()]);
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }
-        return useClient ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
+        if (useClient) {
+            return newHazelcastClient();
+        }else {
+            return HazelcastInstanceFactory.newHazelcastInstance(config);
+        }
     }
 
     public HazelcastInstance[] newInstances(){

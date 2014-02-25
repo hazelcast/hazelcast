@@ -413,11 +413,10 @@ public class BackupTest extends HazelcastTestSupport {
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
-        final Config config = new Config();
         final String name = MAP_NAME;
 
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance();
         final IMap<Object, Object> map = hz2.getMap(name);
 
         final int size = 100000;
@@ -473,11 +472,10 @@ public class BackupTest extends HazelcastTestSupport {
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
-        final Config config = new Config();
         final String name = MAP_NAME;
 
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance();
         final IMap<Object, Object> map = hz2.getMap(name);
 
         final int size = 100000;

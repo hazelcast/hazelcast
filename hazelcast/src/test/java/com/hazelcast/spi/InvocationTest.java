@@ -114,7 +114,7 @@ public class InvocationTest extends HazelcastTestSupport {
     @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz = factory.newHazelcastInstance();
         final IQueue<Object> q = hz.getQueue("queue");
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -203,7 +203,7 @@ public class InvocationTest extends HazelcastTestSupport {
     @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp2() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz = factory.newHazelcastInstance();
         final ILock lock = hz.getLock("lock");
         lock.lock();
         assertTrue(lock.isLockedByCurrentThread());

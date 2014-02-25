@@ -131,17 +131,16 @@ public class BasicQueueTest extends HazelcastTestSupport {
     @Category(ProblematicTest.class)
     public void testQueueStats() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        Config config = new Config();
-        final String name = "t_queue";
+       final String name = "t_queue";
 
-        HazelcastInstance ins1 = factory.newHazelcastInstance(config);
+        HazelcastInstance ins1 = factory.newHazelcastInstance();
         final int items = 20;
         IQueue q1 = ins1.getQueue(name);
         for (int i = 0; i < items / 2; i++) {
             q1.offer("item" + i);
         }
 
-        HazelcastInstance ins2 = factory.newHazelcastInstance(config);
+        HazelcastInstance ins2 = factory.newHazelcastInstance();
         IQueue q2 = ins2.getQueue(name);
         for (int i = 0; i < items / 2; i++) {
             q2.offer("item" + i);

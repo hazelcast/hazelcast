@@ -43,12 +43,12 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
     @Test
     public void testMembershipListener() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
         MembershipListenerImpl listener = new MembershipListenerImpl();
         hz1.getCluster().addMembershipListener(listener);
 
         //start a second instance
-        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
 
         assertEventuallySizeAtLeast(listener.events, 1);
         assertMembershipAddedEvent(listener.events.get(0), hz2.getCluster().getLocalMember(), hz1.getCluster().getLocalMember(), hz2.getCluster().getLocalMember());
@@ -114,7 +114,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
     @Test
     public void testInitialMembershipListener() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
 
         InitialMembershipListenerImpl listener = new InitialMembershipListenerImpl();
         hz1.getCluster().addMembershipListener(listener);
@@ -122,7 +122,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         assertEventuallySizeAtLeast(listener.events, 1);
         assertInitialMembershipEvent(listener.events.get(0), hz1.getCluster().getLocalMember());
 
-        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
 
         assertEventuallySizeAtLeast(listener.events, 2);
         assertMembershipAddedEvent(listener.events.get(1), hz2.getCluster().getLocalMember(), hz1.getCluster().getLocalMember(), hz2.getCluster().getLocalMember());
@@ -137,8 +137,8 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
     @Test
     public void testInitialMembershipListenerRegistrationWithMultipleInitialMembers() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
-        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
 
         InitialMembershipListenerImpl listener = new InitialMembershipListenerImpl();
         hz1.getCluster().addMembershipListener(listener);

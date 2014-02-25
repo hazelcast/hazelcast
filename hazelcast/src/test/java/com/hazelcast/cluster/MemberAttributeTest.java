@@ -38,17 +38,17 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testConfigAttributes() throws Exception {
-        Config c = new Config();
+        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        MemberAttributeConfig memberAttributeConfig = c.getMemberAttributeConfig();
+        MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
         memberAttributeConfig.setIntAttribute("Test", 123);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(c);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
         Member m1 = h1.getCluster().getLocalMember();
         assertEquals(123, (int) m1.getIntAttribute("Test"));
 
-        HazelcastInstance h2 = factory.newHazelcastInstance(c);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
         Member m2 = h2.getCluster().getLocalMember();
         assertEquals(123, (int) m2.getIntAttribute("Test"));
 
@@ -84,14 +84,13 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testPresharedAttributes() throws Exception {
-        Config c = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(c);
+        HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setIntAttribute("Test", 123);
 
-        HazelcastInstance h2 = factory.newHazelcastInstance(c);
+        HazelcastInstance h2 = factory.newHazelcastInstance();
         assertEquals(2, h2.getCluster().getMembers().size());
 
         Member member = null;
@@ -112,14 +111,13 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testAddAttributes() throws Exception {
-        Config c = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(c);
+        HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setIntAttribute("Test", 123);
 
-        HazelcastInstance h2 = factory.newHazelcastInstance(c);
+        HazelcastInstance h2 = factory.newHazelcastInstance();
         assertEquals(2, h2.getCluster().getMembers().size());
 
         Member member = null;
@@ -153,14 +151,13 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testChangeAttributes() throws Exception {
-        Config c = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(c);
+        HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setIntAttribute("Test", 123);
 
-        HazelcastInstance h2 = factory.newHazelcastInstance(c);
+        HazelcastInstance h2 = factory.newHazelcastInstance();
         assertEquals(2, h2.getCluster().getMembers().size());
 
         Member member = null;
@@ -194,14 +191,13 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testRemoveAttributes() throws Exception {
-        Config c = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(c);
+        HazelcastInstance h1 = factory.newHazelcastInstance();
         Member m1 = h1.getCluster().getLocalMember();
         m1.setIntAttribute("Test", 123);
 
-        HazelcastInstance h2 = factory.newHazelcastInstance(c);
+        HazelcastInstance h2 = factory.newHazelcastInstance();
         assertEquals(2, h2.getCluster().getMembers().size());
 
         Member member = null;
@@ -238,12 +234,12 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         System.setProperty("hazelcast.member.attribute.Test-3", "12345");
         System.setProperty("hazelcast.member.attribute.Test-4", "123456");
 
-        Config c = new Config();
-        c.getMemberAttributeConfig().setIntAttribute("Test-1", 123);
-        c.getMemberAttributeConfig().setIntAttribute("Test-2", 123);
+        Config config = new Config();
+        config.getMemberAttributeConfig().setIntAttribute("Test-1", 123);
+        config.getMemberAttributeConfig().setIntAttribute("Test-2", 123);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(c);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
         Member m1 = h1.getCluster().getLocalMember();
         m1.setIntAttribute("Test-4", 1234567);
 

@@ -322,14 +322,14 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void testName() {
-        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance();
         ITopic<?> topic = hClient.getTopic("testName");
         assertEquals("testName", topic.getName());
     }
 
     @Test
     public void addMessageListener() throws InterruptedException {
-        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance();
         ITopic<String> topic = hClient.getTopic("addMessageListener");
         final CountDownLatch latch = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
@@ -362,7 +362,7 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void addTwoMessageListener() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
         ITopic<String> topic = hazelcastInstance.getTopic("addTwoMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
@@ -387,7 +387,7 @@ public class TopicTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener() throws InterruptedException {
         try {
-            HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+            HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
             ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
             final CountDownLatch latch = new CountDownLatch(2);
             final CountDownLatch cp = new CountDownLatch(1);
@@ -442,7 +442,7 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void testPerformance() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
         int count = 10000;
         final ITopic topic = hazelcastInstance.getTopic("perf");
         ExecutorService ex = Executors.newFixedThreadPool(10);
@@ -460,7 +460,7 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void add2listenerAndRemoveOne() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
         ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
         final CountDownLatch latch = new CountDownLatch(4);
         final CountDownLatch cp = new CountDownLatch(2);
@@ -534,7 +534,7 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void testTopicStats() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
         ITopic<String> topic = hazelcastInstance.getTopic("testTopicStats");
 
         final CountDownLatch latch1 = new CountDownLatch(1000);

@@ -57,8 +57,7 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testSimpleUsage() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final Config config = new Config();
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         final ILock lock = instance.getLock("testSimpleUsage");
         assertEquals("testSimpleUsage", lock.getName());
@@ -117,7 +116,7 @@ public class LockTest extends HazelcastTestSupport {
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnLock() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -155,8 +154,8 @@ public class LockTest extends HazelcastTestSupport {
 
     private void testShutDownNodeWhenOtherWaitingOnLock(boolean localKey) throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
         warmUpPartitions(instance2, instance);
 
         final String key;
@@ -190,7 +189,7 @@ public class LockTest extends HazelcastTestSupport {
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalUnlock() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final ILock lock = instance.getLock("testIllegalUnlock");
         lock.unlock();
     }
@@ -198,9 +197,8 @@ public class LockTest extends HazelcastTestSupport {
     @Test(timeout = 100000)
     public void testLockOwnerDies() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
-        final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
 
         final String name = "testLockOwnerDies";
         final ILock lock = lockOwner.getLock(name);
@@ -223,10 +221,9 @@ public class LockTest extends HazelcastTestSupport {
     @Test(timeout = 100000)
     public void testKeyOwnerDies() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        final Config config = new Config();
-        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         warmUpPartitions(keyOwner, instance1, instance2);
         final String key = generateKeyOwnedBy(keyOwner);
@@ -264,10 +261,8 @@ public class LockTest extends HazelcastTestSupport {
 
     private void testLockEviction(boolean localKey) throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
-
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         warmUpPartitions(instance2, instance1);
 
@@ -299,10 +294,8 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testLockCount() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
-
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         final int key = new Random().nextInt();
 
@@ -325,10 +318,8 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testIsLocked2() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
-
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
 
         final int key = new Random().nextInt();
 
@@ -360,9 +351,8 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testLockConditionSimpleUsage() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
         final String name = "testLockConditionSimpleUsage";
-        final ILock lock = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ILock lock = nodeFactory.newHazelcastInstance().getLock(name);
         final ICondition condition = lock.newCondition(name + "c");
         final AtomicInteger count = new AtomicInteger(0);
 
@@ -386,7 +376,7 @@ public class LockTest extends HazelcastTestSupport {
         t.start();
         Thread.sleep(1000);
 
-        final ILock lock1 = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ILock lock1 = nodeFactory.newHazelcastInstance().getLock(name);
         final ICondition condition1 = lock1.newCondition(name + "c");
         assertEquals(false, lock1.isLocked());
         lock1.lock();
@@ -400,9 +390,8 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testLockConditionSignalAll() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
         final String name = "testLockConditionSimpleUsage";
-        final ILock lock = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ILock lock = nodeFactory.newHazelcastInstance().getLock(name);
         final ICondition condition = lock.newCondition(name + "c");
         final AtomicInteger count = new AtomicInteger(0);
         final int k = 50;
@@ -433,7 +422,7 @@ public class LockTest extends HazelcastTestSupport {
         }
 
         awaitLatch.await(1, TimeUnit.MINUTES);
-        final ILock lock1 = nodeFactory.newHazelcastInstance(config).getLock(name);
+        final ILock lock1 = nodeFactory.newHazelcastInstance().getLock(name);
         final ICondition condition1 = lock1.newCondition(name + "c");
         lock1.lock();
         condition1.signalAll();
@@ -445,13 +434,12 @@ public class LockTest extends HazelcastTestSupport {
     @Test
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
         final String name = "testLockConditionSignalAllShutDownKeyOwner";
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final AtomicInteger count = new AtomicInteger(0);
         final int size = 50;
         int k = 0;
-        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance();
         while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner())) {
             Thread.sleep(10);
         }
@@ -497,10 +485,9 @@ public class LockTest extends HazelcastTestSupport {
     @Test(timeout = 100000)
     public void testKeyOwnerDiesOnCondition() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        final Config config = new Config();
-        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
         int k = 0;
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         while (keyOwner.getCluster().getLocalMember().equals(instance1.getPartitionService().getPartition(k++).getOwner())) {
@@ -543,7 +530,7 @@ public class LockTest extends HazelcastTestSupport {
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnConditionAwait() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final ILock lock = instance.getLock("testDestroyLockWhenOtherWaitingOnConditionAwait");
         final ICondition condition = lock.newCondition("condition");
         final CountDownLatch latch = new CountDownLatch(1);
@@ -572,8 +559,8 @@ public class LockTest extends HazelcastTestSupport {
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testShutDownNodeWhenOtherWaitingOnConditionAwait() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
-        nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        nodeFactory.newHazelcastInstance();
         final String name = "testShutDownNodeWhenOtherWaitingOnConditionAwait";
         final ILock lock = instance.getLock(name);
         final ICondition condition = lock.newCondition("s");
@@ -603,7 +590,7 @@ public class LockTest extends HazelcastTestSupport {
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsage1() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final ILock lock = instance.getLock("testIllegalConditionUsage");
         final ICondition condition = lock.newCondition("condition");
         try {
@@ -615,7 +602,7 @@ public class LockTest extends HazelcastTestSupport {
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsage2() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final ILock lock = instance.getLock("testIllegalConditionUsage");
         final ICondition condition = lock.newCondition("condition");
         condition.signal();
@@ -624,9 +611,9 @@ public class LockTest extends HazelcastTestSupport {
     @Test(timeout = 100000)
     public void testScheduledLockActionForDeadMember() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         final ILock lock1 = h1.getLock("default");
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final ILock lock2 = h2.getLock("default");
 
         assertTrue(lock1.tryLock());
@@ -689,11 +676,10 @@ public class LockTest extends HazelcastTestSupport {
      */
     @Test
     public void testIsLocked() throws InterruptedException {
-        Config config = new Config();
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
         final String key = "testLockIsLocked";
         final ILock lock = h1.getLock(key);
         final ILock lock2 = h2.getLock(key);

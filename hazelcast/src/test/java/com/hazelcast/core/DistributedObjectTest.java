@@ -168,7 +168,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
                                    .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
 
-
         String serviceName = TestInitializingObjectService.NAME;
         String objectName = "test-object";
 

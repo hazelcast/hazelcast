@@ -125,13 +125,12 @@ public class SetTest extends HazelcastTestSupport {
 
     @Test
     public void testMigration(){
-        Config config = new Config();
         final String name = "defSet";
 
         final int insCount = 4;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
 
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
 
         ISet set = instance1.getSet(name);
 
@@ -139,11 +138,10 @@ public class SetTest extends HazelcastTestSupport {
             set.add("item" + i);
         }
 
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
         assertEquals(100, instance2.getSet(name).size());
 
-
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
         assertEquals(100, instance3.getSet(name).size());
 
         instance1.shutdown();
@@ -157,7 +155,7 @@ public class SetTest extends HazelcastTestSupport {
         instance2.shutdown();
         assertEquals(200, instance3.getSet(name).size());
 
-        instance1 = factory.newHazelcastInstance(config);
+        instance1 = factory.newHazelcastInstance();
         assertEquals(200, instance1.getSet(name).size());
 
         instance3.shutdown();

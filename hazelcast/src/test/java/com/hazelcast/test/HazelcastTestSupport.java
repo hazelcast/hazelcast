@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionService;
@@ -161,8 +162,13 @@ public abstract class HazelcastTestSupport {
         return factory = new TestHazelcastInstanceFactory(nodeCount);
     }
 
+    public HazelcastInstance createHazelcastInstance(Config config) {
+        return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+    }
+
+
     public HazelcastInstance createHazelcastInstance() {
-        return createHazelcastInstanceFactory(1).newHazelcastInstance();
+        return createHazelcastInstance(new Config());
     }
 
     @After

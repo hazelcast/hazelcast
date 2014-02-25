@@ -93,9 +93,8 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     @ClientCompatibleTest
     public void testLatchDestroyed() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
         final ICountDownLatch latch = hz1.getCountDownLatch("test");
         latch.trySetCount(2);
 

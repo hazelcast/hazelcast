@@ -143,9 +143,8 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRollbackQueue() throws Throwable {
-        Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
-        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = factory.newHazelcastInstance();
 
         final TransactionContext transactionContext = h1.newTransactionContext();
 
@@ -163,9 +162,8 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionNotActiveException.class)
     public void testTxnQueueOuterTransaction() throws Throwable {
-        Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = factory.newHazelcastInstance();
 
         final TransactionContext transactionContext = h1.newTransactionContext();
         transactionContext.beginTransaction();
@@ -182,9 +180,8 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final AtomicInteger count = new AtomicInteger();
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        Config config = new Config();
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
 
         String inQueueName = "in";
         String outQueueName = "out";

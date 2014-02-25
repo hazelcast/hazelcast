@@ -47,10 +47,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testAcquire() {
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testAcquire");
 
         int numberOfPermits = 20;
@@ -69,10 +68,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testRelease() {
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testRelease");
 
         int numberOfPermits = 20;
@@ -86,10 +84,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testMultipleAcquire() throws InterruptedException {
-        final Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testMultipleAcquire");
         int numberOfPermits = 20;
 
@@ -103,10 +100,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testMultipleRelease() {
-        final Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testMultipleRelease");
         int numberOfPermits = 20;
 
@@ -119,10 +115,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testDrain() {
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testDrain");
         int numberOfPermits = 20;
 
@@ -139,10 +134,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testReduce() {
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testReduce");
         int numberOfPermits = 20;
 
@@ -157,10 +151,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testTryAcquire() {
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testTryAcquire");
         int numberOfPermits = 20;
 
@@ -175,10 +168,9 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testTryAcquireMultiple() {
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testTryAcquireMultiple");
         int numberOfPermits = 20;
 
@@ -194,9 +186,8 @@ public class SemaphoreTest extends HazelcastTestSupport {
     @Test(timeout = 30000)
     public void testMutex() throws InterruptedException {
         final int k = 5;
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         final CountDownLatch latch = new CountDownLatch(k);
         final int loopCount = 1000;
 
@@ -245,9 +236,8 @@ public class SemaphoreTest extends HazelcastTestSupport {
     @Test(timeout = 30000)
     public void testSemaphoreWithFailures() throws InterruptedException {
         final int k = 4;
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k + 1);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
 
         final ISemaphore semaphore = instances[k].getSemaphore("test");
         int initialPermits = 20;
@@ -275,11 +265,10 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testSemaphoreWithFailuresAndJoin() {
-        final Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
 
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("test");
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         assertTrue(semaphore.init(0));
@@ -300,7 +289,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
         instance2.getLifecycleService().shutdown();
         semaphore.release();
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
 
         ISemaphore semaphore1 = instance3.getSemaphore("test");
         semaphore1.release();
@@ -315,11 +304,10 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testSemaphoreInit() {
-        final Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
 
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
 
         final ISemaphore sm1 = instance1.getSemaphore("sm");
         assertTrue(sm1.init(5));

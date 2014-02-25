@@ -232,7 +232,6 @@ public class ListTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         assertEquals(100, instance2.getList(name).size());
 
-
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         assertEquals(100, instance3.getList(name).size());
 
