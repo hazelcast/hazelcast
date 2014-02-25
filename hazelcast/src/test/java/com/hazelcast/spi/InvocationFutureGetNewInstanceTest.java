@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNotSame;
 //get a copy of the object.
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class InvocationInstanceCopyingTest extends HazelcastTestSupport {
+public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
     @Test
     @Ignore
