@@ -55,6 +55,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
@@ -99,7 +100,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.nodeEngine = node.nodeEngine;
         int coreSize = Runtime.getRuntime().availableProcessors();
         this.executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
-                coreSize * THREADS_PER_CORE, coreSize * RIDICULOUS_THREADS_PER_CORE);
+                coreSize * THREADS_PER_CORE, coreSize * RIDICULOUS_THREADS_PER_CORE,
+                ExecutorType.CONCRETE);
         this.logger = node.getLogger(ClientEngine.class);
     }
 
@@ -361,7 +363,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     String addClientListener(ClientListener clientListener) {
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
+        EventRegistration registration = eventService
+                .registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
         return registration.getId();
     }
 

@@ -30,6 +30,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -119,7 +120,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         String executorName = "hz:cluster";
-        executionService.register(executorName, 8, 100000);
+        executionService.register(executorName, 2, 1000, ExecutorType.CACHED);
 
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
