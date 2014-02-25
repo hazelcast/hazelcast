@@ -33,6 +33,8 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mdogan 1/16/13
@@ -43,7 +45,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
-    public void testSimpleUsage() {
+    public void testSimpleUsage() throws InterruptedException {
         final int k = 5;
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -67,18 +69,13 @@ public class CountDownLatchTest extends HazelcastTestSupport {
             }
         }.start();
 
-        try {
-            Assert.assertTrue(latch.await(5000, TimeUnit.MILLISECONDS));
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
+        assertTrue(latch.await(5000, TimeUnit.MILLISECONDS));
         assertEquals(0, latch.getCount());
     }
 
     @Test
     @ClientCompatibleTest
-    public void testAwaitFail() {
+    public void testAwaitFail() throws InterruptedException {
         final int k = 3;
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -86,15 +83,10 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
 
-        try {
-            long t = System.currentTimeMillis();
-            Assert.assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
-            final long elapsed = System.currentTimeMillis() - t;
-            Assert.assertTrue(elapsed >= 100);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
+        long t = System.currentTimeMillis();
+        assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
+        final long elapsed = System.currentTimeMillis() - t;
+        assertTrue(elapsed >= 100);
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)

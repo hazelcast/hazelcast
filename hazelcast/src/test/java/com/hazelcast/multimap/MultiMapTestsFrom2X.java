@@ -359,19 +359,19 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         final TransactionContext context = instance.newTransactionContext();
         final MultiMap<Object, Object> mm = instance.getMultiMap("testMultiMapContainsEntry");
         mm.put("1", "value");
-        Assert.assertTrue(mm.containsEntry("1", "value"));
+        assertTrue(mm.containsEntry("1", "value"));
 
         context.beginTransaction();
         TransactionalMultiMap txnMap = context.getMultiMap("testMultiMapContainsEntry");
         txnMap.put("1", "value2");
-        Assert.assertTrue(mm.containsEntry("1", "value"));
-        Assert.assertFalse(mm.containsEntry("1", "value2"));
+        assertTrue(mm.containsEntry("1", "value"));
+        assertFalse(mm.containsEntry("1", "value2"));
         txnMap.remove("1", "value2");
-        Assert.assertTrue(mm.containsEntry("1", "value"));
-        Assert.assertFalse(mm.containsEntry("1", "value2"));
+        assertTrue(mm.containsEntry("1", "value"));
+        assertFalse(mm.containsEntry("1", "value2"));
         context.commitTransaction();
 
-        Assert.assertTrue(mm.containsEntry("1", "value"));
+        assertTrue(mm.containsEntry("1", "value"));
         assertEquals(1, mm.size());
     }
 

@@ -324,7 +324,7 @@ public class TopicTest extends HazelcastTestSupport {
     public void testName() {
         HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         ITopic<?> topic = hClient.getTopic("testName");
-        Assert.assertEquals("testName", topic.getName());
+        assertEquals("testName", topic.getName());
     }
 
     @Test

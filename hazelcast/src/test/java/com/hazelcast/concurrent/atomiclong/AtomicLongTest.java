@@ -90,7 +90,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
         }
         try {
             countDownLatch.await(50, TimeUnit.SECONDS);
-            Assert.assertEquals(0, atomicLong.get());
+            assertEquals(0, atomicLong.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -109,7 +109,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
         for (int i = 0; i < k; i++) {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance(config);
             IAtomicLong newAtomicLong = newInstance.getAtomicLong(name);
-            Assert.assertEquals((long) 100 + i, newAtomicLong.get());
+            assertEquals((long) 100 + i, newAtomicLong.get());
             newAtomicLong.incrementAndGet();
             instance.shutdown();
             instance = newInstance;
@@ -145,7 +145,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
                 assertTrue(countDownLatch.await(1, TimeUnit.MINUTES));
 
                 IAtomicLong newAtomicLong = instance.getAtomicLong(name);
-                Assert.assertEquals((long) 100 + (i + 1) * parallel, newAtomicLong.get());
+                assertEquals((long) 100 + (i + 1) * parallel, newAtomicLong.get());
                 instance.shutdown();
                 instance = instances[0];
             }

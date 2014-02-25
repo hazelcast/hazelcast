@@ -24,6 +24,9 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.io.Serializable;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 
 /**
  * @leimer 8/15/12
@@ -37,11 +40,11 @@ public class SomeRunnableTask implements Runnable, Serializable, ApplicationCont
     private transient SomeBean someBean;
 
     public void run() {
-        Assert.assertNotNull(someBean);
-        Assert.assertNotNull(context);
+        assertNotNull(someBean);
+        assertNotNull(context);
 
         SomeBean bean = (SomeBean) context.getBean("someBean");
-        Assert.assertEquals(someBean, bean);
+        assertEquals(someBean, bean);
     }
 
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {

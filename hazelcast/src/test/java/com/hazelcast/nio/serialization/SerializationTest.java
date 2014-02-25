@@ -33,6 +33,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mdogan 30/10/13
  */
@@ -64,11 +69,11 @@ public class SerializationTest {
         SerializationService ss1 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
         DummyValue value = new DummyValue("test", 111);
         Data data = ss1.toData(value);
-        Assert.assertNotNull(data);
+        assertNotNull(data);
 
         SerializationService ss2 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
         Object o = ss2.toObject(data);
-        Assert.assertEquals(value, o);
+        assertEquals(value, o);
     }
 
     private static class DummyValue {
@@ -123,11 +128,11 @@ public class SerializationTest {
 
         SerializationService ss1 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
         Data data = ss1.toData(new SingletonValue());
-        Assert.assertNotNull(data);
+        assertNotNull(data);
 
         SerializationService ss2 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
         Object o = ss2.toObject(data);
-        Assert.assertEquals(new SingletonValue(), o);
+        assertEquals(new SingletonValue(), o);
     }
 
     private static class SingletonValue {
@@ -140,7 +145,7 @@ public class SerializationTest {
     public void testNullData() {
         Data data = new Data();
         SerializationService ss = new SerializationServiceBuilder().build();
-        Assert.assertNull(ss.toObject(data));
+        assertNull(ss.toObject(data));
     }
 
     /**
@@ -152,7 +157,7 @@ public class SerializationTest {
         Data data = ss.toData(new Foo());
         Foo foo = (Foo) ss.toObject(data);
 
-        Assert.assertTrue("Objects are not identical!", foo == foo.getBar().getFoo());
+        assertTrue("Objects are not identical!", foo == foo.getBar().getFoo());
     }
 
     @Test
@@ -163,7 +168,7 @@ public class SerializationTest {
         linkedList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(linkedList);
         LinkedList deserialized =  ss.toObject(data);
-        Assert.assertTrue("Objects are not identical!", linkedList.equals(deserialized));
+        assertTrue("Objects are not identical!", linkedList.equals(deserialized));
     }
     @Test
     public void testArrayListSerialization() {
@@ -173,7 +178,7 @@ public class SerializationTest {
         arrayList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(arrayList);
         ArrayList deserialized =  ss.toObject(data);
-        Assert.assertTrue("Objects are not identical!", arrayList.equals(deserialized));
+        assertTrue("Objects are not identical!", arrayList.equals(deserialized));
     }
 
     /**
@@ -183,7 +188,7 @@ public class SerializationTest {
     public void testUnsharedJavaSerialization() {
         SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(false).build();
         Data data = ss.toData(new Foo());
-        Foo foo = (Foo) ss.toObject(data);
+        Foo foo =  ss.toObject(data);
 
         Assert.assertFalse("Objects should not be identical!", foo == foo.getBar().getFoo());
     }

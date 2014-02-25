@@ -1739,9 +1739,9 @@ public class QueryTest extends HazelcastTestSupport {
             }.start();
         }
 
-        Assert.assertTrue(latch.await(5, TimeUnit.MINUTES));
+        assertTrue(latch.await(5, TimeUnit.MINUTES));
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
-        Assert.assertEquals(nodes, instances.size());
+        assertEquals(nodes, instances.size());
 
         final int expected = entryPerNode / modulo * nodes;
 
@@ -1751,7 +1751,7 @@ public class QueryTest extends HazelcastTestSupport {
             Predicate p = e.get("name").equal(FIND_ME);
             for (int i = 0; i < 10; i++) {
                 int size = map.values(p).size();
-                Assert.assertEquals(expected, size);
+                assertEquals(expected, size);
                 Thread.sleep(10);
             }
         }

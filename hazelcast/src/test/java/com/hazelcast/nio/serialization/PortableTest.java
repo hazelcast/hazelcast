@@ -74,23 +74,23 @@ public class PortableTest {
 
         NamedPortable np = nn[0];
         data = serializationService.toData(np);
-        Assert.assertEquals(np, serializationService.toObject(data));
-        Assert.assertEquals(np, serializationService2.toObject(data));
+        assertEquals(np, serializationService.toObject(data));
+        assertEquals(np, serializationService2.toObject(data));
 
         InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn);
 
         data = serializationService.toData(inner);
-        Assert.assertEquals(inner, serializationService.toObject(data));
-        Assert.assertEquals(inner, serializationService2.toObject(data));
+        assertEquals(inner, serializationService.toObject(data));
+        assertEquals(inner, serializationService2.toObject(data));
 
         MainPortable main = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main portable object created for testing!", inner);
 
         data = serializationService.toData(main);
-        Assert.assertEquals(main, serializationService.toObject(data));
-        Assert.assertEquals(main, serializationService2.toObject(data));
+        assertEquals(main, serializationService.toObject(data));
+        assertEquals(main, serializationService2.toObject(data));
     }
 
     private SerializationService createSerializationService(int version) {
@@ -151,7 +151,7 @@ public class PortableTest {
                 -897543.3678909d, "this is main portable object created for testing!", null);
 
         final Data data = serializationService.toData(mainWithNullInner);
-        Assert.assertEquals(mainWithNullInner, serializationService2.toObject(data));
+        assertEquals(mainWithNullInner, serializationService2.toObject(data));
 
         NamedPortable[] nn = new NamedPortable[1];
         nn[0] = new NamedPortable("name", 123);
@@ -163,7 +163,7 @@ public class PortableTest {
                 -897543.3678909d, "this is main portable object created for testing!", inner);
 
         final Data data2 = serializationService.toData(mainWithInner);
-        Assert.assertEquals(mainWithInner, serializationService2.toObject(data2));
+        assertEquals(mainWithInner, serializationService2.toObject(data2));
     }
 
     private ClassDefinition createNamedPortableClassDefinition() {
@@ -184,7 +184,7 @@ public class PortableTest {
         serializationService.getSerializationContext().registerClassDefinition(builder.build());
 
         final Data data = serializationService.toData(p);
-        Assert.assertEquals(p, serializationService.toObject(data));
+        assertEquals(p, serializationService.toObject(data));
     }
 
     @Test
@@ -195,7 +195,7 @@ public class PortableTest {
                 9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));
 
         final Data data = serializationService.toData(p);
-        Assert.assertEquals(p, serializationService.toObject(data));
+        assertEquals(p, serializationService.toObject(data));
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -209,7 +209,7 @@ public class PortableTest {
         serializationService.getSerializationContext().registerClassDefinition(builder.build());
 
         final Data data = serializationService.toData(p);
-        Assert.assertEquals(p, serializationService.toObject(data));
+        assertEquals(p, serializationService.toObject(data));
     }
 
     @Test(expected = HazelcastSerializationException.class)
@@ -223,7 +223,7 @@ public class PortableTest {
         serializationService.getSerializationContext().registerClassDefinition(builder.build());
 
         final Data data = serializationService.toData(p);
-        Assert.assertEquals(p, serializationService.toObject(data));
+        assertEquals(p, serializationService.toObject(data));
     }
 
     @Test
@@ -269,7 +269,7 @@ public class PortableTest {
                 9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));
 
         final Data data = serializationService.toData(p);
-        Assert.assertEquals(p, serializationService.toObject(data));
+        assertEquals(p, serializationService.toObject(data));
     }
 
     @Test
@@ -282,7 +282,7 @@ public class PortableTest {
         Data data = serializationService.toData(o1);
         SerializationService serializationService2 = createSerializationService(2);
         Object o2 = serializationService2.toObject(data);
-        Assert.assertEquals(o1, o2);
+        assertEquals(o1, o2);
     }
 
     //https://github.com/hazelcast/hazelcast/issues/1096

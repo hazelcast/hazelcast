@@ -117,7 +117,7 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz2 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map2 = hz2.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map2.size());
+        assertEquals(size, map2.size());
 
         final HazelcastInstance hz3 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map3 = hz3.getMap(MAP_NAME);
@@ -125,8 +125,8 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz4 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map4 = hz4.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
 
         final HazelcastInstance hz5 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map5 = hz5.getMap(MAP_NAME);
@@ -134,22 +134,22 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz6 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map6 = hz6.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
 
         hz.shutdown();
         hz2.shutdown();
 
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
 
         hz3.shutdown();
         hz4.shutdown();
 
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
     }
 
     @Test(timeout = 60 * 1000)
@@ -183,36 +183,36 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz6 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map6 = hz6.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map2.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
 
         hz6.shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map2.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
+        assertEquals(size, map.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
 
         hz2.shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
+        assertEquals(size, map.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
 
         hz5.shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
+        assertEquals(size, map.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
 
         hz3.shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map4.size());
+        assertEquals(size, map.size());
+        assertEquals(size, map4.size());
 
         hz4.shutdown();
-        Assert.assertEquals(size, map.size());
+        assertEquals(size, map.size());
     }
 
     /**

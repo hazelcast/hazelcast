@@ -217,11 +217,11 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
                 latchOffer.countDown();
             }
         }).start();
-        Assert.assertTrue(latchOffer.await(100, TimeUnit.SECONDS));
-        Assert.assertTrue(latchTake.await(10, TimeUnit.SECONDS));
-        Assert.assertTrue(hz1.getQueue("q").isEmpty());
+        assertTrue(latchOffer.await(100, TimeUnit.SECONDS));
+        assertTrue(latchTake.await(10, TimeUnit.SECONDS));
+        assertTrue(hz1.getQueue("q").isEmpty());
         hz1.shutdown();
-        Assert.assertTrue(hz2.getQueue("q").isEmpty());
+        assertTrue(hz2.getQueue("q").isEmpty());
 
         final Object[] objects = new Object[total];
         for (int i = 0; i < total; i++) {
@@ -484,11 +484,11 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final TransactionContext context2 = hz.newTransactionContext();
         context2.beginTransaction();
         final TransactionalQueue<Object> queue2 = context2.getQueue(name);
-        Assert.assertEquals("tx Hello", queue2.poll());
-        Assert.assertEquals("tx World", queue2.poll());
+        assertEquals("tx Hello", queue2.poll());
+        assertEquals("tx World", queue2.poll());
         context2.commitTransaction();
 
-        Assert.assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
-        Assert.assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
+        assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
+        assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
     }
 }

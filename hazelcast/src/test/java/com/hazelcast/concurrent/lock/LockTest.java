@@ -61,7 +61,7 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         final ILock lock = instance.getLock("testSimpleUsage");
-        Assert.assertEquals("testSimpleUsage", lock.getName());
+        assertEquals("testSimpleUsage", lock.getName());
 
         final Runnable tryLockRunnable = new Runnable() {
             public void run() {
@@ -76,37 +76,37 @@ public class LockTest extends HazelcastTestSupport {
             }
         };
 
-        Assert.assertEquals(false, lock.isLocked());
+        assertEquals(false, lock.isLocked());
         lock.lock();
-        Assert.assertEquals(true, lock.isLocked());
-        Assert.assertEquals(true, lock.tryLock());
+        assertEquals(true, lock.isLocked());
+        assertEquals(true, lock.tryLock());
         lock.unlock();
 
         Thread thread1 = new Thread(tryLockRunnable);
         thread1.start();
         thread1.join();
-        Assert.assertEquals(0, atomicInteger.get());
+        assertEquals(0, atomicInteger.get());
 
         lock.unlock();
         Thread thread2 = new Thread(tryLockRunnable);
         thread2.start();
         thread2.join();
-        Assert.assertEquals(1, atomicInteger.get());
-        Assert.assertEquals(true, lock.isLocked());
+        assertEquals(1, atomicInteger.get());
+        assertEquals(true, lock.isLocked());
         lock.forceUnlock();
 
         Thread thread3 = new Thread(lockRunnable);
         thread3.start();
         thread3.join();
-        Assert.assertEquals(true, lock.isLocked());
-        Assert.assertEquals(false, lock.tryLock(2, TimeUnit.SECONDS));
+        assertEquals(true, lock.isLocked());
+        assertEquals(false, lock.tryLock(2, TimeUnit.SECONDS));
 
         Thread thread4 = new Thread(lockRunnable);
         thread4.start();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                Assert.assertEquals(true, lock.isLocked());
+                assertEquals(true, lock.isLocked());
             }
         });
 
@@ -205,7 +205,7 @@ public class LockTest extends HazelcastTestSupport {
         final String name = "testLockOwnerDies";
         final ILock lock = lockOwner.getLock(name);
         lock.lock();
-        Assert.assertTrue(lock.isLocked());
+        assertTrue(lock.isLocked());
         final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -217,7 +217,7 @@ public class LockTest extends HazelcastTestSupport {
         });
         t.start();
         lockOwner.shutdown();
-        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 100000)
@@ -245,11 +245,11 @@ public class LockTest extends HazelcastTestSupport {
         Thread.sleep(1000);
         keyOwner.shutdown();
         assertTrue(lock1.isLocked());
-        Assert.assertTrue(lock1.isLockedByCurrentThread());
-        Assert.assertTrue(lock1.tryLock());
+        assertTrue(lock1.isLockedByCurrentThread());
+        assertTrue(lock1.tryLock());
         lock1.unlock();
         lock1.unlock();
-        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 100000)
@@ -281,7 +281,7 @@ public class LockTest extends HazelcastTestSupport {
         final ILock lock = instance1.getLock(key);
         lock.lock(10, TimeUnit.SECONDS);
         assertTrue(lock.getRemainingLeaseTime() > 0);
-        Assert.assertTrue(lock.isLocked());
+        assertTrue(lock.isLocked());
 
         final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
@@ -293,7 +293,7 @@ public class LockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        Assert.assertTrue(latch.await(30, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
     @Test
@@ -388,13 +388,13 @@ public class LockTest extends HazelcastTestSupport {
 
         final ILock lock1 = nodeFactory.newHazelcastInstance(config).getLock(name);
         final ICondition condition1 = lock1.newCondition(name + "c");
-        Assert.assertEquals(false, lock1.isLocked());
+        assertEquals(false, lock1.isLocked());
         lock1.lock();
-        Assert.assertEquals(true, lock1.isLocked());
+        assertEquals(true, lock1.isLocked());
         condition1.signal();
         lock1.unlock();
         t.join();
-        Assert.assertEquals(2, count.get());
+        assertEquals(2, count.get());
     }
 
     @Test
@@ -439,7 +439,7 @@ public class LockTest extends HazelcastTestSupport {
         condition1.signalAll();
         lock1.unlock();
         finalLatch.await(1, TimeUnit.MINUTES);
-        Assert.assertEquals(k * 2, count.get());
+        assertEquals(k * 2, count.get());
     }
 
     @Test
@@ -491,7 +491,7 @@ public class LockTest extends HazelcastTestSupport {
         keyOwner.shutdown();
 
         finalLatch.await(2, TimeUnit.MINUTES);
-        Assert.assertEquals(size, count.get());
+        assertEquals(size, count.get());
     }
 
     @Test(timeout = 100000)
@@ -537,8 +537,7 @@ public class LockTest extends HazelcastTestSupport {
         lock1.unlock();
         Thread.sleep(1000);
         t.join();
-        Assert.assertEquals(1, atomicInteger.get());
-
+        assertEquals(1, atomicInteger.get());
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)

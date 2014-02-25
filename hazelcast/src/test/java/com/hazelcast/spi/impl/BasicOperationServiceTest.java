@@ -84,7 +84,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             public void run() {
-                Assert.assertEquals(count, map.size());
+                assertEquals(count, map.size());
             }
         });
 
@@ -114,8 +114,8 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             public void run() {
-                Assert.assertEquals(count, map.size());
-                Assert.assertEquals(count, map2.size());
+                assertEquals(count, map.size());
+                assertEquals(count, map2.size());
             }
         });
 

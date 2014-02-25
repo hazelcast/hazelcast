@@ -43,7 +43,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -151,10 +156,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             final String script = "hazelcast.getAtomicLong('count').incrementAndGet();";
             final int rand = new Random().nextInt(100);
             final Future<Integer> future = service.submit(new ScriptRunnable(script, null), rand);
-            Assert.assertEquals(Integer.valueOf(rand), future.get());
+            assertEquals(Integer.valueOf(rand), future.get());
         }
         final IAtomicLong count = instances[0].getAtomicLong("count");
-        Assert.assertEquals(k, count.get());
+        assertEquals(k, count.get());
     }
 
     @Test
@@ -188,8 +193,8 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             service.submitToKeyOwner(new ScriptRunnable(script, map), key, callback);
         }
         latch.await(10, TimeUnit.SECONDS);
-        Assert.assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
-        Assert.assertEquals(k, count.get());
+        assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
+        assertEquals(k, count.get());
     }
 
     @Test
@@ -220,8 +225,8 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             service.submitToMember(new ScriptRunnable(script, map), instance.getCluster().getLocalMember(), callback);
         }
         latch.await(10, TimeUnit.SECONDS);
-        Assert.assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
-        Assert.assertEquals(k, count.get());
+        assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
+        assertEquals(k, count.get());
     }
 
     @Test
@@ -256,8 +261,8 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         assertTrue(latch.await(30, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
-        Assert.assertEquals(sum, result.get());
-        Assert.assertEquals(sum, count.get());
+        assertEquals(sum, result.get());
+        assertEquals(sum, count.get());
     }
 
     @Test
@@ -284,8 +289,8 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
         assertTrue(latch.await(30, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
-        Assert.assertEquals(k * k, result.get());
-        Assert.assertEquals(k * k, count.get());
+        assertEquals(k * k, result.get());
+        assertEquals(k * k, count.get());
     }
 
     @Test
@@ -297,7 +302,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             final IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
             final String script = "hazelcast.getAtomicLong('testSubmitMultipleNode').incrementAndGet();";
             final Future future = service.submit(new ScriptCallable(script, null));
-            Assert.assertEquals((long) (i + 1), future.get());
+            assertEquals((long) (i + 1), future.get());
         }
     }
 
@@ -329,13 +334,13 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             while (!localMember.equals(instance.getPartitionService().getPartition(++key).getOwner())) ;
             if (i % 2 == 0) {
                 final Future f = service.submitToKeyOwner(new ScriptCallable(script, map), key);
-                Assert.assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+                assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
             } else {
                 service.submitToKeyOwner(new ScriptCallable(script, map), key, callback);
             }
         }
         assertTrue(latch.await(30, TimeUnit.SECONDS));
-        Assert.assertEquals(k / 2, count.get());
+        assertEquals(k / 2, count.get());
     }
 
     @Test
@@ -363,13 +368,13 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             map.put("member", instance.getCluster().getLocalMember());
             if (i % 2 == 0) {
                 final Future f = service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember());
-                Assert.assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+                assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
             } else {
                 service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember(), callback);
             }
         }
         assertTrue(latch.await(30, TimeUnit.SECONDS));
-        Assert.assertEquals(k / 2, count.get());
+        assertEquals(k / 2, count.get());
     }
 
     @Test
@@ -405,8 +410,8 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         assertTrue(latch.await(30, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong(name);
-        Assert.assertEquals(sum, result.get());
-        Assert.assertEquals(sum, count.get());
+        assertEquals(sum, result.get());
+        assertEquals(sum, count.get());
     }
 
     @Test
@@ -432,8 +437,8 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
         countDownLatch.await(30, TimeUnit.SECONDS);
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
-        Assert.assertEquals(k * k, result.get());
-        Assert.assertEquals(k * k, count.get());
+        assertEquals(k * k, result.get());
+        assertEquals(k * k, count.get());
     }
 
     @Test
@@ -743,10 +748,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
 
         final LocalExecutorStats stats = executorService.getLocalExecutorStats();
-        Assert.assertEquals(k + 1, stats.getStartedTaskCount());
-        Assert.assertEquals(k, stats.getCompletedTaskCount());
-        Assert.assertEquals(0, stats.getPendingTaskCount());
-        Assert.assertEquals(1, stats.getCancelledTaskCount());
+        assertEquals(k + 1, stats.getStartedTaskCount());
+        assertEquals(k, stats.getCompletedTaskCount());
+        assertEquals(0, stats.getPendingTaskCount());
+        assertEquals(1, stats.getCancelledTaskCount());
     }
 
     @Test

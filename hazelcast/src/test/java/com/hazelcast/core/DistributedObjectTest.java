@@ -35,6 +35,9 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mdogan 8/25/13
  */
@@ -135,11 +138,11 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
     private void test(HazelcastInstance instance, DistributedObject object) {
         DistributedObject object2 = instance.getDistributedObject(object.getServiceName(), object.getName());
-        Assert.assertEquals(object.getServiceName(), object2.getServiceName());
-        Assert.assertEquals(object.getName(), object2.getName());
-        Assert.assertEquals(object.getId(), object2.getId());
-        Assert.assertEquals(object, object2);
-        Assert.assertTrue(instance.getDistributedObjects().contains(object));
+        assertEquals(object.getServiceName(), object2.getServiceName());
+        assertEquals(object.getName(), object2.getName());
+        assertEquals(object.getId(), object2.getId());
+        assertEquals(object, object2);
+        assertTrue(instance.getDistributedObjects().contains(object));
     }
 
     @Test
@@ -173,7 +176,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         for (int i = 0; i < instances.length; i++) {
             instances[i] = factory.newHazelcastInstance(config);
             TestInitializingObject obj2 = instances[i].getDistributedObject(serviceName, objectName);
-            Assert.assertTrue(obj2.init.get());
+            assertTrue(obj2.init.get());
             Assert.assertFalse(obj2.error);
         }
     }
@@ -212,7 +215,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
         for (int i = 0; i < instances.length; i++) {
             TestInitializingObject obj = instances[i].getDistributedObject(serviceName, objectName);
-            Assert.assertTrue(obj.init.get());
+            assertTrue(obj.init.get());
             Assert.assertFalse(obj.error);
         }
     }
