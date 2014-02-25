@@ -52,9 +52,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testOffer() throws Exception {
-        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         HazelcastInstance h1 = instances[0];
         HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
@@ -134,9 +133,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testShutdown() throws Exception {
-        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         warmUpPartitions(h2, h1);
@@ -157,9 +155,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testPollNull() throws Exception {
-        Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
@@ -174,9 +171,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testTake() throws Exception {
-        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
@@ -235,9 +231,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testPollLong() throws Exception {
-        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
@@ -367,9 +362,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
      */
     @Test
     public void testQueueAfterShutdown() throws Exception {
-        Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         IQueue q1 = h1.getQueue("default");
@@ -389,9 +383,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
      */
     @Test
     public void testQueueAfterShutdown2() throws Exception {
-        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         IQueue q1 = h1.getQueue("default");
@@ -408,9 +401,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown() throws Exception {
-        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         final Queue<String> q1 = h1.getQueue("q");
@@ -434,9 +426,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
-        Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         final Queue<String> q1 = h1.getQueue("q");
