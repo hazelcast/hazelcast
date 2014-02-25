@@ -24,13 +24,13 @@ public class ClientConditionTest {
     @BeforeClass
     public static void init() {
         Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        hz = HazelcastClient.newHazelcastClient();
         l = hz.getLock(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 

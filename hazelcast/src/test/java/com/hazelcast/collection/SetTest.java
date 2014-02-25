@@ -146,29 +146,22 @@ public class SetTest extends HazelcastTestSupport {
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         assertEquals(100, instance3.getSet(name).size());
 
-
-
-        instance1.getLifecycleService().shutdown();
+        instance1.shutdown();
         assertEquals(100, instance3.getSet(name).size());
-
 
         set = instance2.getSet(name);
         for (int i=0; i<100; i++){
             set.add("item-" + i);
         }
 
-
-        instance2.getLifecycleService().shutdown();
+        instance2.shutdown();
         assertEquals(200, instance3.getSet(name).size());
-
-
 
         instance1 = factory.newHazelcastInstance(config);
         assertEquals(200, instance1.getSet(name).size());
 
-        instance3.getLifecycleService().shutdown();
+        instance3.shutdown();
         assertEquals(200, instance1.getSet(name).size());
-
     }
 
     @Test

@@ -907,7 +907,7 @@ public class QueryTest extends HazelcastTestSupport {
         imap.addIndex("active", false);
         doFunctionalQueryTest(imap);
         assertEquals(101, imap.size());
-        h2.getLifecycleService().shutdown();
+        h2.shutdown();
         assertEquals(101, imap.size());
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
         assertEquals(2, entries.size());
@@ -931,7 +931,7 @@ public class QueryTest extends HazelcastTestSupport {
         imap.addIndex("active", false);
         doFunctionalQueryTest(imap);
         assertEquals(101, imap.size());
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         imap = h2.getMap("employees");
         assertEquals(101, imap.size());
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
@@ -957,7 +957,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(101, imap.size());
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         assertEquals(101, imap.size());
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         imap = h2.getMap("employees");
         assertEquals(101, imap.size());
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));

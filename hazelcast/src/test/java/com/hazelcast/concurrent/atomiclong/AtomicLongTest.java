@@ -111,7 +111,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
             IAtomicLong newAtomicLong = newInstance.getAtomicLong(name);
             Assert.assertEquals((long) 100 + i, newAtomicLong.get());
             newAtomicLong.incrementAndGet();
-            instance.getLifecycleService().shutdown();
+            instance.shutdown();
             instance = newInstance;
         }
     }
@@ -146,7 +146,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
 
                 IAtomicLong newAtomicLong = instance.getAtomicLong(name);
                 Assert.assertEquals((long) 100 + (i + 1) * parallel, newAtomicLong.get());
-                instance.getLifecycleService().shutdown();
+                instance.shutdown();
                 instance = instances[0];
             }
         } finally {

@@ -86,7 +86,7 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put("key", "value2", 0, TimeUnit.SECONDS);
         Thread.sleep(2000);
         assertEquals("value2", map.get("key"));
-        h.getLifecycleService().shutdown();
+        h.shutdown();
     }
 
     /*
@@ -106,7 +106,7 @@ public class EvictionTest extends HazelcastTestSupport {
         map.set("key", "value2", 0, TimeUnit.SECONDS);
         Thread.sleep(2000);
         assertEquals("value2", map.get("key"));
-        h.getLifecycleService().shutdown();
+        h.shutdown();
     }
 
     /*
@@ -126,7 +126,7 @@ public class EvictionTest extends HazelcastTestSupport {
         map.set("key", "value2");
         Thread.sleep(2000);
         assertEquals(0, map.size());
-        h.getLifecycleService().shutdown();
+        h.shutdown();
     }
 
     /*
@@ -173,7 +173,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
         assertEquals(evictCount.get(), 0);
         assertNotNull(map.get(key));
-        hazelcastInstance.getLifecycleService().shutdown();
+        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -443,11 +443,10 @@ public class EvictionTest extends HazelcastTestSupport {
                 }
             }
             Assert.assertFalse(isFrequentlyUsedEvicted);
-            instances[0].getLifecycleService().shutdown();
+            instances[0].shutdown();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
     }
 
     @Test

@@ -78,8 +78,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member.getIntAttribute("Test"));
         assertEquals(123, (int) member.getIntAttribute("Test"));
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -106,8 +106,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member.getIntAttribute("Test"));
         assertEquals(123, (int) member.getIntAttribute("Test"));
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -147,8 +147,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member.getIntAttribute("Test2"));
         assertEquals(321, (int) member.getIntAttribute("Test2"));
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -188,8 +188,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         assertNotNull(member.getIntAttribute("Test"));
         assertEquals(321, (int) member.getIntAttribute("Test"));
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -228,8 +228,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         assertNull(member.getIntAttribute("Test"));
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -252,7 +252,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         assertEquals("12345", m1.getStringAttribute("Test-3"));
         assertEquals(1234567, (int) m1.getIntAttribute("Test-4"));
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
     }
 
     private static class LatchMembershipListener implements MembershipListener {

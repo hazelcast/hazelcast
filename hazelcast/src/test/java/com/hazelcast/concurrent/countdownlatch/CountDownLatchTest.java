@@ -32,6 +32,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author mdogan 1/16/13
  */
@@ -48,7 +50,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
-        Assert.assertEquals(k - 1, latch.getCount());
+        assertEquals(k - 1, latch.getCount());
 
         new Thread() {
             public void run() {
@@ -60,7 +62,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
                     }
                     final ICountDownLatch l = instances[i].getCountDownLatch("test");
                     l.countDown();
-                    Assert.assertEquals(k - 1 - i, l.getCount());
+                    assertEquals(k - 1 - i, l.getCount());
                 }
             }
         }.start();
@@ -71,7 +73,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
             e.printStackTrace();
             Assert.fail(e.getMessage());
         }
-        Assert.assertEquals(0, latch.getCount());
+        assertEquals(0, latch.getCount());
     }
 
     @Test
@@ -123,45 +125,45 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     @ClientCompatibleTest
     public void testLatchMigration() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
-        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
         warmUpPartitions(hz2, hz1);
 
-        final ICountDownLatch latch1 = hz1.getCountDownLatch("test");
+        ICountDownLatch latch1 = hz1.getCountDownLatch("test");
         latch1.trySetCount(10);
         Thread.sleep(500);
 
-        final ICountDownLatch latch2 = hz2.getCountDownLatch("test");
-        Assert.assertEquals(10, latch2.getCount());
+        ICountDownLatch latch2 = hz2.getCountDownLatch("test");
+        assertEquals(10, latch2.getCount());
         latch2.countDown();
-        Assert.assertEquals(9, latch1.getCount());
-        hz1.getLifecycleService().shutdown();
-        Assert.assertEquals(9, latch2.getCount());
+        assertEquals(9, latch1.getCount());
+        hz1.shutdown();
+        assertEquals(9, latch2.getCount());
 
-        HazelcastInstance hz3 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
         warmUpPartitions(hz3);
-        final ICountDownLatch latch3 = hz3.getCountDownLatch("test");
+        ICountDownLatch latch3 = hz3.getCountDownLatch("test");
         latch3.countDown();
-        Assert.assertEquals(8, latch3.getCount());
+        assertEquals(8, latch3.getCount());
 
-        hz2.getLifecycleService().shutdown();
+        hz2.shutdown();
         latch3.countDown();
-        Assert.assertEquals(7, latch3.getCount());
+        assertEquals(7, latch3.getCount());
 
-        HazelcastInstance hz4 = factory.newHazelcastInstance(new Config());
-        HazelcastInstance hz5 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz4 = factory.newHazelcastInstance();
+        HazelcastInstance hz5 = factory.newHazelcastInstance();
         warmUpPartitions(hz5, hz4);
         Thread.sleep(250);
 
-        hz3.getLifecycleService().shutdown();
-        final ICountDownLatch latch4 = hz4.getCountDownLatch("test");
-        Assert.assertEquals(7, latch4.getCount());
+        hz3.shutdown();
+        ICountDownLatch latch4 = hz4.getCountDownLatch("test");
+        assertEquals(7, latch4.getCount());
 
-        final ICountDownLatch latch5 = hz5.getCountDownLatch("test");
+        ICountDownLatch latch5 = hz5.getCountDownLatch("test");
         latch5.countDown();
-        Assert.assertEquals(6, latch5.getCount());
+        assertEquals(6, latch5.getCount());
         latch5.countDown();
-        Assert.assertEquals(5, latch4.getCount());
-        Assert.assertEquals(5, latch5.getCount());
+        assertEquals(5, latch4.getCount());
+        assertEquals(5, latch5.getCount());
     }
 }

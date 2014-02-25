@@ -55,7 +55,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
 
         //terminate the second instance
         Member member2 = hz2.getCluster().getLocalMember();
-        hz2.getLifecycleService().shutdown();
+        hz2.shutdown();
 
         assertEventuallySizeAtLeast(listener.events, 2);
         assertMembershipRemovedEvent(listener.events.get(1), member2, hz1.getCluster().getLocalMember());
@@ -128,7 +128,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         assertMembershipAddedEvent(listener.events.get(1), hz2.getCluster().getLocalMember(), hz1.getCluster().getLocalMember(), hz2.getCluster().getLocalMember());
 
         Member member2 = hz2.getCluster().getLocalMember();
-        hz2.getLifecycleService().shutdown();
+        hz2.shutdown();
 
         assertEventuallySizeAtLeast(listener.events, 3);
         assertMembershipRemovedEvent(listener.events.get(2), member2, hz1.getCluster().getLocalMember());

@@ -178,7 +178,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
             queue.offer(i + maxSize / 2);
         }
 
-        instance.getLifecycleService().shutdown();
+        instance.shutdown();
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         IQueue<Object> queue2 = instance2.getQueue("testQueueStore");

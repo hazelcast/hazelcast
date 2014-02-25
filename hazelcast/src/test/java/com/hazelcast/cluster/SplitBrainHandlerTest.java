@@ -268,7 +268,7 @@ public class SplitBrainHandlerTest {
         c3.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
                 if (event.getState() == LifecycleState.MERGING) {
-                    h1.getLifecycleService().shutdown();
+                    h1.shutdown();
                 } else if (event.getState() == LifecycleState.MERGED) {
                     latch.countDown();
                 }

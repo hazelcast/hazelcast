@@ -76,7 +76,7 @@ public class MapLockTest extends HazelcastTestSupport {
         new Thread(runnable).start();
         try {
             Thread.sleep(1000);
-            h2.getLifecycleService().shutdown();
+            h2.shutdown();
             latch.await();
             for (int i = 0; i < size; i++) {
                 assertFalse(map1.isLocked(i));

@@ -176,13 +176,13 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         assertEquals(2, q2.size());
-        h1 = factory.newHazelcastInstance(new Config());
+        h1 = factory.newHazelcastInstance();
         q1 = h1.getQueue("q");
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        h2.getLifecycleService().shutdown();
+        h2.shutdown();
         assertEquals(2, q1.size());
     }
 
@@ -220,7 +220,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         Assert.assertTrue(latchOffer.await(100, TimeUnit.SECONDS));
         Assert.assertTrue(latchTake.await(10, TimeUnit.SECONDS));
         Assert.assertTrue(hz1.getQueue("q").isEmpty());
-        hz1.getLifecycleService().shutdown();
+        hz1.shutdown();
         Assert.assertTrue(hz2.getQueue("q").isEmpty());
 
         final Object[] objects = new Object[total];
@@ -249,7 +249,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
         assertEquals(100, h.getQueue("default").size());
         assertFalse(result);
-        h.getLifecycleService().shutdown();
+        h.shutdown();
     }
 
     @Test

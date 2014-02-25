@@ -58,7 +58,7 @@ public class ClientTxnTest {
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 
@@ -73,7 +73,7 @@ public class ClientTxnTest {
             final TransactionalQueue queue = context.getQueue("testTxnRollback");
             queue.offer("item");
 
-            server.getLifecycleService().shutdown();
+            server.shutdown();
 
             context.commitTransaction();
             fail("commit should throw exception!!!");

@@ -98,7 +98,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
             ex.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    hzs.get(1).getLifecycleService().shutdown();
+                    hzs.get(1).shutdown();
                 }
             }, 1000, TimeUnit.MILLISECONDS);
 
@@ -134,7 +134,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
             //System.out.println(execution + ": " + time + " mls");
             Thread.sleep(100);
         }
-        client.getLifecycleService().shutdown();
+        client.shutdown();
     }
 
     private static class Task implements Serializable, Callable<Long> {

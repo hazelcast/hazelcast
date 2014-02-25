@@ -108,7 +108,7 @@ public class ClientXaTest {
         final TransactionalMap<Object, Object> map = context1.getMap("map");
         map.put("key", "value");
         xaResource1.prepare(myXid);
-        client1.getLifecycleService().shutdown();
+        client1.shutdown();
 
         assertNull(instance1.getMap("map").get("key"));
 

@@ -880,7 +880,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
         assertEquals(1000, map3.size());
-        h3.getLifecycleService().shutdown();
+        h3.shutdown();
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());

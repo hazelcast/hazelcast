@@ -79,9 +79,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
             assertEquals(123, (int) m.getIntAttribute("Test"));
         }
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -121,9 +121,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         assertTrue(found);
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -177,9 +177,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         assertTrue(found);
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -234,8 +234,8 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         assertTrue(found);
 
         client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -288,9 +288,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         assertTrue(found);
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     private static class LatchMembershipListener implements MembershipListener {

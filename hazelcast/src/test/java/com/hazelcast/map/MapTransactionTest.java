@@ -187,7 +187,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         };
         new Thread(runnable).start();
         assertTrue(latch2.await(20, TimeUnit.SECONDS));
-        h2.getLifecycleService().shutdown();
+        h2.shutdown();
 
         assertTrue(latch.await(60, TimeUnit.SECONDS));
         for (int i = 0; i < size; i++) {
@@ -233,7 +233,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         Thread thread = new Thread(runnable);
         thread.start();
         Thread.sleep(200);
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         thread.join(30 * 1000);
 
         assertFalse(result.get());
@@ -746,7 +746,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         }
         assertEquals(0, map.size());
 
-        inst.getLifecycleService().shutdown();
+        inst.shutdown();
     }
 
 
@@ -879,8 +879,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
             }
         }
         assertEquals(2, map.keySet().size());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -934,8 +934,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals(1, map.keySet().size());
         assertEquals(0, map.keySet(new SqlPredicate("age <= 10")).size());
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -969,8 +969,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals(2, map.size());
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -1004,8 +1004,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals(3, map2.values().size());
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -1044,8 +1044,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertEquals(0, map2.values(new SqlPredicate("age <= 10")).size());
         assertEquals(1, map2.values(new SqlPredicate("age = 34")).size());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
 }

@@ -527,7 +527,7 @@ public class TopicTest extends HazelcastTestSupport {
         topic1.publish(message);
         assertTrue(latch1.await(5, TimeUnit.SECONDS));
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         topic2.publish(message);
         assertTrue(latch2.await(5, TimeUnit.SECONDS));
     }

@@ -205,8 +205,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), res.get(i));
         }
-        instance1.getLifecycleService().shutdown();
-        instance2.getLifecycleService().shutdown();
+        instance1.shutdown();
+        instance2.shutdown();
     }
 
 
@@ -228,7 +228,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), (Object) (i + 1));
         }
-        instance1.getLifecycleService().shutdown();
+        instance1.shutdown();
         Thread.sleep(1000);
         IMap<Integer, Integer> map2 = instance2.getMap("testBackupMapEntryProcessorAllKeys");
         for (int i = 0; i < size; i++) {
@@ -262,9 +262,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (int i = 0; i < 5; i++) {
             assertEquals(((SampleObjects.Employee) res.get(i)).getState(), SampleObjects.State.STATE2);
         }
-        instance1.getLifecycleService().shutdown();
-        instance2.getLifecycleService().shutdown();
-
+        instance1.shutdown();
+        instance2.shutdown();
     }
 
     @Test
@@ -284,14 +283,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             map.executeOnKey(i, entryProcessor);
         }
 
-        instance1.getLifecycleService().shutdown();
+        instance1.shutdown();
         IMap<Integer, Integer> map3 = instance3.getMap("testBackups");
 
         for (int i = 0; i < 1000; i++) {
             assertEquals((Object) (i + 1), map3.get(i));
         }
-        instance2.getLifecycleService().shutdown();
-        instance3.getLifecycleService().shutdown();
+        instance2.shutdown();
+        instance3.shutdown();
 
     }
 
@@ -597,8 +596,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(100, removeCount.get());
         assertEquals(100, updateCount.get());
 
-        instance1.getLifecycleService().shutdown();
-        instance2.getLifecycleService().shutdown();
+        instance1.shutdown();
+        instance2.shutdown();
     }
 
 
@@ -672,7 +671,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         assertEquals(124, hz.getMap("default").get(1));
 
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
     }
 
     @Test

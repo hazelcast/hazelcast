@@ -181,7 +181,7 @@ public class LockTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                instance.getLifecycleService().shutdown();
+                instance.shutdown();
             }
         }).start();
         lock.lock();
@@ -216,7 +216,7 @@ public class LockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        lockOwner.getLifecycleService().shutdown();
+        lockOwner.shutdown();
         Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
@@ -243,8 +243,8 @@ public class LockTest extends HazelcastTestSupport {
         }).start();
 
         Thread.sleep(1000);
-        keyOwner.getLifecycleService().shutdown();
-        Assert.assertTrue(lock1.isLocked());
+        keyOwner.shutdown();
+        assertTrue(lock1.isLocked());
         Assert.assertTrue(lock1.isLockedByCurrentThread());
         Assert.assertTrue(lock1.tryLock());
         lock1.unlock();
@@ -488,7 +488,7 @@ public class LockTest extends HazelcastTestSupport {
         lock1.lock();
         condition1.signalAll();
         lock1.unlock();
-        keyOwner.getLifecycleService().shutdown();
+        keyOwner.shutdown();
 
         finalLatch.await(2, TimeUnit.MINUTES);
         Assert.assertEquals(size, count.get());
@@ -530,7 +530,7 @@ public class LockTest extends HazelcastTestSupport {
         t.start();
         Thread.sleep(1000);
         lock1.lock();
-        keyOwner.getLifecycleService().shutdown();
+        keyOwner.shutdown();
 
         condition1.signal();
 
@@ -588,7 +588,7 @@ public class LockTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                instance.getLifecycleService().shutdown();
+                instance.shutdown();
             }
         }).start();
 
@@ -646,7 +646,7 @@ public class LockTest extends HazelcastTestSupport {
         Thread.sleep(5000);
 
         assertTrue(lock1.isLocked());
-        h2.getLifecycleService().shutdown();
+        h2.shutdown();
         thread.join(10000);
         assertFalse(thread.isAlive());
         assertFalse(error.get());

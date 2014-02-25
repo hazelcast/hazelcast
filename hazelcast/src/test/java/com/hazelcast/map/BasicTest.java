@@ -845,7 +845,7 @@ public class BasicTest extends HazelcastTestSupport {
             assertEquals(i, map.get(i));
         }
 
-        instance2.getLifecycleService().shutdown();
+        instance2.shutdown();
         assertEquals(size, map.size());
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));

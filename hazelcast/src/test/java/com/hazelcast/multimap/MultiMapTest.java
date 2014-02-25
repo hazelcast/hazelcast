@@ -308,7 +308,7 @@ public class MultiMapTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                instances[0].getLifecycleService().shutdown();
+                instances[0].shutdown();
             }
         }.start();
 
