@@ -28,8 +28,6 @@ import static org.junit.Assert.assertTrue;
  * We don't want instances to be shared unexpectedly. In the future there might be some sharing going
  * on when we see that an instance is immutable.
  */
-//TODO: This test is currently disabled, because we are violating the assumption that a user will always
-//get a copy of the object.
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
