@@ -43,7 +43,7 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class SemaphoreTest extends HazelcastTestSupport {
 
-    @Test
+    @Test(timeout = 30000)
     public void testAcquire(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -65,7 +65,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testRelease(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -82,7 +82,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), numberOfPermits);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testMultipleAcquire(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -103,7 +103,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), 0);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testMultipleRelease(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -119,7 +119,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), numberOfPermits);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testDrain(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -139,7 +139,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), 0);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testReduce(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -157,7 +157,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), 0);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testTryAcquire(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -175,7 +175,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), 0);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testTryAcquireMultiple(){
         final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -193,7 +193,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), 0);
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testMutex() {
         final int k = 5;
         final Config config = new Config();
@@ -243,7 +243,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testSemaphoreWithFailures() throws InterruptedException {
         final int k = 4;
         final Config config = new Config();
@@ -274,7 +274,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testSemaphoreWithFailuresAndJoin() {
         final Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
@@ -314,7 +314,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testSemaphoreInit(){
         final Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
