@@ -61,7 +61,7 @@ public class ClientIOExecutorPoolSizeLowTest {
 
     @After
     public void destroy() {
-        client.getLifecycleService().shutdown();
+        client.shutdown();
         Hazelcast.shutdownAll();
     }
 
@@ -74,15 +74,14 @@ public class ClientIOExecutorPoolSizeLowTest {
 
         destroy();
 
-        Config config = new Config();
-        server1 = Hazelcast.newHazelcastInstance(config);
+        server1 = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(executorPoolSize);
         client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        server2 = Hazelcast.newHazelcastInstance(config);
-        server3 = Hazelcast.newHazelcastInstance(config);
+        server2 = Hazelcast.newHazelcastInstance();
+        server3 = Hazelcast.newHazelcastInstance();
 
         final IMap<Object, Object> map = client.getMap("map");
 

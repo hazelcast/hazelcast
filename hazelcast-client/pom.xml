@@ -63,6 +63,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -76,6 +77,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -106,6 +108,24 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>${findbugs.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnError>true</failOnError>
+                    <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
+                </configuration>
             </plugin>
         </plugins>
     </build>

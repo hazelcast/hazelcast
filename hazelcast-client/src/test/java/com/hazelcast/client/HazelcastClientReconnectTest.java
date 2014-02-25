@@ -62,7 +62,7 @@ public class HazelcastClientReconnectTest {
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         final HazelcastInstance client1 = HazelcastClient.newHazelcastClient(clientConfig);
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         //wait enough time to GET_MEMBERS command to appear and to default connectionTimeout (30 seconds) pass
         Thread.sleep(50000);
 
@@ -106,7 +106,7 @@ public class HazelcastClientReconnectTest {
             m.addEntryListener(new EntryAdapter<String, String>(), true);
         }
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         //wait enough time to GET_MEMBERS command to appear and to default connectionTimeout (30 seconds) pass
         Thread.sleep(50000);
 

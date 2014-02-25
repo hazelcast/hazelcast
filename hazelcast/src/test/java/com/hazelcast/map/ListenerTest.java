@@ -18,20 +18,28 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.test.*;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -61,8 +69,7 @@ public class ListenerTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }));
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMap(name).put(1, 1);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
@@ -171,12 +178,15 @@ public class ListenerTest extends HazelcastTestSupport {
         }
     }
 
-    private void checkCountWithExpected(int expectedGlobal, int expectedLocal, int expectedValue) throws InterruptedException {
-        // wait for entry listener execution
-        Thread.sleep(1000 * 3);
-        Assert.assertEquals(expectedLocal, localCount.get());
-        Assert.assertEquals(expectedGlobal, globalCount.get());
-        Assert.assertEquals(expectedValue, valueCount.get());
+    private void checkCountWithExpected(final int expectedGlobal, final int expectedLocal, final int expectedValue) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(expectedLocal, localCount.get());
+                assertEquals(expectedGlobal, globalCount.get());
+                assertEquals(expectedValue, valueCount.get());
+            }
+        });
     }
 
     /**
@@ -209,17 +219,16 @@ public class ListenerTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
         }, false);
-        map.set(1,1);
-        map.set(1,2);
+        map.set(1, 1);
+        map.set(1, 2);
         assertTrue(addLatch.await(5, TimeUnit.SECONDS));
         assertTrue(updateLatch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
     public void testLocalEntryListener_singleInstance_with_MatchingPredicate() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = new Config();
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         IMap<String, String> map = instance.getMap("map");
 
@@ -227,16 +236,15 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         checkCountWithExpected(count, 0, 0);
     }
 
     @Test
     public void testLocalEntryListener_singleInstance_with_NonMatchingPredicate() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = new Config();
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         IMap<String, String> map = instance.getMap("map");
 
@@ -244,7 +252,7 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), nonMatchingPredicate(), includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         checkCountWithExpected(0, 0, 0);
     }
@@ -261,14 +269,14 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         final int eventPerPartitionMin = count / instanceCount - count / 10;
         final int eventPerPartitionMax = count / instanceCount + count / 10;
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue( globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax);
+                assertTrue(globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax);
             }
         });
     }
@@ -285,12 +293,12 @@ public class ListenerTest extends HazelcastTestSupport {
         map.addLocalEntryListener(createEntryListener(false), matchingPredicate(), "key500", includeValue);
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            map.put("key"+i, "value"+i);
+            map.put("key" + i, "value" + i);
         }
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue( globalCount.get() == 1);
+                assertTrue(globalCount.get() == 1);
             }
         });
     }

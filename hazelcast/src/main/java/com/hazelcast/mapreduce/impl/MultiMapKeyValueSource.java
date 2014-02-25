@@ -22,11 +22,13 @@ import com.hazelcast.multimap.MultiMapContainer;
 import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.multimap.MultiMapWrapper;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -71,8 +73,13 @@ public class MultiMapKeyValueSource<K, V>
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
+        PartitionService ps = nei.getPartitionService();
         MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);
         ss = nei.getSerializationService();
+        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        if (partitionOwner == null) {
+            return false;
+        }
         multiMapContainer = multiMapService.getOrCreateCollectionContainer(partitionId, multiMapName);
         isBinary = multiMapContainer.getConfig().isBinary();
         keyIterator = multiMapContainer.keySet().iterator();

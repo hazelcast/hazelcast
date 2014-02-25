@@ -41,6 +41,7 @@ public class TopicPortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
+            @Override
             public Portable create(int classId) {
                 switch (classId){
                     case PUBLISH:
@@ -51,8 +52,9 @@ public class TopicPortableHook implements PortableHook {
                         return new RemoveMessageListenerRequest();
                     case PORTABLE_MESSAGE:
                         return new PortableMessage();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

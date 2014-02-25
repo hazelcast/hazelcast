@@ -34,6 +34,10 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * User: sancar
  * Date: 3/11/13
@@ -60,11 +64,11 @@ public class RestTest {
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         communicator.put("map", "key", "value");
         String value = communicator.get("map", "key");
-        Assert.assertNotNull(value);
-        Assert.assertEquals("value", value);
+        assertNotNull(value);
+        assertEquals("value", value);
         Thread.sleep(4000);
         value = communicator.get("map", "key");
-        Assert.assertTrue(value.isEmpty());
+        assertTrue(value.isEmpty());
     }
 
     @Test
@@ -78,14 +82,14 @@ public class RestTest {
 
         for (int i = 0; i < 100; i++) {
             String actual = communicator.get(name, String.valueOf(i));
-            Assert.assertEquals(String.valueOf(i * 10), actual);
+            assertEquals(String.valueOf(i * 10), actual);
         }
 
         communicator.deleteAll(name);
 
         for (int i = 0; i < 100; i++) {
             String actual = communicator.get(name, String.valueOf(i));
-            Assert.assertEquals("", actual);
+            assertEquals("", actual);
         }
 
         for (int i = 0; i < 100; i++) {
@@ -93,7 +97,7 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(String.valueOf(i * 10), communicator.get(name, String.valueOf(i)));
+            assertEquals(String.valueOf(i * 10), communicator.get(name, String.valueOf(i)));
         }
 
         for (int i = 0; i < 100; i++) {
@@ -101,7 +105,7 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
-            Assert.assertEquals("", communicator.get(name, String.valueOf(i)));
+            assertEquals("", communicator.get(name, String.valueOf(i)));
         }
 
         for (int i = 0; i < 100; i++) {
@@ -109,7 +113,7 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(String.valueOf(i), communicator.poll(name, 2));
+            assertEquals(String.valueOf(i), communicator.poll(name, 2));
         }
     }
 

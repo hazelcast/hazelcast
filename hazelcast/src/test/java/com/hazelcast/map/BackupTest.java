@@ -84,17 +84,17 @@ public class BackupTest extends HazelcastTestSupport {
 
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap m2 = h2.getMap(MAP_NAME);
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         assertEquals(size, m2.size());
 
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         IMap m3 = h3.getMap(MAP_NAME);
-        h2.getLifecycleService().shutdown();
+        h2.shutdown();
         assertEquals(size, m3.size());
 
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
         IMap m4 = h4.getMap(MAP_NAME);
-        h3.getLifecycleService().shutdown();
+        h3.shutdown();
         assertEquals(size, m4.size());
     }
 
@@ -117,7 +117,7 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz2 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map2 = hz2.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map2.size());
+        assertEquals(size, map2.size());
 
         final HazelcastInstance hz3 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map3 = hz3.getMap(MAP_NAME);
@@ -125,8 +125,8 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz4 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map4 = hz4.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
 
         final HazelcastInstance hz5 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map5 = hz5.getMap(MAP_NAME);
@@ -134,22 +134,22 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz6 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map6 = hz6.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
 
-        hz.getLifecycleService().shutdown();
-        hz2.getLifecycleService().shutdown();
+        hz.shutdown();
+        hz2.shutdown();
 
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
 
-        hz3.getLifecycleService().shutdown();
-        hz4.getLifecycleService().shutdown();
+        hz3.shutdown();
+        hz4.shutdown();
 
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
     }
 
     @Test(timeout = 60 * 1000)
@@ -183,36 +183,36 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz6 = f.newHazelcastInstance(config);
         final IMap<Object, Object> map6 = hz6.getMap(MAP_NAME);
 
-        Assert.assertEquals(size, map2.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
-        Assert.assertEquals(size, map6.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
+        assertEquals(size, map6.size());
 
-        hz6.getLifecycleService().shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map2.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
+        hz6.shutdown();
+        assertEquals(size, map.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
 
-        hz2.getLifecycleService().shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
-        Assert.assertEquals(size, map5.size());
+        hz2.shutdown();
+        assertEquals(size, map.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
+        assertEquals(size, map5.size());
 
-        hz5.getLifecycleService().shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map3.size());
-        Assert.assertEquals(size, map4.size());
+        hz5.shutdown();
+        assertEquals(size, map.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, map4.size());
 
-        hz3.getLifecycleService().shutdown();
-        Assert.assertEquals(size, map.size());
-        Assert.assertEquals(size, map4.size());
+        hz3.shutdown();
+        assertEquals(size, map.size());
+        assertEquals(size, map4.size());
 
-        hz4.getLifecycleService().shutdown();
-        Assert.assertEquals(size, map.size());
+        hz4.shutdown();
+        assertEquals(size, map.size());
     }
 
     /**
@@ -413,11 +413,10 @@ public class BackupTest extends HazelcastTestSupport {
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
-        final Config config = new Config();
         final String name = MAP_NAME;
 
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance();
         final IMap<Object, Object> map = hz2.getMap(name);
 
         final int size = 100000;
@@ -473,11 +472,10 @@ public class BackupTest extends HazelcastTestSupport {
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
-        final Config config = new Config();
         final String name = MAP_NAME;
 
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance();
         final IMap<Object, Object> map = hz2.getMap(name);
 
         final int size = 100000;

@@ -47,7 +47,8 @@ abstract class BaseCallableTaskOperation extends Operation {
 
         if (callable instanceof RunnableAdapter) {
             RunnableAdapter adapter = (RunnableAdapter) callable;
-            adapter.setRunnable((Runnable) managedContext.initialize(adapter.getRunnable()));
+            Runnable runnable = (Runnable) managedContext.initialize(adapter.getRunnable());
+            adapter.setRunnable(runnable);
         } else {
             callable = (Callable) managedContext.initialize(callable);
         }

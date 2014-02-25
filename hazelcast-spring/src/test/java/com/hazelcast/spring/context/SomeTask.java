@@ -30,6 +30,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author mdogan 4/6/12
  */
@@ -44,7 +46,7 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
 
     public Long call() throws Exception {
         SomeBean bean = (SomeBean) context.getBean("someBean");
-        Assert.assertEquals(bean, someBean);
+        assertEquals(bean, someBean);
         return bean.value;
     }
 

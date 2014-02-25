@@ -40,6 +40,7 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -50,6 +51,7 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
@@ -71,6 +73,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -131,6 +134,24 @@
                         </manifest>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>${findbugs.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnError>true</failOnError>
+                    <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
                 </configuration>
             </plugin>
         </plugins>

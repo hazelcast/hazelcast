@@ -22,7 +22,6 @@ import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -755,7 +754,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    public void updateMemberAttribute(String uuid, MapOperationType operationType, String key, Object value) {
+    public void updateMemberAttribute(String uuid, MemberAttributeOperationType operationType, String key, Object value) {
         lock.lock();
         try {
             Map<Address, MemberImpl> memberMap = membersMapRef.get();
@@ -916,7 +915,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private void sendMemberAttributeEvent(MemberImpl member, MapOperationType operationType, String key, Object value) {
+    private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key, Object value) {
         final MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(getClusterProxy(), member, operationType, key, value);
         final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         final MemberAttributeServiceEvent event = new MemberAttributeServiceEvent(getClusterProxy(), member, operationType, key, value);

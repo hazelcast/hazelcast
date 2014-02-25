@@ -186,6 +186,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public int getPriorityOperationExecutorQueueSize() {
+        return executor.getPriorityOperationExecutorQueueSize();
+    }
+
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
         if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);

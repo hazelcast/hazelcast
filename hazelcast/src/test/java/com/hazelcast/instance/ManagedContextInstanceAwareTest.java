@@ -37,13 +37,11 @@ public class ManagedContextInstanceAwareTest extends HazelcastTestSupport {
 
     @Test
     public void test(){
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-
         Config config = new Config();
         ManagedContextImpl managedContext = new ManagedContextImpl();
         config.setManagedContext(managedContext);
 
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         assertNotNull("hazelcastInstance should have been set",managedContext.hz);
     }
 

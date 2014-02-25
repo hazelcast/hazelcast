@@ -42,6 +42,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mdogan 7/30/13
  */
@@ -121,12 +123,7 @@ public class ConnectionTest {
             t.start();
         }
 
-        try {
-            Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
-        } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.dumpAllThreads());
-            throw e;
-        }
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
 
     @Test
@@ -164,12 +161,7 @@ public class ConnectionTest {
             t.start();
         }
 
-        try {
-            Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
-        } catch (AssertionError e) {
-            System.err.println(ThreadDumpGenerator.dumpAllThreads());
-            throw e;
-        }
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
 
 
@@ -256,7 +248,7 @@ public class ConnectionTest {
         }
 
         try {
-            Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
+            assertTrue(latch.await(1, TimeUnit.MINUTES));
         } catch (AssertionError e) {
             System.err.println(ThreadDumpGenerator.dumpAllThreads());
             throw e;

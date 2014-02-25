@@ -49,8 +49,7 @@ public class TestWriteBehindException extends HazelcastTestSupport {
         mapStore.setLoadAllKeys(false);
         Config config = MapStoreTest.newConfig(mapStore, 5);
         config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, String> map = instance.getMap("map");
         IMap<Integer, String> map2 = instance.getMap("map2");
         IMap<Integer, String> map3 = instance.getMap("map3");

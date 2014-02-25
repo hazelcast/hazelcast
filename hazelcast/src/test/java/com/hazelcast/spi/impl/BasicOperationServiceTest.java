@@ -40,8 +40,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
     @Test
     public void testTimeoutSingleMember() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         final IQueue<Object> q = hz.getQueue("queue");
 
         for (int k = 0; k < 1000; k++) {
@@ -73,8 +72,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
     // when Future.get() is not called.
     @Test
     public void testAsyncOpsSingleMember() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         final IMap<Object, Object> map = hz.getMap("test");
 
         final int count = 1000;
@@ -84,7 +82,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             public void run() {
-                Assert.assertEquals(count, map.size());
+                assertEquals(count, map.size());
             }
         });
 
@@ -114,8 +112,8 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             public void run() {
-                Assert.assertEquals(count, map.size());
-                Assert.assertEquals(count, map2.size());
+                assertEquals(count, map.size());
+                assertEquals(count, map2.size());
             }
         });
 

@@ -39,6 +39,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * User: sancar
  * Date: 3/7/13
@@ -70,49 +72,49 @@ public class MemcacheTest {
         try {
             for (int i = 0; i < 100; i++) {
                 final OperationFuture<Boolean> future = client.set(String.valueOf(i), 0, i);
-                Assert.assertEquals(Boolean.TRUE, future.get());
+                assertEquals(Boolean.TRUE, future.get());
             }
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(i, client.get(String.valueOf(i)));
+                assertEquals(i, client.get(String.valueOf(i)));
             }
             for (int i = 0; i < 100; i++) {
                 final OperationFuture<Boolean> future = client.add(String.valueOf(i), 0, i * 100);
-                Assert.assertEquals(Boolean.FALSE, future.get());
+                assertEquals(Boolean.FALSE, future.get());
             }
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(i, client.get(String.valueOf(i)));
+                assertEquals(i, client.get(String.valueOf(i)));
             }
             for (int i = 100; i < 200; i++) {
                 final OperationFuture<Boolean> future = client.add(String.valueOf(i), 0, i);
-                Assert.assertEquals(Boolean.TRUE, future.get());
+                assertEquals(Boolean.TRUE, future.get());
             }
             for (int i = 0; i < 200; i++) {
-                Assert.assertEquals(i, client.get(String.valueOf(i)));
+                assertEquals(i, client.get(String.valueOf(i)));
             }
             for (int i = 0; i < 200; i++) {
                 final OperationFuture<Boolean> future = client.replace(String.valueOf(i), 0, i * 10);
-                Assert.assertEquals(Boolean.TRUE, future.get());
+                assertEquals(Boolean.TRUE, future.get());
             }
             for (int i = 0; i < 200; i++) {
-                Assert.assertEquals(i * 10, client.get(String.valueOf(i)));
+                assertEquals(i * 10, client.get(String.valueOf(i)));
             }
             for (int i = 200; i < 400; i++) {
                 final OperationFuture<Boolean> future = client.replace(String.valueOf(i), 0, i);
-                Assert.assertEquals(Boolean.FALSE, future.get());
+                assertEquals(Boolean.FALSE, future.get());
             }
             for (int i = 200; i < 400; i++) {
-                Assert.assertEquals(null, client.get(String.valueOf(i)));
+                assertEquals(null, client.get(String.valueOf(i)));
             }
             for (int i = 100; i < 200; i++) {
                 final OperationFuture<Boolean> future = client.delete(String.valueOf(i));
-                Assert.assertEquals(Boolean.TRUE, future.get());
+                assertEquals(Boolean.TRUE, future.get());
             }
             for (int i = 100; i < 200; i++) {
-                Assert.assertEquals(null, client.get(String.valueOf(100)));
+                assertEquals(null, client.get(String.valueOf(100)));
             }
             for (int i = 100; i < 200; i++) {
                 final OperationFuture<Boolean> future = client.delete(String.valueOf(i));
-                Assert.assertEquals(Boolean.FALSE, future.get());
+                assertEquals(Boolean.FALSE, future.get());
             }
 
             final LinkedList<String> keys = new LinkedList<String>();
@@ -121,16 +123,16 @@ public class MemcacheTest {
             }
             final Map<String, Object> bulk = client.getBulk(keys);
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(i * 10, bulk.get(String.valueOf(i)));
+                assertEquals(i * 10, bulk.get(String.valueOf(i)));
             }
             // STATS
             final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-            Assert.assertEquals("700", stats.get("cmd_set"));
-            Assert.assertEquals("1000", stats.get("cmd_get"));
-            Assert.assertEquals("700", stats.get("get_hits"));
-            Assert.assertEquals("300", stats.get("get_misses"));
-            Assert.assertEquals("100", stats.get("delete_hits"));
-            Assert.assertEquals("100", stats.get("delete_misses"));
+            assertEquals("700", stats.get("cmd_set"));
+            assertEquals("1000", stats.get("cmd_get"));
+            assertEquals("700", stats.get("get_hits"));
+            assertEquals("300", stats.get("get_misses"));
+            assertEquals("100", stats.get("delete_hits"));
+            assertEquals("100", stats.get("delete_misses"));
         } finally {
             client.shutdown();
         }
@@ -147,18 +149,18 @@ public class MemcacheTest {
                 map.put(String.valueOf(i), String.valueOf(i));
             }
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(String.valueOf(i), client.get(prefix + String.valueOf(i)));
+                assertEquals(String.valueOf(i), client.get(prefix + String.valueOf(i)));
                 client.set(prefix + String.valueOf(i), 0, String.valueOf(i * 10));
             }
             for (int i = 0; i < 100; i++) {
                 final MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(String.valueOf(i));
                 final MemcacheEntry expected = new MemcacheEntry(prefix + String.valueOf(i), String.valueOf(i * 10).getBytes(), 0);
-                Assert.assertEquals(expected, memcacheEntry);
+                assertEquals(expected, memcacheEntry);
             }
             final OperationFuture<Boolean> future = client.delete(prefix);
             future.get();
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(null, client.get(prefix + String.valueOf(i)));
+                assertEquals(null, client.get(prefix + String.valueOf(i)));
             }
         } finally {
             client.shutdown();
@@ -175,27 +177,27 @@ public class MemcacheTest {
                 future.get();
             }
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(i * 2, client.incr(String.valueOf(i), i));
+                assertEquals(i * 2, client.incr(String.valueOf(i), i));
             }
             for (int i = 100; i < 120; i++) {
-                Assert.assertEquals(-1, client.incr(String.valueOf(i), i));
+                assertEquals(-1, client.incr(String.valueOf(i), i));
             }
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(i, client.decr(String.valueOf(i), i));
+                assertEquals(i, client.decr(String.valueOf(i), i));
             }
             for (int i = 100; i < 130; i++) {
-                Assert.assertEquals(-1, client.decr(String.valueOf(i), i));
+                assertEquals(-1, client.decr(String.valueOf(i), i));
             }
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(i, client.get(String.valueOf(i)));
+                assertEquals(i, client.get(String.valueOf(i)));
             }
             final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-            Assert.assertEquals("100", stats.get("cmd_set"));
-            Assert.assertEquals("100", stats.get("cmd_get"));
-            Assert.assertEquals("100", stats.get("incr_hits"));
-            Assert.assertEquals("20", stats.get("incr_misses"));
-            Assert.assertEquals("100", stats.get("decr_hits"));
-            Assert.assertEquals("30", stats.get("decr_misses"));
+            assertEquals("100", stats.get("cmd_set"));
+            assertEquals("100", stats.get("cmd_get"));
+            assertEquals("100", stats.get("incr_hits"));
+            assertEquals("20", stats.get("incr_misses"));
+            assertEquals("100", stats.get("decr_hits"));
+            assertEquals("30", stats.get("decr_misses"));
         } finally {
             client.shutdown();
         }
@@ -212,14 +214,14 @@ public class MemcacheTest {
             }
             for (int i = 0; i < 100; i++) {
                 final OperationFuture<Boolean> future = client.append(0, String.valueOf(i), "append");
-                Assert.assertEquals(Boolean.TRUE, future.get());
+                assertEquals(Boolean.TRUE, future.get());
             }
             for (int i = 0; i < 100; i++) {
                 final OperationFuture<Boolean> future = client.prepend(0, String.valueOf(i), "prepend");
-                Assert.assertEquals(Boolean.TRUE, future.get());
+                assertEquals(Boolean.TRUE, future.get());
             }
             for (int i = 1; i < 100; i++) {
-                Assert.assertEquals("prepend" + String.valueOf(i) + "append", client.get(String.valueOf(i)));
+                assertEquals("prepend" + String.valueOf(i) + "append", client.get(String.valueOf(i)));
             }
         } finally {
             client.shutdown();
@@ -240,9 +242,9 @@ public class MemcacheTest {
         try {
             OperationFuture<Boolean> future = client.set(String.valueOf(0), 3, 10);
             future.get();
-            Assert.assertEquals(10, client.get(String.valueOf(0)));
+            assertEquals(10, client.get(String.valueOf(0)));
             Thread.sleep(6000);
-            Assert.assertEquals(null, client.get(String.valueOf(0)));
+            assertEquals(null, client.get(String.valueOf(0)));
         } finally {
             client.shutdown();
         }

@@ -15,12 +15,8 @@
  */
 
 package com.hazelcast.util;
+
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.jmx.InstanceMBean;
@@ -63,6 +59,7 @@ public class HealthMonitor extends Thread {
     public HealthMonitor(HazelcastInstanceImpl hazelcastInstance, HealthMonitorLevel logLevel, int delaySeconds) {
         super(hazelcastInstance.node.threadGroup, hazelcastInstance.node.getThreadNamePrefix("HealthMonitor"));
         setDaemon(true);
+
         this.hazelcastInstance = hazelcastInstance;
         this.node = hazelcastInstance.node;
         this.logger = node.getLogger(HealthMonitor.class.getName());
@@ -80,8 +77,9 @@ public class HealthMonitor extends Thread {
         this.connectionManager = node.connectionManager;
     }
 
+    @Override
     public void run() {
-        if(logLevel == HealthMonitorLevel.OFF){
+        if (logLevel == HealthMonitorLevel.OFF) {
             return;
         }
 
@@ -109,6 +107,7 @@ public class HealthMonitor extends Thread {
             }
         }
     }
+
     public class HealthMetrics {
         private final long memoryFree;
         private final long memoryTotal;
@@ -130,6 +129,7 @@ public class HealthMonitor extends Thread {
         private final int systemExecutorQueueSize;
         private final int eventQueueSize;
         private final int operationServiceOperationExecutorQueueSize;
+        private final int operationServiceOperationPriorityExecutorQueueSize;
         private final int operationServiceOperationResponseQueueSize;
         private final int runningOperationsCount;
         private final int remoteOperationsCount;
@@ -158,8 +158,9 @@ public class HealthMonitor extends Thread {
             scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).queueSize();
             systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).queueSize();
             ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).queueSize();
-             eventQueueSize = eventService.getEventQueueSize();
+            eventQueueSize = eventService.getEventQueueSize();
             operationServiceOperationExecutorQueueSize = operationService.getOperationExecutorQueueSize();
+            operationServiceOperationPriorityExecutorQueueSize = operationService.getPriorityOperationExecutorQueueSize();
             operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
             runningOperationsCount = operationService.getRunningOperationsCount();
             remoteOperationsCount = operationService.getRemoteOperationsCount();
@@ -211,6 +212,8 @@ public class HealthMonitor extends Thread {
             sb.append("executor.q.io.size=").append(ioExecutorQueueSize).append(", ");
             sb.append("executor.q.system.size=").append(systemExecutorQueueSize).append(", ");
             sb.append("executor.q.operation.size=").append(operationServiceOperationExecutorQueueSize).append(", ");
+            sb.append("executor.q.priorityOperation.size=").
+                    append(operationServiceOperationPriorityExecutorQueueSize).append(", ");
             sb.append("executor.q.response.size=").append(operationServiceOperationResponseQueueSize).append(", ");
             sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
             sb.append("operations.running.size=").append(runningOperationsCount).append(", ");

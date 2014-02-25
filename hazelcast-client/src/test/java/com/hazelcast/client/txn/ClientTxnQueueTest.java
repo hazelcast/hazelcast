@@ -49,13 +49,12 @@ public class ClientTxnQueueTest {
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
-//        second = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        hz = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 

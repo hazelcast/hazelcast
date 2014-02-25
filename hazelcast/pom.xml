@@ -32,17 +32,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.6.4</version>
-                <configuration>
-                    <excludes>
-                        <exclude>com/hazelcast/examples/**/*.class</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
@@ -227,6 +216,7 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -298,7 +288,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>findbugs-maven-plugin</artifactId>
-                        <version>2.5.4</version>
+                        <version>${maven.findbugs.plugin.version}</version>
                         <configuration>
                             <effort>Max</effort>
                             <threshold>Low</threshold>

@@ -35,6 +35,9 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import static com.hazelcast.instance.TestUtil.warmUpPartitions;
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class EncryptionTest {
@@ -58,18 +61,18 @@ public class EncryptionTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
-        Assert.assertEquals(3, h1.getCluster().getMembers().size());
-        Assert.assertEquals(3, h2.getCluster().getMembers().size());
-        Assert.assertEquals(3, h3.getCluster().getMembers().size());
-        Assert.assertEquals(h1.getCluster().getLocalMember(), h2.getCluster().getMembers().iterator().next());
-        Assert.assertEquals(h1.getCluster().getLocalMember(), h3.getCluster().getMembers().iterator().next());
+        assertEquals(3, h1.getCluster().getMembers().size());
+        assertEquals(3, h2.getCluster().getMembers().size());
+        assertEquals(3, h3.getCluster().getMembers().size());
+        assertEquals(h1.getCluster().getLocalMember(), h2.getCluster().getMembers().iterator().next());
+        assertEquals(h1.getCluster().getLocalMember(), h3.getCluster().getMembers().iterator().next());
 
-        TestUtil.warmUpPartitions(h1, h2, h3);
+        warmUpPartitions(h1, h2, h3);
         Member owner1 = h1.getPartitionService().getPartition(0).getOwner();
         Member owner2 = h2.getPartitionService().getPartition(0).getOwner();
         Member owner3 = h3.getPartitionService().getPartition(0).getOwner();
-        Assert.assertEquals(owner1, owner2);
-        Assert.assertEquals(owner1, owner3);
+        assertEquals(owner1, owner2);
+        assertEquals(owner1, owner3);
 
         String name = "encryption-test";
         IMap<Integer, byte[]> map1 = h1.getMap(name);
@@ -80,13 +83,13 @@ public class EncryptionTest {
         IMap<Integer, byte[]> map2 = h2.getMap(name);
         for (int i = 1; i < 100; i++) {
             byte[] bytes = map2.get(i);
-            Assert.assertEquals(i * 1024, bytes.length);
+            assertEquals(i * 1024, bytes.length);
         }
 
         IMap<Integer, byte[]> map3 = h3.getMap(name);
         for (int i = 1; i < 100; i++) {
             byte[] bytes = map3.get(i);
-            Assert.assertEquals(i * 1024, bytes.length);
+            assertEquals(i * 1024, bytes.length);
         }
     }
 }

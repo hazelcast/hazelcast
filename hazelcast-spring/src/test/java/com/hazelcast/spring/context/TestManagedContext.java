@@ -43,6 +43,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mdogan 4/6/12
  */
@@ -78,20 +81,20 @@ public class TestManagedContext {
         SomeValue v = (SomeValue) instance1.getMap("test").get(1L);
         Assert.assertNotNull(v.context);
         Assert.assertNotNull(v.someBean);
-        Assert.assertEquals(context, v.context);
-        Assert.assertEquals(bean, v.someBean);
-        Assert.assertTrue(v.init);
+        assertEquals(context, v.context);
+        assertEquals(bean, v.someBean);
+        assertTrue(v.init);
     }
 
     @Test
     public void testDistributedTask() throws ExecutionException, InterruptedException {
         SomeTask task = (SomeTask) context.getBean("someTask");
         Future<Long> f = instance1.getExecutorService("test").submit(task);
-        Assert.assertEquals(bean.value, f.get().longValue());
+        assertEquals(bean.value, f.get().longValue());
 
         Future<Long> f2 = instance1.getExecutorService("test").submitToMember(new SomeTask(),
                 instance2.getCluster().getLocalMember());
-        Assert.assertEquals(bean.value, f2.get().longValue());
+        assertEquals(bean.value, f2.get().longValue());
     }
 
     @Test
@@ -99,7 +102,7 @@ public class TestManagedContext {
         Future f = instance1.getExecutorService("test").submitToMember(new SomeTransactionalTask(),
                 instance2.getCluster().getLocalMember());
         f.get();
-        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+        assertTrue("transaction manager could not proxy the submitted task.",
                 transactionManager.isCommitted());
     }
 
@@ -120,7 +123,7 @@ public class TestManagedContext {
             }
         });
 
-        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         Throwable t = error.get();
         if (t != null) {
             ExceptionUtil.sneakyThrow(t);
@@ -140,7 +143,7 @@ public class TestManagedContext {
             }
         });
         latch.await(1, TimeUnit.MINUTES);
-        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+        assertTrue("transaction manager could not proxy the submitted task.",
                 transactionManager.isCommitted());
     }
 
@@ -154,12 +157,12 @@ public class TestManagedContext {
         map.put("key5", "value5");
 
         final Map<Object,Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
-        Assert.assertEquals(5, objectMap.size());
+        assertEquals(5, objectMap.size());
         for (Object o : objectMap.values()) {
-            Assert.assertEquals("notNull", o);
+            assertEquals("notNull", o);
         }
 
         final Object result = map.executeOnKey("key8", new SomeEntryProcessor());
-        Assert.assertEquals("notNull", result);
+        assertEquals("notNull", result);
     }
 }

@@ -15,6 +15,9 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+
 /**
  * Created by Emanuele Gherardini
  */
@@ -33,27 +36,23 @@ public class ProxyEqualityTest {
 
     @Test
     public void testTwoClientProxiesFromTheSameInstanceAreEquals() {
-
         HazelcastInstance h1Client = createClient("group1");
 
         ClientProxy ref1 = (ClientProxy) h1Client.getAtomicLong("foo");
         ClientProxy ref2 = (ClientProxy) h1Client.getAtomicLong("foo");
 
-        Assert.assertEquals(ref1, ref2);
-
+        assertEquals(ref1, ref2);
     }
 
     @Test
     public void testTwoClientProxiesFromDifferentInstancesAreNotEquals() {
-
         HazelcastInstance h1Client = createClient("group1");
         HazelcastInstance h2Client = createClient("group2");
 
         ClientProxy ref1 = (ClientProxy) h1Client.getAtomicLong("foo");
         ClientProxy ref2 = (ClientProxy) h2Client.getAtomicLong("foo");
 
-        Assert.assertNotEquals(ref1, ref2);
-
+        assertNotEquals(ref1, ref2);
     }
 
     @Test
@@ -65,15 +64,15 @@ public class ProxyEqualityTest {
         ClientProxy ref1 = (ClientProxy) h1Client.getAtomicLong("foo");
         ClientProxy ref2 = (ClientProxy) h2Client.getAtomicLong("foo");
 
-        Assert.assertNotEquals(ref1, ref2);
+        assertNotEquals(ref1, ref2);
 
     }
 
     private HazelcastInstance createClient(String serverInstanceGroupName) {
 
         HazelcastInstance serverInstance = testInstancesCache.get(serverInstanceGroupName);
-        
-        if(serverInstance == null) {
+
+        if (serverInstance == null) {
             Config config = new Config();
             config.getGroupConfig().setName(serverInstanceGroupName);
             serverInstance = Hazelcast.newHazelcastInstance(config);

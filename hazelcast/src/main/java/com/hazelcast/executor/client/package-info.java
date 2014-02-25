@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
-
-public interface LocalReplicatedMapStats extends LocalMapStats {
-
-    long getReplicationEventCount();
-
-}
+/**
+ * <p>This package contains client requests for the IExecutorService.<br/>
+ *
+ * @since 1
+ */
+package com.hazelcast.executor.client;

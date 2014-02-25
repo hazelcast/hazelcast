@@ -35,6 +35,9 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mdogan 8/25/13
  */
@@ -44,102 +47,102 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
     @Test
     public void testMap() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getMap("test");
         test(instance, object);
     }
 
     @Test
     public void testQueue() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getQueue("test");
         test(instance, object);
     }
 
     @Test
     public void testTopic() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getTopic("test");
         test(instance, object);
     }
 
     @Test
     public void testMultiMap() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getMultiMap("test");
         test(instance, object);
     }
 
     @Test
     public void testSet() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getSet("test");
         test(instance, object);
     }
 
     @Test
     public void testList() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getList("test");
         test(instance, object);
     }
 
     @Test
     public void testExecutorService() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getExecutorService("test");
         test(instance, object);
     }
 
     @Test
     public void testLock() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getLock("test");
         test(instance, object);
     }
 
     @Test
     public void testLock2() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getLock(System.currentTimeMillis());
         test(instance, object);
     }
 
     @Test
     public void testAtomicLong() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getAtomicLong("test");
         test(instance, object);
     }
 
     @Test
     public void testSemaphore() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getSemaphore("test");
         test(instance, object);
     }
 
     @Test
     public void testCountdownLatch() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getCountDownLatch("test");
         test(instance, object);
     }
 
     @Test
     public void testIdGenerator() {
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         DistributedObject object = instance.getIdGenerator("test");
         test(instance, object);
     }
 
     private void test(HazelcastInstance instance, DistributedObject object) {
         DistributedObject object2 = instance.getDistributedObject(object.getServiceName(), object.getName());
-        Assert.assertEquals(object.getServiceName(), object2.getServiceName());
-        Assert.assertEquals(object.getName(), object2.getName());
-        Assert.assertEquals(object.getId(), object2.getId());
-        Assert.assertEquals(object, object2);
-        Assert.assertTrue(instance.getDistributedObjects().contains(object));
+        assertEquals(object.getServiceName(), object2.getServiceName());
+        assertEquals(object.getName(), object2.getName());
+        assertEquals(object.getId(), object2.getId());
+        assertEquals(object, object2);
+        assertTrue(instance.getDistributedObjects().contains(object));
     }
 
     @Test
@@ -149,7 +152,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
                 new ServiceConfig().setServiceImpl(new TestInitializingObjectService())
                                    .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
-        HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         TestInitializingObject object = instance
                 .getDistributedObject(TestInitializingObjectService.NAME, "test-object");
         test(instance, object);
@@ -165,7 +168,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
                                    .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
 
-
         String serviceName = TestInitializingObjectService.NAME;
         String objectName = "test-object";
 
@@ -173,7 +175,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         for (int i = 0; i < instances.length; i++) {
             instances[i] = factory.newHazelcastInstance(config);
             TestInitializingObject obj2 = instances[i].getDistributedObject(serviceName, objectName);
-            Assert.assertTrue(obj2.init.get());
+            assertTrue(obj2.init.get());
             Assert.assertFalse(obj2.error);
         }
     }
@@ -212,7 +214,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
         for (int i = 0; i < instances.length; i++) {
             TestInitializingObject obj = instances[i].getDistributedObject(serviceName, objectName);
-            Assert.assertTrue(obj.init.get());
+            assertTrue(obj.init.get());
             Assert.assertFalse(obj.error);
         }
     }

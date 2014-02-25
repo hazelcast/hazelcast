@@ -50,13 +50,12 @@ public class ClientTopicTest {
 
     @After
     public void stop(){
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testListener() throws Exception {
-
         final CountDownLatch latch = new CountDownLatch(10);
         MessageListener listener = new MessageListener() {
             public void onMessage(Message message) {

@@ -29,13 +29,13 @@ import com.hazelcast.core.HazelcastInstance;
 public class OomeOnClientShutdownMain {
 
     public static void main(String[] args) {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
 
         for (int k = 0; k < 1000000; k++) {
             System.out.println("At:" + k);
             HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-            client.getLifecycleService().shutdown();
+            client.shutdown();
         }
     }
 }

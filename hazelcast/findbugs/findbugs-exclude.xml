@@ -17,9 +17,6 @@
         <Package name="com.hazelcast.util" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.monitor" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.transaction.impl" />
     </Match>
     <Match>
@@ -50,9 +47,6 @@
         <Package name="com.hazelcast.config" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.osgi" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.map" />
     </Match>
     <Match>
@@ -60,12 +54,6 @@
     </Match>
     <Match>
         <Package name="com.hazelcast.cluster.client" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.mapreduce.client" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.mapreduce.impl" />
     </Match>
     <Match>
         <Package name="com.hazelcast.cluster" />

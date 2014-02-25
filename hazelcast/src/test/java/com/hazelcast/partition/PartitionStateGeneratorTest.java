@@ -37,6 +37,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PartitionStateGeneratorTest {
@@ -143,9 +147,9 @@ public class PartitionStateGeneratorTest {
     public void testXmlPartitionGroupConfig() {
         Config config = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
         PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
-        Assert.assertFalse(partitionGroupConfig.isEnabled());
-        Assert.assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, partitionGroupConfig.getGroupType());
-        Assert.assertEquals(2, partitionGroupConfig.getMemberGroupConfigs().size());
+        assertFalse(partitionGroupConfig.isEnabled());
+        assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, partitionGroupConfig.getGroupType());
+        assertEquals(2, partitionGroupConfig.getMemberGroupConfigs().size());
     }
 
     private void test(MemberGroupFactory memberGroupFactory) throws Exception {
@@ -318,7 +322,7 @@ public class PartitionStateGeneratorTest {
             for (int i = 0; i < replicaCount; i++) {
                 Address owner = replicas[i];
                 Assert.assertNotNull(owner);
-                Assert.assertFalse("Duplicate owner of partition: " + partitionId,
+                assertFalse("Duplicate owner of partition: " + partitionId,
                         set.contains(owner));
                 set.add(owner);
                 MemberGroup group = null;
@@ -400,12 +404,12 @@ public class PartitionStateGeneratorTest {
             return;
         }
         final float r = 2f;
-        Assert.assertTrue("Too low partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: "+ partitionCount +  ", Replica: " + replica +
+        assertTrue("Too low partition count! \nOwned: " + count + ", Avg: " + average
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
                 ", \nOwner: " + owner, count >= (float) (average) / r);
 
-        Assert.assertTrue("Too high partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: "+ partitionCount +  ", Replica: " + replica +
+        assertTrue("Too high partition count! \nOwned: " + count + ", Avg: " + average
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
                 ", \nOwner: " + owner, count <= (float) (average) * r);
     }
 

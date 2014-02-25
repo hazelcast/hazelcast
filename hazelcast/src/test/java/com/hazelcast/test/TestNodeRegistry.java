@@ -71,7 +71,7 @@ final class TestNodeRegistry {
         final Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
         nodes.clear();
         for (NodeEngineImpl value : values) {
-            value.getHazelcastInstance().getLifecycleService().shutdown();
+            value.getHazelcastInstance().shutdown();
         }
     }
 
