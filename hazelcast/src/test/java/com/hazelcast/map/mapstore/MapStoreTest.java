@@ -16,8 +16,23 @@
 
 package com.hazelcast.map.mapstore;
 
-import com.hazelcast.config.*;
-import com.hazelcast.core.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
@@ -39,15 +54,31 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.query.SampleObjects.Employee;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -138,7 +169,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test (timeout = 120000)
+    @Test(timeout = 120000)
     public void testInitialLoadModeEager() {
         int size = 100000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -159,7 +190,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     }
 
-    @Test (timeout = 120000)
+    @Test(timeout = 120000)
     @Category(ProblematicTest.class)
     public void testInitialLoadModeEagerMultipleThread() {
         final int size = 100000;
@@ -185,7 +216,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         IMap map = instance1.getMap("testInitialLoadModeEagerMultipleThread");
         assertEquals(size, map.size());
     }
-    @Test (timeout = 120000)
+
+    @Test(timeout = 120000)
     public void testInitialLoadModeEagerWhileStoppigOneNode() {
         final int size = 100000;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -1145,22 +1177,10 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap(mapName);
         final CountDownLatch latch = new CountDownLatch(mapSize);
-        map.addEntryListener(new EntryListener() {
+        map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
             }
         }, true);
         // create all partition recordstores.

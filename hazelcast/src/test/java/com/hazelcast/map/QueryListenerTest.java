@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -24,7 +25,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -126,18 +126,9 @@ public class QueryListenerTest extends HazelcastTestSupport {
         final AtomicInteger addCount = new AtomicInteger(0);
 
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addCount.incrementAndGet();
-            }
-
-            public void entryRemoved(EntryEvent<Object, Object> event) {
-            }
-
-            public void entryUpdated(EntryEvent<Object, Object> event) {
-            }
-
-            public void entryEvicted(EntryEvent<Object, Object> event) {
             }
         };
 

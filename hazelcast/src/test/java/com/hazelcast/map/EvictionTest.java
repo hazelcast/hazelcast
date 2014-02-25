@@ -166,16 +166,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         IMap<String, Long> map = hazelcastInstance.getMap("testIssue304EvictionDespitePutMap");
         final AtomicInteger evictCount = new AtomicInteger(0);
-        map.addEntryListener(new EntryListener<String, Long>() {
-            public void entryAdded(EntryEvent<String, Long> event) {
-            }
-
-            public void entryRemoved(EntryEvent<String, Long> event) {
-            }
-
-            public void entryUpdated(EntryEvent<String, Long> event) {
-            }
-
+        map.addEntryListener(new EntryAdapter<String, Long>() {
             public void entryEvicted(EntryEvent<String, Long> event) {
                 evictCount.incrementAndGet();
             }

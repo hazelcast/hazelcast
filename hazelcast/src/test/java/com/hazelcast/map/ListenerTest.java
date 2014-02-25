@@ -200,23 +200,15 @@ public class ListenerTest extends HazelcastTestSupport {
         IMap<Object, Object> map = h1.getMap("map");
         final CountDownLatch updateLatch = new CountDownLatch(1);
         final CountDownLatch addLatch = new CountDownLatch(1);
-        map.addEntryListener(new EntryListener<Object, Object>() {
+        map.addEntryListener(new EntryAdapter<Object, Object>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addLatch.countDown();
             }
 
-            @Override
-            public void entryRemoved(EntryEvent<Object, Object> event) {
-            }
-
-            @Override
+           @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updateLatch.countDown();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<Object, Object> event) {
             }
         }, false);
         map.set(1, 1);
@@ -323,17 +315,8 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private EntryListener<String, String> createEntryListener(final boolean isLocal) {
-        return new EntryListener<String, String>() {
+        return new EntryAdapter<String, String>() {
             private final boolean local = isLocal;
-
-            public void entryUpdated(EntryEvent<String, String> event) {
-            }
-
-            public void entryRemoved(EntryEvent<String, String> event) {
-            }
-
-            public void entryEvicted(EntryEvent<String, String> event) {
-            }
 
             public void entryAdded(EntryEvent<String, String> event) {
                 if (local) {

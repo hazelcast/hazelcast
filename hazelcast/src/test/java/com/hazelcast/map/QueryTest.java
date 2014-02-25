@@ -361,19 +361,7 @@ public class QueryTest extends HazelcastTestSupport {
             assertTrue(employee.isActive());
         }
         final  CountDownLatch latch =  new CountDownLatch(1000);
-        imap.addEntryListener(new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
+        imap.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
@@ -383,7 +371,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(0, imap.size());
         values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
         assertEquals(0, values.size());
-        }
+    }
 
     @Test(timeout=1000*60)
     @Category(ProblematicTest.class)
