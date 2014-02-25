@@ -59,7 +59,7 @@ public class ClientExecutorServiceTest {
 
     @AfterClass
     public static void destroy() {
-        client.getLifecycleService().shutdown();
+        client.shutdown();
         Hazelcast.shutdownAll();
     }
 

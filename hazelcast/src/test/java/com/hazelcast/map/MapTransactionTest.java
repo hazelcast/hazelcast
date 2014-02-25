@@ -18,15 +18,31 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.query.*;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +55,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -187,7 +206,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         };
         new Thread(runnable).start();
         assertTrue(latch2.await(20, TimeUnit.SECONDS));
-        h2.getLifecycleService().shutdown();
+        h2.shutdown();
 
         assertTrue(latch.await(60, TimeUnit.SECONDS));
         for (int i = 0; i < size; i++) {
@@ -233,7 +252,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         Thread thread = new Thread(runnable);
         thread.start();
         Thread.sleep(200);
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         thread.join(30 * 1000);
 
         assertFalse(result.get());
@@ -271,6 +290,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("value2", map1.get("1"));
         assertEquals("value2", map2.get("1"));
     }
+
     @Test
     public void testTxnPutTTL() throws TransactionException {
         Config config = new Config();
@@ -704,8 +724,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue1076() {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance inst = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance inst = createHazelcastInstance();
 
         IMap map = inst.getMap("default");
 
@@ -714,16 +733,13 @@ public class MapTransactionTest extends HazelcastTestSupport {
             public void entryAdded(EntryEvent<String, Integer> event) {
             }
 
-
             @Override
             public void entryRemoved(EntryEvent<String, Integer> event) {
             }
 
-
             @Override
             public void entryUpdated(EntryEvent<String, Integer> event) {
             }
-
 
             @Override
             public void entryEvicted(EntryEvent<String, Integer> event) {
@@ -746,9 +762,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
         }
         assertEquals(0, map.size());
 
-        inst.getLifecycleService().shutdown();
+        inst.shutdown();
     }
-
 
 
     @Test
@@ -811,9 +826,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionNotActiveException.class)
     public void testTxnMapOuterTransaction() throws Throwable {
-        Config config = new Config();
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+         final HazelcastInstance h1 = createHazelcastInstance();
 
         final TransactionContext transactionContext = h1.newTransactionContext();
         transactionContext.beginTransaction();
@@ -879,8 +892,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
             }
         }
         assertEquals(2, map.keySet().size());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -934,8 +947,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals(1, map.keySet().size());
         assertEquals(0, map.keySet(new SqlPredicate("age <= 10")).size());
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -969,8 +982,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals(2, map.size());
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -1004,8 +1017,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals(3, map2.values().size());
 
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test
@@ -1044,8 +1057,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertEquals(0, map2.values(new SqlPredicate("age <= 10")).size());
         assertEquals(1, map2.values(new SqlPredicate("age = 34")).size());
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
 }

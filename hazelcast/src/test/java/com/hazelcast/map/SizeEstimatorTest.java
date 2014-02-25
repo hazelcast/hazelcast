@@ -41,25 +41,22 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     public void testIdleState() throws InterruptedException {
         final String MAP_NAME = "default";
 
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance h = createHazelcastInstance();
 
         final IMap<String, String> map = h.getMap(MAP_NAME);
 
-        Assert.assertEquals(0, map.getLocalMapStats().getHeapCost());
+        assertEquals(0, map.getLocalMapStats().getHeapCost());
     }
 
     @Test
     public void testPuts() throws InterruptedException {
         final String MAP_NAME = "default";
 
-        Config config = new Config();
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h = factory.newHazelcastInstance(config);
+        final HazelcastInstance h = createHazelcastInstance();
 
         final IMap<Integer, Long> map = h.getMap(MAP_NAME);
         map.put(0, 10L);
-        Assert.assertEquals(148, map.getLocalMapStats().getHeapCost());
+        assertEquals(148, map.getLocalMapStats().getHeapCost());
     }
 
     @Test
@@ -140,7 +137,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             nearCachedMap.get("key" + i);
         }
 
-        Assert.assertTrue(nearCachedMap.getLocalMapStats().getHeapCost() > noNearCached.getLocalMapStats().getHeapCost());
+        assertTrue(nearCachedMap.getLocalMapStats().getHeapCost() > noNearCached.getLocalMapStats().getHeapCost());
     }
 
     @Test
@@ -170,8 +167,8 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         }
 
         for (int i = 0; i < n; i++) {
-            Assert.assertTrue(h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost() > 0);
-            Assert.assertEquals(0, h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost());
+            assertTrue(h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost() > 0);
+            assertEquals(0, h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost());
         }
 
         // clear map
@@ -179,8 +176,8 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         objectMap.clear();
 
         for (int i = 0; i < n; i++) {
-            Assert.assertEquals(0, h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost());
-            Assert.assertEquals(0, h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost());
+            assertEquals(0, h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost());
+            assertEquals(0, h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost());
         }
     }
 

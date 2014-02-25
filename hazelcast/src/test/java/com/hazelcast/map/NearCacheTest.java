@@ -93,14 +93,14 @@ public class NearCacheTest extends HazelcastTestSupport {
         for (HazelcastInstance instance : instances) {
             NearCache nearCache = getNearCache(mapName, instance);
             int size = nearCache.size();
-            Assert.assertTrue("NearCache Size: " + size, size > 0);
+            assertTrue("NearCache Size: " + size, size > 0);
         }
 
         map.clear();
         for (HazelcastInstance instance : instances) {
             NearCache nearCache = getNearCache(mapName, instance);
             int size = nearCache.size();
-            Assert.assertEquals(0, size);
+            assertEquals(0, size);
         }
 
     }

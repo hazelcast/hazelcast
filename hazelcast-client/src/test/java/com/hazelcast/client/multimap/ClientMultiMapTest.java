@@ -52,13 +52,13 @@ public class ClientMultiMapTest {
         MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
         multiMapConfig.setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
         Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient(null);
+        hz = HazelcastClient.newHazelcastClient();
         mm = hz.getMultiMap(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 

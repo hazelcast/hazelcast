@@ -41,10 +41,9 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
 
     @Test
     public void testTxnCommit() throws TransactionException {
-        Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = factory.newHazelcastInstance();
+        final HazelcastInstance h2 = factory.newHazelcastInstance();
         final String map1 = "map1";
         final String map2 = "map2";
         final String key = "1";
@@ -116,9 +115,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionNotActiveException.class)
     public void testTxnMultimapOuterTransaction() throws Throwable {
-        Config config = new Config();
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = createHazelcastInstance();
 
         final TransactionContext transactionContext = h1.newTransactionContext();
         transactionContext.beginTransaction();
@@ -134,10 +131,9 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         long key = 1L;
         String value = "value";
         String value2 = "value2";
-        final Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
 
         CountingEntryListener<Object, Object> listener = new CountingEntryListener<Object, Object>();
 

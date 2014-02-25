@@ -34,6 +34,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mdogan 1/23/13
  */
@@ -57,21 +60,21 @@ public class ObjectDataTest {
 
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         DataAdapter dataAdapter = new DataAdapter(data1, ss.getSerializationContext());
-        Assert.assertTrue(dataAdapter.writeTo(buffer));
+        assertTrue(dataAdapter.writeTo(buffer));
 
-        Assert.assertEquals(bytes1.length, buffer.position());
+        assertEquals(bytes1.length, buffer.position());
         byte[] bytes2 = new byte[buffer.position()];
         buffer.flip();
         buffer.get(bytes2);
-        Assert.assertEquals(bytes1.length, bytes2.length);
-        Assert.assertTrue(Arrays.equals(bytes1, bytes2));
+        assertEquals(bytes1.length, bytes2.length);
+        assertTrue(Arrays.equals(bytes1, bytes2));
 
         buffer.flip();
         dataAdapter.reset();
         dataAdapter.readFrom(buffer);
         Data data2 = dataAdapter.getData();
 
-        Assert.assertEquals(data1, data2);
+        assertEquals(data1, data2);
     }
 
     @Test
@@ -110,8 +113,8 @@ public class ObjectDataTest {
         out2.writeObject(person);
         byte[] data2 = out2.toByteArray();
 
-        Assert.assertEquals(data1.length, data2.length);
-        Assert.assertTrue(Arrays.equals(data1, data2));
+        assertEquals(data1.length, data2.length);
+        assertTrue(Arrays.equals(data1, data2));
 
         final ByteArrayInputStream bin = new ByteArrayInputStream(data2);
         final ObjectDataInput in = ss.createObjectDataInputStream(bin, byteOrder);
@@ -120,7 +123,7 @@ public class ObjectDataTest {
         final ObjectDataInput in2 = ss.createObjectDataInput(data1);
         final Person person2 = in2.readObject();
 
-        Assert.assertEquals(person, person1);
-        Assert.assertEquals(person, person2);
+        assertEquals(person, person1);
+        assertEquals(person, person2);
     }
 }

@@ -14,6 +14,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientConditionTest {
@@ -24,13 +26,13 @@ public class ClientConditionTest {
     @BeforeClass
     public static void init() {
         Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        hz = HazelcastClient.newHazelcastClient();
         l = hz.getLock(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 
@@ -67,13 +69,13 @@ public class ClientConditionTest {
         t.start();
         Thread.sleep(1000);
 
-        Assert.assertEquals(false, lock.isLocked());
+        assertEquals(false, lock.isLocked());
         lock.lock();
-        Assert.assertEquals(true, lock.isLocked());
+        assertEquals(true, lock.isLocked());
         condition.signal();
         lock.unlock();
         t.join();
-        Assert.assertEquals(2, count.get());
+        assertEquals(2, count.get());
     }
 
     @Test
@@ -114,7 +116,7 @@ public class ClientConditionTest {
         condition.signalAll();
         lock.unlock();
         finalLatch.await(1, TimeUnit.MINUTES);
-        Assert.assertEquals(k * 2, count.get());
+        assertEquals(k * 2, count.get());
     }
 
     @Test
@@ -161,10 +163,10 @@ public class ClientConditionTest {
         lock.lock();
         condition.signalAll();
         lock.unlock();
-        keyOwner.getLifecycleService().shutdown();
+        keyOwner.shutdown();
 
         finalLatch.await(2, TimeUnit.MINUTES);
-        Assert.assertEquals(size, count.get());
+        assertEquals(size, count.get());
     }
 
     @Test(timeout = 100000)
@@ -203,15 +205,14 @@ public class ClientConditionTest {
         t.start();
         Thread.sleep(1000);
         lock1.lock();
-        keyOwner.getLifecycleService().shutdown();
+        keyOwner.shutdown();
 
         condition1.signal();
 
         lock1.unlock();
         Thread.sleep(1000);
         t.join();
-        Assert.assertEquals(1, atomicInteger.get());
-
+        assertEquals(1, atomicInteger.get());
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)

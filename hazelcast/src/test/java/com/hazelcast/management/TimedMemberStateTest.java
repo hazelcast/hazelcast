@@ -22,7 +22,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
 
     @Test
     public void testSerialization() throws InterruptedException {
-        HazelcastInstance hz = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         SerializationService serializationService = getNode(hz).getSerializationService();
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 

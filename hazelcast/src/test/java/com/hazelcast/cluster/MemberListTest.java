@@ -296,7 +296,7 @@ public class MemberListTest {
         assertEquals(master, h4.getCluster().getMembers().iterator().next());
         assertEquals(master, h5.getCluster().getMembers().iterator().next());
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
 
         assertEquals(4, h2.getCluster().getMembers().size());
         assertEquals(4, h3.getCluster().getMembers().size());

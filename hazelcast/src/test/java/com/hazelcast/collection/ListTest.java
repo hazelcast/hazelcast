@@ -232,31 +232,24 @@ public class ListTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         assertEquals(100, instance2.getList(name).size());
 
-
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         assertEquals(100, instance3.getList(name).size());
 
-
-
-        instance1.getLifecycleService().shutdown();
+        instance1.shutdown();
         assertEquals(100, instance3.getList(name).size());
-
 
         list = instance2.getList(name);
         for (int i=0; i<100; i++){
             list.add("item-"+i);
         }
 
-
-        instance2.getLifecycleService().shutdown();
+        instance2.shutdown();
         assertEquals(200, instance3.getList(name).size());
-
-
 
         instance1 = factory.newHazelcastInstance(config);
         assertEquals(200, instance1.getList(name).size());
 
-        instance3.getLifecycleService().shutdown();
+        instance3.shutdown();
         assertEquals(200, instance1.getList(name).size());
 
     }

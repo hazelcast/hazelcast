@@ -37,6 +37,7 @@ import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -87,7 +88,7 @@ public class JoinStressTest {
             ex.shutdown();
         }
         for (HazelcastInstance h : mapOfInstances.values()) {
-            Assert.assertEquals(count, h.getCluster().getMembers().size());
+            assertEquals(count, h.getCluster().getMembers().size());
         }
     }
 
@@ -141,7 +142,7 @@ public class JoinStressTest {
         for (HazelcastInstance h : mapOfInstances.values()) {
             int clusterSize = h.getCluster().getMembers().size();
             int shouldBeClusterSize = groups.get(h.getConfig().getGroupConfig().getName()).get();
-            Assert.assertEquals(h.getConfig().getGroupConfig().getName() + ": ", shouldBeClusterSize, clusterSize);
+            assertEquals(h.getConfig().getGroupConfig().getName() + ": ", shouldBeClusterSize, clusterSize);
         }
     }
 
@@ -186,7 +187,7 @@ public class JoinStressTest {
             ex.shutdown();
         }
         for (HazelcastInstance h : map.values()) {
-            Assert.assertEquals(count, h.getCluster().getMembers().size());
+            assertEquals(count, h.getCluster().getMembers().size());
         }
     }
 

@@ -66,7 +66,7 @@ public class ClusterJoinTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
@@ -89,7 +89,7 @@ public class ClusterJoinTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());

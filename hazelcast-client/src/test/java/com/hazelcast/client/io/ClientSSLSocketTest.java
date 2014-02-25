@@ -33,6 +33,8 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Properties;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author mdogan 8/23/13
  */
@@ -74,7 +76,7 @@ public class ClientSSLSocketTest {
 
         IMap<Object, Object> map = hz1.getMap("test");
         for (int i = 0; i < size; i++) {
-            Assert.assertEquals(2 * i + 1, map.get(i));
+            assertEquals(2 * i + 1, map.get(i));
         }
     }
 }
