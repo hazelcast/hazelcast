@@ -339,7 +339,7 @@ public class ClientIOExecutorPoolSizeLowTest {
     ;
 
 
-    public class EntryCounter implements EntryListener {
+    public class EntryCounter extends EntryAdapter {
 
         public AtomicInteger count = new AtomicInteger(0);
 
@@ -350,12 +350,5 @@ public class ClientIOExecutorPoolSizeLowTest {
         public void entryRemoved(EntryEvent event) {
             count.getAndDecrement();
         }
-
-        public void entryUpdated(EntryEvent event) {
-        }
-
-        public void entryEvicted(EntryEvent event) {
-        }
-
     }
 }

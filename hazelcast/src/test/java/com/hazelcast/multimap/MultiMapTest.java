@@ -202,19 +202,13 @@ public class MultiMapTest extends HazelcastTestSupport {
 
         final Set keys = new HashSet();
 
-        EntryListener listener = new EntryListener() {
+        EntryListener listener = new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
                 keys.add(event.getKey());
             }
 
             public void entryRemoved(EntryEvent event) {
                 keys.remove(event.getKey());
-            }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
             }
         };
 
