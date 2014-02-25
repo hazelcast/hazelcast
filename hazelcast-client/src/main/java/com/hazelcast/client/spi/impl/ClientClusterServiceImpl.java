@@ -23,6 +23,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.client.MemberAttributeChange;
@@ -31,7 +32,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
@@ -297,7 +297,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     if (memberMap != null) {
                         for (MemberImpl target : memberMap.values()) {
                             if (target.getUuid().equals(memberAttributeChange.getUuid())) {
-                                final MapOperationType operationType = memberAttributeChange.getOperationType();
+                                final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
                                 final String key = memberAttributeChange.getKey();
                                 final Object value = memberAttributeChange.getValue();
                                 target.updateAttribute(operationType, key, value);
