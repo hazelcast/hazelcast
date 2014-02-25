@@ -428,7 +428,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                     endpoint = createEndpoint(conn);
                     if (endpoint != null) {
                         processRequest(endpoint, request);
-                    } else{
+                    } else {
                         handleEndpointNotCreatedConnectionNotAlive();
                     }
                 } else if (endpoint == null) {
@@ -450,7 +450,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
         private void handleEndpointNotCreatedConnectionNotAlive() {
             logger.warning("Dropped: " + packet + " -> endpoint not created for AuthenticationRequest, "
-                    +"connection not alive");
+                    + "connection not alive");
         }
 
         private void handlePacketWithNullRequest() {
