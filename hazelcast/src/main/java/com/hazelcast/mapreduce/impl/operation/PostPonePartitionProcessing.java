@@ -19,7 +19,6 @@ package com.hazelcast.mapreduce.impl.operation;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.ObjectDataInput;
@@ -69,17 +68,15 @@ public class PostPonePartitionProcessing
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
 
         while (true) {
-            JobPartitionState.State newState = JobPartitionState.State.WAITING;
             JobPartitionState[] partitionStates = processInformation.getPartitionStates();
             JobPartitionState oldPartitionState = partitionStates[partitionId];
 
-            if (oldPartitionState == null || getCallerAddress().equals(oldPartitionState.getOwner())) {
+            if (oldPartitionState == null || !getCallerAddress().equals(oldPartitionState.getOwner())) {
                 result = new RequestPartitionResult(CHECK_STATE_FAILED, partitionId);
                 return;
             }
 
-            JobPartitionState newPartitionState = new JobPartitionStateImpl(getCallerAddress(), newState);
-            if (processInformation.updatePartitionState(partitionId, oldPartitionState, newPartitionState)) {
+            if (processInformation.updatePartitionState(partitionId, oldPartitionState, null)) {
                 result = new RequestPartitionResult(SUCCESSFUL, partitionId);
                 return;
             }
