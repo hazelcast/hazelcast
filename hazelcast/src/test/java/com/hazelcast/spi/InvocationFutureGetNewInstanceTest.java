@@ -9,7 +9,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This test verifies that instances returned by the InvocationFuture, are always copied instances.
@@ -33,17 +34,24 @@ import static org.junit.Assert.assertNotSame;
 @Category(QuickTest.class)
 public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
-    @Test
-    @Ignore
-    public void invocationToLocalMember() throws ExecutionException, InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance local = factory.newHazelcastInstance();
-        warmUpPartitions(local);
+    private static HazelcastInstance[] instances;
+    private static HazelcastInstance local;
+    private static HazelcastInstance remote;
 
+    @BeforeClass
+    public static void setUp() {
+        instances = new TestHazelcastInstanceFactory(2).newInstances();
+        warmUpPartitions(instances);
+        local = instances[0];
+        remote = instances[1];
+    }
+
+    @Test
+    public void invocationToLocalMember() throws ExecutionException, InterruptedException {
         Node localNode = getNode(local);
 
-        DummyObject dummyObject = new DummyObject();
-        Operation op = new OperationWithResponse(dummyObject);
+        Object response = localNode.nodeEngine.toData(new DummyObject());
+        Operation op = new OperationWithResponse(response);
 
         OperationService service = localNode.nodeEngine.getOperationService();
         Future f = service.createInvocationBuilder(null, op, localNode.address).invoke();
@@ -52,23 +60,19 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
         assertNotNull(instance1);
         assertNotNull(instance2);
+        assertTrue(instance1 instanceof DummyObject);
+        assertTrue(instance2 instanceof DummyObject);
         assertNotSame(instance1, instance2);
-        assertNotSame(instance1, dummyObject);
-        assertNotSame(instance2, dummyObject);
+        assertNotSame(instance1, response);
+        assertNotSame(instance2, response);
     }
 
     @Test
-    @Ignore
     public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance local = factory.newHazelcastInstance();
-        HazelcastInstance remote = factory.newHazelcastInstance();
-        warmUpPartitions(local, remote);
-
         Node localNode = getNode(local);
 
-        DummyObject dummyObject = new DummyObject();
-        Operation op = new OperationWithResponse(dummyObject);
+        Object response = localNode.nodeEngine.toData(new DummyObject());
+        Operation op = new OperationWithResponse(response);
 
         Address remoteAddress = getNode(remote).address;
 
@@ -79,9 +83,11 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
         assertNotNull(instance1);
         assertNotNull(instance2);
+        assertTrue(instance1 instanceof DummyObject);
+        assertTrue(instance2 instanceof DummyObject);
         assertNotSame(instance1, instance2);
-        assertNotSame(instance1, dummyObject);
-        assertNotSame(instance2, dummyObject);
+        assertNotSame(instance1, response);
+        assertNotSame(instance2, response);
     }
 
     public static class DummyObject implements Serializable {
@@ -93,7 +99,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
         public OperationWithResponse() {
         }
 
-        public OperationWithResponse(DummyObject response) {
+        public OperationWithResponse(Object response) {
             this.response = response;
         }
 
