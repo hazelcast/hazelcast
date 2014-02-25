@@ -34,6 +34,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.concurrent.*;
 
+import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
@@ -241,7 +242,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                     getAsyncExecutor().execute(new ReInvocationTask());
                 } else {
                     ex.schedule(ExecutionService.ASYNC_EXECUTOR, new ReInvocationTask(),
-                                tryPauseMillis, TimeUnit.MILLISECONDS);
+                            tryPauseMillis, TimeUnit.MILLISECONDS);
                 }
             }
             return;
@@ -535,15 +536,20 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 @Override
                 public void run() {
                     try {
-                        if (response instanceof NormalResponse) {
-                            final NormalResponse responseObj = (NormalResponse) response;
+                        Object resp = response;
+                        if(resultDeserialized && resp instanceof Data){
+                            resp = nodeEngine.toObject(resp);
+                        }
+
+                        if (resp instanceof NormalResponse) {
+                            final NormalResponse responseObj = (NormalResponse) resp;
                             callback.onResponse((E) responseObj.getValue());
-                        } else if (response == NULL_RESPONSE) {
+                        } else if (resp == NULL_RESPONSE) {
                             callback.onResponse(null);
-                        } else if (response instanceof Throwable) {
-                            callback.onFailure((Throwable) response);
+                        } else if (resp instanceof Throwable) {
+                            callback.onFailure((Throwable) resp);
                         } else {
-                            callback.onResponse((E) response);
+                            callback.onResponse((E) resp);
                         }
                     } catch (Throwable t) {
                         //todo: improved error message
@@ -564,10 +570,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
             if(response == null){
                 response = NULL_RESPONSE;
-            }
-
-            if(resultDeserialized && response instanceof Data){
-                response = nodeEngine.toObject(response);
             }
 
             ExecutionCallbackNode<E> callbackChain;
@@ -615,7 +617,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
         @Override
         public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return (E) resolveResponse(waitForResponse(timeout, unit));
+            Object response = waitForResponse(timeout, unit);
+            return (E) resolveResponse(response);
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
@@ -662,7 +665,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                     interrupted = true;
                 }
 
-
                 if (!interrupted && /* response == null && */ longPolling) {
                     // no response!
                     final Address target = getTarget();
@@ -687,9 +689,13 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         private Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
+            if(resultDeserialized && response instanceof Data){
+                response = nodeEngine.toObject(response);
+            }
+
             if (response instanceof Throwable) {
                 if (remote) {
-                    ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+                    fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
                 }
                 // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
                 if (response instanceof ExecutionException) {
