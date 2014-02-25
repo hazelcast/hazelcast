@@ -64,7 +64,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     private IExecutorService createSingleNodeExecutorService(String name, int poolSize) {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig(name, poolSize));
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        final HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getExecutorService(name);
     }
 
@@ -83,7 +83,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        final HazelcastInstance instance = createHazelcastInstance(config);
         IExecutorService executor = instance.getExecutorService("test");
 
         RunnableWithManagedContext task = new RunnableWithManagedContext();
@@ -103,7 +103,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     public void hazelcastInstanceAwareAndLocal()throws Exception{
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        final HazelcastInstance instance = createHazelcastInstance(config);
         IExecutorService executor = instance.getExecutorService("test");
 
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
@@ -756,8 +756,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testPreregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
@@ -807,8 +806,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testMultiPreregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
@@ -873,8 +871,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testPostregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
@@ -928,8 +925,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testMultiPostregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
@@ -994,8 +990,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testManagedPreregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
@@ -1039,8 +1034,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testManagedMultiPreregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy)createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
@@ -1099,8 +1093,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testManagedPostregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
@@ -1144,8 +1137,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testManagedMultiPostregisteredExecutionCallbackCompletableFuture() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);

@@ -237,9 +237,8 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getMemberAttributeConfig().setIntAttribute("Test-1", 123);
         config.getMemberAttributeConfig().setIntAttribute("Test-2", 123);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h1 = createHazelcastInstance(config);
         Member m1 = h1.getCluster().getLocalMember();
         m1.setIntAttribute("Test-4", 1234567);
 

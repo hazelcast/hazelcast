@@ -90,8 +90,7 @@ public class AsyncTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsync() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        IMap<String, String> map = factory.newHazelcastInstance().getMap("map:test:removeAsync");
+        IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync");
         // populate map
         map.put(key, value1);
         Future<String> f1 = map.removeAsync(key);
@@ -100,8 +99,7 @@ public class AsyncTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsyncWithImmediateTimeout() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final IMap<String, String> map = factory.newHazelcastInstance().getMap("map:test:removeAsync:timeout");
+       final IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync:timeout");
         // populate map
         map.put(key, value1);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -124,8 +122,7 @@ public class AsyncTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsyncWithNonExistentKey() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        IMap<String, String> map = factory.newHazelcastInstance().getMap("map:test:removeAsync:nonexistant");
+       IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync:nonexistant");
         Future<String> f1 = map.removeAsync(key);
         TestCase.assertNull(f1.get());
     }

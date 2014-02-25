@@ -51,14 +51,13 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testConfigListenerRegistration() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = new Config();
         final String name = "queue";
         final QueueConfig queueConfig = config.getQueueConfig(name);
         final DummyListener dummyListener = new DummyListener();
         final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(dummyListener, true);
         queueConfig.addItemListenerConfig(itemListenerConfig);
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance = createHazelcastInstance(config);
         final IQueue queue = instance.getQueue(name);
         queue.offer("item");
         queue.poll();
@@ -83,10 +82,9 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueEviction() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final Config config = new Config();
+         final Config config = new Config();
         config.getQueueConfig("q").setEmptyQueueTtl(2);
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
         final IQueue<Object> q = hz.getQueue("q");
 
         try {
@@ -103,10 +101,9 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueEviction2() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final Config config = new Config();
         config.getQueueConfig("q2").setEmptyQueueTtl(0);
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
 
         final CountDownLatch latch = new CountDownLatch(2);
         hz.addDistributedObjectListener(new DistributedObjectListener() {

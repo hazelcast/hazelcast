@@ -41,8 +41,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     public void testIdleState() throws InterruptedException {
         final String MAP_NAME = "default";
 
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance h = createHazelcastInstance();
 
         final IMap<String, String> map = h.getMap(MAP_NAME);
 
@@ -53,9 +52,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     public void testPuts() throws InterruptedException {
         final String MAP_NAME = "default";
 
-        Config config = new Config();
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h = factory.newHazelcastInstance(config);
+        final HazelcastInstance h = createHazelcastInstance();
 
         final IMap<Integer, Long> map = h.getMap(MAP_NAME);
         map.put(0, 10L);

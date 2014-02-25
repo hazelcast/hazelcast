@@ -30,8 +30,7 @@ public class LockStressTest extends HazelcastTestSupport {
      */
     @Test(timeout = 1000 * 100)
     public void testHighConcurrentLockAndUnlock() {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance hz = createHazelcastInstance();
         final String key = "key";
         final int threadCount = 100;
         final int lockCountPerThread = 5000;

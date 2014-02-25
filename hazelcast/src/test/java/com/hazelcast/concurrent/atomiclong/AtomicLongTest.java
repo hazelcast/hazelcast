@@ -47,7 +47,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void testSimpleAtomicLong() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicLong an = hazelcastInstance.getAtomicLong("testAtomicLong");
         assertEquals(0, an.get());
         assertEquals(-1, an.decrementAndGet());
@@ -68,9 +68,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void testMultipleThreadAtomicLong() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
-        final HazelcastInstance instance = instances[0];
+        final HazelcastInstance instance = createHazelcastInstance();
         final int k = 10;
         final CountDownLatch countDownLatch = new CountDownLatch(k);
         final IAtomicLong atomicLong = instance.getAtomicLong("testMultipleThreadAtomicLong");
@@ -155,7 +153,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     @ClientCompatibleTest
     public void apply_whenCalledWithNullFunction() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicLong ref = hazelcastInstance.getAtomicLong("apply_whenCalledWithNullFunction");
 
         ref.apply(null);
@@ -164,7 +162,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void apply() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicLong ref = hazelcastInstance.getAtomicLong("apply");
 
         assertEquals(new Long(1), ref.apply(new AddOneFunction()));
@@ -174,7 +172,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void apply_whenException() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicLong ref = hazelcastInstance.getAtomicLong("apply");
         ref.set(1);
         try {
@@ -189,7 +187,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test(expected = IllegalArgumentException.class)
    @ClientCompatibleTest
    public void alter_whenCalledWithNullFunction() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("alter_whenCalledWithNullFunction");
 
        ref.alter(null);
@@ -198,7 +196,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test
    @ClientCompatibleTest
    public void alter_whenException() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("alter_whenException");
        ref.set(10);
 
@@ -214,7 +212,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test
    @ClientCompatibleTest
    public void alter() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("alter");
 
        ref.set(10);
@@ -226,7 +224,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test(expected = IllegalArgumentException.class)
    @ClientCompatibleTest
    public void alterAndGet_whenCalledWithNullFunction() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("alterAndGet_whenCalledWithNullFunction");
 
        ref.alterAndGet(null);
@@ -235,7 +233,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test
    @ClientCompatibleTest
    public void alterAndGet_whenException() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("alterAndGet_whenException");
        ref.set(10);
 
@@ -251,7 +249,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test
    @ClientCompatibleTest
    public void alterAndGet() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("alterAndGet");
 
        ref.set(10);
@@ -262,7 +260,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test(expected = IllegalArgumentException.class)
    @ClientCompatibleTest
    public void getAndAlter_whenCalledWithNullFunction() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("getAndAlter_whenCalledWithNullFunction");
 
        ref.getAndAlter(null);
@@ -271,7 +269,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test
    @ClientCompatibleTest
    public void getAndAlter_whenException() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("getAndAlter_whenException");
        ref.set(10);
 
@@ -287,7 +285,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
    @Test
    @ClientCompatibleTest
    public void getAndAlter() {
-       HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+       HazelcastInstance hazelcastInstance = createHazelcastInstance();
        IAtomicLong ref = hazelcastInstance.getAtomicLong("getAndAlter");
 
        ref.set(10);

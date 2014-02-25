@@ -56,8 +56,7 @@ public class LockTest extends HazelcastTestSupport {
 
     @Test
     public void testSimpleUsage() throws InterruptedException {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance = createHazelcastInstance();
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         final ILock lock = instance.getLock("testSimpleUsage");
         assertEquals("testSimpleUsage", lock.getName());
@@ -115,8 +114,7 @@ public class LockTest extends HazelcastTestSupport {
 
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnLock() throws InterruptedException {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance = createHazelcastInstance();
         final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -188,8 +186,7 @@ public class LockTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalUnlock() {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance = createHazelcastInstance();
         final ILock lock = instance.getLock("testIllegalUnlock");
         lock.unlock();
     }
@@ -589,8 +586,7 @@ public class LockTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsage1() {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance = createHazelcastInstance();
         final ILock lock = instance.getLock("testIllegalConditionUsage");
         final ICondition condition = lock.newCondition("condition");
         try {
@@ -601,8 +597,7 @@ public class LockTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsage2() {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance = createHazelcastInstance();
         final ILock lock = instance.getLock("testIllegalConditionUsage");
         final ICondition condition = lock.newCondition("condition");
         condition.signal();
@@ -648,8 +643,7 @@ public class LockTest extends HazelcastTestSupport {
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
 
         final Lock lock = hz.getLock("testLockInterruption2");
         final CountDownLatch latch = new CountDownLatch(1);

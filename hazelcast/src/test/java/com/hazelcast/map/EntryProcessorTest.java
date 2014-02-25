@@ -56,10 +56,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Test
     @Ignore
     public void testIndexAware_Issue_1719() {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         Config cfg = new Config();
         cfg.getMapConfig("test").addMapIndexConfig(new MapIndexConfig("attr1", false));
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance = createHazelcastInstance(cfg);
         IMap<String, TempData> map = instance.getMap("test");
         map.put("a", new TempData("foo", "bar"));
         map.put("b", new TempData("abc", "123"));

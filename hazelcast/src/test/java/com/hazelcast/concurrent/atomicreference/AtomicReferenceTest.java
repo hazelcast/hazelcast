@@ -37,7 +37,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void getAndSet() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("getAndSet");
         assertNull(ref.getAndSet("foo"));
         assertEquals("foo", ref.getAndSet("bar"));
@@ -47,7 +47,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void isNull() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("isNull");
 
         assertTrue(ref.isNull());
@@ -58,7 +58,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void get() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("get");
 
         assertNull(ref.get());
@@ -69,7 +69,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void setAndGet() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("setAndGet");
 
         assertNull(ref.setAndGet(null));
@@ -88,7 +88,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void set() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("set");
 
         ref.set(null);
@@ -107,7 +107,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void clear() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("clear");
 
         ref.clear();
@@ -124,7 +124,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void contains() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("clear");
 
         assertTrue(ref.contains(null));
@@ -140,7 +140,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void compareAndSet() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("compareAndSet");
 
         assertTrue(ref.compareAndSet(null, null));
@@ -166,7 +166,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     @ClientCompatibleTest
     public void apply_whenCalledWithNullFunction() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("apply_whenCalledWithNullFunction");
 
         ref.apply(null);
@@ -175,7 +175,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void apply() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("apply");
 
         assertEquals("null", ref.apply(new AppendFunction("")));
@@ -192,7 +192,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void apply_whenException() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("apply");
         ref.set("foo");
 
@@ -208,7 +208,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     @ClientCompatibleTest
     public void alter_whenCalledWithNullFunction() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alter_whenCalledWithNullFunction");
 
         ref.alter(null);
@@ -217,7 +217,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void alter_whenException() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alter_whenException");
         ref.set("foo");
 
@@ -233,7 +233,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void alter() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alter");
 
         ref.alter(new NullFunction());
@@ -250,7 +250,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     @ClientCompatibleTest
     public void alterAndGet_whenCalledWithNullFunction() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alterAndGet_whenCalledWithNullFunction");
 
         ref.alterAndGet(null);
@@ -259,7 +259,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void alterAndGet_whenException() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alterAndGet_whenException");
         ref.set("foo");
 
@@ -275,7 +275,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void alterAndGet() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("alterAndGet");
 
         assertNull(ref.alterAndGet(new NullFunction()));
@@ -292,7 +292,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     @ClientCompatibleTest
     public void getAndAlter_whenCalledWithNullFunction() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("getAndAlter_whenCalledWithNullFunction");
 
         ref.getAndAlter(null);
@@ -301,7 +301,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void getAndAlter_whenException() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("getAndAlter_whenException");
         ref.set("foo");
 
@@ -317,7 +317,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void getAndAlter() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("getAndAlter");
 
         assertNull(ref.getAndAlter(new NullFunction()));
@@ -364,7 +364,7 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
 
     @Test
     public void testToString() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("toString");
 
         assertEquals("IAtomicReference{name='toString'}", ref.toString());

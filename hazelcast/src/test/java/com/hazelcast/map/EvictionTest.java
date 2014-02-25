@@ -565,8 +565,7 @@ public class EvictionTest extends HazelcastTestSupport {
         MapConfig mc = cfg.getMapConfig("testZeroResetsTTL");
         int ttl = 5;
         mc.setTimeToLiveSeconds(ttl);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+       HazelcastInstance instance = createHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryAdapter<Object, Object>() {
@@ -687,8 +686,7 @@ public class EvictionTest extends HazelcastTestSupport {
         Config cfg = new Config();
         String mapname = "testContainsKeyShouldDelayEviction";
         cfg.getMapConfig(mapname).setMaxIdleSeconds(3);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance = createHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap(mapname);
         map.put(1, 1);
         for (int i = 0; i < 20; i++) {
@@ -732,9 +730,7 @@ public class EvictionTest extends HazelcastTestSupport {
      */
     @Test
     public void testEvictionAfterRemove() throws InterruptedException {
-        Config cfg = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance = createHazelcastInstance();
         IMap<Object, Object> map = instance.getMap("map");
         final AtomicInteger count = new AtomicInteger(0);
         map.addEntryListener(new EntryAdapter<Object, Object>() {

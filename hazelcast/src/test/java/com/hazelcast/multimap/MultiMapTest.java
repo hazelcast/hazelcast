@@ -268,8 +268,7 @@ public class MultiMapTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }));
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMultiMap(name).put(1, 1);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }

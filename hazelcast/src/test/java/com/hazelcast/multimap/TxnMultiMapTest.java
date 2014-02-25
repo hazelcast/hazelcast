@@ -115,8 +115,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionNotActiveException.class)
     public void testTxnMultimapOuterTransaction() throws Throwable {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h1 = factory.newHazelcastInstance();
+        final HazelcastInstance h1 = createHazelcastInstance();
 
         final TransactionContext transactionContext = h1.newTransactionContext();
         transactionContext.beginTransaction();

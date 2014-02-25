@@ -113,8 +113,7 @@ public class InvocationTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         final IQueue<Object> q = hz.getQueue("queue");
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -177,10 +176,9 @@ public class InvocationTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final Config config = new Config();
+       final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
 
         hz.getLock("testWaitingInfinitelyForTryLock").lock();
@@ -202,8 +200,7 @@ public class InvocationTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp2() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         final ILock lock = hz.getLock("lock");
         lock.lock();
         assertTrue(lock.isLockedByCurrentThread());

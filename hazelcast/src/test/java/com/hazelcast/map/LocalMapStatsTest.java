@@ -24,7 +24,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     public void testLastAccessTime() throws InterruptedException {
         long startTime = System.currentTimeMillis();
 
-        HazelcastInstance h1 = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance h1 = createHazelcastInstance();
         IMap<String, String> map1 = h1.getMap(name);
 
         String key = "key";

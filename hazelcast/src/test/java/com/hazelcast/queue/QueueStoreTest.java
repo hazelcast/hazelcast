@@ -66,8 +66,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+         HazelcastInstance instance = createHazelcastInstance(config);
 
         for (int i = 0; i < maxSize * 2; i++) {
             queueStore.store.put((long) i, i);
@@ -91,8 +90,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setProperty("bulk-load", "100");
         qConfig.setQueueStoreConfig(queueStoreConfig);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         for (int i = 0; i < 10; i++) {
             TransactionContext context = instance.newTransactionContext();
