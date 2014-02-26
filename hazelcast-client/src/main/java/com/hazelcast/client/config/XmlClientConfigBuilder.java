@@ -115,7 +115,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                         return;
                     }
                 }
-                logger.info( "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
+                logger.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
                 in = configurationUrl.openStream();
                 if (in == null) {
                     throw new IllegalStateException("Cannot read configuration file, giving up.");
@@ -178,26 +178,29 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleLoadBalancer(node);
             } else if ("near-cache".equals(nodeName)) {
                 handleNearCache(node);
+            } else if ("executor-pool-size".equals(nodeName)) {
+                final int poolSize = Integer.parseInt(getTextContent(node));
+                clientConfig.setExecutorPoolSize(poolSize);
             }
         }
     }
 
-    private void handleNearCache(Node node){
+    private void handleNearCache(Node node) {
         final String name = getAttribute(node, "name");
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child);
             if ("max-size".equals(nodeName)) {
                 nearCacheConfig.setMaxSize(Integer.parseInt(getTextContent(child)));
-            } else if ("time-to-live-seconds".equals(nodeName)){
+            } else if ("time-to-live-seconds".equals(nodeName)) {
                 nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
-            } else if ("max-idle-seconds".equals(nodeName)){
+            } else if ("max-idle-seconds".equals(nodeName)) {
                 nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
-            } else if ("eviction-policy".equals(nodeName)){
+            } else if ("eviction-policy".equals(nodeName)) {
                 nearCacheConfig.setEvictionPolicy(getTextContent(child));
-            } else if ("in-memory-format".equals(nodeName)){
+            } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(getTextContent(child)));
-            } else if ("invalidate-on-change".equals(nodeName)){
+            } else if ("invalidate-on-change".equals(nodeName)) {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
             }
         }
