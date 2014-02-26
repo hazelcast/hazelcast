@@ -60,8 +60,6 @@ public class Config {
 
     private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
 
-    private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
-
     private final Map<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
 
     private final Map<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
@@ -390,45 +388,6 @@ public class Config {
         this.multiMapConfigs.clear();
         this.multiMapConfigs.putAll(multiMapConfigs);
         for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    public ReplicatedMapConfig findReplicatedMapConfig(String name){
-        ReplicatedMapConfig config;
-        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) return config.getAsReadOnly();
-        return getReplicatedMapConfig("default").getAsReadOnly();
-    }
-
-    public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        ReplicatedMapConfig config;
-        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) return config;
-        ReplicatedMapConfig defConfig = replicatedMapConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new ReplicatedMapConfig();
-            defConfig.setName("default");
-            addReplicatedMapConfig(defConfig);
-        }
-        config = new ReplicatedMapConfig(defConfig);
-        config.setName(name);
-        addReplicatedMapConfig(config);
-        return config;
-    }
-
-    public Config addReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
-        replicatedMapConfigs.put(replicatedMapConfig.getName(), replicatedMapConfig);
-        return this;
-    }
-
-    public Map<String, ReplicatedMapConfig> getReplicatedMapConfigs() {
-        return replicatedMapConfigs;
-    }
-
-    public Config setReplicatedMapConfigs(Map<String, ReplicatedMapConfig> replicatedMapConfigs) {
-        this.replicatedMapConfigs.clear();
-        this.replicatedMapConfigs.putAll(replicatedMapConfigs);
-        for (final Entry<String, ReplicatedMapConfig> entry : this.replicatedMapConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
