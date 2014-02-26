@@ -18,10 +18,9 @@ package com.hazelcast.partition.strategy;
 
 import com.hazelcast.core.PartitioningStrategy;
 
-/**
- * @author mdogan 8/25/13
- */
 public class StringPartitioningStrategy implements PartitioningStrategy {
+
+    public final static StringPartitioningStrategy INSTANCE = new StringPartitioningStrategy();
 
     public Object getPartitionKey(Object key) {
         if (key instanceof String) {

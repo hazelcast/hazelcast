@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -184,30 +185,36 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
-    protected static void warmUpPartitions(HazelcastInstance... instances) throws InterruptedException {
-        TestUtil.warmUpPartitions(instances);
+    protected static void warmUpPartitions(HazelcastInstance... instances)  {
+        try {
+            TestUtil.warmUpPartitions(instances);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected static String generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
+    protected static String generateKeyOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        int k = (int) (Math.random() * 1000);
-        while (!localMember.equals(partitionService.getPartition(String.valueOf(k)).getOwner())) {
-            k++;
-            Thread.sleep(10);
+        for(;;){
+            String id  = UUID.randomUUID().toString();
+            Partition partition = partitionService.getPartition(id);
+            if(localMember.equals(partition.getOwner())){
+                return id;
+            }
         }
-        return String.valueOf(k);
     }
 
-    protected static String generateKeyNotOwnedBy(HazelcastInstance instance) throws InterruptedException {
+    protected static String generateKeyNotOwnedBy(HazelcastInstance instance)  {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        int k = (int) (Math.random() * 1000);
-        while (localMember.equals(partitionService.getPartition(String.valueOf(k)).getOwner())) {
-            k++;
-            Thread.sleep(10);
+        for(;;){
+            String id  = UUID.randomUUID().toString();
+            Partition partition = partitionService.getPartition(id);
+            if(!localMember.equals(partition.getOwner())){
+                return id;
+            }
         }
-        return String.valueOf(k);
     }
 
     public final class DummyUncheckedHazelcastTestException extends RuntimeException {

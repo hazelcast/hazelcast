@@ -183,7 +183,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (key == null) {
             throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
         }
-        return getDistributedObject(LockService.SERVICE_NAME, LockProxy.convertToStringKey(key, node.getSerializationService()));
+        String name = LockProxy.convertToStringKey(key, node.getSerializationService());
+        return getLock(name);
     }
 
     public ILock getLock(String key) {
