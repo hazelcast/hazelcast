@@ -190,13 +190,6 @@
         <value-collection-type>SET</value-collection-type>
     </multimap>
 
-    <replicatedmap name="default">
-        <in-memory-format>OBJECT</in-memory-format>
-        <concurrency-level>32</concurrency-level>
-        <replication-delay-millis>100</replication-delay-millis>
-        <async-fillup>true</async-fillup>
-    </replicatedmap>
-
     <list name="default">
         <backup-count>1</backup-count>
     </list>
