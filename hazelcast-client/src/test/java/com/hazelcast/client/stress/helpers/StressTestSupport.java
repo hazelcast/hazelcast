@@ -53,7 +53,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         cluster.shutDown();
     }
 
-    public final boolean startAndWaitForTestCompletion() {
+    private final boolean startAndWaitForTestCompletion() {
         System.out.println("Cluster change enabled:" + clusterChangeEnabled);
         if (clusterChangeEnabled) {
             killMemberThread = new KillMemberThread();
@@ -93,6 +93,10 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     }
 
 
+    /*run all test threads for set amount of time
+    * and wait for them to finish with a join,
+    * then calls assertResult(), to do you post test asserting
+    * */
     public void runTest(boolean clusterChangeEnabled, TestThread[] threads) {
         setClusterChangeEnabled(clusterChangeEnabled);
         startAndWaitForTestCompletion();
@@ -100,6 +104,9 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         assertResult();
     }
 
+    /* Called after the test has run and we have joined all thread
+    *  Do you post test asserting hear
+    */
     abstract public void assertResult();
 
 

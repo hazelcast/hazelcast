@@ -57,20 +57,14 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
 
     @Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true, stressThreads);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
+        runTest(false, stressThreads);
     }
 
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
-        initializeReferences();
-        startAndWaitForTestCompletion();
-        joinAll(stressThreads);
-    }
 
     private void initializeReferences() {
         System.out.println("==================================================================");

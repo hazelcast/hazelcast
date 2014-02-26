@@ -59,22 +59,14 @@ public class MapStableReadStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true, stressThreads);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
+        runTest(false, stressThreads);
     }
 
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
-        fillMap();
-
-        startAndWaitForTestCompletion();
-
-        joinAll(stressThreads);
-    }
 
     private void fillMap() {
         System.out.println("==================================================================");

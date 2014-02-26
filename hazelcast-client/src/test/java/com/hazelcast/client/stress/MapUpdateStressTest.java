@@ -60,21 +60,15 @@ public class MapUpdateStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true, stressThreads);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
+        runTest(false, stressThreads);
     }
 
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
-        fillMap();
-        startAndWaitForTestCompletion();
-        joinAll(stressThreads);
-        assertResult();
-    }
+
 
     public void assertResult() {
         int[] increments = new int[MAP_SIZE];

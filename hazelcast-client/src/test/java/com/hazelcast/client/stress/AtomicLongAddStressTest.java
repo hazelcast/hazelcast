@@ -63,6 +63,7 @@ public class AtomicLongAddStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
+
     public void assertResult() {
 
         long total=0;
