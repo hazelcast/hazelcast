@@ -17,14 +17,17 @@ import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static org.junit.Assert.assertNull;
 
 public abstract class StressTestSupport extends HazelcastTestSupport {
+
     //todo: should be system property
-    public static final int RUNNING_TIME_SECONDS = 180;
+    public static int RUNNING_TIME_SECONDS = 180;
     //todo: should be system property
-    public static final int CLUSTER_SIZE = 6;
+    public static int CLUSTER_SIZE = 6;
     //todo: should be system property
     public static final int KILL_DELAY_SECONDS = 10;
 
-    private final List<HazelcastInstance> instances = new CopyOnWriteArrayList<HazelcastInstance>();
+    protected final List<HazelcastInstance> instances = new CopyOnWriteArrayList<HazelcastInstance>();
+
+
     private CountDownLatch startLatch;
     private KillMemberThread killMemberThread;
     private volatile boolean stopOnError = true;
@@ -89,13 +92,25 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
             }
         }
 
+        stopTest();
+
         System.out.println("==================================================================");
         System.out.println("Test completed.");
         System.out.println("==================================================================");
 
-        stopTest();
         return true;
     }
+
+
+    public void runTest(boolean clusterChangeEnabled, TestThread[] threads) {
+        setClusterChangeEnabled(clusterChangeEnabled);
+        startAndWaitForTestCompletion();
+        joinAll(threads);
+        assertResult();
+    }
+
+    abstract public void assertResult();
+
 
     protected final void setStopOnError(boolean stopOnError) {
         this.stopOnError = stopOnError;
@@ -142,7 +157,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         protected final Random random = new Random();
 
         public TestThread() {
-            setName(getClass().getName() + "" + ID_GENERATOR.getAndIncrement());
+            setName(getClass().getName() + "(" + ID_GENERATOR.getAndIncrement() +")");
         }
 
         @Override

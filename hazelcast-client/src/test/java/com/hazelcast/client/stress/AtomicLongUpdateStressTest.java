@@ -75,10 +75,10 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
 
         startAndWaitForTestCompletion();
         joinAll(stressThreads);
-        assertNoUpdateFailures();
+        assertResult();
     }
 
-    private void assertNoUpdateFailures() {
+    public void assertResult() {
         int[] increments = new int[REFERENCE_COUNT];
         for (StressThread t : stressThreads) {
             t.addIncrements(increments);

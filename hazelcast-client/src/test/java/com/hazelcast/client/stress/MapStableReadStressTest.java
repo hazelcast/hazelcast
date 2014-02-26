@@ -93,6 +93,9 @@ public class MapStableReadStressTest extends StressTestSupport {
         System.out.println("==================================================================");
     }
 
+    //this test dose not have any assert at the end. all asserts made in doRun
+    public void assertResult(){}
+
     public class StressThread extends TestThread {
 
         @Override

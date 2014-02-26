@@ -72,10 +72,10 @@ public class MapUpdateStressTest extends StressTestSupport {
         fillMap();
         startAndWaitForTestCompletion();
         joinAll(stressThreads);
-        assertNoUpdateFailures();
+        assertResult();
     }
 
-    private void assertNoUpdateFailures() {
+    public void assertResult() {
         int[] increments = new int[MAP_SIZE];
         for (StressThread t : stressThreads) {
             t.addIncrements(increments);
@@ -130,9 +130,11 @@ public class MapUpdateStressTest extends StressTestSupport {
                 int key = random.nextInt(MAP_SIZE);
                 int increment = random.nextInt(10);
                 increments[key] += increment;
+
                 for (; ; ) {
                     int oldValue = map.get(key);
                     if (map.replace(key, oldValue, oldValue + increment)) {
+                        System.out.println(this);
                         break;
                     }
                 }
