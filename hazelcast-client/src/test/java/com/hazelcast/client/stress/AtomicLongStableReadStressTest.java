@@ -39,6 +39,8 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
             references[k] = client.getAtomicLong("atomicreference:" + k);
         }
 
+        initializeReferences();
+
         stressThreads = new StressThread[CLIENT_THREAD_COUNT];
         for (int k = 0; k < stressThreads.length; k++) {
             stressThreads[k] = new StressThread();

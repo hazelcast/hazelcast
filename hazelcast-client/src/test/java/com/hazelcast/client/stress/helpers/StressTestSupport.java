@@ -1,6 +1,7 @@
 package com.hazelcast.client.stress.helpers;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
@@ -20,11 +21,11 @@ import static org.junit.Assert.assertNull;
 public abstract class StressTestSupport extends HazelcastTestSupport {
 
     //todo: should be system property
-    public static int RUNNING_TIME_SECONDS = 20;
+    public static int RUNNING_TIME_SECONDS = 30;
     //todo: should be system property
-    public static int CLUSTER_SIZE = 6;
+    public static int CLUSTER_SIZE = 3;
     //todo: should be system property
-    public static final int KILL_DELAY_SECONDS = 10;
+    public static final int KILL_DELAY_SECONDS = 2;
 
     protected SimpleClusterUtil cluster = new SimpleClusterUtil(CLUSTER_SIZE);
 
@@ -50,10 +51,11 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        cluster.shutDown();
+        //cluster.shutDown();
+        Hazelcast.shutdownAll();
     }
 
-    private final boolean startAndWaitForTestCompletion() {
+    private final boolean runTestReportLoop() {
         System.out.println("Cluster change enabled:" + clusterChangeEnabled);
         if (clusterChangeEnabled) {
             killMemberThread = new KillMemberThread();
@@ -99,7 +101,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     * */
     public void runTest(boolean clusterChangeEnabled, TestThread[] threads) {
         setClusterChangeEnabled(clusterChangeEnabled);
-        startAndWaitForTestCompletion();
+        runTestReportLoop();
         joinAll(threads);
         assertResult();
     }

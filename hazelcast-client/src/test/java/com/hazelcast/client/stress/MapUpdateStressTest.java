@@ -42,6 +42,8 @@ public class MapUpdateStressTest extends StressTestSupport {
         client = HazelcastClient.newHazelcastClient(clientConfig);
         map = client.getMap("map");
 
+        fillMap();
+
         stressThreads = new StressThread[CLIENT_THREAD_COUNT];
         for (int k = 0; k < stressThreads.length; k++) {
             stressThreads[k] = new StressThread();
