@@ -94,6 +94,7 @@ public interface ILock extends Lock, DistributedObject {
      *
      * @param name identifier of the new condition instance
      * @return A new {@link ICondition} instance for this {@code ILock} instance
+     * @throws java.lang.NullPointerException if name is null.
      */
     ICondition newCondition(String name);
 
