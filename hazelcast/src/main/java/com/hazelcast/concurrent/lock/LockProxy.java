@@ -127,7 +127,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
         return key;
     }
 
-    int getPartitionId() {
+    public int getPartitionId() {
         return partitionId;
     }
 
