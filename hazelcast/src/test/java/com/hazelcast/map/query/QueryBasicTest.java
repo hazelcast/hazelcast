@@ -47,6 +47,22 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class QueryBasicTest extends HazelcastTestSupport {
 
+    @Test(timeout=1000*60)
+    public void testInPredicateWithEmptyArray() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        final IMap<String, Value> map = instance.getMap("default");
+        for (int i = 0; i < 10; i++) {
+            final Value v = new Value("name" + i, new ValueType("type" + i), i);
+            map.put("" + i, v);
+        }
+        String[] emptyArray = new String[2];
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in(emptyArray);
+        final Collection<Value> values = map.values(predicate);
+        assertEquals(values.size(), 0);
+    }
+
     @Test(timeout = 1000 * 60)
     public void testInnerIndex() {
         HazelcastInstance instance = createHazelcastInstance();

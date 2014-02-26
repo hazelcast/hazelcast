@@ -57,23 +57,6 @@ import static org.junit.Assert.*;
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
 
-    @Test(timeout=1000*60)
-    public void testInPredicateWithEmptyArray() {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        //todo: why do we need to instances?
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        final IMap<String, Value> map = instance.getMap("default");
-        for (int i = 0; i < 10; i++) {
-            final Value v = new Value("name" + i, new ValueType("type" + i), i);
-            map.put("" + i, v);
-        }
-        String[] emptyArray = new String[2];
-        final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in(emptyArray);
-        final Collection<Value> values = map.values(predicate);
-        assertEquals(values.size(), 0);
-    }
 
 
     @Test(timeout=1000*60)
@@ -140,6 +123,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -167,6 +151,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
     public void testQueryWithIndexesWhileMigrating() throws Exception {
          TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -413,6 +398,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown2() {
        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -436,6 +422,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown3() {
          TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -460,6 +447,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
     public void testSecondMemberAfterAddingIndexes() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -472,6 +460,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
     public void testShutDown() {
         Config cfg = new Config();
         cfg.getMapConfig("testShutDown").addMapIndexConfig(new MapIndexConfig("typeName", false));
@@ -504,6 +493,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
      * test for issue #359
      */
     @Test(timeout=1000*60)
+    @Category(ProblematicTest.class)
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
         final int runCount = 500;
