@@ -2,6 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;

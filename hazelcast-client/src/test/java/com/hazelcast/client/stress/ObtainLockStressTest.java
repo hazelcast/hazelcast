@@ -2,9 +2,9 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -13,10 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static org.junit.Assert.fail;
@@ -39,7 +35,6 @@ public class ObtainLockStressTest extends StressTestSupport {
 
     @Before
     public void setUp() {
-        super.RUNNING_TIME_SECONDS = 20;
         super.setUp();
 
         int index=0;

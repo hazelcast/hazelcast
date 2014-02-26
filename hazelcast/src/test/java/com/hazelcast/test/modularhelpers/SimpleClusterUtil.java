@@ -22,14 +22,9 @@ public class SimpleClusterUtil {
     private List<HazelcastInstance> cluster;
     private Config config = new Config();
 
-    public SimpleClusterUtil(String groupName, int clusterSZ){
+    public SimpleClusterUtil(int clusterSZ){
         initialClusterSize = clusterSZ;
-        setupMultiCast(groupName, clusterSZ);
-    }
-
-    public void setupMultiCast(String groupName, int clusterSZ){
-        cluster = new ArrayList<HazelcastInstance>(clusterSZ);
-        config.getGroupConfig().setName(groupName);
+        cluster = Collections.synchronizedList( new ArrayList<HazelcastInstance>(initialClusterSize) );
     }
 
     public void initCluster(){
@@ -66,25 +61,39 @@ public class SimpleClusterUtil {
 
     public void terminateRandomNode(){
         HazelcastInstance node = getRandomNode();
-        node.getLifecycleService().terminate();
         cluster.remove(node);
+
+        node.getLifecycleService().terminate();
     }
 
-    public void terminateAllNodes(){
-        for(HazelcastInstance node : cluster){
-            node.getLifecycleService().terminate();
-            cluster.remove(node);
+    public void shutDownRandomNode(){
+        HazelcastInstance node = getRandomNode();
+        cluster.remove(node);
+
+        node.getLifecycleService().shutdown();
+    }
+
+    public void shutDown() {
+
+        for (HazelcastInstance hz : cluster) {
+            try {
+                hz.shutdown();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public void addNode(){
-        if(cluster.size() < maxClusterSize){
-            cluster.add( factory.newHazelcastInstance( config ) );
-        }
+        cluster.add( factory.newHazelcastInstance( config ) );
     }
 
     public Config getConfig(){
         return config;
+    }
+
+    public void setConfig(Config config){
+        this.config = config;
     }
 
     public void assertClusterSizeEventually(final int sz){

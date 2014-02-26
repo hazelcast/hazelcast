@@ -3,8 +3,8 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.ItemCounter;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ISet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -34,7 +34,6 @@ public class SetStressTest extends StressTestSupport {
 
     @Before
     public void setUp() {
-        super.RUNNING_TIME_SECONDS=20;
         super.setUp();
 
         int index=0;
@@ -69,7 +68,8 @@ public class SetStressTest extends StressTestSupport {
 
     public void assertResult() {
 
-        ISet<Long> expeted = instances.get(0).getSet("set");
+        HazelcastInstance hz = cluster.getRandomNode();
+        ISet<Long> expeted = hz.getSet("set");
 
         long total=0;
         for ( StressThread s : stressThreads ) {

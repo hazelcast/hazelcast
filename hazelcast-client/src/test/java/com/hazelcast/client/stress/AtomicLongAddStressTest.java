@@ -2,6 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -69,7 +70,8 @@ public class AtomicLongAddStressTest extends StressTestSupport {
             total += s.count;
         }
 
-        IAtomicLong expeted = instances.get(0).getAtomicLong("atomicL");
+        HazelcastInstance hz = cluster.getRandomNode();
+        IAtomicLong expeted = hz.getAtomicLong("atomicL");
 
         assertEquals(expeted+" has failed writes ", total, expeted.get());
     }

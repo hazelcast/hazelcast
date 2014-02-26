@@ -38,11 +38,10 @@ public class ClientQueueDisruptionTest {
     public void init(){
         Hazelcast.shutdownAll();
 
-        cluster = new SimpleClusterUtil("A", 3);
+        cluster = new SimpleClusterUtil(3);
         cluster.initCluster();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig(cluster.getName()));
         client1  = HazelcastClient.newHazelcastClient(clientConfig);
         client2  = HazelcastClient.newHazelcastClient(clientConfig);
     }

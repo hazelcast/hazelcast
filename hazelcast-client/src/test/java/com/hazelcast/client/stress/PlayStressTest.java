@@ -2,9 +2,8 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.Incromentor;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.*;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -12,8 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.Future;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -71,7 +68,8 @@ public class PlayStressTest extends StressTestSupport {
             total += s.count;
         }
 
-        IAtomicReference<Long> expeted = instances.get(0).getAtomicReference("ref");
+        HazelcastInstance hz = cluster.getRandomNode();
+        IAtomicReference<Long> expeted = hz.getAtomicReference("ref");
 
         assertEquals(expeted+" has failed writes ", total, (long) expeted.get());
     }

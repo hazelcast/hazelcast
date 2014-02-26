@@ -3,8 +3,7 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.EnteryCounter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -84,7 +83,8 @@ public class PubIfAbsentStressTest extends StressTestSupport {
 
 
         //checking the map size and EnteryCounter add up
-        IMap map = instances.get(0).getMap("map");
+        HazelcastInstance hz = cluster.getRandomNode();
+        IMap map = hz.getMap("map");
 
         long total=0;
         for ( int i = 0; i < stressThreads.length; i++ ) {

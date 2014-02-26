@@ -3,6 +3,7 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.Incromentor;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
@@ -33,10 +34,11 @@ public class SubmitToKeyStressTest extends StressTestSupport {
 
     @Before
     public void setUp() {
-        super.RUNNING_TIME_SECONDS = 20;
         super.setUp();
 
-        super.instances.get(0).getMap("map").put(0, 0);
+        //make the initial key val that all thread will run task on
+        HazelcastInstance hz = super.cluster.getRandomNode();
+        hz.getMap("map").put(0, 0);
 
         int index=0;
         for (int i = 0; i < TOTAL_HZ_INSTANCES; i++) {
@@ -75,7 +77,7 @@ public class SubmitToKeyStressTest extends StressTestSupport {
             total += s.totalOpps;
         }
 
-        IMap map = instances.get(0).getMap("map");
+        IMap map = cluster.getRandomNode().getMap("map");
 
         assertEquals(total, map.get(0));
     }
