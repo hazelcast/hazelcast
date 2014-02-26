@@ -49,23 +49,116 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class LockTest extends HazelcastTestSupport {
 
+
+
+    // ======================== lock ==================================================
+
     @Test
     @Ignore
-    public void testLockCanBeAcquiredReentrant() {
+    public void testLock_whenNotLocked() {
 
     }
 
     @Test
     @Ignore
-    public void testReleaseOfReentrantAcquiredLock() {
+    public void testLock_whenLockedBySelf() {
 
     }
 
     @Test
     @Ignore
-    public void tryLock() {
+    public void testLock_whenLockedByOther() {
 
     }
+
+    // ======================== try lock ==============================================
+
+    @Test
+    @Ignore
+    public void testTryLock_whenNotLocked() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testTryLock_whenLockedBySelf() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testTryLock_whenLockedByOther() {
+
+    }
+
+    // ======================== try lock with timeout ==============================================
+
+    @Test
+    @Ignore
+    public void testTryLockTimeout_whenNotLocked() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testTryLockTimeout_whenLockedBySelf() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testTryLockTimeout_whenLockedByOtherAndTimeout() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testTryLockTimeout_whenLockedByOtherAndEventuallyAvailable() {
+
+    }
+
+    @Test
+    @Ignore                            //errror?
+    public void testTryLockTimeout_whenNegativeTimeout() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testTryLockTimeout_whenNullTimeout() {
+
+    }
+
+
+    // ======================== unlock ==============================================
+
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testUnlock_whenFree() {
+        HazelcastInstance instance = createHazelcastInstance();
+        ILock lock = instance.getLock("testIllegalUnlock");
+        lock.unlock();
+    }
+
+    @Test
+    @Ignore
+    public void testUnlock_whenLockedBySelf() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testUnlock_whenReentrantlyLockedBySelf() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testUnlock_whenLockedByOther() {
+
+    }
+
+
+    // ======================== force unlock ==============================================
 
     @Test
     @Ignore
@@ -84,6 +177,35 @@ public class LockTest extends HazelcastTestSupport {
     public void testForceUnlock_whenOwnedByCurrentThread() {
 
     }
+
+    // ========================= lease time ==============================================
+
+    @Test
+    @Ignore
+    public void testLockLeaseTime_whenNullTimeout() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testLockLeaseTime_whenLockFree() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testLockLeaseTime_whenLockAcquiredByOther() {
+
+    }
+
+    @Test
+    @Ignore
+    public void testLockLeaseTime_lockIsReleasedEventually() {
+
+    }
+
+
+    // =======================================================================
 
     @Test
     public void testSimpleUsage() throws InterruptedException {
@@ -215,13 +337,6 @@ public class LockTest extends HazelcastTestSupport {
         lock.lock();
     }
 
-    @Test(expected = IllegalMonitorStateException.class)
-    public void testUnlockOfUnownedLock() {
-        HazelcastInstance instance = createHazelcastInstance();
-        ILock lock = instance.getLock("testIllegalUnlock");
-        lock.unlock();
-    }
-
 
     @Test(timeout = 100000)
     public void testLockEvictionLocalKey() throws Exception {
@@ -285,11 +400,6 @@ public class LockTest extends HazelcastTestSupport {
         assertEquals(-1L, lock.getRemainingLeaseTime());
     }
 
-    @Test
-    @Ignore
-    public void testLockLeaseTime() {
-
-    }
 
     /**
      * Test for issue #39
@@ -394,7 +504,6 @@ public class LockTest extends HazelcastTestSupport {
         lock.unlock();
         assertTrue("Could not acquire lock!", lock.tryLock());
     }
-
 
 
     // ====================== tests to make sure the lock can deal with cluster member failure ====================
