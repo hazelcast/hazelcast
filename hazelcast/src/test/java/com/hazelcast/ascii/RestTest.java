@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
@@ -105,13 +106,38 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(i, communicator.size(name));
             communicator.offer(name, String.valueOf(i));
         }
 
         for (int i = 0; i < 100; i++) {
             Assert.assertEquals(String.valueOf(i), communicator.poll(name, 2));
         }
+    }
+
+    @Test
+    public void testQueueSizeEmpty() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        final String name = "testQueueSizeEmpty";
+
+        IQueue queue = instance.getQueue(name);
+        Assert.assertEquals(queue.size(), communicator.size(name));
+    }
+
+    @Test
+    public void testQueueSizeNonEmpty() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        final String name = "testQueueSizeNotEmpty";
+        final int num_items = 100;
+
+        IQueue queue = instance.getQueue(name);
+
+        for (int i = 0; i < num_items; i++) {
+            queue.add(i);
+        }
+
+        Assert.assertEquals(queue.size(), communicator.size(name));
     }
 
     private class HTTPCommunicator {
@@ -121,7 +147,7 @@ public class RestTest {
 
         HTTPCommunicator(HazelcastInstance instance) {
             this.instance = instance;
-            address = "http:/" + instance.getCluster().getLocalMember().getInetSocketAddress().toString() + "/hazelcast/rest/";
+            this.address = "http:/" + instance.getCluster().getLocalMember().getInetSocketAddress().toString() + "/hazelcast/rest/";
         }
 
         public String poll(String queueName, long timeout) {
