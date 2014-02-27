@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.proxy;
+package com.hazelcast.topic;
 
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.topic.PublishOperation;
-import com.hazelcast.topic.TopicService;
-import com.hazelcast.util.ExceptionUtil;
-
-import java.util.concurrent.Future;
 
 public class TotalOrderedTopicProxy extends TopicProxy {
 
@@ -32,18 +28,14 @@ public class TotalOrderedTopicProxy extends TopicProxy {
     public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-        this.operationService=nodeEngine.getOperationService();
+        this.operationService = nodeEngine.getOperationService();
     }
 
     @Override
     public void publish(Object message) {
-        try {
-            NodeEngine nodeEngine = getNodeEngine();
-            PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
-            Future f = operationService.invokeOnPartition(TopicService.SERVICE_NAME,operation,partitionId);
-            f.get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        NodeEngine nodeEngine = getNodeEngine();
+        PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
+        InternalCompletableFuture f = operationService.invokeOnPartition(TopicService.SERVICE_NAME, operation, partitionId);
+        f.getSafely();
     }
 }

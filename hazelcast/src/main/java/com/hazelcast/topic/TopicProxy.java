@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.proxy;
+package com.hazelcast.topic;
 
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.topic.TopicService;
 
 public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
@@ -30,7 +30,8 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     @Override
     public void publish(E message) {
-        publishInternal(getNodeEngine().toData(message));
+        Data messageData = getNodeEngine().toData(message);
+        publishInternal(messageData);
     }
 
     @Override
@@ -39,7 +40,7 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
     }
 
     @Override
-    public boolean removeMessageListener(final String registrationId) {
+    public boolean removeMessageListener(String registrationId) {
         return removeMessageListenerInternal(registrationId);
     }
 
