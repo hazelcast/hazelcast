@@ -25,9 +25,9 @@ import java.security.Permission;
  */
 public abstract class InstancePermission extends ClusterPermission {
 
-    protected final static int NONE = 0x0;
-    protected final static int CREATE = 0x1;
-    protected final static int DESTROY = 0x2;
+    protected static final int NONE = 0x0;
+    protected static final int CREATE = 0x1;
+    protected static final int DESTROY = 0x2;
 
     protected final int mask;
     protected final String actions;
@@ -90,12 +90,15 @@ public abstract class InstancePermission extends ClusterPermission {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         InstancePermission other = (InstancePermission) obj;
         if (getName() == null && other.getName() != null) {
             return false;

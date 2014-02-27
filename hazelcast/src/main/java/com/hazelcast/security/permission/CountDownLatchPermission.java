@@ -18,17 +18,18 @@ package com.hazelcast.security.permission;
 
 
 public class CountDownLatchPermission extends InstancePermission {
-	
-	private final static int READ 		= 0x4;
-	private final static int MODIFY	 		= 0x8;
-	private final static int ALL 			= CREATE | DESTROY | READ | MODIFY;
 
-	public CountDownLatchPermission(String name, String... actions) {
-		super(name, actions);
-	}
+    private static final int READ = 0x4;
+    private static final int MODIFY = 0x8;
+    private static final int ALL = CREATE | DESTROY | READ | MODIFY;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+    public CountDownLatchPermission(String name, String... actions) {
+        super(name, actions);
+    }
+
+    @Override
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -44,6 +45,6 @@ public class CountDownLatchPermission extends InstancePermission {
                 mask |= MODIFY;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 }

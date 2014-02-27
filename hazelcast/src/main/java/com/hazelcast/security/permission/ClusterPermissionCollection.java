@@ -18,7 +18,11 @@ package com.hazelcast.security.permission;
 
 import java.security.Permission;
 import java.security.PermissionCollection;
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class ClusterPermissionCollection extends PermissionCollection {
 
@@ -26,12 +30,10 @@ public class ClusterPermissionCollection extends PermissionCollection {
     final Class<? extends Permission> permClass;
 
     public ClusterPermissionCollection() {
-        super();
         permClass = null;
     }
 
     public ClusterPermissionCollection(Class<? extends Permission> permClass) {
-        super();
         this.permClass = permClass;
     }
 

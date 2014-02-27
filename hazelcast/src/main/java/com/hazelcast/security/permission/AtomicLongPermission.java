@@ -18,18 +18,19 @@ package com.hazelcast.security.permission;
 
 
 public class AtomicLongPermission extends InstancePermission {
-	
-	private final static int READ 		= 0x4;
-	private final static int MODIFY 		= 0x8;
 
-	private final static int ALL 			= READ | MODIFY | CREATE | DESTROY;
+    private static final int READ = 0x4;
+    private static final int MODIFY = 0x8;
 
-	public AtomicLongPermission(String name, String... actions) {
-		super(name, actions);
-	}
+    private static final int ALL = READ | MODIFY | CREATE | DESTROY;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+    public AtomicLongPermission(String name, String... actions) {
+        super(name, actions);
+    }
+
+    @Override
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -45,6 +46,6 @@ public class AtomicLongPermission extends InstancePermission {
                 mask |= DESTROY;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 }
