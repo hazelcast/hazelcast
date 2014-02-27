@@ -118,7 +118,11 @@ public abstract class HazelcastTestSupport {
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
         for (int k = 0; k < durationSeconds; k++) {
-            task.run();
+            try {
+                task.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             sleepSeconds(1);
         }
     }
@@ -131,7 +135,11 @@ public abstract class HazelcastTestSupport {
         int sleepMillis = 200;
         for (int k = 0; k < iterations; k++) {
             try {
-                task.run();
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
                 return;
             } catch (AssertionError e) {
                 error = e;
@@ -153,7 +161,11 @@ public abstract class HazelcastTestSupport {
 
     public static void assertTrueDelayed(int delaySeconds, AssertTask task) {
         sleepSeconds(delaySeconds);
-        task.run();
+        try {
+            task.run();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
