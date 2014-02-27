@@ -85,6 +85,10 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        if (unit == null) {
+            throw new NullPointerException("unit can't be null");
+        }
+
         return lockSupport.tryLock(getNodeEngine(), key, time, unit);
     }
 
@@ -105,6 +109,9 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public ICondition newCondition(String name) {
+        if (name == null) {
+            throw new NullPointerException("Condition name can't be null");
+        }
         return new ConditionImpl(this, name);
     }
 

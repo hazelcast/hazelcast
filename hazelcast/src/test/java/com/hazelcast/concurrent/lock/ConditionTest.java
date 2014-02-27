@@ -24,11 +24,23 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class ConditionTest extends HazelcastTestSupport {
 
-    @Test(timeout = 60000)
-    @Ignore
-    public void testNewCondition_nullName() {
+    @Test(expected = UnsupportedOperationException.class)
+    public void testNewConditionWithoutNameIsNotSupported() {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        ILock lock = instance.getLock(randomString());
+
+        lock.newCondition();
     }
 
+    @Test(timeout = 60000, expected = NullPointerException.class)
+    public void testNewCondition_whenNullName() {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        ILock lock = instance.getLock(randomString());
+
+        lock.newCondition(null);
+    }
 
     @Test(timeout = 60000)
     @Ignore
@@ -205,21 +217,17 @@ public class ConditionTest extends HazelcastTestSupport {
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
-        int k = 0;
-        final AtomicInteger atomicInteger = new AtomicInteger(0);
-        while (keyOwner.getCluster().getLocalMember().equals(instance1.getPartitionService().getPartition(k++).getOwner())) {
-            Thread.sleep(10);
-        }
+        final AtomicInteger signalCounter = new AtomicInteger(0);
 
-        final int key = k;
+        final String key = generateKeyOwnedBy(instance1);
         final ILock lock1 = instance1.getLock(key);
-        final String name = randomString();
-        final ICondition condition1 = lock1.newCondition(name);
+        final String conditionName = randomString();
+        final ICondition condition1 = lock1.newCondition(conditionName);
 
         Thread t = new Thread(new Runnable() {
             public void run() {
-                final ILock lock = instance2.getLock(key);
-                final ICondition condition = lock.newCondition(name);
+                ILock lock = instance2.getLock(key);
+                ICondition condition = lock.newCondition(conditionName);
                 lock.lock();
                 try {
                     condition.await();
@@ -228,7 +236,7 @@ public class ConditionTest extends HazelcastTestSupport {
                 } finally {
                     lock.unlock();
                 }
-                atomicInteger.incrementAndGet();
+                signalCounter.incrementAndGet();
             }
         });
         t.start();
@@ -241,7 +249,7 @@ public class ConditionTest extends HazelcastTestSupport {
         lock1.unlock();
         Thread.sleep(1000);
         t.join();
-        assertEquals(1, atomicInteger.get());
+        assertEquals(1, signalCounter.get());
     }
 
     @Test(timeout = 60000, expected = DistributedObjectDestroyedException.class)
@@ -314,6 +322,8 @@ public class ConditionTest extends HazelcastTestSupport {
         int k = 0;
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance();
         warmUpPartitions(instance, keyOwner);
+
+        //todo: what is this, we are trying to find the 'not keyowner'????
 
         while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner())) {
             Thread.sleep(10);
