@@ -35,7 +35,7 @@ public class CountOperation extends MultiMapKeyBasedOperation {
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         MultiMapWrapper wrapper = container.getMultiMapWrapper(dataKey);
-        response = wrapper == null ? 0 : wrapper.getCollection().size();
+        response = wrapper == null ? 0 : wrapper.getCollection(false).size();
     }
 
     public int getId() {

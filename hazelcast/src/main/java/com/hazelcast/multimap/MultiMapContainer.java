@@ -121,9 +121,13 @@ public class MultiMapContainer {
         return multiMapWrappers.get(dataKey);
     }
 
-    public Collection<MultiMapRecord> remove(Data dataKey) {
+    public void delete(Data dataKey) {
+        multiMapWrappers.remove(dataKey);
+    }
+
+    public Collection<MultiMapRecord> remove(Data dataKey, boolean copyOf) {
         MultiMapWrapper wrapper = multiMapWrappers.remove(dataKey);
-        return wrapper != null ? wrapper.getCollection() : null;
+        return wrapper != null ? wrapper.getCollection(copyOf) : null;
     }
 
     public Set<Data> keySet() {
@@ -136,7 +140,7 @@ public class MultiMapContainer {
     public Collection<MultiMapRecord> values() {
         Collection<MultiMapRecord> valueCollection = new LinkedList<MultiMapRecord>();
         for (MultiMapWrapper wrapper : multiMapWrappers.values()) {
-            valueCollection.addAll(wrapper.getCollection());
+            valueCollection.addAll(wrapper.getCollection(false));
         }
         return valueCollection;
     }
@@ -151,7 +155,7 @@ public class MultiMapContainer {
             return false;
         }
         MultiMapRecord record = new MultiMapRecord(binary ? value : nodeEngine.toObject(value));
-        return wrapper.getCollection().contains(record);
+        return wrapper.getCollection(false).contains(record);
     }
 
     public boolean containsValue(boolean binary, Data value) {
@@ -167,22 +171,16 @@ public class MultiMapContainer {
         Map<Data, Collection<MultiMapRecord>> map = new HashMap<Data, Collection<MultiMapRecord>>(multiMapWrappers.size());
         for (Map.Entry<Data, MultiMapWrapper> entry : multiMapWrappers.entrySet()) {
             Data key = entry.getKey();
-            Collection<MultiMapRecord> col = copyCollection(entry.getValue().getCollection());
+            Collection<MultiMapRecord> col = entry.getValue().getCollection(true);
             map.put(key, col);
         }
         return map;
     }
 
-    private Collection<MultiMapRecord> copyCollection(Collection<MultiMapRecord> coll) {
-        Collection<MultiMapRecord> copy = new ArrayList<MultiMapRecord>(coll.size());
-        copy.addAll(coll);
-        return copy;
-    }
-
     public int size() {
         int size = 0;
         for (MultiMapWrapper wrapper : multiMapWrappers.values()) {
-            size += wrapper.getCollection().size();
+            size += wrapper.getCollection(false).size();
         }
         return size;
     }

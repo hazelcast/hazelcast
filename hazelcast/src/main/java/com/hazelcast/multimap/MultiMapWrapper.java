@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap;
 
-import java.util.Collection;
+import java.util.*;
 
 /**
  * @author ali 3/1/13
@@ -33,8 +33,20 @@ public class MultiMapWrapper {
         this.collection = collection;
     }
 
-    public Collection<MultiMapRecord> getCollection() {
+    public Collection<MultiMapRecord> getCollection(boolean copyOf) {
+        if (copyOf) {
+            return getCopyOfCollection();
+        }
         return collection;
+    }
+
+    private Collection<MultiMapRecord> getCopyOfCollection(){
+        if (collection instanceof Set) {
+            return new HashSet<MultiMapRecord>(collection);
+        } else if (collection instanceof List) {
+            return new LinkedList<MultiMapRecord>(collection);
+        }
+        throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
 
     public void incrementHit(){

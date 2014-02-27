@@ -218,9 +218,9 @@ public class MultiMapService implements ManagedService, RemoteService,
             for (Map.Entry<Data, MultiMapWrapper> wrapperEntry : collections.entrySet()) {
                 final Data key = wrapperEntry.getKey();
                 final MultiMapWrapper wrapper = wrapperEntry.getValue();
-                Collection<MultiMapRecord> coll = wrapper.getCollection();
+                Collection<MultiMapRecord> coll = wrapper.getCollection(false);
                 if (container.config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
-                    coll = new HashSet<MultiMapRecord>(wrapper.getCollection());
+                    coll = new HashSet<MultiMapRecord>(coll);
                 }
                 container.multiMapWrappers.put(key, new MultiMapWrapper(coll));
             }
@@ -271,7 +271,7 @@ public class MultiMapService implements ManagedService, RemoteService,
                 lockedEntryCount += multiMapContainer.getLockedCount();
                 for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
                     hits += wrapper.getHits();
-                    ownedEntryCount += wrapper.getCollection().size();
+                    ownedEntryCount += wrapper.getCollection(false).size();
                 }
             } else {
                 int backupCount = multiMapContainer.config.getTotalBackupCount();
@@ -292,7 +292,7 @@ public class MultiMapService implements ManagedService, RemoteService,
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                         for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
-                            backupEntryCount += wrapper.getCollection().size();
+                            backupEntryCount += wrapper.getCollection(false).size();
                         }
                     }
                 }

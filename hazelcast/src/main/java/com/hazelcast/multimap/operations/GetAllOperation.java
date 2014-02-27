@@ -19,7 +19,7 @@ package com.hazelcast.multimap.operations;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
+import com.hazelcast.spi.ResponseHandler;
 
 import java.util.Collection;
 
@@ -27,8 +27,6 @@ import java.util.Collection;
  * @author ali 1/16/13
  */
 public class GetAllOperation extends MultiMapKeyBasedOperation {
-
-    transient long begin = -1;
 
     public GetAllOperation() {
     }
@@ -42,9 +40,9 @@ public class GetAllOperation extends MultiMapKeyBasedOperation {
         Collection coll = null;
         if (wrapper != null) {
             wrapper.incrementHit();
-            coll = wrapper.getCollection();
+            final ResponseHandler responseHandler = getResponseHandler();
+            coll = wrapper.getCollection(responseHandler.isLocal());
         }
-        begin = Clock.currentTimeMillis();
         response = new MultiMapResponse(coll);
     }
 
