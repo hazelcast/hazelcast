@@ -17,6 +17,7 @@
 package com.hazelcast.cluster.client;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -64,7 +65,7 @@ public class MemberAttributeChange implements DataSerializable {
         out.writeUTF(key);
         out.writeByte(operationType.id);
         if (operationType == PUT) {
-            out.writeObject(value);
+            IOUtil.writeAttributeValue(value, out);
         }
     }
 
@@ -74,7 +75,7 @@ public class MemberAttributeChange implements DataSerializable {
         key = in.readUTF();
         operationType = MemberAttributeOperationType.getValue(in.readByte());
         if (operationType == PUT) {
-            value = in.readObject();
+            value = IOUtil.readAttributeValue(in);
         }
     }
 
