@@ -43,8 +43,7 @@
     <suppress checks="" files="[\\/]query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
     <suppress checks="" files="[\\/]replicatedmap[\\/]"/>
-    <suppress checks="" files="[\\/]security[\\/]"/>
-    <suppress checks="" files="[\\/]spi[\\/]"/>
+     <suppress checks="" files="[\\/]spi[\\/]"/>
     <suppress checks="" files="[\\/]storage[\\/]"/>
     <suppress checks="" files="[\\/]topic[\\/]"/>
     <suppress checks="" files="[\\/]transaction[\\/]"/>
@@ -111,6 +110,14 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.osgi[\\/]"/>
 
+    <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.security[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.security[\\/]"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission[\\/]"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.security.permission.ActionConstants"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.security.permission.ActionConstants"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.security.permission.InstancePermission"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.logging[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.logging[\\/]"/>

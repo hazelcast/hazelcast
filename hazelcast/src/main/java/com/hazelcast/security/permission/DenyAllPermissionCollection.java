@@ -22,38 +22,45 @@ import java.util.Enumeration;
 
 public class DenyAllPermissionCollection extends PermissionCollection {
 
-	public DenyAllPermissionCollection() {
-		super();
-	}
+    public DenyAllPermissionCollection() {
+    }
 
-	public void add(Permission permission) {
-	}
+    @Override
+    public void add(Permission permission) {
+    }
 
-	public boolean implies(Permission permission) {
-		return false;
-	}
+    @Override
+    public boolean implies(Permission permission) {
+        return false;
+    }
 
-	public Enumeration<Permission> elements() {
-		return new Enumeration<Permission>() {
-			public boolean hasMoreElements() {
-				return false;
-			}
-			public Permission nextElement() {
-				return null;
-			}
-		};
-	}
+    @Override
+    public Enumeration<Permission> elements() {
+        return new Enumeration<Permission>() {
+            @Override
+            public boolean hasMoreElements() {
+                return false;
+            }
 
-	public int hashCode() {
-		return 37;
-	}
+            @Override
+            public Permission nextElement() {
+                return null;
+            }
+        };
+    }
 
-	public String toString() {
-		return "<deny all permissions>";
-	}
+    @Override
+    public int hashCode() {
+        return 37;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		return obj instanceof DenyAllPermissionCollection;
-	}
+    @Override
+    public String toString() {
+        return "<deny all permissions>";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof DenyAllPermissionCollection;
+    }
 }

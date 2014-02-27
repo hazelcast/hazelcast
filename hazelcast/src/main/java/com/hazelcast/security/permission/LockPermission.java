@@ -18,17 +18,18 @@ package com.hazelcast.security.permission;
 
 
 public class LockPermission extends InstancePermission {
-	
-	private final static int LOCK	 		= 0x4;
-    private final static int READ	 		= 0x8;
-	private final static int ALL 			= CREATE | DESTROY | LOCK | READ;
 
-	public LockPermission(String key, String... actions) {
-		super(key, actions);
-	}
+    private static final  int LOCK = 0x4;
+    private static final  int READ = 0x8;
+    private static final  int ALL = CREATE | DESTROY | LOCK | READ;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+    public LockPermission(String key, String... actions) {
+        super(key, actions);
+    }
+
+    @Override
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -44,6 +45,6 @@ public class LockPermission extends InstancePermission {
                 mask |= READ;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 }
