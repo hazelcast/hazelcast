@@ -226,6 +226,27 @@ public class ClientIssueTest extends HazelcastTestSupport {
         assertFalse(instance.getLifecycleService().isRunning());
     }
 
+
+    @Test
+    public void testIssue821_Terminate(){
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final IMap<Object, Object> map = client.getMap("default");
+
+        map.put("key1", "value1");
+
+        instance.getLifecycleService().terminate();
+
+        try {
+            map.get("key1");
+            fail();
+        } catch (HazelcastException ignored){
+        }
+        assertFalse(instance.getLifecycleService().isRunning());
+    }
+
+
     @Test
     public void testClientConnectionEvents() throws InterruptedException {
         final LinkedList<LifecycleState> list = new LinkedList<LifecycleState>();

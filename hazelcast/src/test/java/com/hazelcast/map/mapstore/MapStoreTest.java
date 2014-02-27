@@ -43,6 +43,7 @@ import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -143,6 +144,69 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertTrue(loadAllCalled.get());
         assertFalse(loadCalled.get());
     }
+
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void loadAllKeysTest_withNodeAdded() throws InterruptedException {
+
+        final Map<String, String> _map = new HashMap<String, String>();
+        _map.put("key1", "value1");
+        _map.put("key2", "value2");
+        _map.put("key3", "value3");
+
+        final AtomicInteger loadAllCalled = new AtomicInteger(0);
+        final AtomicInteger loadCalled = new AtomicInteger(0);
+        final AtomicInteger loadAllKeys = new AtomicInteger(0);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+
+        mapStoreConfig.setImplementation(new MapLoader<String, String>() {
+
+            public String load(String key) {
+                loadCalled.getAndIncrement();
+                return _map.get(key);
+            }
+
+            public Map<String, String> loadAll(Collection<String> keys) {
+                loadAllCalled.getAndIncrement();
+                final HashMap<String, String> temp = new HashMap<String, String>();
+                for (String key : keys) {
+                    temp.put(key, _map.get(key));
+                }
+                return temp;
+            }
+
+            public Set<String> loadAllKeys() {
+                loadAllKeys.getAndIncrement();
+                return _map.keySet();
+            }
+        });
+
+        cfg.getMapConfig("testMapGetAll").setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap map = instance1.getMap("testMapGetAll");
+
+        map.size();
+
+        assertEquals(1, loadAllKeys.get());
+
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals("after node added to cluster load all keys called again", 1, loadAllKeys.get());
+            }
+        });
+    }
+
+
 
     @Test
     public void testSlowStore() throws Exception {
