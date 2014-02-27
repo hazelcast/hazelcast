@@ -113,7 +113,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return endpoint;
     }
 
-    void setEndpoint(final Address endpoint) {
+    public void setEndpoint(final Address endpoint) {
         this.endpoint = endpoint;
     }
 

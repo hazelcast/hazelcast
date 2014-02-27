@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.PartitionAwareOperation;

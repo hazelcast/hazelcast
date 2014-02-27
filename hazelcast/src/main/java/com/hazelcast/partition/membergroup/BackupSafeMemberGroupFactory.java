@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.core.Member;
 
@@ -25,7 +25,7 @@ import java.util.Set;
 abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     @Override
-    public final Collection<MemberGroup> createMemberGroups(final Collection<Member> members) {
+    public final Collection<MemberGroup> createMemberGroups(Collection<Member> members) {
         Collection<MemberGroup> groups = createInternalMemberGroups(members);
         if (groups.size() == 1 && members.size() > 1) {
             // If there are more than one members and just one group
@@ -44,6 +44,6 @@ abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
         return groups;
     }
 
-    protected abstract Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers);
+    protected abstract Set<MemberGroup> createInternalMemberGroups(Collection<Member> allMembers);
 
 }

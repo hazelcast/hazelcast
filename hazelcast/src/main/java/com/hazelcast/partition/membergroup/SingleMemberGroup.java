@@ -14,65 +14,89 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.core.Member;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
-public class DefaultMemberGroup implements MemberGroup {
+public class SingleMemberGroup implements MemberGroup {
 
-    private final Set<Member> members = new HashSet<Member>();
+    private Member member;
 
-    public DefaultMemberGroup() {
+    public SingleMemberGroup() {
     }
 
-    public DefaultMemberGroup(Collection<Member> members) {
-        addMembers(members);
+    public SingleMemberGroup(Member member) {
+        this.member = member;
     }
 
     @Override
     public void addMember(Member member) {
-        members.add(member);
+        if (this.member != null) {
+            throw new UnsupportedOperationException();
+        }
+        this.member = member;
     }
 
     @Override
     public void addMembers(Collection<Member> members) {
-        this.members.addAll(members);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void removeMember(Member member) {
-        members.remove(member);
+        if (this.member != null && this.member.equals(member)) {
+            this.member = null;
+        }
     }
 
     @Override
     public boolean hasMember(Member member) {
-        return members.contains(member);
-    }
-
-    public Set<Member> getMembers() {
-        return members;
+        return this.member != null && this.member.equals(member);
     }
 
     @Override
     public Iterator<Member> iterator() {
-        return members.iterator();
+        return new MemberIterator();
     }
 
     @Override
     public int size() {
-        return members.size();
+        return member != null ? 1 : 0;
+    }
+
+    private class MemberIterator implements Iterator<Member> {
+        boolean end;
+
+        @Override
+        public boolean hasNext() {
+            return !end;
+        }
+
+        @Override
+        public Member next() {
+            if (hasNext()) {
+                end = true;
+                return member;
+            }
+            return null;
+        }
+
+        @Override
+        public void remove() {
+            if (end) {
+                member = null;
+            }
+        }
     }
 
     @Override
     public int hashCode() {
         int prime = 31;
         int result = 1;
-        result = prime * result + (members.hashCode());
+        result = prime * result + ((member == null) ? 0 : member.hashCode());
         return result;
     }
 
@@ -87,15 +111,22 @@ public class DefaultMemberGroup implements MemberGroup {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        DefaultMemberGroup other = (DefaultMemberGroup) obj;
-        return members.equals(other.members);
+        SingleMemberGroup other = (SingleMemberGroup) obj;
+        if (member == null) {
+            if (other.member != null) {
+                return false;
+            }
+        } else if (!member.equals(other.member)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("DefaultMemberGroup");
-        sb.append("{members=").append(members);
+        sb.append("SingleMemberGroup");
+        sb.append("{member=").append(member);
         sb.append('}');
         return sb.toString();
     }

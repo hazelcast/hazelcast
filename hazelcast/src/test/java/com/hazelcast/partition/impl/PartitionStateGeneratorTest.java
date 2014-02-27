@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
@@ -24,6 +24,13 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.membergroup.ConfigMemberGroupFactory;
+import com.hazelcast.partition.membergroup.DefaultMemberGroup;
+import com.hazelcast.partition.membergroup.HostAwareMemberGroupFactory;
+import com.hazelcast.partition.membergroup.MemberGroup;
+import com.hazelcast.partition.membergroup.MemberGroupFactory;
+import com.hazelcast.partition.membergroup.SingleMemberGroupFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -35,7 +42,16 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -194,11 +210,11 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private DummyInternalPartition[] toPartitionView(Address[][] state){
+    private DummyInternalPartition[] toPartitionView(Address[][] state) {
         DummyInternalPartition[] result = new DummyInternalPartition[state.length];
-        for(int partitionId=0;partitionId<state.length;partitionId++){
+        for (int partitionId = 0; partitionId < state.length; partitionId++) {
             DummyInternalPartition partitionView = new DummyInternalPartition(state[partitionId]);
-            result[partitionId]=partitionView;
+            result[partitionId] = partitionView;
         }
         return result;
     }
@@ -227,7 +243,7 @@ public class PartitionStateGeneratorTest {
 
         @Override
         public Address getReplicaAddress(int replicaIndex) {
-           return replicas[replicaIndex];
+            return replicas[replicaIndex];
         }
 
         @Override
@@ -241,7 +257,7 @@ public class PartitionStateGeneratorTest {
         for (Member member : members) {
             addresses.add(((MemberImpl) member).getAddress());
         }
-        for (int partitionId=0;partitionId<state.length;partitionId++) {
+        for (int partitionId = 0; partitionId < state.length; partitionId++) {
             Address[] replicas = state[partitionId];
             for (int i = 0; i < replicas.length; i++) {
                 if (replicas[i] != null && !addresses.contains(replicas[i])) {
@@ -254,10 +270,10 @@ public class PartitionStateGeneratorTest {
                         }
                     }
                     for (int a = 0; a < k; a++) {
-                        replicas[i+a]=validAddresses[a];
+                        replicas[i + a] = validAddresses[a];
                     }
                     for (int a = i + k; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
-                        replicas[a]=null;
+                        replicas[a] = null;
                     }
                     break;
                 }
@@ -317,7 +333,7 @@ public class PartitionStateGeneratorTest {
         final Map<MemberGroup, GroupPartitionState> groupPartitionStates = new HashMap<MemberGroup, GroupPartitionState>();
         final Set<Address> set = new HashSet<Address>();
         final int avgPartitionPerGroup = partitionCount / groups.size();
-        for(int partitionId=0;partitionId<partitionCount;partitionId++){
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address[] replicas = state[partitionId];
             for (int i = 0; i < replicaCount; i++) {
                 Address owner = replicas[i];

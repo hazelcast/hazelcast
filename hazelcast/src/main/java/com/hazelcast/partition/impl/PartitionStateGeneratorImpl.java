@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.membergroup.MemberGroup;
+import com.hazelcast.partition.membergroup.SingleMemberGroup;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +36,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
+public final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private static final ILogger logger = Logger.getLogger(PartitionStateGenerator.class);
     private static final float RANGE_CHECK_RATIO = 1.1f;
@@ -42,6 +45,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private static final int AGGRESSIVE_INDEX_THRESHOLD = 3;
     private static final int MIN_AVG_OWNER_DIFF = 3;
 
+    @Override
     public Address[][] initialize(Collection<MemberGroup> memberGroups, int partitionCount) {
         LinkedList<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
         if (nodeGroups.size() == 0) {
@@ -50,6 +54,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return arrange(nodeGroups, partitionCount, new EmptyStateInitializer());
     }
 
+    @Override
     public Address[][] reArrange(Collection<MemberGroup> memberGroups, InternalPartition[] currentState) {
         LinkedList<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
         if (nodeGroups.size() == 0) {

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.membergroup.MemberGroup;
 
 import java.util.Collection;
 

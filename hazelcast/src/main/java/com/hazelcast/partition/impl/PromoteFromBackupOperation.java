@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -29,7 +31,8 @@ import java.io.IOException;
 import java.util.Collection;
 
 // runs locally...
-final class PromoteFromBackupOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation {
+final class PromoteFromBackupOperation extends AbstractOperation
+        implements PartitionAwareOperation, MigrationCycleOperation {
 
     @Override
     public void run() throws Exception {

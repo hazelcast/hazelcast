@@ -56,39 +56,39 @@ public class MigrationInfo implements DataSerializable {
         return partitionId;
     }
 
-    void setMasterUuid(String uuid) {
+    public void setMasterUuid(String uuid) {
         masterUuid = uuid;
     }
 
-    String getMasterUuid() {
+    public String getMasterUuid() {
         return masterUuid;
     }
 
-    Address getMaster() {
+    public Address getMaster() {
         return master;
     }
 
-    void setMaster(Address master) {
+    public void setMaster(Address master) {
         this.master = master;
     }
 
-    boolean startProcessing() {
+    public boolean startProcessing() {
         return processing.compareAndSet(false, true);
     }
 
-    boolean isProcessing() {
+    public boolean isProcessing() {
         return processing.get();
     }
 
-    void doneProcessing() {
+    public void doneProcessing() {
         processing.set(false);
     }
 
-    boolean isValid() {
+    public boolean isValid() {
         return valid;
     }
 
-    void invalidate() {
+    public void invalidate() {
         valid = false;
     }
 

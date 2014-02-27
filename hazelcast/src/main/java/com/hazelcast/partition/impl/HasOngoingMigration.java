@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -54,6 +55,6 @@ public final class HasOngoingMigration extends AbstractOperation {
 
     @Override
     public String getServiceName() {
-        return PartitionServiceImpl.SERVICE_NAME;
+        return PartitionService.SERVICE_NAME;
     }
 }

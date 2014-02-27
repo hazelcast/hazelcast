@@ -33,7 +33,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.impl.PartitionServiceImpl;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -41,7 +41,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.*;
 
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -72,7 +71,7 @@ public class Node {
 
     public final ClientEngineImpl clientEngine;
 
-    public final PartitionServiceImpl partitionService;
+    public final com.hazelcast.partition.PartitionService partitionService;
 
     public final ClusterServiceImpl clusterService;
 
@@ -276,7 +275,7 @@ public class Node {
         return clusterService;
     }
 
-    public PartitionServiceImpl getPartitionService() {
+    public com.hazelcast.partition.PartitionService getPartitionService() {
         return partitionService;
     }
 

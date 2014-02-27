@@ -29,12 +29,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PartitionServiceProxy implements com.hazelcast.core.PartitionService {
 
-    private final PartitionServiceImpl partitionService;
-    private final ConcurrentMap<Integer, PartitionProxy> mapPartitions = new ConcurrentHashMap<Integer, PartitionProxy>();
+    private final PartitionService partitionService;
+    private final ConcurrentMap<Integer, PartitionProxy> mapPartitions
+            = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final Set<Partition> partitions = new TreeSet<Partition>();
     private final Random random = new Random();
 
-    public PartitionServiceProxy(PartitionServiceImpl partitionService) {
+    public PartitionServiceProxy(PartitionService partitionService) {
         this.partitionService = partitionService;
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
             PartitionProxy partitionProxy = new PartitionProxy(i);
@@ -89,10 +90,12 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         @Override
         public Member getOwner() {
             Address address = partitionService.getPartitionOwner(partitionId);
-            if (address != null) {
-                return partitionService.getMember(address);
+            if (address == null) {
+                return null;
             }
-            return null;
+
+            //todo: why are we calling the partitionService twice, why don't we immediately get the member?
+            return partitionService.getMember(address);
         }
 
         @Override

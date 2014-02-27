@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.partition.PartitionRuntimeState;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
@@ -62,7 +67,7 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public String getServiceName() {
-        return PartitionServiceImpl.SERVICE_NAME;
+        return PartitionService.SERVICE_NAME;
     }
 
     @Override

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -22,6 +22,9 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -109,7 +112,7 @@ public final class ReplicaSyncRequest extends Operation
 
     private void logNoReplicaDataFound(int partitionId, int replicaIndex) {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        PartitionService partitionService = nodeEngine.getPartitionService();
         ILogger logger = nodeEngine.getLogger(getClass());
 
         if (logger.isFinestEnabled()) {

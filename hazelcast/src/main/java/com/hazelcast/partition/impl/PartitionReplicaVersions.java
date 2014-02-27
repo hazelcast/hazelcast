@@ -1,4 +1,6 @@
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
+
+import com.hazelcast.partition.InternalPartition;
 
 import java.util.Arrays;
 

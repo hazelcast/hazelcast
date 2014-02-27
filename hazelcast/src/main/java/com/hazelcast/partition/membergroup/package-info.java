@@ -14,24 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
-
-import com.hazelcast.core.Member;
-
-import java.util.Collection;
-import java.util.Iterator;
-
-public interface MemberGroup {
-
-    void addMember(Member member);
-
-    void addMembers(Collection<Member> members);
-
-    void removeMember(Member member);
-
-    boolean hasMember(Member member);
-
-    Iterator<Member> iterator();
-
-    int size();
-}
+/**
+ * Packages contains different partitioning strategies.
+ */
+package com.hazelcast.partition.membergroup;

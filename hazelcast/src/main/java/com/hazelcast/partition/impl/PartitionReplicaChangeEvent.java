@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.Address;
 
-class PartitionReplicaChangeEvent {
+public class PartitionReplicaChangeEvent {
     private int partitionId;
     private int replicaIndex;
     private Address oldAddress;

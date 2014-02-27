@@ -16,15 +16,21 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public interface PartitionService extends CoreService {
+
+    String SERVICE_NAME = "hz:core:partitionService";
 
     /**
      * @param partitionId
@@ -82,4 +88,31 @@ public interface PartitionService extends CoreService {
     String addMigrationListener(MigrationListener migrationListener);
 
     boolean removeMigrationListener(String registrationId);
+
+    Member getMember(Address address);
+
+    long getMigrationQueueSize();
+
+    void pauseMigration();
+
+    void resumeMigration();
+
+    void memberAdded(MemberImpl newMember);
+
+    void memberRemoved(MemberImpl deadMember);
+
+    boolean prepareToSafeShutdown(long timeout, TimeUnit seconds);
+
+    InternalPartition[] getPartitions();
+
+    Collection<MigrationInfo> getActiveMigrations();
+
+    void firstArrangement();
+
+    void updatePartitionReplicaVersions(int partitionId, long[] replicaVersions, int replicaIndex);
+
+    long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
+
+    //todo: this is very strange.
+    com.hazelcast.core.PartitionService getPartitionServiceProxy();
 }

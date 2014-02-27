@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
@@ -84,7 +87,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
 
     @Override
     public String getServiceName() {
-        return PartitionServiceImpl.SERVICE_NAME;
+        return PartitionService.SERVICE_NAME;
     }
 
     @Override

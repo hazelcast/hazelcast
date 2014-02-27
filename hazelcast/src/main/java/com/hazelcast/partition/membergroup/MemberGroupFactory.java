@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.membergroup;
 
-interface PartitionListener {
-    void replicaChanged(PartitionReplicaChangeEvent event);
+import com.hazelcast.core.Member;
+
+import java.util.Collection;
+
+public interface MemberGroupFactory {
+
+    Collection<MemberGroup> createMemberGroups(Collection<Member> members);
 }

@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -58,10 +61,10 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
         long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
         NodeEngine nodeEngine = getNodeEngine();
         CheckReplicaVersion op = new CheckReplicaVersion(currentVersions[replicaIndex], sync);
-        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionServiceImpl.SERVICE_NAME);
+        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionService.SERVICE_NAME);
         OperationService operationService = nodeEngine.getOperationService();
         if (sync) {
-            operationService.createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME, op, target)
+            operationService.createInvocationBuilder(PartitionService.SERVICE_NAME, op, target)
                     .setCallback(callback).setTryCount(10).setTryPauseMillis(250).invoke();
         } else {
             operationService.send(op, target);
@@ -89,7 +92,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
 
     @Override
     public String getServiceName() {
-        return PartitionServiceImpl.SERVICE_NAME;
+        return PartitionService.SERVICE_NAME;
     }
 
     @Override

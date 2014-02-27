@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;

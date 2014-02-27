@@ -30,7 +30,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupCompletionCallback;
@@ -449,7 +448,7 @@ final class BasicOperationService implements InternalOperationService {
     private int sendBackups(BackupAwareOperation backupAwareOp) throws Exception {
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        final PartitionService partitionService = nodeEngine.getPartitionService();
         final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT);
 
         int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0

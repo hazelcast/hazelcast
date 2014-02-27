@@ -23,7 +23,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.PartitionService;
 
 import java.security.Permission;
 import java.util.Collection;
@@ -34,7 +34,7 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
 
     @Override
     public Object call() throws Exception {
-        PartitionServiceImpl service = getService();
+        PartitionService service = getService();
         service.firstArrangement();
         ClusterService clusterService = getClientEngine().getClusterService();
         Collection<MemberImpl> memberList = clusterService.getMemberList();
@@ -66,7 +66,7 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
 
     @Override
     public String getServiceName() {
-        return PartitionServiceImpl.SERVICE_NAME;
+        return PartitionService.SERVICE_NAME;
     }
 
     @Override

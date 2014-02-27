@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.partition.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
@@ -23,6 +23,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -120,7 +124,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                                     data = out.toByteArray();
                                 }
                                 MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
-                                Future future = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
+                                Future future = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
                                         migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).invoke();
                                 Boolean result = nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
                                 migrationInfo.doneProcessing();
