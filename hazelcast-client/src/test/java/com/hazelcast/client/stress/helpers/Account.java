@@ -1,18 +1,23 @@
 package com.hazelcast.client.stress.helpers;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class Account implements Serializable {
 
-    private int acountNumber;
+    private int acountNumber = -1;
 
     private byte[] someData = new byte[1024];
 
-    private long balance = 0;
+    private long balance = -1;
 
     public Account(int acountNumber, long balance){
         this.acountNumber = acountNumber;
         this.balance = balance;
+    }
+
+    public Account(Account acount){
+        this(acount.acountNumber, acount.balance);
     }
 
     public int getAcountNumber(){
@@ -34,7 +39,6 @@ public class Account implements Serializable {
     public TransferRecord transferTo(Account to, long amount){
 
         TransferRecord tr = new TransferRecord(this, to, amount);
-        tr.setDecliened(true);
 
         if ( acountNumber == to.acountNumber){
             tr.setReason("same account");
@@ -46,8 +50,18 @@ public class Account implements Serializable {
             this.decrease(amount);
             to.increase(amount);
             tr.setDecliened(false);
+            tr.setReason("ok");
         }
 
         return  tr;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "acountNumber=" + acountNumber +
+                ", balance=" + balance +
+                '}';
     }
 }

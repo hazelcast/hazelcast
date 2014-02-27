@@ -5,7 +5,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.Account;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.client.stress.helpers.TransferRecord;
+import com.hazelcast.collection.CollectionAddAllBackupOperation;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -16,6 +18,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -32,12 +40,12 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
     public static final String FAILED_TRANS_MAP ="FAIL";
 
 
-    public static final int TOTAL_HZ_INSTANCES = 2;
-    public static final int THREADS_PER_INSTANCE = 2;
+    public static final int TOTAL_HZ_INSTANCES = 5;
+    public static final int THREADS_PER_INSTANCE = 3;
 
     private Transactor[] stressThreads = new Transactor[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
 
-    protected static final int MAX_ACCOUNTS = 100;
+    protected static final int MAX_ACCOUNTS = 2;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
 
@@ -73,7 +81,7 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
 
     @After
     public void tearDown() {
-        //super.tearDown();
+        super.tearDown();
     }
 
     @Test
@@ -92,7 +100,7 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
         HazelcastInstance hz = super.cluster.getRandomNode();
 
         IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
-        IMap processed = hz.getMap(PROCESED_TRANS_MAP);
+        IMap<Long, TransferRecord> processed = hz.getMap(PROCESED_TRANS_MAP);
         IMap failed = hz.getMap(FAILED_TRANS_MAP);
 
         System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
@@ -101,6 +109,14 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
         for(Account a : accounts.values()){
             System.out.println("==>> bal "+a.getBalance());
             total += a.getBalance();
+        }
+
+
+        List<TransferRecord> transactions = new ArrayList( processed.values() );
+        Collections.sort(transactions, new TransferRecord.Comparator());
+
+        for ( TransferRecord t : transactions ) {
+            System.out.println(t);
         }
 
         assertEquals("", TOTAL_VALUE, total);
@@ -129,9 +145,48 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
                     to = random.nextInt(MAX_ACCOUNTS);
                 }
 
-                long amount = 1; //random.nextInt(100)+1;
+                long amount = random.nextInt(100)+1;
 
-                contextTransfer(from, to, amount);
+                //contextTransfer(from, to, amount);
+                lockTransfer(from, to, amount);
+            }
+        }
+
+
+        private void lockTransfer(int fromAccountNumber, int toAccountNumber, long amount){
+
+            IMap<Integer, Account> accounts = instance.getMap(ACCOUNTS_MAP);
+            IMap<Long, TransferRecord> transactions = instance.getMap(PROCESED_TRANS_MAP);
+
+            //IT DONT WORK
+            //this lock only works for  a - b  and b - a,  but a - c, or c - a
+            String lockPair = Math.min(fromAccountNumber, toAccountNumber) +"-"+ Math.max(fromAccountNumber, toAccountNumber);
+
+            ILock pair = instance.getLock(lockPair);
+            try {
+
+                if ( pair.tryLock(50, TimeUnit.MILLISECONDS) ) {
+
+                    Account fromAccount = accounts.get(fromAccountNumber);
+                    Account toAccount = accounts.get(toAccountNumber);
+
+                    TransferRecord trace = fromAccount.transferTo(toAccount, amount);
+                    transactions.put(trace.getId(), trace);
+
+                    accounts.put(fromAccount.getAcountNumber(), fromAccount);
+                    accounts.put(toAccount.getAcountNumber(), toAccount);
+
+                    pair.unlock();
+
+                }else{
+                    //IMap failed = instance.getMap(FAILED_TRANS_MAP);
+                    //TransferRecord trace = new TransferRecord(fromAccount, toAccount, amount);
+                    //trace.setReason("Time Out");
+                    //failed.put(trace.getId(), trace);
+                }
+
+            } catch (InterruptedException e) {
+
             }
         }
 

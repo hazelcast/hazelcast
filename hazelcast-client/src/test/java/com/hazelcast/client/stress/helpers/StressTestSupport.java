@@ -1,16 +1,12 @@
 package com.hazelcast.client.stress.helpers;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
 import org.junit.After;
 import org.junit.Before;
 
-import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -51,8 +47,8 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        //cluster.shutDown();
-        Hazelcast.shutdownAll();
+        cluster.shutDown();
+        //Hazelcast.shutdownAll();
     }
 
     private final boolean runTestReportLoop() {

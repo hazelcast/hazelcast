@@ -1,45 +1,41 @@
 package com.hazelcast.client.stress.helpers;
 
 import java.io.Serializable;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class TransferRecord implements Serializable{
+public class FailedTransferRecord implements Serializable{
 
     public final static AtomicLong ID_GENERATOR = new AtomicLong(1);
 
     private long id;
-    private Account from;
-    private Account to;
+    private int from;
+    private int to;
     private long amount;
 
-    private boolean decliened=true;
 
     private String reason;
 
-    public TransferRecord(Account from, Account to, long amount){
+    public FailedTransferRecord(int from, int to, long amount){
         id = ID_GENERATOR.getAndIncrement();
 
-
-        this.from = new Account(from);
-        this.to = new Account(to);
-
+        this.from = from;
+        this.to = to;
         this.amount = amount;
     }
 
-    public Account getFrom() {
+    public int getFrom() {
         return from;
     }
 
-    public void setFrom(Account from) {
+    public void setFrom(int from) {
         this.from = from;
     }
 
-    public Account getTo() {
+    public int getTo() {
         return to;
     }
 
-    public void setTo(Account to) {
+    public void setTo(int to) {
         this.to = to;
     }
 
@@ -51,13 +47,6 @@ public class TransferRecord implements Serializable{
         this.amount = amount;
     }
 
-    public boolean isDecliened() {
-        return decliened;
-    }
-
-    public void setDecliened(boolean decliened) {
-        this.decliened = decliened;
-    }
 
     public long getId(){
         return id;
@@ -79,15 +68,14 @@ public class TransferRecord implements Serializable{
                 ", from=" + from +
                 ", to=" + to +
                 ", amount=" + amount +
-                ", decliened=" + decliened +
                 ", reason='" + reason + '\'' +
                 '}';
     }
 
-    public static class Comparator  implements java.util.Comparator<TransferRecord>{
+    public static class Comparator  implements java.util.Comparator<FailedTransferRecord>{
 
         @Override
-        public int compare(TransferRecord a, TransferRecord b) {
+        public int compare(FailedTransferRecord a, FailedTransferRecord b) {
             return (int) (a.id - b.id);
         }
 
