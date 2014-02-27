@@ -51,4 +51,5 @@ public class SomeRunnableTask implements Runnable, Serializable, ApplicationCont
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;
     }
+
 }
