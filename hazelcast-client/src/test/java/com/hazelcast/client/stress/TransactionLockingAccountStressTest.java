@@ -227,7 +227,7 @@ public class TransactionLockingAccountStressTest extends StressTestSupport {
 
                         }catch(Exception e){
                             context.rollbackTransaction();
-                            errorReason = "Role Back";
+                            errorReason = "Role Back "+e.getMessage();
                         }
 
                         accounts.unlock(toAccountNumber);
