@@ -23,7 +23,11 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
@@ -57,7 +61,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, byte[] taskData, int taskCount, boolean compressed) {
+    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, byte[] taskData,
+                              int taskCount, boolean compressed) {
         super(migrationInfo);
         this.replicaVersions = replicaVersions;
         this.taskCount = taskCount;
@@ -81,7 +86,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         }
     }
 
-    private void doRun()throws Exception {
+    private void doRun() throws Exception {
         if (startMigration()) {
             try {
                 migrate();
@@ -160,14 +165,18 @@ public final class MigrationOperation extends BaseMigrationOperation {
             }
 
             if (taskCount != tasks.size()) {
-                getLogger().severe("Migration task count mismatch! => " +
-                        "expected-count: " + size + ", actual-count: " + tasks.size() +
-                        "\nfrom: " + migrationInfo.getSource() + ", partition: " + getPartitionId()
-                        + ", replica: " + getReplicaIndex());
+                logTaskCountMismatch(size);
             }
         } finally {
             closeResource(in);
         }
+    }
+
+    private void logTaskCountMismatch(int size) {
+        getLogger().severe("Migration task count mismatch! => "
+                + "expected-count: " + size + ", actual-count: " + tasks.size()
+                + "\nfrom: " + migrationInfo.getSource() + ", partition: " + getPartitionId()
+                + ", replica: " + getReplicaIndex());
     }
 
     private byte[] toData() throws IOException {
@@ -185,7 +194,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
         op.setResponseHandler(ERROR_RESPONSE_HANDLER);
         OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
         MigrationAwareService service = op.getService();
-        PartitionMigrationEvent event = new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getPartitionId());
+        PartitionMigrationEvent event =
+                new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getPartitionId());
         service.beforeMigration(event);
         op.beforeRun();
         op.run();
@@ -215,7 +225,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName());
         sb.append("{partitionId=").append(getPartitionId());
         sb.append(", migration=").append(migrationInfo);

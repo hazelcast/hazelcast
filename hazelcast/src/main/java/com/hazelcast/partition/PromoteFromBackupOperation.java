@@ -28,12 +28,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.Collection;
 
-/**
- * @author mdogan 07/11/13
- */
-
 // runs locally...
-final class PromoteFromBackupOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation{
+final class PromoteFromBackupOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation {
 
     @Override
     public void run() throws Exception {

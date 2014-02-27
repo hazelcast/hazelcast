@@ -33,13 +33,14 @@ public final class PartitionStateOperation extends AbstractOperation
 
     private PartitionRuntimeState partitionState;
 
-    public PartitionStateOperation(final Collection<MemberImpl> members,
-                                   final InternalPartition[] partitions,
-                                   final Collection<MigrationInfo> migrationInfos,
-                                   final long masterTime, int version) {
-        final List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
+    public PartitionStateOperation(Collection<MemberImpl> members,
+                                   InternalPartition[] partitions,
+                                   Collection<MigrationInfo> migrationInfos,
+                                   long masterTime, int version) {
+        List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
         for (MemberImpl member : members) {
-            memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes()));
+            MemberInfo memberInfo = new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes());
+            memberInfos.add(memberInfo);
         }
         partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfos, masterTime, version);
     }
@@ -47,6 +48,7 @@ public final class PartitionStateOperation extends AbstractOperation
     public PartitionStateOperation() {
     }
 
+    @Override
     public void run() {
         partitionState.setEndpoint(getCallerAddress());
         PartitionServiceImpl partitionService = getService();
@@ -63,12 +65,14 @@ public final class PartitionStateOperation extends AbstractOperation
         return PartitionServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         partitionState = new PartitionRuntimeState();
         partitionState.readData(in);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         partitionState.writeData(out);

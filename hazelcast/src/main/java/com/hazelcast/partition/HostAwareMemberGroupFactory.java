@@ -20,12 +20,17 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
-    protected Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) {
-        final Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
+    @Override
+    protected Set<MemberGroup> createInternalMemberGroups(Collection<Member> allMembers) {
+        Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (Member member : allMembers) {
             Address address = ((MemberImpl) member).getAddress();
             MemberGroup group = groups.get(address.getHost());

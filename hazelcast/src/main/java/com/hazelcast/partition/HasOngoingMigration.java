@@ -21,13 +21,11 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
-/**
- * @author mdogan 6/26/13
- */
 public final class HasOngoingMigration extends AbstractOperation {
 
     private Object response;
 
+    @Override
     public void run() throws Exception {
         PartitionServiceImpl service = getService();
         response = service.hasOnGoingMigrationLocal();

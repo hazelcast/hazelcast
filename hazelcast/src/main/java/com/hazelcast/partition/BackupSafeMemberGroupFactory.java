@@ -24,16 +24,17 @@ import java.util.Set;
 
 abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
+    @Override
     public final Collection<MemberGroup> createMemberGroups(final Collection<Member> members) {
-        final Collection<MemberGroup> groups = createInternalMemberGroups(members);
+        Collection<MemberGroup> groups = createInternalMemberGroups(members);
         if (groups.size() == 1 && members.size() > 1) {
             // If there are more than one members and just one group
             // then split members into two groups to guarantee at least the first backup.
             MemberGroup group1 = groups.iterator().next();
             MemberGroup group2 = new DefaultMemberGroup();
-            final int sizePerGroup = group1.size() / 2;
+            int sizePerGroup = group1.size() / 2;
 
-            final Iterator<Member> iter = group1.iterator();
+            Iterator<Member> iter = group1.iterator();
             while (group2.size() < sizePerGroup && iter.hasNext()) {
                 group2.addMember(iter.next());
                 iter.remove();
@@ -43,6 +44,6 @@ abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
         return groups;
     }
 
-    protected abstract Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers) ;
+    protected abstract Set<MemberGroup> createInternalMemberGroups(final Collection<Member> allMembers);
 
 }

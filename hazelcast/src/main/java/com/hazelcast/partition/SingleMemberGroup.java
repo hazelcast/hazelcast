@@ -34,6 +34,7 @@ public class SingleMemberGroup implements MemberGroup {
         this.member = member;
     }
 
+    @Override
     public void addMember(Member member) {
         if (this.member != null) {
             throw new UnsupportedOperationException();
@@ -41,35 +42,42 @@ public class SingleMemberGroup implements MemberGroup {
         this.member = member;
     }
 
+    @Override
     public void addMembers(Collection<Member> members) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void removeMember(Member member) {
         if (this.member != null && this.member.equals(member)) {
             this.member = null;
         }
     }
 
+    @Override
     public boolean hasMember(Member member) {
         return this.member != null && this.member.equals(member);
     }
 
+    @Override
     public Iterator<Member> iterator() {
         return new MemberIterator();
     }
 
+    @Override
     public int size() {
         return member != null ? 1 : 0;
     }
 
     private class MemberIterator implements Iterator<Member> {
-        boolean end = false;
+        boolean end;
 
+        @Override
         public boolean hasNext() {
             return !end;
         }
 
+        @Override
         public Member next() {
             if (hasNext()) {
                 end = true;
@@ -78,6 +86,7 @@ public class SingleMemberGroup implements MemberGroup {
             return null;
         }
 
+        @Override
         public void remove() {
             if (end) {
                 member = null;
@@ -87,7 +96,7 @@ public class SingleMemberGroup implements MemberGroup {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
+        int prime = 31;
         int result = 1;
         result = prime * result + ((member == null) ? 0 : member.hashCode());
         return result;
@@ -95,24 +104,29 @@ public class SingleMemberGroup implements MemberGroup {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         SingleMemberGroup other = (SingleMemberGroup) obj;
         if (member == null) {
-            if (other.member != null)
+            if (other.member != null) {
                 return false;
-        } else if (!member.equals(other.member))
+            }
+        } else if (!member.equals(other.member)) {
             return false;
+        }
         return true;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("SingleMemberGroup");
         sb.append("{member=").append(member);
         sb.append('}');

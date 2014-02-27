@@ -28,26 +28,28 @@ public class DefaultMemberGroup implements MemberGroup {
     private final Set<Member> members = new HashSet<Member>();
 
     public DefaultMemberGroup() {
-        super();
     }
 
     public DefaultMemberGroup(Collection<Member> members) {
-        super();
         addMembers(members);
     }
 
+    @Override
     public void addMember(Member member) {
         members.add(member);
     }
 
+    @Override
     public void addMembers(Collection<Member> members) {
         this.members.addAll(members);
     }
 
+    @Override
     public void removeMember(Member member) {
         members.remove(member);
     }
 
+    @Override
     public boolean hasMember(Member member) {
         return members.contains(member);
     }
@@ -56,17 +58,19 @@ public class DefaultMemberGroup implements MemberGroup {
         return members;
     }
 
+    @Override
     public Iterator<Member> iterator() {
         return members.iterator();
     }
 
+    @Override
     public int size() {
         return members.size();
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
+        int prime = 31;
         int result = 1;
         result = prime * result + (members.hashCode());
         return result;
@@ -74,19 +78,22 @@ public class DefaultMemberGroup implements MemberGroup {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         DefaultMemberGroup other = (DefaultMemberGroup) obj;
         return members.equals(other.members);
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("DefaultMemberGroup");
         sb.append("{members=").append(members);
         sb.append('}');

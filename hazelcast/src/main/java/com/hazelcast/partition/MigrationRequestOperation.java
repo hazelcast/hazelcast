@@ -23,7 +23,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -48,7 +56,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     public void run() {
         final NodeEngine nodeEngine = getNodeEngine();
-        final Address masterAddress = nodeEngine.getMasterAddress();
+        Address masterAddress = nodeEngine.getMasterAddress();
         if (!masterAddress.equals(migrationInfo.getMaster())) {
             throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
         }
@@ -56,12 +64,13 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             throw new RetryableHazelcastException("Caller is not master node! => " + toString());
         }
 
-        final Address source = migrationInfo.getSource();
+        Address source = migrationInfo.getSource();
         final Address destination = migrationInfo.getDestination();
-        final Member target = nodeEngine.getClusterService().getMember(destination);
+        Member target = nodeEngine.getClusterService().getMember(destination);
         if (target == null) {
             throw new TargetNotMemberException("Destination of migration could not be found! => " + toString());
         }
+
         if (destination.equals(source)) {
             getLogger().warning("Source and destination addresses are the same! => " + toString());
             success = false;
@@ -97,20 +106,20 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
                     nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR).execute(new Runnable() {
                         public void run() {
-                            final BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+                            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
                             try {
                                 out.writeInt(tasks.size());
                                 for (Operation task : tasks) {
                                     serializationService.writeObject(out, task);
                                 }
-                                final byte[] data;
+                                byte[] data;
                                 boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
                                 if (compress) {
                                     data = IOUtil.compress(out.toByteArray());
                                 } else {
                                     data = out.toByteArray();
                                 }
-                                final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
+                                MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
                                 Future future = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
                                         migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).invoke();
                                 Boolean result = nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
@@ -133,11 +142,11 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                     success = true;
                 }
             } catch (Throwable e) {
-                getLogger().warning( e);
+                getLogger().warning(e);
                 success = false;
             } finally {
 //                if (returnResponse) {
-                    migrationInfo.doneProcessing();
+                migrationInfo.doneProcessing();
 //                }
             }
         } else {
@@ -145,7 +154,6 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             success = false;
         }
     }
-
 
     @Override
     public ExceptionAction onException(Throwable throwable) {
@@ -170,13 +178,15 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private Collection<Operation> prepareMigrationTasks() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(), 0);
-        final PartitionMigrationEvent migrationEvent = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId());
-        final Collection<Operation> tasks = new LinkedList<Operation>();
+        PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(), 0);
+        PartitionMigrationEvent migrationEvent
+                = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId());
+
+        Collection<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
             service.beforeMigration(migrationEvent);
-            final Operation op = service.prepareReplicationOperation(replicationEvent);
+            Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {
                 op.setServiceName(serviceInfo.getName());
                 tasks.add(op);

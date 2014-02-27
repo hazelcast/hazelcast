@@ -19,13 +19,15 @@ package com.hazelcast.partition;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 4/11/13
- */
 // runs locally
 final class SyncReplicaVersion extends Operation implements PartitionAwareOperation, UrgentSystemOperation {
 
@@ -39,64 +41,75 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
         this.sync = callback != null;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
     public void run() throws Exception {
-        final PartitionServiceImpl partitionService = getService();
-        final int partitionId = getPartitionId();
-        final int replicaIndex = syncReplicaIndex;
-        final InternalPartition partition = partitionService.getPartition(partitionId);
-        final Address target = partition.getReplicaAddress(replicaIndex);
-        if (target != null) {
-            final long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
-            final NodeEngine nodeEngine = getNodeEngine();
-            CheckReplicaVersion op = new CheckReplicaVersion(currentVersions[replicaIndex], sync);
-            op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionServiceImpl.SERVICE_NAME);
-            OperationService operationService = nodeEngine.getOperationService();
-            if (sync) {
-                operationService.createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME, op, target)
-                        .setCallback(callback).setTryCount(10).setTryPauseMillis(250).invoke();
-            } else {
-                operationService.send(op, target);
-            }
+        PartitionServiceImpl partitionService = getService();
+        int partitionId = getPartitionId();
+        int replicaIndex = syncReplicaIndex;
+        InternalPartition partition = partitionService.getPartition(partitionId);
+        Address target = partition.getReplicaAddress(replicaIndex);
+        if (target == null) {
+            return;
+        }
+
+        long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
+        NodeEngine nodeEngine = getNodeEngine();
+        CheckReplicaVersion op = new CheckReplicaVersion(currentVersions[replicaIndex], sync);
+        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionServiceImpl.SERVICE_NAME);
+        OperationService operationService = nodeEngine.getOperationService();
+        if (sync) {
+            operationService.createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME, op, target)
+                    .setCallback(callback).setTryCount(10).setTryPauseMillis(250).invoke();
+        } else {
+            operationService.send(op, target);
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return false;
     }
 
+    @Override
     public Object getResponse() {
         return null;
     }
 
+    @Override
     public boolean validatesTarget() {
         return false;
     }
 
+    @Override
     public String getServiceName() {
         return PartitionServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     public void logError(Throwable e) {
         ReplicaErrorLogger.log(e, getLogger());
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SyncReplicaVersion{");
+        StringBuilder sb = new StringBuilder("SyncReplicaVersion{");
         sb.append("partitionId=").append(getPartitionId());
         sb.append(", replicaIndex=").append(syncReplicaIndex);
         sb.append('}');

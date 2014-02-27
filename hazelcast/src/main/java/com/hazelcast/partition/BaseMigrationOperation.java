@@ -29,8 +29,7 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         implements MigrationCycleOperation, PartitionAwareOperation {
 
     protected MigrationInfo migrationInfo;
-
-    protected transient boolean success = false;
+    protected boolean success;
 
     public BaseMigrationOperation() {
     }
@@ -55,6 +54,7 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return false;
     }
 
+    @Override
     public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return ExceptionAction.THROW_EXCEPTION;
@@ -65,10 +65,12 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return super.onException(throwable);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         migrationInfo.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
@@ -76,7 +78,7 @@ public abstract class BaseMigrationOperation extends AbstractOperation
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName());
         sb.append("{partitionId=").append(getPartitionId());
         sb.append(", migration=").append(migrationInfo);

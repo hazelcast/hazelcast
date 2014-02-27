@@ -19,9 +19,6 @@ package com.hazelcast.partition.strategy;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.core.PartitioningStrategy;
 
-/**
- * @author mdogan 8/25/13
- */
 public class DefaultPartitioningStrategy implements PartitioningStrategy {
 
     public Object getPartitionKey(Object key) {

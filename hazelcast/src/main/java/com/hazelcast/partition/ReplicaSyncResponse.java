@@ -22,17 +22,21 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.logging.Level;
 
-/**
- * @author mdogan 4/11/13
- */
-public class ReplicaSyncResponse extends Operation implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
+import static com.hazelcast.nio.IOUtil.closeResource;
+
+public class ReplicaSyncResponse extends Operation
+        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
 
     private byte[] data;
     private long[] replicaVersions;
@@ -45,91 +49,96 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         this.replicaVersions = replicaVersions;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        final SerializationService serializationService = nodeEngine.getSerializationService();
-        final int partitionId = getPartitionId();
-        final int replicaIndex = getReplicaIndex();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
         BufferObjectDataInput in = null;
         try {
             if (data != null) {
-                final ILogger logger = nodeEngine.getLogger(getClass());
-                if (logger.isFinestEnabled()) {
-                    logger.finest( "Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
-                }
-                final byte[] taskData = IOUtil.decompress(data);
+                logApplyReplicaSync(partitionId, replicaIndex);
+                byte[] taskData = IOUtil.decompress(data);
                 in = serializationService.createObjectDataInput(taskData);
                 int size = in.readInt();
                 for (int i = 0; i < size; i++) {
                     Operation op = (Operation) serializationService.readObject(in);
                     try {
+                        ErrorLoggingResponseHandler responseHandler
+                                = new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass()));
                         op.setNodeEngine(nodeEngine)
-                                .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-                        op.setResponseHandler(new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass())));
+                                .setPartitionId(partitionId)
+                                .setReplicaIndex(replicaIndex)
+                                .setResponseHandler(responseHandler);
                         op.beforeRun();
                         op.run();
                         op.afterRun();
                     } catch (Throwable e) {
-                        final Level level = nodeEngine.isActive() ? Level.WARNING : Level.FINEST;
-                        if (logger.isLoggable(level)) {
-                            logger.log(level, "While executing " + op, e);
-                        }
+                        logException(op, e);
                     }
                 }
             }
         } finally {
-            IOUtil.closeResource(in);
+            closeResource(in);
             partitionService.finalizeReplicaSync(partitionId, replicaVersions);
         }
     }
 
-    private static  class ErrorLoggingResponseHandler implements ResponseHandler {
-        private final ILogger logger;
-
-        private ErrorLoggingResponseHandler(ILogger logger) {
-            this.logger = logger;
-        }
-
-        public void sendResponse(final Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
-                logger.severe(t);
-            }
-        }
-
-        public boolean isLocal() {
-            return true;
+    private void logException(Operation op, Throwable e) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        ILogger logger = nodeEngine.getLogger(getClass());
+        Level level = nodeEngine.isActive() ? Level.WARNING : Level.FINEST;
+        if (logger.isLoggable(level)) {
+            logger.log(level, "While executing " + op, e);
         }
     }
 
+    private void logApplyReplicaSync(int partitionId, int replicaIndex) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        ILogger logger = nodeEngine.getLogger(getClass());
+        if (logger.isFinestEnabled()) {
+            logger.finest("Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
+        }
+    }
+
+
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return false;
     }
 
+    @Override
     public Object getResponse() {
         return null;
     }
 
+    @Override
     public boolean validatesTarget() {
         return true;
     }
 
+    @Override
     public void logError(Throwable e) {
         ReplicaErrorLogger.log(e, getLogger());
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         IOUtil.writeByteArray(out, data);
         out.writeLongArray(replicaVersions);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         data = IOUtil.readByteArray(in);
         replicaVersions = in.readLongArray();
@@ -137,12 +146,33 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("ReplicaSyncResponse");
         sb.append("{partition=").append(getPartitionId());
         sb.append(", replica=").append(getReplicaIndex());
         sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append('}');
         return sb.toString();
+    }
+
+    private static final class ErrorLoggingResponseHandler implements ResponseHandler {
+        private final ILogger logger;
+
+        private ErrorLoggingResponseHandler(ILogger logger) {
+            this.logger = logger;
+        }
+
+        @Override
+        public void sendResponse(final Object obj) {
+            if (obj instanceof Throwable) {
+                Throwable t = (Throwable) obj;
+                logger.severe(t);
+            }
+        }
+
+        @Override
+        public boolean isLocal() {
+            return true;
+        }
     }
 }

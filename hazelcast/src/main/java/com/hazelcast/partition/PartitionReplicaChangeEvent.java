@@ -49,11 +49,11 @@ class PartitionReplicaChangeEvent {
 
     @Override
     public String toString() {
-        return "PartitionReplicaChangeEvent{" +
-                "partitionId=" + partitionId +
-                ", replicaIndex=" + replicaIndex +
-                ", oldAddress=" + oldAddress +
-                ", newAddress=" + newAddress +
-                '}';
+        return "PartitionReplicaChangeEvent{"
+                + "partitionId=" + partitionId
+                + ", replicaIndex=" + replicaIndex
+                + ", oldAddress=" + oldAddress
+                + ", newAddress=" + newAddress
+                + '}';
     }
 }

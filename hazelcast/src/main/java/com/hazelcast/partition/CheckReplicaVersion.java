@@ -22,11 +22,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
-/**
- * @author mdogan 4/11/13
- */
 public final class CheckReplicaVersion extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 
     private long version;
@@ -41,54 +37,68 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
         this.returnResponse = returnResponse;
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
-        final PartitionServiceImpl partitionService = getService();
-        final int partitionId = getPartitionId();
-        final int replicaIndex = getReplicaIndex();
-        final long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
-        final long currentVersion = currentVersions[replicaIndex];
+        PartitionServiceImpl partitionService = getService();
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
+        long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
+        long currentVersion = currentVersions[replicaIndex];
 
-        if (currentVersion != version) {
-            getLogger().info("Backup partition version is not matching version of the owner " +
-                    "-> " + currentVersion + " -vs- " + version);
+        if (currentVersion == version) {
+            response = true;
+        } else {
+            logBackupVersionMismatch(currentVersion);
             partitionService.syncPartitionReplica(partitionId, replicaIndex, false);
             response = false;
-        } else {
-            response = true;
         }
     }
 
+    private void logBackupVersionMismatch(long currentVersion) {
+        getLogger().info("Backup partition version is not matching version of the owner "
+                + "-> " + currentVersion + " -vs- " + version);
+    }
+
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return returnResponse;
     }
 
+    @Override
     public Object getResponse() {
         return response;
     }
 
+    @Override
     public boolean validatesTarget() {
         return false;
     }
 
+    @Override
     public String getServiceName() {
         return PartitionServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     public void logError(Throwable e) {
         ReplicaErrorLogger.log(e, getLogger());
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(version);
         out.writeBoolean(returnResponse);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         version = in.readLong();
         returnResponse = in.readBoolean();

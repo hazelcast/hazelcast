@@ -17,110 +17,142 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
 
-/**
- * @author mdogan 4/11/13
- */
-public final class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.nio.IOUtil.compress;
+
+public final class ReplicaSyncRequest extends Operation
+        implements PartitionAwareOperation, MigrationCycleOperation {
 
     public ReplicaSyncRequest() {
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
         partitionService.incrementReplicaSyncProcessCount();
 
-        final ILogger logger = nodeEngine.getLogger(getClass());
-        final int partitionId = getPartitionId();
-        final int replicaIndex = getReplicaIndex();
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
 
         try {
-            final Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
-            final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
-            final List<Operation> tasks = new LinkedList<Operation>();
+            Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
+            PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
+            List<Operation> tasks = new LinkedList<Operation>();
             for (ServiceInfo serviceInfo : services) {
                 MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
-                final Operation op = service.prepareReplicationOperation(event);
+                Operation op = service.prepareReplicationOperation(event);
                 if (op != null) {
                     op.setServiceName(serviceInfo.getName());
                     tasks.add(op);
                 }
             }
             byte[] data = null;
-            if (!tasks.isEmpty()) {
-                final SerializationService serializationService = nodeEngine.getSerializationService();
-                final BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+            if (tasks.isEmpty()) {
+                logNoReplicaDataFound(partitionId, replicaIndex);
+            } else {
+                SerializationService serializationService = nodeEngine.getSerializationService();
+                BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
                 try {
                     out.writeInt(tasks.size());
                     for (Operation task : tasks) {
                         serializationService.writeObject(out, task);
                     }
-                    data = IOUtil.compress(out.toByteArray());
+                    data = compress(out.toByteArray());
                 } finally {
-                    IOUtil.closeResource(out);
-                }
-            } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex + "\n" + partitionService.getPartition(partitionId));
+                    closeResource(out);
                 }
             }
 
-            final long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+            long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
             ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
             syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-            final Address target = getCallerAddress();
-            if (logger.isFinestEnabled()) {
-                logger.finest( "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
-            }
-            final OperationService operationService = nodeEngine.getOperationService();
+            Address target = getCallerAddress();
+            logSendSyncResponse(partitionId, replicaIndex, target);
+            OperationService operationService = nodeEngine.getOperationService();
             operationService.send(syncResponse, target);
         } finally {
             partitionService.decrementReplicaSyncProcessCount();
         }
     }
 
+    private void logSendSyncResponse(int partitionId, int replicaIndex, Address target) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        ILogger logger = nodeEngine.getLogger(getClass());
+        if (logger.isFinestEnabled()) {
+            logger.finest("Sending sync response to -> " + target + "; for partition: " + partitionId
+                    + ", replica: " + replicaIndex);
+        }
+    }
+
+    private void logNoReplicaDataFound(int partitionId, int replicaIndex) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        ILogger logger = nodeEngine.getLogger(getClass());
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("No replica data is found for partition: " + partitionId
+                    + ", replica: " + replicaIndex + "\n" + partitionService.getPartition(partitionId));
+        }
+    }
+
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return false;
     }
 
+    @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }
 
+    @Override
     public boolean validatesTarget() {
         return false;
     }
 
+    @Override
     public void logError(Throwable e) {
         ReplicaErrorLogger.log(e, getLogger());
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("ReplicaSyncRequest");
         sb.append("{partition=").append(getPartitionId());
         sb.append(", replica=").append(getReplicaIndex());

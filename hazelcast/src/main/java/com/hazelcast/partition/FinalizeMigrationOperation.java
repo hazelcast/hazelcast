@@ -28,12 +28,13 @@ import java.io.IOException;
 import java.util.Collection;
 
 // runs locally...
-final class FinalizeMigrationOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation {
+final class FinalizeMigrationOperation extends AbstractOperation
+        implements PartitionAwareOperation, MigrationCycleOperation {
 
     private final MigrationEndpoint endpoint;
     private final boolean success;
 
-    public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final boolean success) {
+    public FinalizeMigrationOperation(MigrationEndpoint endpoint, boolean success) {
         this.endpoint = endpoint;
         this.success = success;
     }
@@ -42,24 +43,26 @@ final class FinalizeMigrationOperation extends AbstractOperation implements Part
         PartitionServiceImpl partitionService = getService();
         MigrationInfo migrationInfo = partitionService.getActiveMigration(getPartitionId());
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        if (migrationInfo != null) {
-            final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
-            final PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
-            for (MigrationAwareService service : services) {
-                try {
-                    if (success) {
-                        service.commitMigration(event);
-                    } else {
-                        service.rollbackMigration(event);
-                    }
-                } catch (Throwable e) {
-                    getLogger().warning("Error while finalizing migration -> " + event, e);
+        if (migrationInfo == null) {
+            return;
+        }
+
+        Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
+        PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
+        for (MigrationAwareService service : services) {
+            try {
+                if (success) {
+                    service.commitMigration(event);
+                } else {
+                    service.rollbackMigration(event);
                 }
+            } catch (Throwable e) {
+                getLogger().warning("Error while finalizing migration -> " + event, e);
             }
-            partitionService.removeActiveMigration(getPartitionId());
-            if (success) {
-                nodeEngine.onPartitionMigrate(migrationInfo);
-            }
+        }
+        partitionService.removeActiveMigration(getPartitionId());
+        if (success) {
+            nodeEngine.onPartitionMigrate(migrationInfo);
         }
     }
 
