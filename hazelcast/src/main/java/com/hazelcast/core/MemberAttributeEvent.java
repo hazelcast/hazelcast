@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -67,7 +68,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         member.writeData(out);
         out.writeByte(operationType.id);
         if (operationType == PUT) {
-            out.writeObject(value);
+            IOUtil.writeAttributeValue(value,out);
         }
     }
 
@@ -78,7 +79,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         member.readData(in);
         operationType = MemberAttributeOperationType.getValue(in.readByte());
         if (operationType == PUT) {
-            value = in.readObject();
+            value = IOUtil.readAttributeValue(in);
         }
         this.source = member;
     }
