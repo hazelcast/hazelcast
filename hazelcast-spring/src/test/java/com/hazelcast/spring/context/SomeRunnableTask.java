@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring.context;
 
-import org.junit.Assert;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -33,6 +32,8 @@ import static org.junit.Assert.assertNotNull;
  */
 @SpringAware
 public class SomeRunnableTask implements Runnable, Serializable, ApplicationContextAware {
+
+    private static final long serialVersionUID = 5851289963628278937L;
 
     private transient ApplicationContext context;
 
