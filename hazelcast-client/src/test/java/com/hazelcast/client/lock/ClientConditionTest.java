@@ -127,15 +127,13 @@ public class ClientConditionTest extends HazelcastTestSupport{
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final AtomicInteger count = new AtomicInteger(0);
         final int size = 50;
-        int k = 0;
         final HazelcastInstance keyOwner = Hazelcast.newHazelcastInstance();
-        final Member keyOwnerMember = keyOwner.getCluster().getLocalMember();
-        final PartitionService partitionService = instance.getPartitionService();
-        while (!keyOwnerMember.equals(partitionService.getPartition(++k).getOwner())) {
-            Thread.sleep(10);
-        }
 
-        final ILock lock = client.getLock(k);
+        warmUpPartitions(instance, keyOwner);
+
+        final String key = generateKeyOwnedBy(keyOwner);
+
+        final ILock lock = client.getLock(key);
         final ICondition condition = lock.newCondition(name);
 
         final CountDownLatch awaitLatch = new CountDownLatch(size);
