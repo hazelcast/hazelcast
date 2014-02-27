@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNull;
 public abstract class StressTestSupport extends HazelcastTestSupport {
 
     //todo: should be system property
-    public static int RUNNING_TIME_SECONDS = 30;
+    public static int RUNNING_TIME_SECONDS = 10;
     //todo: should be system property
     public static int CLUSTER_SIZE = 3;
     //todo: should be system property
