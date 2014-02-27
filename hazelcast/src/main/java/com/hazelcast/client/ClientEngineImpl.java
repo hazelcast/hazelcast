@@ -373,10 +373,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return new ClientServiceProxy(this);
     }
 
-    public Collection<Client> getEndpoints() {
-        return new HashSet<Client>(endpoints.values());
-    }
-
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
         for (ClientEndpoint endpoint : endpoints.values()) {
