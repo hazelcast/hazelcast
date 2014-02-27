@@ -44,6 +44,13 @@ src/ExecutorService.md
 	src/DistributedExecution.md
 	src/ExecutionCancellation.md
 	src/ExecutionCallback.md
+src/mapreduce/Index.md
+    src/mapreduce/MR-API-Introduction.md
+    src/mapreduce/MR-Architecture.md
+    src/mapreduce/.md
+    src/mapreduce/.md
+    src/mapreduce/.md
+    src/mapreduce/.md
 src/HttpSessionClustering.md
 src/WanReplication.md
 src/Config.md
