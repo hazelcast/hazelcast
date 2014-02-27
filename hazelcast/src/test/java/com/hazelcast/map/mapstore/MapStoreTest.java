@@ -28,6 +28,7 @@ import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -127,9 +128,11 @@ public class MapStoreTest extends HazelcastTestSupport {
         final AtomicInteger loadAllKeys = new AtomicInteger(0);
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
         Config cfg = new Config();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
+
         mapStoreConfig.setImplementation(new MapLoader<String, String>() {
 
             public String load(String key) {
@@ -151,6 +154,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                 return _map.keySet();
             }
         });
+
         cfg.getMapConfig("testMapGetAll").setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -163,9 +167,11 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        Thread.sleep(1000*10);
-
-        assertEquals("after node added to cluster load all keys called times ", 1, loadAllKeys.get());
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals("after node added to cluster load all keys called again", 1, loadAllKeys.get());
+            }
+        });
     }
 
 
