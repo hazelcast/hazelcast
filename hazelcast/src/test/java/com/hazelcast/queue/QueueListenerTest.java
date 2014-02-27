@@ -38,7 +38,7 @@ import static junit.framework.Assert.assertTrue;
 public class QueueListenerTest extends HazelcastTestSupport {
 
     @Test
-    public void testItemListener_addedToQueueConfig() throws InterruptedException {
+    public void testItemListener_addedToQueueConfig_Issue366() throws InterruptedException {
 
         int count=2000;
 
