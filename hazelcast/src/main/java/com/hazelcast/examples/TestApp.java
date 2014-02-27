@@ -18,6 +18,7 @@ package com.hazelcast.examples;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -42,12 +43,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
-
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -58,7 +58,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
@@ -1450,6 +1449,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     /**
      * Handled the help command
+     *
      * @param command
      */
     protected void handleHelp(String command) {
@@ -1619,38 +1619,26 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     /**
-     * Starts the test application. Management Center is expected to be running on localhost:8080
+     * Starts the test application. Loads the config from classpath hazelcast.xml,
+     * if it fails to load, will use default config.
+     *
      * @param args none
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String version = getVersion();
+        Config config;
 
-        Config config = new Config();
-        config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl("http://localhost:8080/mancenter-" + version);
+        try {
+            config = new FileSystemXmlConfig("hazelcast.xml");
+        } catch (FileNotFoundException e) {
+            config = new Config();
+        }
 
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
             config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
         }
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
         testApp.start(args);
-    }
-
-    private static String getVersion() throws IOException {
-        InputStream in = TestApp.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-        if (in == null) {
-            throw new IOException("hazelcast-runtime.properties is not found");
-        }
-
-        try {
-            Properties props = new Properties();
-            props.load(in);
-
-            return props.getProperty("hazelcast.version");
-        } finally {
-            in.close();
-        }
     }
 
 }
