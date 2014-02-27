@@ -377,6 +377,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return new HashSet<Client>(endpoints.values());
     }
 
+    public Collection<Client> getClients() {
+        final HashSet<Client> clients = new HashSet<Client>();
+        for (ClientEndpoint endpoint : endpoints.values()) {
+            if (!endpoint.isFirstConnection()) {
+                clients.add(endpoint);
+            }
+        }
+        return clients;
+    }
+
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         ClassDefinitionBuilder builder = new ClassDefinitionBuilder(ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
