@@ -49,8 +49,12 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
         return getOrCreateContainer().getMultiMapWrapper(dataKey);
     }
 
-    public final Collection<MultiMapRecord> remove() {
-        return getOrCreateContainer().remove(dataKey);
+    public final Collection<MultiMapRecord> remove(boolean copyOf) {
+        return getOrCreateContainer().remove(dataKey, copyOf);
+    }
+
+    public final void delete() {
+        getOrCreateContainer().delete(dataKey);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
