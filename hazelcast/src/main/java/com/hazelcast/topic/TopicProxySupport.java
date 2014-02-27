@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.proxy;
+package com.hazelcast.topic;
 
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
@@ -28,11 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.topic.TopicEvent;
-import com.hazelcast.topic.TopicService;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.List;
 
 abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 

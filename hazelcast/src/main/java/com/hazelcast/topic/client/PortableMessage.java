@@ -63,8 +63,8 @@ public class PortableMessage implements Portable {
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeLong("pt",publishTime);
-        writer.writeUTF("u",uuid);
+        writer.writeLong("pt", publishTime);
+        writer.writeUTF("u", uuid);
         message.writeData(writer.getRawDataOutput());
     }
 

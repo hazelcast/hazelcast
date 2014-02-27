@@ -17,7 +17,6 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -62,10 +61,10 @@ public class TopicEvent implements DataSerializable {
 
     @Override
     public String toString() {
-        return "TopicEvent{" +
-                "name='" + name + '\'' +
-                ", publishTime=" + publishTime +
-                ", publishingMember=" + publishingMember +
-                '}';
+        return "TopicEvent{"
+                + "name='" + name + '\''
+                + ", publishTime=" + publishTime
+                + ", publishingMember=" + publishingMember
+                + '}';
     }
 }

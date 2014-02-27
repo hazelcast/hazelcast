@@ -20,10 +20,12 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.spi.*;
-import com.hazelcast.topic.proxy.TopicProxy;
-import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
-import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
@@ -40,17 +42,16 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     public static final String SERVICE_NAME = "hz:impl:topicService";
     public static final int ORDERING_LOCKS_LENGTH = 1000;
 
+    final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
     private final Lock[] orderingLocks = new Lock[ORDERING_LOCKS_LENGTH];
     private NodeEngine nodeEngine;
 
-    final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
-
     private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
             new ConstructorFunction<String, LocalTopicStatsImpl>() {
-        public LocalTopicStatsImpl createNew(String mapName) {
-            return new LocalTopicStatsImpl();
-        }
-    };
+                public LocalTopicStatsImpl createNew(String mapName) {
+                    return new LocalTopicStatsImpl();
+                }
+            };
     private EventService eventService;
 
     @Override
@@ -88,9 +89,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     @Override
     public TopicProxy createDistributedObject(String name) {
-        if (isGlobalOrderingEnabled(name)){
+        if (isGlobalOrderingEnabled(name)) {
             return new TotalOrderedTopicProxy(name, nodeEngine, this);
-        }else{
+        } else {
             return new TopicProxy(name, nodeEngine, this);
         }
     }
@@ -132,7 +133,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, name.hashCode());
     }
 
-    public String addMessageListener(String name, MessageListener listener){
+    public String addMessageListener(String name, MessageListener listener) {
         EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
         return eventRegistration.getId();
     }
