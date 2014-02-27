@@ -2,7 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.Acount;
+import com.hazelcast.client.stress.helpers.Account;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.client.stress.helpers.TransferRecord;
 import com.hazelcast.core.*;
@@ -25,13 +25,21 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class PlayStressTest extends StressTestSupport {
 
-    public static int TOTAL_HZ_INSTANCES = 5;
-    public static int THREADS_PER_INSTANCE = 2;
+    public static final String ACCOUNTS_MAP = "ACOUNTS";
+    public static final String PROCESED_TRANS_MAP ="PROCESSED";
+    public static final String FAILED_TRANS_MAP ="FAIL";
+
+
+    public static final int TOTAL_HZ_INSTANCES = 1;
+    public static final int THREADS_PER_INSTANCE = 5;
 
     private Transactor[] stressThreads = new Transactor[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
 
-    protected int MAZ_ACOUNTS = 1000;
-    private IMap<Integer, Acount> acounts=null;
+    protected static final int MAX_ACCOUNTS = 2;
+    protected static final long INITIAL_VALUE = 100;
+    protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
+
+    private IMap<Integer, Account> accounts =null;
 
     @Before
     public void setUp() {
@@ -39,11 +47,11 @@ public class PlayStressTest extends StressTestSupport {
 
         HazelcastInstance hz = super.cluster.getRandomNode();
 
-        acounts = hz.getMap("A");
+        accounts = hz.getMap(ACCOUNTS_MAP);
 
-        for(int i=0; i<MAZ_ACOUNTS; i++){
-            Acount a = new Acount(i, 100.0);
-            acounts.put(a.getAcountNumber(), a);
+        for(int i=0; i< MAX_ACCOUNTS; i++){
+            Account a = new Account(i, INITIAL_VALUE);
+            accounts.put(a.getAcountNumber(), a);
         }
 
 
@@ -59,6 +67,7 @@ public class PlayStressTest extends StressTestSupport {
                 stressThreads[index++] = t;
             }
         }
+
     }
 
 
@@ -81,12 +90,21 @@ public class PlayStressTest extends StressTestSupport {
 
         HazelcastInstance hz = super.cluster.getRandomNode();
 
-        IMap trace = hz.getMap("T");
+        IMap processed = hz.getMap(PROCESED_TRANS_MAP);
 
-        Acount a = acounts.get(1);
-        Acount b = acounts.get(2);
+        IMap failed = hz.getMap(FAILED_TRANS_MAP);
 
-        System.out.println( "===>>> "+ a.getBalance() +" and "+ b.getBalance()+" total transactions "+trace.size());
+
+        System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
+
+        long total=0;
+        for(Account a : accounts.values()){
+            System.out.println("==>> bal "+a.getBalance());
+            total += a.getBalance();
+        }
+
+        assertEquals(TOTAL_VALUE, total);
+
     }
 
 
@@ -94,16 +112,18 @@ public class PlayStressTest extends StressTestSupport {
 
         private HazelcastInstance instance;
 
-        private IMap<Integer, Acount> acounts;
+        private IMap<Integer, Account> accounts;
         private IMap<Long, TransferRecord> transactions;
+        private IMap<Long, TransferRecord> failed;
 
         public Transactor(HazelcastInstance node){
             super();
 
             instance = node;
 
-            acounts = instance.getMap("A");
-            transactions = instance.getMap("T");
+            accounts = instance.getMap(ACCOUNTS_MAP);
+            transactions = instance.getMap(PROCESED_TRANS_MAP);
+            failed = instance.getMap(FAILED_TRANS_MAP);
         }
 
         @Override
@@ -111,57 +131,87 @@ public class PlayStressTest extends StressTestSupport {
 
             while ( !isStopped() ) {
 
-                int from = 1;
-                int to = 2;
-                double amount = 10;
+                int from = 0; //random.nextInt(MAX_ACCOUNTS);
+                int to = 1; //random.nextInt(MAX_ACCOUNTS);
+                long amount = 1; //random.nextInt(100)+1;
 
-                lockTransfer(from, to, amount);
-                //contexTransfer(from, to, amount);
+                //lockTransfer(from, to, amount);
+                contextTransfer(from, to, amount);
             }
         }
 
-        private void lockTransfer(int a, int b, double amount){
-            acounts.lock(a);
-            Acount from = acounts.get(a);
+        private void lockTransfer(int a, int b, long amount){
+            accounts.lock(a);
+            Account from = accounts.get(a);
 
-            acounts.lock(b);
-            Acount to = acounts.get(b);
-
-            TransferRecord tr = from.transferTo(to, amount);
-            transactions.put(tr.getId(), tr);
-
-            acounts.put(to.getAcountNumber(), to);
-            acounts.put(from.getAcountNumber(), from);
-
-            acounts.unlock(to.getAcountNumber());
-            acounts.unlock(from.getAcountNumber());
-        }
-
-        private void contexTransfer(int a, int b, double amount){
-
-            TransactionContext context = instance.newTransactionContext();
-            context.beginTransaction();
-
-            TransactionalMap<Integer, Acount> acounts = context.getMap("A");
-
-            Acount from = acounts.get(a);
-            Acount to = acounts.get(b);
+            accounts.lock(b);
+            Account to = accounts.get(b);
 
             TransferRecord tr = from.transferTo(to, amount);
             transactions.put(tr.getId(), tr);
 
-            acounts.put(to.getAcountNumber(), to);
-            acounts.put(from.getAcountNumber(), from);
+            accounts.put(to.getAcountNumber(), to);
+            accounts.put(from.getAcountNumber(), from);
 
-            context.commitTransaction();
+            accounts.unlock(to.getAcountNumber());
+            accounts.unlock(from.getAcountNumber());
         }
+
+
+        private void contextTransfer(int fromAccountNumber, int toAccountNumber, long amount){
+
+            try{
+                TransactionContext context = instance.newTransactionContext();
+                context.beginTransaction();
+
+                TransactionalMap<Integer, Account> accounts = context.getMap(ACCOUNTS_MAP);
+
+                Account from = accounts.get(fromAccountNumber);
+                Account to = accounts.get(toAccountNumber);
+
+                try{
+                    doTransaction(from, to, amount);
+
+                    context.commitTransaction();
+
+                }catch(Exception e){
+                    context.rollbackTransaction();
+
+                    TransferRecord rt = new TransferRecord(from, to, amount);
+                    failed.put(rt.getId(), rt);
+                }
+
+            }catch (Throwable e) {
+                System.err.println("==>> "+e);
+            }
+        }
+
+
+        private void doTransaction(Account from, Account to, long amount){
+
+            TransferRecord  record = from.transferTo(to, amount);
+            transactions.put(record.getId(), record);
+
+            accounts.put(to.getAcountNumber(), to);
+            accounts.put(from.getAcountNumber(), from);
+
+            //throwExceptionAtRandom();
+        }
+
+
+        private void throwExceptionAtRandom() throws Exception{
+            if(random.nextInt(10)==0){
+                throw new Exception();
+            }
+        }
+
     }
 
 
     public class Depositor extends TestThread{
 
         private HazelcastInstance instance;
-        private IMap<Integer, Acount> acounts;
+        private IMap<Integer, Account> acounts;
 
         public Depositor(HazelcastInstance node){
             super();
@@ -175,12 +225,13 @@ public class PlayStressTest extends StressTestSupport {
 
             while ( !isStopped() ) {
 
-                int acountNumber = random.nextInt(MAZ_ACOUNTS);
+                int acountNumber = random.nextInt(MAX_ACCOUNTS);
 
                 acounts.lock(acountNumber);
 
-                Acount acount = acounts.get(acountNumber);
+                Account acount = acounts.get(acountNumber);
                 acount.increase(10);
+
                 acounts.put(acount.getAcountNumber(), acount);
 
                 acounts.unlock(acount.getAcountNumber());

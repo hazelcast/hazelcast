@@ -2,15 +2,15 @@ package com.hazelcast.client.stress.helpers;
 
 import java.io.Serializable;
 
-public class Acount implements Serializable {
+public class Account implements Serializable {
 
     private int acountNumber;
 
     private byte[] someData = new byte[1024];
 
-    private double balance = 0.0;
+    private long balance = 0;
 
-    public Acount(int acountNumber, double balance){
+    public Account(int acountNumber, long balance){
         this.acountNumber = acountNumber;
         this.balance = balance;
     }
@@ -19,28 +19,33 @@ public class Acount implements Serializable {
         return acountNumber;
     }
 
-    public double getBalance(){
+    public long getBalance(){
         return balance;
     }
 
-    public void increase(double amount){
+    public void increase(long amount){
         balance+=amount;
     }
 
-    public void decrease(double amount){
+    public void decrease(long amount){
         balance-=amount;
     }
 
-    public TransferRecord transferTo(Acount to, double amount){
+    public TransferRecord transferTo(Account to, long amount){
 
         TransferRecord tr = new TransferRecord(this, to, amount);
-        tr.setAccepted(false);
+        tr.setDecliened(true);
 
-        if ( balance>=amount ) {
-
+        if ( acountNumber == to.acountNumber){
+            tr.setReason("same account");
+        }
+        else if ( balance < amount ){
+            tr.setReason("to low");
+        }
+        else {
             this.decrease(amount);
             to.increase(amount);
-            tr.setAccepted(true);
+            tr.setDecliened(false);
         }
 
         return  tr;

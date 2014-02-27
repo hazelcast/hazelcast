@@ -15,7 +15,7 @@ public class MySocketInterceptor implements MemberSocketInterceptor {
     }
 
     public void onAccept(Socket acceptedSocket) throws IOException {
-        // do something meaningful when accepted a connection
+        // do something meaningful when decliened a connection
     }
 }
 ```

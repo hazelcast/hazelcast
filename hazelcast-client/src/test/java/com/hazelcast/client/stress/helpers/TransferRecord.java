@@ -8,52 +8,63 @@ public class TransferRecord implements Serializable{
     public final static AtomicLong ID_GENERATOR = new AtomicLong(1);
 
     private long id;
-    private Acount from;
-    private Acount to;
-    private double amount;
+    private Account from;
+    private Account to;
+    private long amount;
 
-    private boolean accepted;
+    private boolean decliened;
 
-    public TransferRecord(Acount form, Acount to, double amount){
+    private String reason;
+
+    public TransferRecord(Account form, Account to, long amount){
         id = ID_GENERATOR.getAndIncrement();
         this.from = form;
         this.to = to;
         this.amount = amount;
     }
 
-    public Acount getFrom() {
+    public Account getFrom() {
         return from;
     }
 
-    public void setFrom(Acount from) {
+    public void setFrom(Account from) {
         this.from = from;
     }
 
-    public Acount getTo() {
+    public Account getTo() {
         return to;
     }
 
-    public void setTo(Acount to) {
+    public void setTo(Account to) {
         this.to = to;
     }
 
-    public double getAmount() {
+    public long getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(long amount) {
         this.amount = amount;
     }
 
-    public boolean isAccepted() {
-        return accepted;
+    public boolean isDecliened() {
+        return decliened;
     }
 
-    public void setAccepted(boolean accepted) {
-        this.accepted = accepted;
+    public void setDecliened(boolean decliened) {
+        this.decliened = decliened;
     }
 
     public long getId(){
         return id;
     }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
 }
