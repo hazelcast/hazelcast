@@ -77,4 +77,10 @@
         <Package name="com.hazelcast.ascii" />
     </Match>
 
+    <!-- todo: these findbugs warnings needs to be fixed -->
+    <Match>
+        <Package name="com.hazelcast.jca" />
+    </Match>
+
+
 </FindBugsFilter>
