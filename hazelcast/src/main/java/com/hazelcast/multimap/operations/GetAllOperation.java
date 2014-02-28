@@ -19,7 +19,7 @@ package com.hazelcast.multimap.operations;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
+import com.hazelcast.spi.ResponseHandler;
 
 import java.util.Collection;
 
@@ -40,7 +40,8 @@ public class GetAllOperation extends MultiMapKeyBasedOperation {
         Collection coll = null;
         if (wrapper != null) {
             wrapper.incrementHit();
-            coll = wrapper.getCollection();
+            final ResponseHandler responseHandler = getResponseHandler();
+            coll = wrapper.getCollection(responseHandler.isLocal());
         }
         response = new MultiMapResponse(coll);
     }

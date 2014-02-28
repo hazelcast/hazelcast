@@ -261,7 +261,7 @@ public class MultiMapService implements ManagedService, RemoteService,
                 lockedEntryCount += multiMapContainer.getLockedCount();
                 for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
                     hits += wrapper.getHits();
-                    ownedEntryCount += wrapper.getCollection().size();
+                    ownedEntryCount += wrapper.getCollection(false).size();
                 }
             } else {
                 int backupCount = multiMapContainer.config.getTotalBackupCount();
@@ -282,7 +282,7 @@ public class MultiMapService implements ManagedService, RemoteService,
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                         for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
-                            backupEntryCount += wrapper.getCollection().size();
+                            backupEntryCount += wrapper.getCollection(false).size();
                         }
                     }
                 }
