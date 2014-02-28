@@ -37,7 +37,7 @@ class InternalPartitionImpl implements InternalPartition {
         return isMigrating;
     }
 
-    public void setMigrating(boolean isMigrating){
+    public void setMigrating(boolean isMigrating) {
         this.isMigrating = isMigrating;
     }
 
@@ -63,15 +63,13 @@ class InternalPartitionImpl implements InternalPartition {
             oldAddress = oldAddresses[replicaIndex];
             if (partitionListener != null) {
                 if (oldAddress == null) {
-                    changed = (newAddress != null);
+                    changed = newAddress != null;
                 } else {
                     changed = !oldAddress.equals(newAddress);
                 }
             }
 
-            Address[] newAddresses = new Address[MAX_REPLICA_COUNT];
-            arraycopy(oldAddresses, 0, newAddresses, 0, MAX_REPLICA_COUNT);
-            newAddresses[replicaIndex] = newAddress;
+            Address[] newAddresses = createNewAddresses(replicaIndex, newAddress, oldAddresses);
             if (ADDRESSES_UPDATER.compareAndSet(this, oldAddresses, newAddresses)) {
                 break;
             }
@@ -84,15 +82,24 @@ class InternalPartitionImpl implements InternalPartition {
         }
     }
 
+    private Address[] createNewAddresses(int replicaIndex, Address newAddress, Address[] oldAddresses) {
+        Address[] newAddresses = new Address[MAX_REPLICA_COUNT];
+        arraycopy(oldAddresses, 0, newAddresses, 0, MAX_REPLICA_COUNT);
+        newAddresses[replicaIndex] = newAddress;
+        return newAddresses;
+    }
+
     boolean onDeadAddress(Address deadAddress) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            if (deadAddress.equals(addresses[i])) {
-                for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
-                    setReplicaAddress(a, addresses[a + 1]);
-                }
-                setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
-                return true;
+            if (!deadAddress.equals(addresses[i])) {
+                continue;
             }
+
+            for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
+                setReplicaAddress(a, addresses[a + 1]);
+            }
+            setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
+            return true;
         }
         return false;
     }

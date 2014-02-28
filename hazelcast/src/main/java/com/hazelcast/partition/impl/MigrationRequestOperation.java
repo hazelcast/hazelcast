@@ -19,6 +19,7 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
@@ -39,7 +40,9 @@ import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
@@ -47,8 +50,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
+
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
+    public static final int TRY_PAUSE_MILLIS = 1000;
     private boolean returnResponse = true;
 
     public MigrationRequestOperation() {
@@ -59,21 +65,12 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     public void run() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Address masterAddress = nodeEngine.getMasterAddress();
-        if (!masterAddress.equals(migrationInfo.getMaster())) {
-            throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
-        }
-        if (!masterAddress.equals(getCallerAddress())) {
-            throw new RetryableHazelcastException("Caller is not master node! => " + toString());
-        }
+        NodeEngine nodeEngine = getNodeEngine();
+        verifyGoodMaster(nodeEngine);
 
         Address source = migrationInfo.getSource();
-        final Address destination = migrationInfo.getDestination();
-        Member target = nodeEngine.getClusterService().getMember(destination);
-        if (target == null) {
-            throw new TargetNotMemberException("Destination of migration could not be found! => " + toString());
-        }
+        Address destination = migrationInfo.getDestination();
+        verifyExistingTarget(nodeEngine, destination);
 
         if (destination.equals(source)) {
             getLogger().warning("Source and destination addresses are the same! => " + toString());
@@ -81,93 +78,101 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             return;
         }
 
-        if (source == null || !source.equals(nodeEngine.getThisAddress())) {
-            throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
-        }
+        verifyNotThisNode(nodeEngine, source);
 
         PartitionServiceImpl partitionService = getService();
         InternalPartition partition = partitionService.getPartition(migrationInfo.getPartitionId());
-        final Address owner = partition.getOwner();
+        Address owner = partition.getOwner();
+        verifyOwnerExists(owner);
+
+        if (!migrationInfo.startProcessing()) {
+            getLogger().warning("Migration is cancelled -> " + migrationInfo);
+            success = false;
+            return;
+        }
+
+        try {
+            verifyOwner(source, partition, owner);
+            partitionService.addActiveMigration(migrationInfo);
+            long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
+            Collection<Operation> tasks = prepareMigrationTasks();
+            if (tasks.size() > 0) {
+                returnResponse = false;
+                spawnMigrationRequestTask(destination, replicaVersions, tasks);
+            } else {
+                success = true;
+            }
+        } catch (Throwable e) {
+            getLogger().warning(e);
+            success = false;
+        } finally {
+            migrationInfo.doneProcessing();
+        }
+    }
+
+    private void verifyNotThisNode(NodeEngine nodeEngine, Address source) {
+        if (source == null || !source.equals(nodeEngine.getThisAddress())) {
+            throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
+        }
+    }
+
+    private void verifyOwnerExists(Address owner) {
         if (owner == null) {
             throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
                     + migrationInfo);
         }
+    }
 
-        if (migrationInfo.startProcessing()) {
-            try {
-                if (!source.equals(owner)) {
-                    throw new HazelcastException("Cannot migrate! This node is not owner of the partition => "
-                            + migrationInfo + " -> " + partition);
-                }
-                partitionService.addActiveMigration(migrationInfo);
-                final long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
-                final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
-                final Collection<Operation> tasks = prepareMigrationTasks();
-                if (tasks.size() > 0) {
-                    returnResponse = false;
-                    final ResponseHandler responseHandler = getResponseHandler();
-                    final SerializationService serializationService = nodeEngine.getSerializationService();
+    private void verifyOwner(Address source, InternalPartition partition, Address owner) {
+        if (!source.equals(owner)) {
+            throw new HazelcastException("Cannot migrate! This node is not owner of the partition => "
+                    + migrationInfo + " -> " + partition);
+        }
+    }
 
-                    nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR).execute(new Runnable() {
-                        public void run() {
-                            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
-                            try {
-                                out.writeInt(tasks.size());
-                                for (Operation task : tasks) {
-                                    serializationService.writeObject(out, task);
-                                }
-                                byte[] data;
-                                boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
-                                if (compress) {
-                                    data = IOUtil.compress(out.toByteArray());
-                                } else {
-                                    data = out.toByteArray();
-                                }
-                                MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
-                                Future future = nodeEngine.getOperationService().createInvocationBuilder(PartitionService.SERVICE_NAME,
-                                        migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).invoke();
-                                Boolean result = nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
-                                migrationInfo.doneProcessing();
-                                responseHandler.sendResponse(result);
-                            } catch (Throwable e) {
-                                responseHandler.sendResponse(Boolean.FALSE);
-                                if (e instanceof ExecutionException) {
-                                    e = e.getCause() != null ? e.getCause() : e;
-                                }
-                                Level level = (e instanceof MemberLeftException || e instanceof InterruptedException)
-                                        || !getNodeEngine().isActive() ? Level.INFO : Level.WARNING;
-                                getLogger().log(level, e.getMessage(), e);
-                            } finally {
-                                IOUtil.closeResource(out);
-                            }
-                        }
-                    });
-                } else {
-                    success = true;
-                }
-            } catch (Throwable e) {
-                getLogger().warning(e);
-                success = false;
-            } finally {
-//                if (returnResponse) {
-                migrationInfo.doneProcessing();
-//                }
-            }
-        } else {
-            getLogger().warning("Migration is cancelled -> " + migrationInfo);
-            success = false;
+    private void spawnMigrationRequestTask(Address destination, long[] replicaVersions, Collection<Operation> tasks) {
+        NodeEngine nodeEngine = getNodeEngine();
+        ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        MigrationRequestTask task = new MigrationRequestTask(tasks, replicaVersions, destination);
+        executor.execute(task);
+    }
+
+    private void verifyGoodMaster(NodeEngine nodeEngine) {
+        Address masterAddress = nodeEngine.getMasterAddress();
+        if (!masterAddress.equals(migrationInfo.getMaster())) {
+            throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
+        }
+        if (!masterAddress.equals(getCallerAddress())) {
+            throw new RetryableHazelcastException("Caller is not master node! => " + toString());
+        }
+    }
+
+    private void verifyExistingTarget(NodeEngine nodeEngine, Address destination) {
+        Member target = nodeEngine.getClusterService().getMember(destination);
+        if (target == null) {
+            throw new TargetNotMemberException("Destination of migration could not be found! => " + toString());
         }
     }
 
     @Override
     public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof TargetNotMemberException) {
-            NodeEngine nodeEngine = getNodeEngine();
-            if (nodeEngine != null && nodeEngine.getClusterService().getMember(migrationInfo.getDestination()) == null) {
+            boolean rethrowException = rethrowException();
+            if (rethrowException) {
                 return ExceptionAction.THROW_EXCEPTION;
             }
         }
         return super.onException(throwable);
+    }
+
+    private boolean rethrowException() {
+        NodeEngine nodeEngine = getNodeEngine();
+        if(nodeEngine == null){
+            return false;
+        }
+
+        MemberImpl destination = nodeEngine.getClusterService().getMember(migrationInfo.getDestination());
+        return destination == null;
     }
 
     @Override
@@ -197,5 +202,79 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             }
         }
         return tasks;
+    }
+
+    private class MigrationRequestTask implements Runnable {
+        private final SerializationService serializationService;
+        private final Collection<Operation> tasks;
+        private final long[] replicaVersions;
+        private final Address destination;
+        private final long timeout;
+        private final ResponseHandler responseHandler;
+        private final boolean compress;
+
+        public MigrationRequestTask(Collection<Operation> tasks, long[] replicaVersions, Address destination) {
+            this.tasks = tasks;
+            this.replicaVersions = replicaVersions;
+            this.destination = destination;
+            this.responseHandler = getResponseHandler();
+            NodeEngine nodeEngine = getNodeEngine();
+            this.serializationService = nodeEngine.getSerializationService();
+            this.compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
+            this.timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
+        }
+
+        @Override
+        public void run() {
+            NodeEngine nodeEngine = getNodeEngine();
+            try {
+                byte[] data = getTaskData();
+                MigrationOperation operation = new MigrationOperation(
+                        migrationInfo, replicaVersions, data, tasks.size(), compress);
+                Future future = nodeEngine.getOperationService()
+                        .createInvocationBuilder(PartitionService.SERVICE_NAME, operation, destination)
+                        .setTryPauseMillis(TRY_PAUSE_MILLIS)
+                        .setReplicaIndex(getReplicaIndex())
+                        .invoke();
+                Object response = future.get(timeout, TimeUnit.SECONDS);
+                Boolean result = nodeEngine.toObject(response);
+                migrationInfo.doneProcessing();
+                responseHandler.sendResponse(result);
+            } catch (Throwable e) {
+                responseHandler.sendResponse(Boolean.FALSE);
+                logThrowable(e);
+            }
+        }
+
+        private void logThrowable(Throwable e) {
+            if (e instanceof ExecutionException) {
+                e = e.getCause() != null ? e.getCause() : e;
+            }
+            Level level = getLogLevel(e);
+            getLogger().log(level, e.getMessage(), e);
+        }
+
+        private Level getLogLevel(Throwable e) {
+            return (e instanceof MemberLeftException || e instanceof InterruptedException)
+                    || !getNodeEngine().isActive() ? Level.INFO : Level.WARNING;
+        }
+
+        private byte[] getTaskData() throws IOException {
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+            try {
+                out.writeInt(tasks.size());
+                for (Operation task : tasks) {
+                    serializationService.writeObject(out, task);
+                }
+
+                if (compress) {
+                    return IOUtil.compress(out.toByteArray());
+                } else {
+                    return out.toByteArray();
+                }
+            } finally {
+                closeResource(out);
+            }
+        }
     }
 }

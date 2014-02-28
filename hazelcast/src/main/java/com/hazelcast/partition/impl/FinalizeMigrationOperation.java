@@ -42,30 +42,37 @@ final class FinalizeMigrationOperation extends AbstractOperation
         this.success = success;
     }
 
+    @Override
     public void run() {
         PartitionServiceImpl partitionService = getService();
+
         MigrationInfo migrationInfo = partitionService.getActiveMigration(getPartitionId());
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         if (migrationInfo == null) {
             return;
         }
 
-        Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+
         PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
-        for (MigrationAwareService service : services) {
-            try {
-                if (success) {
-                    service.commitMigration(event);
-                } else {
-                    service.rollbackMigration(event);
-                }
-            } catch (Throwable e) {
-                getLogger().warning("Error while finalizing migration -> " + event, e);
-            }
+        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+            finishMigration(event, service);
         }
+
         partitionService.removeActiveMigration(getPartitionId());
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
+        }
+    }
+
+    private void finishMigration(PartitionMigrationEvent event, MigrationAwareService service) {
+        try {
+            if (success) {
+                service.commitMigration(event);
+            } else {
+                service.rollbackMigration(event);
+            }
+        } catch (Throwable e) {
+            getLogger().warning("Error while finalizing migration -> " + event, e);
         }
     }
 

@@ -38,6 +38,9 @@ public final class PartitionStateOperation extends AbstractOperation
 
     private PartitionRuntimeState partitionState;
 
+    public PartitionStateOperation() {
+    }
+
     public PartitionStateOperation(Collection<MemberImpl> members,
                                    InternalPartition[] partitions,
                                    Collection<MigrationInfo> migrationInfos,
@@ -48,9 +51,6 @@ public final class PartitionStateOperation extends AbstractOperation
             memberInfos.add(memberInfo);
         }
         partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfos, masterTime, version);
-    }
-
-    public PartitionStateOperation() {
     }
 
     @Override

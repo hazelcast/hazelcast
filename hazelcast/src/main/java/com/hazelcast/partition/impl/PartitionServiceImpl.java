@@ -127,7 +127,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         this.logger = node.getLogger(PartitionService.class);
         this.systemLogService = node.getSystemLogService();
         this.partitions = new InternalPartitionImpl[partitionCount];
-        PartitionListener partitionListener = new LocalPartitionListener(node.getThisAddress());
+        PartitionListener partitionListener = new LocalPartitionListener(this, node.getThisAddress());
         for (int i = 0; i < partitionCount; i++) {
             this.partitions[i] = new InternalPartitionImpl(i, partitionListener);
         }
@@ -1351,11 +1351,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    private final class LocalPartitionListener implements PartitionListener {
+    private static class LocalPartitionListener implements PartitionListener {
         final Address thisAddress;
+        private PartitionServiceImpl partitionService;
 
-        private LocalPartitionListener(Address thisAddress) {
+        private LocalPartitionListener(PartitionServiceImpl partitionService, Address thisAddress) {
             this.thisAddress = thisAddress;
+            this.partitionService = partitionService;
         }
 
         @Override
@@ -1366,27 +1368,27 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 // backup replica owner changed!
                 int partitionId = event.getPartitionId();
                 if (thisAddress.equals(event.getOldAddress())) {
-                    InternalPartitionImpl partition = partitions[partitionId];
+                    InternalPartitionImpl partition = partitionService.partitions[partitionId];
                     if (!partition.isOwnerOrBackup(thisAddress)) {
-                        clearPartitionReplica(partitionId, replicaIndex);
+                        partitionService.clearPartitionReplica(partitionId, replicaIndex);
                     }
                 } else if (thisAddress.equals(newAddress)) {
-                    syncPartitionReplica(partitionId, replicaIndex, true);
+                    partitionService.syncPartitionReplica(partitionId, replicaIndex, true);
                 }
             }
-            if (replicaIndex == 0 && newAddress == null && node.isActive() && node.joined()) {
+            if (replicaIndex == 0 && newAddress == null && partitionService.node.isActive() && partitionService.node.joined()) {
                 logOwnerOfPartitionIsMoved(event);
             }
-            if (node.isMaster()) {
-                stateVersion.incrementAndGet();
+            if (partitionService.node.isMaster()) {
+                partitionService.stateVersion.incrementAndGet();
             }
         }
 
         private void logOwnerOfPartitionIsMoved(PartitionReplicaChangeEvent event) {
             String warning = "Owner of partition is being removed! "
                     + "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
-            logger.warning(warning);
-            systemLogService.logWarningPartition(warning);
+            partitionService.logger.warning(warning);
+            partitionService.systemLogService.logWarningPartition(warning);
         }
     }
 

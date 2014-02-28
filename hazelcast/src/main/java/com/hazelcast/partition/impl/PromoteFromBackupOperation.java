@@ -28,7 +28,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.Collection;
 
 // runs locally...
 final class PromoteFromBackupOperation extends AbstractOperation
@@ -36,22 +35,39 @@ final class PromoteFromBackupOperation extends AbstractOperation
 
     @Override
     public void run() throws Exception {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
-        int partitionId = getPartitionId();
-        PartitionMigrationEvent event = new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, partitionId);
+        logPromotingPartition();
 
-        ILogger logger = getLogger();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Promoting partition " + partitionId);
-        }
-        for (MigrationAwareService service : services) {
+        PartitionMigrationEvent event = createPartitionMigrationEvent();
+
+        sendToAllMigrationAwareServices(event);
+    }
+
+    private void sendToAllMigrationAwareServices(PartitionMigrationEvent event) {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
             try {
                 service.beforeMigration(event);
                 service.commitMigration(event);
             } catch (Exception e) {
-                logger.warning("While promoting partition " + partitionId, e);
+                logMigrationError(e);
             }
+        }
+    }
+
+    private PartitionMigrationEvent createPartitionMigrationEvent() {
+        int partitionId = getPartitionId();
+        return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, partitionId);
+    }
+
+    private void logMigrationError(Exception e) {
+        ILogger logger = getLogger();
+        logger.warning("While promoting partition " + getPartitionId(), e);
+    }
+
+    private void logPromotingPartition() {
+        ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Promoting partition " + getPartitionId());
         }
     }
 

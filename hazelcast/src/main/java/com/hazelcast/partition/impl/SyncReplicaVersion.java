@@ -34,6 +34,9 @@ import java.io.IOException;
 // runs locally
 final class SyncReplicaVersion extends Operation implements PartitionAwareOperation, UrgentSystemOperation {
 
+    public static final int OPERATION_TRY_COUNT = 10;
+    public static final int OPERATION_TRY_PAUSE_MILLIS = 250;
+
     private final int syncReplicaIndex;
     private final Callback<Object> callback;
     private final boolean sync;
@@ -59,17 +62,31 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
             return;
         }
 
+        invokeCheckReplicaVersion(partitionId, replicaIndex, target);
+    }
+
+    private void invokeCheckReplicaVersion(int partitionId, int replicaIndex, Address target) {
+        PartitionServiceImpl partitionService = getService();
         long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
+        CheckReplicaVersion op = createCheckReplicaVersion(partitionId, replicaIndex, currentVersions[replicaIndex]);
+
         NodeEngine nodeEngine = getNodeEngine();
-        CheckReplicaVersion op = new CheckReplicaVersion(currentVersions[replicaIndex], sync);
-        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionService.SERVICE_NAME);
         OperationService operationService = nodeEngine.getOperationService();
         if (sync) {
             operationService.createInvocationBuilder(PartitionService.SERVICE_NAME, op, target)
-                    .setCallback(callback).setTryCount(10).setTryPauseMillis(250).invoke();
+                    .setCallback(callback)
+                    .setTryCount(OPERATION_TRY_COUNT)
+                    .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
+                    .invoke();
         } else {
             operationService.send(op, target);
         }
+    }
+
+    private CheckReplicaVersion createCheckReplicaVersion(int partitionId, int replicaIndex, long currentVersion) {
+        CheckReplicaVersion op = new CheckReplicaVersion(currentVersion, sync);
+        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionService.SERVICE_NAME);
+        return op;
     }
 
     @Override
