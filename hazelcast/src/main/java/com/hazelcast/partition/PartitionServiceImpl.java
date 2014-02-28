@@ -204,7 +204,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             lock.lock();
             try {
                 migrationQueue.clear();
-                migrationQueue.offer(new RepartitioningTask());
+                migrationQueue.add(new RepartitioningTask());
 
                 if (initialized) {
                     // send initial partition table to newly joined node.
@@ -260,7 +260,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             }
 
             if (node.isMaster()) {
-                migrationQueue.offer(new RepartitioningTask());
+                migrationQueue.add(new RepartitioningTask());
             }
 
             // Add a delay before activating migration, to give other nodes time to notice the dead one.
@@ -949,7 +949,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     @Override
     public void dispatchEvent(MigrationEvent migrationEvent, MigrationListener migrationListener) {
-        switch (migrationEvent.getStatus()) {
+        final MigrationStatus status = migrationEvent.getStatus();
+        switch (status) {
             case STARTED:
                 migrationListener.migrationStarted(migrationEvent);
                 break;
@@ -959,6 +960,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             case FAILED:
                 migrationListener.migrationFailed(migrationEvent);
                 break;
+            default:
+                throw new IllegalArgumentException("Not a known MigrationStatus: " + status);
         }
     }
 
@@ -1075,7 +1078,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             migrationCount++;
                             MigrationInfo info = new MigrationInfo(partitionId, currentOwner, newOwner);
                             final Migrator migrator = new Migrator(info, new BackupMigrationTask(partitionId, replicas));
-                            migrationQueue.offer(migrator);
+                            migrationQueue.add(migrator);
                         } else {
                             currentPartition.setPartitionInfo(replicas);
                         }
