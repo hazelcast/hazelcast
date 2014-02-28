@@ -364,6 +364,10 @@
         </profile>
 
         <profile>
+            <id>qa</id>
+        </profile>
+
+        <profile>
             <id>parallel-test</id>
             <build>
                 <plugins>
