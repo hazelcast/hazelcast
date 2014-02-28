@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public class MapContainer {
 
     private final String name;
-    private MapConfig mapConfig;
+    private volatile MapConfig mapConfig;
     private final RecordFactory recordFactory;
     private final MapService mapService;
     private final MapStoreWrapper storeWrapper;
