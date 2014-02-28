@@ -3,6 +3,7 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.spi.AbstractOperation;
 
 public class AssignPartitions extends AbstractOperation {
+
     @Override
     public void run() {
         PartitionServiceImpl service = getService();

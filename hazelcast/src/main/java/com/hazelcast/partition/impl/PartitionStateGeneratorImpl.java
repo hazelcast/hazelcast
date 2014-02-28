@@ -136,7 +136,9 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
     }
 
     private void transferPartitionsBetweenGroups(final Queue<NodeGroup> underLoadedGroups,
-                                                 final Collection<NodeGroup> overLoadedGroups, final int index, final int avgPartitionPerGroup, int plusOneGroupCount) {
+                                                 final Collection<NodeGroup> overLoadedGroups,
+                                                 final int index, final int avgPartitionPerGroup,
+                                                 int plusOneGroupCount) {
         final int maxPartitionPerGroup = avgPartitionPerGroup + 1;
         final int maxTries = underLoadedGroups.size() * overLoadedGroups.size() * 10;
         int tries = 0;
@@ -193,7 +195,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
         }
     }
 
-    private void distributeUnownedPartitions(final Queue<NodeGroup> groups, final Queue<Integer> freePartitions, final int index) {
+    private void distributeUnownedPartitions( Queue<NodeGroup> groups,  Queue<Integer> freePartitions,  int index) {
         final int groupSize = groups.size();
         final int maxTries = freePartitions.size() * groupSize * 10;
         int tries = 0;
@@ -207,8 +209,8 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
         }
     }
 
-    private int tryToDistributeUnownedPartitions(final Queue<NodeGroup> underLoadedGroups, final Queue<Integer> freePartitions,
-                                                 final int avgPartitionPerGroup, final int index, int plusOneGroupCount) {
+    private int tryToDistributeUnownedPartitions( Queue<NodeGroup> underLoadedGroups,  Queue<Integer> freePartitions,
+                                                  int avgPartitionPerGroup,  int index, int plusOneGroupCount) {
         // distribute free partitions among under-loaded groups
         final int maxPartitionPerGroup = avgPartitionPerGroup + 1;
         int maxTries = freePartitions.size() * underLoadedGroups.size();
@@ -438,22 +440,27 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
         final Collection<PartitionTable> nodeTables = nodePartitionTables.values();
         final LinkedList<Integer> partitionQ = new LinkedList<Integer>();
 
+        @Override
         public void addNode(Address address) {
             nodePartitionTables.put(address, new PartitionTable());
         }
 
+        @Override
         public boolean hasNode(Address address) {
             return nodes.contains(address);
         }
 
+        @Override
         public Set<Address> getNodes() {
             return nodes;
         }
 
+        @Override
         public PartitionTable getPartitionTable(Address address) {
             return nodePartitionTables.get(address);
         }
 
+        @Override
         public void resetPartitions() {
             groupPartitionTable.reset();
             partitionQ.clear();
@@ -462,14 +469,17 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             }
         }
 
+        @Override
         public int getPartitionCount(int index) {
             return groupPartitionTable.size(index);
         }
 
+        @Override
         public boolean containsPartition(Integer partitionId) {
             return groupPartitionTable.contains(partitionId);
         }
 
+        @Override
         public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = "Address does not belong to this group: " + address.toString();
@@ -488,6 +498,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             return nodePartitionTables.get(address).add(index, partitionId);
         }
 
+        @Override
         public boolean addPartition(int replicaIndex, Integer partitionId) {
             if (containsPartition(partitionId)) {
                 return false;
@@ -499,19 +510,23 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             return false;
         }
 
+        @Override
         public Iterator<Integer> getPartitionsIterator(final int index) {
             final Iterator<Integer> iter = groupPartitionTable.getPartitions(index).iterator();
             return new Iterator<Integer>() {
                 Integer current = null;
 
+                @Override
                 public boolean hasNext() {
                     return iter.hasNext();
                 }
 
+                @Override
                 public Integer next() {
                     return (current = iter.next());
                 }
 
+                @Override
                 public void remove() {
                     iter.remove();
                     doRemovePartition(index, current);
@@ -519,6 +534,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             };
         }
 
+        @Override
         public boolean removePartition(int index, Integer partitionId) {
             if (groupPartitionTable.remove(index, partitionId)) {
                 doRemovePartition(index, partitionId);
@@ -535,6 +551,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             }
         }
 
+        @Override
         public void postProcessPartitionTable(int index) {
             if (nodes.size() == 1) {
                 PartitionTable table = nodeTables.iterator().next();
@@ -587,6 +604,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
         Address address = null;
         Set<Address> nodes;
 
+        @Override
         public void addNode(Address addr) {
             if (address != null) {
                 logger.warning("Single node group already has an address => " + address);
@@ -596,30 +614,37 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             nodes = Collections.singleton(address);
         }
 
+        @Override
         public boolean hasNode(Address address) {
             return this.address != null && this.address.equals(address);
         }
 
+        @Override
         public Set<Address> getNodes() {
             return nodes;
         }
 
+        @Override
         public PartitionTable getPartitionTable(Address address) {
             return hasNode(address) ? nodeTable : null;
         }
 
+        @Override
         public void resetPartitions() {
             nodeTable.reset();
         }
 
+        @Override
         public int getPartitionCount(int index) {
             return nodeTable.size(index);
         }
 
+        @Override
         public boolean containsPartition(Integer partitionId) {
             return nodeTable.contains(partitionId);
         }
 
+        @Override
         public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = address + " is different from this node's " + this.address;
@@ -637,6 +662,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             return nodeTable.add(index, partitionId);
         }
 
+        @Override
         public boolean addPartition(int replicaIndex, Integer partitionId) {
             if (containsPartition(partitionId)) {
                 return false;
@@ -644,14 +670,17 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             return nodeTable.add(replicaIndex, partitionId);
         }
 
+        @Override
         public Iterator<Integer> getPartitionsIterator(final int index) {
             return nodeTable.getPartitions(index).iterator();
         }
 
+        @Override
         public boolean removePartition(int index, Integer partitionId) {
             return nodeTable.remove(index, partitionId);
         }
 
+        @Override
         public void postProcessPartitionTable(int index) {
         }
 

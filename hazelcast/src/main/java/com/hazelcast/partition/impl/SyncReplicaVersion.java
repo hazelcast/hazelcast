@@ -48,6 +48,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         PartitionServiceImpl partitionService = getService();
         int partitionId = getPartitionId();

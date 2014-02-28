@@ -15,6 +15,6 @@
  */
 
 /**
- * Packages contains different partitioning strategies.
+ * todo
  */
 package com.hazelcast.partition.membergroup;

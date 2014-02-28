@@ -134,7 +134,7 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.partition[\\/]"/>
     <!-- todo -->
     <!-- suppress checks="" files="com.hazelcast.partition.impl.PartitionServiceImpl"/ -->
-    <suppress checks="" files="com.hazelcast.partition.impl.PartitionStateGenerator"/>
+    <suppress checks="" files="com.hazelcast.partition.impl[\\/]"/>
     <suppress checks="" files="com.hazelcast.partition.impl.MigrationRequestOperation"/>
     <suppress checks="MagicNumber" files="com.hazelcast.partition[\\/]"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.partition.MigrationInfo"/>
