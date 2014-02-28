@@ -84,7 +84,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         super.tearDown();
     }
 
-    @Test
+    //@Test
     public void testChangingCluster() {
         runTest(true, stressThreads);
     }

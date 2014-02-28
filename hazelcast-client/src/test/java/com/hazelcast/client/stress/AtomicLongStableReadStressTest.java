@@ -57,7 +57,7 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         }
     }
 
-    @Test
+    //@Test
     public void testChangingCluster() {
         runTest(true, stressThreads);
     }
