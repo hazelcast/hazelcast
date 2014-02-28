@@ -48,7 +48,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     @After
     public void tearDown() {
         cluster.shutDown();
-        //Hazelcast.shutdownAll();
     }
 
     private final boolean runTestReportLoop() {

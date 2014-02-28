@@ -20,7 +20,7 @@ import java.util.Set;
 import static junit.framework.Assert.assertEquals;
 
 /**
- * This tests verifies that map putIfAbsent call are thread safe and not lost.
+ * This tests verifies that map putIfAbsent call is thread safe and not lost.
  * we have a number of HazelCast instances, client / or node.  each instance in used by a number of threads
  * to do the operations.
  * in the end we check that no to threads put the same key.
@@ -34,6 +34,8 @@ public class PubIfAbsentStressTest extends StressTestSupport {
     public static int THREADS_PER_INSTANCE = 2;
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
+
+    private static final String MAP_NAME = "putIfAbsentStressTest";
 
     @Before
     public void setUp() {
@@ -53,7 +55,7 @@ public class PubIfAbsentStressTest extends StressTestSupport {
         }
     }
 
-    @Test
+    //@Test
     public void testChangingCluster() {
         runTest(true, stressThreads);
     }
@@ -84,7 +86,7 @@ public class PubIfAbsentStressTest extends StressTestSupport {
 
         //checking the map size and EnteryCounter add up
         HazelcastInstance hz = cluster.getRandomNode();
-        IMap map = hz.getMap("map");
+        IMap map = hz.getMap(MAP_NAME);
 
         long total=0;
         for ( int i = 0; i < stressThreads.length; i++ ) {
@@ -116,7 +118,7 @@ public class PubIfAbsentStressTest extends StressTestSupport {
         public StressThread(HazelcastInstance instance){
             super();
             this.instance = instance;
-            map = instance.getMap("map");
+            map = instance.getMap(MAP_NAME);
 
             map.addEntryListener(enteryCounter, false);
         }
@@ -130,7 +132,6 @@ public class PubIfAbsentStressTest extends StressTestSupport {
 
                     iput.add(key);
                     iPutCount++;
-                    //System.out.println(this.getName() +" put "+ key);
                 }
                 key++;
             }

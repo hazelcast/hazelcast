@@ -26,12 +26,13 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.Assert.assertEquals;
 
 /**
- * This tests verifies that map updates are not lost. So we have a client which is going to do updates on a map
- * and in the end we verify that the actual updates in the map, are the same as the expected updates.
+ * this test using map key locks, which allows to process transfers involving diffrent accounts concrruntly.
+ * by process transfers using a common acount sequentuali.  at the end we chek if we have lost of gained value from
+ * the system.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class TransactionLockingAccountStressTest extends StressTestSupport {
+public class AccountTransactionStressTest extends StressTestSupport {
 
     public static final String ACCOUNTS_MAP = "ACOUNTS";
     public static final String PROCESED_TRANS_MAP ="PROCESSED";
@@ -44,7 +45,7 @@ public class TransactionLockingAccountStressTest extends StressTestSupport {
     private Transactor[] stressThreads = new Transactor[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
 
     protected static final int MAX_ACCOUNTS = 200;
-    protected static final long INITIAL_VALUE = 100;
+    protected static final long INITIAL_VALUE = 0;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
 
@@ -83,6 +84,11 @@ public class TransactionLockingAccountStressTest extends StressTestSupport {
 
 
     @Test
+    public void testChangingCluster() {
+        runTest(true, stressThreads);
+    }
+
+    @Test
     public void testFixedCluster() {
         runTest(false, stressThreads);
     }
@@ -117,7 +123,7 @@ public class TransactionLockingAccountStressTest extends StressTestSupport {
 
         System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
 
-        assertEquals("", TOTAL_VALUE, total);
+        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
 
 
@@ -145,13 +151,12 @@ public class TransactionLockingAccountStressTest extends StressTestSupport {
 
                 long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
 
-                //lockTransfer(from, to, amount);
-                lockContextTransfer(from, to, amount);
+                transfer(from, to, amount);
             }
         }
 
 
-        private void lockTransfer(int fromAccountNumber, int toAccountNumber, long amount){
+        private void transfer(int fromAccountNumber, int toAccountNumber, long amount){
 
             IMap<Integer, Account> accounts = instance.getMap(ACCOUNTS_MAP);
             IMap<Long, TransferRecord> transactions = instance.getMap(PROCESED_TRANS_MAP);
@@ -186,70 +191,6 @@ public class TransactionLockingAccountStressTest extends StressTestSupport {
                     failed.put(trace.getId(), trace);
                 }
             } catch (InterruptedException e) {}
-        }
-
-
-
-        private void lockContextTransfer(int fromAccountNumber, int toAccountNumber, long amount){
-
-            IMap<Integer, Account> accounts = instance.getMap(ACCOUNTS_MAP);
-            IMap<Long, TransferRecord> transactions = instance.getMap(PROCESED_TRANS_MAP);
-
-            try {
-                String errorReason = "Time Out";
-
-                if ( accounts.tryLock(fromAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
-
-                    if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
-                        errorReason=null;
-
-
-                        TransactionContext context = instance.newTransactionContext();
-                        context.beginTransaction();
-
-                        try{
-                            TransactionalMap<Integer, Account> accountsTnx = context.getMap(ACCOUNTS_MAP);
-
-                            Account a = accountsTnx.get(fromAccountNumber);
-                            Account b = accountsTnx.get(toAccountNumber);
-
-                            TransferRecord  record = a.transferTo(b, amount);
-
-                            TransactionalMap<Long, TransferRecord> transactionsTnx = context.getMap(PROCESED_TRANS_MAP);
-                            transactionsTnx.put(record.getId(), record);
-
-                            accountsTnx.put(a.getAcountNumber(), a);
-                            accountsTnx.put(b.getAcountNumber(), b);
-
-                            throwExceptionAtRandom();
-
-                            context.commitTransaction();
-
-                        }catch(Exception e){
-                            context.rollbackTransaction();
-                            errorReason = "Role Back "+e.getMessage();
-                        }
-
-                        accounts.unlock(toAccountNumber);
-                    }
-
-                    accounts.unlock(fromAccountNumber);
-                }
-
-                if(errorReason != null){
-                    IMap failed = instance.getMap(FAILED_TRANS_MAP);
-                    FailedTransferRecord trace = new FailedTransferRecord(fromAccountNumber, toAccountNumber, amount);
-                    trace.setReason(errorReason);
-                    failed.put(trace.getId(), trace);
-                }
-
-            } catch (InterruptedException e) {}
-        }
-
-        private void throwExceptionAtRandom() throws Exception{
-            if(random.nextInt(100)==0){
-                throw new Exception("Random Test Exception");
-            }
         }
     }
 

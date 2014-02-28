@@ -79,7 +79,7 @@ public class SetStressTest extends StressTestSupport {
             assertEquals(s.itemCounter + " itemCounter instance has wrong total ", itemCount, expeted.size());
         }
 
-        assertEquals(expeted+" total if add count != set size ", total, (long) expeted.size());
+        assertEquals(expeted+" total count != set size ", total, (long) expeted.size());
     }
 
 

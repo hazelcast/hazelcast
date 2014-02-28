@@ -60,7 +60,7 @@ public class MapUpdateStressTest extends StressTestSupport {
         }
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true, stressThreads);
     }

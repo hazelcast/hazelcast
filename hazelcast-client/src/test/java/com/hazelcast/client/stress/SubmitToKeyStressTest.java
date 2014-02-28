@@ -30,6 +30,9 @@ public class SubmitToKeyStressTest extends StressTestSupport {
     public static int TOTAL_HZ_INSTANCES = 5;
     public static int THREADS_PER_INSTANCE = 1;
 
+
+    private static final String MAP_NAME = "submitToKeys";
+
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
 
     @Before
@@ -38,7 +41,7 @@ public class SubmitToKeyStressTest extends StressTestSupport {
 
         //make the initial key val that all thread will run task on
         HazelcastInstance hz = super.cluster.getRandomNode();
-        hz.getMap("map").put(0, 0);
+        hz.getMap(MAP_NAME).put(0, 0);
 
         int index=0;
         for (int i = 0; i < TOTAL_HZ_INSTANCES; i++) {
@@ -77,7 +80,7 @@ public class SubmitToKeyStressTest extends StressTestSupport {
             total += s.totalOpps;
         }
 
-        IMap map = cluster.getRandomNode().getMap("map");
+        IMap map = cluster.getRandomNode().getMap(MAP_NAME);
 
         assertEquals(total, map.get(0));
     }
@@ -94,7 +97,7 @@ public class SubmitToKeyStressTest extends StressTestSupport {
             super();
 
             instance = node;
-            map = instance.getMap("map");
+            map = instance.getMap(MAP_NAME);
 
             task = new Incromentor();
         }

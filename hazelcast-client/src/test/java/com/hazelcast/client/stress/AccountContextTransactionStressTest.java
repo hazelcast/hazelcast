@@ -1,13 +1,11 @@
 package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.Account;
+import com.hazelcast.client.stress.helpers.FailedTransferRecord;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.client.stress.helpers.TransferRecord;
-import com.hazelcast.collection.CollectionAddAllBackupOperation;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -20,7 +18,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -28,12 +25,14 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.Assert.assertEquals;
 
 /**
- * This tests verifies that map updates are not lost. So we have a client which is going to do updates on a map
- * and in the end we verify that the actual updates in the map, are the same as the expected updates.
+ * This test uses map key locks to lock the 2 accounts needed for a transfer transaction, and also uses a
+ * TransactionContext to do roleback when a random test exception is thrown. we assert there there are no
+ * concurrent transfer using the same account,  by checking the total value of the accounts is the same initial value
+ * after we have shuffeled the balances between the acounts,
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class TransactionContextAccountStressTest extends StressTestSupport {
+public class AccountContextTransactionStressTest extends StressTestSupport {
 
     public static final String ACCOUNTS_MAP = "ACOUNTS";
     public static final String PROCESED_TRANS_MAP ="PROCESSED";
@@ -45,9 +44,10 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
 
     private Transactor[] stressThreads = new Transactor[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
 
-    protected static final int MAX_ACCOUNTS = 2;
-    protected static final long INITIAL_VALUE = 100;
+    protected static final int MAX_ACCOUNTS = 200;
+    protected static final long INITIAL_VALUE = 0;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
+    protected static final int MAX_TRANSFER_VALUE = 100;
 
 
     @Before
@@ -62,7 +62,6 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
             accounts.put(a.getAcountNumber(), a);
         }
 
-
         int index=0;
         for ( int i = 0; i < TOTAL_HZ_INSTANCES; i++ ) {
 
@@ -75,7 +74,6 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
                 stressThreads[index++] = t;
             }
         }
-
     }
 
 
@@ -101,16 +99,12 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
 
         IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
         IMap<Long, TransferRecord> processed = hz.getMap(PROCESED_TRANS_MAP);
-        IMap failed = hz.getMap(FAILED_TRANS_MAP);
-
-        System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
+        IMap<Long, FailedTransferRecord> failed = hz.getMap(FAILED_TRANS_MAP);
 
         long total=0;
         for(Account a : accounts.values()){
-            System.out.println("==>> bal "+a.getBalance());
             total += a.getBalance();
         }
-
 
         List<TransferRecord> transactions = new ArrayList( processed.values() );
         Collections.sort(transactions, new TransferRecord.Comparator());
@@ -119,7 +113,16 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
             System.out.println(t);
         }
 
-        assertEquals("", TOTAL_VALUE, total);
+        List<FailedTransferRecord> failedList = new ArrayList( failed.values() );
+        Collections.sort(failedList, new FailedTransferRecord.Comparator());
+
+        for ( FailedTransferRecord f : failedList ) {
+            System.out.println(f);
+        }
+
+        System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
+
+        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
 
 
@@ -145,94 +148,67 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
                     to = random.nextInt(MAX_ACCOUNTS);
                 }
 
-                long amount = random.nextInt(100)+1;
+                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
 
-                //contextTransfer(from, to, amount);
-                lockTransfer(from, to, amount);
+                transferInContext(from, to, amount);
             }
         }
 
 
-        private void lockTransfer(int fromAccountNumber, int toAccountNumber, long amount){
+        private void transferInContext(int fromAccountNumber, int toAccountNumber, long amount){
 
             IMap<Integer, Account> accounts = instance.getMap(ACCOUNTS_MAP);
             IMap<Long, TransferRecord> transactions = instance.getMap(PROCESED_TRANS_MAP);
 
-            //IT DONT WORK
-            //this lock only works for  a - b  and b - a,  but a - c, or c - a
-            String lockPair = Math.min(fromAccountNumber, toAccountNumber) +"-"+ Math.max(fromAccountNumber, toAccountNumber);
-
-            ILock pair = instance.getLock(lockPair);
             try {
+                String errorReason = "Time Out";
 
-                if ( pair.tryLock(50, TimeUnit.MILLISECONDS) ) {
+                if ( accounts.tryLock(fromAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
 
-                    Account fromAccount = accounts.get(fromAccountNumber);
-                    Account toAccount = accounts.get(toAccountNumber);
+                    if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                        errorReason=null;
 
-                    TransferRecord trace = fromAccount.transferTo(toAccount, amount);
-                    transactions.put(trace.getId(), trace);
 
-                    accounts.put(fromAccount.getAcountNumber(), fromAccount);
-                    accounts.put(toAccount.getAcountNumber(), toAccount);
+                        TransactionContext context = instance.newTransactionContext();
+                        context.beginTransaction();
 
-                    pair.unlock();
+                        try{
+                            TransactionalMap<Integer, Account> accountsTnx = context.getMap(ACCOUNTS_MAP);
 
-                }else{
-                    //IMap failed = instance.getMap(FAILED_TRANS_MAP);
-                    //TransferRecord trace = new TransferRecord(fromAccount, toAccount, amount);
-                    //trace.setReason("Time Out");
-                    //failed.put(trace.getId(), trace);
+                            Account a = accountsTnx.get(fromAccountNumber);
+                            Account b = accountsTnx.get(toAccountNumber);
+
+                            TransferRecord  record = a.transferTo(b, amount);
+
+                            TransactionalMap<Long, TransferRecord> transactionsTnx = context.getMap(PROCESED_TRANS_MAP);
+                            transactionsTnx.put(record.getId(), record);
+
+                            accountsTnx.put(a.getAcountNumber(), a);
+                            accountsTnx.put(b.getAcountNumber(), b);
+
+                            throwExceptionAtRandom();
+
+                            context.commitTransaction();
+
+                        }catch(Exception e){
+                            context.rollbackTransaction();
+                            errorReason = "Role Back "+e.getMessage();
+                        }
+
+                        accounts.unlock(toAccountNumber);
+                    }
+
+                    accounts.unlock(fromAccountNumber);
                 }
 
-            } catch (InterruptedException e) {
+                if(errorReason != null){
+                    IMap failed = instance.getMap(FAILED_TRANS_MAP);
+                    FailedTransferRecord trace = new FailedTransferRecord(fromAccountNumber, toAccountNumber, amount);
+                    trace.setReason(errorReason);
+                    failed.put(trace.getId(), trace);
+                }
 
-            }
-        }
-
-
-        private void contextTransfer(int fromAccountNumber, int toAccountNumber, long amount){
-
-            TransactionContext context = instance.newTransactionContext();
-            context.beginTransaction();
-
-            try{
-                TransactionalMap<Integer, Account> accounts = context.getMap(ACCOUNTS_MAP);
-
-                Account a = accounts.get(fromAccountNumber);
-                Account b = accounts.get(toAccountNumber);
-
-                TransferRecord  record = a.transferTo(b, amount);
-
-                TransactionalMap<Long, TransferRecord> transactions = context.getMap(PROCESED_TRANS_MAP);
-                transactions.put(record.getId(), record);
-
-                accounts.put(a.getAcountNumber(), a);
-                accounts.put(b.getAcountNumber(), b);
-
-                //throwExceptionAtRandom();
-
-                context.commitTransaction();
-
-            }catch(Exception e){
-                context.rollbackTransaction();
-
-                IMap<Long, TransferRecord> failed = instance.getMap(FAILED_TRANS_MAP);
-                TransferRecord rt = createFailedTransferRecored(fromAccountNumber, toAccountNumber, amount);
-                failed.put(rt.getId(), rt);
-            }
-        }
-
-        private TransferRecord createFailedTransferRecored(int from, int to, long amount){
-
-            IMap<Integer, Account> accounts = instance.getMap(ACCOUNTS_MAP);
-
-            Account a = accounts.get(from);
-            Account b = accounts.get(to);
-
-            TransferRecord t = new TransferRecord(a, b, amount);
-            t.setReason("Role Back");
-            return t;
+            } catch (InterruptedException e) {}
         }
 
         private void throwExceptionAtRandom() throws Exception{
@@ -240,6 +216,6 @@ public class TransactionContextAccountStressTest extends StressTestSupport {
                 throw new Exception("Random Test Exception");
             }
         }
-
     }
+
 }

@@ -1,11 +1,13 @@
 package com.hazelcast.test.modularhelpers;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
@@ -24,7 +26,8 @@ public class SimpleClusterUtil {
 
     public SimpleClusterUtil(int clusterSZ){
         initialClusterSize = clusterSZ;
-        cluster = Collections.synchronizedList( new ArrayList<HazelcastInstance>(initialClusterSize) );
+        //cluster = Collections.synchronizedList( new ArrayList<HazelcastInstance>(initialClusterSize) );
+        cluster = new CopyOnWriteArrayList<HazelcastInstance>();
     }
 
     public void initCluster(){
@@ -69,19 +72,25 @@ public class SimpleClusterUtil {
     public void shutDownRandomNode(){
         HazelcastInstance node = getRandomNode();
         cluster.remove(node);
-
-        node.getLifecycleService().shutdown();
+        node.shutdown();
+        node=null;//double check
     }
 
     public void shutDown() {
 
+        Hazelcast.shutdownAll();
+
+        /*
         for (HazelcastInstance hz : cluster) {
             try {
                 hz.shutdown();
+                hz = null;
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
+        }*/
+
+        cluster=null;
     }
 
     public void addNode(){
