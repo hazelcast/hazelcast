@@ -55,7 +55,7 @@ public class UpdateMapConfigOperation extends Operation {
         newConfig.setBackupCount(mapConfig.getTotalBackupCount());
         newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
-        service.getMapContainer(mapName).setMapConfig(newConfig);
+        service.getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());
     }
 
     @Override
