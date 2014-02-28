@@ -31,11 +31,12 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Level;
 
-public final class AuthenticationRequest extends CallableClientRequest implements Portable {
+public final class AuthenticationRequest extends CallableClientRequest {
 
     private Credentials credentials;
     private ClientPrincipal principal;
@@ -194,5 +195,10 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         principal = reader.readPortable("principal");
         reAuth = reader.readBoolean("reAuth");
         firstConnection = reader.readBoolean("firstConnection");
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

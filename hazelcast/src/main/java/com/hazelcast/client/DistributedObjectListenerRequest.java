@@ -18,11 +18,12 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 
-public class DistributedObjectListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
+import java.security.Permission;
+
+public class DistributedObjectListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     public DistributedObjectListenerRequest() {
     }
@@ -67,5 +68,10 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
                 endpoint.sendEvent(portableEvent, getCallId());
             }
         }
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }
