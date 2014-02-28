@@ -56,7 +56,11 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         }
         MultiMapWrapper wrapper = getOrCreateCollectionWrapper();
 
-        response = new MultiMapResponse(wrapper.getCollection()).setNextRecordId(container.nextId()).setTxVersion(wrapper.incrementAndGetVersion());
+        final boolean isLocal = getResponseHandler().isLocal();
+        final MultiMapResponse multiMapResponse = new MultiMapResponse(wrapper.getCollection(isLocal));
+        multiMapResponse.setNextRecordId(container.nextId());
+        multiMapResponse.setTxVersion(wrapper.incrementAndGetVersion());
+        response = multiMapResponse;
     }
 
     public WaitNotifyKey getWaitKey() {
