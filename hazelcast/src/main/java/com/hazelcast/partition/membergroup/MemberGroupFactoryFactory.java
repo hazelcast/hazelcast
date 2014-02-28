@@ -2,9 +2,10 @@ package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.PartitionGroupConfig;
 
-public class MemberGroupFactoryFactory {
+public final class MemberGroupFactoryFactory {
 
-    private MemberGroupFactoryFactory(){}
+    private MemberGroupFactoryFactory() {
+    }
 
     public static MemberGroupFactory newMemberGroupFactory(PartitionGroupConfig partitionGroupConfig) {
         PartitionGroupConfig.MemberGroupType memberGroupType;
@@ -26,5 +27,4 @@ public class MemberGroupFactoryFactory {
                 throw new RuntimeException("Unknown MemberGroupType:" + memberGroupType);
         }
     }
-
 }
