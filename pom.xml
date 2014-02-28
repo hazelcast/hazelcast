@@ -154,6 +154,11 @@
     </build>
 
     <profiles>
+
+        <profile>
+            <id>qa</id>
+        </profile>
+
         <profile>
             <id>release</id>
             <build>
