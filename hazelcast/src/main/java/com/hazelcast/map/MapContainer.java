@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public class MapContainer {
 
     private final String name;
-    private final MapConfig mapConfig;
+    private volatile MapConfig mapConfig;
     private final RecordFactory recordFactory;
     private final MapService mapService;
     private final MapStoreWrapper storeWrapper;
@@ -275,6 +275,10 @@ public class MapContainer {
 
     public MapConfig getMapConfig() {
         return mapConfig;
+    }
+
+    public void setMapConfig(MapConfig mapConfig) {
+        this.mapConfig = mapConfig;
     }
 
     public MapStoreWrapper getStore() {
