@@ -705,4 +705,27 @@ public class TestUtil {
             return sb.toString();
         }
     }
+
+    protected static String generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
+        final Member localMember = instance.getCluster().getLocalMember();
+        final PartitionService partitionService = instance.getPartitionService();
+        int k = (int) (Math.random() * 1000);
+        while (!localMember.equals(partitionService.getPartition(String.valueOf(k)).getOwner())) {
+            k++;
+            Thread.sleep(10);
+        }
+        return String.valueOf(k);
+    }
+
+    protected static String generateKeyNotOwnedBy(HazelcastInstance instance) throws InterruptedException {
+        final Member localMember = instance.getCluster().getLocalMember();
+        final PartitionService partitionService = instance.getPartitionService();
+        int k = (int) (Math.random() * 1000);
+        while (localMember.equals(partitionService.getPartition(String.valueOf(k)).getOwner())) {
+            k++;
+            Thread.sleep(10);
+        }
+        return String.valueOf(k);
+    }
+
 }

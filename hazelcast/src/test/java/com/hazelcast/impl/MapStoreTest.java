@@ -85,6 +85,30 @@ public class MapStoreTest extends TestUtil {
             assertEquals("value" + i, q2.take());
         }
     }
+    @Test
+    public void testDirtyAfterMigration() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1,0,0);
+        Config config = newConfig(testMapStore, 10);
+        config.setProperty("hazelcast.map.partition.count","2");
+        config.setGroupConfig(new GroupConfig("testDirtyAfterMigration"));
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+        IMap map1 = h1.getMap("default");
+        IMap map2 = h2.getMap("default");
+        final String key1 = generateKeyOwnedBy(h1);
+        map1.put(key1, "1");
+        Thread.sleep(1500);
+        map1.put(key1, "last on h1");
+        migrateKey(key1,h1,h2,0);
+        CMap cmap1 = getCMap(h1, "default");
+        CMap cmap2 = getCMap(h2, "default");
+        final Record record = cmap1.getRecord(toData(key1));
+        assertTrue(record.isDirty());
+        final Record record2 = cmap2.getRecord(toData(key1));
+        assertTrue(record2.isDirty());
+        testMapStore.assertAwait(30);
+
+    }
 
     @Test
     public void testGetAllKeys() throws Exception {
@@ -118,6 +142,8 @@ public class MapStoreTest extends TestUtil {
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
+        assertEquals(0, map1.getLocalMapStats().getDirtyEntryCount());
+        assertEquals(0, map2.getLocalMapStats().getDirtyEntryCount());
     }
 
     @Test

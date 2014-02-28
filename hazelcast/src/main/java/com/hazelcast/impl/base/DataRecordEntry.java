@@ -42,6 +42,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     private long version = 0;
     private int hits = 0;
     private boolean valid = true;
+    private boolean dirty = false;
     private String name = null;
     private Data keyData = null;
     private Data valueData = null;
@@ -77,6 +78,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
         version = record.getVersion();
         hits = record.getHits();
         valid = record.isValid();
+        dirty = record.isDirty();
         name = record.getName();
         keyData = record.getKeyData();
         valueData = value;
@@ -98,6 +100,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     public void writeData(DataOutput out) throws IOException {
         long now = Clock.currentTimeMillis();
         out.writeBoolean(valid);
+        out.writeBoolean(dirty);
         out.writeLong(cost);
         out.writeLong(remainingIdle);
         out.writeLong(expirationTime - now);
@@ -139,6 +142,7 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
     public void readData(DataInput in) throws IOException {
         long now = Clock.currentTimeMillis();
         valid = in.readBoolean();
+        dirty = in.readBoolean();
         cost = in.readLong();
         remainingIdle = in.readLong();
         expirationTime = in.readLong() + now;
@@ -231,6 +235,10 @@ public class DataRecordEntry implements DataSerializable, MapEntry {
 
     public boolean isValid() {
         return valid;
+    }
+
+    public boolean isDirty() {
+        return dirty;
     }
 
     public boolean hasValue() {
