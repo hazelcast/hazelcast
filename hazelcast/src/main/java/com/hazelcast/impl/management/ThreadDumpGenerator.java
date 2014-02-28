@@ -25,12 +25,11 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Constructor;
 import java.util.logging.Level;
 
-public abstract class ThreadDumpGenerator {
+public class ThreadDumpGenerator {
 
     protected static final ILogger logger = Logger.getLogger(ThreadDumpGenerator.class.getName());
 
-    private static final String THREAD_DUMP_15_CNAME = "ThreadDumpGeneratorImpl_15";
-    private static final String THREAD_DUMP_16_CNAME = "ThreadDumpGeneratorImpl_16";
+    private static final String THREAD_DUMP_JAVA6_CLASS_NAME = "ThreadDumpGeneratorJava6";
     private static final Class[] TYPE = new Class[]{ThreadMXBean.class};
 
     public static ThreadDumpGenerator newInstance() throws Exception {
@@ -41,19 +40,17 @@ public abstract class ThreadDumpGenerator {
         String p = System.getProperty("java.specification.version");
         // 1.4, 1.5, 1.6 ...
         int v = Integer.parseInt(p.split("\\.")[1]);
-        String cname = null;
         if (v >= 6) {
-            cname = THREAD_DUMP_16_CNAME;
+            String pkg = ThreadDumpGenerator.class.getPackage().getName();
+            String className = pkg + "." + THREAD_DUMP_JAVA6_CLASS_NAME;
+            Class clazz = ThreadDumpGenerator.class.getClassLoader().loadClass(className);
+            Constructor<ThreadDumpGenerator> cons = clazz.getConstructor(TYPE);
+            return cons.newInstance(bean);
         } else if (v == 5) {
-            cname = THREAD_DUMP_15_CNAME;
+            return new ThreadDumpGenerator(bean);
         } else {
             throw new UnsupportedOperationException("ThreadDumpGenerator can not run on JVM version: " + p);
         }
-        String pkg = ThreadDumpGenerator.class.getPackage().getName();
-        String className = pkg + "." + cname;
-        Class clazz = ThreadDumpGenerator.class.getClassLoader().loadClass(className);
-        Constructor<ThreadDumpGenerator> cons = clazz.getConstructor(TYPE);
-        return cons.newInstance(bean);
     }
 
     protected final ThreadMXBean threadMxBean;
@@ -108,11 +105,9 @@ public abstract class ThreadDumpGenerator {
         if (infos == null || infos.length == 0) return;
         for (int i = 0; i < infos.length; i++) {
             ThreadInfo info = infos[i];
-            appendThreadInfo(info, s);
+            s.append(info);
         }
     }
-
-    protected abstract void appendThreadInfo(ThreadInfo info, StringBuilder sb);
 
     protected ThreadInfo[] getThreads(long[] tids) {
         if (tids == null || tids.length == 0) return null;
