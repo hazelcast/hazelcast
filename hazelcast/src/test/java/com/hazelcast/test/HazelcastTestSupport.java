@@ -111,7 +111,7 @@ public abstract class HazelcastTestSupport {
         TestUtil.warmUpPartitions(instances);
     }
 
-    protected static String generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
+    public static String generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
         int k = (int) (Math.random() * 1000);
