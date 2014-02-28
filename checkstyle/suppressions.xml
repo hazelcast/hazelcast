@@ -42,12 +42,19 @@
     <suppress checks="" files="[\\/]partition[\\/]"/>
     <suppress checks="" files="[\\/]query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
-    <suppress checks="" files="[\\/]replicatedmap[\\/]"/>
-     <suppress checks="" files="[\\/]spi[\\/]"/>
+    <suppress checks="" files="[\\/]spi[\\/]"/>
     <suppress checks="" files="[\\/]storage[\\/]"/>
     <suppress checks="" files="[\\/]transaction[\\/]"/>
     <suppress checks="" files="[\\/]util[\\/]"/>
     <suppress checks="" files="[\\/]wan[\\/]"/>
+
+    <suppress checks="" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
+    <suppress checks="" files="com.hazelcast.jca[\\/]"/>
+    <suppress checks="" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="" files="com.hazelcast.web[\\/]"/>
+    <suppress checks="" files="com.hazelcast.aws[\\/]"/>
+    <suppress checks="" files="com.hazelcast.cluster[\\/]"/>
 
     <!--Code Smells -->
 

@@ -18,6 +18,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>hazelcast</name>
+    <artifactId>hazelcast</artifactId>
+    <packaging>jar</packaging>
+
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
@@ -25,9 +29,10 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>hazelcast</name>
-    <artifactId>hazelcast</artifactId>
-    <packaging>jar</packaging>
+    <properties>
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
 
     <build>
         <plugins>
@@ -137,51 +142,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${checkstyle.maven.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>checkstyle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <configLocation>${basedir}/checkstyle/checkstyle.xml</configLocation>
-                    <suppressionsLocation>${basedir}/checkstyle/suppressions.xml</suppressionsLocation>
-                    <headerLocation>${basedir}/checkstyle/ClassHeader.txt</headerLocation>
-                    <enableRSS>false</enableRSS>
-                    <linkXRef>true</linkXRef>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                    <failOnViolation>true</failOnViolation>
-                    <includeTestSourceDirectory>false</includeTestSourceDirectory>
-                    <enableRulesSummary>true</enableRulesSummary>
-                    <propertyExpansion>basedir=${basedir}</propertyExpansion>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs.maven.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <failOnError>true</failOnError>
-                    <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
-                </configuration>
             </plugin>
 
             <plugin>

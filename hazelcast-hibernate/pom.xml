@@ -18,16 +18,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>hazelcast-hibernate</name>
+    <artifactId>hazelcast-hibernate</artifactId>
+    <packaging>pom</packaging>
+
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
         <version>3.2-RC2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <name>hazelcast-hibernate</name>
-    <artifactId>hazelcast-hibernate</artifactId>
-    <packaging>pom</packaging>
 
     <modules>
         <module>hazelcast-hibernate3</module>
@@ -37,6 +37,8 @@
     <properties>
         <hsqldb.version>2.2.9</hsqldb.version>
         <javaassist.version>3.12.1.GA</javaassist.version>
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
     <build>

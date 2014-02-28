@@ -20,6 +20,11 @@
                       http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>hazelcast-wm</name>
+    <artifactId>hazelcast-wm</artifactId>
+    <packaging>jar</packaging>
+
+
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
@@ -27,14 +32,12 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>hazelcast-wm</name>
-    <artifactId>hazelcast-wm</artifactId>
-    <packaging>jar</packaging>
-
     <properties>
         <jsp.api.version>2.2.1</jsp.api.version>
         <servlet.api.version>3.0.1</servlet.api.version>
         <jetty.maven.plugin.version>8.1.2.v20120308</jetty.maven.plugin.version>
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
     <build>
@@ -152,24 +155,6 @@
                     <stopKey>stop</stopKey>
                 </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs.maven.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <failOnError>true</failOnError>
-                    <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
@@ -218,10 +203,10 @@
             <classifier>tests</classifier>
         </dependency>
         <dependency>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-          <version>4.3.1</version>
-          <scope>test</scope>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

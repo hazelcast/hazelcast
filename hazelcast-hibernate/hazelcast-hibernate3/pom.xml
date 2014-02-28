@@ -18,6 +18,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>hazelcast-hibernate3</name>
+    <artifactId>hazelcast-hibernate3</artifactId>
+    <packaging>jar</packaging>
+
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-hibernate</artifactId>
@@ -25,36 +29,11 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>hazelcast-hibernate3</name>
-    <artifactId>hazelcast-hibernate3</artifactId>
-    <packaging>jar</packaging>
-
-    <properties>
+     <properties>
         <hibernate.core.version>3.5.0-Final</hibernate.core.version>
-        <!--<hibernate.core.version>3.6.10.Final</hibernate.core.version>-->
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs.maven.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <failOnError>true</failOnError>
-                    <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
     <dependencies>
         <dependency>
