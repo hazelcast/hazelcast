@@ -57,7 +57,7 @@ public class ReplicaSyncResponse extends Operation
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         SerializationService serializationService = nodeEngine.getSerializationService();
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();

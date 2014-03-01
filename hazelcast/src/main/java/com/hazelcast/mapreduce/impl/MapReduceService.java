@@ -31,7 +31,7 @@ import com.hazelcast.mapreduce.impl.operation.ProcessingOperation;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -78,7 +78,7 @@ public class MapReduceService
     private final ConcurrentMap<String, NodeJobTracker> jobTrackers;
     private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors;
 
-    private final PartitionService partitionService;
+    private final InternalPartitionService partitionService;
     private final ClusterService clusterService;
 
     private final NodeEngineImpl nodeEngine;

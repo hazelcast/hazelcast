@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
@@ -80,7 +80,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
             return;
         }
         NodeEngine nodeEngine = getNodeEngine();
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
 
         if (backupOp != null) {

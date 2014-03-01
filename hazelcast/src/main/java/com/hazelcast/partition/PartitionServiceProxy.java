@@ -29,13 +29,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PartitionServiceProxy implements com.hazelcast.core.PartitionService {
 
-    private final PartitionService partitionService;
+    private final InternalPartitionService partitionService;
     private final ConcurrentMap<Integer, PartitionProxy> mapPartitions
             = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final Set<Partition> partitions = new TreeSet<Partition>();
     private final Random random = new Random();
 
-    public PartitionServiceProxy(PartitionService partitionService) {
+    public PartitionServiceProxy(InternalPartitionService partitionService) {
         this.partitionService = partitionService;
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
             PartitionProxy partitionProxy = new PartitionProxy(i);

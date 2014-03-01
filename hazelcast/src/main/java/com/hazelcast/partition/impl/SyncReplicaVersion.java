@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.NodeEngine;
@@ -53,7 +53,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
 
     @Override
     public void run() throws Exception {
-        PartitionServiceImpl partitionService = getService();
+        InternalPartitionServiceImpl partitionService = getService();
         int partitionId = getPartitionId();
         int replicaIndex = syncReplicaIndex;
         InternalPartition partition = partitionService.getPartition(partitionId);
@@ -66,14 +66,14 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
     }
 
     private void invokeCheckReplicaVersion(int partitionId, int replicaIndex, Address target) {
-        PartitionServiceImpl partitionService = getService();
+        InternalPartitionServiceImpl partitionService = getService();
         long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
         CheckReplicaVersion op = createCheckReplicaVersion(partitionId, replicaIndex, currentVersions[replicaIndex]);
 
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         if (sync) {
-            operationService.createInvocationBuilder(PartitionService.SERVICE_NAME, op, target)
+            operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, op, target)
                     .setCallback(callback)
                     .setTryCount(OPERATION_TRY_COUNT)
                     .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
@@ -85,7 +85,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
 
     private CheckReplicaVersion createCheckReplicaVersion(int partitionId, int replicaIndex, long currentVersion) {
         CheckReplicaVersion op = new CheckReplicaVersion(currentVersion, sync);
-        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionService.SERVICE_NAME);
+        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(InternalPartitionService.SERVICE_NAME);
         return op;
     }
 
@@ -110,7 +110,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
 
     @Override
     public String getServiceName() {
-        return PartitionService.SERVICE_NAME;
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

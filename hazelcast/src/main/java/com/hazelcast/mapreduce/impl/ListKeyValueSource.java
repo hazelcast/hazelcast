@@ -26,7 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -70,7 +70,7 @@ public class ListKeyValueSource<V>
         ss = nei.getSerializationService();
 
         Address thisAddress = nei.getThisAddress();
-        PartitionService ps = nei.getPartitionService();
+        InternalPartitionService ps = nei.getPartitionService();
         Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
         Address partitionOwner = ps.getPartitionOwner(partitionId);

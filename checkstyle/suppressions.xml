@@ -133,7 +133,7 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.partition[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.partition[\\/]"/>
     <!-- todo -->
-    <!-- suppress checks="" files="com.hazelcast.partition.impl.PartitionServiceImpl"/ -->
+    <!-- suppress checks="" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/ -->
     <suppress checks="" files="com.hazelcast.partition.impl[\\/]"/>
     <suppress checks="" files="com.hazelcast.partition.impl.MigrationRequestOperation"/>
     <suppress checks="MagicNumber" files="com.hazelcast.partition[\\/]"/>

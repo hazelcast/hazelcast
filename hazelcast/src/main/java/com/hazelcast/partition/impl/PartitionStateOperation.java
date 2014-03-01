@@ -22,10 +22,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public final class PartitionStateOperation extends AbstractOperation
     @Override
     public void run() {
         partitionState.setEndpoint(getCallerAddress());
-        PartitionServiceImpl partitionService = getService();
+        InternalPartitionServiceImpl partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);
     }
 
@@ -67,7 +67,7 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public String getServiceName() {
-        return PartitionService.SERVICE_NAME;
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

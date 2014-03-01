@@ -15,11 +15,11 @@
  */
 
 /**
- * Contains the actual implementation of the {@link com.hazelcast.partition.PartitionService}.
+ * Contains the actual implementation of the {@link com.hazelcast.partition.InternalPartitionService}.
  *
  * It is very important that should be the least amount of dependencies to this package. Preferably only the
- * {@link com.hazelcast.partition.impl.PartitionServiceImpl} is called while constructing an instance and after
- * that all communication should go through the {@link com.hazelcast.partition.PartitionService} interface.
+ * {@link com.hazelcast.partition.impl.InternalPartitionServiceImpl} is called while constructing an instance and after
+ * that all communication should go through the {@link com.hazelcast.partition.InternalPartitionService} interface.
  *
  * Nobody needs to know about the actual implementing classes because this gives a very tight coupling and
  * this is undesirable. This is not only undesirable for external people because they could easily be tightly

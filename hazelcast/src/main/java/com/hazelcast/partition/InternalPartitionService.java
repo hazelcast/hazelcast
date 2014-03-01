@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public interface PartitionService extends CoreService {
+public interface InternalPartitionService extends CoreService {
 
     String SERVICE_NAME = "hz:core:partitionService";
 

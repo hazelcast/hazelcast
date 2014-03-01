@@ -28,7 +28,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.Collection;
 
 // runs locally...
 final class FinalizeMigrationOperation extends AbstractOperation
@@ -44,7 +43,7 @@ final class FinalizeMigrationOperation extends AbstractOperation
 
     @Override
     public void run() {
-        PartitionServiceImpl partitionService = getService();
+        InternalPartitionServiceImpl partitionService = getService();
 
         MigrationInfo migrationInfo = partitionService.getActiveMigration(getPartitionId());
         if (migrationInfo == null) {

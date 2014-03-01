@@ -27,11 +27,11 @@ import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionServiceProxy;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
@@ -82,7 +82,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus;
 
-public class PartitionServiceImpl implements PartitionService, ManagedService,
+public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
 
     private final Node node;
@@ -120,11 +120,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     // both reads and updates will be done under lock!
     private final LinkedList<MigrationInfo> completedMigrations = new LinkedList<MigrationInfo>();
 
-    public PartitionServiceImpl(Node node) {
+    public InternalPartitionServiceImpl(Node node) {
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         this.node = node;
         this.nodeEngine = node.nodeEngine;
-        this.logger = node.getLogger(PartitionService.class);
+        this.logger = node.getLogger(InternalPartitionService.class);
         this.systemLogService = node.getSystemLogService();
         this.partitions = new InternalPartitionImpl[partitionCount];
         PartitionListener partitionListener = new LocalPartitionListener(this, node.getThisAddress());
@@ -155,14 +155,15 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     @Override
-    public void init(final NodeEngine nodeEngine, Properties properties) {
+    public void init(NodeEngine nodeEngine, Properties properties) {
         migrationThread.start();
 
         int partitionTableSendInterval = node.groupProperties.PARTITION_TABLE_SEND_INTERVAL.getInteger();
         if (partitionTableSendInterval <= 0) {
             partitionTableSendInterval = 1;
         }
-        nodeEngine.getExecutionService().scheduleAtFixedRate(new SendClusterStateTask(),
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.scheduleAtFixedRate(new SendClusterStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
     }
 
@@ -193,6 +194,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
+    @Override
     public void firstArrangement() {
         if (!node.isMaster() || !node.isActive()) {
             return;
@@ -225,13 +227,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     private void updateMemberGroupsSize() {
-        final Collection<MemberGroup> groups = memberGroupFactory.createMemberGroups(node.getClusterService().getMembers());
+        Set<Member> members = node.getClusterService().getMembers();
+        final Collection<MemberGroup> groups = memberGroupFactory.createMemberGroups(members);
         memberGroupsSize = groups.size();
     }
 
     @Override
     public int getMemberGroupsSize() {
-        final int size = memberGroupsSize;
+        int size = memberGroupsSize;
         // size = 0 means service is not initialized yet.
         // return 1 instead since there should be at least one member group
         return size > 0 ? size : 1;
@@ -351,13 +354,16 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             // do not send partition state until initialized!
             return;
         }
+
         if (!node.isMaster() || !node.isActive() || !node.joined()) {
             return;
         }
+
         if (!required && !migrationActive.get()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
+
         final Collection<MemberImpl> members = node.clusterService.getMemberList();
         lock.lock();
         try {
@@ -420,7 +426,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         if (logger.isFinestEnabled()) {
                             logger.finest(
                                     "Unknown " + address + " found in partition table sent from master "
-                                            + sender + ". It has probably already left the cluster. Partition: " + partitionId);
+                                            + sender + ". It has probably already left the cluster. Partition: "
+                                            + partitionId);
                         }
                         unknownAddresses.add(address);
                     }
@@ -1063,7 +1070,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 for (final InternalPartitionImpl partition : partitions) {
                     if (thisAddress.equals(partition.getOwner()) && partition.getReplicaAddress(1) != null) {
                         final SyncReplicaVersion op = new SyncReplicaVersion(1, null);
-                        op.setService(PartitionServiceImpl.this);
+                        op.setService(InternalPartitionServiceImpl.this);
                         op.setNodeEngine(nodeEngine);
                         op.setResponseHandler(ResponseHandlerFactory
                                 .createErrorLoggingResponseHandler(node.getLogger(SyncReplicaVersion.class)));
@@ -1353,9 +1360,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     private static class LocalPartitionListener implements PartitionListener {
         final Address thisAddress;
-        private PartitionServiceImpl partitionService;
+        private InternalPartitionServiceImpl partitionService;
 
-        private LocalPartitionListener(PartitionServiceImpl partitionService, Address thisAddress) {
+        private LocalPartitionListener(InternalPartitionServiceImpl partitionService, Address thisAddress) {
             this.thisAddress = thisAddress;
             this.partitionService = partitionService;
         }
@@ -1394,9 +1401,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     private static class ReplicaSyncEntryProcessor implements ScheduledEntryProcessor<Integer, ReplicaSyncInfo> {
 
-        private PartitionServiceImpl partitionService;
+        private InternalPartitionServiceImpl partitionService;
 
-        public ReplicaSyncEntryProcessor(PartitionServiceImpl partitionService) {
+        public ReplicaSyncEntryProcessor(InternalPartitionServiceImpl partitionService) {
             this.partitionService = partitionService;
         }
 

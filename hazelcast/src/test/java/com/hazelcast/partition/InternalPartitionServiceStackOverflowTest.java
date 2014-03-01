@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class PartitionServiceStackOverflowTest extends HazelcastTestSupport {
+public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionSpecificOperation() {

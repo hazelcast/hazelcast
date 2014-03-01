@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationCycleOperation;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
@@ -54,7 +54,7 @@ public final class ReplicaSyncRequest extends Operation
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         partitionService.incrementReplicaSyncProcessCount();
 
         int partitionId = getPartitionId();
@@ -112,7 +112,7 @@ public final class ReplicaSyncRequest extends Operation
 
     private void logNoReplicaDataFound(int partitionId, int replicaIndex) {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         ILogger logger = nodeEngine.getLogger(getClass());
 
         if (logger.isFinestEnabled()) {

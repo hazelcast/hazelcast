@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.task.KeyValueJob;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -40,7 +40,7 @@ class NodeJobTracker
         super(name, jobTrackerConfig, nodeEngine, mapReduceService);
 
         ExecutionService es = nodeEngine.getExecutionService();
-        PartitionService ps = nodeEngine.getPartitionService();
+        InternalPartitionService ps = nodeEngine.getPartitionService();
         int maxThreadSize = jobTrackerConfig.getMaxThreadSize();
         if (maxThreadSize <= 0) {
             maxThreadSize = Runtime.getRuntime().availableProcessors();

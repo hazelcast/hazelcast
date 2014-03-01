@@ -17,7 +17,7 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -28,7 +28,7 @@ public final class HasOngoingMigration extends AbstractOperation {
 
     @Override
     public void run() throws Exception {
-        PartitionServiceImpl service = getService();
+        InternalPartitionServiceImpl service = getService();
         response = service.hasOnGoingMigrationLocal();
     }
 
@@ -55,6 +55,6 @@ public final class HasOngoingMigration extends AbstractOperation {
 
     @Override
     public String getServiceName() {
-        return PartitionService.SERVICE_NAME;
+        return InternalPartitionService.SERVICE_NAME;
     }
 }

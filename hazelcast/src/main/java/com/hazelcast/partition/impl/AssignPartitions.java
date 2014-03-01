@@ -6,7 +6,7 @@ public class AssignPartitions extends AbstractOperation {
 
     @Override
     public void run() {
-        PartitionServiceImpl service = getService();
+        InternalPartitionServiceImpl service = getService();
         service.firstArrangement();
     }
 

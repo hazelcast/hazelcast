@@ -117,7 +117,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private void afterMigrate() {
         if (success) {
-            PartitionServiceImpl partitionService = getService();
+            InternalPartitionServiceImpl partitionService = getService();
             partitionService.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions);
         }
 
@@ -151,7 +151,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private void addActiveMigration() {
-        PartitionServiceImpl partitionService = getService();
+        InternalPartitionServiceImpl partitionService = getService();
         partitionService.addActiveMigration(migrationInfo);
     }
 

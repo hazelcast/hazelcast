@@ -25,9 +25,9 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -80,7 +80,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
         verifyNotThisNode(nodeEngine, source);
 
-        PartitionServiceImpl partitionService = getService();
+        InternalPartitionServiceImpl partitionService = getService();
         InternalPartition partition = partitionService.getPartition(migrationInfo.getPartitionId());
         Address owner = partition.getOwner();
         verifyOwnerExists(owner);
@@ -232,7 +232,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 MigrationOperation operation = new MigrationOperation(
                         migrationInfo, replicaVersions, data, tasks.size(), compress);
                 Future future = nodeEngine.getOperationService()
-                        .createInvocationBuilder(PartitionService.SERVICE_NAME, operation, destination)
+                        .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
                         .setTryPauseMillis(TRY_PAUSE_MILLIS)
                         .setReplicaIndex(getReplicaIndex())
                         .invoke();

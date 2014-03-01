@@ -42,7 +42,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -63,7 +63,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 /**
  * The SPI Service for the Map.
@@ -201,7 +200,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public Runnable prepareMergeRunnable() {
         Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer, Collection<Record>>(mapContainers.size());
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
 
@@ -336,7 +335,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     private List<Integer> getMemberPartitions() {
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         List<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
         return Collections.unmodifiableList(partitions);
     }
@@ -1110,7 +1109,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
-        final com.hazelcast.partition.PartitionService partitionService = nodeEngine.getPartitionService();
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
