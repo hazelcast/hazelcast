@@ -948,30 +948,39 @@ public class MapService implements ManagedService, MigrationAwareService,
                         final PartitionContainer pc = partitionContainers[i];
                         final RecordStore recordStore = pc.getRecordStore(mapName);
                         final Collection<Record> values = recordStore.getReadonlyRecordMap().values();
-                        final List<Record> sortedRecords = new ArrayList<Record>(values.size());
-                        sortedRecords.addAll(recordStore.getReadonlyRecordMap().values());
-                        Collections.sort(sortedRecords, comparator);
-                        final int sortedSize = sortedRecords.size();
+                        final List<Record> currentSortedRecords = new ArrayList<Record>(values.size());
+                        currentSortedRecords.addAll(recordStore.getReadonlyRecordMap().values());
+                        Collections.sort(currentSortedRecords, comparator);
+                        final int currentPartitionSize = currentSortedRecords.size();
                         int evictSize;
                         switch (maxSizePolicy) {
                             case PER_PARTITION:
                             case PER_NODE:
-                                evictSize = Math.max((sortedSize - targetSizePerPartition), (sortedSize * evictionPercentage / 100 + 1));
+                                final int diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
+                                final int prunedSize = currentPartitionSize * evictionPercentage / 100 + 1;
+                                evictSize = Math.max(diffFromTargetSize, prunedSize);
+                                break;
+                            case USED_HEAP_PERCENTAGE:
+                            case USED_HEAP_SIZE:
+                                evictSize = currentPartitionSize * evictionPercentage / 100;
                                 break;
                             default:
-                                evictSize = sortedSize * evictionPercentage / 100;
-                                break;
+                                throw new IllegalArgumentException("Max size policy not defined [" + maxSizePolicy + "]");
                         }
                         if (evictSize <= 0) {
                             continue;
                         }
                         Set<Record> recordSet = new HashSet<Record>(evictSize);
                         Set<Data> keySet = new HashSet<Data>(evictSize);
-                        Iterator iterator = sortedRecords.iterator();
-                        while (iterator.hasNext() && evictSize-- > 0) {
+                        Iterator iterator = currentSortedRecords.iterator();
+                        while (iterator.hasNext()) {
+                            if (evictSize == 0) {
+                                break;
+                            }
                             Record rec = (Record) iterator.next();
                             recordSet.add(rec);
                             keySet.add(rec.getKey());
+                            evictSize--;
                         }
                         if (keySet.isEmpty()) {
                             continue;
