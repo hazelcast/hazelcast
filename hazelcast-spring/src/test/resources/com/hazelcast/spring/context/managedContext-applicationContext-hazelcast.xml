@@ -17,7 +17,6 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:p="http://www.springframework.org/schema/p"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
@@ -30,10 +29,10 @@
         http://www.hazelcast.com/schema/spring
         http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
 
-    <tx:annotation-driven transaction-manager="dummyTransactionManager" />
+    <tx:annotation-driven transaction-manager="dummyTransactionManager"/>
 
-    <context:annotation-config />
-    <context:component-scan base-package="com.hazelcast.spring.context" />
+    <context:annotation-config/>
+    <context:component-scan base-package="com.hazelcast.spring.context"/>
 
     <hz:hazelcast id="instance1">
         <hz:config>

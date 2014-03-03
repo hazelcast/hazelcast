@@ -167,7 +167,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private boolean rethrowException() {
         NodeEngine nodeEngine = getNodeEngine();
-        if(nodeEngine == null){
+        if (nodeEngine == null) {
             return false;
         }
 

@@ -18,7 +18,6 @@ package com.hazelcast.cluster.client;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;

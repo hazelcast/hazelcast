@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -118,7 +117,7 @@ public class SerializationConcurrencyTest {
 
         private String street;
 
-        private int no ;
+        private int no;
 
         public Address() {
         }
@@ -230,9 +229,9 @@ public class SerializationConcurrencyTest {
 
     static class PortableAddress implements Portable {
 
-        private String street ;
+        private String street;
 
-        private int no ;
+        private int no;
 
         public PortableAddress() {
         }

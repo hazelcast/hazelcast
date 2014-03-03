@@ -41,6 +41,7 @@ public class MemberLeftException extends ExecutionException implements DataSeria
 
     /**
      * Returns the member which left the cluster
+     *
      * @return member
      */
     public Member getMember() {

@@ -40,9 +40,9 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
 
     public void afterRun() {
         if (success) {
-          mapService.interceptAfterRemove(name, dataValue);
-          mapService.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
-          invalidateNearCaches();
+            mapService.interceptAfterRemove(name, dataValue);
+            mapService.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
+            invalidateNearCaches();
         }
     }
 

@@ -20,7 +20,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.logging.Level;

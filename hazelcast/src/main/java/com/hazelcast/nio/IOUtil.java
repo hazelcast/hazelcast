@@ -18,7 +18,15 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -26,7 +34,8 @@ import java.util.zip.Inflater;
 
 public final class IOUtil {
 
-    private IOUtil(){}
+    private IOUtil() {
+    }
 
     public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
     public static final byte PRIMITIVE_TYPE_BYTE = 2;
@@ -230,7 +239,7 @@ public final class IOUtil {
         } else if (type.equals(Double.class)) {
             out.writeByte(PRIMITIVE_TYPE_DOUBLE);
             out.writeDouble((Double) value);
-        } else if(type.equals(String.class)) {
+        } else if (type.equals(String.class)) {
             out.writeByte(PRIMITIVE_TYPE_UTF);
             out.writeUTF((String) value);
         }

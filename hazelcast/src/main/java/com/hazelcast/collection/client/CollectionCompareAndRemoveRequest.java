@@ -44,7 +44,7 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
 
     public CollectionCompareAndRemoveRequest(String name, Set<Data> valueSet, boolean retain) {
         super(name);
-        this.valueSet= valueSet;
+        this.valueSet = valueSet;
         this.retain = retain;
     }
 
@@ -74,7 +74,7 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);
-        for (int i = 0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final Data value = new Data();
             value.readData(in);
             valueSet.add(value);

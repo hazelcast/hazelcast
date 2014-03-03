@@ -84,9 +84,9 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     @Override
     public final Permission getRequiredPermission() {
         final String action = getRequiredAction();
-        if (ListService.SERVICE_NAME.equals(serviceName)){
+        if (ListService.SERVICE_NAME.equals(serviceName)) {
             return new ListPermission(name, action);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
             return new SetPermission(name, action);
         }
         throw new IllegalArgumentException("No service matched!!!");

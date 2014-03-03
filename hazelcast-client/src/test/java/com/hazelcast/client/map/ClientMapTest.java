@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -102,6 +101,7 @@ public class ClientMapTest {
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
+
             public void entryEvicted(EntryEvent event) {
                 final Object value = event.getValue();
                 final Object oldValue = event.getOldValue();
@@ -679,7 +679,7 @@ public class ClientMapTest {
         final CountDownLatch gateEvict = new CountDownLatch(1);
         final CountDownLatch gateUpdate = new CountDownLatch(1);
 
-        final String mapName =  randomString();
+        final String mapName = randomString();
 
         final IMap<Object, Object> serverMap = server.getMap(mapName);
         serverMap.put(3, new Deal(3));

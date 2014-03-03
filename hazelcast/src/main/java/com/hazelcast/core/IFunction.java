@@ -20,14 +20,14 @@ import java.io.Serializable;
 
 /**
  * Represents a function that accepts one argument and produces a result.
- *
+ * <p/>
  * This class is called IFunction instead of Function to prevent clashes with the one in Java 8.
  *
  * @param <T>
  * @param <R>
  * @since 3.2
  */
-public interface IFunction<T,R> extends Serializable {
+public interface IFunction<T, R> extends Serializable {
 
     R apply(T input);
 }

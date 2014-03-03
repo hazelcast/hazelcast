@@ -53,8 +53,8 @@ public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements
     }
 
     protected Object reduce(Map<Integer, Object> map) {
-        for (Object obj: map.values()){
-            if (Boolean.TRUE.equals(obj)){
+        for (Object obj : map.values()) {
+            if (Boolean.TRUE.equals(obj)) {
                 return true;
             }
         }

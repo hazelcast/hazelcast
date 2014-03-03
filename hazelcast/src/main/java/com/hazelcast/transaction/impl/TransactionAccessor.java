@@ -33,5 +33,6 @@ public final class TransactionAccessor {
         throw new IllegalArgumentException();
     }
 
-    private TransactionAccessor() {}
+    private TransactionAccessor() {
+    }
 }

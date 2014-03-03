@@ -38,6 +38,7 @@ public final class SimpleQueueTest {
 
     /**
      * Creates a cluster and exercises a queue until stopped
+     *
      * @param args none
      */
     public static void main(String[] args) {

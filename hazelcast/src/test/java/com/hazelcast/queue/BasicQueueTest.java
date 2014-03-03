@@ -19,7 +19,12 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,7 +45,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 2/12/13
@@ -82,7 +91,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueEviction() throws Exception {
-         final Config config = new Config();
+        final Config config = new Config();
         config.getQueueConfig("q").setEmptyQueueTtl(2);
         final HazelcastInstance hz = createHazelcastInstance(config);
         final IQueue<Object> q = hz.getQueue("q");
@@ -92,7 +101,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
             assertEquals("item", q.poll());
             q.take();
             fail();
-        } catch (Exception e){
+        } catch (Exception e) {
             assertTrue(e instanceof DistributedObjectDestroyedException);
         }
         q.size();
@@ -128,7 +137,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
     @Category(ProblematicTest.class)
     public void testQueueStats() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-       final String name = "t_queue";
+        final String name = "t_queue";
 
         HazelcastInstance ins1 = factory.newHazelcastInstance();
         final int items = 20;

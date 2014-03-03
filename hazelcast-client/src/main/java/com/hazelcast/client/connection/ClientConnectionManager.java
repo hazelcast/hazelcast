@@ -27,7 +27,7 @@ public interface ClientConnectionManager {
 
     ClientConnection tryToConnect(Address address) throws Exception;
 
-    ClientConnection ownerConnection(Address address) throws Exception ;
+    ClientConnection ownerConnection(Address address) throws Exception;
 
     boolean removeEventHandler(Integer callId);
 }

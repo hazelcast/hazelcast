@@ -28,7 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
-import static com.hazelcast.aws.impl.Constants.*;
+import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
+import static com.hazelcast.aws.impl.Constants.GET;
+import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD;
+import static com.hazelcast.aws.impl.Constants.SIGNATURE_VERSION;
 import static com.hazelcast.aws.utility.CloudyUtility.unmarshalTheResponse;
 
 public class DescribeInstances {

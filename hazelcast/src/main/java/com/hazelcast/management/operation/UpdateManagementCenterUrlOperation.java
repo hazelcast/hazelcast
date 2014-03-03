@@ -50,7 +50,7 @@ public class UpdateManagementCenterUrlOperation extends Operation {
             service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         }
 
-        if (service != null){
+        if (service != null) {
             service.updateManagementCenterUrl(newUrl);
         }
     }

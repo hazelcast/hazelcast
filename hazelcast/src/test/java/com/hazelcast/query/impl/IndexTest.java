@@ -18,7 +18,13 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,7 +37,9 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.instance.TestUtil.toData;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

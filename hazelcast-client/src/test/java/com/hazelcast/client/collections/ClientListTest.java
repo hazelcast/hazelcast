@@ -18,10 +18,18 @@ package com.hazelcast.client.collections;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -49,7 +57,7 @@ public class ClientListTest {
     static IList list;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         Config config = new Config();
         Hazelcast.newHazelcastInstance(config);
         hz = HazelcastClient.newHazelcastClient();
@@ -90,7 +98,7 @@ public class ClientListTest {
     public void testAddSetRemove() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
-        list.add(0,"item3");
+        list.add(0, "item3");
         assertEquals(3, list.size());
         Object o = list.set(2, "item4");
         assertEquals("item2", o);
@@ -111,7 +119,7 @@ public class ClientListTest {
     }
 
     @Test
-    public void testIndexOf(){
+    public void testIndexOf() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
@@ -125,22 +133,22 @@ public class ClientListTest {
     }
 
     @Test
-    public void testIterator(){
+    public void testIterator() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
         assertTrue(list.add("item4"));
 
         Iterator iter = list.iterator();
-        assertEquals("item1",iter.next());
-        assertEquals("item2",iter.next());
-        assertEquals("item1",iter.next());
-        assertEquals("item4",iter.next());
+        assertEquals("item1", iter.next());
+        assertEquals("item2", iter.next());
+        assertEquals("item1", iter.next());
+        assertEquals("item4", iter.next());
         assertFalse(iter.hasNext());
 
         ListIterator listIterator = list.listIterator(2);
-        assertEquals("item1",listIterator.next());
-        assertEquals("item4",listIterator.next());
+        assertEquals("item1", listIterator.next());
+        assertEquals("item4", listIterator.next());
         assertFalse(listIterator.hasNext());
 
         List l = list.subList(1, 3);
@@ -150,7 +158,7 @@ public class ClientListTest {
     }
 
     @Test
-    public void testContains(){
+    public void testContains() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
@@ -169,7 +177,7 @@ public class ClientListTest {
     }
 
     @Test
-    public void removeRetainAll(){
+    public void removeRetainAll() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
@@ -215,9 +223,9 @@ public class ClientListTest {
         };
         String registrationId = tempList.addItemListener(listener, true);
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<5; i++){
+                for (int i = 0; i < 5; i++) {
                     tempList.add("item" + i);
                 }
                 tempList.add("done");

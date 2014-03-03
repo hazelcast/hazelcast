@@ -91,9 +91,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void enqueueSocketWritable(SocketWritable socketWritable) {
-        if(socketWritable.isUrgent()){
+        if (socketWritable.isUrgent()) {
             urgencyWriteQueue.offer(socketWritable);
-        }else{
+        } else {
             writeQueue.offer(socketWritable);
         }
         if (informSelector.compareAndSet(true, false)) {
@@ -108,7 +108,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private SocketWritable poll() {
         SocketWritable writable = urgencyWriteQueue.poll();
-        if(writable == null){
+        if (writable == null) {
             writable = writeQueue.poll();
         }
 

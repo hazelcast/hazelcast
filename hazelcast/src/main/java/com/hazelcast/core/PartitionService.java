@@ -45,7 +45,7 @@ public interface PartitionService {
     /**
      * Generates a random partition key. This is useful if you want to partition data in the same partition,
      * but don't care which partition it is going to be.
-     *
+     * <p/>
      * The returned value will never be null.
      *
      * @return the random partition key.

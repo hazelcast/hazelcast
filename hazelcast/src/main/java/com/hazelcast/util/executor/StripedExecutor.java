@@ -17,7 +17,11 @@
 package com.hazelcast.util.executor;
 
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -51,10 +55,10 @@ public final class StripedExecutor implements Executor {
         }
     }
 
-    public int getWorkQueueSize(){
+    public int getWorkQueueSize() {
         int size = 0;
-        for(Worker worker: workers){
-            size+=worker.workQueue.size();
+        for (Worker worker : workers) {
+            size += worker.workQueue.size();
         }
         return size;
     }

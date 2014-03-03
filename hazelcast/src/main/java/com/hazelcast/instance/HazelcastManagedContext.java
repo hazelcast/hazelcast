@@ -16,9 +16,9 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.spi.NodeAware;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.spi.NodeAware;
 
 /**
  * @author mdogan 4/6/12

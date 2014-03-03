@@ -150,7 +150,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
                 new ServiceConfig().setServiceImpl(new TestInitializingObjectService())
-                                   .setEnabled(true).setName(TestInitializingObjectService.NAME)
+                        .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
         HazelcastInstance instance = createHazelcastInstance(config);
         TestInitializingObject object = instance
@@ -165,7 +165,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
                 new ServiceConfig().setServiceImpl(new TestInitializingObjectService())
-                                   .setEnabled(true).setName(TestInitializingObjectService.NAME)
+                        .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
 
         String serviceName = TestInitializingObjectService.NAME;
@@ -187,7 +187,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
                 new ServiceConfig().setServiceImpl(new TestInitializingObjectService())
-                                   .setEnabled(true).setName(TestInitializingObjectService.NAME)
+                        .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
 
         String serviceName = TestInitializingObjectService.NAME;
@@ -221,9 +221,11 @@ public class DistributedObjectTest extends HazelcastTestSupport {
 
     private static class TestInitializingObjectService implements RemoteService {
         static final String NAME = "TestInitializingObjectService";
+
         public DistributedObject createDistributedObject(final String objectName) {
             return new TestInitializingObject(objectName);
         }
+
         public void destroyDistributedObject(final String objectName) {
         }
     }
@@ -244,22 +246,27 @@ public class DistributedObjectTest extends HazelcastTestSupport {
                 throw new IllegalStateException("InitializingObject must be initialized only once!");
             }
         }
+
         @Override
         public String getName() {
             return name;
         }
+
         @Override
         public String getServiceName() {
             return TestInitializingObjectService.NAME;
         }
+
         @Override
         public Object getId() {
             return getName();
         }
+
         @Override
         public String getPartitionKey() {
             return getName();
         }
+
         @Override
         public void destroy() {
         }

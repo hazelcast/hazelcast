@@ -24,7 +24,8 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
  * This class is the auto registered serializer hook for a {@link java.util.LinkedList}.

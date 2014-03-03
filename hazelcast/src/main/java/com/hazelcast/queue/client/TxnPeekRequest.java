@@ -37,7 +37,7 @@ public class TxnPeekRequest extends BaseTransactionRequest {
 
     private long timeout;
 
-    public TxnPeekRequest(){
+    public TxnPeekRequest() {
     }
 
     public TxnPeekRequest(String name, long timeout) {
@@ -71,8 +71,8 @@ public class TxnPeekRequest extends BaseTransactionRequest {
     @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeout);
+        writer.writeUTF("n", name);
+        writer.writeLong("t", timeout);
     }
 
     public void read(PortableReader reader) throws IOException {

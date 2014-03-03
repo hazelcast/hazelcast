@@ -25,13 +25,13 @@ import java.security.PrivilegedAction;
 
 /**
  * Unsafe accessor.
- *
+ * <p/>
  * Warning: Although both array base-offsets and array index-scales are
  * constant over time currently,
  * a later JVM implementation can change this behaviour
  * to allow varying index-scales and base-offsets over time or per array instances.
  * (For example; compressed primitive arrays or backwards growing arrays...)
- *
+ * <p/>
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
  *
@@ -111,7 +111,7 @@ public final class UnsafeHelper {
 
                         } catch (Exception e) {
                             for (Field field : type.getDeclaredFields()) {
-                                if (type.isAssignableFrom(field.getType()))  {
+                                if (type.isAssignableFrom(field.getType())) {
                                     field.setAccessible(true);
                                     return type.cast(field.get(type));
                                 }

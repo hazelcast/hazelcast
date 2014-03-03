@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 import static java.lang.String.format;
@@ -46,8 +45,8 @@ public class CloudyUtility {
 
     public static String getQueryString(Map<String, String> attributes) {
         StringBuilder query = new StringBuilder();
-        for (Iterator<Map.Entry<String,String>> iterator = attributes.entrySet().iterator(); iterator.hasNext(); ) {
-            final Map.Entry<String,String> entry = iterator.next();
+        for (Iterator<Map.Entry<String, String>> iterator = attributes.entrySet().iterator(); iterator.hasNext(); ) {
+            final Map.Entry<String, String> entry = iterator.next();
             final String value = entry.getValue();
             query.append(AwsURLEncoder.urlEncode(entry.getKey())).append("=").append(AwsURLEncoder.urlEncode(value)).append("&");
         }
@@ -130,7 +129,7 @@ public class CloudyUtility {
                 final String ip = getIp(name, nodeHolder);
                 final String instanceName = getInstanceName(nodeHolder);
 
-                 if (ip != null) {
+                if (ip != null) {
                     if (!acceptState(state)) {
                         logger.finest(format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName, ip, state));
                     } else if (!acceptTag(awsConfig, node)) {
@@ -139,7 +138,7 @@ public class CloudyUtility {
                         logger.finest(format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName, ip));
                     } else {
                         list.add(ip);
-                        logger.finest(format("Accepting EC2 instance [%s][%s]",instanceName, ip));
+                        logger.finest(format("Accepting EC2 instance [%s][%s]", instanceName, ip));
                     }
                 }
 

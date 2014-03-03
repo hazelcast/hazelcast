@@ -570,7 +570,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         public void map(Integer key, Integer value, Context<String, Integer> collector) {
             try {
                 Thread.sleep(1000);
-            } catch(Exception ignore) {
+            } catch (Exception ignore) {
             }
             collector.emit(String.valueOf(key), value);
         }

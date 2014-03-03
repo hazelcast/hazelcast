@@ -23,7 +23,7 @@ public class AtomicReferenceMBean extends HazelcastMBean<IAtomicReference> {
 
     public AtomicReferenceMBean(IAtomicReference managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IAtomicReference",managedObject.getName());
+        objectName = service.createObjectName("IAtomicReference", managedObject.getName());
     }
 
     @ManagedAnnotation("name")

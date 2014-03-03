@@ -26,13 +26,15 @@ import javax.resource.cci.ConnectionSpec;
  */
 public interface HazelcastConnectionFactory extends ConnectionFactory {
 
-	/** @return access to the real bridging object to access Hazelcast's infrastructure
-	 * @see HazelcastConnection
-	 */
-	HazelcastConnection getConnection() throws ResourceException;
+    /**
+     * @return access to the real bridging object to access Hazelcast's infrastructure
+     * @see HazelcastConnection
+     */
+    HazelcastConnection getConnection() throws ResourceException;
 
-	/** @return access to the real bridging object to access Hazelcast's infrastructure
-	 * @see HazelcastConnection
-	 */
-	HazelcastConnection getConnection(ConnectionSpec connSpec) throws ResourceException;
+    /**
+     * @return access to the real bridging object to access Hazelcast's infrastructure
+     * @see HazelcastConnection
+     */
+    HazelcastConnection getConnection(ConnectionSpec connSpec) throws ResourceException;
 }

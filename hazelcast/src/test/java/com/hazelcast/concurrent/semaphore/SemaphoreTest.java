@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -84,7 +83,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testMultipleAcquire() throws InterruptedException {
-         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance();
         final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testMultipleAcquire");
@@ -100,7 +99,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testMultipleRelease() {
-         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance();
         final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("testMultipleRelease");

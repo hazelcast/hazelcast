@@ -31,7 +31,7 @@ public final class ListenerUtil {
         //TODO callback
         final Future future;
         try {
-            final ClientInvocationServiceImpl invocationService =getClientInvocationService(context);
+            final ClientInvocationServiceImpl invocationService = getClientInvocationService(context);
 
             if (key == null) {
                 future = invocationService.invokeOnRandomTarget(request, handler);

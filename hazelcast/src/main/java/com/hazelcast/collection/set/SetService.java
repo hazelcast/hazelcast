@@ -45,10 +45,10 @@ public class SetService extends CollectionService {
     @Override
     public SetContainer getOrCreateContainer(String name, boolean backup) {
         SetContainer container = containerMap.get(name);
-        if (container == null){
+        if (container == null) {
             container = new SetContainer(name, nodeEngine);
             final SetContainer current = containerMap.putIfAbsent(name, container);
-            if (current != null){
+            if (current != null) {
                 container = current;
             }
         }

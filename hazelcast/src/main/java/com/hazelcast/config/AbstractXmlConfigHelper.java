@@ -185,7 +185,7 @@ public abstract class AbstractXmlConfigHelper {
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
-            logger.info( parameterName + " parameter value, [" + value
+            logger.info(parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
             logger.warning(e);
             return defaultValue;

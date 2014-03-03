@@ -166,7 +166,9 @@ public class IMapRegionCache implements RegionCache {
         }
     }
 
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {};
+    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
+    };
 
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {};
+    private static final SoftLock LOCK_FAILURE = new SoftLock() {
+    };
 }

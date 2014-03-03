@@ -68,7 +68,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         member.writeData(out);
         out.writeByte(operationType.id);
         if (operationType == PUT) {
-            IOUtil.writeAttributeValue(value,out);
+            IOUtil.writeAttributeValue(value, out);
         }
     }
 

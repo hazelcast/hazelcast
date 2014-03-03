@@ -20,9 +20,8 @@ import com.hazelcast.nio.serialization.Data;
 
 /**
  * Plain storage interface for off-heap, disk etc access.
- *
+ * <p/>
  * Note: Can be extended to allow querying stored items...
- *
  */
 public interface Storage<REF extends DataRef> {
 

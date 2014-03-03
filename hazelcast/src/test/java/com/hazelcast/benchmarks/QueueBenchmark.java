@@ -17,7 +17,6 @@
 package com.hazelcast.benchmarks;
 
 
-import com.carrotsearch.junitbenchmarks.BenchmarkOptions;
 import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkHistoryChart;
@@ -26,7 +25,12 @@ import com.carrotsearch.junitbenchmarks.annotation.LabelType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestRule;
 
 @AxisRange(min = 0, max = 1)
@@ -45,12 +49,12 @@ public class QueueBenchmark {
     }
 
     @Before
-    public void before(){
+    public void before() {
         queue = hazelcastInstance.getQueue("exampleQueue");
     }
 
     @After
-    public void after(){
+    public void after() {
         queue.destroy();
     }
 
@@ -61,7 +65,7 @@ public class QueueBenchmark {
 
     @Test
     public void addFollowedByTake() throws Exception {
-        for(int k=0;k<50000;k++){
+        for (int k = 0; k < 50000; k++) {
             queue.add("foo");
             queue.take();
         }

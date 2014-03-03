@@ -20,7 +20,7 @@ public class SomeEntryProcessor extends AbstractEntryProcessor implements Applic
     private transient SomeBean someBean;
 
     public Object process(Map.Entry entry) {
-        if (someBean == null ){
+        if (someBean == null) {
             return ">null";
         }
         return "notNull";

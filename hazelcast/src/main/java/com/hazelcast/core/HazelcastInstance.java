@@ -148,14 +148,13 @@ public interface HazelcastInstance {
     /**
      * Returns the local Endpoint which this HazelcastInstance is belongs to.
      * <p/>
-     *
+     * <p/>
      * Returned endpoint will be a {@link Member} instance for cluster nodes
      * and a {@link Client} instance for clients.
      *
+     * @return local endpoint
      * @see Member
      * @see Client
-     *
-     * @return local endpoint
      */
     Endpoint getLocalEndpoint();
 
@@ -178,9 +177,8 @@ public interface HazelcastInstance {
      * and returns the result of the task.
      *
      * @param task task to be executed
-     * @param <T> return type of task
+     * @param <T>  return type of task
      * @return returns result of transactional task
-     *
      * @throws TransactionException if an error occurs during transaction.
      */
     <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
@@ -190,10 +188,9 @@ public interface HazelcastInstance {
      * and returns the result of the task.
      *
      * @param options options for this transactional task
-     * @param task task to be executed
-     * @param <T> return type of task
+     * @param task    task to be executed
+     * @param <T>     return type of task
      * @return returns result of transactional task
-     *
      * @throws TransactionException if an error occurs during transaction.
      */
     <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
@@ -329,22 +326,19 @@ public interface HazelcastInstance {
     LifecycleService getLifecycleService();
 
     /**
-     *
      * @param serviceName name of the service
-     * @param id identifier of the object
-     * @param <T> type of the DistributedObject
+     * @param id          identifier of the object
+     * @param <T>         type of the DistributedObject
      * @return DistributedObject created by the service
-     *
      * @deprecated use {@link #getDistributedObject(String, String)} instead.
      */
     @Deprecated
     <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
 
     /**
-     *
      * @param serviceName name of the service
-     * @param name name of the object
-     * @param <T> type of the DistributedObject
+     * @param name        name of the object
+     * @param <T>         type of the DistributedObject
      * @return DistributedObject created by the service
      */
     <T extends DistributedObject> T getDistributedObject(String serviceName, String name);

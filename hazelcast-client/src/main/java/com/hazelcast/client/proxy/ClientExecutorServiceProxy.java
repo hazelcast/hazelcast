@@ -20,7 +20,15 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.util.ClientCancellableDelegatingFuture;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
+import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.RunnableAdapter;
 import com.hazelcast.executor.client.IsShutdownRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
@@ -32,8 +40,19 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

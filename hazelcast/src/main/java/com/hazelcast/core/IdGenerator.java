@@ -26,7 +26,7 @@ public interface IdGenerator extends DistributedObject {
      * generated id will be 1 bigger than id.
      *
      * @return true if initialization success. If id is equal or smaller
-     * than 0, then false is returned.
+     *         than 0, then false is returned.
      */
     boolean init(long id);
 

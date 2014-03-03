@@ -64,9 +64,9 @@ public class PortableDistributedObjectEvent implements Portable {
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeUTF("s",serviceName);
-        writer.writeUTF("t",eventType.name());
+        writer.writeUTF("n", name);
+        writer.writeUTF("s", serviceName);
+        writer.writeUTF("t", eventType.name());
     }
 
     public void readPortable(PortableReader reader) throws IOException {

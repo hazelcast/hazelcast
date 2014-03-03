@@ -111,5 +111,6 @@ final class DateHelper {
         return new SimpleDateFormat(sqlTimeFormat, Locale.US);
     }
 
-    private DateHelper() {}
+    private DateHelper() {
+    }
 }

@@ -71,10 +71,10 @@ public abstract class AbstractWebfilterTestCase {
     }
 
     protected static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
-    
+
     protected String serverXml1;
     protected String serverXml2;
-    
+
     protected int serverPort1;
     protected int serverPort2;
     protected Server server1;
@@ -120,7 +120,7 @@ public abstract class AbstractWebfilterTestCase {
         }
         return null;
     }
-    
+
     protected String executeRequest(String context, int serverPort, CookieStore cookieStore) throws Exception {
         HttpClient client = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
         HttpGet request = new HttpGet("http://localhost:" + serverPort + "/" + context);

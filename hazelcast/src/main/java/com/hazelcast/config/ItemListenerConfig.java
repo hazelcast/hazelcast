@@ -45,7 +45,7 @@ public class ItemListenerConfig extends ListenerConfig {
     }
 
     public ItemListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null ){
+        if (readOnly == null) {
             readOnly = new ItemListenerConfigReadOnly(this);
         }
         return readOnly;

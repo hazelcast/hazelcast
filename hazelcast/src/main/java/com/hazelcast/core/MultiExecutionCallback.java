@@ -25,7 +25,6 @@ import java.util.Map;
  *
  * @see IExecutorService
  * @see ExecutionCallback
- *
  */
 public interface MultiExecutionCallback {
 
@@ -33,7 +32,7 @@ public interface MultiExecutionCallback {
      * Called when an execution is completed on a member.
      *
      * @param member member which task is submitted to.
-     * @param value result of execution
+     * @param value  result of execution
      */
     void onResponse(Member member, Object value);
 

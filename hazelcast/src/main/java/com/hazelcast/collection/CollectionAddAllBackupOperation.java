@@ -75,7 +75,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
         super.readInternal(in);
         final int size = in.readInt();
         valueMap = new HashMap<Long, Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final long itemId = in.readLong();
             final Data value = new Data();
             value.readData(in);

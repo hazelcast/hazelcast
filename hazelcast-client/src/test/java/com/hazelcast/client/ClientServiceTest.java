@@ -16,7 +16,11 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientListener;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

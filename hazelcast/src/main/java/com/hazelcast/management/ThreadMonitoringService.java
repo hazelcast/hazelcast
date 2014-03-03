@@ -86,7 +86,7 @@ public class ThreadMonitoringService {
             long now = System.nanoTime();
             for (Thread thread : threads) {
                 ThreadCpuInfoConstructor constructor = new ThreadCpuInfoConstructor(thread);
-                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads,thread.getId(), constructor);
+                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads, thread.getId(), constructor);
                 int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * 100);
                 monitoredThreads.add(new MonitoredThread(thread.getName(), thread.getId(), percentage));
             }
@@ -96,11 +96,11 @@ public class ThreadMonitoringService {
         }
     }
 
-    private static class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
+    private static class ThreadCpuInfoConstructor implements ConstructorFunction<Long, ThreadCpuInfo> {
 
         private Thread thread;
 
-        private ThreadCpuInfoConstructor(Thread thread){
+        private ThreadCpuInfoConstructor(Thread thread) {
             this.thread = thread;
         }
 

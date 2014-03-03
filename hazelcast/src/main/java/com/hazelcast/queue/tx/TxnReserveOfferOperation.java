@@ -46,7 +46,7 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
 
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
-        if (container.hasEnoughCapacity(txSize+1)) {
+        if (container.hasEnoughCapacity(txSize + 1)) {
             response = container.txnOfferReserve(transactionId);
         }
     }
@@ -57,7 +57,7 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
 
     public boolean shouldWait() {
         QueueContainer container = getOrCreateContainer();
-        return getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity(txSize+1);
+        return getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity(txSize + 1);
     }
 
     public void onWaitExpire() {

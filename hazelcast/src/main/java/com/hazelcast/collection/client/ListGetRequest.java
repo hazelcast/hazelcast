@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * @ali 9/4/13
  */
-public class ListGetRequest extends CollectionRequest{
+public class ListGetRequest extends CollectionRequest {
 
     int index = -1;
 
@@ -47,7 +47,7 @@ public class ListGetRequest extends CollectionRequest{
 
     @Override
     public int getClassId() {
-        return CollectionPortableHook.LIST_GET ;
+        return CollectionPortableHook.LIST_GET;
     }
 
     public void write(PortableWriter writer) throws IOException {

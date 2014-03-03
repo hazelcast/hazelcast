@@ -81,9 +81,9 @@ public class KeysAssignmentOperation
                 this.result = new KeysAssignmentResult(CHECK_STATE_FAILED, assignment);
                 return;
                 // TODO Not yet fully supported
-            /* } else if (tcs == DISCARD_AND_RESTART) {
-             *   supervisor.cancelNotifyAndRestart();
-             */
+                /* } else if (tcs == DISCARD_AND_RESTART) {
+                *   supervisor.cancelNotifyAndRestart();
+                */
             } else {
                 Exception exception = new TopologyChangedException("Unknown or unsupported TopologyChangedStrategy");
                 supervisor.cancelAndNotify(exception);

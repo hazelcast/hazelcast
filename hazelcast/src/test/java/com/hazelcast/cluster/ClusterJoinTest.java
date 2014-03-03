@@ -20,14 +20,17 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.DuplicateInstanceNameException;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,7 +41,9 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -363,7 +368,7 @@ public class ClusterJoinTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
         Config config1 = new Config();
-        config1.getNetworkConfig().setPort(5901) ; // bigger port to make sure address.hashCode() check pass during merge!
+        config1.getNetworkConfig().setPort(5901); // bigger port to make sure address.hashCode() check pass during merge!
         config1.setProperties(props);
         config1.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
@@ -380,7 +385,7 @@ public class ClusterJoinTest {
         Thread.sleep(5000);
 
         Config config2 = new Config();
-        config2.getNetworkConfig().setPort(5701) ;
+        config2.getNetworkConfig().setPort(5701);
         config2.setProperties(props);
         Hazelcast.newHazelcastInstance(config2);
 

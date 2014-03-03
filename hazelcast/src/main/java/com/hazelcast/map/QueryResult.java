@@ -23,7 +23,11 @@ import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class QueryResult implements DataSerializable {
 

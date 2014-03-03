@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Transactional implementation of {@link BaseQueue}.
  *
+ * @param <E>
  * @see BaseQueue
  * @see IQueue
- * @param <E>
  */
 public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E> {
 

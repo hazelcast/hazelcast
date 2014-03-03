@@ -44,7 +44,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -54,7 +57,7 @@ public class HazelcastXaTest {
 
     UserTransactionManager tm = null;
 
-    public void cleanAtomikosLogs(){
+    public void cleanAtomikosLogs() {
         try {
             File currentDir = new File(".");
             final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {

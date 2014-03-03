@@ -21,10 +21,10 @@ import java.util.Collection;
 /**
  * Base interface for Hazelcast distributed multi-maps.
  *
- * @see MultiMap
- * @see TransactionalMultiMap
  * @param <K>
  * @param <V>
+ * @see MultiMap
+ * @see TransactionalMultiMap
  */
 public interface BaseMultiMap<K, V> extends DistributedObject {
 

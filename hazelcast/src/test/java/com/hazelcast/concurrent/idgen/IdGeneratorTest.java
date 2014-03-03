@@ -63,7 +63,7 @@ public class IdGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testNewId_withExplicitInit() {
-        IdGenerator idGenerator =createIdGenerator();
+        IdGenerator idGenerator = createIdGenerator();
         assertTrue(idGenerator.init(10));
 
         long result = idGenerator.newId();

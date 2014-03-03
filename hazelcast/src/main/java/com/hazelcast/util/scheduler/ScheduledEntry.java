@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * @author mdogan 2/25/13
  */
-public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
+public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
     private final K key;
 
     private final V value;

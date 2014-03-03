@@ -77,7 +77,7 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
         Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
         Collection<Address> addresses = new HashSet<Address>();
         for (MemberImpl member : memberList) {
-                addresses.add(member.getAddress());
+            addresses.add(member.getAddress());
         }
         return addresses;
     }

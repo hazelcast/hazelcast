@@ -19,9 +19,9 @@ package com.hazelcast.security.permission;
 
 public class LockPermission extends InstancePermission {
 
-    private static final  int LOCK = 0x4;
-    private static final  int READ = 0x8;
-    private static final  int ALL = CREATE | DESTROY | LOCK | READ;
+    private static final int LOCK = 0x4;
+    private static final int READ = 0x8;
+    private static final int ALL = CREATE | DESTROY | LOCK | READ;
 
     public LockPermission(String key, String... actions) {
         super(key, actions);

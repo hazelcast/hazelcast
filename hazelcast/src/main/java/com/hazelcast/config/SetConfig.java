@@ -28,7 +28,7 @@ public class SetConfig extends CollectionConfig<SetConfig> {
     }
 
     public SetConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new SetConfigReadOnly(this);
         }
         return readOnly;

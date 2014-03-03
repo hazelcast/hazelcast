@@ -17,10 +17,16 @@
 package com.hazelcast.client.topic;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -42,14 +48,14 @@ public class ClientTopicTest {
     static ITopic t;
 
     @Before
-    public void init(){
+    public void init() {
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         t = hz.getTopic(name);
     }
 
     @After
-    public void stop(){
+    public void stop() {
         hz.shutdown();
         Hazelcast.shutdownAll();
     }
@@ -64,8 +70,8 @@ public class ClientTopicTest {
         };
         t.addMessageListener(listener);
 
-        for (int i=0; i<10; i++){
-            t.publish("naber"+i);
+        for (int i = 0; i < 10; i++) {
+            t.publish("naber" + i);
         }
         assertTrue(latch.await(20, TimeUnit.SECONDS));
 

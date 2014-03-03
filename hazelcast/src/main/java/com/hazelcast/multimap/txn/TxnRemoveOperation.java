@@ -16,9 +16,13 @@
 
 package com.hazelcast.multimap.txn;
 
-import com.hazelcast.multimap.*;
-import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.MultiMapWrapper;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -59,8 +63,8 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
         }
         Collection<MultiMapRecord> coll = wrapper.getCollection(false);
         Iterator<MultiMapRecord> iter = coll.iterator();
-        while (iter.hasNext()){
-            if (iter.next().getRecordId() == recordId){
+        while (iter.hasNext()) {
+            if (iter.next().getRecordId() == recordId) {
                 iter.remove();
                 break;
             }
@@ -71,7 +75,7 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
+        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         final MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoves(elapsed);
         if (Boolean.TRUE.equals(response)) {

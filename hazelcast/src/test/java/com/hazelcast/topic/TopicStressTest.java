@@ -26,11 +26,11 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * This test creates a cluster of HazelcastInstances and a bunch of Topics.
- *
+ * <p/>
  * On each instance, there is a listener for each topic.
- *
+ * <p/>
  * There is a bunch of threads, that selects a random instance with a random topic to publish a message (int) on.
- *
+ * <p/>
  * To verify that everything is fine, we expect that the total messages send by each topic is the same as the total
  * sum of messages receives by the topic listeners.
  */
@@ -88,7 +88,7 @@ public class TopicStressTest extends HazelcastTestSupport {
                     String topicName = getTopicName(topicIndex);
                     long expected = getExpectedCount(topicName);
                     long actual = getActualCount(topicName);
-                    assertEquals("Count for topic " + topicName + " is not the same", expected,actual);
+                    assertEquals("Count for topic " + topicName + " is not the same", expected, actual);
                 }
             }
         });

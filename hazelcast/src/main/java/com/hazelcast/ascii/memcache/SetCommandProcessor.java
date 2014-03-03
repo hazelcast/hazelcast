@@ -23,9 +23,12 @@ import com.hazelcast.util.ByteUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.logging.Level;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {

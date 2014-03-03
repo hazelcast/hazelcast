@@ -25,7 +25,19 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -43,20 +55,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
 public class TestClientApplicationContext {
 
-    @Resource (name = "client")
+    @Resource(name = "client")
     private HazelcastClientProxy client;
 
-    @Resource (name = "client2")
+    @Resource(name = "client2")
     private HazelcastClientProxy client2;
 
-    @Resource (name = "client3")
+    @Resource(name = "client3")
     private HazelcastClientProxy client3;
 
     @Resource(name = "instance")
@@ -132,16 +146,16 @@ public class TestClientApplicationContext {
         assertEquals("q", map.get("Q"));
         assertEquals("x", map.get("X"));
 
-        ClientConfig config3 =client3.getClientConfig();
+        ClientConfig config3 = client3.getClientConfig();
         final SerializationConfig serConf = config3.getSerializationConfig();
 
-        assertEquals(ByteOrder.BIG_ENDIAN,serConf.getByteOrder());
-        assertEquals(false,serConf.isAllowUnsafe());
-        assertEquals(false,serConf.isCheckClassDefErrors());
-        assertEquals(false,serConf.isEnableCompression());
-        assertEquals(false,serConf.isEnableSharedObject());
-        assertEquals(false,serConf.isUseNativeByteOrder());
-        assertEquals(10,serConf.getPortableVersion());
+        assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
+        assertEquals(false, serConf.isAllowUnsafe());
+        assertEquals(false, serConf.isCheckClassDefErrors());
+        assertEquals(false, serConf.isEnableCompression());
+        assertEquals(false, serConf.isEnableSharedObject());
+        assertEquals(false, serConf.isUseNativeByteOrder());
+        assertEquals(10, serConf.getPortableVersion());
 
         final Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
         assertNotNull(map1);
@@ -160,7 +174,7 @@ public class TestClientApplicationContext {
         final SerializerConfig serializerConfig = serializerConfigs.iterator().next();
         assertNotNull(serializerConfig);
         assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
-        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName() );
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
 
         final List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
         assertNotNull(proxyFactoryConfigs);
@@ -178,11 +192,11 @@ public class TestClientApplicationContext {
 
         assertNotNull(nearCacheConfig);
 
-        assertEquals(1,nearCacheConfig.getTimeToLiveSeconds());
-        assertEquals(70,nearCacheConfig.getMaxIdleSeconds());
-        assertEquals("LRU",nearCacheConfig.getEvictionPolicy());
-        assertEquals(4000,nearCacheConfig.getMaxSize());
-        assertEquals(true,nearCacheConfig.isInvalidateOnChange());
+        assertEquals(1, nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(70, nearCacheConfig.getMaxIdleSeconds());
+        assertEquals("LRU", nearCacheConfig.getEvictionPolicy());
+        assertEquals(4000, nearCacheConfig.getMaxSize());
+        assertEquals(true, nearCacheConfig.isInvalidateOnChange());
 
 
     }

@@ -26,14 +26,13 @@ import org.hibernate.cache.RegionFactory;
 import org.hibernate.cfg.Settings;
 import org.hibernate.engine.SessionFactoryImplementor;
 
-import java.util.logging.Level;
-
 /**
  * Access underlying HazelcastInstance using Hibernate SessionFactory
  */
 public final class HazelcastAccessor {
 
-    private HazelcastAccessor(){}
+    private HazelcastAccessor() {
+    }
 
     static final ILogger logger = Logger.getLogger(HazelcastAccessor.class);
 

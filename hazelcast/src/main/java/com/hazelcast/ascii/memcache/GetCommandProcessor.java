@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 

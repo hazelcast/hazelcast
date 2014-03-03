@@ -18,7 +18,6 @@ package com.hazelcast.core;
 
 /**
  * Container managed context, such as Spring, Guice and etc.
- *
  */
 
 public interface ManagedContext {

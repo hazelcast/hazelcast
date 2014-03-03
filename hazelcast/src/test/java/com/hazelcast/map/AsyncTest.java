@@ -33,7 +33,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -99,7 +101,7 @@ public class AsyncTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsyncWithImmediateTimeout() throws Exception {
-       final IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync:timeout");
+        final IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync:timeout");
         // populate map
         map.put(key, value1);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -122,7 +124,7 @@ public class AsyncTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsyncWithNonExistentKey() throws Exception {
-       IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync:nonexistant");
+        IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync:nonexistant");
         Future<String> f1 = map.removeAsync(key);
         TestCase.assertNull(f1.get());
     }

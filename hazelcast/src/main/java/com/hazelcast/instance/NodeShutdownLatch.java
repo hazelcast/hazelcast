@@ -20,7 +20,11 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -87,11 +91,13 @@ final class NodeShutdownLatch {
     private class ShutdownMembershipListener implements MembershipListener {
         public void memberAdded(MembershipEvent membershipEvent) {
         }
+
         public void memberRemoved(MembershipEvent event) {
             if (localMember.equals(event.getMember())) {
                 latch.release();
             }
         }
+
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
         }
     }

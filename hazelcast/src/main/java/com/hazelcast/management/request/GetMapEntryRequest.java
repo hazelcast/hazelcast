@@ -91,7 +91,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
 
         dos.writeInt(result.size());
 
-        for (Map.Entry<String,String> propertyEntry : result.entrySet()) {
+        for (Map.Entry<String, String> propertyEntry : result.entrySet()) {
             dos.writeUTF(propertyEntry.getKey() + ":#" + propertyEntry.getValue());
         }
     }

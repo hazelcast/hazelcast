@@ -16,13 +16,21 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.*;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapEvent;
+import com.hazelcast.multimap.MultiMapEventFilter;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -30,7 +38,7 @@ import java.util.Collection;
 /**
  * @author ali 1/8/13
  */
-public abstract class MultiMapOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable{
+public abstract class MultiMapOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 

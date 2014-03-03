@@ -23,13 +23,23 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.queue.proxy.QueueProxyImpl;
 import com.hazelcast.queue.tx.QueueTransactionRollbackOperation;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -37,8 +47,12 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -71,11 +85,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 new QueueEvictionProcessor(nodeEngine, this), ScheduleType.POSTPONE);
     }
 
-    public void scheduleEviction(String name, long delay){
+    public void scheduleEviction(String name, long delay) {
         queueEvictionScheduler.schedule(delay, name, null);
     }
 
-    public void cancelEviction(String name){
+    public void cancelEviction(String name) {
         queueEvictionScheduler.cancel(name);
     }
 
@@ -208,9 +222,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
 
         Address owner = partition.getOwner();
-        if(owner == null){
+        if (owner == null) {
             //no-op because the owner is not yet set.
-        }else if (thisAddress.equals(owner)) {
+        } else if (thisAddress.equals(owner)) {
             stats.setOwnedItemCount(container.size());
         } else {
             stats.setBackupItemCount(container.backupSize());

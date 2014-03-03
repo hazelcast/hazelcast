@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,7 +57,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_key() {
-         HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
@@ -76,7 +75,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_this() {
-         HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
@@ -94,7 +93,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_attribute() {
-       HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
@@ -102,9 +101,9 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         IMap<Integer, Id> hazelcastLookupMap = hz.getMap("somemap");
 
-        hazelcastLookupMap.put(1,new Id("10"));
-        hazelcastLookupMap.put(2,new Id("20"));
-        hazelcastLookupMap.put(3,new Id("30"));
+        hazelcastLookupMap.put(1, new Id("10"));
+        hazelcastLookupMap.put(2, new Id("20"));
+        hazelcastLookupMap.put(3, new Id("30"));
 
         Collection<Id> result = hazelcastLookupMap.values(predicate);
         assertEquals(1, result.size());

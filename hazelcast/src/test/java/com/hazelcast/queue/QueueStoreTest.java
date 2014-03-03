@@ -66,7 +66,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-         HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         for (int i = 0; i < maxSize * 2; i++) {
             queueStore.store.put((long) i, i);

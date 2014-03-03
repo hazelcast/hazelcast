@@ -56,7 +56,7 @@ public class MapStoreConfig {
     }
 
     public MapStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null ) {
+        if (readOnly == null) {
             readOnly = new MapStoreConfigReadOnly(this);
         }
         return readOnly;
@@ -208,7 +208,7 @@ public class MapStoreConfig {
 
     /**
      * Sets initial load mode
-     *
+     * <p/>
      * LAZY: Default load mode where load is async
      * EAGER: load mode where load is blocked till all partitions are loaded
      *

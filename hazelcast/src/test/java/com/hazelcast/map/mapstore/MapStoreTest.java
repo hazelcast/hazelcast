@@ -1080,7 +1080,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         testMapStore.getStore().putAll(mapForStore);
 
         Config config = newConfig(testMapStore, 0);
-       HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("default");
 
         assertEquals(map.keySet(), mapForStore.keySet());

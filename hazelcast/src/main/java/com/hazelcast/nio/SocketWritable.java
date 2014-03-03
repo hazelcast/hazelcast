@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 
 /**
  * Represents something that can be written to a {@link com.hazelcast.nio.Connection}.
- *
+ * <p/>
  * todo:
  * Perhaps this class should be renamed to ConnectionWritable since it is written to a
  * {@link com.hazelcast.nio.Connection#write(SocketWritable)}. This aligns the names.
@@ -37,7 +37,7 @@ public interface SocketWritable {
 
     /**
      * Checks if this SocketWritable is urgent.
-     *
+     * <p/>
      * SocketWritable that are urgent, have priority above regular SocketWritable. This is useful to implement
      * System Operations so that they can be send faster than regular operations; especially when the system is
      * under load you want these operations have precedence.

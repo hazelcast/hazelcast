@@ -24,6 +24,7 @@ public interface LifecycleService {
 
     /**
      * whether the instance is running
+     *
      * @return true if instance is active and running
      */
     boolean isRunning();
@@ -40,6 +41,7 @@ public interface LifecycleService {
 
     /**
      * Add listener object to listen lifecycle events.
+     *
      * @param lifecycleListener Listener object
      * @return listener id
      */
@@ -47,6 +49,7 @@ public interface LifecycleService {
 
     /**
      * Remove lifecycle listener
+     *
      * @param registrationId The listener id returned by {@link #addLifecycleListener(LifecycleListener)}
      * @return true if removed successfully
      */

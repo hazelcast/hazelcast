@@ -26,8 +26,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
-* @author mdogan 06/15/13
-*/
+ * @author mdogan 06/15/13
+ */
 final class ByteBufferObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
 
     private final DynamicByteBuffer buffer;
@@ -75,8 +75,8 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
         write(v);
     }
 
-    public void writeZeroBytes(int count){
-        for(int k=0;k<count;k++){
+    public void writeZeroBytes(int count) {
+        for (int k = 0; k < count; k++) {
             write(0);
         }
     }

@@ -88,7 +88,7 @@ public class MapReduceService
         this.config = nodeEngine.getConfig();
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.clusterService = nodeEngine.getClusterService();
-        this.partitionService =  nodeEngine.getPartitionService();
+        this.partitionService = nodeEngine.getPartitionService();
 
         this.jobTrackers = new ConcurrentHashMap<String, NodeJobTracker>();
         this.jobSupervisors = new ConcurrentHashMap<JobSupervisorKey, JobSupervisor>();
@@ -225,7 +225,7 @@ public class MapReduceService
 
         String executorName = MapReduceUtil.buildExecutorName(name);
         InvocationBuilder invocation = nodeEngine.getOperationService()
-                                                 .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
+                .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
 
         Future<R> future = invocation.setExecutorName(executorName).invoke();
         return future.get();

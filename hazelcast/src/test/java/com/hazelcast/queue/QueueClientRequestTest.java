@@ -25,7 +25,18 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.queue.client.*;
+import com.hazelcast.queue.client.AddAllRequest;
+import com.hazelcast.queue.client.AddListenerRequest;
+import com.hazelcast.queue.client.ClearRequest;
+import com.hazelcast.queue.client.CompareAndRemoveRequest;
+import com.hazelcast.queue.client.ContainsRequest;
+import com.hazelcast.queue.client.DrainRequest;
+import com.hazelcast.queue.client.IteratorRequest;
+import com.hazelcast.queue.client.OfferRequest;
+import com.hazelcast.queue.client.PeekRequest;
+import com.hazelcast.queue.client.PollRequest;
+import com.hazelcast.queue.client.RemoveRequest;
+import com.hazelcast.queue.client.SizeRequest;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -41,7 +52,10 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/8/13

@@ -18,14 +18,27 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.txn.proxy.*;
+import com.hazelcast.client.txn.proxy.ClientTxnListProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnMultiMapProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnSetProxy;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.TransactionalList;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 
 import javax.transaction.xa.XAResource;
@@ -108,7 +121,7 @@ public class TransactionContextProxy implements TransactionContext {
                 obj = new ClientTxnMultiMapProxy(name, this);
             } else if (serviceName.equals(ListService.SERVICE_NAME)) {
                 obj = new ClientTxnListProxy(name, this);
-            }else if (serviceName.equals(SetService.SERVICE_NAME)) {
+            } else if (serviceName.equals(SetService.SERVICE_NAME)) {
                 obj = new ClientTxnSetProxy(name, this);
             }
 

@@ -23,7 +23,6 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
@@ -556,7 +555,7 @@ public class EvictionTest extends HazelcastTestSupport {
         MapConfig mc = cfg.getMapConfig("testZeroResetsTTL");
         int ttl = 5;
         mc.setTimeToLiveSeconds(ttl);
-       HazelcastInstance instance = createHazelcastInstance(cfg);
+        HazelcastInstance instance = createHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryAdapter<Object, Object>() {

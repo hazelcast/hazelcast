@@ -18,10 +18,8 @@ package com.hazelcast.wm.test;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,7 +31,9 @@ import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(Parameterized.class)
 @Category(QuickTest.class)
@@ -41,12 +41,12 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
 
     @Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] { //
-                new Object[] { "node - not deferred", "node1-node.xml", "node2-node.xml" }, //
-                        new Object[] { "node - deferred", "node1-node-deferred.xml", "node2-node-deferred.xml" }, //
-                        new Object[] { "client - not deferred", "node1-client.xml", "node2-client.xml" }, //
-                        new Object[] { "client - deferred", "node1-client-deferred.xml", "node2-client-deferred.xml" } //
-                });
+        return Arrays.asList(new Object[][]{ //
+                new Object[]{"node - not deferred", "node1-node.xml", "node2-node.xml"}, //
+                new Object[]{"node - deferred", "node1-node-deferred.xml", "node2-node-deferred.xml"}, //
+                new Object[]{"client - not deferred", "node1-client.xml", "node2-client.xml"}, //
+                new Object[]{"client - deferred", "node1-client-deferred.xml", "node2-client-deferred.xml"} //
+        });
     }
 
     public WebfilterTestCase(String name, String serverXml1, String serverXml2) {

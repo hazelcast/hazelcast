@@ -19,10 +19,10 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.map.operation.EntrySetOperationFactory;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.EntrySetOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -57,8 +57,8 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
         MapEntrySet entrySet = new MapEntrySet();
         MapService service = getService();
         for (Object result : map.values()) {
-            Set<Map.Entry<Data,Data>> entries = ((MapEntrySet) service.toObject(result)).getEntrySet();
-            for (Map.Entry<Data,Data> entry : entries) {
+            Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) service.toObject(result)).getEntrySet();
+            for (Map.Entry<Data, Data> entry : entries) {
                 entrySet.add(entry);
             }
         }

@@ -36,27 +36,27 @@
 
     <build>
         <plugins>
-    		<plugin>
-			  <artifactId>exec-maven-plugin</artifactId>
-			  <groupId>org.codehaus.mojo</groupId>
-			  <executions>
-			  <execution>
-			    <id>GenerateDocumentation</id>
-			    <phase>compile</phase>
-			    <goals>
-			      <goal>exec</goal>
-			    </goals>
-			    <configuration>
-			      <executable>./build.sh</executable>
-			      <arguments>
-			         <argument>${project.version}</argument>
-			      </arguments>
-			      <workingDirectory>${env.PROJECT_HOME}</workingDirectory>            
-			    </configuration>
-			  </execution>
-			  </executions>
-			
-			</plugin>
-		</plugins>
+            <plugin>
+                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <executions>
+                    <execution>
+                        <id>GenerateDocumentation</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>./build.sh</executable>
+                            <arguments>
+                                <argument>${project.version}</argument>
+                            </arguments>
+                            <workingDirectory>${env.PROJECT_HOME}</workingDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
+        </plugins>
     </build>
 </project>

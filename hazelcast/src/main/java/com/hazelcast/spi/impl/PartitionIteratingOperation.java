@@ -20,11 +20,20 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {

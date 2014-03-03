@@ -19,7 +19,6 @@ package com.hazelcast.nio;
 import com.hazelcast.client.ClientTypes;
 
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 

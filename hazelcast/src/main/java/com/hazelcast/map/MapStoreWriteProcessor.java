@@ -23,7 +23,12 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
 
 public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
@@ -66,7 +71,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             }
         } else {   // if entries size > 0, we will call storeAll
             final Queue<ScheduledEntry> duplicateKeys = new LinkedList<ScheduledEntry>();
-            final Map<Object,Object> map = new HashMap<Object,Object>(entries.size());
+            final Map<Object, Object> map = new HashMap<Object, Object>(entries.size());
             for (ScheduledEntry<Data, Object> entry : entries) {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
                 // execute operation if the node is owner of the key (it can be backup)
@@ -84,7 +89,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             for (ScheduledEntry duplicateKey : duplicateKeys) {
                 Object key = duplicateKey.getKey();
                 Object removed = map.remove(key);
-                if(removed != null) {
+                if (removed != null) {
                     final Exception ex = tryStore(scheduler, new AbstractMap.SimpleEntry(key, removed));
                     if (ex != null) {
                         logger.severe(ex);

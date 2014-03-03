@@ -22,13 +22,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/28/13
@@ -49,7 +53,7 @@ public class ClientCountDownLatchTest {
     }
 
     @After
-    public void stop(){
+    public void stop() {
         hz.shutdown();
         Hazelcast.shutdownAll();
     }
@@ -60,9 +64,9 @@ public class ClientCountDownLatchTest {
         assertFalse(l.trySetCount(10));
         assertEquals(20, l.getCount());
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<20; i++){
+                for (int i = 0; i < 20; i++) {
                     l.countDown();
                     try {
                         Thread.sleep(60);

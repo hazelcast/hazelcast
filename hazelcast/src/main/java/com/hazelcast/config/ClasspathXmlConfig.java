@@ -21,7 +21,6 @@ import com.hazelcast.logging.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
 
 /**
  * A {@link Config} which is initialized by loading an XML configuration file from the classpath.
@@ -39,7 +38,8 @@ public class ClasspathXmlConfig extends Config {
      *
      * @param resource the xml resource.
      * @throws IllegalArgumentException if the resource could not be found.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public ClasspathXmlConfig(String resource) {
         this(resource, System.getProperties());
@@ -49,10 +49,11 @@ public class ClasspathXmlConfig extends Config {
      * Creates a config which is loaded from a classpath resource using the
      * Thread.currentThread contextClassLoader.
      *
-     * @param resource the xml resource.
+     * @param resource   the xml resource.
      * @param properties the Properties to resolve variables in the XML.
      * @throws IllegalArgumentException if the resource could not be found or if properties is null.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public ClasspathXmlConfig(String resource, Properties properties) {
         this(Thread.currentThread().getContextClassLoader(), resource, properties);
@@ -63,9 +64,10 @@ public class ClasspathXmlConfig extends Config {
      * resolve variables in the XML.
      *
      * @param classLoader the ClassLoader used to load the resource.
-     * @param resource the classpath resource
+     * @param resource    the classpath resource
      * @throws IllegalArgumentException if classLoader or resource is null, or if the resource is not found.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public ClasspathXmlConfig(ClassLoader classLoader, String resource) {
         this(classLoader, resource, System.getProperties());
@@ -75,21 +77,22 @@ public class ClasspathXmlConfig extends Config {
      * Creates a config which is loaded from a classpath resource.
      *
      * @param classLoader the ClassLoader used to load the resource.
-     * @param resource the classpath resource
-     * @param properties to properties used to resolve variables in the XML.
+     * @param resource    the classpath resource
+     * @param properties  to properties used to resolve variables in the XML.
      * @throws IllegalArgumentException if classLoader or resource is null, or if the resource is not found.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public ClasspathXmlConfig(ClassLoader classLoader, String resource, Properties properties) {
-        if(classLoader == null){
+        if (classLoader == null) {
             throw new IllegalArgumentException("classLoader can't be null");
         }
 
-        if(resource == null){
+        if (resource == null) {
             throw new IllegalArgumentException("resource can't be null");
         }
 
-        if(properties == null){
+        if (properties == null) {
             throw new IllegalArgumentException("properties can't be null");
         }
 

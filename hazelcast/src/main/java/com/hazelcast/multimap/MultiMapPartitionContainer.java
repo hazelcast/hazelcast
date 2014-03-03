@@ -51,9 +51,9 @@ public class MultiMapPartitionContainer {
         return container;
     }
 
-    public MultiMapContainer getCollectionContainer(String name){
+    public MultiMapContainer getCollectionContainer(String name) {
         MultiMapContainer container = containerMap.get(name);
-        if (container != null){
+        if (container != null) {
             container.access();
         }
         return container;

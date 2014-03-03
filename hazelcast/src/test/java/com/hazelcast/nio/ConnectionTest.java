@@ -23,9 +23,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.management.ThreadDumpGenerator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -35,7 +36,11 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -93,7 +98,7 @@ public class ConnectionTest {
             Thread t = new Thread("client-socket-" + i) {
                 public void run() {
                     try {
-                        if (cc.incrementAndGet() > count/5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
+                        if (cc.incrementAndGet() > count / 5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
                             st.interrupt();
                             serverSocket.close();
                             try {
@@ -142,7 +147,7 @@ public class ConnectionTest {
             Thread t = new Thread("client-socket-" + i) {
                 public void run() {
                     try {
-                        if (cc.incrementAndGet() > count/5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
+                        if (cc.incrementAndGet() > count / 5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
                             serverSocket.close();
                         } else {
                             clientSocket.setSoTimeout(1000 * 5);

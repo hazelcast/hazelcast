@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.operations.client;
 
+import com.hazelcast.concurrent.lock.client.AbstractUnlockRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.concurrent.lock.client.AbstractUnlockRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

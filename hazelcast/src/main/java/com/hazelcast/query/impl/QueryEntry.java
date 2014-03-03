@@ -16,7 +16,11 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 
@@ -87,9 +91,9 @@ public class QueryEntry implements QueryableEntry {
                 return (Comparable) getValue();
             }
 
-            if(attributeName.startsWith(KEY_ATTRIBUTE_NAME)){
+            if (attributeName.startsWith(KEY_ATTRIBUTE_NAME)) {
                 return ReflectionHelper.extractValue(this, attributeName, getKey());
-            }else{
+            } else {
                 return ReflectionHelper.extractValue(this, attributeName, getValue());
             }
         } catch (Exception e) {

@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class QueryBasicTest extends HazelcastTestSupport {
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testInPredicateWithEmptyArray() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();

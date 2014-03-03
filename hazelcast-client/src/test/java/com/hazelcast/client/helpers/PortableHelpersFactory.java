@@ -13,7 +13,7 @@ public class PortableHelpersFactory implements PortableFactory {
     public static final int ID = 666;
 
     public Portable create(int classId) {
-        if (classId == SimpleClientInterceptor.ID){
+        if (classId == SimpleClientInterceptor.ID) {
             return new SimpleClientInterceptor();
         }
 

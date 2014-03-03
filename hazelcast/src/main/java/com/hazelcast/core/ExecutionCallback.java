@@ -20,11 +20,10 @@ package com.hazelcast.core;
  * ExecutionCallback allows to asynchronously get notified when the execution is completed,
  * either successfully or with error.
  *
+ * @param <V> value
  * @see IExecutorService#submit(java.util.concurrent.Callable, ExecutionCallback)
  * @see IExecutorService#submitToMember(java.util.concurrent.Callable, Member, ExecutionCallback)
  * @see IExecutorService#submitToKeyOwner(java.util.concurrent.Callable, Object, ExecutionCallback)
- *
- * @param <V> value
  */
 public interface ExecutionCallback<V> {
 
@@ -37,6 +36,7 @@ public interface ExecutionCallback<V> {
 
     /**
      * Called when an execution is completed with an error.
+     *
      * @param t exception thrown
      */
     void onFailure(Throwable t);

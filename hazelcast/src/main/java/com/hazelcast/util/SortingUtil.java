@@ -13,7 +13,7 @@ public final class SortingUtil {
     private SortingUtil() {
     }
 
-    public static int compare(Comparator comparator, IterationType iterationType, Map.Entry entry1, Map.Entry entry2){
+    public static int compare(Comparator comparator, IterationType iterationType, Map.Entry entry1, Map.Entry entry2) {
         Object comparable1 = entry1;
         Object comparable2 = entry2;
         if (iterationType == IterationType.KEY) {
@@ -38,8 +38,8 @@ public final class SortingUtil {
         return comparable1.hashCode() - comparable2.hashCode();
     }
 
-    public static Comparator newComparator(final Comparator comparator){
-        return new Comparator(){
+    public static Comparator newComparator(final Comparator comparator) {
+        return new Comparator() {
             public int compare(Object comparable1, Object comparable2) {
                 if (comparator != null) {
                     return comparator.compare(comparable1, comparable2);
@@ -52,16 +52,16 @@ public final class SortingUtil {
         };
     }
 
-    public static Comparator<Map.Entry> newComparator(final Comparator comparator, final IterationType iterationType){
-        return new Comparator<Map.Entry>(){
+    public static Comparator<Map.Entry> newComparator(final Comparator comparator, final IterationType iterationType) {
+        return new Comparator<Map.Entry>() {
             public int compare(Map.Entry entry1, Map.Entry entry2) {
                 return SortingUtil.compare(comparator, iterationType, entry1, entry2);
             }
         };
     }
 
-    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate){
-        return new Comparator<Map.Entry>(){
+    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate) {
+        return new Comparator<Map.Entry>() {
             public int compare(Map.Entry entry1, Map.Entry entry2) {
                 return SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
             }

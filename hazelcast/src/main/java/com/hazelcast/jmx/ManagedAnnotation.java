@@ -22,5 +22,6 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ManagedAnnotation {
     String value();
+
     boolean operation() default false;
 }

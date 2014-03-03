@@ -309,7 +309,8 @@
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
             <serializer type-class="com.hazelcast.examples.DummyType">
-                com.hazelcast.examples.SerializerFactory</serializer>
+                com.hazelcast.examples.SerializerFactory
+            </serializer>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>

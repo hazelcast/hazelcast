@@ -37,7 +37,10 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 3/6/13
@@ -55,14 +58,14 @@ public class SetTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
-        for (int i=0; i<count; i++){
-            assertTrue(getSet(instances, name).add("item"+i));
+        for (int i = 0; i < count; i++) {
+            assertTrue(getSet(instances, name).add("item" + i));
         }
         assertFalse(getSet(instances, name).add("item0"));
 
         Iterator iter = getSet(instances, name).iterator();
         int item = 0;
-        while (iter.hasNext()){
+        while (iter.hasNext()) {
             getSet(instances, name).contains(iter.next());
             item++;
         }
@@ -78,9 +81,9 @@ public class SetTest extends HazelcastTestSupport {
         list.add("item-2");
 
         assertTrue(getSet(instances, name).addAll(list));
-        assertEquals(count+list.size()-1, getSet(instances, name).size());
+        assertEquals(count + list.size() - 1, getSet(instances, name).size());
         assertFalse(getSet(instances, name).addAll(list));
-        assertEquals(count+list.size()-1, getSet(instances, name).size());
+        assertEquals(count + list.size() - 1, getSet(instances, name).size());
 
         assertTrue(getSet(instances, name).containsAll(list));
         list.add("asd");
@@ -124,7 +127,7 @@ public class SetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMigration(){
+    public void testMigration() {
         final String name = "defSet";
 
         final int insCount = 4;
@@ -134,7 +137,7 @@ public class SetTest extends HazelcastTestSupport {
 
         ISet set = instance1.getSet(name);
 
-        for (int i=0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             set.add("item" + i);
         }
 
@@ -148,7 +151,7 @@ public class SetTest extends HazelcastTestSupport {
         assertEquals(100, instance3.getSet(name).size());
 
         set = instance2.getSet(name);
-        for (int i=0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             set.add("item-" + i);
         }
 
@@ -163,7 +166,7 @@ public class SetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMaxSize(){
+    public void testMaxSize() {
         Config config = new Config();
         final String name = "defSet";
         config.addSetConfig(new SetConfig().setName(name).setBackupCount(1).setMaxSize(100));
@@ -176,7 +179,7 @@ public class SetTest extends HazelcastTestSupport {
 
         ISet set = instance1.getSet(name);
 
-        for (int i=0; i<100; i++){
+        for (int i = 0; i < 100; i++) {
             assertTrue(set.add("item" + i));
         }
         assertFalse(set.add("item"));
@@ -184,7 +187,7 @@ public class SetTest extends HazelcastTestSupport {
         assertTrue(set.add("item"));
     }
 
-    private ISet getSet(HazelcastInstance[] instances, String name){
+    private ISet getSet(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getSet(name);
     }

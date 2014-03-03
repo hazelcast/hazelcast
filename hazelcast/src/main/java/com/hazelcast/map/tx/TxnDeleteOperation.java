@@ -17,8 +17,8 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.operation.BaseRemoveOperation;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.operation.RemoveBackupOperation;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -49,7 +49,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     public void run() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
-        if (record == null || version == record.getVersion()){
+        if (record == null || version == record.getVersion()) {
             dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey));
             successful = dataOldValue != null;
         }

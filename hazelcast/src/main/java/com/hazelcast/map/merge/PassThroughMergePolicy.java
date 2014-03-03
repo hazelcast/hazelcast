@@ -28,14 +28,13 @@ import java.io.IOException;
  * <p/>
  * PassThroughMergePolicy causes the merging entry to be merged from source to destination map
  * if source entry has updated more recently than the destination entry.
- *
+ * <p/>
  * <p/>
  *
  * @see com.hazelcast.map.merge.MapMergePolicy
  * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
  * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
  * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
- *
  */
 public class PassThroughMergePolicy implements MapMergePolicy {
 

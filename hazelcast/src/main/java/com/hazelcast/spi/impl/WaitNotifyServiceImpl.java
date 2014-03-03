@@ -22,7 +22,13 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.WaitNotifyService;
+import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -33,7 +39,15 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 class WaitNotifyServiceImpl implements WaitNotifyService {
@@ -212,7 +226,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     void shutdown() {
-        logger.finest( "Stopping tasks...");
+        logger.finest("Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
@@ -279,7 +293,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
         public boolean isCallTimedOut() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            if(nodeEngine.operationService.isCallTimedOut(op)) {
+            if (nodeEngine.operationService.isCallTimedOut(op)) {
                 cancel(new CallTimeoutException(op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout()));
                 return true;
             }
@@ -302,9 +316,9 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
         }
 
-        public boolean equals(Object o){
-            if(o!=null && o instanceof Delayed){
-                return this.compareTo((Delayed)o)==0;
+        public boolean equals(Object o) {
+            if (o != null && o instanceof Delayed) {
+                return this.compareTo((Delayed) o) == 0;
             }
             return false;
         }
