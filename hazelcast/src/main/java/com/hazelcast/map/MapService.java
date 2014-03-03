@@ -41,9 +41,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
@@ -210,7 +210,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 // add your owned entries to the map so they will be merged
                 if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
                     Collection<Record> records = recordMap.get(mapContainer);
-                    if(records == null){
+                    if (records == null) {
                         records = new ArrayList<Record>();
                         recordMap.put(mapContainer, records);
                     }
@@ -520,8 +520,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public void destroyDistributedObject(String name) {
         MapContainer mapContainer = mapContainers.remove(name);
         if (mapContainer != null) {
-            if(mapContainer.isNearCacheEnabled())
-            {
+            if (mapContainer.isNearCacheEnabled()) {
                 NearCache nearCache = nearCacheMap.remove(name);
                 if (nearCache != null) {
                     nearCache.clear();
@@ -939,66 +938,65 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
 
             public void run() {
-                    Set<Data> keysGatheredForNearCacheEviction = null;
-                    for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-                        if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
+                Set<Data> keysGatheredForNearCacheEviction = null;
+                for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                    if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
+                        continue;
+                    }
+                    final Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                    if (nodeEngine.getThisAddress().equals(owner)) {
+                        final PartitionContainer pc = partitionContainers[i];
+                        final RecordStore recordStore = pc.getRecordStore(mapName);
+                        final Collection<Record> values = recordStore.getReadonlyRecordMap().values();
+                        final List<Record> sortedRecords = new ArrayList<Record>(values.size());
+                        sortedRecords.addAll(recordStore.getReadonlyRecordMap().values());
+                        Collections.sort(sortedRecords, comparator);
+                        final int sortedSize = sortedRecords.size();
+                        int evictSize;
+                        switch (maxSizePolicy) {
+                            case PER_PARTITION:
+                            case PER_NODE:
+                                evictSize = Math.max((sortedSize - targetSizePerPartition), (sortedSize * evictionPercentage / 100 + 1));
+                                break;
+                            default:
+                                evictSize = sortedSize * evictionPercentage / 100;
+                                break;
+                        }
+                        if (evictSize <= 0) {
                             continue;
                         }
-                        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
-                        if (nodeEngine.getThisAddress().equals(owner)) {
-                            final PartitionContainer pc = partitionContainers[i];
-                            final RecordStore recordStore = pc.getRecordStore(mapName);
-                            final Collection<Record> values = recordStore.getReadonlyRecordMap().values();
-                            final List<Record> sortedRecords = new ArrayList<Record>(values.size());
-                            sortedRecords.addAll(recordStore.getReadonlyRecordMap().values());
-                            Collections.sort(sortedRecords, comparator);
-
-                            final int sortedSize = sortedRecords.size();
-                            int evictSize;
-                            switch (maxSizePolicy) {
-                                case PER_PARTITION:
-                                case PER_NODE:
-                                    evictSize = Math.max((sortedSize - targetSizePerPartition), (sortedSize * evictionPercentage / 100 + 1));
-                                    break;
-                                default:
-                                    evictSize = sortedSize * evictionPercentage / 100;
-                                    break;
-                            }
-                            if (evictSize <= 0) {
-                                continue;
-                            }
-                            Set<Record> recordSet = new HashSet<Record>(evictSize);
-                            Set<Data> keySet = new HashSet<Data>(evictSize);
-                            Iterator iterator = sortedRecords.iterator();
-                            while (iterator.hasNext() && evictSize-- > 0) {
-                                Record rec = (Record) iterator.next();
-                                recordSet.add(rec);
-                                keySet.add(rec.getKey());
-                            }
-                            if (keySet.isEmpty()) {
-                                continue;
-                            }
-                            keysGatheredForNearCacheEviction = new HashSet<Data>(keySet.size());
-                            //add keys for near cache eviction.
-                            keysGatheredForNearCacheEviction.addAll(keySet);
-                            //prepare local "evict keys" operation.
-                            EvictKeysOperation evictKeysOperation = new EvictKeysOperation(mapName, keySet);
-                            evictKeysOperation.setNodeEngine(nodeEngine);
-                            evictKeysOperation.setServiceName(SERVICE_NAME);
-                            evictKeysOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                            evictKeysOperation.setPartitionId(i);
-                            OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
-                            nodeEngine.getOperationService().executeOperation(evictKeysOperation);
-                            for (Record record : recordSet) {
-                                publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED, record.getKey(), toData(record.getValue()), null);
-                            }
+                        Set<Record> recordSet = new HashSet<Record>(evictSize);
+                        Set<Data> keySet = new HashSet<Data>(evictSize);
+                        Iterator iterator = sortedRecords.iterator();
+                        while (iterator.hasNext() && evictSize-- > 0) {
+                            Record rec = (Record) iterator.next();
+                            recordSet.add(rec);
+                            keySet.add(rec.getKey());
+                        }
+                        if (keySet.isEmpty()) {
+                            continue;
+                        }
+                        keysGatheredForNearCacheEviction = new HashSet<Data>(keySet.size());
+                        //add keys for near cache eviction.
+                        keysGatheredForNearCacheEviction.addAll(keySet);
+                        //prepare local "evict keys" operation.
+                        EvictKeysOperation evictKeysOperation = new EvictKeysOperation(mapName, keySet);
+                        evictKeysOperation.setNodeEngine(nodeEngine);
+                        evictKeysOperation.setServiceName(SERVICE_NAME);
+                        evictKeysOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        evictKeysOperation.setPartitionId(i);
+                        OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
+                        nodeEngine.getOperationService().executeOperation(evictKeysOperation);
+                        for (Record record : recordSet) {
+                            publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED, record.getKey(), toData(record.getValue()), null);
                         }
                     }
-                    //send invalidation request to all members.
-                    if (isNearCacheAndInvalidationEnabled(mapName)) {
-                        invalidateAllNearCaches(mapName, keysGatheredForNearCacheEviction);
-                    }
                 }
+                //send invalidation request to all members.
+                if (isNearCacheAndInvalidationEnabled(mapName)) {
+                    invalidateAllNearCaches(mapName, keysGatheredForNearCacheEviction);
+                }
+            }
         }
 
         private boolean checkLimits(MapContainer mapContainer) {
@@ -1066,7 +1064,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         RecordStore recordStore = container.getRecordStore(mapName);
         Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate)predicate : null;
+        final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
         for (Record record : records.values()) {
             Data key = record.getKey();
@@ -1079,7 +1077,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 if (pagingPredicate != null) {
                     Map.Entry anchor = pagingPredicate.getAnchor();
                     if (anchor != null &&
-                            SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), anchor, queryEntry) >= 0 ) {
+                            SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
                         continue;
                     }
                 }
@@ -1122,9 +1120,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId);
             Address owner = partition.getOwner();
-            if(owner == null){
+            if (owner == null) {
                 //no-op because no owner is set yet. Therefor we don't know anything about the map
-            }else if (owner.equals(thisAddress)) {
+            } else if (owner.equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
 
@@ -1191,9 +1189,8 @@ public class MapService implements ManagedService, MigrationAwareService,
         // add near cache heap cost.
         heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
         localMapStats.setHeapCost(heapCost);
-        if(mapContainer.getMapConfig().isNearCacheEnabled())
-        {
-            NearCacheStatsImpl nearCacheStats =  getNearCache(mapName).getNearCacheStats();
+        if (mapContainer.getMapConfig().isNearCacheEnabled()) {
+            NearCacheStatsImpl nearCacheStats = getNearCache(mapName).getNearCacheStats();
             localMapStats.setNearCacheStats(nearCacheStats);
         }
 
