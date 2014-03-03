@@ -31,7 +31,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
@@ -143,7 +143,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         // todo action for read-backup true is not well tested.
         if (mapConfig.isReadBackupData()) {
             int backupCount = mapConfig.getTotalBackupCount();
-            PartitionService partitionService = mapService.getNodeEngine().getPartitionService();
+            InternalPartitionService partitionService = mapService.getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
                 InternalPartition partition = partitionService.getPartition(partitionId);
@@ -460,7 +460,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
-        PartitionService partitionService = getNodeEngine().getPartitionService();
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitions = partitionService.getPartitionCount();
         int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
         Set<Integer> partitionIds = new HashSet<Integer>(capacity);
@@ -477,7 +477,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         int factor = 3;
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         int partitionCount = partitionService.getPartitionCount();
         boolean tooManyEntries = entries.size() > (partitionCount * factor);

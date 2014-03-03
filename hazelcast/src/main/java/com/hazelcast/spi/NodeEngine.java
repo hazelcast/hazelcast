@@ -25,7 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -42,7 +42,7 @@ public interface NodeEngine {
 
     ClusterService getClusterService();
 
-    PartitionService getPartitionService();
+    InternalPartitionService getPartitionService();
 
     EventService getEventService();
 

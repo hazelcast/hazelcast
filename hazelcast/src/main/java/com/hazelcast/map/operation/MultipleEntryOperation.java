@@ -7,7 +7,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -48,7 +48,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
     @Override
     public void run() throws Exception {
         response = new MapEntrySet();
-        final PartitionService partitionService = getNodeEngine().getPartitionService();
+        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(),name);
         MapEntrySimple entry;
 

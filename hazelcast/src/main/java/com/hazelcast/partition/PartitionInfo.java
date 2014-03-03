@@ -14,35 +14,43 @@ public class PartitionInfo {
     private final int partitionId;
 
     public PartitionInfo(int partitionId, Address[] addresses) {
-        this.addresses = isNotNull(addresses,"addresses");
+        this.addresses = isNotNull(addresses, "addresses");
         this.partitionId = partitionId;
     }
 
-    public Address getReplicaAddress(int index){
+    public Address getReplicaAddress(int index) {
         return addresses[index];
     }
 
-    public Address[] getReplicaAddresses(){
+    public Address[] getReplicaAddresses() {
         return addresses;
     }
 
-    public int getPartitionId(){
+    public int getPartitionId() {
         return partitionId;
     }
 
-    public int getReplicaCount(){
+    public int getReplicaCount() {
         return addresses.length;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         PartitionInfo that = (PartitionInfo) o;
 
-        if (partitionId != that.partitionId) return false;
-        if (!Arrays.equals(addresses, that.addresses)) return false;
+        if (partitionId != that.partitionId) {
+            return false;
+        }
+        if (!Arrays.equals(addresses, that.addresses)) {
+            return false;
+        }
 
         return true;
     }
@@ -56,9 +64,9 @@ public class PartitionInfo {
 
     @Override
     public String toString() {
-        return "PartitionInfo{" +
-                "addresses=" + Arrays.toString(addresses) +
-                ", partitionId=" + partitionId +
-                '}';
+        return "PartitionInfo{"
+                + "addresses=" + Arrays.toString(addresses)
+                + ", partitionId=" + partitionId
+                + '}';
     }
 }

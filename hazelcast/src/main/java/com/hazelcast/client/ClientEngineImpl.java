@@ -35,7 +35,7 @@ import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -128,7 +128,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public PartitionService getPartitionService() {
+    public InternalPartitionService getPartitionService() {
         return nodeEngine.getPartitionService();
     }
 

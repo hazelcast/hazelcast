@@ -23,21 +23,21 @@ import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 5/13/13
- */
 public final class PartitionPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.PARTITION_PORTABLE_FACTORY, -2);
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return null;
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

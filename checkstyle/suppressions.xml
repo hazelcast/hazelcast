@@ -36,10 +36,8 @@
     <suppress checks="" files="[\\/]jmx[\\/]"/>
     <suppress checks="" files="[\\/]management[\\/]"/>
     <suppress checks="" files="[\\/]map[\\/]"/>
-    <!-- suppress checks="" files="[\\/]mapreduce[\\/]"/ -->
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
-    <suppress checks="" files="[\\/]partition[\\/]"/>
     <suppress checks="" files="[\\/]query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
     <suppress checks="" files="[\\/]spi[\\/]"/>
@@ -129,6 +127,18 @@
     <suppress checks="JavadocType" files="com.hazelcast.logging[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.logging[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.logging[\\/]"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.partition[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.partition[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.partition[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.partition[\\/]"/>
+    <!-- todo -->
+    <!-- suppress checks="" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/ -->
+    <suppress checks="" files="com.hazelcast.partition.impl[\\/]"/>
+    <suppress checks="" files="com.hazelcast.partition.impl.MigrationRequestOperation"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.partition[\\/]"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.partition.MigrationInfo"/>
+
 
     <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.topic[\\/]"/>

@@ -32,9 +32,6 @@
         <Package name="com.hazelcast.nio.ssl" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.nio.partition" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.spi.impl" />
     </Match>
     <Match>
@@ -62,12 +59,6 @@
         <Package name="com.hazelcast.nio.ascii" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.partition" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.partition.client" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.management" />
     </Match>
     <Match>
@@ -76,6 +67,20 @@
     <Match>
         <Package name="com.hazelcast.ascii" />
     </Match>
+
+    <Match>
+        <Package name="com.hazelcast.nio.partition" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition.client" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition.impl" />
+    </Match>
+
 
     <!-- todo: these findbugs warnings needs to be fixed -->
     <Match>

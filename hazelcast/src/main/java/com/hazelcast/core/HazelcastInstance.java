@@ -294,7 +294,7 @@ public interface HazelcastInstance {
 
     /**
      * Returns the partition service of this Hazelcast instance.
-     * PartitionService allows you to introspect current partitions in the
+     * InternalPartitionService allows you to introspect current partitions in the
      * cluster, partition owner members and listen for partition migration events.
      *
      * @return partition service
