@@ -58,9 +58,12 @@ It also has a toolbar on the top and a menu on the left.
 
 ####Toolbar
 Toolbar has the following buttons:
--	Home: When pressed, loads the home page shown above.
--	</> Scripting: When pressed, loads the page used to write and execute scripts.
--	
+
+-	***Home***: When pressed, loads the home page shown above.
+-	***Scripting***: When pressed, loads the page used to write and execute user`s own scripts on the cluster. Please see [Scripting](#scripting).
+-	***Console***: When pressed, loads the page used to execute commands on the cluster. Please see [Console](#console).
+-	***Documentation***: It is used to open the documentation of Hosted Management Center in a window inside the tool. Please see [Documentation](#documentation).
+-	***Cluster Selector***: It is used to switch between clusters. When the mouse is moved onto this item, a dropdown list of clusters appears. The user can select any cluster and once selected by using the 
 
 
 The starter page of the tool is`Cluster Home`. Here you can see cluster's main properties such as uptime, memory. Also with pie chart, you can see the distribution of partitions over cluster members. You can come back to this page, by clicking the `Home` icon on the top-right toolbar. On the left panel you see the Map/Queue/Topic instances in the cluster. At the bottom-left corner, members of the cluster are listed. On top menu bar, you can change the current tab to`Scripting, Docs`, user`Administration`. Note that Administration tab is viewable only for admin users. Also `Scripting` page is disabled for users with read-only credential.
