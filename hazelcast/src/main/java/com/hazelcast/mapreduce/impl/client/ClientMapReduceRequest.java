@@ -44,6 +44,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
@@ -57,8 +58,7 @@ import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
  * @param <KeyIn>   type of the input key
  * @param <ValueIn> type of the input value
  */
-public class ClientMapReduceRequest<KeyIn, ValueIn>
-        extends InvocationClientRequest {
+public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequest {
 
     protected String name;
 
@@ -241,4 +241,8 @@ public class ClientMapReduceRequest<KeyIn, ValueIn>
         throw new IllegalArgumentException("TopologyChangedStrategy with ordinal " + ordinal + " is unknown");
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

@@ -498,8 +498,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
         private void checkPermissions(ClientEndpoint endpoint, ClientRequest request) {
             SecurityContext securityContext = getSecurityContext();
-            if (securityContext != null && request instanceof SecureRequest) {
-                Permission permission = ((SecureRequest) request).getRequiredPermission();
+            if (securityContext != null) {
+                Permission permission = request.getRequiredPermission();
                 if (permission != null) {
                     securityContext.checkPermission(endpoint.getSubject(), permission);
                 }

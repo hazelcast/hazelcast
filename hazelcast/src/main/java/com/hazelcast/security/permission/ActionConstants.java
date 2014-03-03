@@ -25,6 +25,7 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.topic.TopicService;
@@ -81,6 +82,8 @@ public final class ActionConstants {
             return new ExecutorServicePermission(name, actions);
         } else if (IdGeneratorService.SERVICE_NAME.equals(serviceName)) {
             return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
+        } else if (MapReduceService.SERVICE_NAME.equals(serviceName)) {
+            return new MapReducePermission(name, actions);
         }
         throw new IllegalArgumentException("No service matched!!!");
     }

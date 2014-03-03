@@ -22,10 +22,10 @@ import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionServiceImpl;
 
+import java.security.Permission;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * @author mdogan 5/13/13
  */
-public final class GetPartitionsRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public final class GetPartitionsRequest extends CallableClientRequest implements RetryableRequest {
 
     public Object call() throws Exception {
         final PartitionServiceImpl service = getService();
@@ -78,4 +78,8 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
         return ClientPortableHook.GET_PARTITIONS;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

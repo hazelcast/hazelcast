@@ -18,9 +18,12 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
+import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionAccessor;
+
+import java.security.Permission;
 
 public class PrepareTransactionRequest extends BaseTransactionRequest {
 
@@ -49,5 +52,10 @@ public class PrepareTransactionRequest extends BaseTransactionRequest {
     @Override
     public int getClassId() {
         return ClientTxnPortableHook.PREPARE;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
     }
 }
