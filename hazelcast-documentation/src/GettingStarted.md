@@ -55,7 +55,7 @@ Members [2] {
 }                              
 ```
 
--	Now, you can use the **Management Center** to monitor and configure your maps, topics, queues and members, and also the see the logs.
+-	Now, you can use the **Management Center** to monitor and configure your maps, topics, queues and members, and also the see the logs. Please see [Management Center](#management-center) for usage explanations. 
 
 **Connecting Hazelcast Cluster with Java Client API**
 
