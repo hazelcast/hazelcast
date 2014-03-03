@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * @author ali 5/10/13
  */
-public class ClearRequest extends MultiMapAllPartitionRequest implements RetryableRequest{
+public class ClearRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public ClearRequest() {
     }

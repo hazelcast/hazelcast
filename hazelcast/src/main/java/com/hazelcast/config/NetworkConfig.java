@@ -93,8 +93,8 @@ public class NetworkConfig {
      * @see #setPortAutoIncrement(boolean) for more information.
      */
     public void setPortCount(int portCount) {
-        if(portCount<1){
-           throw new IllegalArgumentException("port count can't be smaller than 0");
+        if (portCount < 1) {
+            throw new IllegalArgumentException("port count can't be smaller than 0");
         }
         this.portCount = portCount;
     }
@@ -113,11 +113,11 @@ public class NetworkConfig {
     /**
      * Sets if a Hazelcast member is allowed to find a free port by incrementing the port number when it encounters
      * an occupied port.
-     *
+     * <p/>
      * If you explicitly want to control the port the a Hazelcast member is going to use, you probably want to set
      * portAutoincrement to false. In this case, the Hazelcast member is going to try to the port {@link #setPort(int)}
      * and if the port is not free, the member will not start and throw an exception.
-     *
+     * <p/>
      * If this value is set to true, Hazelcast will start at the port specified by {@link #setPort(int)} and will try
      * until it finds a free port, or until it runs out of ports to try {@link #setPortCount(int)}.
      *
@@ -206,11 +206,11 @@ public class NetworkConfig {
         this.join = join;
         return this;
     }
-    
+
     public String getPublicAddress() {
         return publicAddress;
     }
-    
+
     public NetworkConfig setPublicAddress(String publicAddress) {
         this.publicAddress = publicAddress;
         return this;
@@ -219,7 +219,7 @@ public class NetworkConfig {
     /**
      * Gets the {@link SocketInterceptorConfig}. The value can be null if no socket interception is needed.
      *
-     * @return  the SocketInterceptorConfig
+     * @return the SocketInterceptorConfig
      * @see #setSocketInterceptorConfig(SocketInterceptorConfig)
      */
     public SocketInterceptorConfig getSocketInterceptorConfig() {
@@ -251,7 +251,7 @@ public class NetworkConfig {
     /**
      * Sets the {@link SymmetricEncryptionConfig}. The value can be null if no symmetric encryption should be used.
      *
-     * @param symmetricEncryptionConfig  the SymmetricEncryptionConfig
+     * @param symmetricEncryptionConfig the SymmetricEncryptionConfig
      * @return the updated NetworkConfig.
      * @see #getSymmetricEncryptionConfig()
      */

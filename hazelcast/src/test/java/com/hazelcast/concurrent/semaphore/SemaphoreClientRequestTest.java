@@ -17,7 +17,12 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.client.ClientTestSupport;
-import com.hazelcast.concurrent.semaphore.client.*;
+import com.hazelcast.concurrent.semaphore.client.AcquireRequest;
+import com.hazelcast.concurrent.semaphore.client.AvailableRequest;
+import com.hazelcast.concurrent.semaphore.client.DrainRequest;
+import com.hazelcast.concurrent.semaphore.client.InitRequest;
+import com.hazelcast.concurrent.semaphore.client.ReduceRequest;
+import com.hazelcast.concurrent.semaphore.client.ReleaseRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,7 +35,9 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/13/13

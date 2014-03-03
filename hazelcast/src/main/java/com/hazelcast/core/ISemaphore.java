@@ -44,7 +44,6 @@ import java.util.concurrent.TimeUnit;
  * <ul>
  * <li>Correct usage of a semaphore is established by programming convention in the application.
  * </ul>
- *
  */
 
 public interface ISemaphore extends DistributedObject {
@@ -85,8 +84,8 @@ public interface ISemaphore extends DistributedObject {
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
      *
-     * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
+     * @throws InterruptedException  if the current thread is interrupted
+     * @throws IllegalStateException if hazelcast instance is shutdown while waiting
      */
     public void acquire() throws InterruptedException;
 
@@ -117,9 +116,9 @@ public interface ISemaphore extends DistributedObject {
      * interrupted status is cleared.
      *
      * @param permits the number of permits to acquire
-     * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalArgumentException   if {@code permits} is negative
-     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
+     * @throws InterruptedException     if the current thread is interrupted
+     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
     public void acquire(int permits) throws InterruptedException;
 
@@ -246,8 +245,8 @@ public interface ISemaphore extends DistributedObject {
      * @param unit    the time unit of the {@code timeout} argument
      * @return {@code true} if a permit was acquired and {@code false}
      *         if the waiting time elapsed before a permit was acquired
-     * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
+     * @throws InterruptedException  if the current thread is interrupted
+     * @throws IllegalStateException if hazelcast instance is shutdown while waiting
      */
     public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException;
 
@@ -288,9 +287,9 @@ public interface ISemaphore extends DistributedObject {
      * @param unit    the time unit of the {@code timeout} argument
      * @return {@code true} if all permits were acquired and {@code false}
      *         if the waiting time elapsed before all permits could be acquired
-     * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalArgumentException   if {@code permits} is negative
-     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
+     * @throws InterruptedException     if the current thread is interrupted
+     * @throws IllegalArgumentException if {@code permits} is negative
+     * @throws IllegalStateException    if hazelcast instance is shutdown while waiting
      */
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException;
 

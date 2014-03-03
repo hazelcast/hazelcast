@@ -20,8 +20,11 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
-import java.util.*;
-import java.util.logging.Level;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author mdogan 5/8/13
@@ -34,7 +37,7 @@ final class PortableHookLoader {
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
     private final Collection<ClassDefinition> definitions = new HashSet<ClassDefinition>();
     private final ClassLoader classLoader;
-    
+
     PortableHookLoader(Map<Integer, ? extends PortableFactory> configuredFactories, ClassLoader classLoader) {
         this.configuredFactories = configuredFactories;
         this.classLoader = classLoader;

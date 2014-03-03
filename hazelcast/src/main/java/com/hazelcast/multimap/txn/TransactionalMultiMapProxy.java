@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.txn;
 
+import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
@@ -30,7 +30,7 @@ import java.util.Collection;
 /**
  * @author ali 3/29/13
  */
-public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxySupport implements TransactionalMultiMap<K, V> {
+public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxySupport implements TransactionalMultiMap<K, V> {
 
     public TransactionalMultiMapProxy(NodeEngine nodeEngine, MultiMapService service, String name, TransactionSupport tx) {
         super(nodeEngine, service, name, tx);
@@ -52,8 +52,8 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
         Data dataKey = getNodeEngine().toData(key);
         Collection<MultiMapRecord> coll = getInternal(dataKey);
         Collection<V> collection = new ArrayList<V>(coll.size());
-        for (MultiMapRecord record: coll){
-            collection.add((V)getNodeEngine().toObject(record.getObject()));
+        for (MultiMapRecord record : coll) {
+            collection.add((V) getNodeEngine().toObject(record.getObject()));
         }
         return collection;
     }
@@ -70,8 +70,8 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
         Data dataKey = getNodeEngine().toData(key);
         Collection<MultiMapRecord> coll = removeAllInternal(dataKey);
         Collection<V> result = new ArrayList<V>(coll.size());
-        for (MultiMapRecord record: coll){
-            result.add((V)getNodeEngine().toObject(record.getObject()));
+        for (MultiMapRecord record : coll) {
+            result.add((V) getNodeEngine().toObject(record.getObject()));
         }
         return result;
     }

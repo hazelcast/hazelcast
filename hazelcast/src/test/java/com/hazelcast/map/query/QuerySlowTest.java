@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 @Category(SlowTest.class)
 public class QuerySlowTest extends HazelcastTestSupport {
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexPerformanceUsingPredicate() {
         Config cfg = new Config();
@@ -73,7 +73,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexSQLPerformance() {
         Config cfg = new Config();
@@ -112,7 +112,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
@@ -171,7 +171,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexPerformance() {
         Config cfg = new Config();
@@ -214,6 +214,6 @@ public class QuerySlowTest extends HazelcastTestSupport {
             assertEquals(c.getAge(), 23);
             assertTrue(c.isActive());
         }
-        assertTrue("tookWithIndex: " + tookWithIndex + ", tookWithoutIndex: " + tookWithout,  tookWithIndex < (tookWithout / 2));
+        assertTrue("tookWithIndex: " + tookWithIndex + ", tookWithoutIndex: " + tookWithout, tookWithIndex < (tookWithout / 2));
     }
 }

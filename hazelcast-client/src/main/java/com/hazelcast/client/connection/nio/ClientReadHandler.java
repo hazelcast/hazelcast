@@ -49,7 +49,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
         if (!connection.live()) {
             if (logger.isFinestEnabled()) {
                 String message = "We are being asked to read, but connection is not live so we won't";
-                logger.finest( message);
+                logger.finest(message);
             }
             return;
         }

@@ -27,8 +27,12 @@ import com.hazelcast.util.Clock;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.access.SoftLock;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -73,7 +77,7 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+                          final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
             return false;
         }
@@ -81,7 +85,7 @@ public class LocalRegionCache implements RegionCache {
         final Value currentValue = cache.get(key);
         if (lock == LOCK_SUCCESS) {
             if (currentValue != null && currentVersion != null
-                && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
+                    && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
                 return false;
             }
         }

@@ -51,8 +51,8 @@ public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements 
         }
         Collection<MultiMapRecord> coll = wrapper.getCollection(false);
         Iterator<MultiMapRecord> iter = coll.iterator();
-        while (iter.hasNext()){
-            if(iter.next().getRecordId() == recordId){
+        while (iter.hasNext()) {
+            if (iter.next().getRecordId() == recordId) {
                 iter.remove();
                 response = true;
                 if (coll.isEmpty()) {

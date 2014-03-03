@@ -38,14 +38,14 @@ public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, V
     }
 
     public void process(EntryTaskScheduler<String, Void> scheduler, Collection<ScheduledEntry<String, Void>> entries) {
-        if (entries.isEmpty()){
+        if (entries.isEmpty()) {
             return;
         }
         for (ScheduledEntry<String, Void> entry : entries) {
             String name = entry.getKey();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
             CheckAndEvictOperation op = new CheckAndEvictOperation(entry.getKey());
-            nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,op,partitionId).getSafely();
+            nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId).getSafely();
         }
 
     }

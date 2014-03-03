@@ -4,7 +4,6 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.client.MapQueryRequest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -84,7 +83,7 @@ public class MapStableReadStressTest extends StressTestSupport {
         for (int k = 0; k < MAP_SIZE; k++) {
             map.put(k, k);
             if (k % 10000 == 0) {
-                System.out.println("Inserted data: "+k);
+                System.out.println("Inserted data: " + k);
             }
         }
 

@@ -45,10 +45,10 @@ public class ListService extends CollectionService {
     @Override
     public ListContainer getOrCreateContainer(String name, boolean backup) {
         ListContainer container = containerMap.get(name);
-        if (container == null){
+        if (container == null) {
             container = new ListContainer(name, nodeEngine);
             final ListContainer current = containerMap.putIfAbsent(name, container);
-            if (current != null){
+            if (current != null) {
                 container = current;
             }
         }

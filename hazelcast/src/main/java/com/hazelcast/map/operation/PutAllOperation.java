@@ -67,10 +67,9 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
             Data dataValue = entry.getValue();
             if (partitionId == partitionService.getPartitionId(dataKey)) {
                 Data dataOldValue = null;
-                if(initialLoad) {
+                if (initialLoad) {
                     recordStore.putFromLoad(dataKey, dataValue, -1);
-                }
-                else {
+                } else {
                     dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, -1));
                 }
                 mapService.interceptAfterPut(name, dataValue);

@@ -22,12 +22,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -149,14 +147,14 @@ public class TestManagedContext {
 
     @Test
     public void testEntryProcessor() {
-        final IMap<Object,Object> map = instance1.getMap("testEntryProcessor");
+        final IMap<Object, Object> map = instance1.getMap("testEntryProcessor");
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
         map.put("key4", "value4");
         map.put("key5", "value5");
 
-        final Map<Object,Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
+        final Map<Object, Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
         assertEquals(5, objectMap.size());
         for (Object o : objectMap.values()) {
             assertEquals("notNull", o);

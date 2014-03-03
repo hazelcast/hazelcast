@@ -17,8 +17,18 @@
 package com.hazelcast.util;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.*;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 public final class AddressUtil {
 
@@ -94,7 +104,7 @@ public final class AddressUtil {
     public static InetAddress fixScopeIdAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
         Inet6Address resultInetAddress = null;
         if (inetAddress instanceof Inet6Address &&
-            (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
+                (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
             final Inet6Address inet6Address = (Inet6Address) inetAddress;
             if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
                 Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -104,10 +114,10 @@ public final class AddressUtil {
                     while (addresses.hasMoreElements()) {
                         InetAddress address = addresses.nextElement();
                         if (address instanceof Inet6Address &&
-                            Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
+                                Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
                             if (resultInetAddress != null) {
                                 throw new IllegalArgumentException("This address " + inet6Address +
-                                                                   " is bound to more than one network interface!");
+                                        " is bound to more than one network interface!");
                             }
                             resultInetAddress = (Inet6Address) address;
                         }
@@ -153,7 +163,7 @@ public final class AddressUtil {
                             continue;
                         }
                         if (inet6Address.isLinkLocalAddress() && address.isLinkLocalAddress()
-                            || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
+                                || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
                             final Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
                                     ((Inet6Address) address).getScopeId());
                             possibleAddresses.addFirst(newAddress);
@@ -164,7 +174,7 @@ public final class AddressUtil {
             }
             if (possibleAddresses.isEmpty()) {
                 throw new IllegalArgumentException("Could not find a proper network interface" +
-                                                   " to connect to " + inet6Address);
+                        " to connect to " + inet6Address);
             }
             return possibleAddresses;
         }
@@ -177,10 +187,10 @@ public final class AddressUtil {
         }
         final Collection<String> addresses = new HashSet<String>();
         final String first3 = addressMatcher.address[0] + "." +
-                              addressMatcher.address[1] + "." +
-                              addressMatcher.address[2]  ;
+                addressMatcher.address[1] + "." +
+                addressMatcher.address[2];
         final String lastPart = addressMatcher.address[3];
-        final int dashPos ;
+        final int dashPos;
         if ("*".equals(lastPart)) {
             for (int j = 0; j <= 255; j++) {
                 addresses.add(first3 + "." + j);
@@ -202,7 +212,8 @@ public final class AddressUtil {
      *
      * @param address the address
      * @return the returned AddressMatcher. The returned value will never be null.
-     * @throws com.hazelcast.util.AddressUtil.InvalidAddressException if the address is not valid.
+     * @throws com.hazelcast.util.AddressUtil.InvalidAddressException
+     *          if the address is not valid.
      */
     public static AddressMatcher getAddressMatcher(String address) {
         final AddressMatcher matcher;

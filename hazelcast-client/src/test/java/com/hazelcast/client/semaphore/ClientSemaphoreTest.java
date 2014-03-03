@@ -17,10 +17,16 @@
 package com.hazelcast.client.semaphore;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -46,7 +52,7 @@ public class ClientSemaphoreTest {
     static ISemaphore s;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         s = hz.getSemaphore(name);
@@ -71,7 +77,7 @@ public class ClientSemaphoreTest {
         assertEquals(10, s.drainPermits());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     s.acquire();
@@ -99,10 +105,10 @@ public class ClientSemaphoreTest {
 
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(s.tryAcquire(2, 5, TimeUnit.SECONDS)){
+                    if (s.tryAcquire(2, 5, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {

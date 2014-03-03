@@ -206,7 +206,7 @@ public class ListenerTest extends HazelcastTestSupport {
                 addLatch.countDown();
             }
 
-           @Override
+            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updateLatch.countDown();
             }

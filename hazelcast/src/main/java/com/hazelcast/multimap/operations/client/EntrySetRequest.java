@@ -49,7 +49,7 @@ public class EntrySetRequest extends MultiMapAllPartitionRequest implements Retr
             if (obj == null) {
                 continue;
             }
-            EntrySetResponse response = (EntrySetResponse)obj;
+            EntrySetResponse response = (EntrySetResponse) obj;
             Set<Map.Entry<Data, Data>> entries = response.getDataEntrySet();
             entrySet.addAll(entries);
         }

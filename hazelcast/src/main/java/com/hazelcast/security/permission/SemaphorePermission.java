@@ -19,11 +19,11 @@ package com.hazelcast.security.permission;
 
 public class SemaphorePermission extends InstancePermission {
 
-   private static final int ACQUIRE = 0x4;
-   private static final int RELEASE = 0x8;
-   private static final int READ = 0x16;
+    private static final int ACQUIRE = 0x4;
+    private static final int RELEASE = 0x8;
+    private static final int READ = 0x16;
 
-   private static final int ALL = CREATE | DESTROY | ACQUIRE | RELEASE | READ;
+    private static final int ALL = CREATE | DESTROY | ACQUIRE | RELEASE | READ;
 
     public SemaphorePermission(String name, String... actions) {
         super(name, actions);

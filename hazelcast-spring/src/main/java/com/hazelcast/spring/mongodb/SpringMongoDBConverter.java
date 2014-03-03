@@ -41,14 +41,14 @@ public class SpringMongoDBConverter implements MongoDBConverter {
 
     public DBObject toDBObject(Object obj) {
         DBObject dbObject = new BasicDBObject();
-        if(isStandardClass(obj.getClass()))
+        if (isStandardClass(obj.getClass()))
             obj = new ValueWrapper(obj);
         mongoTemplate.getConverter().write(obj, dbObject);
         return dbObject;
     }
 
     public Object toObject(Class clazz, DBObject dbObject) {
-        if(clazz.equals(ValueWrapper.class))
+        if (clazz.equals(ValueWrapper.class))
             return dbObject.get("value");
         return mongoTemplate.getConverter().read(clazz, dbObject);
     }

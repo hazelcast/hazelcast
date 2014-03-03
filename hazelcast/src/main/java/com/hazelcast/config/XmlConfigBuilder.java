@@ -27,7 +27,11 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;

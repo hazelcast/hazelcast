@@ -19,8 +19,8 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.core.ISet;
 
 /**
-* @author ali 5/20/13
-*/
+ * @author ali 5/20/13
+ */
 public class ClientSetProxy<E> extends AbstractClientCollectionProxy<E> implements ISet<E> {
 
     public ClientSetProxy(String instanceName, String serviceName, String name) {

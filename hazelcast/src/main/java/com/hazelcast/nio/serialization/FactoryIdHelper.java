@@ -23,7 +23,8 @@ public final class FactoryIdHelper {
 
     // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
-    private FactoryIdHelper(){}
+    private FactoryIdHelper() {
+    }
 
     public static final String SPI_DS_FACTORY = "hazelcast.serialization.ds.spi";
     public static final String PARTITION_DS_FACTORY = "hazelcast.serialization.ds.partition";

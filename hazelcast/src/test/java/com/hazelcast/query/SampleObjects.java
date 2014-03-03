@@ -145,7 +145,7 @@ public final class SampleObjects {
         BigDecimal bigDecimal = new BigDecimal("1.23E3");
 
         public Employee(long id, String name, int age, boolean live, double salary, State state) {
-            this(id,name,age,live,salary);
+            this(id, name, age, live, salary);
             this.state = state;
         }
 

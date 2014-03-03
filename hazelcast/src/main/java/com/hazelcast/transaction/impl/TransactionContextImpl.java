@@ -18,13 +18,22 @@ package com.hazelcast.transaction.impl;
 
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.TransactionalList;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +63,7 @@ final class TransactionContextImpl implements TransactionContext {
         return xaResource;
     }
 
-    public boolean isXAManaged(){
+    public boolean isXAManaged() {
         return transaction.getXid() != null;
     }
 

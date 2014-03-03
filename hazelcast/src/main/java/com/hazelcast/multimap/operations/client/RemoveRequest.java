@@ -49,7 +49,7 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
     }
 
     protected Operation prepareOperation() {
-        return new RemoveOperation(name,key,threadId,value);
+        return new RemoveOperation(name, key, threadId, value);
     }
 
     public int getClassId() {
@@ -57,7 +57,7 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeLong("t",threadId);
+        writer.writeLong("t", threadId);
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         value.writeData(out);

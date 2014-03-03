@@ -71,12 +71,12 @@ public final class TestHazelcastInstanceFactory {
         }
         if (useClient) {
             return newHazelcastClient();
-        }else {
+        } else {
             return HazelcastInstanceFactory.newHazelcastInstance(config);
         }
     }
 
-    public HazelcastInstance[] newInstances(){
+    public HazelcastInstance[] newInstances() {
         return newInstances(new Config());
     }
 

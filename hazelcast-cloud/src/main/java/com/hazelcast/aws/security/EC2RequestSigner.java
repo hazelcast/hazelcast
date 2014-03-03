@@ -20,7 +20,11 @@ import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.aws.utility.AwsURLEncoder;
 
 import java.security.SignatureException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class EC2RequestSigner {
     private static final String HTTP_VERB = "GET\n";

@@ -36,8 +36,8 @@ public class RecordInfo implements DataSerializable {
     }
 
     public RecordInfo(RecordStatistics statistics,
-                               long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
-                               long mapStoreDeleteDelayMillis) {
+                      long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
+                      long mapStoreDeleteDelayMillis) {
         this.statistics = statistics;
         this.idleDelayMillis = idleDelayMillis;
         this.ttlDelayMillis = ttlDelayMillis;

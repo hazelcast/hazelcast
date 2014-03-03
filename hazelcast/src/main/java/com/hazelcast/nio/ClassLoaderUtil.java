@@ -114,7 +114,7 @@ public final class ClassLoaderUtil {
 
     public static boolean isInternalType(Class type) {
         return type.getClassLoader() == ClassLoaderUtil.class.getClassLoader()
-            && type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
+                && type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
     }
 
     private static class ConstructorCache {
@@ -153,5 +153,6 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private ClassLoaderUtil() {}
+    private ClassLoaderUtil() {
+    }
 }

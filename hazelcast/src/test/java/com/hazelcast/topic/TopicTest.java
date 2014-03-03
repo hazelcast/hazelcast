@@ -33,9 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.UuidUtil;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,7 +50,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -60,7 +62,7 @@ import static org.junit.Assert.*;
 public class TopicTest extends HazelcastTestSupport {
 
     @Test
-   public void testDestroyTopicRemovesStatistics(){
+    public void testDestroyTopicRemovesStatistics() {
         HazelcastInstance instance = createHazelcastInstance();
         final ITopic topic = instance.getTopic("foo");
         topic.publish("foobar");

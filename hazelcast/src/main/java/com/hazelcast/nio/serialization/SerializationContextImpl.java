@@ -31,8 +31,8 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 /**
-* @author mdogan 7/29/13
-*/
+ * @author mdogan 7/29/13
+ */
 final class SerializationContextImpl implements SerializationContext {
 
     final int version;

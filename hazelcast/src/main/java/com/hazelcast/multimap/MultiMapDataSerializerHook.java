@@ -16,9 +16,40 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.multimap.operations.*;
-import com.hazelcast.multimap.txn.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.multimap.operations.ClearBackupOperation;
+import com.hazelcast.multimap.operations.ClearOperation;
+import com.hazelcast.multimap.operations.ContainsEntryOperation;
+import com.hazelcast.multimap.operations.CountOperation;
+import com.hazelcast.multimap.operations.EntrySetOperation;
+import com.hazelcast.multimap.operations.GetAllOperation;
+import com.hazelcast.multimap.operations.KeySetOperation;
+import com.hazelcast.multimap.operations.PutBackupOperation;
+import com.hazelcast.multimap.operations.PutOperation;
+import com.hazelcast.multimap.operations.RemoveAllBackupOperation;
+import com.hazelcast.multimap.operations.RemoveAllOperation;
+import com.hazelcast.multimap.operations.RemoveBackupOperation;
+import com.hazelcast.multimap.operations.RemoveOperation;
+import com.hazelcast.multimap.operations.SizeOperation;
+import com.hazelcast.multimap.operations.ValuesOperation;
+import com.hazelcast.multimap.txn.TxnCommitBackupOperation;
+import com.hazelcast.multimap.txn.TxnCommitOperation;
+import com.hazelcast.multimap.txn.TxnGenerateRecordIdOperation;
+import com.hazelcast.multimap.txn.TxnLockAndGetOperation;
+import com.hazelcast.multimap.txn.TxnPrepareBackupOperation;
+import com.hazelcast.multimap.txn.TxnPrepareOperation;
+import com.hazelcast.multimap.txn.TxnPutBackupOperation;
+import com.hazelcast.multimap.txn.TxnPutOperation;
+import com.hazelcast.multimap.txn.TxnRemoveAllBackupOperation;
+import com.hazelcast.multimap.txn.TxnRemoveAllOperation;
+import com.hazelcast.multimap.txn.TxnRemoveBackupOperation;
+import com.hazelcast.multimap.txn.TxnRemoveOperation;
+import com.hazelcast.multimap.txn.TxnRollbackBackupOperation;
+import com.hazelcast.multimap.txn.TxnRollbackOperation;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
@@ -77,7 +108,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     }
 
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[TXN_ROLLBACK_BACKUP+1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[TXN_ROLLBACK_BACKUP + 1];
         constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearBackupOperation();
@@ -154,8 +185,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
             }
         };
 
-        
-        
+
         constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TxnCommitBackupOperation();

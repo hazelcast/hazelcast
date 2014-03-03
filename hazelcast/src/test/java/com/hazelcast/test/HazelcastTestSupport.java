@@ -26,7 +26,6 @@ import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -48,17 +47,17 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
-    public static void assertSizeEventually(int expectedSize, Collection c){
+    public static void assertSizeEventually(int expectedSize, Collection c) {
         assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds){
+    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-               assertEquals("the size of the collection is correct",expectedSize, c.size());
+                assertEquals("the size of the collection is correct", expectedSize, c.size());
             }
-        },timeoutSeconds);
+        }, timeoutSeconds);
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -104,7 +103,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static String randomString(){
+    public static String randomString() {
         return UUID.randomUUID().toString();
     }
 
@@ -197,7 +196,7 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
-    protected static void warmUpPartitions(HazelcastInstance... instances)  {
+    protected static void warmUpPartitions(HazelcastInstance... instances) {
         try {
             TestUtil.warmUpPartitions(instances);
         } catch (InterruptedException e) {
@@ -208,22 +207,22 @@ public abstract class HazelcastTestSupport {
     protected static String generateKeyOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for(;;){
-            String id  = UUID.randomUUID().toString();
+        for (; ; ) {
+            String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
-            if(localMember.equals(partition.getOwner())){
+            if (localMember.equals(partition.getOwner())) {
                 return id;
             }
         }
     }
 
-    protected static String generateKeyNotOwnedBy(HazelcastInstance instance)  {
+    protected static String generateKeyNotOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for(;;){
-            String id  = UUID.randomUUID().toString();
+        for (; ; ) {
+            String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
-            if(!localMember.equals(partition.getOwner())){
+            if (!localMember.equals(partition.getOwner())) {
                 return id;
             }
         }

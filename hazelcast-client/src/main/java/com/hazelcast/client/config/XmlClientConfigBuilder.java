@@ -18,7 +18,15 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.*;
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.UsernamePasswordCredentials;

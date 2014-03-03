@@ -56,7 +56,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         final int size = 50;
         final int pageSize = 5;
         for (int i = 0; i < size; i++) {
-            map1.put(i+10, i);
+            map1.put(i + 10, i);
         }
 
         final PagingPredicate predicate1 = new PagingPredicate(pageSize);
@@ -64,7 +64,7 @@ public class SortLimitTest extends HazelcastTestSupport {
 
         int value = 9;
         Set<Integer> whole = new HashSet<Integer>(size);
-        while (keySet.size() > 0 ) {
+        while (keySet.size() > 0) {
             for (Integer integer : keySet) {
                 assertTrue(integer > value);
                 value = integer;
@@ -77,7 +77,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         final PagingPredicate predicate2 = new PagingPredicate(pageSize);
         value = 9;
         keySet = map2.localKeySet(predicate2);
-        while (keySet.size() > 0 ) {
+        while (keySet.size() > 0) {
             for (Integer integer : keySet) {
                 assertTrue(integer > value);
                 value = integer;

@@ -29,7 +29,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-     <properties>
+    <properties>
         <hibernate.core.version>3.5.0-Final</hibernate.core.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.parent.basedir}</main.basedir>

@@ -17,7 +17,6 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 
 public class SetOperation extends BasePutOperation {

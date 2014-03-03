@@ -28,7 +28,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author ali 12/14/12
@@ -63,22 +67,22 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             return;
         }
         store = storeConfig.getStoreImplementation();
-        if (store == null){
+        if (store == null) {
             try {
                 store = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getClassName());
             } catch (Exception ignored) {
             }
         }
 
-        if (store == null){
+        if (store == null) {
             QueueStoreFactory factory = storeConfig.getFactoryImplementation();
-            if (factory == null){
+            if (factory == null) {
                 try {
                     factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getFactoryClassName());
                 } catch (Exception ignored) {
                 }
             }
-            if (factory == null){
+            if (factory == null) {
                 return;
             }
             store = factory.newQueueStore(name, storeConfig.getProperties());

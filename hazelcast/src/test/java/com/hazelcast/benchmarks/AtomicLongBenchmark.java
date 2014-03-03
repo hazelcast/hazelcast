@@ -24,7 +24,12 @@ import com.carrotsearch.junitbenchmarks.annotation.LabelType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestRule;
 
 @AxisRange(min = 0, max = 1)
@@ -43,12 +48,12 @@ public class AtomicLongBenchmark {
     }
 
     @Before
-    public void before(){
+    public void before() {
         atomicLong = hazelcastInstance.getAtomicLong("atomicLong");
     }
 
     @After
-    public void after(){
+    public void after() {
         atomicLong.destroy();
     }
 
@@ -61,18 +66,18 @@ public class AtomicLongBenchmark {
     public void get() throws Exception {
         long startMs = System.currentTimeMillis();
         int iterations = 1000000;
-        for(int k=0;k< iterations;k++){
+        for (int k = 0; k < iterations; k++) {
             atomicLong.get();
-            if(k%100000==0){
-                System.out.println("at "+k);
+            if (k % 100000 == 0) {
+                System.out.println("at " + k);
             }
         }
-        long durationMs = System.currentTimeMillis()-startMs;
-        double performance = (iterations*1000d)/durationMs;
-        System.out.println("Performance: "+performance);
+        long durationMs = System.currentTimeMillis() - startMs;
+        double performance = (iterations * 1000d) / durationMs;
+        System.out.println("Performance: " + performance);
     }
 
-    public static void main(String[] args)throws Exception{
+    public static void main(String[] args) throws Exception {
         AtomicLongBenchmark.beforeClass();
         AtomicLongBenchmark benchmark = new AtomicLongBenchmark();
         benchmark.before();
@@ -83,7 +88,7 @@ public class AtomicLongBenchmark {
 
     @Test
     public void set() throws Exception {
-        for(int k=0;k<500000;k++){
+        for (int k = 0; k < 500000; k++) {
             atomicLong.set(k);
         }
     }

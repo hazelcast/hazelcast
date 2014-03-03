@@ -24,9 +24,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -155,7 +153,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testPollNull() throws Exception {
-       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -362,7 +360,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
      */
     @Test
     public void testQueueAfterShutdown() throws Exception {
-         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -426,7 +424,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
-       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];

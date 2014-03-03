@@ -20,7 +20,13 @@ import com.hazelcast.ascii.CommandParser;
 import com.hazelcast.ascii.TextCommand;
 import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.ascii.memcache.*;
+import com.hazelcast.ascii.memcache.DeleteCommandParser;
+import com.hazelcast.ascii.memcache.ErrorCommand;
+import com.hazelcast.ascii.memcache.GetCommandParser;
+import com.hazelcast.ascii.memcache.IncrementCommandParser;
+import com.hazelcast.ascii.memcache.SetCommandParser;
+import com.hazelcast.ascii.memcache.SimpleCommandParser;
+import com.hazelcast.ascii.memcache.TouchCommandParser;
 import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.ascii.rest.HttpGetCommandParser;
@@ -34,9 +40,20 @@ import com.hazelcast.nio.TcpIpConnection;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.TOUCH;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 public class SocketTextReader implements TextCommandConstants, SocketReader {
 

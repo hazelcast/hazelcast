@@ -25,7 +25,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
  * <code>OutOfMemoryHandler</code> is called for ALL <code>HazelcastInstance</code>s
  * knows by current JVM (actually ClassLoader).
  * </p>
- *
+ * <p/>
  * <p>
  * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
  * <tt>OutOfMemoryError</tt>.
@@ -35,7 +35,6 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
  *
  * @see OutOfMemoryError
  * @see Hazelcast#setOutOfMemoryHandler(OutOfMemoryHandler)
- *
  */
 public abstract class OutOfMemoryHandler {
 
@@ -43,14 +42,14 @@ public abstract class OutOfMemoryHandler {
      * When an <code>OutOfMemoryError</code> is caught by Hazelcast threads,
      * this method is called for ALL <code>HazelcastInstance</code>s
      * knows by current JVM (actually ClassLoader).
-     *
+     * <p/>
      * <p>
      * User can shutdown <tt>HazelcastInstance</tt>, call <code>System.exit()</code>,
      * just log the error etc.
      * Default handler tries to close socket connections to other nodes and shutdown
      * <tt>HazelcastInstance</tt>.
      * </p>
-     *
+     * <p/>
      * <p>
      * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
      * <tt>OutOfMemoryError</tt>.
@@ -58,14 +57,13 @@ public abstract class OutOfMemoryHandler {
      * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
      * </p>
      *
+     * @param oom                OutOfMemoryError thrown by JVM
+     * @param hazelcastInstances All HazelcastInstances known by JVM,
+     *                           can include inactive or NULL instances.
      * @see OutOfMemoryHandler#inactivate(HazelcastInstance)
      * @see OutOfMemoryHandler#tryCloseConnections(HazelcastInstance)
      * @see OutOfMemoryHandler#tryStopThreads(HazelcastInstance)
      * @see OutOfMemoryHandler#tryShutdown(HazelcastInstance)
-     *
-     * @param oom OutOfMemoryError thrown by JVM
-     * @param hazelcastInstances All HazelcastInstances known by JVM,
-     *                           can include inactive or NULL instances.
      */
     public abstract void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances);
 

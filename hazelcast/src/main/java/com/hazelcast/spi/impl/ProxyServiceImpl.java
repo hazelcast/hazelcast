@@ -240,9 +240,9 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         /**
          * Retrieves a DistributedObject proxy or creates it if it's not available
          *
-         * @param name name of the proxy object
+         * @param name         name of the proxy object
          * @param publishEvent true if a DistributedObjectEvent should  be fired
-         * @param initialize true if proxy object should be initialized
+         * @param initialize   true if proxy object should be initialized
          * @return a DistributedObject instance
          */
         DistributedObject getOrCreateProxy(final String name, boolean publishEvent, boolean initialize) {
@@ -263,9 +263,9 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         /**
          * Creates a DistributedObject proxy if it's not created yet
          *
-         * @param name name of the proxy object
+         * @param name         name of the proxy object
          * @param publishEvent true if a DistributedObjectEvent should  be fired
-         * @param initialize true if proxy object should be initialized
+         * @param initialize   true if proxy object should be initialized
          * @return a DistributedObject instance if it's created by this method, null otherwise
          */
         DistributedObject createProxy(final String name, boolean publishEvent, boolean initialize) {
@@ -341,9 +341,9 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         public void run() {
             DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, object);
             for (DistributedObjectListener listener : listeners.values()) {
-                if (EventType.CREATED.equals(type)){
+                if (EventType.CREATED.equals(type)) {
                     listener.distributedObjectCreated(event);
-                } else if (EventType.DESTROYED.equals(type)){
+                } else if (EventType.DESTROYED.equals(type)) {
                     listener.distributedObjectDestroyed(event);
                 }
             }
@@ -414,7 +414,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
                 for (ProxyInfo proxy : proxies) {
                     final ProxyRegistry registry = ConcurrencyUtil
                             .getOrPutIfAbsent(proxyService.registries, proxy.serviceName,
-                                              proxyService.registryConstructor);
+                                    proxyService.registryConstructor);
                     final DistributedObject object = registry.createProxy(proxy.objectName, false, false);
                     if (object != null && object instanceof InitializingObject) {
                         nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {

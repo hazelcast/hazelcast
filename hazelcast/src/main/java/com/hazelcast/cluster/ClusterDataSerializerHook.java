@@ -19,7 +19,11 @@ package com.hazelcast.cluster;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
 /**

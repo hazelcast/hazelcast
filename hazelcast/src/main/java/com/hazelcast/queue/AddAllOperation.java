@@ -37,7 +37,7 @@ import java.util.Map;
 public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;
-    private  Map<Long, Data> dataMap;
+    private Map<Long, Data> dataMap;
 
     public AddAllOperation() {
     }

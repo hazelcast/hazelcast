@@ -4,23 +4,30 @@ package com.hazelcast.client;
  * User: danny Date: 11/28/13
  */
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.AssertTask;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -28,18 +35,18 @@ import static org.junit.Assert.*;
 public class MembershipListenerTest extends HazelcastTestSupport {
 
     private HazelcastInstance server1 = null;
-    private HazelcastInstance client = null ;
+    private HazelcastInstance client = null;
     private MemberShipEventLoger listener = null;
 
     @Before
-    public void setup(){
-       server1 = Hazelcast.newHazelcastInstance();
-       client = HazelcastClient.newHazelcastClient();
-           listener = new MemberShipEventLoger();
+    public void setup() {
+        server1 = Hazelcast.newHazelcastInstance();
+        client = HazelcastClient.newHazelcastClient();
+        listener = new MemberShipEventLoger();
     }
 
     @After
-    public void tearDown(){
+    public void tearDown() {
         Hazelcast.shutdownAll();
     }
 
@@ -124,7 +131,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
 
     @Test(expected = java.lang.NullPointerException.class)
-    public void addNullListener_thenException() throws Exception{
+    public void addNullListener_thenException() throws Exception {
 
         client.getCluster().addMembershipListener(null);
     }

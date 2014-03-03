@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class MemberRemoveOperation extends AbstractClusterOperation {
 
@@ -44,7 +43,7 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
                 (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest( "Removing " + deadAddress + ", called from " + caller);
+                logger.finest("Removing " + deadAddress + ", called from " + caller);
             }
             clusterService.removeAddress(deadAddress);
         }

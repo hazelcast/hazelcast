@@ -20,10 +20,8 @@ import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
@@ -36,6 +34,8 @@ import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.queue.QueueService;
@@ -48,7 +48,13 @@ import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -71,7 +77,7 @@ final class ServiceManager {
     synchronized void start() {
         final Node node = nodeEngine.getNode();
         // register core services
-        logger.finest( "Registering core services...");
+        logger.finest("Registering core services...");
         registerService(ClusterServiceImpl.SERVICE_NAME, node.getClusterService());
         registerService(InternalPartitionService.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
@@ -83,7 +89,7 @@ final class ServiceManager {
         final Map<String, Object> serviceConfigObjects;
         if (servicesConfig != null) {
             if (servicesConfig.isEnableDefaults()) {
-                logger.finest( "Registering default services...");
+                logger.finest("Registering default services...");
                 registerService(MapService.SERVICE_NAME, new MapService(nodeEngine));
                 registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
                 registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
@@ -128,7 +134,7 @@ final class ServiceManager {
             if (serviceInfo.isConfigurableService()) {
                 try {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "Configuring service -> " + service);
+                        logger.finest("Configuring service -> " + service);
                     }
                     final Object configObject = serviceConfigObjects.get(serviceInfo.getName());
                     ((ConfigurableService) service).configure(configObject);
@@ -139,7 +145,7 @@ final class ServiceManager {
             if (serviceInfo.isManagedService()) {
                 try {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "Initializing service -> " + service);
+                        logger.finest("Initializing service -> " + service);
                     }
                     final Properties props = serviceProps.get(serviceInfo.getName());
                     ((ManagedService) service).init(nodeEngine, props != null ? props : new Properties());
@@ -168,7 +174,7 @@ final class ServiceManager {
     }
 
     synchronized void shutdown(boolean terminate) {
-        logger.finest( "Stopping services...");
+        logger.finest("Stopping services...");
         final List<ManagedService> managedServices = getServices(ManagedService.class);
         // reverse order to stop CoreServices last.
         Collections.reverse(managedServices);
@@ -180,8 +186,8 @@ final class ServiceManager {
 
     private void shutdownService(final ManagedService service, final boolean terminate) {
         try {
-            if(logger.isFinestEnabled()){
-                logger.finest( "Shutting down service -> " + service);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Shutting down service -> " + service);
             }
             service.shutdown(terminate);
         } catch (Throwable t) {
@@ -191,7 +197,7 @@ final class ServiceManager {
 
     private synchronized void registerService(String serviceName, Object service) {
         if (logger.isFinestEnabled()) {
-            logger.finest( "Registering service: '" + serviceName + "'");
+            logger.finest("Registering service: '" + serviceName + "'");
         }
         final ServiceInfo serviceInfo = new ServiceInfo(serviceName, service);
         final ServiceInfo currentServiceInfo = services.putIfAbsent(serviceName, serviceInfo);

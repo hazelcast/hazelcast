@@ -26,14 +26,14 @@ import java.util.Map.Entry;
 
 public class InvalidateEntryProcessor extends AbstractEntryProcessor<String, Object> implements DataSerializable {
     private String sessionId;
-    
+
     // Serialization Constructor
     public InvalidateEntryProcessor() {
         super(true);
     }
-    
+
     public InvalidateEntryProcessor(String sessionId) {
-            this.sessionId = sessionId;
+        this.sessionId = sessionId;
     }
 
     @Override

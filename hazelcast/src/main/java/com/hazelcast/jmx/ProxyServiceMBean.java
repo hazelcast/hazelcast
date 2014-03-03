@@ -40,7 +40,7 @@ public class ProxyServiceMBean extends HazelcastMBean<ProxyService> {
 
     @ManagedAnnotation("proxyCount")
     @ManagedDescription("The number proxies")
-    public int getProxyCount(){
+    public int getProxyCount() {
         return managedObject.getProxyCount();
     }
 }

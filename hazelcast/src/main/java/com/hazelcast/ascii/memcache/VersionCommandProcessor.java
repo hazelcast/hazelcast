@@ -16,8 +16,6 @@
 
 package com.hazelcast.ascii.memcache;
 
-import com.hazelcast.ascii.AbstractTextCommandProcessor;
-import com.hazelcast.ascii.TextCommandProcessor;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 
 /**

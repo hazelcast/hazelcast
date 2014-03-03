@@ -16,8 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

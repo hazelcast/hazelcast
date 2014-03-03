@@ -167,9 +167,10 @@ public class SerializationTest {
         linkedList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
         linkedList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(linkedList);
-        LinkedList deserialized =  ss.toObject(data);
+        LinkedList deserialized = ss.toObject(data);
         assertTrue("Objects are not identical!", linkedList.equals(deserialized));
     }
+
     @Test
     public void testArrayListSerialization() {
         SerializationService ss = new SerializationServiceBuilder().build();
@@ -177,7 +178,7 @@ public class SerializationTest {
         arrayList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
         arrayList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(arrayList);
-        ArrayList deserialized =  ss.toObject(data);
+        ArrayList deserialized = ss.toObject(data);
         assertTrue("Objects are not identical!", arrayList.equals(deserialized));
     }
 
@@ -188,7 +189,7 @@ public class SerializationTest {
     public void testUnsharedJavaSerialization() {
         SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(false).build();
         Data data = ss.toData(new Foo());
-        Foo foo =  ss.toObject(data);
+        Foo foo = ss.toObject(data);
 
         Assert.assertFalse("Objects should not be identical!", foo == foo.getBar().getFoo());
     }

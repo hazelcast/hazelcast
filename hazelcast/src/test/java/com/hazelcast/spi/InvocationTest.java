@@ -29,8 +29,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -120,7 +118,7 @@ public class InvocationTest extends HazelcastTestSupport {
         final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
 
         OpThread thread = new OpThread("Queue Thread", latch, interruptedFlag) {
-            protected void doOp()throws InterruptedException {
+            protected void doOp() throws InterruptedException {
                 q.poll(1, TimeUnit.MINUTES);
             }
         };
@@ -153,7 +151,7 @@ public class InvocationTest extends HazelcastTestSupport {
 
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     // because max timeout=2000 we get timeout exception which we should not
@@ -176,14 +174,14 @@ public class InvocationTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
-       final Config config = new Config();
+        final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
         final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
 
         hz.getLock("testWaitingInfinitelyForTryLock").lock();
 
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     hz.getLock("testWaitingInfinitelyForTryLock").tryLock(5, TimeUnit.SECONDS);
@@ -233,7 +231,7 @@ public class InvocationTest extends HazelcastTestSupport {
     private abstract class OpThread extends Thread {
         final CountDownLatch latch;
         final AtomicBoolean interruptionCaught = new AtomicBoolean(false);
-        final AtomicBoolean interruptedFlag ;
+        final AtomicBoolean interruptedFlag;
 
         protected OpThread(String name, CountDownLatch latch, AtomicBoolean interruptedFlag) {
             super(name);
@@ -256,6 +254,6 @@ public class InvocationTest extends HazelcastTestSupport {
             return interruptionCaught.get();
         }
 
-        protected abstract void doOp()throws InterruptedException;
+        protected abstract void doOp() throws InterruptedException;
     }
 }

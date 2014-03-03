@@ -16,7 +16,11 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
@@ -72,8 +76,8 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
                 send(item);
             }
 
-            private void send(ItemEvent event){
-                if (endpoint.live()){
+            private void send(ItemEvent event) {
+                if (endpoint.live()) {
                     Data item = clientEngine.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());
@@ -120,9 +124,9 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
     @Override
     public Permission getRequiredPermission() {
-        if (ListService.SERVICE_NAME.equals(serviceName)){
+        if (ListService.SERVICE_NAME.equals(serviceName)) {
             return new ListPermission(name, ActionConstants.ACTION_LISTEN);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
             return new SetPermission(name, ActionConstants.ACTION_LISTEN);
         }
         throw new IllegalArgumentException("No service matched!!!");

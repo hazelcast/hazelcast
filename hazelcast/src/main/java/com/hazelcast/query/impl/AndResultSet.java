@@ -18,10 +18,14 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -31,7 +35,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final List<Predicate> lsNoIndexPredicates;
 
     public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults, List<Predicate> lsNoIndexPredicates) {
-        this.setSmallest = isNotNull(setSmallest,"setSmallest");
+        this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.otherIndexedResults = otherIndexedResults;
         this.lsNoIndexPredicates = lsNoIndexPredicates;
     }
@@ -137,7 +141,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
         @Override
         public QueryableEntry next() {
-            if(!hasNext()){
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
 

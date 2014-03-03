@@ -32,7 +32,9 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 6/7/13
@@ -47,7 +49,7 @@ public class ClientTxnQueueTest {
     static HazelcastInstance second;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient();
     }
@@ -67,7 +69,7 @@ public class ClientTxnQueueTest {
         TransactionalQueue<String> q = context.getQueue(name);
         assertTrue(q.offer("ali"));
         String s = q.poll();
-        assertEquals("ali",s);
+        assertEquals("ali", s);
         context.commitTransaction();
         assertEquals(0, hz.getQueue(name).size());
     }
@@ -117,9 +119,9 @@ public class ClientTxnQueueTest {
         TransactionalQueue<String> q = context.getQueue(name);
         assertTrue(q.offer("ali"));
         String s = q.peek();
-        assertEquals("ali",s);
+        assertEquals("ali", s);
         s = q.peek();
-        assertEquals("ali",s);
+        assertEquals("ali", s);
         context.commitTransaction();
         assertEquals(1, hz.getQueue(name).size());
     }

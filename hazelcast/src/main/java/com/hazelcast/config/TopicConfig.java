@@ -47,14 +47,14 @@ public class TopicConfig {
      * @param config
      */
     public TopicConfig(TopicConfig config) {
-        isNotNull(config,"config");
+        isNotNull(config, "config");
         this.name = config.name;
         this.globalOrderingEnabled = config.globalOrderingEnabled;
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
     }
 
     public TopicConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new TopicConfigReadOnly(this);
         }
         return readOnly;
@@ -77,7 +77,7 @@ public class TopicConfig {
      * @throws IllegalArgumentException if name is null or an empty string.
      */
     public TopicConfig setName(String name) {
-        this.name = hasText(name,"name");
+        this.name = hasText(name, "name");
         return this;
     }
 
@@ -123,7 +123,6 @@ public class TopicConfig {
     }
 
     /**
-     *
      * @param statisticsEnabled
      * @return
      */

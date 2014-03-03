@@ -16,8 +16,8 @@
   -->
 
 <hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.2.xsd"
-           xmlns="http://www.hazelcast.com/schema/client-config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  xmlns="http://www.hazelcast.com/schema/client-config"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <group>
         <name>dev</name>
@@ -70,13 +70,13 @@
     </serialization>
 
     <proxy-factories>
-        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ1" service="sampleService1" />
-        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ2" service="sampleService1" />
-        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ3" service="sampleService3" />
+        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ1" service="sampleService1"/>
+        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ2" service="sampleService1"/>
+        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ3" service="sampleService3"/>
 
     </proxy-factories>
 
-    <load-balancer type="random" ></load-balancer>
+    <load-balancer type="random"></load-balancer>
 
     <near-cache name="asd">
         <max-size>2000</max-size>
@@ -86,7 +86,6 @@
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
-
 
 
 </hazelcast-client>

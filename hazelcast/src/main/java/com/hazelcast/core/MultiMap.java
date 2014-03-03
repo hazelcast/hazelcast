@@ -260,9 +260,8 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * other nodes for load balancing and/or membership change.
      *
      * @param listener entry listener
-     * @see #localKeySet()
-     *
      * @return returns registration id.
+     * @see #localKeySet()
      */
     String addLocalEntryListener(EntryListener<K, V> listener);
 
@@ -273,7 +272,6 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * @param listener     entry listener
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     *
      * @return returns registration id.
      */
     String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
@@ -283,7 +281,6 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * Returns silently if there is no such listener added before.
      *
      * @param registrationId Id of listener registration
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeEntryListener(String registrationId);
@@ -304,7 +301,6 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * @param key          the key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     *
      * @return returns registration id.
      */
     String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
@@ -351,9 +347,9 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      *
-     * @param key key to lock.
+     * @param key       key to lock.
      * @param leaseTime time to wait before releasing the lock.
-     * @param timeUnit unit of time to specify lease time.
+     * @param timeUnit  unit of time to specify lease time.
      */
     void lock(K key, long leaseTime, TimeUnit timeUnit);
 

@@ -62,11 +62,11 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
         }
     }
 
-    private void updateSizeEstimator( long recordSize ) {
-        recordStore.getSizeEstimator().add( recordSize );
+    private void updateSizeEstimator(long recordSize) {
+        recordStore.getSizeEstimator().add(recordSize);
     }
 
-    private long calculateRecordSize( Record record ) {
+    private long calculateRecordSize(Record record) {
         return recordStore.getSizeEstimator().getCost(record);
     }
 

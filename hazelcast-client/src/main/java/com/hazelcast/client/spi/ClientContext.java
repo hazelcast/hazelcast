@@ -70,7 +70,7 @@ public final class ClientContext {
         return executionService;
     }
 
-    public void removeProxy(ClientProxy proxy){
+    public void removeProxy(ClientProxy proxy) {
         proxyManager.removeProxy(proxy.getServiceName(), proxy.getName());
     }
 

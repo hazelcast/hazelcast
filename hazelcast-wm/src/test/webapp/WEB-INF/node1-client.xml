@@ -68,14 +68,14 @@
     </filter-mapping>
 
     <servlet>
-      <servlet-name>test-servlet</servlet-name>
-      <servlet-class>com.hazelcast.wm.test.TestServlet</servlet-class>
-      <load-on-startup>1</load-on-startup>
+        <servlet-name>test-servlet</servlet-name>
+        <servlet-class>com.hazelcast.wm.test.TestServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet-mapping>
-      <servlet-name>test-servlet</servlet-name>
-      <url-pattern>/*</url-pattern>
+        <servlet-name>test-servlet</servlet-name>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
     <listener>

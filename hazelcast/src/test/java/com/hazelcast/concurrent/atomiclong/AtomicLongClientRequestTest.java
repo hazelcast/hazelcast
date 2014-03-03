@@ -18,7 +18,11 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
-import com.hazelcast.concurrent.atomiclong.client.*;
+import com.hazelcast.concurrent.atomiclong.client.AddAndGetRequest;
+import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndAddRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.client.SetRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,7 +33,9 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/13/13

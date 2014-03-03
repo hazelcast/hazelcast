@@ -50,13 +50,12 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (itemIdSet == null){
+        if (itemIdSet == null) {
             out.writeBoolean(false);
-        }
-        else {
+        } else {
             out.writeBoolean(true);
             out.writeInt(itemIdSet.size());
-            for (Long itemId: itemIdSet){
+            for (Long itemId : itemIdSet) {
                 out.writeLong(itemId);
             }
         }
@@ -64,10 +63,10 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (in.readBoolean()){
+        if (in.readBoolean()) {
             int size = in.readInt();
             itemIdSet = new HashSet<Long>(size);
-            for (int i=0; i<size; i++){
+            for (int i = 0; i < size; i++) {
                 itemIdSet.add(in.readLong());
             }
         }

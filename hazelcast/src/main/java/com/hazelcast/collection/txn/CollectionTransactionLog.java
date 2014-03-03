@@ -80,7 +80,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
         CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName,operation,partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(serviceName, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

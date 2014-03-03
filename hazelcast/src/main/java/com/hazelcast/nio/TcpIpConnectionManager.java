@@ -32,7 +32,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -133,7 +137,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             }
             if (implementation != null) {
                 if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                    logger.severe("SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
                 }
             }
@@ -216,7 +220,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return ioService;
     }
 
-     public MemberSocketInterceptor getMemberSocketInterceptor() {
+    public MemberSocketInterceptor getMemberSocketInterceptor() {
         return memberSocketInterceptor;
     }
 
@@ -486,7 +490,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return count;
     }
 
-      public boolean isLive() {
+    public boolean isLive() {
         return live;
     }
 

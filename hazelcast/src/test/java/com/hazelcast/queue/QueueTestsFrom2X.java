@@ -240,7 +240,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void issue427QOfferIncorrectWithinTransaction() {
-         Config config = new Config();
+        Config config = new Config();
         config.getQueueConfig("default").setMaxSize(100);
         HazelcastInstance h = createHazelcastInstance(config);
         final TransactionContext transactionContext = h.newTransactionContext();

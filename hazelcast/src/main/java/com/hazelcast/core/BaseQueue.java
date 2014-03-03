@@ -19,13 +19,12 @@ package com.hazelcast.core;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
  * Base interface for Hazelcast distributed queues.
  *
+ * @param <E>
  * @see java.util.concurrent.BlockingQueue
  * @see IQueue
  * @see TransactionalQueue
- * @param <E>
  */
 public interface BaseQueue<E> extends DistributedObject {
 
@@ -45,11 +44,11 @@ public interface BaseQueue<E> extends DistributedObject {
      * Inserts the specified element into this queue, waiting up to the
      * specified wait time if necessary for space to become available.
      *
-     * @param e the element to add
+     * @param e       the element to add
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-     *        <tt>timeout</tt> parameter
+     *                <tt>unit</tt>
+     * @param unit    a <tt>TimeUnit</tt> determining how to interpret the
+     *                <tt>timeout</tt> parameter
      * @return <tt>true</tt> if successful, or <tt>false</tt> if
      *         the specified waiting time elapses before space is available
      * @throws InterruptedException if interrupted while waiting
@@ -69,9 +68,9 @@ public interface BaseQueue<E> extends DistributedObject {
      * specified wait time if necessary for an element to become available.
      *
      * @param timeout how long to wait before giving up, in units of
-     *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
-     *        <tt>timeout</tt> parameter
+     *                <tt>unit</tt>
+     * @param unit    a <tt>TimeUnit</tt> determining how to interpret the
+     *                <tt>timeout</tt> parameter
      * @return the head of this queue, or <tt>null</tt> if the
      *         specified waiting time elapses before an element is available
      * @throws InterruptedException if interrupted while waiting

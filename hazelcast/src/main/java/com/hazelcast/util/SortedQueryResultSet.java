@@ -16,7 +16,11 @@
 
 package com.hazelcast.util;
 
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * @ali 08/12/13

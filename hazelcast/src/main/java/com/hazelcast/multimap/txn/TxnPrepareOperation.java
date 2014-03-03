@@ -44,7 +44,7 @@ public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (!container.extendLock(dataKey, getCallerUuid(), threadId, 10000L)){
+        if (!container.extendLock(dataKey, getCallerUuid(), threadId, 10000L)) {
             throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
         response = true;

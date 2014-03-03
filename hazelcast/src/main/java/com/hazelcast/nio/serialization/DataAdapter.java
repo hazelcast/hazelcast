@@ -69,7 +69,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
 
     /**
      * WARNING:
-     *
+     * <p/>
      * Should be in sync with {@link Data#writeData(com.hazelcast.nio.ObjectDataOutput)}
      */
     @Override
@@ -165,7 +165,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
 
     /**
      * WARNING:
-     *
+     * <p/>
      * Should be in sync with {@link Data#readData(com.hazelcast.nio.ObjectDataInput)}
      */
     @Override

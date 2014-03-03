@@ -81,5 +81,6 @@ public final class Clock {
         }
     }
 
-    private Clock() {}
+    private Clock() {
+    }
 }

@@ -47,7 +47,7 @@ public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation impleme
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (!container.txnLock(dataKey, caller, threadId, ttl + 10000L)){
+        if (!container.txnLock(dataKey, caller, threadId, ttl + 10000L)) {
             throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
     }

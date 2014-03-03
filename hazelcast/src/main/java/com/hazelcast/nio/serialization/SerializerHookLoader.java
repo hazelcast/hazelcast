@@ -20,11 +20,13 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Loads auto registered serializers using {@link com.hazelcast.nio.serialization.SerializerHook}

@@ -38,55 +38,55 @@ import static org.junit.Assert.assertNotNull;
 public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
     @Test
-    public void testPortableFactoryInstance(){
+    public void testPortableFactoryInstance() {
         HazelcastInstanceAwarePortableFactory factory = new HazelcastInstanceAwarePortableFactory();
 
         Config config = new Config();
         config.getSerializationConfig().addPortableFactory(1, factory);
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,PortablePerson> map = instance.getMap("map");
+        Map<String, PortablePerson> map = instance.getMap("map");
         map.put("1", new PortablePerson());
         PortablePerson person = map.get("1");
-        assertNotNull("HazelcastInstance should have been set",person.hz);
+        assertNotNull("HazelcastInstance should have been set", person.hz);
     }
 
     @Test
-    public void testPortableFactoryClass(){
+    public void testPortableFactoryClass() {
         Config config = new Config();
         config.getSerializationConfig().addPortableFactoryClass(1, HazelcastInstanceAwarePortableFactory.class.getName());
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,PortablePerson> map = instance.getMap("map");
+        Map<String, PortablePerson> map = instance.getMap("map");
         map.put("1", new PortablePerson());
         PortablePerson person = map.get("1");
-        assertNotNull("HazelcastInstance should have been set",person.hz);
+        assertNotNull("HazelcastInstance should have been set", person.hz);
     }
 
     @Test
-    public void testDataSerializableFactoryInstance(){
+    public void testDataSerializableFactoryInstance() {
         HazelcastInstanceAwareDataSerializableFactory factory = new HazelcastInstanceAwareDataSerializableFactory();
 
         Config config = new Config();
         config.getSerializationConfig().addDataSerializableFactory(1, factory);
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,DataSerializablePerson> map = instance.getMap("map");
+        Map<String, DataSerializablePerson> map = instance.getMap("map");
         map.put("1", new DataSerializablePerson());
         DataSerializablePerson person = map.get("1");
-        assertNotNull("HazelcastInstance should have been set",person.hz);
+        assertNotNull("HazelcastInstance should have been set", person.hz);
     }
 
     @Test
-    public void testDataSerializableFactoryClass(){
+    public void testDataSerializableFactoryClass() {
         Config config = new Config();
         config.getSerializationConfig().addDataSerializableFactoryClass(1, HazelcastInstanceAwareDataSerializableFactory.class.getName());
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,DataSerializablePerson> map = instance.getMap("map");
+        Map<String, DataSerializablePerson> map = instance.getMap("map");
         map.put("1", new DataSerializablePerson());
         DataSerializablePerson person = map.get("1");
-        assertNotNull("HazelcastInstance should have been set",person.hz);
+        assertNotNull("HazelcastInstance should have been set", person.hz);
     }
 
     private static class HazelcastInstanceAwarePortableFactory implements PortableFactory, HazelcastInstanceAware {
@@ -94,7 +94,7 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-           this.hz = hazelcastInstance;
+            this.hz = hazelcastInstance;
         }
 
         @Override
@@ -105,7 +105,7 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
         }
     }
 
-    private static class PortablePerson implements Portable{
+    private static class PortablePerson implements Portable {
         private HazelcastInstance hz;
 
         @Override
@@ -143,7 +143,7 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
         }
     }
 
-    private static class DataSerializablePerson implements IdentifiedDataSerializable{
+    private static class DataSerializablePerson implements IdentifiedDataSerializable {
         private HazelcastInstance hz;
 
         @Override

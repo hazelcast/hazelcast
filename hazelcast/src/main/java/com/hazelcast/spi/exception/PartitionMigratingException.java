@@ -23,6 +23,6 @@ public class PartitionMigratingException extends RetryableHazelcastException {
     public PartitionMigratingException(Address thisAddress, int partitionId,
                                        String operationName, String serviceName) {
         super("Partition is migrating! this:" + thisAddress
-              + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
+                + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

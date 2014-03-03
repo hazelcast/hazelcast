@@ -70,8 +70,8 @@ public class TxnPollRequest extends BaseTransactionRequest implements Portable, 
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeout);
+        writer.writeUTF("n", name);
+        writer.writeLong("t", timeout);
     }
 
     public void read(PortableReader reader) throws IOException {

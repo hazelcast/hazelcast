@@ -20,20 +20,20 @@ import static com.hazelcast.util.ValidationUtil.hasText;
 
 /**
  * The AWSConfig contains the configuration for AWS join mechanism.
- *
+ * <p/>
  * what happens behind the scenes is that data about the running AWS instances in a specific region are downloaded using the
  * accesskey/secretkey and are potential Hazelcast members.
- *
+ * <p/>
  * <h1>Filtering</h1>
  * There are 2 mechanisms for filtering out AWS instances and these mechanisms can be combined (AND).
  * <ol>
- *     <li>If a securityGroup is configured only instanced within that security group are selected.
- *     </li>
- *     <li>
- *         If a tag key/value is set only instances with that tag key/value will be selected.
- *     </li>
+ * <li>If a securityGroup is configured only instanced within that security group are selected.
+ * </li>
+ * <li>
+ * If a tag key/value is set only instances with that tag key/value will be selected.
+ * </li>
  * </ol>
- *
+ * <p/>
  * Once Hazelcast has figured out which instances are available, it will use the private ip addresses of these
  * instances to create a tcp/ip-cluster.
  */
@@ -69,7 +69,7 @@ public class AwsConfig {
      * @see #setSecretKey(String)
      */
     public AwsConfig setAccessKey(String accessKey) {
-        this.accessKey = hasText(accessKey,"accessKey");
+        this.accessKey = hasText(accessKey, "accessKey");
         return this;
     }
 
@@ -93,7 +93,7 @@ public class AwsConfig {
      * @see #setAccessKey(String)
      */
     public AwsConfig setSecretKey(String secretKey) {
-        this.secretKey = hasText(secretKey,"secretKey");
+        this.secretKey = hasText(secretKey, "secretKey");
         return this;
     }
 
@@ -115,7 +115,7 @@ public class AwsConfig {
      * @throws IllegalArgumentException if region is null or empty.
      */
     public AwsConfig setRegion(String region) {
-        this.region = hasText(region,"region");
+        this.region = hasText(region, "region");
         return this;
     }
 
@@ -136,7 +136,7 @@ public class AwsConfig {
      * @throws IllegalArgumentException if hostHeader is null or an empty string.
      */
     public AwsConfig setHostHeader(String hostHeader) {
-        this.hostHeader = hasText(hostHeader,"hostHeader");
+        this.hostHeader = hasText(hostHeader, "hostHeader");
         return this;
     }
 
@@ -163,10 +163,10 @@ public class AwsConfig {
     /**
      * Sets the security group name. See the filtering section for more information.
      *
-     * @param securityGroupName  the security group name.
+     * @param securityGroupName the security group name.
      * @return the updated AwsConfig.
      * @see #getSecurityGroupName()
-      */
+     */
     public AwsConfig setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
         return this;
@@ -216,7 +216,7 @@ public class AwsConfig {
     }
 
     /**
-     *  Gets the tag value. If nothing is specified null is returned.
+     * Gets the tag value. If nothing is specified null is returned.
      *
      * @return the tag value.
      */
@@ -243,7 +243,7 @@ public class AwsConfig {
      * @see TcpIpConfig#setConnectionTimeoutSeconds(int)
      */
     public AwsConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
-        if(connectionTimeoutSeconds<0){
+        if (connectionTimeoutSeconds < 0) {
             throw new IllegalArgumentException("connection timeout can't be smaller than 0");
         }
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;

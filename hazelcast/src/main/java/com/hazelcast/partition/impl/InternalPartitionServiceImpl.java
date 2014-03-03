@@ -1038,7 +1038,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 break;
             default:
                 throw new IllegalArgumentException("Not a known MigrationStatus: " + status);
-         }
+        }
     }
 
     @Override

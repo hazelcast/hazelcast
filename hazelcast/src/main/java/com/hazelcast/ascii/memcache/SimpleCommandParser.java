@@ -21,7 +21,10 @@ import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TypeAwareCommandParser;
 import com.hazelcast.nio.ascii.SocketTextReader;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 public class SimpleCommandParser extends TypeAwareCommandParser {
     public SimpleCommandParser(TextCommandConstants.TextCommandType type) {

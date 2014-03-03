@@ -89,9 +89,9 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         final Data value = nodeEngine.toData(e);
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         long reservedItemId = -1;
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             final CollectionItem item = iterator.next();
-            if (value.equals(item.getValue())){
+            if (value.equals(item.getValue())) {
                 reservedItemId = item.getItemId();
                 break;
             }
@@ -101,7 +101,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
             Future<CollectionItem> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
             CollectionItem item = f.get();
             if (item != null) {
-                if (reservedItemId == item.getItemId()){
+                if (reservedItemId == item.getItemId()) {
                     iterator.remove();
                     tx.removeTransactionLog(reservedItemId);
                     itemIdSet.remove(reservedItemId);
@@ -132,8 +132,8 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         }
     }
 
-    private void checkTransactionState(){
-        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+    private void checkTransactionState() {
+        if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }

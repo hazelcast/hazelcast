@@ -26,9 +26,9 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-public class GetSystemWarningsRequest  implements ConsoleRequest {
+public class GetSystemWarningsRequest implements ConsoleRequest {
 
-    public GetSystemWarningsRequest(){
+    public GetSystemWarningsRequest() {
     }
 
     @Override

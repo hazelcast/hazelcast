@@ -17,15 +17,12 @@
 package com.hazelcast.core;
 
 /**
- *
  * Base interface for Hazelcast distributed maps.
  *
  * @param <K> Key
  * @param <V> Value
- *
  * @see IMap
  * @see TransactionalMap
- *
  */
 public interface BaseMap<K, V> extends DistributedObject {
 
@@ -51,7 +48,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      * If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
      *
-     * @param key key
+     * @param key   key
      * @param value value
      * @return previous value associated with {@code key} or {@code null}
      *         if there was no mapping for {@code key}.
@@ -62,11 +59,11 @@ public interface BaseMap<K, V> extends DistributedObject {
      * Associates the specified value with the specified key in this map
      * If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
-     *
+     * <p/>
      * <p/> This method is preferred to {@link #put(Object, Object)}
      * if the old value is not needed.
      *
-     * @param key key
+     * @param key   key
      * @param value value
      */
     void set(K key, V value);
@@ -82,7 +79,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      *       return map.get(key);</pre>
      * except that the action is performed atomically.
      *
-     * @param key key
+     * @param key   key
      * @param value value
      * @return previous value associated with {@code key} or {@code null}
      *         if there was no mapping for {@code key}.
@@ -98,7 +95,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      *   } else return null;</pre>
      * except that the action is performed atomically.
      *
-     * @param key key
+     * @param key   key
      * @param value value
      * @return previous value associated with {@code key} or {@code null}
      *         if there was no mapping for {@code key}.
@@ -115,7 +112,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      *   } else return false;</pre>
      * except that the action is performed atomically.
      *
-     * @param key key
+     * @param key      key
      * @param oldValue old value
      * @param newValue new value
      * @return {@code true} if the value was replaced
@@ -138,7 +135,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      * Removes the mapping for a key from this map if it is present.
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
-     *
+     * <p/>
      * * <p> This method is preferred to {@link #remove(Object)}
      * if the old value is not needed.
      *
@@ -156,7 +153,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      *   } else return false;</pre>
      * except that the action is performed atomically.
      *
-     * @param key key
+     * @param key   key
      * @param value value
      * @return {@code true} if the value was removed
      */

@@ -23,9 +23,9 @@ import com.hazelcast.queue.DrainOperation;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -55,7 +55,7 @@ public class DrainRequest extends QueueRequest {
     }
 
     protected Object filter(Object response) {
-        if (response instanceof SerializableCollection){
+        if (response instanceof SerializableCollection) {
             Collection<Data> coll = ((SerializableCollection) response).getCollection();
             return new PortableCollection(coll);
         }
@@ -64,7 +64,7 @@ public class DrainRequest extends QueueRequest {
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeInt("m",maxSize);
+        writer.writeInt("m", maxSize);
     }
 
     public void read(PortableReader reader) throws IOException {

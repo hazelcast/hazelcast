@@ -1,8 +1,6 @@
 package com.hazelcast.management;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;

@@ -64,9 +64,9 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
     @Override
     public int compareTo(CollectionItem o) {
         long otherItemId = o.getItemId();
-        if (itemId > otherItemId){
+        if (itemId > otherItemId) {
             return 1;
-        } else if (itemId < otherItemId){
+        } else if (itemId < otherItemId) {
             return -1;
         }
         return 0;

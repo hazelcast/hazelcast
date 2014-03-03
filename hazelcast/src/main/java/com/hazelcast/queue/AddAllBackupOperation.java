@@ -47,7 +47,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataMap.size());
-        for (Map.Entry<Long, Data> entry: dataMap.entrySet()) {
+        for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
             long itemId = entry.getKey();
             Data value = entry.getValue();
             out.writeLong(itemId);

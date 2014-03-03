@@ -16,7 +16,11 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
@@ -61,8 +65,8 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeBoolean("i",includeValue);
+        writer.writeUTF("n", name);
+        writer.writeBoolean("i", includeValue);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -84,8 +88,8 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                 send(item);
             }
 
-            private void send(ItemEvent event){
-                if (endpoint.live()){
+            private void send(ItemEvent event) {
+                if (endpoint.live()) {
                     Data item = clientEngine.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());

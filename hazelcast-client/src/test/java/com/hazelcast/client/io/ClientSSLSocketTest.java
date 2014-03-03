@@ -26,7 +26,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ssl.TestKeyStoreUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 

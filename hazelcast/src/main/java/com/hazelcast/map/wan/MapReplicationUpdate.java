@@ -25,7 +25,7 @@ import com.hazelcast.wan.ReplicationEventObject;
 
 import java.io.IOException;
 
-public class MapReplicationUpdate implements ReplicationEventObject,DataSerializable {
+public class MapReplicationUpdate implements ReplicationEventObject, DataSerializable {
 
     String mapName;
     MapMergePolicy mergePolicy;

@@ -20,7 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -40,7 +44,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,17 +58,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.query.QueryBasicTest.doFunctionalQueryTest;
 import static com.hazelcast.map.query.QueryBasicTest.doFunctionalSQLQueryTest;
-import static com.hazelcast.query.SampleObjects.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.query.SampleObjects.Employee;
+import static com.hazelcast.query.SampleObjects.Value;
+import static com.hazelcast.query.SampleObjects.ValueType;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
 
-
-
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     // TODO: fails @mm - Test fails randomly!
     @Category(ProblematicTest.class)
     public void testQueryWithTTL() throws Exception {
@@ -90,7 +101,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         for (Employee employee : values) {
             assertTrue(employee.isActive());
         }
-        final  CountDownLatch latch =  new CountDownLatch(1000);
+        final CountDownLatch latch = new CountDownLatch(1000);
         imap.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
@@ -103,7 +114,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testQueryDuringAndAfterMigration() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -122,7 +133,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = new Config();
@@ -150,10 +161,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryWithIndexesWhileMigrating() throws Exception {
-         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -181,7 +192,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoNodesWithPartialIndexes() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -222,7 +233,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testTwoNodesWithIndexes() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -265,14 +276,14 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testOneMemberWithoutIndex() {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap imap = h1.getMap("employees");
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testOneMemberWithIndex() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap imap = instance.getMap("employees");
@@ -282,7 +293,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testOneMemberSQLWithoutIndex() {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap imap = h1.getMap("employees");
@@ -291,7 +302,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(27, entries.size());
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testOneMemberSQLWithIndex() {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap imap = h1.getMap("employees");
@@ -301,7 +312,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         doFunctionalSQLQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testNullIndexing() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -354,7 +365,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testTwoMembers() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -363,7 +374,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testTwoMembersWithIndexes() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -375,7 +386,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testTwoMembersWithIndexesAndShutdown() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -397,10 +408,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown2() {
-       TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         IMap imap = h1.getMap("employees");
@@ -421,10 +432,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown3() {
-         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -446,7 +457,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testSecondMemberAfterAddingIndexes() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -459,7 +470,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testShutDown() {
         Config cfg = new Config();
@@ -472,10 +483,10 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         int allsize = 10000;
         int targetSize = 3000;
         for (int i = 0; i < allsize; i++) {
-            map.put(i, new ValueType("type"+i));
+            map.put(i, new ValueType("type" + i));
         }
 
-        for (int i = allsize; i < allsize+targetSize; i++) {
+        for (int i = allsize; i < allsize + targetSize; i++) {
             map.put(i, new ValueType("typex"));
         }
         assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
@@ -492,7 +503,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     /**
      * test for issue #359
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
@@ -555,7 +566,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     // issue 1404 "to be fixed by issue 1404"
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Ignore
     public void testQueryAfterInitialLoad() {
         String name = "testQueryAfterInitialLoad";
@@ -594,7 +605,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     /**
      * see zendesk ticket #82
      */
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     @Category(ProblematicTest.class)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";

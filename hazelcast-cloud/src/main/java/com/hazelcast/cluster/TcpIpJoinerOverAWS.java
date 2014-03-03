@@ -24,7 +24,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
 
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
@@ -45,12 +44,12 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     protected Collection<String> getMembers() {
         try {
             List<String> list = aws.getPrivateIpAddresses();
-            if(list.isEmpty()){
+            if (list.isEmpty()) {
                 logger.warning("No EC2 instances found!");
-            }else{
-                if(logger.isFinestEnabled()){
+            } else {
+                if (logger.isFinestEnabled()) {
                     StringBuilder sb = new StringBuilder("Found the following EC2 instances:\n");
-                    for(String ip: list){
+                    for (String ip : list) {
                         sb.append("    ").append(ip).append("\n");
                     }
                     logger.finest(sb.toString());

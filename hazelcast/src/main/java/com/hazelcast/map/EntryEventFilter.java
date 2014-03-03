@@ -24,7 +24,7 @@ import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-public class EntryEventFilter implements EventFilter,DataSerializable {
+public class EntryEventFilter implements EventFilter, DataSerializable {
 
     boolean includeValue = false;
     Data key = null;

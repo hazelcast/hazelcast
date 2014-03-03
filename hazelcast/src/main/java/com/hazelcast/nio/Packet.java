@@ -68,7 +68,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
 
     /**
      * Sets the Connection this Packet is send with.
-     *
+     * <p/>
      * This is done on the reading side of the Packet to make it possible to retrieve information about
      * the sender of the Packet.
      *
@@ -90,7 +90,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      * Returns the header of the Packet. The header is used to figure out what the content is of this Packet before
      * the actual payload needs to be processed.
      *
-     * @return  the header.
+     * @return the header.
      */
     public short getHeader() {
         return header;
@@ -106,7 +106,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     }
 
     @Override
-    public boolean isUrgent(){
+    public boolean isUrgent() {
         return isHeaderSet(HEADER_URGENT);
     }
 
@@ -172,7 +172,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      * @return the size of the packet.
      */
     public int size() {
-        return (data != null  ? data.totalSize() : 0) + 7; // 7 = byte(version) + short(header) + int(partitionId)
+        return (data != null ? data.totalSize() : 0) + 7; // 7 = byte(version) + short(header) + int(partitionId)
     }
 
     @Override

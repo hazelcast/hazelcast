@@ -17,11 +17,7 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
-
-import java.io.IOException;
 
 public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation {
 

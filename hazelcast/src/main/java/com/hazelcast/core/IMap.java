@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Concurrent, distributed, observable and queryable map.
- *
+ * <p/>
  * <p/>
  * <p><b>This class is <i>not</i> a general-purpose <tt>ConcurrentMap</tt> implementation! While this class implements
  * the <tt>Map</tt> interface, it intentionally violates <tt>Map's</tt> general contract, which mandates the
@@ -84,6 +84,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}
+     *
      * @throws NullPointerException if the specified value is null
      */
     boolean containsValue(Object value);
@@ -166,19 +167,19 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     /**
      * Removes the mapping for a key from this map if it is present
      * (optional operation).
-     *
+     * <p/>
      * <p>Differently from {@link #remove(Object)}; this operation does not return
      * removed value to avoid serialization cost of returned value.
-     *
+     * <p/>
      * If the removed value will not be used, delete operation
      * should be preferred over remove operation for a better performance.
-     *
+     * <p/>
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
      *
      * @param key key whose mapping is to be removed from the map
-     * @throws ClassCastException if the key is of an inappropriate type for
-     *         this map (optional)
+     * @throws ClassCastException   if the key is of an inappropriate type for
+     *                              this map (optional)
      * @throws NullPointerException if the specified key is null
      */
     void delete(Object key);
@@ -299,8 +300,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      *
-     * @param key   the key of the map entry
-     * @param value the new value of the map entry
+     * @param key      the key of the map entry
+     * @param value    the new value of the map entry
      * @param ttl      maximum time for this entry to stay in the map
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
@@ -350,7 +351,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *         otherwise.
      * @throws NullPointerException if the specified key is null
      */
-    boolean tryRemove(K key, long timeout, TimeUnit timeunit) ;
+    boolean tryRemove(K key, long timeout, TimeUnit timeunit);
 
     /**
      * Tries to put the given key, value into this map within specified
@@ -501,9 +502,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      *
-     * @param key      key of the entry
-     * @param value    value of the entry
-     *
+     * @param key   key of the entry
+     * @param value value of the entry
      * @throws NullPointerException if the specified key or value is null
      */
     void set(K key, V value);
@@ -570,9 +570,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      *
-     * @param key key to lock.
+     * @param key       key to lock.
      * @param leaseTime time to wait before releasing the lock.
-     * @param timeUnit unit of time to specify lease time.
+     * @param timeUnit  unit of time to specify lease time.
      * @throws NullPointerException if the specified key is null
      */
     void lock(K key, long leaseTime, TimeUnit timeUnit);
@@ -648,7 +648,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in <tt>key</tt>'s class.
      *
      * @param key key to lock.
-     * @throws NullPointerException if the specified key is null
+     * @throws NullPointerException         if the specified key is null
      * @throws IllegalMonitorStateException if the current thread does not hold this lock
      */
     void unlock(K key);
@@ -688,14 +688,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     String addLocalEntryListener(EntryListener<K, V> listener);
 
     /**
-     *
      * Adds a local entry listener for this map. Added listener will be only
      * listening for the events (add/remove/update/evict) of the locally owned entries.
      * Listener will get notified for map add/remove/update/evict events filtered by given predicate.
      *
-     *
-     * @param listener entry listener
-     * @param predicate predicate for filtering entries
+     * @param listener     entry listener
+     * @param predicate    predicate for filtering entries
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return
@@ -703,15 +701,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
 
     /**
-     *
      * Adds a local entry listener for this map. Added listener will be only
      * listening for the events (add/remove/update/evict) of the locally owned entries.
      * Listener will get notified for map add/remove/update/evict events filtered by given predicate.
      *
-     *
-     * @param listener entry listener
-     * @param predicate predicate for filtering entries
-     * @param key key to listen
+     * @param listener     entry listener
+     * @param predicate    predicate for filtering entries
+     * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return
@@ -750,9 +746,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Removes the specified entry listener
      * Returns silently if there is no such listener added before.
      *
-     *
      * @param id id of registered listener
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeEntryListener(String id);
@@ -779,8 +773,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Adds an continuous entry listener for this map. Listener will get notified
      * for map add/remove/update/evict events filtered by given predicate.
      *
-     * @param listener  entry listener
-     * @param predicate predicate for filtering entries
+     * @param listener     entry listener
+     * @param predicate    predicate for filtering entries
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      */
@@ -790,8 +784,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Adds an continuous entry listener for this map. Listener will get notified
      * for map add/remove/update/evict events filtered by given predicate.
      *
-     * @param listener  entry listener
-     * @param predicate predicate for filtering entries
+     * @param listener     entry listener
+     * @param predicate    predicate for filtering entries
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
@@ -817,7 +811,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is null
      * @see EntryView
      */
-    EntryView<K,V> getEntryView(K key);
+    EntryView<K, V> getEntryView(K key);
 
     /**
      * Evicts the specified key from this map. If
@@ -1014,26 +1008,26 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return result of entry process.
      * @throws NullPointerException if the specified key is null
      */
-    Map<K,Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
+    Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
 
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key with
      * specified ExecutionCallback to listen event status and returns immediately.
      *
-     * @param key   key to be processed
+     * @param key            key to be processed
      * @param entryProcessor processor to process the key
-     * @param callback to listen whether operation is finished or not
+     * @param callback       to listen whether operation is finished or not
      */
     void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
 
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key.
      * Returns immediately with a Future representing that task.
-     *
+     * <p/>
      * EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the operation of EntryProcessor.
      *
-     * @param key   key to be processed
+     * @param key            key to be processed
      * @param entryProcessor processor to process the key
      * @return Future from which the result of the operation can be retrieved.
      * @see java.util.concurrent.Future
@@ -1045,16 +1039,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Applies the user defined EntryProcessor to the all entries in the map.
      * Returns the results mapped by each key in the map.
      * <p/>
-     *
      */
-    Map<K,Object> executeOnEntries(EntryProcessor entryProcessor);
+    Map<K, Object> executeOnEntries(EntryProcessor entryProcessor);
 
     /**
      * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
      * Returns the results mapped by each key in the map.
      * <p/>
-     *
      */
-    Map<K,Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
+    Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 
 }

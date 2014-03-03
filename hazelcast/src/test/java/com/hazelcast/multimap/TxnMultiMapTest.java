@@ -18,19 +18,31 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.BaseMultiMap;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 4/5/13
@@ -166,7 +178,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         assertEquals(2, listener.removedCount);
     }
 
-    private class CountingEntryListener<K,V> extends EntryAdapter<K,V> {
+    private class CountingEntryListener<K, V> extends EntryAdapter<K, V> {
         int addedCount = 0;
         int removedCount = 0;
 
@@ -189,7 +201,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        for (int i=0; i<2; i++) {
+        for (int i = 0; i < 2; i++) {
             TransactionContext ctx1 = instance1.newTransactionContext();
             ctx1.beginTransaction();
             BaseMultiMap<Long, Long> txProfileTasks1 = ctx1.getMultiMap(mapName);

@@ -26,8 +26,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 /**
-* @author ali 4/16/13
-*/
+ * @author ali 4/16/13
+ */
 public class TransactionalListProxy<E> extends AbstractTransactionalCollectionProxy<ListService, E>
         implements TransactionalList<E> {
 

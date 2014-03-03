@@ -19,8 +19,8 @@ package com.hazelcast.config;
 /**
  * Storage format type of values stored in cluster
  *
-* @author mdogan 10/8/13
-*/
+ * @author mdogan 10/8/13
+ */
 public enum InMemoryFormat {
     BINARY, OBJECT, OFFHEAP
 }

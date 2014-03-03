@@ -22,7 +22,6 @@ import com.hazelcast.logging.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -39,7 +38,8 @@ public class InMemoryXmlConfig extends Config {
      *
      * @param xml the XML content
      * @throws IllegalArgumentException if the XML is null or empty.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public InMemoryXmlConfig(String xml) {
         this(xml, System.getProperties());
@@ -50,14 +50,15 @@ public class InMemoryXmlConfig extends Config {
      *
      * @param xml the XML content
      * @throws IllegalArgumentException if the XML is null or empty or if properties is null.
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws com.hazelcast.core.HazelcastException
+     *                                  if the XML content is invalid
      */
     public InMemoryXmlConfig(String xml, Properties properties) {
         logger.info("Configuring Hazelcast from 'in-memory xml'.");
         if (xml == null || "".equals(xml.trim())) {
             throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
         }
-        if(properties == null){
+        if (properties == null) {
             throw new IllegalArgumentException("properties can't be null");
         }
 

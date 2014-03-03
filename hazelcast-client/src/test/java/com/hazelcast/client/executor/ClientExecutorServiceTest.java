@@ -17,7 +17,12 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -28,10 +33,17 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**

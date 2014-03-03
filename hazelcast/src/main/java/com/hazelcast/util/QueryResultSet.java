@@ -25,7 +25,10 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryResultEntry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.newSetFromMap;
@@ -80,8 +83,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
                 Data valueData = entry.getValueData();
                 if (data) {
                     return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
-                }
-                else {
+                } else {
                     Object key = serializationService.toObject(keyData);
                     Object value = serializationService.toObject(valueData);
                     return new AbstractMap.SimpleImmutableEntry(key, value);

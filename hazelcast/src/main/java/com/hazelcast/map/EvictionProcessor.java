@@ -52,7 +52,7 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object> 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                // execute eviction if the node is owner of the key (it can be backup)
+            // execute eviction if the node is owner of the key (it can be backup)
             if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
                 Operation operation = new EvictOperation(mapName, key, true);
                 try {

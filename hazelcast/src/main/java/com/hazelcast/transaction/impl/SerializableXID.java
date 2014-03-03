@@ -49,7 +49,7 @@ public class SerializableXID implements Xid, DataSerializable {
 
     @Override
     public byte[] getGlobalTransactionId() {
-        return Arrays.copyOf(globalTransactionId, globalTransactionId.length) ;
+        return Arrays.copyOf(globalTransactionId, globalTransactionId.length);
     }
 
     @Override

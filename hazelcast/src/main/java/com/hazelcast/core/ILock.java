@@ -66,7 +66,7 @@ public interface ILock extends Lock, DistributedObject {
      * <p/>
      *
      * @param leaseTime time to wait before releasing the lock.
-     * @param timeUnit unit of time to specify lease time.
+     * @param timeUnit  unit of time to specify lease time.
      */
     void lock(long leaseTime, TimeUnit timeUnit);
 
@@ -86,7 +86,7 @@ public interface ILock extends Lock, DistributedObject {
     /**
      * Returns a new {@link ICondition} instance that is bound to this
      * {@code ILock} instance with given name.
-     *
+     * <p/>
      * <p>Before waiting on the condition the lock must be held by the
      * current thread.
      * A call to {@link ICondition#await()} will atomically release the lock

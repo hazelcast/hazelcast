@@ -55,8 +55,8 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         config = nodeEngine.getConfig().findQueueConfig(name);
     }
 
-    protected void checkTransactionState(){
-        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+    protected void checkTransactionState() {
+        if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }

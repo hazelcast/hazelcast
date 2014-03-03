@@ -19,9 +19,19 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
-import com.hazelcast.multimap.operations.client.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.multimap.operations.client.AddEntryListenerRequest;
+import com.hazelcast.multimap.operations.client.ClearRequest;
+import com.hazelcast.multimap.operations.client.ContainsEntryRequest;
+import com.hazelcast.multimap.operations.client.EntrySetRequest;
+import com.hazelcast.multimap.operations.client.GetAllRequest;
+import com.hazelcast.multimap.operations.client.KeySetRequest;
+import com.hazelcast.multimap.operations.client.PortableEntrySetResponse;
+import com.hazelcast.multimap.operations.client.PutRequest;
+import com.hazelcast.multimap.operations.client.RemoveAllRequest;
+import com.hazelcast.multimap.operations.client.SizeRequest;
+import com.hazelcast.multimap.operations.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
@@ -38,7 +48,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/10/13
@@ -48,7 +61,7 @@ import static org.junit.Assert.*;
 public class MultiMapClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";
-//    static final CollectionProxyId mmProxyId = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
+    //    static final CollectionProxyId mmProxyId = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
 //    static final CollectionProxyId listProxyId = new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST);
     static final SerializationService ss = new SerializationServiceBuilder().build();
     static final Data dataKey = ss.toData(name);

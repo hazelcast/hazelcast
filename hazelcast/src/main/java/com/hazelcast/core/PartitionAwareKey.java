@@ -30,7 +30,7 @@ import java.io.IOException;
  * @param <K>
  * @param <P>
  */
-public final class PartitionAwareKey<K,P> implements PartitionAware<Object>, DataSerializable {
+public final class PartitionAwareKey<K, P> implements PartitionAware<Object>, DataSerializable {
 
     private K key;
     private P partitionKey;
@@ -38,17 +38,17 @@ public final class PartitionAwareKey<K,P> implements PartitionAware<Object>, Dat
     /**
      * Creates a new PartitionAwareKey.
      *
-     * @param key the key
+     * @param key          the key
      * @param partitionKey the partitionKey
      * @throws IllegalArgumentException if key or partitionKey is null.
      */
     public PartitionAwareKey(K key, P partitionKey) {
-        this.key = ValidationUtil.isNotNull(key,"key");
-        this.partitionKey = ValidationUtil.isNotNull(partitionKey,"partitionKey");
+        this.key = ValidationUtil.isNotNull(key, "key");
+        this.partitionKey = ValidationUtil.isNotNull(partitionKey, "partitionKey");
     }
 
     //constructor needed for deserialization.
-    private PartitionAwareKey(){
+    private PartitionAwareKey() {
     }
 
     public K getKey() {

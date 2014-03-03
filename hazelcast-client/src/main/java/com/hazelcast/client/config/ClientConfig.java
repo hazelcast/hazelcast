@@ -18,7 +18,11 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.*;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.security.Credentials;
 
@@ -64,20 +68,15 @@ public class ClientConfig {
     private int executorPoolSize = -1;
 
     private SerializationConfig serializationConfig = new SerializationConfig();
-    
+
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
 
     private ManagedContext managedContext = null;
-    
+
     private ClassLoader classLoader = null;
-    
+
     private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
-
-
-
-
-
 
 
     public ClientSecurityConfig getSecurityConfig() {
@@ -96,7 +95,7 @@ public class ClientConfig {
         this.networkConfig = networkConfig;
     }
 
-    public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig){
+    public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig) {
         nearCacheConfigMap.put(mapName, nearCacheConfig);
         return this;
     }
@@ -260,7 +259,7 @@ public class ClientConfig {
 
     public ClientConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
-        return this ;
+        return this;
     }
 
     public LoadBalancer getLoadBalancer() {
@@ -342,8 +341,7 @@ public class ClientConfig {
         return this;
     }
 
-    public SerializationConfig getSerializationConfig()
-    {
+    public SerializationConfig getSerializationConfig() {
         return serializationConfig;
     }
 
@@ -356,7 +354,7 @@ public class ClientConfig {
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
-            for (Map.Entry<String,T> entry : map.entrySet()) {
+            for (Map.Entry<String, T> entry : map.entrySet()) {
                 String pattern = entry.getKey();
                 T value = entry.getValue();
                 if (nameMatches(name, pattern)) {

@@ -20,11 +20,22 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.query.impl.*;
+import com.hazelcast.query.impl.AndResultSet;
+import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.ComparisonType;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.OrResultSet;
+import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryException;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +45,8 @@ import java.util.regex.Pattern;
 public final class Predicates {
 
     //we don't want instances.
-    private Predicates(){}
+    private Predicates() {
+    }
 
     public static Predicate instanceOf(final Class klass) {
         return new InstanceOfPredicate(klass);
@@ -702,10 +714,10 @@ public final class Predicates {
         }
 
         protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
-            if (attributeValue == null ) {
+            if (attributeValue == null) {
                 return null;
             }
-            if( attributeValue instanceof IndexImpl.NullObject ){
+            if (attributeValue instanceof IndexImpl.NullObject) {
                 return IndexImpl.NULL;
             }
             AttributeType type = attributeType;
@@ -780,7 +792,7 @@ public final class Predicates {
             try {
                 klass = in.getClassLoader().loadClass(klassName);
             } catch (ClassNotFoundException e) {
-                throw new HazelcastSerializationException("Failed to load class: "+klass,e);
+                throw new HazelcastSerializationException("Failed to load class: " + klass, e);
             }
         }
 

@@ -72,7 +72,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        int size = 0 ;
+        int size = 0;
         // statistics
         size += 4 + (statistics == null ? 0 : statistics.size());
 

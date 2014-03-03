@@ -20,7 +20,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * Contains the configuration for Hazelcast groups.
- *
+ * <p/>
  * With groups it is possible to create multiple clusters where each cluster has its own group and doesn't
  * interfere with other clusters.
  */
@@ -41,7 +41,7 @@ public final class GroupConfig {
     /**
      * Creates a GroupConfig with the given group-name and default group-password
      *
-     * @param name  the name of the group
+     * @param name the name of the group
      * @throws IllegalArgumentException if name is null.
      */
     public GroupConfig(final String name) {
@@ -51,7 +51,7 @@ public final class GroupConfig {
     /**
      * Creates a GroupConfig with the given group-name and group-password
      *
-     * @param name  the name of the group
+     * @param name     the name of the group
      * @param password the password of the group
      * @throws IllegalArgumentException if name or password is null.
      */
@@ -76,8 +76,8 @@ public final class GroupConfig {
      * @return the updated GroupConfig.
      * @throws IllegalArgumentException if name is null.
      */
-    public GroupConfig setName(final String name){
-        this.name = isNotNull(name,"group name");
+    public GroupConfig setName(final String name) {
+        this.name = isNotNull(name, "group name");
         return this;
     }
 
@@ -98,7 +98,7 @@ public final class GroupConfig {
      * @throws IllegalArgumentException if password is null.
      */
     public GroupConfig setPassword(final String password) {
-        this.password = isNotNull(password,"group password");
+        this.password = isNotNull(password, "group password");
         return this;
     }
 

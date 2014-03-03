@@ -19,7 +19,6 @@ package com.hazelcast.spi;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- *
  * Marker interface for core Hazelcast services.
  *
  * @author mdogan 9/14/12

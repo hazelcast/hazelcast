@@ -19,9 +19,10 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -107,14 +108,14 @@ public final class ResponseHandlerFactory {
             Connection conn = op.getConnection();
             if (!sent.compareAndSet(false, true)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
-                                                + " to " + conn.getEndPoint() + ", current-response: " + obj);
+                        + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
             NormalResponse response;
-            if(!(obj instanceof NormalResponse)){
-                response = new NormalResponse(obj, op.getCallId(),0, op.isUrgent());
-            }else{
-                response = (NormalResponse)obj;
+            if (!(obj instanceof NormalResponse)) {
+                response = new NormalResponse(obj, op.getCallId(), 0, op.isUrgent());
+            } else {
+                response = (NormalResponse) obj;
             }
 
             nodeEngine.getOperationService().send(response, op.getCallerAddress());

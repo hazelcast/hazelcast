@@ -19,8 +19,8 @@ package com.hazelcast.multimap.operations.client;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapRecord;
-import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.multimap.operations.GetAllOperation;
+import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
@@ -49,13 +49,13 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
     }
 
     protected Object filter(Object response) {
-        if (response instanceof MultiMapResponse){
+        if (response instanceof MultiMapResponse) {
             Collection<MultiMapRecord> coll = ((MultiMapResponse) response).getCollection();
-            if (coll == null){
+            if (coll == null) {
                 return new PortableCollection();
             }
             Collection<Data> collection = new ArrayList<Data>(coll.size());
-            for (MultiMapRecord record: coll){
+            for (MultiMapRecord record : coll) {
                 collection.add(getClientEngine().toData(record.getObject()));
             }
             return new PortableCollection(collection);

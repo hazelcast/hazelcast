@@ -18,10 +18,10 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.map.operation.EntryOperation;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.EntryOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

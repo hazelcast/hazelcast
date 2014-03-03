@@ -89,7 +89,7 @@ public final class SSLConfig {
     /**
      * Sets a property.
      *
-     * @param name the name of the property to set.
+     * @param name  the name of the property to set.
      * @param value the value of the property to set
      * @return the updated SSLConfig
      * @throws NullPointerException if name or value is null.
@@ -113,7 +113,7 @@ public final class SSLConfig {
     /**
      * Gets all properties.
      *
-     * @return  the properties.
+     * @return the properties.
      */
     public Properties getProperties() {
         return properties;
@@ -127,7 +127,7 @@ public final class SSLConfig {
      * @throws IllegalArgumentException if properties is null.
      */
     public SSLConfig setProperties(Properties properties) {
-        if(properties == null){
+        if (properties == null) {
             throw new IllegalArgumentException("properties can't be null");
         }
         this.properties = properties;

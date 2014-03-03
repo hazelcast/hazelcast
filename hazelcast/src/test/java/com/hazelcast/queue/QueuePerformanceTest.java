@@ -50,25 +50,23 @@ public class QueuePerformanceTest {
         final int threadCount = 10;
         final int queueCount = 1000;
         final IQueue[] queues = new IQueue[queueCount];
-        for (int i=0; i<queueCount; i++){
-            queues[i] = ins.getQueue("queue"+i);
+        for (int i = 0; i < queueCount; i++) {
+            queues[i] = ins.getQueue("queue" + i);
         }
         System.err.println("starting threads");
-        for (int i=0; i < threadCount; i++){
-            new Thread(){
+        for (int i = 0; i < threadCount; i++) {
+            new Thread() {
                 public void run() {
-                    while (true){
+                    while (true) {
                         IQueue q = queues[rnd.nextInt(queueCount)];
                         int random = rnd.nextInt(100);
-                        if(random > 65){
+                        if (random > 65) {
                             q.poll();
                             totalPoll.incrementAndGet();
-                        }
-                        else if(random > 30){
+                        } else if (random > 30) {
                             q.offer("item");
                             totalOffer.incrementAndGet();
-                        }
-                        else {
+                        } else {
                             q.peek();
                             totalPeek.incrementAndGet();
                         }
@@ -78,9 +76,9 @@ public class QueuePerformanceTest {
         }
         System.err.println("finished starting threads");
 
-        while (true){
+        while (true) {
             long sleepTime = 10;
-            Thread.sleep(sleepTime*1000);
+            Thread.sleep(sleepTime * 1000);
             long totalOfferVal = totalOffer.getAndSet(0);
             long totalPollVal = totalPoll.getAndSet(0);
             long totalPeekVal = totalPeek.getAndSet(0);
@@ -88,7 +86,7 @@ public class QueuePerformanceTest {
 
             System.err.println("_______________________________________________________________________________________");
             System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal + ",\t peek: " + totalPeekVal);
-            System.err.println(" speed: " + ((totalOfferVal+totalPollVal+totalPeekVal)/sleepTime));
+            System.err.println(" speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
             System.err.println("---------------------------------------------------------------------------------------");
             System.err.println("");
         }
@@ -103,20 +101,18 @@ public class QueuePerformanceTest {
         final IQueue<String> q = ins.getQueue(name);
 
         System.err.println("starting threads");
-        for (int i=0; i < threadCount; i++){
-            new Thread(){
+        for (int i = 0; i < threadCount; i++) {
+            new Thread() {
                 public void run() {
-                    while (true){
+                    while (true) {
                         int random = rnd.nextInt(100);
-                        if(random > 54){
+                        if (random > 54) {
                             q.poll();
                             totalPoll.incrementAndGet();
-                        }
-                        else if(random > 8){
+                        } else if (random > 8) {
                             q.offer("item");
                             totalOffer.incrementAndGet();
-                        }
-                        else {
+                        } else {
                             q.peek();
                             totalPeek.incrementAndGet();
                         }
@@ -124,20 +120,19 @@ public class QueuePerformanceTest {
                 }
             }.start();
         }
-        new Thread(){
+        new Thread() {
             public void run() {
-                while (true){
+                while (true) {
                     int size = q.size();
-                    if (size > 50000){
+                    if (size > 50000) {
                         System.err.println("cleaning a little");
-                        for (int i=0; i < 10000; i++){
+                        for (int i = 0; i < 10000; i++) {
                             q.poll();
                             totalPoll.incrementAndGet();
                         }
-                    }
-                    else{
+                    } else {
                         try {
-                            Thread.sleep(10*1000);
+                            Thread.sleep(10 * 1000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -147,9 +142,9 @@ public class QueuePerformanceTest {
         }.start();
         System.err.println("finished starting threads");
 
-        while (true){
+        while (true) {
             long sleepTime = 10;
-            Thread.sleep(sleepTime*1000);
+            Thread.sleep(sleepTime * 1000);
             long totalOfferVal = totalOffer.getAndSet(0);
             long totalPollVal = totalPoll.getAndSet(0);
             long totalPeekVal = totalPeek.getAndSet(0);
@@ -157,7 +152,7 @@ public class QueuePerformanceTest {
 
             System.err.println("_______________________________________________________________________________________");
             System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal + ",\t peek: " + totalPeekVal);
-            System.err.println(" size: " + q.size() + " \t speed: " + ((totalOfferVal+totalPollVal+totalPeekVal)/sleepTime));
+            System.err.println(" size: " + q.size() + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
             System.err.println("---------------------------------------------------------------------------------------");
             System.err.println("");
         }

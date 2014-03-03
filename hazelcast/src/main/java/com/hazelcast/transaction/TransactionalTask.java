@@ -19,7 +19,7 @@ package com.hazelcast.transaction;
 /**
  * Contains the logic that is going to be executed within a transaction. In practice the
  * implementation will be an anonymous inner task.
- *
+ * <p/>
  * Unlike the {@link Runnable} and {@link java.util.concurrent.Callable} the {@link TransactionalTask}
  * will run on the caller thread.
  *

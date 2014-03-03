@@ -22,7 +22,19 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.*;
+import com.hazelcast.queue.AddAllOperation;
+import com.hazelcast.queue.ClearOperation;
+import com.hazelcast.queue.CompareAndRemoveOperation;
+import com.hazelcast.queue.ContainsOperation;
+import com.hazelcast.queue.DrainOperation;
+import com.hazelcast.queue.IteratorOperation;
+import com.hazelcast.queue.OfferOperation;
+import com.hazelcast.queue.PeekOperation;
+import com.hazelcast.queue.PollOperation;
+import com.hazelcast.queue.QueueOperation;
+import com.hazelcast.queue.QueueService;
+import com.hazelcast.queue.RemoveOperation;
+import com.hazelcast.queue.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
@@ -158,7 +170,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     private <T> T invoke(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,operation,partitionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -168,7 +180,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     private Object invokeData(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,operation,partitionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

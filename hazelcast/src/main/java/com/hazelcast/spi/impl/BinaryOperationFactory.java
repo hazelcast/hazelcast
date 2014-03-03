@@ -16,15 +16,15 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.NodeAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.NodeAware;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 

@@ -30,7 +30,14 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 //todo: cluster runtime should not extend PartitionRuntime but should compose it;
 //favor composition over inheritance.
@@ -47,22 +54,22 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     public ClusterRuntimeState() {
     }
 
-    public ClusterRuntimeState( Collection<Member> members, // !!! ordered !!!
-                                InternalPartition[] partitions,
-                                Collection<MigrationInfo> activeMigrations,
-                                Map<Address, Connection> connections,
-                                Collection<LockResource> locks) {
+    public ClusterRuntimeState(Collection<Member> members, // !!! ordered !!!
+                               InternalPartition[] partitions,
+                               Collection<MigrationInfo> activeMigrations,
+                               Map<Address, Connection> connections,
+                               Collection<LockResource> locks) {
         this.activeMigrations = activeMigrations != null ? activeMigrations : Collections.<MigrationInfo>emptySet();
         lockInfos = new LinkedList<LockInfo>();
         connectionInfos = new LinkedList<ConnectionInfo>();
-         Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
+        Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
         int memberIndex = 0;
         for (Member member : members) {
             MemberImpl memberImpl = (MemberImpl) member;
             MemberInfo memberInfo = new MemberInfo(memberImpl.getAddress(), member.getUuid(), member.getAttributes());
             addMemberInfo(memberInfo, addressIndexes, memberIndex);
             if (!member.localMember()) {
-                 Connection conn = connections.get(memberImpl.getAddress());
+                Connection conn = connections.get(memberImpl.getAddress());
                 ConnectionInfo connectionInfo;
                 if (conn != null) {
                     connectionInfo = new ConnectionInfo(memberIndex, conn.live(), conn.lastReadTime(), conn.lastWriteTime());
@@ -79,7 +86,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         setLocks(locks, addressIndexes, members);
     }
 
-    private void setLocks( Collection<LockResource> locks,  Map<Address, Integer> addressIndexes,  Collection<Member> members) {
+    private void setLocks(Collection<LockResource> locks, Map<Address, Integer> addressIndexes, Collection<Member> members) {
         Map<String, Address> uuidToAddress = new HashMap<String, Address>(members.size());
         for (Member member : members) {
             uuidToAddress.put(member.getUuid(), ((MemberImpl) member).getAddress());
@@ -132,7 +139,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     @Override
-    public void readData( ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         localMemberIndex = in.readInt();
         lockTotalNum = in.readInt();
@@ -163,7 +170,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
     }
 
     @Override
-    public void writeData( ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeInt(localMemberIndex);
         out.writeInt(lockTotalNum);

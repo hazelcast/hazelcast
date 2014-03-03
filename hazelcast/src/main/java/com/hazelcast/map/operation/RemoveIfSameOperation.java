@@ -37,7 +37,7 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-       successful = recordStore.remove(dataKey, testValue);
+        successful = recordStore.remove(dataKey, testValue);
     }
 
     public void afterRun() {

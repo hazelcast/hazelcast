@@ -1,13 +1,11 @@
 <%@ page
-      errorPage="ErrorPage.jsp"
-      import="java.io.*"
-      import="java.util.*"
-      import="com.hazelcast.wm.test.*"
-%>
+        errorPage="ErrorPage.jsp"
+        import="com.hazelcast.wm.test.Value"
+        %>
 hello1...
 
 <%
-  session.setAttribute("value", new Value());
+    session.setAttribute("value", new Value());
 %>
-<jsp:forward page="include.jsp" /> 
+<jsp:forward page="include.jsp"/>
 world

@@ -31,7 +31,7 @@ public class MapConfigReadOnly extends MapConfig {
 
     public MaxSizeConfig getMaxSizeConfig() {
         final MaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
-        if (maxSizeConfig == null){
+        if (maxSizeConfig == null) {
             return null;
         }
         return maxSizeConfig.getAsReadOnly();
@@ -39,7 +39,7 @@ public class MapConfigReadOnly extends MapConfig {
 
     public WanReplicationRef getWanReplicationRef() {
         final WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
-        if (wanReplicationRef == null){
+        if (wanReplicationRef == null) {
             return null;
         }
         return wanReplicationRef.getAsReadOnly();
@@ -65,7 +65,7 @@ public class MapConfigReadOnly extends MapConfig {
 
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {
         final PartitioningStrategyConfig partitioningStrategyConfig = super.getPartitioningStrategyConfig();
-        if (partitioningStrategyConfig == null){
+        if (partitioningStrategyConfig == null) {
             return null;
         }
         return partitioningStrategyConfig.getAsReadOnly();
