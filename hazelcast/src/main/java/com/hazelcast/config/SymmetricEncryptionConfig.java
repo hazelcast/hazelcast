@@ -73,11 +73,11 @@ public class SymmetricEncryptionConfig {
     }
 
     public byte[] getKey() {
-        return key;
+        return Arrays.copyOf(key, key.length);
     }
 
     public SymmetricEncryptionConfig setKey(byte[] key) {
-        this.key = key;
+        this.key = Arrays.copyOf(key, key.length);
         return this;
     }
 

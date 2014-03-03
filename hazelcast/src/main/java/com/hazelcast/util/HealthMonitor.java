@@ -251,6 +251,8 @@ public class HealthMonitor extends Thread {
             }
 
             return defaultValue;
+        } catch (RuntimeException re) {
+            throw re;
         } catch (Exception e) {
             return defaultValue;
         }

@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -901,11 +902,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("enabled".equals(att.getNodeName())) {
                 mapStoreConfig.setEnabled(checkTrue(value));
             } else if ("initial-mode".equals(att.getNodeName())) {
-                final MapStoreConfig.InitialLoadMode mode = att != null
-                        ? MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(att)))
-                        : MapStoreConfig.InitialLoadMode.LAZY;
+                final InitialLoadMode mode = InitialLoadMode.valueOf(upperCaseInternal(getTextContent(att)));
                 mapStoreConfig.setInitialLoadMode(mode);
-
             }
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {

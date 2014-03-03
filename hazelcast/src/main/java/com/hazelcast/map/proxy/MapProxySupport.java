@@ -329,22 +329,21 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new PartitionCheckIfLoadedOperationFactory(name));
-            final Set<Integer> partitions = results.keySet();
-            Iterator<Integer> iterator = partitions.iterator();
+            Iterator<Entry<Integer, Object>> iterator = results.entrySet().iterator();
             boolean isFinished = false;
             final Set<Integer> retrySet = new HashSet<Integer>();
             while (!isFinished) {
                 while (iterator.hasNext()) {
-                    final Integer partitionId = iterator.next();
-                    if ((Boolean) results.get(partitionId) == true) {
+                    final Entry<Integer, Object> entry = iterator.next();
+                    if (Boolean.TRUE.equals(entry.getValue())) {
                         iterator.remove();
                     } else {
-                        retrySet.add(partitionId);
+                        retrySet.add(entry.getKey());
                     }
                 }
                 if (retrySet.size() > 0) {
                     results = retryPartitions(retrySet);
-                    iterator = results.keySet().iterator();
+                    iterator = results.entrySet().iterator();
                     Thread.sleep(1000);
                     retrySet.clear();
                 } else {

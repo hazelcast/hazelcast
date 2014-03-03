@@ -113,7 +113,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                                 final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
                                 Future future = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
                                         migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).invoke();
-                                Boolean result = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
+                                Boolean result = nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
                                 migrationInfo.doneProcessing();
                                 responseHandler.sendResponse(result);
                             } catch (Throwable e) {
