@@ -33,7 +33,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -183,12 +182,8 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
         };
         new Thread(runnable).start();
-        try {
-            countDownLatch.await(120000, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
+        assertOpenEventually(countDownLatch, 120);
         IMap map = instance1.getMap("testInitialLoadModeEagerMultipleThread");
         assertEquals(size, map.size());
 
@@ -226,11 +221,11 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
         };
         new Thread(runnable).start();
-        Assert.assertTrue(String.format("Latch timeout after %d seconds", 120), countDownLatch.await(120, TimeUnit.SECONDS));
+        assertOpenEventually(countDownLatch, 120);
+
         final IMap<Object, Object> map2 = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
         final int map2Size = map2.size();
-        Assert.assertEquals(String.format("testInitialLoadModeEagerWhileStoppigOneNode %d", map2Size),
-                size, map2Size);
+        assertEquals(size, map2Size);
     }
 
     @Test
@@ -700,8 +695,9 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
         assertEquals(testMapStore.getStore().size(), size * 2);
         countDownLatch.await(5, TimeUnit.SECONDS);
-        assertTrue(String.format("map.size() > size / 2 %d %d", map.size(), size), map.size() > size / 2);
-        assertTrue(String.format("map.size() <= size %d %d", map.size(), size), map.size() <= size);
+        final String msgFailure = String.format("map size: %d put size: %d", map.size(), size);
+        assertTrue(msgFailure, map.size() > size / 2);
+        assertTrue(msgFailure, map.size() <= size);
         assertEquals(testMapStore.getStore().size(), size * 2);
     }
 
@@ -1399,11 +1395,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
 
         public void awaitStores() {
-            try {
-                assertTrue(String.format("awaitStores failed after waiting %d seconds.", waitSecond),
-                        latch.await(waitSecond, TimeUnit.SECONDS));
-            } catch (InterruptedException e) {
-            }
+            assertOpenEventually(latch, waitSecond);
         }
 
         @Override
