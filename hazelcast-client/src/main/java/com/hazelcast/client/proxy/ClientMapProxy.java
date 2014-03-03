@@ -78,7 +78,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
@@ -553,10 +552,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Comparator<Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.KEY);
         final SortedQueryResultSet sortedResult = new SortedQueryResultSet(comparator, IterationType.KEY, pagingPredicate.getPageSize());
 
-        for (QueryResultEntry entry: result.getEntries()) {
 
-            final K key = toObject(entry.getKeyData());
-            final V value = toObject(entry.getValueData());
+        final Iterator<Entry> iterator = result.rawIterator();
+        while (iterator.hasNext()) {
+            final Entry entry = iterator.next();
+            final K key = toObject(entry.getKey());
+            final V value = toObject(entry.getValue());
             sortedResult.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
         }
 
@@ -625,9 +626,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
 
         List<Entry<Object, V>> valueEntryList = new ArrayList<Entry<Object, V>>(result.size());
-        for (QueryResultEntry entry : result.getEntries()) {
-            K key = toObject(entry.getKeyData());
-            V value = toObject(entry.getValueData());
+        final Iterator<Entry> iterator = result.rawIterator();
+        while (iterator.hasNext()) {
+            final Entry entry = iterator.next();
+            K key = toObject(entry.getKey());
+            V value = toObject(entry.getValue());
             valueEntryList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
         }
 
