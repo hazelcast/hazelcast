@@ -939,59 +939,66 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
 
             public void run() {
-
-                final Set<Data> keysGatheredForNearCacheEviction = new HashSet<Data>();
-                for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-                    if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
-                        continue;
-                    }
-                    final Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
-                    if (nodeEngine.getThisAddress().equals(owner)) {
-                        final PartitionContainer pc = partitionContainers[i];
-                        final RecordStore recordStore = pc.getRecordStore(mapName);
-                        TreeSet<Record> sortedRecords = new TreeSet<Record>(comparator);
-                        sortedRecords.addAll(recordStore.getReadonlyRecordMap().values());
-                        int evictSize;
-                        if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
-                            evictSize = Math.max((sortedRecords.size() - targetSizePerPartition), (sortedRecords.size() * evictionPercentage / 100 + 1));
-                        } else {
-                            evictSize = sortedRecords.size() * evictionPercentage / 100;
-                        }
-
-                        if (evictSize == 0)
+                    Set<Data> keysGatheredForNearCacheEviction = null;
+                    for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                        if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
                             continue;
-
-                        Set<Record> recordSet = new HashSet<Record>();
-                        Set<Data> keySet = new HashSet<Data>();
-                        Iterator iterator = sortedRecords.iterator();
-                        while (iterator.hasNext() && evictSize-- > 0) {
-                            Record rec = (Record) iterator.next();
-                            recordSet.add(rec);
-                            keySet.add(rec.getKey());
                         }
+                        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                        if (nodeEngine.getThisAddress().equals(owner)) {
+                            final PartitionContainer pc = partitionContainers[i];
+                            final RecordStore recordStore = pc.getRecordStore(mapName);
+                            final Collection<Record> values = recordStore.getReadonlyRecordMap().values();
+                            final List<Record> sortedRecords = new ArrayList<Record>(values.size());
+                            sortedRecords.addAll(recordStore.getReadonlyRecordMap().values());
+                            Collections.sort(sortedRecords, comparator);
 
-                        if (keySet.isEmpty()) continue;
-                        //add keys for near cache eviction.
-                        keysGatheredForNearCacheEviction.addAll(keySet);
-                        //prepare local "evict keys" operation.
-                        EvictKeysOperation evictKeysOperation = new EvictKeysOperation(mapName, keySet);
-                        evictKeysOperation.setNodeEngine(nodeEngine);
-                        evictKeysOperation.setServiceName(SERVICE_NAME);
-                        evictKeysOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                        evictKeysOperation.setPartitionId(i);
-                        OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
-                        nodeEngine.getOperationService().executeOperation(evictKeysOperation);
-
-                        for (Record record : recordSet) {
-                            publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED, record.getKey(), toData(record.getValue()), null);
+                            final int sortedSize = sortedRecords.size();
+                            int evictSize;
+                            switch (maxSizePolicy) {
+                                case PER_PARTITION:
+                                case PER_NODE:
+                                    evictSize = Math.max((sortedSize - targetSizePerPartition), (sortedSize * evictionPercentage / 100 + 1));
+                                    break;
+                                default:
+                                    evictSize = sortedSize * evictionPercentage / 100;
+                                    break;
+                            }
+                            if (evictSize <= 0) {
+                                continue;
+                            }
+                            Set<Record> recordSet = new HashSet<Record>(evictSize);
+                            Set<Data> keySet = new HashSet<Data>(evictSize);
+                            Iterator iterator = sortedRecords.iterator();
+                            while (iterator.hasNext() && evictSize-- > 0) {
+                                Record rec = (Record) iterator.next();
+                                recordSet.add(rec);
+                                keySet.add(rec.getKey());
+                            }
+                            if (keySet.isEmpty()) {
+                                continue;
+                            }
+                            keysGatheredForNearCacheEviction = new HashSet<Data>(keySet.size());
+                            //add keys for near cache eviction.
+                            keysGatheredForNearCacheEviction.addAll(keySet);
+                            //prepare local "evict keys" operation.
+                            EvictKeysOperation evictKeysOperation = new EvictKeysOperation(mapName, keySet);
+                            evictKeysOperation.setNodeEngine(nodeEngine);
+                            evictKeysOperation.setServiceName(SERVICE_NAME);
+                            evictKeysOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                            evictKeysOperation.setPartitionId(i);
+                            OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
+                            nodeEngine.getOperationService().executeOperation(evictKeysOperation);
+                            for (Record record : recordSet) {
+                                publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED, record.getKey(), toData(record.getValue()), null);
+                            }
                         }
                     }
+                    //send invalidation request to all members.
+                    if (isNearCacheAndInvalidationEnabled(mapName)) {
+                        invalidateAllNearCaches(mapName, keysGatheredForNearCacheEviction);
+                    }
                 }
-                //send invalidation request to all members.
-                if (isNearCacheAndInvalidationEnabled(mapName)) {
-                    invalidateAllNearCaches(mapName, keysGatheredForNearCacheEviction);
-                }
-            }
         }
 
         private boolean checkLimits(MapContainer mapContainer) {
