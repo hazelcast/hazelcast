@@ -22,21 +22,84 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.map.*;
-import com.hazelcast.map.client.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapKeySet;
+import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.map.client.MapAddEntryListenerRequest;
+import com.hazelcast.map.client.MapAddIndexRequest;
+import com.hazelcast.map.client.MapAddInterceptorRequest;
+import com.hazelcast.map.client.MapClearRequest;
+import com.hazelcast.map.client.MapContainsKeyRequest;
+import com.hazelcast.map.client.MapContainsValueRequest;
+import com.hazelcast.map.client.MapDeleteRequest;
+import com.hazelcast.map.client.MapEntrySetRequest;
+import com.hazelcast.map.client.MapEvictRequest;
+import com.hazelcast.map.client.MapExecuteOnAllKeysRequest;
+import com.hazelcast.map.client.MapExecuteOnKeyRequest;
+import com.hazelcast.map.client.MapExecuteOnKeysRequest;
+import com.hazelcast.map.client.MapExecuteWithPredicateRequest;
+import com.hazelcast.map.client.MapFlushRequest;
+import com.hazelcast.map.client.MapGetAllRequest;
+import com.hazelcast.map.client.MapGetEntryViewRequest;
+import com.hazelcast.map.client.MapGetRequest;
+import com.hazelcast.map.client.MapIsLockedRequest;
+import com.hazelcast.map.client.MapKeySetRequest;
+import com.hazelcast.map.client.MapLockRequest;
+import com.hazelcast.map.client.MapPutAllRequest;
+import com.hazelcast.map.client.MapPutIfAbsentRequest;
+import com.hazelcast.map.client.MapPutRequest;
+import com.hazelcast.map.client.MapPutTransientRequest;
+import com.hazelcast.map.client.MapQueryRequest;
+import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
+import com.hazelcast.map.client.MapRemoveIfSameRequest;
+import com.hazelcast.map.client.MapRemoveInterceptorRequest;
+import com.hazelcast.map.client.MapRemoveRequest;
+import com.hazelcast.map.client.MapReplaceIfSameRequest;
+import com.hazelcast.map.client.MapReplaceRequest;
+import com.hazelcast.map.client.MapSetRequest;
+import com.hazelcast.map.client.MapSizeRequest;
+import com.hazelcast.map.client.MapTryPutRequest;
+import com.hazelcast.map.client.MapTryRemoveRequest;
+import com.hazelcast.map.client.MapUnlockRequest;
+import com.hazelcast.map.client.MapValuesRequest;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-import com.hazelcast.util.*;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
+import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.util.SortedQueryResultSet;
+import com.hazelcast.util.SortingUtil;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -133,7 +196,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (nearCache != null) {
             Object cached = nearCache.get(keyData);
             if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
-                return new CompletedFuture(getContext().getSerializationService(),cached,getContext().getExecutionService().getAsyncExecutor());
+                return new CompletedFuture(getContext().getSerializationService(), cached, getContext().getExecutionService().getAsyncExecutor());
             }
         }
 
@@ -407,17 +470,16 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         if (nearCache != null) {
             final Iterator<Data> iterator = keySet.iterator();
-            while(iterator.hasNext())
-            {
+            while (iterator.hasNext()) {
                 Data key = iterator.next();
                 Object cached = nearCache.get(key);
                 if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
-                    result.put((K)toObject(key), (V) cached);
+                    result.put((K) toObject(key), (V) cached);
                     iterator.remove();
                 }
             }
         }
-        if(keys.isEmpty()){
+        if (keys.isEmpty()) {
             return result;
         }
         MapGetAllRequest request = new MapGetAllRequest(name, keySet);
@@ -428,7 +490,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             final K key = (K) toObject(dataEntry.getKey());
             result.put(key, value);
             if (nearCache != null) {
-                nearCache.put(dataEntry.getKey(),value);
+                nearCache.put(dataEntry.getKey(), value);
             }
         }
         return result;
@@ -478,23 +540,29 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
         QueryResultSet result = invoke(request);
-        List<K> keyList = new ArrayList<K>(result.size());
-        for (Object data : result) {
-            K key = toObject((Data) data);
-            keyList.add(key);
-        }
-        if (pagingPredicate != null) {
-            Collections.sort(keyList, SortingUtil.newComparator(pagingPredicate.getComparator()));
-            if (keyList.size() > pagingPredicate.getPageSize()) {
-                keyList = keyList.subList(0, pagingPredicate.getPageSize());
+        if (pagingPredicate == null) {
+            final HashSet<K> keySet = new HashSet<K>();
+            for (Object o : result) {
+                final K key = toObject(o);
+                keySet.add(key);
             }
-            Object anchor = null;
-            if (keyList.size() != 0) {
-                anchor = keyList.get(keyList.size()-1);
-            }
-            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(anchor, null));
+            return keySet;
         }
-        return new HashSet<K>(keyList);
+
+
+        final Comparator<Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.KEY);
+        final SortedQueryResultSet sortedResult = new SortedQueryResultSet(comparator, IterationType.KEY, pagingPredicate.getPageSize());
+
+        for (QueryResultEntry entry: result.getEntries()) {
+
+            final K key = toObject(entry.getKeyData());
+            final V value = toObject(entry.getValueData());
+            sortedResult.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
+        }
+
+        PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, sortedResult.last());
+
+        return (Set<K>)sortedResult;
     }
 
     @Override
@@ -546,21 +614,36 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
         QueryResultSet result = invoke(request);
-        List<V> values = new ArrayList<V>(result.size());
-        for (Object data : result) {
-            V value = toObject((Data) data);
-            values.add(value);
+
+        if (pagingPredicate == null) {
+            final ArrayList<V> values = new ArrayList<V>(result.size());
+            for (Object data : result) {
+                V value = toObject(data);
+                values.add(value);
+            }
+            return values;
         }
-        if (pagingPredicate != null) {
-            Collections.sort(values, SortingUtil.newComparator(pagingPredicate.getComparator()));
-            if (values.size() > pagingPredicate.getPageSize()) {
-                values = values.subList(0, pagingPredicate.getPageSize());
-            }
-            Object anchor = null;
-            if (values.size() != 0) {
-                anchor = values.get(values.size()-1);
-            }
-            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, new AbstractMap.SimpleImmutableEntry(null, anchor));
+
+        List<Entry<Object, V>> valueEntryList = new ArrayList<Entry<Object, V>>(result.size());
+        for (QueryResultEntry entry : result.getEntries()) {
+            K key = toObject(entry.getKeyData());
+            V value = toObject(entry.getValueData());
+            valueEntryList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
+        }
+
+        Collections.sort(valueEntryList, SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.VALUE));
+        if (valueEntryList.size() > pagingPredicate.getPageSize()) {
+            valueEntryList = valueEntryList.subList(0, pagingPredicate.getPageSize());
+        }
+        Entry anchor = null;
+        if (valueEntryList.size() != 0) {
+            anchor = valueEntryList.get(valueEntryList.size() - 1);
+        }
+        PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, anchor);
+
+        final ArrayList<V> values = new ArrayList<V>(valueEntryList.size());
+        for (Entry<Object, V> objectVEntry : valueEntryList) {
+            values.add(objectVEntry.getValue());
         }
         return values;
     }
@@ -584,8 +667,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public LocalMapStats getLocalMapStats() {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
-        if(nearCache != null)
-        {
+        if (nearCache != null) {
             localMapStats.setNearCacheStats(nearCache.getNearCacheStats());
         }
         return localMapStats;
@@ -598,11 +680,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return invoke(request, keyData);
     }
 
-    public void submitToKey(K key, EntryProcessor entryProcessor,final ExecutionCallback callback) {
+    public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         try {
-            final ClientCallFuture future = (ClientCallFuture)getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            final ClientCallFuture future = (ClientCallFuture) getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
             future.andThen(callback);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -647,15 +729,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         return result;
     }
+
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
-        for(K key : keys)
-        {
+        for (K key : keys) {
             dataKeys.add(toData(key));
         }
 
-        MapExecuteOnKeysRequest request = new MapExecuteOnKeysRequest(name,entryProcessor,dataKeys);
+        MapExecuteOnKeysRequest request = new MapExecuteOnKeysRequest(name, entryProcessor, dataKeys);
         MapEntrySet entrySet = invoke(request);
         Map<K, Object> result = new HashMap<K, Object>();
         for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {

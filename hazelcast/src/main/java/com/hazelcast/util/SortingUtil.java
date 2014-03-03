@@ -13,46 +13,45 @@ public final class SortingUtil {
     private SortingUtil() {
     }
 
-    public static int compare(Comparator comparator, IterationType iterationType, Map.Entry entry1, Map.Entry entry2){
-        Object comparable1 = entry1;
-        Object comparable2 = entry2;
-        if (iterationType == IterationType.KEY) {
-            comparable1 = entry1.getKey();
-            comparable2 = entry2.getKey();
-        } else if (iterationType == IterationType.VALUE) {
-            comparable1 = entry1.getValue();
-            comparable2 = entry2.getValue();
-        }
+    public static int compare(Comparator<Map.Entry> comparator, IterationType iterationType, Map.Entry entry1, Map.Entry entry2){
         if (comparator != null) {
-            return comparator.compare(comparable1, comparable2);
-        }
-
-        if (iterationType == IterationType.ENTRY) {
-            comparable1 = entry1.getValue();
-            comparable2 = entry2.getValue();
-        }
-
-        if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
-            return ((Comparable) comparable1).compareTo(comparable2);
-        }
-        return comparable1.hashCode() - comparable2.hashCode();
-    }
-
-    public static Comparator newComparator(final Comparator comparator){
-        return new Comparator(){
-            public int compare(Object comparable1, Object comparable2) {
-                if (comparator != null) {
-                    return comparator.compare(comparable1, comparable2);
-                }
-                if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
-                    return ((Comparable) comparable1).compareTo(comparable2);
-                }
-                return comparable1.hashCode() - comparable2.hashCode();
+            int result = comparator.compare(entry1, entry2);
+            if (result != 0) {
+                return result;
             }
-        };
+            return entry1.getKey().hashCode() - entry2.getKey().hashCode();
+        }
+
+        Object comparable1;
+        Object comparable2;
+        switch (iterationType) {
+            case KEY:
+                comparable1 = entry1.getKey();
+                comparable2 = entry2.getKey();
+                break;
+            case VALUE:
+                comparable1 = entry1.getValue();
+                comparable2 = entry2.getValue();
+                break;
+            default:
+                comparable1 = entry1;
+                comparable2 = entry2;
+                break;
+        }
+        int result;
+        if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
+            result = ((Comparable) comparable1).compareTo(comparable2);
+        } else {
+            result = comparable1.hashCode() - comparable2.hashCode();
+        }
+
+        if (result != 0) {
+            return result;
+        }
+        return entry1.getKey().hashCode() - entry2.getKey().hashCode();
     }
 
-    public static Comparator<Map.Entry> newComparator(final Comparator comparator, final IterationType iterationType){
+    public static Comparator<Map.Entry> newComparator(final Comparator<Map.Entry> comparator, final IterationType iterationType){
         return new Comparator<Map.Entry>(){
             public int compare(Map.Entry entry1, Map.Entry entry2) {
                 return SortingUtil.compare(comparator, iterationType, entry1, entry2);

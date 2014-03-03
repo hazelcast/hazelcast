@@ -47,6 +47,10 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         this.iterationType = iterationType;
     }
 
+    public Set<QueryResultEntry> getEntries() {
+        return entries;
+    }
+
     public boolean add(QueryResultEntry entry) {
         return entries.add(entry);
     }
