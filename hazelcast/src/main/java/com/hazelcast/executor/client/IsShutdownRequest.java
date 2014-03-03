@@ -20,13 +20,13 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorPortableHook;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.security.Permission;
 
-public class IsShutdownRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public class IsShutdownRequest extends CallableClientRequest implements RetryableRequest {
 
     private String name;
 
@@ -66,5 +66,10 @@ public class IsShutdownRequest extends CallableClientRequest implements Portable
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

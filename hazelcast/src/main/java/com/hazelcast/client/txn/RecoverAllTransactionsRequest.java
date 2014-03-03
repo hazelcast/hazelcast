@@ -24,7 +24,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.impl.RecoverTxnOperation;
@@ -32,6 +32,7 @@ import com.hazelcast.transaction.impl.RecoveredTransaction;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.TransactionManagerServiceImpl.RECOVER_TIMEOUT;
 
-public class RecoverAllTransactionsRequest extends InvocationClientRequest implements Portable {
+public class RecoverAllTransactionsRequest extends InvocationClientRequest {
 
     public RecoverAllTransactionsRequest() {
     }
@@ -121,4 +122,8 @@ public class RecoverAllTransactionsRequest extends InvocationClientRequest imple
         return ClientTxnPortableHook.RECOVER_ALL;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
+    }
 }

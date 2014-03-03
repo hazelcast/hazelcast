@@ -25,18 +25,14 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.topic.TopicService;
 
 import java.security.Permission;
 
-/**
- * @ali 10/3/13
- */
 public final class ActionConstants {
-
-    private ActionConstants(){}
 
     public static final String ACTION_ALL = "all";
     public static final String ACTION_CREATE = "create";
@@ -58,31 +54,36 @@ public final class ActionConstants {
     public static final String LISTENER_MEMBER = "member";
     public static final String LISTENER_MIGRATION = "migration";
 
-    public static Permission getPermission(String name, String serviceName, String... actions){
-        if (QueueService.SERVICE_NAME.equals(serviceName)){
+    private ActionConstants() {
+    }
+
+    public static Permission getPermission(String name, String serviceName, String... actions) {
+        if (QueueService.SERVICE_NAME.equals(serviceName)) {
             return new QueuePermission(name, actions);
-        } else if (MapService.SERVICE_NAME.equals(serviceName)){
+        } else if (MapService.SERVICE_NAME.equals(serviceName)) {
             return new MapPermission(name, actions);
-        } else if (MultiMapService.SERVICE_NAME.equals(serviceName)){
+        } else if (MultiMapService.SERVICE_NAME.equals(serviceName)) {
             return new MultiMapPermission(name, actions);
-        } else if (ListService.SERVICE_NAME.equals(serviceName)){
+        } else if (ListService.SERVICE_NAME.equals(serviceName)) {
             return new ListPermission(name, actions);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
             return new SetPermission(name, actions);
-        } else if (AtomicLongService.SERVICE_NAME.equals(serviceName)){
+        } else if (AtomicLongService.SERVICE_NAME.equals(serviceName)) {
             return new AtomicLongPermission(name, actions);
-        } else if (CountDownLatchService.SERVICE_NAME.equals(serviceName)){
+        } else if (CountDownLatchService.SERVICE_NAME.equals(serviceName)) {
             return new CountDownLatchPermission(name, actions);
-        } else if (SemaphoreService.SERVICE_NAME.equals(serviceName)){
+        } else if (SemaphoreService.SERVICE_NAME.equals(serviceName)) {
             return new SemaphorePermission(name, actions);
-        } else if (TopicService.SERVICE_NAME.equals(serviceName)){
+        } else if (TopicService.SERVICE_NAME.equals(serviceName)) {
             return new TopicPermission(name, actions);
-        } else if (LockService.SERVICE_NAME.equals(serviceName)){
+        } else if (LockService.SERVICE_NAME.equals(serviceName)) {
             return new LockPermission(name, actions);
-        } else if (DistributedExecutorService.SERVICE_NAME.equals(serviceName)){
+        } else if (DistributedExecutorService.SERVICE_NAME.equals(serviceName)) {
             return new ExecutorServicePermission(name, actions);
-        } else if (IdGeneratorService.SERVICE_NAME.equals(serviceName)){
-            return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME+name, actions);
+        } else if (IdGeneratorService.SERVICE_NAME.equals(serviceName)) {
+            return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
+        } else if (MapReduceService.SERVICE_NAME.equals(serviceName)) {
+            return new MapReducePermission(name, actions);
         }
         throw new IllegalArgumentException("No service matched!!!");
     }

@@ -29,9 +29,9 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
 
     public static final byte VERSION = 1;
 
-    private static final int stVersion = stBit++;
-    private static final int stHeader = stBit++;
-    private static final int stPartition = stBit++;
+    private static final int stVersion = 11;
+    private static final int stHeader = 12;
+    private static final int stPartition = 13;
 
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;

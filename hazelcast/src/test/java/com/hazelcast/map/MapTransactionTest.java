@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
@@ -728,28 +729,10 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         IMap map = inst.getMap("default");
 
-        EntryListener<String, Integer> l = new EntryListener<String, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<String, Integer> event) {
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent<String, Integer> event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent<String, Integer> event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<String, Integer> event) {
-            }
-        };
-
+        EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {};
 
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate<String, Integer> p = e.equal(1);
-
 
         map.addEntryListener(l, p, null, false);
 

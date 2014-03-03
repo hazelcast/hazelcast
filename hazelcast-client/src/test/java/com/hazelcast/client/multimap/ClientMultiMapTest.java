@@ -144,7 +144,7 @@ public class ClientMultiMapTest {
         final CountDownLatch latch2Add = new CountDownLatch(3);
         final CountDownLatch latch2Remove = new CountDownLatch(3);
 
-        EntryListener listener1 = new EntryListener() {
+        EntryListener listener1 = new EntryAdapter() {
 
             public void entryAdded(EntryEvent event) {
                 latch1Add.countDown();
@@ -153,15 +153,9 @@ public class ClientMultiMapTest {
             public void entryRemoved(EntryEvent event) {
                 latch1Remove.countDown();
             }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
-            }
         };
 
-        EntryListener listener2 = new EntryListener() {
+        EntryListener listener2 = new EntryAdapter() {
 
             public void entryAdded(EntryEvent event) {
                 latch2Add.countDown();
@@ -170,13 +164,7 @@ public class ClientMultiMapTest {
             public void entryRemoved(EntryEvent event) {
                 latch2Remove.countDown();
             }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
-            }
-        };
+      };
 
         final String firstRegId = mm.addEntryListener(listener1, true);
         final String secondRegId = mm.addEntryListener(listener2, "key3", true);

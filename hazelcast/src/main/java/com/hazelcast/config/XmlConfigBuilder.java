@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -284,8 +285,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleMap(node);
             } else if ("multimap".equals(nodeName)) {
                 handleMultiMap(node);
-            } else if ("replicatedmap".equals(nodeName)) {
-                handleReplicatedMap(node);
             } else if ("list".equals(nodeName)) {
                 handleList(node);
             } else if ("set".equals(nodeName)) {
@@ -795,39 +794,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.config.addMultiMapConfig(multiMapConfig);
     }
 
-    private void handleReplicatedMap(final org.w3c.dom.Node node) {
-        final Node attName = node.getAttributes().getNamedItem("name");
-        final String name = getTextContent(attName);
-        final ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
-        replicatedMapConfig.setName(name);
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
-            final String value = getTextContent(n).trim();
-            if ("concurrency-level".equals(nodeName)) {
-                replicatedMapConfig.setConcurrencyLevel(getIntegerValue("concurrency-level", value, ReplicatedMapConfig.DEFAULT_CONCURRENCY_LEVEL));
-            } else if ("in-memory-format".equals(nodeName)) {
-                replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
-            } else if ("replication-delay-millis".equals(nodeName)) {
-                replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis", value, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-            } else if ("async-fillup".equals(nodeName)) {
-                replicatedMapConfig.setAsyncFillup(checkTrue(value));
-            } else if ("statistics-enabled".equals(nodeName)) {
-                replicatedMapConfig.setStatisticsEnabled(checkTrue(value));
-            } else if ("entry-listeners".equals(nodeName)) {
-                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
-                    if ("entry-listener".equals(cleanNodeName(listenerNode))) {
-                        final NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
-                        boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
-                        String listenerClass = getTextContent(listenerNode);
-                        replicatedMapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
-                    }
-                }
-            }
-        }
-        this.config.addReplicatedMapConfig(replicatedMapConfig);
-    }
-
     private void handleMap(final org.w3c.dom.Node node) throws Exception {
         final String name = getAttribute(node, "name");
         final MapConfig mapConfig = new MapConfig();
@@ -936,11 +902,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("enabled".equals(att.getNodeName())) {
                 mapStoreConfig.setEnabled(checkTrue(value));
             } else if ("initial-mode".equals(att.getNodeName())) {
-                final MapStoreConfig.InitialLoadMode mode = att != null
-                        ? MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(att)))
-                        : MapStoreConfig.InitialLoadMode.LAZY;
+                final InitialLoadMode mode = InitialLoadMode.valueOf(upperCaseInternal(getTextContent(att)));
                 mapStoreConfig.setInitialLoadMode(mode);
-
             }
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {

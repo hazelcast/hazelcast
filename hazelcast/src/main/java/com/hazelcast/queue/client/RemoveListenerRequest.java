@@ -19,6 +19,10 @@ package com.hazelcast.queue.client;
 import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
+
+import java.security.Permission;
 
 /**
  * @author ali 23/12/13
@@ -50,4 +54,8 @@ public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
         return QueuePortableHook.REMOVE_LISTENER;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_LISTEN);
+    }
 }

@@ -82,7 +82,7 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         ObjectDataOutput out = writer.getRawDataOutput();
         message.writeData(out);
     }

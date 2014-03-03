@@ -27,18 +27,16 @@ import java.nio.ByteBuffer;
  */
 public class DataAdapter implements SocketWritable, SocketReadable {
 
-    protected static int stBit = 0;
-
-    private static final int stType = stBit++;
-    private static final int stClassId = stBit++;
-    private static final int stFactoryId = stBit++;
-    private static final int stVersion = stBit++;
-    private static final int stClassDefSize = stBit++;
-    private static final int stClassDef = stBit++;
-    private static final int stSize = stBit++;
-    private static final int stValue = stBit++;
-    private static final int stHash = stBit++;
-    private static final int stAll = stBit++;
+    private static final int stType = 1;
+    private static final int stClassId = 2;
+    private static final int stFactoryId = 3;
+    private static final int stVersion = 4;
+    private static final int stClassDefSize = 5;
+    private static final int stClassDef = 6;
+    private static final int stSize = 7;
+    private static final int stValue = 8;
+    private static final int stHash = 9;
+    private static final int stAll = 10;
 
     private ByteBuffer buffer;
     private int factoryId = 0;

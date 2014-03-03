@@ -67,6 +67,7 @@
         <mockito.all.version>1.9.5</mockito.all.version>
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
+        <main.basedir>${project.basedir}</main.basedir>
     </properties>
     <licenses>
         <license>
@@ -133,6 +134,17 @@
         </resources>
 
         <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.6.4</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/hazelcast/examples/**/*.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -459,6 +471,59 @@
         </profile>
 
         <profile>
+            <id>qa</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>${checkstyle.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>checkstyle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <configLocation>${main.basedir}/checkstyle/checkstyle.xml</configLocation>
+                            <suppressionsLocation>${main.basedir}/checkstyle/suppressions.xml</suppressionsLocation>
+                            <headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</headerLocation>
+                            <enableRSS>false</enableRSS>
+                            <linkXRef>true</linkXRef>
+                            <consoleOutput>true</consoleOutput>
+                            <failsOnError>true</failsOnError>
+                            <failOnViolation>true</failOnViolation>
+                            <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                            <enableRulesSummary>true</enableRulesSummary>
+                            <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>findbugs-maven-plugin</artifactId>
+                        <version>${findbugs.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <failOnError>true</failOnError>
+                            <excludeFilterFile>${main.basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>slow-test</id>
             <build>
                 <plugins>
@@ -500,7 +565,8 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
+                            </groups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
@@ -562,7 +628,7 @@
             </build>
         </profile>
 
-   </profiles>
+    </profiles>
 
     <distributionManagement>
         <repository>

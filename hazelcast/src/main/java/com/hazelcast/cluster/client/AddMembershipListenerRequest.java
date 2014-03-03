@@ -27,17 +27,17 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * @author mdogan 5/13/13
  */
-public final class AddMembershipListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public final class AddMembershipListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     public AddMembershipListenerRequest() {
     }
@@ -101,4 +101,8 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         return ClientPortableHook.MEMBERSHIP_LISTENER;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

@@ -26,7 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -66,7 +66,7 @@ public class MapKeyValueSource<K, V>
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
-        PartitionService ps = nei.getPartitionService();
+        InternalPartitionService ps = nei.getPartitionService();
         MapService mapService = nei.getService(MapService.SERVICE_NAME);
         ss = nei.getSerializationService();
         Address partitionOwner = ps.getPartitionOwner(partitionId);

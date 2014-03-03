@@ -24,11 +24,14 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-/**
- * @author mdogan 5/7/12
- */
 public class PartitionRuntimeState implements DataSerializable {
 
     protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
@@ -42,10 +45,10 @@ public class PartitionRuntimeState implements DataSerializable {
     public PartitionRuntimeState() {
     }
 
-    public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
-                                 final InternalPartition[] partitions,
-                                 final Collection<MigrationInfo> migrationInfos,
-                                 final long masterTime, int version) {
+    public PartitionRuntimeState(Collection<MemberInfo> memberInfos,
+                                 InternalPartition[] partitions,
+                                 Collection<MigrationInfo> migrationInfos,
+                                 long masterTime, int version) {
         this.masterTime = masterTime;
         this.version = version;
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(memberInfos.size());
@@ -85,7 +88,7 @@ public class PartitionRuntimeState implements DataSerializable {
         for (ShortPartitionInfo partitionInfo : partitionInfos) {
             Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
             int partitionId = partitionInfo.partitionId;
-            result[partitionId] = new PartitionInfo(partitionId,replicas);
+            result[partitionId] = new PartitionInfo(partitionId, replicas);
             int[] addressIndexes = partitionInfo.addressIndexes;
             for (int c = 0; c < addressIndexes.length; c++) {
                 int index = addressIndexes[c];
@@ -110,7 +113,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return endpoint;
     }
 
-    void setEndpoint(final Address endpoint) {
+    public void setEndpoint(final Address endpoint) {
         this.endpoint = endpoint;
     }
 
@@ -118,6 +121,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         masterTime = in.readLong();
         version = in.readInt();
@@ -148,6 +152,7 @@ public class PartitionRuntimeState implements DataSerializable {
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(masterTime);
         out.writeInt(version);
@@ -199,6 +204,7 @@ public class PartitionRuntimeState implements DataSerializable {
         ShortPartitionInfo() {
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(partitionId);
             for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
@@ -206,6 +212,7 @@ public class PartitionRuntimeState implements DataSerializable {
             }
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             partitionId = in.readInt();
             for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {

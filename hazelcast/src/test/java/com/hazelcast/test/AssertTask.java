@@ -18,5 +18,5 @@ package com.hazelcast.test;
 
 public abstract class AssertTask {
 
-    public abstract void run();
+    public abstract void run()throws Exception;
 }

@@ -13,7 +13,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
@@ -65,7 +65,7 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
 
     @Override
     public Collection<Integer> getPartitions() {
-        PartitionService partitionService = getClientEngine().getPartitionService();
+        InternalPartitionService partitionService = getClientEngine().getPartitionService();
         int partitions = partitionService.getPartitionCount();
         int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
         Set<Integer> partitionIds = new HashSet<Integer>(capacity);

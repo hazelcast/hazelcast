@@ -98,17 +98,10 @@ public class ClientMapTest {
         final CountDownLatch nullLatch = new CountDownLatch(2);
         final IMap map = createMap();
 
-        final EntryListener listener = new EntryListener() {
+        final EntryListener listener = new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
-
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
             public void entryEvicted(EntryEvent event) {
                 final Object value = event.getValue();
                 final Object oldValue = event.getOldValue();
@@ -133,7 +126,6 @@ public class ClientMapTest {
         map.put("key2", new GenericEvent("value2"));
 
         assertEquals(1, map.size());
-
     }
 
     @Test
@@ -579,23 +571,11 @@ public class ClientMapTest {
         final IMap tradeMap = createMap();
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final AtomicInteger atomicInteger = new AtomicInteger(0);
-        EntryListener listener = new EntryListener() {
+        EntryListener listener = new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
                 atomicInteger.incrementAndGet();
                 countDownLatch.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
             }
         };
         AuthenticationRequest key = new AuthenticationRequest(new UsernamePasswordCredentials("a", "b"));

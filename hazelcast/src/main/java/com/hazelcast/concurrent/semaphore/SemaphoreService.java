@@ -22,7 +22,7 @@ import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -58,7 +58,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     private final ConstructorFunction<String, Permit> permitConstructor = new ConstructorFunction<String, Permit>() {
         public Permit createNew(String name) {
             SemaphoreConfig config = nodeEngine.getConfig().findSemaphoreConfig(name);
-            PartitionService partitionService = nodeEngine.getPartitionService();
+            InternalPartitionService partitionService = nodeEngine.getPartitionService();
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
             return new Permit(partitionId, new SemaphoreConfig(config));
         }
@@ -107,7 +107,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     private void onOwnerDisconnected(final String caller) {
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         Address thisAddress = nodeEngine.getThisAddress();
 

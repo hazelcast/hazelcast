@@ -18,16 +18,17 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionAccessor;
 
 import java.io.IOException;
+import java.security.Permission;
 
-public class CommitTransactionRequest extends BaseTransactionRequest implements Portable {
+public class CommitTransactionRequest extends BaseTransactionRequest {
 
     private boolean prepareAndCommit;
 
@@ -77,5 +78,10 @@ public class CommitTransactionRequest extends BaseTransactionRequest implements 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         prepareAndCommit = reader.readBoolean("pc");
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
     }
 }

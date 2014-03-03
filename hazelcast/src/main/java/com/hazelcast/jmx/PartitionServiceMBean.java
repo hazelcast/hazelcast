@@ -18,7 +18,7 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 
 import java.net.InetSocketAddress;
 import java.util.Hashtable;
@@ -26,11 +26,11 @@ import java.util.Hashtable;
 import static com.hazelcast.jmx.ManagementService.quote;
 
 @ManagedDescription("HazelcastInstance.PartitionServiceMBean")
-public class PartitionServiceMBean  extends HazelcastMBean<PartitionService> {
+public class PartitionServiceMBean  extends HazelcastMBean<InternalPartitionService> {
 
     private final HazelcastInstanceImpl hazelcastInstance;
 
-    public PartitionServiceMBean(HazelcastInstanceImpl hazelcastInstance, PartitionService partitionService,
+    public PartitionServiceMBean(HazelcastInstanceImpl hazelcastInstance, InternalPartitionService partitionService,
                                  ManagementService service) {
         super(partitionService, service);
 

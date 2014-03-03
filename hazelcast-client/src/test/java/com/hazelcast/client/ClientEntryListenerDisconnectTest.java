@@ -53,16 +53,11 @@ public class ClientEntryListenerDisconnectTest {
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Integer, GenericEvent> mapClient = client.getMap("test");
 
-        mapClient.addEntryListener(new EntryListener<Integer, GenericEvent>() {
+        mapClient.addEntryListener(new EntryAdapter<Integer, GenericEvent>() {
 
             public void entryAdded(EntryEvent<Integer, GenericEvent> event) {
                 adds++;
             }
-
-            public void entryRemoved(EntryEvent<Integer, GenericEvent> event) {}
-
-            public void entryUpdated(EntryEvent<Integer, GenericEvent> event) {}
-
             public void entryEvicted(EntryEvent<Integer, GenericEvent> event) {
                 if (event.getValue() == null) evictionsNull++;
             }

@@ -19,10 +19,11 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 
-/**
- * @author ali 23/12/13
- */
+import java.security.Permission;
+
 public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {
 
 
@@ -50,4 +51,8 @@ public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerReque
         return MapPortableHook.REMOVE_ENTRY_LISTENER;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_LISTEN);
+    }
 }

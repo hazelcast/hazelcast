@@ -30,6 +30,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.concurrent.ExecutionException;
 
 public class CancellationRequest extends InvocationClientRequest {
@@ -99,5 +100,10 @@ public class CancellationRequest extends InvocationClientRequest {
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         target = new Address();
         target.readData(rawDataInput);
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,16 +60,26 @@ import static org.junit.Assert.*;
 public class TopicTest extends HazelcastTestSupport {
 
     @Test
-    public void testDestroyTopicRemovesStatistics(){
+   public void testDestroyTopicRemovesStatistics(){
         HazelcastInstance instance = createHazelcastInstance();
-        ITopic topic = instance.getTopic("foo");
+        final ITopic topic = instance.getTopic("foo");
         topic.publish("foobar");
+
+        //we need to give the message the chance to be processed, else the topic statistics are recreated.
+        //so in theory the destroy for the topic is broken.
+        sleepSeconds(1);
+
         topic.destroy();
 
-        TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
+        final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
 
-        boolean containsStats = topicService.statsMap.containsKey(topic.getName());
-        assertFalse(containsStats);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                boolean containsStats = topicService.statsMap.containsKey(topic.getName());
+                assertFalse(containsStats);
+            }
+        });
     }
 
     @Test

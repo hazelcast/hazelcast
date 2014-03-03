@@ -19,8 +19,8 @@ package com.hazelcast.collection;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
 
@@ -75,7 +75,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     @Override
     public void rollbackTransaction(String transactionId) {
         final Set<String> collectionNames = getContainerMap().keySet();
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : collectionNames) {
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -93,7 +93,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     public Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
         Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -127,7 +127,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     private void clearMigrationData(int partitionId) {
         final Set<? extends Map.Entry<String, ? extends CollectionContainer>> entrySet = getContainerMap().entrySet();
         final Iterator<? extends Map.Entry<String, ? extends CollectionContainer>> iterator = entrySet.iterator();
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
             final Map.Entry<String, ? extends CollectionContainer> entry = iterator.next();
             final String name = entry.getKey();

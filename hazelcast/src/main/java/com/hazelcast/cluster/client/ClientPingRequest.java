@@ -18,12 +18,10 @@ package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientPortableHook;
-import com.hazelcast.nio.serialization.Portable;
 
-/**
- * @author mdogan 5/17/13
- */
-public final class ClientPingRequest extends CallableClientRequest implements Portable {
+import java.security.Permission;
+
+public final class ClientPingRequest extends CallableClientRequest {
 
     public Object call() throws Exception {
         return null;
@@ -41,4 +39,8 @@ public final class ClientPingRequest extends CallableClientRequest implements Po
         return ClientPortableHook.CLIENT_PING;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

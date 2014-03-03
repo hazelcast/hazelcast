@@ -22,7 +22,7 @@ import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 
 import java.util.List;
 
@@ -63,7 +63,7 @@ public class RequestPartitionMapping
             return;
         }
 
-        PartitionService ps = getNodeEngine().getPartitionService();
+        InternalPartitionService ps = getNodeEngine().getPartitionService();
         List<Integer> memberPartitions = ps.getMemberPartitions(getCallerAddress());
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
 

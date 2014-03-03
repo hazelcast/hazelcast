@@ -18,9 +18,11 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.security.permission.TransactionPermission;
 
-public class RollbackTransactionRequest extends BaseTransactionRequest implements Portable {
+import java.security.Permission;
+
+public class RollbackTransactionRequest extends BaseTransactionRequest {
 
     public RollbackTransactionRequest() {
     }
@@ -48,4 +50,8 @@ public class RollbackTransactionRequest extends BaseTransactionRequest implement
         return ClientTxnPortableHook.ROLLBACK;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
+    }
 }

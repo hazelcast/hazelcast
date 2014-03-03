@@ -45,15 +45,17 @@ public class UpdateMapConfigOperation extends Operation {
     @Override
     public void run() throws Exception {
         MapService service = getService();
-        MapConfig config = service.getMapContainer(mapName).getMapConfig();
-        config.setTimeToLiveSeconds(mapConfig.getTimeToLiveSeconds());
-        config.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
-        config.setEvictionPolicy(mapConfig.getEvictionPolicy());
-        config.setEvictionPercentage(mapConfig.getEvictionPercentage());
-        config.setReadBackupData(mapConfig.isReadBackupData());
-        config.setBackupCount(mapConfig.getTotalBackupCount());
-        config.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
-        config.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
+        MapConfig oldConfig = service.getMapContainer(mapName).getMapConfig();
+        MapConfig newConfig = new MapConfig(oldConfig);
+        newConfig.setTimeToLiveSeconds(mapConfig.getTimeToLiveSeconds());
+        newConfig.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
+        newConfig.setEvictionPolicy(mapConfig.getEvictionPolicy());
+        newConfig.setEvictionPercentage(mapConfig.getEvictionPercentage());
+        newConfig.setReadBackupData(mapConfig.isReadBackupData());
+        newConfig.setBackupCount(mapConfig.getTotalBackupCount());
+        newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
+        newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
+        service.getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());
     }
 
     @Override
