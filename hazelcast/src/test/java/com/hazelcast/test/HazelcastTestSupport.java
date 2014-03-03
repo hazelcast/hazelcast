@@ -206,6 +206,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
+    public static String generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
         for(;;){
