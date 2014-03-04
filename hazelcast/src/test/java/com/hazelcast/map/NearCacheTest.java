@@ -296,6 +296,9 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     @Test
+    /**
+     * failed randomly, a candidate to {@link ProblematicTest}
+     */
     public void testCacheLocalEntries() {
         int n = 2;
         String mapName = "test";
