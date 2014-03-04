@@ -45,9 +45,6 @@ public class LockStressTest extends HazelcastTestSupport {
                         final Lock lock = hz.getLock(key + rand.nextInt(locks));
                         lock.lock();
                         try {
-                            if (j % 100 == 0) {
-                                System.out.println(Thread.currentThread().getName() + " is at:" + j);
-                            }
                             totalCount.incrementAndGet();
                             Thread.sleep(1);
                         } catch (InterruptedException e) {
