@@ -268,22 +268,35 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
         ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue);
-        return (Boolean) invokeOperation(key, operation);
+        boolean replaceSuccessful = (Boolean) invokeOperation(key, operation);
+        if (replaceSuccessful) {
+            invalidateLocalNearCache(key);
+        }
+        return replaceSuccessful;
     }
 
     protected Data replaceInternal(final Data key, final Data value) {
         ReplaceOperation operation = new ReplaceOperation(name, key, value);
-        return (Data) invokeOperation(key, operation);
+        final Data result = (Data) invokeOperation(key, operation);
+        if (result != null) {
+            invalidateLocalNearCache(key);
+        }
+        return result;
     }
 
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         SetOperation operation = new SetOperation(name, key, value, timeunit.toMillis(ttl));
         invokeOperation(key, operation);
+        invalidateLocalNearCache(key);
     }
 
     protected boolean evictInternal(final Data key) {
         EvictOperation operation = new EvictOperation(name, key, false);
-        return (Boolean) invokeOperation(key, operation);
+        final boolean evictSuccess = (Boolean) invokeOperation(key, operation);
+        if (evictSuccess) {
+            invalidateLocalNearCache(key);
+        }
+        return evictSuccess;
     }
 
     protected Data removeInternal(Data key) {
@@ -297,19 +310,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         RemoveOperation operation = new RemoveOperation(name, key);
         invokeOperation(key, operation);
         invalidateLocalNearCache(key);
-    }
-
-    private void invalidateLocalNearCache(Data key) {
-        // invalidate local near cache to ensure this thread does not see its old state
-        // note: this is a local-only operation and therefore fast and safe to execute
-        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
-        if (nearCacheEnabled) {
-            final boolean cacheLocalEntries = mapConfig.getNearCacheConfig().isCacheLocalEntries();
-            if (cacheLocalEntries) {
-                final MapService mapService = getService();
-                mapService.invalidateNearCache(name, key);
-            }
-        }
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
@@ -520,8 +520,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         boolean tooManyEntries = entries.size() > (partitionCount * factor);
         try {
             if (tooManyEntries) {
-                List<Future> flist = new LinkedList<Future>();
-                Map<Integer, MapEntrySet> entryMap = new HashMap<Integer, MapEntrySet>();
+                List<Future> futures = new LinkedList<Future>();
+                Map<Integer, MapEntrySet> entryMap = new HashMap<Integer, MapEntrySet>(nodeEngine.getPartitionService().getPartitionCount());
                 for (Entry entry : entries.entrySet()) {
                     if (entry.getKey() == null) {
                         throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
@@ -537,17 +537,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                             entry.getKey(),
                             partitionStrategy),
                             mapService
-                                    .toData(entry.getValue())));
+                                    .toData(entry.getValue())
+                    ));
                 }
 
                 for (final Map.Entry<Integer, MapEntrySet> entry : entryMap.entrySet()) {
                     final Integer partitionId = entry.getKey();
                     final PutAllOperation op = new PutAllOperation(name, entry.getValue());
                     op.setPartitionId(partitionId);
-                    flist.add(operationService.invokeOnPartition(SERVICE_NAME, op, partitionId));
+                    futures.add(operationService.invokeOnPartition(SERVICE_NAME, op, partitionId));
                 }
 
-                for (Future future : flist) {
+                for (Future future : futures) {
                     future.get();
                 }
 
@@ -641,6 +642,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             clearOperation.setServiceName(SERVICE_NAME);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(clearOperation, nodeEngine));
+
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -840,7 +842,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     .invokeOnAllPartitions(SERVICE_NAME,
                             new PartitionWideEntryWithPredicateOperationFactory(name,
                                     entryProcessor,
-                                    predicate));
+                                    predicate)
+                    );
             for (Object o : results.values()) {
                 if (o != null) {
                     final MapService service = getService();
@@ -1070,6 +1073,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
         }
         return false;
+    }
+
+    private void invalidateLocalNearCache(Data key) {
+        // invalidate local near cache to ensure this thread does not see its old state
+        // note: this is a local-only operation and therefore fast and safe to execute
+        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        if (nearCacheEnabled) {
+            final boolean cacheLocalEntries = mapConfig.getNearCacheConfig().isCacheLocalEntries();
+            if (cacheLocalEntries) {
+                final MapService mapService = getService();
+                mapService.invalidateNearCache(name, key);
+            }
+        }
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
