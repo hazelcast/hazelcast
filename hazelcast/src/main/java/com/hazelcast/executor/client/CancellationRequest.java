@@ -61,13 +61,16 @@ public class CancellationRequest extends InvocationClientRequest {
         try {
             result = (Boolean) future.get();
         } catch (InterruptedException e) {
-            ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
-            logger.warning(e);
+            logException(e);
         } catch (ExecutionException e) {
-            ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
-            logger.warning(e);
+            logException(e);
         }
         getEndpoint().sendResponse(result, getCallId());
+    }
+
+    private void logException(Exception e) {
+        ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
+        logger.warning(e);
     }
 
     @Override
