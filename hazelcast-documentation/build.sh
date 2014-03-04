@@ -207,9 +207,9 @@ function init {
 	COPYRIGHT_FILE_NAME="copyright.txt"
 	date=`date +%b\ %d\,\ %Y`
 	year=`date +%Y`
-	INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' documentation.index`
-	MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' mancenter.index`
-	HOSTED_MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' hostedmancenter.index`
+	INDEX=`awk '{gsub(/^[ \t]+|[ \t]+([#]+.*)\$/,""); print;}' documentation.index`
+	MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+([#]+.*)\$/,""); print;}' mancenter.index`
+	HOSTED_MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+([#]+.*)\$/,""); print;}' hostedmancenter.index`
 }
 
 function cleanIfExists {
