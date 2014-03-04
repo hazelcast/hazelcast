@@ -32,14 +32,17 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
+    public static boolean TEST_CASE;
+    public static boolean TEST_CASE_LOCK = true;
+    public static boolean TEST_CASE_TRY_LOCK = false;
+
     public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
     public static int THREADS_PER_INSTANCE = 5;
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
-    public static final String ACCOUNTS_MAP = "ACOUNTS";
-    public static final String PROCESED_TRANS_MAP ="PROCESSED";
-    public static final String FAILED_TRANS_MAP ="FAIL";
+    public final String ACCOUNTS_MAP = "ACCOUNTS";
+    private IMap<Integer, Account> accounts;
 
     protected static final int MAX_ACCOUNTS = 2;
     protected static final long INITIAL_VALUE = 100;
@@ -52,8 +55,8 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         super.setUp();
 
         HazelcastInstance hz = cluster.getRandomNode();
+        accounts = hz.getMap(ACCOUNTS_MAP);
 
-        IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
             Account a = new Account(i, INITIAL_VALUE);
             accounts.put(a.getAcountNumber(), a);
@@ -73,15 +76,6 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         }
     }
 
-    @After
-    public void tearDown() {
-
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
-    }
-
     //@Test
     public void testChangingCluster() {
         setKillThread(new KillMemberThread());
@@ -89,24 +83,30 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     }
 
     @Test
-    public void testFixedCluster() {
+    public void lock_testFixedCluster() {
+
+        //CONTROL which test case we are checking
+        TEST_CASE = TEST_CASE_LOCK;
+        runTest(false, stressThreads);
+    }
+
+
+
+    @Test
+    //this test case randomly fails
+    public void tryLock_testFixedCluster() {
+
+        //CONTROL which test case we are checking
+        TEST_CASE = TEST_CASE_TRY_LOCK;
         runTest(false, stressThreads);
     }
 
     public void assertResult() {
 
-        HazelcastInstance hz = super.cluster.getRandomNode();
-
-        IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
-        IMap<Long, TransferRecord> processed = hz.getMap(PROCESED_TRANS_MAP);
-        IMap<Long, FailedTransferRecord> failed = hz.getMap(FAILED_TRANS_MAP);
-
         long total=0;
         for(Account a : accounts.values()){
             total += a.getBalance();
         }
-
-        System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size()+" total value = "+total);
 
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
@@ -116,21 +116,18 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     public class StressThread extends TestThread {
 
         private HazelcastInstance instance;
+
         private ILock lock;
         IMap<Integer, Account> accounts = null;
-        IMap<Long, TransferRecord> transactions = null;
-        IMap failed = null;
 
         public StressThread( HazelcastInstance node ){
 
             this.instance = node;
 
             //with this "global Lock only one transfer at a time is allowed"
-            lock = instance.getLock("L");
+            lock = instance.getLock("globalLock");
 
             accounts = instance.getMap(ACCOUNTS_MAP);
-            transactions = instance.getMap(PROCESED_TRANS_MAP);
-            failed = instance.getMap(FAILED_TRANS_MAP);
         }
 
         //@Override
@@ -147,35 +144,48 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
                     to = random.nextInt(MAX_ACCOUNTS);
                 }
 
-                transfer(to, from, amount);
+                //WHICH TEST CASE ARE WE CHECKING
+                if ( TEST_CASE == TEST_CASE_LOCK){
+                    lock_Andtransfer(to, from, amount);
+                }
+                else{
+                    trylock_Andtransfer(to, from, amount);
+                }
             }
         }
 
-        private void transfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
+        private void lock_Andtransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
 
+            lock.lock();
+            try{
+                transfer(fromAccountNumber, toAccountNumber, amount);
+
+            }finally {
+                lock.unlock();
+            }
+        }
+
+        private void trylock_Andtransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
 
             if(lock.tryLock(10, TimeUnit.MILLISECONDS)){
                 try{
-                    Account fromAccount = accounts.get(fromAccountNumber);
-                    Account toAccount = accounts.get(toAccountNumber);
-
-                    TransferRecord trace = fromAccount.transferTo(toAccount, amount);
-                    transactions.put(trace.getId(), trace);
-
-                    accounts.put(fromAccount.getAcountNumber(), fromAccount);
-                    accounts.put(toAccount.getAcountNumber(), toAccount);
+                    transfer(fromAccountNumber, toAccountNumber, amount);
 
                 }finally {
                     lock.unlock();
                 }
-            } else {
-
-                FailedTransferRecord trace = new FailedTransferRecord(fromAccountNumber, toAccountNumber, amount);
-                trace.setReason("Time Out");
-                failed.put(trace.getId(), trace);
             }
         }
 
+        private void transfer(int fromAccountNumber, int toAccountNumber, long amount){
+            Account fromAccount = accounts.get(fromAccountNumber);
+            Account toAccount = accounts.get(toAccountNumber);
+
+            fromAccount.transferTo(toAccount, amount);
+
+            accounts.put(fromAccount.getAcountNumber(), fromAccount);
+            accounts.put(toAccount.getAcountNumber(), toAccount);
+        }
     }
 
 }
