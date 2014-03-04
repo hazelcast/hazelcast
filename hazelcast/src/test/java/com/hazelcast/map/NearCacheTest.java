@@ -298,6 +298,9 @@ public class NearCacheTest extends HazelcastTestSupport {
     @Test
     /**
      * failed randomly, a candidate to {@link ProblematicTest}
+     * @ali reason of the fail can be that map.put sends an invalidation,
+     * there is no guarantee that map.get will execute after this invalidation occurs
+     * if invalidation occurs after map.get then test fails
      */
     public void testCacheLocalEntries() {
         int n = 2;
