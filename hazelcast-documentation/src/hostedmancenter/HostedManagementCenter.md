@@ -7,13 +7,13 @@
 
 ## Introduction
 
-Hazelcast Hosted Management Center enables you to monitor and manage your servers running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail. You can also update map configurations and take thread dump from nodes. With its scripting module, you can run scritps (JavaScript, Groovy etc.) on your servers. Version 2.0 is a web based tool so you can deploy it into your internal server and serve your users.
+Hazelcast Hosted Management Center enables you to monitor and manage your nodes running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail, update map configurations and take thread dump from nodes. With its scripting and console module, you can run scripts (JavaScript, Groovy etc.) and commands on your nodes. It is a web based tool and you can deploy it into your internal server and serve your users.
 
 ---
 
 ## Installation
 
-It is important to understand how it actually works. Basically you will deploy `mancenter`-*version*`.war` application into your Java web server and then tell Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
+Basically, `mancenter`-*version*`.war` application should be deployed into the Java web server and  Hazelcast nodes should be configured to communicate with this application, i.e. Hazelcast nodes should know the URL of `mancenter` application before they are started.
 
 Here are the steps:
 
@@ -103,13 +103,63 @@ Each time an item from the toolbar or menu is selected, it is added to main view
 
 ![](images/TabbedView.jpg)
 
-In the above example, *Home*, *Scripting*, *Console*, *queue1* and *map1* windows can be seen as tabs. All windows can be close using the ![](images/CloseIcon.jpg) icon on each tab (except the Home Page, it cannot be closed).
+In the above example, *Home*, *Scripting*, *Console*, *queue1* and *map1* windows can be seen as tabs. Windows can be closed using the ![](images/CloseIcon.jpg) icon on each tab (except the Home Page; it cannot be closed).
 
 ---
 
 
 ##Home Page
-The starter page of the tool is`Cluster Home`. Here you can see cluster's main properties such as uptime, memory. Also with pie chart, you can see the distribution of partitions over cluster members. You can come back to this page, by clicking the `Home` icon on the top-right toolbar. On the left panel you see the Map/Queue/Topic instances in the cluster. At the bottom-left corner, members of the cluster are listed. On top menu bar, you can change the current tab to`Scripting, Docs`, user`Administration`. Note that Administration tab is viewable only for admin users. Also `Scripting` page is disabled for users with read-only credential.
+This is the first page appearing after logging in. It gives an overview of the cluster connected. Below subsections describe each portion on the page.
+
+####Cluster Info
+On top of the page, **Cluster Info** is placed, as shown below.
+
+![](images/HomeClusterInfo.jpg)
+
+-	Version		: Shows the release number of Hazelcast used.
+-	Start Time	: It is the date and time (UTC) when first node of the connected cluster was started.
+-	Up Time		: Shows the period of time in days, hours, minutes and seconds for which connected Hazelcast cluster is up.
+-	Used Memory	: Shows the real-time total memory used in the whole cluster.
+-	Free Memory	: Shows the real-time memory that is free in the whole cluster.
+-	Max Memory	: Shows the maximum memory than can be used in the whole cluster.
+
+####CPU Load Averages & Utilization
+This part of the page provides information related to load and utilization of CPUs for each node, as shown below.
+
+![](images/Home-CPULoadAveragesUtilization.jpg)
+
+First column lists the nodes with their IPs and ports. Then, the loads on each CPU for the last 1, 5 and 15 minutes are listed. The last column (**Utilization(%)**) shows the utilization of CPUs graphically. When you move the mouse cursor on a desired graph, you can see the CPU utilization at the time to which cursor corresponds. In the above example, the CPU utilization at 10:53:25 (where the mouse cursor is on) is -1%. Graphs under this column shows the CPU utilizations approximately for the last 2 minutes.
+
+
+####Memory Usages
+This part of the page provides information related to memory usages for each node, as shown below.
+
+![](images/Home-MemoryUsages.jpg)
+
+First column lists the nodes with their IPs and ports. Then, used and free memories out of the total memory reserved for Hazelcast usage are shown, in real-time. **Max** column lists the maximum memory capacity of each node and **Percent** column lists the percentage value of used memory out of the maximum memory. The last column (**Used Memory(%)**) shows the memory usage of nodes graphically. When you move the mouse cursor on a desired graph, you can see the memory usage at the time to which cursor corresponds. In the above example, the memory usage at 10:53:55 (where the mouse cursor is on) is 32 MB. Graphs under this column shows the memory usages approximately for the last 2 minutes.
+
+####Memory Distribution
+
+![](images/Home-MemoryDistribution.jpg)
+
+####Map Memory Distribution
+
+![](images/Home-MapMemoryDistribution.jpg)
+
+####Health Check
+
+
+![](images/Home-HealthCheckbuttonpressed.jpg)
+
+####Partition Distribution
+
+![](images/Home-PartitionDistribution.jpg)
+
+####System Warnings
+
+![](images/SystemWarnings.jpg)
+
+
 
 ---
 
@@ -211,13 +261,7 @@ Besides monitoring you can perform certain actions on members. You can take thre
 
 ![](images/mapoperations.jpg)
 
----
 
-## System Logs
-
-System logs part helps you track internal operations and detect problems. To see system logs first you should set a Log level other than "None". In left menu there are inputs by which you can filter the displayed logs dynamically. Also you can Export your logs and send the file to Hazelcast support team, so they can analyze and help you solving your problem.
-
-![](images/systemlogs.jpg)
 
 ---
 
