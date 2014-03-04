@@ -23,12 +23,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,15 +39,14 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(QuickTest.class)
 public class SocketInterceptorTest {
 
-    @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    @Before
+    @After
+    public void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 
@@ -64,19 +60,15 @@ public class SocketInterceptorTest {
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
 
-        TestUtil.warmUpPartitions(h1, h2, h3, h4);
+        TestUtil.warmUpPartitions(h1, h2);
 
-        assertEquals(4, h4.getCluster().getMembers().size());
-        assertEquals(4, h3.getCluster().getMembers().size());
-        assertEquals(4, h2.getCluster().getMembers().size());
-        assertEquals(4, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+        assertEquals(2, h1.getCluster().getMembers().size());
 
-        assertTrue(mySocketInterceptor.getAcceptCallCount() >= 6);
-        assertTrue(mySocketInterceptor.getConnectCallCount() >= 6);
-        assertEquals(4, mySocketInterceptor.getInitCallCount());
+        assertEquals(1, mySocketInterceptor.getAcceptCallCount());
+        assertEquals(1, mySocketInterceptor.getConnectCallCount());
+        assertEquals(2, mySocketInterceptor.getInitCallCount());
         assertEquals(0, mySocketInterceptor.getAcceptFailureCount());
         assertEquals(0, mySocketInterceptor.getConnectFailureCount());
     }
