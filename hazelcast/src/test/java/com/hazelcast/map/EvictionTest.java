@@ -321,7 +321,7 @@ public class EvictionTest extends HazelcastTestSupport {
             }.start();
         }
 
-        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
+        assertOpenEventually(latch,5*60);
         assertFalse("map was not evicted properly!", error.get());
     }
 
@@ -495,7 +495,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
         //wait until eviction is complete
-        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
+        assertOpenEventually(latch,5*60);
         assertEquals(0, map.size());
     }
 
@@ -605,7 +605,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
         //wait until eviction is complete
-        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
+        assertOpenEventually(latch,5*60);
 
         assertEquals("not all idle values evicted!",nsize, map.size());
 
@@ -647,7 +647,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         // wait until eviction is completed.
-        assertTrue("Latch Countdown not completed in 5 minutes!",latch.await(5,TimeUnit.MINUTES));
+        assertOpenEventually(latch,5*60);
         assertFalse("Some evictions took more than 5 seconds! -> late eviction count:" + times.size(), error.get());
     }
 
@@ -699,7 +699,7 @@ public class EvictionTest extends HazelcastTestSupport {
         instances[2].shutdown();
 
         //wait until eviction is complete
-        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
+        assertOpenEventually(latch,5*60);
 
         assertEquals("not all values evicted!",0,map.size());
      }
