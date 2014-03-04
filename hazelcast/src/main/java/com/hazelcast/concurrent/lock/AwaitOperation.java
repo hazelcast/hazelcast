@@ -64,7 +64,15 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
     }
 
     public boolean shouldWait() {
-        final boolean shouldWait = firstRun || !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+        LockStoreImpl lockStore = getLockStore();
+        boolean canAcquireLock = lockStore.canAcquireLock(key, getCallerUuid(), threadId);
+
+        ConditionKey signalKey = lockStore.getSignalKey(key);
+        if (signalKey != null && conditionId.equals(signalKey.getConditionId()) && canAcquireLock) {
+            return false;
+        }
+
+        boolean shouldWait = firstRun || !canAcquireLock;
         firstRun = false;
         return shouldWait;
     }

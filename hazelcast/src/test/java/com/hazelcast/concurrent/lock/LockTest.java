@@ -442,13 +442,11 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         final AtomicInteger count = new AtomicInteger(0);
         final int size = 50;
-        int k = 0;
-        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
-        while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner())) {
-            Thread.sleep(10);
-        }
 
-        final ILock lock = instance.getLock(k);
+        final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
+        String key = generateKeyOwnedBy(keyOwner);
+        final ILock lock = instance.getLock(key);
+
         final ICondition condition = lock.newCondition(name);
 
         final CountDownLatch awaitLatch = new CountDownLatch(size);
@@ -460,7 +458,6 @@ public class LockTest extends HazelcastTestSupport {
                     try {
                         awaitLatch.countDown();
                         condition.await();
-                        Thread.sleep(5);
                         if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
                         }
@@ -474,7 +471,7 @@ public class LockTest extends HazelcastTestSupport {
             }).start();
         }
 
-        final ILock lock1 = keyOwner.getLock(k);
+        final ILock lock1 = keyOwner.getLock(key);
         final ICondition condition1 = lock1.newCondition(name);
         awaitLatch.await(1, TimeUnit.MINUTES);
         lock1.lock();
