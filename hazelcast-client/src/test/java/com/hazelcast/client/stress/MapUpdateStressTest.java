@@ -133,7 +133,7 @@ public class MapUpdateStressTest extends StressTestSupport {
                 for (; ; ) {
                     int oldValue = map.get(key);
                     if (map.replace(key, oldValue, oldValue + increment)) {
-                        System.out.println(this);
+
                         break;
                     }
                 }

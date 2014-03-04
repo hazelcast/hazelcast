@@ -107,20 +107,6 @@ public class AccountTransactionStressTest extends StressTestSupport {
             total += a.getBalance();
         }
 
-        List<TransferRecord> transactions = new ArrayList( processed.values() );
-        Collections.sort(transactions, new TransferRecord.Comparator());
-
-        for ( TransferRecord t : transactions ) {
-            System.out.println(t);
-        }
-
-        List<FailedTransferRecord> failedList = new ArrayList( failed.values() );
-        Collections.sort(failedList, new FailedTransferRecord.Comparator());
-
-        for ( FailedTransferRecord f : failedList ) {
-            System.out.println(f);
-        }
-
         System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
 
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
