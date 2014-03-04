@@ -1,6 +1,15 @@
+
+
+
+---
+
+
+
 ## Introduction
 
 Hazelcast Hosted Management Center enables you to monitor and manage your servers running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail. You can also update map configurations and take thread dump from nodes. With its scripting module, you can run scritps (JavaScript, Groovy etc.) on your servers. Version 2.0 is a web based tool so you can deploy it into your internal server and serve your users.
+
+---
 
 ## Installation
 
@@ -23,13 +32,15 @@ Here are the steps:
 
 *Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory setting "hazelcast.mancenter.home" system property.*
 
+---
 
 ## Login & Sign Up
 After the cluster has started, go to `http://localhost:8080/mancenter`-*version* using any web browser. Below page will load.
 
 ![](images/1Login.jpg)
 
-**Initial login username/passwords is `admin/admin`**
+Initial login username/password is `admin/admin`.
+
 ???
 ???
 
@@ -39,6 +50,7 @@ Once the credentials are entered and **Login** key is pressed, the tool will ask
 
 Select the cluster and hit **Connect** button.
 
+---
 
 ## User Administration
 
@@ -46,20 +58,22 @@ Default credentials are for the admin user. In the `Administration` tab, Admin c
 
 ![](images/admin.jpg)
 
+---
+
 ## Tool Overview
 
 Once the page is loaded after selecting a cluster, tool's home page appears as shown below.
 
 ![](images/3HomePage.jpg)
 
-This page provides the fundamental properties of the selected cluster which are explained in the below subsections.
+This page provides the fundamental properties of the selected cluster which are explained in [Home Page](#homepage).
 
 It also has a toolbar on the top and a menu on the left.
 
 ####Toolbar
 Toolbar has the following buttons:
 
--	**Home**: When pressed, loads the home page shown above.
+-	**Home**: When pressed, loads the home page shown above. Please see [Home Page](#homepage).
 -	**Scripting**: When pressed, loads the page used to write and execute user`s own scripts on the cluster. Please see [Scripting](#scripting).
 -	**Console**: When pressed, loads the page used to execute commands on the cluster. Please see [Console](#console).
 -	**Documentation**: It is used to open the documentation of Hosted Management Center in a window inside the tool. Please see [Documentation](#documentation).
@@ -68,12 +82,36 @@ Toolbar has the following buttons:
      ![](images/4ChangeCluster.jpg)
      
      The user can select any cluster and once selected, the page immediately loads with the selected cluster's information.
--	**Logout**: 
+-	**Logout**: It is used to close the current user's session.
+
+####Menu
+Home page includes a menu on the left which lists the distributed data structures in the cluster and also all cluster members (nodes), as shown below.
+
+![](images/LeftMenu.jpg)
+
+Menu items can be expanded/collapsed by clicking on them. Below is the list of menu items with the links to their explanations.
+     
+-	[Maps](#maps)
+-	[Queues](#queues)
+-	[Topics](#topics)
+-	[MultiMaps](#MultiMaps)
+-	[Executors](#executors)
+-	[Members](#members)
+
+####Tabbed View
+Each time an item from the toolbar or menu is selected, it is added to main view as a tab, as shown below.
+
+![](images/TabbedView.jpg)
+
+In the above example, *Home*, *Scripting*, *Console*, *queue1* and *map1* windows can be seen as tabs. All windows can be close using the ![](images/CloseIcon.jpg) icon on each tab (except the Home Page, it cannot be closed).
+
+---
 
 
+##Home Page
 The starter page of the tool is`Cluster Home`. Here you can see cluster's main properties such as uptime, memory. Also with pie chart, you can see the distribution of partitions over cluster members. You can come back to this page, by clicking the `Home` icon on the top-right toolbar. On the left panel you see the Map/Queue/Topic instances in the cluster. At the bottom-left corner, members of the cluster are listed. On top menu bar, you can change the current tab to`Scripting, Docs`, user`Administration`. Note that Administration tab is viewable only for admin users. Also `Scripting` page is disabled for users with read-only credential.
 
-
+---
 
 
 
@@ -82,6 +120,7 @@ The starter page of the tool is`Cluster Home`. Here you can see cluster's main p
 Map instances are listed on the left panel. When you click on a map, a new tab for monitoring this map instance is opened on the right. In this tab, you can monitor metrics also re-configure the map.
 
 ![](images/MapsHome.jpg)
+
 
 ### Monitoring Maps
 
@@ -124,6 +163,7 @@ You can open "Map Configuration" tool by clicking "Config" button on map tab pag
 
 ![](images/mapconfig.jpg)
 
+---
 
 ## Queues
 
@@ -131,12 +171,25 @@ Queues is the second data structure that you can monitor in management center. Y
 
 ![](images/queue.jpg)
 
+---
 
-## Topics
+##Topics
 
 You can monitor your topics' metrics by clicking the topic name listed on the left panel under topics part. There are two charts which reflects live data, and a datatable lists the live data distributed among members.
 
 ![](images/topic.jpg)
+
+---
+
+##MultiMaps
+???
+
+---
+
+##Executors
+???
+
+---
 
 
 ## Members
@@ -144,6 +197,7 @@ You can monitor your topics' metrics by clicking the topic name listed on the le
 The current members in the cluster are listed on the bottom side of the left panel. You can monitor each member on tab page displayed by clicking on member items.
 
 ![](images/member.jpg)
+
 
 ### Monitoring
 
@@ -157,6 +211,7 @@ Besides monitoring you can perform certain actions on members. You can take thre
 
 ![](images/mapoperations.jpg)
 
+---
 
 ## System Logs
 
@@ -164,6 +219,7 @@ System logs part helps you track internal operations and detect problems. To see
 
 ![](images/systemlogs.jpg)
 
+---
 
 ## Scripting
 
@@ -171,13 +227,7 @@ In scripting part, you can execute your own code on your cluster. In the left pa
 
 ![](images/scripting.jpg)
 
-
-## Time Travel
-
-Time Travel mode is activated by clicking clock icon on top right toolbar. In time travel mode, the time is paused and the full state of the cluster is displayed according the time selected on time slider. You can change time either by Prev/Next buttons or sliding the slider. Also you can change the day by clicking calendar icon. Management center stores the states in you local disk, while your web server is alive. So if you slide to a time when you do not have data, the reports will be seen as empty.
-
-![](images/timetravel.jpg)
-
+---
 
 ## Console
 
@@ -262,3 +312,17 @@ execute0nMember <echo-input> <key>  //executes an echo task on the member with g
 execute0nMembers <echo-input>       //executes an echo task on all of the members
 ```
 ![](images/console.jpg)
+
+---
+
+##Documentation
+???
+
+---
+
+## Time Travel
+
+Time Travel mode is activated by clicking clock icon on top right toolbar. In time travel mode, the time is paused and the full state of the cluster is displayed according the time selected on time slider. You can change time either by Prev/Next buttons or sliding the slider. Also you can change the day by clicking calendar icon. Management center stores the states in you local disk, while your web server is alive. So if you slide to a time when you do not have data, the reports will be seen as empty.
+
+![](images/timetravel.jpg)
+
