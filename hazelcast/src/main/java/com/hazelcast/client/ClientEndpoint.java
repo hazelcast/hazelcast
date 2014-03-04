@@ -25,6 +25,7 @@ import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionAccessor;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -135,7 +136,11 @@ public final class ClientEndpoint implements Client {
     }
 
     public TransactionContext getTransactionContext(String txnId) {
-        return transactionContextMap.get(txnId);
+        final TransactionContext transactionContext = transactionContextMap.get(txnId);
+        if(transactionContext == null){
+            throw new TransactionException("No transaction context found for txnId:" + txnId);
+        }
+        return transactionContext;
     }
 
     public void setTransactionContext(TransactionContext transactionContext) {
