@@ -26,7 +26,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     protected SimpleClusterUtil cluster = new SimpleClusterUtil(CLUSTER_SIZE);
 
     private CountDownLatch startLatch;
-    private Thread killThread;
+    private Thread killThread = null;
     private volatile boolean stopOnError = true;
     private volatile boolean stopTest = false;
     private boolean clusterChangeEnabled = true;
@@ -37,8 +37,12 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         cluster.initCluster();
     }
 
-    public void setClusterChangeEnabled(boolean membershutdownEnabled) {
-        this.clusterChangeEnabled = membershutdownEnabled;
+    private void setClusterChangeEnabled(boolean member_shutdown_Enabled) {
+        clusterChangeEnabled = member_shutdown_Enabled;
+
+        if( clusterChangeEnabled == true && killThread == null){
+            killThread = new KillMemberThread();
+        }
     }
 
     public void setClusterConfig(Config config) {
@@ -191,7 +195,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
                 }
 
                 cluster.shutDownRandomNode();
-
                 cluster.addNode();
             }
         }
@@ -199,7 +202,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
     public class KillMemberOwning extends TestThread {
 
-        Object key = null;
+        private Object key = null;
 
         public KillMemberOwning(Object key){
             this.key = key;

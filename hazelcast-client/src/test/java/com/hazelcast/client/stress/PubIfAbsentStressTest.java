@@ -93,7 +93,6 @@ public class PubIfAbsentStressTest extends StressTestSupport {
             }
         }
 
-
         //checking the map size and EnteryCounter add up
         HazelcastInstance hz = cluster.getRandomNode();
         IMap map = hz.getMap(MAP_NAME);

@@ -64,7 +64,6 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
 
     @Test
     public void testChangingCluster() {
-        setKillThread(new KillMemberThread());
         runTest(true, stressThreads);
     }
 

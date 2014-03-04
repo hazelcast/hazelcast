@@ -31,9 +31,8 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class AccountTransactionStressTest extends StressTestSupport {
 
-    public static final String ACCOUNTS_MAP = "ACOUNTS";
-    public static final String PROCESED_TRANS_MAP ="PROCESSED";
-    public static final String FAILED_TRANS_MAP ="FAIL";
+    private static final String ACCOUNTS_MAP = "ACOUNTS";
+    private  IMap<Integer, Account> accounts;
 
 
     public static final int TOTAL_HZ_CLIENT_INSTANCES = 3;
@@ -42,7 +41,7 @@ public class AccountTransactionStressTest extends StressTestSupport {
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     protected static final int MAX_ACCOUNTS = 200;
-    protected static final long INITIAL_VALUE = 0;
+    protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
 
@@ -52,8 +51,8 @@ public class AccountTransactionStressTest extends StressTestSupport {
         super.setUp();
 
         HazelcastInstance hz = cluster.getRandomNode();
+        accounts = hz.getMap(ACCOUNTS_MAP);
 
-        IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
             Account a = new Account(i, INITIAL_VALUE);
             accounts.put(a.getAcountNumber(), a);
@@ -96,18 +95,10 @@ public class AccountTransactionStressTest extends StressTestSupport {
 
     public void assertResult() {
 
-        HazelcastInstance hz = super.cluster.getRandomNode();
-
-        IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
-        IMap<Long, TransferRecord> processed = hz.getMap(PROCESED_TRANS_MAP);
-        IMap<Long, FailedTransferRecord> failed = hz.getMap(FAILED_TRANS_MAP);
-
         long total=0;
         for(Account a : accounts.values()){
             total += a.getBalance();
         }
-
-        System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
 
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
@@ -116,10 +107,12 @@ public class AccountTransactionStressTest extends StressTestSupport {
     public class StressThread extends TestThread{
 
         private HazelcastInstance instance;
+        private IMap<Integer, Account> accounts;
 
         public StressThread(HazelcastInstance node){
 
             instance = node;
+            accounts = instance.getMap(ACCOUNTS_MAP);
         }
 
         @Override
@@ -128,7 +121,6 @@ public class AccountTransactionStressTest extends StressTestSupport {
             while ( !isStopped() ) {
 
                 long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
-
                 int from = 0;
                 int to = 0;
 
@@ -137,46 +129,39 @@ public class AccountTransactionStressTest extends StressTestSupport {
                     to = random.nextInt(MAX_ACCOUNTS);
                 }
 
-                transfer(from, to, amount);
+                lockAccounts_andTransfer(from, to, amount);
             }
         }
 
+        private void lockAccounts_andTransfer(int fromAccountNumber, int toAccountNumber, long amount){
+            try {
+                if ( accounts.tryLock(fromAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                    try{
+                        if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                            try{
+
+                                transfer(fromAccountNumber, toAccountNumber, amount);
+
+                            } finally {
+                                accounts.unlock(toAccountNumber);
+                            }
+                        }
+                    } finally {
+                        accounts.unlock(fromAccountNumber);
+                    }
+                }
+            } catch (InterruptedException e) {}
+        }
 
         private void transfer(int fromAccountNumber, int toAccountNumber, long amount){
 
-            IMap<Integer, Account> accounts = instance.getMap(ACCOUNTS_MAP);
-            IMap<Long, TransferRecord> transactions = instance.getMap(PROCESED_TRANS_MAP);
+            Account from = accounts.get(fromAccountNumber);
+            Account to = accounts.get(toAccountNumber);
 
-            try {
-                boolean timeOut = true;
+            from.transferTo(to, amount);
 
-                if ( accounts.tryLock(fromAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
-
-                    if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
-                        timeOut=false;
-
-                        Account fromAccount = accounts.get(fromAccountNumber);
-                        Account toAccount = accounts.get(toAccountNumber);
-
-                        TransferRecord trace = fromAccount.transferTo(toAccount, amount);
-                        transactions.put(trace.getId(), trace);
-
-                        accounts.put(fromAccount.getAcountNumber(), fromAccount);
-                        accounts.put(toAccount.getAcountNumber(), toAccount);
-
-                        accounts.unlock(toAccountNumber);
-                    }
-
-                    accounts.unlock(fromAccountNumber);
-                }
-
-                if(timeOut){
-                    IMap failed = instance.getMap(FAILED_TRANS_MAP);
-                    FailedTransferRecord trace = new FailedTransferRecord(fromAccountNumber, toAccountNumber, amount);
-                    trace.setReason("Time Out");
-                    failed.put(trace.getId(), trace);
-                }
-            } catch (InterruptedException e) {}
+            accounts.put(from.getAcountNumber(), from);
+            accounts.put(to.getAcountNumber(), to);
         }
     }
 

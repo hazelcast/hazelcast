@@ -17,9 +17,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
@@ -49,7 +46,7 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     protected static final int MAX_ACCOUNTS = 200;
-    protected static final long INITIAL_VALUE = 0;
+    protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
 
@@ -64,6 +61,7 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
         failed = hz.getMap(FAILED_TRANS_MAP);
         accounts = hz.getMap(ACCOUNTS_MAP);
 
+        //init accounts
         for ( int i=0; i < MAX_ACCOUNTS; i++ ) {
             Account a = new Account(i, INITIAL_VALUE);
             accounts.put(a.getAcountNumber(), a);
@@ -105,21 +103,26 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
 
     public void assertResult() {
 
-        long total=0;
+        long acutalValue=0;
         for(Account a : accounts.values()){
-            total += a.getBalance();
+            acutalValue += a.getBalance();
         }
 
-        int roleBacks=0;
+        int expeted_roleBacks=0;
+        int expeted_transactionsProcessed=0;
+
         for(StressThread s : stressThreads){
-            roleBacks += s.roleBacksTrigered;
+            expeted_roleBacks += s.roleBacksTriggered;
+            expeted_transactionsProcessed += s.transactionsProcessed;
         }
 
         System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
 
-        assertEquals("number of role Backs triggered and failed transaction count not equal", roleBacks, failed.size());
+        assertEquals("number of processed transactions not equal expeted", expeted_transactionsProcessed, processed.size());
 
-        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
+        assertEquals("number of role Backs triggered and failed transaction count not equal", expeted_roleBacks, failed.size());
+
+        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, acutalValue);
     }
 
 
@@ -128,7 +131,8 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
         private HazelcastInstance instance;
         private IMap<Integer, Account> accounts;
 
-        public int roleBacksTrigered=0;
+        public int transactionsProcessed=0;
+        public int roleBacksTriggered =0;
 
         public StressThread(HazelcastInstance node){
 
@@ -150,57 +154,78 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
                     to = random.nextInt(MAX_ACCOUNTS);
                 }
 
-                transferInContext(from, to, amount);
+                transfer(from, to, amount);
             }
         }
 
 
-        private void transferInContext(int fromAccountNumber, int toAccountNumber, long amount){
-
+        //this method is responsible to obtaining the lock to do the transaction for the 2 accounts
+        //and releasing the locks in the event of any thrown exceptions
+        private void transfer(int fromAccountNumber, int toAccountNumber, long amount){
             try {
                 if ( accounts.tryLock(fromAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                    try{
+                        if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                            try {
 
-                    if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                                //now all needed locks are obtained do the transation between acounts
+                                transferInTransactionContext(fromAccountNumber, toAccountNumber, amount);
 
-                        TransactionContext context = instance.newTransactionContext();
-                        context.beginTransaction();
-
-                        try{
-                            TransactionalMap<Integer, Account> accountsContext = context.getMap(ACCOUNTS_MAP);
-                            TransactionalMap<Long, TransferRecord> transactionsContext = context.getMap(PROCESED_TRANS_MAP);
-
-                            Account a = accountsContext.get(fromAccountNumber);
-                            Account b = accountsContext.get(toAccountNumber);
-
-                            TransferRecord  record = a.transferTo(b, amount);
-
-                            transactionsContext.put(record.getId(), record);
-
-                            accountsContext.put(a.getAcountNumber(), a);
-                            accountsContext.put(b.getAcountNumber(), b);
-
-                            trigerRoleBack_atRandom();
-
-                            context.commitTransaction();
-
-                        }catch(Exception e){
-                            context.rollbackTransaction();
-
-                            FailedTransferRecord trace = new FailedTransferRecord(fromAccountNumber, toAccountNumber, amount);
-                            failed.put(trace.getId(), trace);
+                            }finally {
+                                accounts.unlock(toAccountNumber);
+                            }
                         }
-
-                        accounts.unlock(toAccountNumber);
+                    }finally {
+                        accounts.unlock(fromAccountNumber);
                     }
-
-                    accounts.unlock(fromAccountNumber);
                 }
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
         }
 
-        private void trigerRoleBack_atRandom() throws Exception{
+
+
+        private void transferInTransactionContext(int fromAccountNumber, int toAccountNumber, long amount){
+
+            TransactionContext context = instance.newTransactionContext();
+            context.beginTransaction();
+
+            try{
+                TransactionalMap<Integer, Account> accountsContext = context.getMap(ACCOUNTS_MAP);
+                TransactionalMap<Long, TransferRecord> processedTransactions = context.getMap(PROCESED_TRANS_MAP);
+
+                Account a = accountsContext.get(fromAccountNumber);
+                Account b = accountsContext.get(toAccountNumber);
+
+                TransferRecord  record = a.transferTo(b, amount);
+
+                //keep track of all the transactions that have processed correctly
+                processedTransactions.put(record.getId(), record);
+
+                accountsContext.put(a.getAcountNumber(), a);
+                accountsContext.put(b.getAcountNumber(), b);
+
+                trigerRoleBack_WithException_AtRandom();
+
+                context.commitTransaction();
+
+                //keep a count of the number of processed Transactions corectley
+                transactionsProcessed++;
+
+            }catch(Exception e){
+
+                context.rollbackTransaction();
+
+                //keeps track of all the Transactions that failed due to a role Back triggered
+                FailedTransferRecord trace = new FailedTransferRecord(fromAccountNumber, toAccountNumber, amount);
+                failed.put(trace.getId(), trace);
+            }
+        }
+
+        //cause a role back by throwing an exception and count the number this thread cause
+        private void trigerRoleBack_WithException_AtRandom() throws Exception{
             if(random.nextInt(100)==0){
-                roleBacksTrigered++;
+                roleBacksTriggered++;
                 throw new Exception("Random Test Exception");
             }
         }

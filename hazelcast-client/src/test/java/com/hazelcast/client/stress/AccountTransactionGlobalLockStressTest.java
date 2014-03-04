@@ -17,6 +17,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -84,6 +86,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
+        setKillThread(new KillMemberThread());
         runTest(true, stressThreads);
     }
 
@@ -150,11 +153,10 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
             }
         }
 
-        private void transfer(int fromAccountNumber, int toAccountNumber, long amount) throws InterruptedException {
+        private void transfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
 
 
-            //if(lock.tryLock(10,TimeUnit.MILLISECONDS)){
-            if(lock.tryLock()){
+            if(lock.tryLock(10, TimeUnit.MILLISECONDS)){
                 try{
                     Account fromAccount = accounts.get(fromAccountNumber);
                     Account toAccount = accounts.get(toAccountNumber);
