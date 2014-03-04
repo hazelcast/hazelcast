@@ -3,16 +3,16 @@
 ## Release Notes
 ### RC2 Fixed Issues
 -	`ClientService.getConnectedClients` returns all end points [[#1883]](https://github.com/hazelcast/hazelcast/issues/1883).
--	MultiMap ConcurrentModificationExceptions [[#1882]](https://github.com/hazelcast/hazelcast/issues/1882).
--	ClientConfig::executorPoolSize not configured from xml [[#1867]](https://github.com/hazelcast/hazelcast/issues/1867).
--	Fixed 'Cannot postpone partition processing' problem [[#1856]](https://github.com/hazelcast/hazelcast/pull/1856).
--	Resolved the ClientEndpoint memory leak [[#1842]](https://github.com/hazelcast/hazelcast/pull/1842).
--	fix errors related to management center config on startup [[#1821]](https://github.com/hazelcast/hazelcast/pull/1821).
--	fix client xml parse [[#1818]](https://github.com/hazelcast/hazelcast/pull/1818).
--	MemberAttributeOperationType introduced [[#1811]](https://github.com/hazelcast/hazelcast/pull/1811).
--	ClientReAuthOperation can not return response without call-id! [[#1816]](https://github.com/hazelcast/hazelcast/issues/1816).
--	multimap remove entry listener fix [[#1810]](https://github.com/hazelcast/hazelcast/pull/1810).
--	Change DefaultRecordStore#removeAll to keep "key objects to delete" as a list, not a set [[#1795]](https://github.com/hazelcast/hazelcast/issues/1795).
+-	MultiMap is throwing `ConcurrentModificationExceptions` [[#1882]](https://github.com/hazelcast/hazelcast/issues/1882).
+-	`executorPoolSize` field of ClientConfig cannot be configured using XML [[#1867]](https://github.com/hazelcast/hazelcast/issues/1867).
+-	Partition processing cannot be postponed [[#1856]](https://github.com/hazelcast/hazelcast/pull/1856).
+-	Memory leak at client endpoints [[#1842]](https://github.com/hazelcast/hazelcast/pull/1842).
+-	Errors related to management center configuration on startup [[#1821]](https://github.com/hazelcast/hazelcast/pull/1821).
+-	XML parsing error by client [[#1818]](https://github.com/hazelcast/hazelcast/pull/1818).
+-	`ClientReAuthOperation` cannot return response without call ID [[#1816]](https://github.com/hazelcast/hazelcast/issues/1816).
+-	`MemberAttributeOperationType` should be introduced to remove the dependency to `MapOperationType` [[#1811]](https://github.com/hazelcast/hazelcast/pull/1811).
+-	Entry listener removal from MultiMap [[#1810]](https://github.com/hazelcast/hazelcast/pull/1810).
+-	Change `DefaultRecordStore#removeAll` to keep "key objects to delete" as a list, not a set [[#1795]](https://github.com/hazelcast/hazelcast/issues/1795).
 
 ### RC1 Fixed Issues
 
