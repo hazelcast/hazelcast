@@ -3,6 +3,7 @@ package com.hazelcast.test.modularhelpers;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 
@@ -73,23 +74,32 @@ public class SimpleClusterUtil {
         HazelcastInstance node = getRandomNode();
         cluster.remove(node);
         node.shutdown();
-        node=null;//double check
     }
+
+
+    public void shutDownNodeOwning(Object key){
+
+        HazelcastInstance node = getRandomNode();
+        Member owner = node.getPartitionService().getPartition(key).getOwner();
+
+        for (HazelcastInstance hz : cluster) {
+
+            Member local = hz.getCluster().getLocalMember();
+
+            if ( owner.getUuid().equals(local.getUuid()) ){
+
+                cluster.remove(hz);
+                hz.shutdown();
+
+            }
+        }
+
+    }
+
 
     public void shutDown() {
 
         Hazelcast.shutdownAll();
-
-        /*
-        for (HazelcastInstance hz : cluster) {
-            try {
-                hz.shutdown();
-                hz = null;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }*/
-
         cluster=null;
     }
 

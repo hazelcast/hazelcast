@@ -21,12 +21,12 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     //todo: should be system property
     public static int CLUSTER_SIZE = 3;
     //todo: should be system property
-    public static final int KILL_DELAY_SECONDS = 2;
+    public static int KILL_DELAY_SECONDS = RUNNING_TIME_SECONDS / 4;
 
     protected SimpleClusterUtil cluster = new SimpleClusterUtil(CLUSTER_SIZE);
 
     private CountDownLatch startLatch;
-    private KillMemberThread killMemberThread;
+    private Thread killThread;
     private volatile boolean stopOnError = true;
     private volatile boolean stopTest = false;
     private boolean clusterChangeEnabled = true;
@@ -50,11 +50,14 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         cluster.shutDown();
     }
 
+    public void setKillThread(Thread t){
+        killThread = t;
+    }
+
     private final boolean runTestReportLoop() {
         System.out.println("Cluster change enabled:" + clusterChangeEnabled);
         if (clusterChangeEnabled) {
-            killMemberThread = new KillMemberThread();
-            killMemberThread.start();
+            killThread.start();
         }
 
         System.out.println("==================================================================");
@@ -189,6 +192,28 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
                 cluster.shutDownRandomNode();
 
+                cluster.addNode();
+            }
+        }
+    }
+
+    public class KillMemberOwning extends TestThread {
+
+        Object key = null;
+
+        public KillMemberOwning(Object key){
+            this.key = key;
+        }
+
+        @Override
+        public void doRun() throws Exception {
+            while (!stopTest) {
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
+                } catch (InterruptedException e) {
+                }
+
+                cluster.shutDownNodeOwning(key);
                 cluster.addNode();
             }
         }

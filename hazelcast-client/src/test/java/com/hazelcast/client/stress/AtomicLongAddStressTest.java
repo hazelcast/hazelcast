@@ -7,36 +7,43 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.Assert.assertEquals;
 
 /**
  * This tests verifies that atomicLong updates via getandInc are not lost.
  * a number of threads are all going for the same AtomicLong to do a get and add.
- * we verify that the actual updates to the atomic long, are the same as the total number of updates from all thread.
+ * we verify that the actual updates to the atomic long, are the same as the total number of updates from all threads.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class AtomicLongAddStressTest extends StressTestSupport {
 
-    public static int TOTAL_HZ_INSTANCES = 5;
-    public static int THREADS_PER_INSTANCE = 2;
+    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public static int THREADS_PER_INSTANCE = 5;
 
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
+    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
+
+    private String atomicKey = "atomicL";
 
     @Before
     public void setUp() {
+
         super.setUp();
 
         int index=0;
-        for (int i = 0; i < TOTAL_HZ_INSTANCES; i++) {
+        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
 
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
+            ClientConfig clientConfig = new ClientConfig();
+            clientConfig.getNetworkConfig().setRedoOperation(true);
+
+            HazelcastInstance instance = HazelcastClient.newHazelcastClient(clientConfig);
 
             for (int j = 0; j < THREADS_PER_INSTANCE; j++) {
 
@@ -48,13 +55,10 @@ public class AtomicLongAddStressTest extends StressTestSupport {
     }
 
 
-    @After
-    public void tearDown() {
-        super.tearDown();
-    }
-
-    //@Test
+    @Test
     public void testChangingCluster() {
+
+        setKillThread( new KillMemberOwning(atomicKey) );
         runTest(true, stressThreads);
     }
 
@@ -64,17 +68,18 @@ public class AtomicLongAddStressTest extends StressTestSupport {
     }
 
 
+    @Override
     public void assertResult() {
 
-        long total=0;
+        long expetedTotal=0;
         for ( StressThread s : stressThreads ) {
-            total += s.count;
+            expetedTotal += s.count.get();
         }
 
         HazelcastInstance hz = cluster.getRandomNode();
-        IAtomicLong expeted = hz.getAtomicLong("atomicL");
+        IAtomicLong acutal = hz.getAtomicLong(atomicKey);
 
-        assertEquals(expeted+" has failed writes ", total, expeted.get());
+        assertEquals(acutal+" has value "+acutal.get(), expetedTotal, acutal.get());
     }
 
 
@@ -82,25 +87,21 @@ public class AtomicLongAddStressTest extends StressTestSupport {
 
         private HazelcastInstance instance;
         private IAtomicLong atomicLong;
-        public long count=0;
+        public AtomicInteger count = new AtomicInteger(0);
 
         public StressThread(HazelcastInstance node){
-            super();
 
             instance = node;
-            atomicLong = instance.getAtomicLong("atomicL");
-
+            atomicLong = instance.getAtomicLong(atomicKey);
         }
 
-        @Override
         public void doRun() throws Exception {
 
             while ( !isStopped() ) {
 
-                int inc = random.nextInt(5);
+                int inc = 1;
                 atomicLong.getAndAdd(inc);
-                count+=inc;
-
+                count.addAndGet(inc);
             }
         }
     }

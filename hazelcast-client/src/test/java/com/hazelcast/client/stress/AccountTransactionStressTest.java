@@ -6,12 +6,9 @@ import com.hazelcast.client.stress.helpers.FailedTransferRecord;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.client.stress.helpers.TransferRecord;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.transaction.TransactionContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,10 +36,10 @@ public class AccountTransactionStressTest extends StressTestSupport {
     public static final String FAILED_TRANS_MAP ="FAIL";
 
 
-    public static final int TOTAL_HZ_INSTANCES = 5;
-    public static final int THREADS_PER_INSTANCE = 3;
+    public static final int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public static final int THREADS_PER_INSTANCE = 5;
 
-    private Transactor[] stressThreads = new Transactor[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
+    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     protected static final int MAX_ACCOUNTS = 200;
     protected static final long INITIAL_VALUE = 0;
@@ -54,7 +51,7 @@ public class AccountTransactionStressTest extends StressTestSupport {
     public void setUp() {
         super.setUp();
 
-        HazelcastInstance hz = super.cluster.getRandomNode();
+        HazelcastInstance hz = cluster.getRandomNode();
 
         IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
@@ -63,13 +60,13 @@ public class AccountTransactionStressTest extends StressTestSupport {
         }
 
         int index=0;
-        for ( int i = 0; i < TOTAL_HZ_INSTANCES; i++ ) {
+        for ( int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++ ) {
 
             HazelcastInstance instance = HazelcastClient.newHazelcastClient();
 
             for ( int j = 0; j < THREADS_PER_INSTANCE; j++ ) {
 
-                Transactor t = new Transactor(instance);
+                StressThread t = new StressThread(instance);
                 t.start();
                 stressThreads[index++] = t;
             }
@@ -127,12 +124,11 @@ public class AccountTransactionStressTest extends StressTestSupport {
     }
 
 
-    public class Transactor extends TestThread{
+    public class StressThread extends TestThread{
 
         private HazelcastInstance instance;
 
-        public Transactor(HazelcastInstance node){
-            super();
+        public StressThread(HazelcastInstance node){
 
             instance = node;
         }
@@ -142,14 +138,15 @@ public class AccountTransactionStressTest extends StressTestSupport {
 
             while ( !isStopped() ) {
 
-                int from = 0, to = 0;
+                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
+
+                int from = 0;
+                int to = 0;
 
                 while ( from == to ) {
                     from = random.nextInt(MAX_ACCOUNTS);
                     to = random.nextInt(MAX_ACCOUNTS);
                 }
-
-                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
 
                 transfer(from, to, amount);
             }

@@ -9,7 +9,6 @@ import com.hazelcast.client.stress.helpers.TransferRecord;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -17,11 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static junit.framework.Assert.assertEquals;
@@ -38,10 +32,10 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
-    public static int TOTAL_HZ_INSTANCES = 5;
-    public static int THREADS_PER_INSTANCE = 2;
+    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public static int THREADS_PER_INSTANCE = 5;
 
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
+    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     public static final String ACCOUNTS_MAP = "ACOUNTS";
     public static final String PROCESED_TRANS_MAP ="PROCESSED";
@@ -57,7 +51,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     public void setUp() {
         super.setUp();
 
-        HazelcastInstance hz = super.cluster.getRandomNode();
+        HazelcastInstance hz = cluster.getRandomNode();
 
         IMap<Integer, Account> accounts = hz.getMap(ACCOUNTS_MAP);
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
@@ -66,7 +60,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         }
 
         int index=0;
-        for (int i = 0; i < TOTAL_HZ_INSTANCES; i++) {
+        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
 
             HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
 
@@ -123,7 +117,6 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         IMap failed = null;
 
         public StressThread( HazelcastInstance node ){
-            super();
 
             this.instance = node;
 
@@ -140,13 +133,14 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
             while ( !isStopped() ) {
 
-                int from = 0, to = 0;
+                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
+                int from = 0;
+                int to = 0;
 
                 while ( from == to ) {
                     from = random.nextInt(MAX_ACCOUNTS);
                     to = random.nextInt(MAX_ACCOUNTS);
                 }
-                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
 
                 transfer(to, from, amount);
             }

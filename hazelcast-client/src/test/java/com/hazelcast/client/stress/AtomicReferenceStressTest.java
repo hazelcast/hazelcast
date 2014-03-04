@@ -23,17 +23,17 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class AtomicReferenceStressTest extends StressTestSupport {
 
-    public static int TOTAL_HZ_INSTANCES = 5;
-    public static int THREADS_PER_INSTANCE = 2;
+    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public static int THREADS_PER_INSTANCE = 5;
 
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
+    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     @Before
     public void setUp() {
         super.setUp();
 
         int index=0;
-        for (int i = 0; i < TOTAL_HZ_INSTANCES; i++) {
+        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
 
             HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
 
@@ -85,7 +85,6 @@ public class AtomicReferenceStressTest extends StressTestSupport {
         public long count=0;
 
         public StressThread(HazelcastInstance node){
-            super();
 
             instance = node;
             ref = instance.getAtomicReference("ref");

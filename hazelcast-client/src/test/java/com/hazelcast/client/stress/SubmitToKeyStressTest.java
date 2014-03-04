@@ -27,24 +27,24 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class SubmitToKeyStressTest extends StressTestSupport {
 
-    public static int TOTAL_HZ_INSTANCES = 5;
-    public static int THREADS_PER_INSTANCE = 1;
+    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public static int THREADS_PER_INSTANCE = 5;
 
 
     private static final String MAP_NAME = "submitToKeys";
 
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_INSTANCES * THREADS_PER_INSTANCE];
+    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     @Before
     public void setUp() {
         super.setUp();
 
-        //make the initial key val that all thread will run task on
-        HazelcastInstance hz = super.cluster.getRandomNode();
+        //make the initial key val that all threads will run tasks on
+        HazelcastInstance hz = cluster.getRandomNode();
         hz.getMap(MAP_NAME).put(0, 0);
 
         int index=0;
-        for (int i = 0; i < TOTAL_HZ_INSTANCES; i++) {
+        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
 
             HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
 
@@ -94,7 +94,6 @@ public class SubmitToKeyStressTest extends StressTestSupport {
         private int totalOpps=0;
 
         public StressThread(HazelcastInstance node){
-            super();
 
             instance = node;
             map = instance.getMap(MAP_NAME);

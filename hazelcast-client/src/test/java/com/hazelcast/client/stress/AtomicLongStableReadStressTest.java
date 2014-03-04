@@ -32,7 +32,8 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         super.setUp();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+
         client = HazelcastClient.newHazelcastClient(clientConfig);
         references = new IAtomicLong[REFERENCE_COUNT];
         for (int k = 0; k < references.length; k++) {

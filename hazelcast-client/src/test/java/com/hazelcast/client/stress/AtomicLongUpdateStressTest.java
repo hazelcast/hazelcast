@@ -39,6 +39,7 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
+
         client = HazelcastClient.newHazelcastClient(clientConfig);
         references = new IAtomicLong[REFERENCE_COUNT];
         for (int k = 0; k < references.length; k++) {
@@ -61,8 +62,9 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
         }
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
+        setKillThread(new KillMemberThread());
         runTest(true, stressThreads);
     }
 
@@ -107,7 +109,7 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
         public void doRun() throws Exception {
             while (!isStopped()) {
                 int index = random.nextInt(REFERENCE_COUNT);
-                int increment = random.nextInt(100);
+                int increment =1; // random.nextInt(100);
                 increments[index] += increment;
                 IAtomicLong reference = references[index];
                 reference.addAndGet(increment);
