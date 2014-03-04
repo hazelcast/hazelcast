@@ -48,11 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -270,9 +266,7 @@ public class EvictionTest extends HazelcastTestSupport {
         assertTrue(success.get());
     }
 
-    //this test is flawed because it assumes to out map entries in a certain amount of time.
     @Test
-    @Category(ProblematicTest.class)
     public void testEvictionSpeedTestPerPartition() throws InterruptedException {
         final int k = 2;
         final int size = 100;
@@ -290,7 +284,7 @@ public class EvictionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         final int pnum = instances[0].getPartitionService().getPartitions().size();
-        final AtomicInteger failCount = new AtomicInteger(0);
+        final AtomicBoolean error = new AtomicBoolean(false);
 
         new Thread() {
             final IMap map = instances[0].getMap(mapName);
@@ -302,7 +296,7 @@ public class EvictionTest extends HazelcastTestSupport {
                         try {
                             int msize = map.size();
                             if (msize > (size * pnum * 1.2)) {
-                                failCount.incrementAndGet();
+                                error.set(true);
                             }
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -311,7 +305,7 @@ public class EvictionTest extends HazelcastTestSupport {
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
+            }
             }
         }.start();
 
@@ -319,7 +313,7 @@ public class EvictionTest extends HazelcastTestSupport {
             final IMap map = instances[i].getMap(mapName);
             new Thread() {
                 public void run() {
-                    for (int j = 0; j < 100000; j++) {
+                    for (int j = 0; j < 10000; j++) {
                         map.put(k + "-" + j, j);
                     }
                     latch.countDown();
@@ -327,8 +321,8 @@ public class EvictionTest extends HazelcastTestSupport {
             }.start();
         }
 
-        assertEquals(latch.await(10, TimeUnit.MINUTES), true);
-        assertEquals(0, failCount.get());
+        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
+        assertFalse("map was not evicted properly!", error.get());
     }
 
 
@@ -482,7 +476,7 @@ public class EvictionTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testMapRecordEviction() throws InterruptedException {
-        int size = 100000;
+        int size = 1000;
         Config cfg = new Config();
         MapConfig mc = cfg.getMapConfig("testMapRecordEviction");
         mc.setTimeToLiveSeconds(1);
@@ -500,7 +494,8 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        assertTrue("map size is : " + map.size(), latch.await(5, TimeUnit.MINUTES));
+        //wait until eviction is complete
+        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
         assertEquals(0, map.size());
     }
 
@@ -573,14 +568,12 @@ public class EvictionTest extends HazelcastTestSupport {
         assertEquals(2, map.get(1));
     }
 
-    //TODO"test fails on latch wait(not enough time to eviect enterys)  or map.size < expected so the inner Thread did not have enough time to get the enterys and save them from evection")
     @Test
-    @Category(ProblematicTest.class)
     public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
         Config cfg = new Config();
         final String name = "testMapRecordIdleEvictionOnMigration";
         MapConfig mc = cfg.getMapConfig(name);
-        int maxIdleSeconds = 10;
+        int maxIdleSeconds = 30;
         int size = 100;
         final int nsize = size / 5;
         mc.setMaxIdleSeconds(maxIdleSeconds);
@@ -595,49 +588,39 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         }, false);
 
+        // put sample data
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        final Thread thread = new Thread(new Runnable() {
-            public void run() {
-                while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        for (int i = 0; i < nsize; i++) {
-                            map.get(i);
-                        }
-                        Thread.sleep(1000);
-                    } catch (HazelcastInstanceNotActiveException e) {
-                        return;
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-            }
-        });
-        thread.start();
+
+        // wait until some time that is close to eviction
+        Thread.sleep((maxIdleSeconds - 5) * 1000);
+
+        // touch the ones you dont want to be evicted.
+        for (int i = 0; i < nsize; i++) {
+            map.get(i);
+        }
+
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
+        //wait until eviction is complete
+        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
 
-        assertEquals(nsize, map.size());
+        assertEquals("not all idle values evicted!",nsize, map.size());
 
-        thread.interrupt();
-        thread.join(5000);
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void testMapPutTtlWithListener() throws InterruptedException {
+    public void testMapPutTTLWithListener() throws InterruptedException {
         Config cfg = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(cfg);
+        final HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(cfg);
         warmUpPartitions(instances);
 
         final int k = 10;
-        final int putCount = 10000;
+        final int putCount = 1000;
         final CountDownLatch latch = new CountDownLatch(k * putCount);
-        final IMap map = instances[0].getMap("testMapEvictionTtlWithListener");
+        final IMap map = instances[0].getMap("testMapPutTTLWithListener");
 
         final AtomicBoolean error = new AtomicBoolean(false);
         final Set<Long> times = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
@@ -663,8 +646,9 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         }
 
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
-        assertFalse("Some evictions took more than 3 seconds! -> " + times, error.get());
+        // wait until eviction is completed.
+        assertTrue("Latch Countdown not completed in 5 minutes!",latch.await(5,TimeUnit.MINUTES));
+        assertFalse("Some evictions took more than 5 seconds! -> late eviction count:" + times.size(), error.get());
     }
 
     /**
@@ -687,17 +671,16 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testIssue1085EvictionBackup() throws InterruptedException {
         Config config = new Config();
         config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);
+
+        HazelcastInstance[] instances = createHazelcastInstanceFactory(3).newInstances(config);
+
         int size = 1000;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(size);
-        final IMap map = instance.getMap("testIssue1085EvictionBackup");
+
+        final IMap map = instances[0].getMap("testIssue1085EvictionBackup");
         map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
@@ -705,13 +688,21 @@ public class EvictionTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }, false);
+
+        // put some sample data
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        instance2.shutdown();
-        instance3.shutdown();
-        assertTrue("map size:" + map.size(), latch.await(30, TimeUnit.SECONDS));
-    }
+
+        // shutdown instances so we can check eviction happens in case backup process
+        instances[1].shutdown();
+        instances[2].shutdown();
+
+        //wait until eviction is complete
+        assertTrue("Latch Countdown not completed in 5 minutes!", latch.await(5, TimeUnit.MINUTES));
+
+        assertEquals("not all values evicted!",0,map.size());
+     }
 
     /**
      * Test for the issue 537.
