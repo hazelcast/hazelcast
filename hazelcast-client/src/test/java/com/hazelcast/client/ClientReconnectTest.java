@@ -31,9 +31,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -74,8 +74,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance();
         waitForClientReconnect(client, 5);
         m.put("key", "value");
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-
+        assertOpenEventually(latch, 10);
     }
 
 
