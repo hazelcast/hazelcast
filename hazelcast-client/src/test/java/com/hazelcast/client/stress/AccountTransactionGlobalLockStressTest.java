@@ -28,8 +28,6 @@ import static org.junit.Assert.fail;
  * so only one transfer can be run at a time.  we as the end check the total value of the accounts to assert we haven
  * not lost or gained value from the system
  */
-
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class AccountTransactionGlobalLockStressTest extends StressTestSupport {

@@ -116,8 +116,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
             expeted_transactionsProcessed += s.transactionsProcessed;
         }
 
-        System.out.println( "==>> procesed tnx "+processed.size()+" failed tnx "+failed.size());
-
         assertEquals("number of processed transactions not equal expeted", expeted_transactionsProcessed, processed.size());
 
         assertEquals("number of role Backs triggered and failed transaction count not equal", expeted_roleBacks, failed.size());
