@@ -111,7 +111,7 @@ public class MapContainer {
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
-            storeWrapper = new MapStoreWrapper(store, mapConfig.getName(), mapStoreConfig.isEnabled());
+            storeWrapper = new MapStoreWrapper(store, name, mapStoreConfig.isEnabled());
         } else {
             storeWrapper = null;
         }
