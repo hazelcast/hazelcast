@@ -93,7 +93,9 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
 
     @Test
-    //this test case randomly fails
+    //this test case randomly fails  looks like using a tryLock, some times blocks are will not return as the test some
+    //times fails with stress threads could not be joined  and we see some exceptions thrown
+    //ResponseAlreadySentException: NormalResponse already sent for callback:
     public void tryLock_testFixedCluster() {
 
         //CONTROL which test case we are checking
