@@ -139,17 +139,25 @@ This part of the page provides information related to memory usages for each nod
 First column lists the nodes with their IPs and ports. Then, used and free memories out of the total memory reserved for Hazelcast usage are shown, in real-time. **Max** column lists the maximum memory capacity of each node and **Percent** column lists the percentage value of used memory out of the maximum memory. The last column (**Used Memory(%)**) shows the memory usage of nodes graphically. When you move the mouse cursor on a desired graph, you can see the memory usage at the time to which cursor corresponds. In the above example, the memory usage at 10:53:55 (where the mouse cursor is on) is 32 MB. Graphs under this column shows the memory usages approximately for the last 2 minutes.
 
 ####Memory Distribution
+This part of the page graphically provides the cluster wise breakdown of memory, as shown below. Blue area is the memory used by maps, dark yellow area is the memory used by non-Hazelcast entities and green area is the free memory (out of whole cluster`s memory capacity).
 
 ![](images/Home-MemoryDistribution.jpg)
 
+In the above example, you can see 0.32% of the total memory is used by Hazelcast maps (it can be seen by moving the mouse cursor on it), 64.43% is used by non-Hazelcast entities and 35.24% of the total memory is free.
+
 ####Map Memory Distribution
+This part is actually the breakdown of the blue area shown in **Memory Distribution** graph explained above. It provides the percentage values of the memories used by each map, out of the total cluster memory reserved for all Hazelcast maps.
 
 ![](images/Home-MapMemoryDistribution.jpg)
 
-####Health Check
+In the above example, you can see 49.55% of the total map memory is used by **map1** and 49.55% is used by **map2**.
 
+####Health Check
+This part is useful to check how the cluster in general behaves. It lists the nodes (cluster members), locks and partition mismatches along with the information related to migrations and node interconnections. To see these, just click on the **Check Cluster Health** button. A sample is shown below.
 
 ![](images/Home-HealthCheckbuttonpressed.jpg)
+
+You can see each node's IP address and port by clicking on the plus sign at the **Members** 
 
 ####Partition Distribution
 
