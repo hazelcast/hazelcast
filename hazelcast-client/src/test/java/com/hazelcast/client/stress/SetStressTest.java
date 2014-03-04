@@ -53,6 +53,10 @@ public class SetStressTest extends StressTestSupport {
 
     @After
     public void tearDown() {
+
+        for(StressThread s: stressThreads){
+            s.instance.shutdown();
+        }
         super.tearDown();
     }
 

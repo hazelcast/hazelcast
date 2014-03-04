@@ -49,8 +49,13 @@ public class AtomicReferenceStressTest extends StressTestSupport {
 
     @After
     public void tearDown() {
+
+        for(StressThread s: stressThreads){
+            s.instance.shutdown();
+        }
         super.tearDown();
     }
+
 
     //@Test
     public void testChangingCluster() {

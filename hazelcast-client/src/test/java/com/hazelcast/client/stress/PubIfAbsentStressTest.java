@@ -7,6 +7,7 @@ import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,6 +54,15 @@ public class PubIfAbsentStressTest extends StressTestSupport {
                 stressThreads[index++] = t;
             }
         }
+    }
+
+    @After
+    public void tearDown() {
+
+        for(StressThread s: stressThreads){
+            s.instance.shutdown();
+        }
+        super.tearDown();
     }
 
     //@Test

@@ -7,6 +7,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,6 +55,14 @@ public class AtomicLongAddStressTest extends StressTestSupport {
         }
     }
 
+    @After
+    public void tearDown() {
+
+        for(StressThread s: stressThreads){
+            s.instance.shutdown();
+        }
+        super.tearDown();
+    }
 
     @Test
     public void testChangingCluster() {
