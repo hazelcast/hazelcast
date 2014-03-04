@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
@@ -26,15 +27,12 @@ import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public abstract class HazelcastTestSupport {
 
@@ -56,9 +54,9 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-               assertEquals("the size of the collection is correct",expectedSize, c.size());
+                assertEquals("the size of the collection is correct", expectedSize, c.size());
             }
-        },timeoutSeconds);
+        }, timeoutSeconds);
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -95,6 +93,19 @@ public abstract class HazelcastTestSupport {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void waitForClientReconnect(HazelcastInstance client, int timeoutSeconds) {
+        final Cluster cluster = client.getCluster();
+        long iterations = timeoutSeconds * 5;
+        int sleepMillis = 200;
+        for (int i = 0; i < iterations; i++) {
+            if (cluster.getMembers().size() != 0) {
+                return;
+            }
+            sleepMillis(sleepMillis);
+        }
+        throw new AssertionError("Client cannot reconnect in " + timeoutSeconds + " seconds");
     }
 
     public static void sleepSeconds(int seconds) {
