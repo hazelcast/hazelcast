@@ -37,7 +37,7 @@ public class MapStableReadStressTest extends StressTestSupport {
         super.setUp();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         client = HazelcastClient.newHazelcastClient(clientConfig);
 
         map = client.getMap("map");
