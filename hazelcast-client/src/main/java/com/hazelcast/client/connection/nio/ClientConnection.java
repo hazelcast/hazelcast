@@ -159,6 +159,7 @@ public class ClientConnection implements Connection, Closeable {
                     readFromSocket = false;
                 } else {
                     readBuffer.compact();
+                    readFromSocket = true;
                 }
                 return packet.getData();
             }

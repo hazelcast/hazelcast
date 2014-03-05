@@ -38,6 +38,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -308,6 +309,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(uuid);
+        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
