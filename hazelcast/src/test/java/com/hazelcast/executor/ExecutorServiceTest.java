@@ -458,7 +458,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCancellationAwareTask() {
+    public void testCancellationAwareTask() throws ExecutionException, InterruptedException {
         CancellationAwareTask task = new CancellationAwareTask(5000);
         ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask");
         Future future = executor.submit(task);
@@ -466,8 +466,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             future.get(2, TimeUnit.SECONDS);
             fail("Should throw TimeoutException!");
         } catch (TimeoutException expected) {
-        } catch (Exception e) {
-            fail("No other Exception!! -> " + e);
         }
         assertFalse(future.isDone());
         assertTrue(future.cancel(true));

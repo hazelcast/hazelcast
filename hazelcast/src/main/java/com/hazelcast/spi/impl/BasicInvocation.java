@@ -501,7 +501,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
     }
 
-    private class InvocationFuture<E> implements InternalCompletableFuture<E> {
+    private final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         volatile ExecutionCallbackNode<E> callbackHead;
         volatile Object response;
@@ -509,10 +509,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
         private InvocationFuture(final Callback<E> callback) {
             if (callback != null) {
-                callbackHead = new ExecutionCallbackNode<E>(new ExecutorCallbackAdapter<E>(callback), getAsyncExecutor(), null);
+                ExecutorCallbackAdapter<E> adapter = new ExecutorCallbackAdapter<E>(callback);
+                callbackHead = new ExecutionCallbackNode<E>(adapter, getAsyncExecutor(), null);
             }
         }
 
+        @Override
         public void andThen(ExecutionCallback<E> callback, Executor executor) {
             isNotNull(callback, "callback");
             isNotNull(executor, "executor");
@@ -527,6 +529,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             }
         }
 
+        @Override
         public void andThen(ExecutionCallback<E> callback) {
             andThen(callback, getAsyncExecutor());
         }
@@ -536,20 +539,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 @Override
                 public void run() {
                     try {
-                        Object resp = response;
-                        if(resultDeserialized && resp instanceof Data){
-                            resp = nodeEngine.toObject(resp);
-                        }
+                        Object resp = resolveResponse(response);
 
-                        if (resp instanceof NormalResponse) {
-                            final NormalResponse responseObj = (NormalResponse) resp;
-                            callback.onResponse((E) responseObj.getValue());
-                        } else if (resp == NULL_RESPONSE) {
-                            callback.onResponse(null);
-                        } else if (resp instanceof Throwable) {
-                            callback.onFailure((Throwable) resp);
-                        } else {
-                            callback.onResponse((E) resp);
+                        if(resp == null || !(resp instanceof Throwable)){
+                            callback.onResponse((E)resp);
+                        }else{
+                            callback.onFailure((Throwable)resp);
                         }
                     } catch (Throwable t) {
                         //todo: improved error message
@@ -609,6 +604,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         @Override
         public E getSafely() {
             try {
+                //todo:
+                //this method is quite inefficient when there is unchecked exception, because it will be wrapped
+                //in a ExecutionException, and then it is unwrapped again.
                 return get();
             } catch (Throwable throwable) {
                 throw ExceptionUtil.rethrow(throwable);
@@ -617,8 +615,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
         @Override
         public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            Object response = waitForResponse(timeout, unit);
-            return (E) resolveResponse(response);
+            Object unresolvedResponse = waitForResponse(timeout, unit);
+            return (E) resolveResponseOrThrowException(unresolvedResponse);
         }
 
         private Object waitForResponse(long time, TimeUnit unit) {
@@ -688,39 +686,81 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return TIMEOUT_RESPONSE;
         }
 
-        private Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
-            if(resultDeserialized && response instanceof Data){
+        private Object resolveResponseOrThrowException(Object unresolvedResponse)
+                throws ExecutionException, InterruptedException, TimeoutException {
+
+            Object response = resolveResponse(unresolvedResponse);
+
+            if(response == null || !(response instanceof Throwable)){
+                return response;
+            }
+
+            if (response instanceof ExecutionException) {
+                throw (ExecutionException) response;
+            }
+
+            if (response instanceof TimeoutException) {
+                throw (TimeoutException) response;
+            }
+
+            if (response instanceof InterruptedException) {
+                throw (InterruptedException) response;
+            }
+
+            if (response instanceof Error) {
+                throw (Error) response;
+            }
+
+            // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
+            throw new ExecutionException((Throwable) response);
+        }
+
+        private Object resolveResponse(Object unresolvedResponse) {
+            if (unresolvedResponse == NULL_RESPONSE) {
+                return null;
+            }
+
+            if (unresolvedResponse == TIMEOUT_RESPONSE) {
+                return new TimeoutException("Call " + BasicInvocation.this + " encountered a timeout");
+            }
+
+            if (unresolvedResponse == INTERRUPTED_RESPONSE) {
+                return new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
+            }
+
+            Object response = unresolvedResponse;
+            if (resultDeserialized && response instanceof Data) {
                 response = nodeEngine.toObject(response);
+                if (response == null) {
+                    return null;
+                }
+            }
+
+            if (response instanceof NormalResponse) {
+                NormalResponse responseObj = (NormalResponse) response;
+                response = responseObj.getValue();
+
+                if (response == null) {
+                    return null;
+                }
+
+                //it could be that the value of the response is Data.
+                if (resultDeserialized && response instanceof Data) {
+                    response = nodeEngine.toObject(response);
+                    if (response == null) {
+                        return null;
+                    }
+                }
             }
 
             if (response instanceof Throwable) {
+                Throwable throwable = ((Throwable) response);
                 if (remote) {
                     fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
                 }
-                // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
-                if (response instanceof ExecutionException) {
-                    throw (ExecutionException) response;
-                }
-                if (response instanceof TimeoutException) {
-                    throw (TimeoutException) response;
-                }
-                if (response instanceof Error) {
-                    throw (Error) response;
-                }
-                if (response instanceof InterruptedException) {
-                    throw (InterruptedException) response;
-                }
-                throw new ExecutionException((Throwable) response);
+                return throwable;
             }
-            if (response == NULL_RESPONSE) {
-                return null;
-            }
-            if (response == TIMEOUT_RESPONSE) {
-                throw new TimeoutException();
-            }
-            if (response == INTERRUPTED_RESPONSE) {
-                throw new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
-            }
+
             return response;
         }
 
@@ -739,15 +779,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return response != null;
         }
 
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("InvocationFuture{");
-            sb.append("invocation=").append(BasicInvocation.this.toString());
-            sb.append(", done=").append(isDone());
-            sb.append('}');
-            return sb.toString();
-        }
-
         private boolean isOperationExecuting(Address target) {
             // ask if op is still being executed?
             Boolean executing = Boolean.FALSE;
@@ -764,6 +795,15 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             // TODO: @mm - improve logging (see SystemLogService)
             logger.warning("'is-executing': " + executing + " -> " + toString());
             return executing;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("InvocationFuture{");
+            sb.append("invocation=").append(BasicInvocation.this.toString());
+            sb.append(", done=").append(isDone());
+            sb.append('}');
+            return sb.toString();
         }
     }
 
