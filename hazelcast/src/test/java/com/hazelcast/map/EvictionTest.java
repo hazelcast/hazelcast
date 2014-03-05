@@ -727,4 +727,43 @@ public class EvictionTest extends HazelcastTestSupport {
         Thread.sleep(2000);
         assertEquals(1, count.get());
     }
+
+    /** Tests If Map operations operate as if eviction is done
+     *  while eviction process is ongoing
+     */
+    @Test
+    public void testEvictedValueOperations() throws InterruptedException {
+        int size = 1000;
+        Config cfg = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
+        final CountDownLatch latch = new CountDownLatch(size);
+
+        IMap map = instances[0].getMap("testMapWideEviction");
+        map.addEntryListener(new EntryAdapter<Object, Object>() {
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+                latch.countDown();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, true);
+
+        for (int i = 0; i < size; i++) {
+            map.put(i, i, 1, TimeUnit.SECONDS);
+        }
+        Thread.sleep(1000);
+
+        for (int i = size - 1; i > -1; i--) {
+            assertNull("value is not null :" + i, map.get(i));
+        }
+
+        assertTrue(map.size() == 0);
+        assertTrue("all entries are evicted! test is invalid!", latch.getCount() > 0);
+
+
+    }
 }
