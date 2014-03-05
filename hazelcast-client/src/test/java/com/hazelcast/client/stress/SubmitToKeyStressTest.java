@@ -30,7 +30,6 @@ public class SubmitToKeyStressTest extends StressTestSupport {
     public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
     public static int THREADS_PER_INSTANCE = 5;
 
-
     private static final String MAP_NAME = "submitToKeys";
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
@@ -56,7 +55,6 @@ public class SubmitToKeyStressTest extends StressTestSupport {
             }
         }
     }
-
 
     @After
     public void tearDown() {
@@ -88,7 +86,6 @@ public class SubmitToKeyStressTest extends StressTestSupport {
 
         assertEquals(total, map.get(0));
     }
-
 
     public class StressThread extends TestThread{
 

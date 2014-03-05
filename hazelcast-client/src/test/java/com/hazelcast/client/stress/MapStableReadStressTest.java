@@ -69,7 +69,6 @@ public class MapStableReadStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
     private void fillMap() {
         System.out.println("==================================================================");
         System.out.println("Inserting data in map");

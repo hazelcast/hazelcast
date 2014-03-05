@@ -39,17 +39,16 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
     private IMap<Long, FailedTransferRecord> failed;
     private IMap<Integer, Account> accounts;
 
-
     public static final int TOTAL_HZ_CLIENT_INSTANCES = 3;
     public static final int THREADS_PER_INSTANCE = 5;
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
-    protected static final int MAX_ACCOUNTS = 200;
+    //keeping number of accounts low for high Lock contention as we are locking on map keys (account numbers)
+    protected static final int MAX_ACCOUNTS = 3;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
-
 
     @Before
     public void setUp() {
@@ -99,7 +98,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
     public void assertResult() {
 
         long acutalValue=0;
@@ -121,7 +119,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
 
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, acutalValue);
     }
-
 
     public class StressThread extends TestThread{
 

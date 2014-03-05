@@ -40,7 +40,6 @@ public class MapUpdateStressTest extends StressTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
-
         client = HazelcastClient.newHazelcastClient(clientConfig);
         map = client.getMap("map");
 

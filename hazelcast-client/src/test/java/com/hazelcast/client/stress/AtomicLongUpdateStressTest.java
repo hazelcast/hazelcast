@@ -6,6 +6,7 @@ import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -27,7 +28,7 @@ import static org.junit.Assert.fail;
 public class AtomicLongUpdateStressTest extends StressTestSupport {
 
     public static final int CLIENT_THREAD_COUNT = 5;
-    public static final int REFERENCE_COUNT = 10 * 1000;
+    public static final int REFERENCE_COUNT = 1; ////10 * 1000;
 
     private HazelcastInstance client;
     private IAtomicLong[] references;
@@ -39,8 +40,8 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
-
         client = HazelcastClient.newHazelcastClient(clientConfig);
+
         references = new IAtomicLong[REFERENCE_COUNT];
         for (int k = 0; k < references.length; k++) {
             references[k] = client.getAtomicLong("atomicreference:" + k);
@@ -64,6 +65,8 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
 
     @Test
     public void testChangingCluster() {
+
+        setKillThread( new KillMemberOwningKeyThread("atomicreference:" + 0) );
         runTest(true, stressThreads);
     }
 
@@ -71,7 +74,6 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
     public void testFixedCluster() {
         runTest(false, stressThreads);
     }
-
 
     public void assertResult() {
         int[] increments = new int[REFERENCE_COUNT];

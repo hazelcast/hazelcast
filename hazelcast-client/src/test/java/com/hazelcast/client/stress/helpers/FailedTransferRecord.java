@@ -11,8 +11,6 @@ public class FailedTransferRecord implements Serializable{
     private int from;
     private int to;
     private long amount;
-
-
     private String reason;
 
     public FailedTransferRecord(int from, int to, long amount){
@@ -47,7 +45,6 @@ public class FailedTransferRecord implements Serializable{
         this.amount = amount;
     }
 
-
     public long getId(){
         return id;
     }
@@ -59,7 +56,6 @@ public class FailedTransferRecord implements Serializable{
     public void setReason(String reason) {
         this.reason = reason;
     }
-
 
     @Override
     public String toString() {

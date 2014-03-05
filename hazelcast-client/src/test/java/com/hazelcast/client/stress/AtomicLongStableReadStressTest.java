@@ -68,7 +68,6 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
     private void initializeReferences() {
         System.out.println("==================================================================");
         System.out.println("Initializing references");
@@ -82,7 +81,6 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         System.out.println("Completed with initializing references");
         System.out.println("==================================================================");
     }
-
 
     public class StressThread extends TestThread {
 

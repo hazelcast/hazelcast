@@ -11,7 +11,6 @@ public class EntryCounter implements EntryListener {
     public AtomicLong totalAdded= new AtomicLong();
     public AtomicLong totalUpdated= new AtomicLong();
 
-
     @Override
     public void entryAdded(EntryEvent event) {
         totalAdded.incrementAndGet();

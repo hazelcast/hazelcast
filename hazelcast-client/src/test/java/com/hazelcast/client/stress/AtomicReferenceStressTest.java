@@ -46,7 +46,6 @@ public class AtomicReferenceStressTest extends StressTestSupport {
         }
     }
 
-
     @After
     public void tearDown() {
 
@@ -55,7 +54,6 @@ public class AtomicReferenceStressTest extends StressTestSupport {
         }
         super.tearDown();
     }
-
 
     //@Test
     public void testChangingCluster() {
@@ -79,7 +77,6 @@ public class AtomicReferenceStressTest extends StressTestSupport {
 
         assertEquals(expeted+" has failed writes ", total, (long) expeted.get());
     }
-
 
     public class StressThread extends TestThread{
 

@@ -16,6 +16,7 @@ import static org.junit.Assert.assertNull;
 
 public abstract class StressTestSupport extends HazelcastTestSupport {
 
+    public final static AtomicLong ID_GENERATOR = new AtomicLong(1);
     //todo: should be system property
     public static int RUNNING_TIME_SECONDS = 10;
     //todo: should be system property
@@ -112,7 +113,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     */
     public void assertResult(){}
 
-
     protected final void setStopOnError(boolean stopOnError) {
         this.stopOnError = stopOnError;
     }
@@ -151,8 +151,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         assertNoErrors(threads);
     }
 
-    public final static AtomicLong ID_GENERATOR = new AtomicLong(1);
-
     public abstract class TestThread extends Thread {
         private volatile Throwable error;
         protected final Random random = new Random();
@@ -181,7 +179,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
         public abstract void doRun() throws Exception;
     }
-
 
     public class KillMemberThread extends TestThread {
 

@@ -56,7 +56,6 @@ public class Account implements Serializable {
         return  tr;
     }
 
-
     @Override
     public String toString() {
         return "Account{" +

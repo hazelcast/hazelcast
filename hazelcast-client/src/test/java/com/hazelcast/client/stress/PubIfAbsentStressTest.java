@@ -75,9 +75,7 @@ public class PubIfAbsentStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
     public void assertResult() {
-
         //there should be no intersection of the set ok keys put but any threads
         for ( int i = 0; i < stressThreads.length; i++ ) {
             for ( int j = i+1; j < stressThreads.length; j++ ) {
@@ -109,7 +107,6 @@ public class PubIfAbsentStressTest extends StressTestSupport {
 
         assertEquals("total putCount and map size don't match", total, map.size());
     }
-
 
     public class StressThread extends TestThread {
 
@@ -145,6 +142,5 @@ public class PubIfAbsentStressTest extends StressTestSupport {
             }
         }
     }
-
 
 }

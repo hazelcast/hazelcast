@@ -26,7 +26,7 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class AtomicLongAddStressTest extends StressTestSupport {
 
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public static int TOTAL_HZ_CLIENT_INSTANCES = 1;
     public static int THREADS_PER_INSTANCE = 5;
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
@@ -75,7 +75,6 @@ public class AtomicLongAddStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
     @Override
     public void assertResult() {
 
@@ -89,7 +88,6 @@ public class AtomicLongAddStressTest extends StressTestSupport {
 
         assertEquals(acutal+" has value "+acutal.get(), expetedTotal, acutal.get());
     }
-
 
     public class StressThread extends TestThread{
 

@@ -39,11 +39,11 @@ public class AccountTransactionStressTest extends StressTestSupport {
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
-    protected static final int MAX_ACCOUNTS = 200;
+    //low number of accounts for high lock contention
+    protected static final int MAX_ACCOUNTS = 3;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
-
 
     @Before
     public void setUp() {
@@ -98,7 +98,6 @@ public class AccountTransactionStressTest extends StressTestSupport {
 
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
-
 
     public class StressThread extends TestThread{
 

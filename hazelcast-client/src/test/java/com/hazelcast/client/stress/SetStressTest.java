@@ -85,7 +85,6 @@ public class SetStressTest extends StressTestSupport {
         assertEquals(expected+" total count != set size ", total, (long) expected.size());
     }
 
-
     public class StressThread extends TestThread{
 
         private HazelcastInstance instance;

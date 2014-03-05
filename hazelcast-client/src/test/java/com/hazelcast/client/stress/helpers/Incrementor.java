@@ -6,7 +6,6 @@ import java.util.Map;
 
 public class Incrementor implements EntryProcessor<Object, Integer> {
 
-
     public Object process(Map.Entry<Object, Integer> entry) {
 
         int v = entry.getValue();

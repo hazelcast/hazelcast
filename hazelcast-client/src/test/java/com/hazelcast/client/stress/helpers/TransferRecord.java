@@ -12,18 +12,14 @@ public class TransferRecord implements Serializable{
     private Account from;
     private Account to;
     private long amount;
-
     private boolean decliened=true;
-
     private String reason;
 
     public TransferRecord(Account from, Account to, long amount){
         id = ID_GENERATOR.getAndIncrement();
 
-
         this.from = new Account(from);
         this.to = new Account(to);
-
         this.amount = amount;
     }
 
@@ -70,7 +66,6 @@ public class TransferRecord implements Serializable{
     public void setReason(String reason) {
         this.reason = reason;
     }
-
 
     @Override
     public String toString() {

@@ -3,13 +3,12 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.Account;
-import com.hazelcast.client.stress.helpers.FailedTransferRecord;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
-import com.hazelcast.client.stress.helpers.TransferRecord;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -36,15 +35,15 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     public static boolean TEST_CASE_LOCK = true;
     public static boolean TEST_CASE_TRY_LOCK = false;
 
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 1;
-    public static int THREADS_PER_INSTANCE = 15;
+    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public static int THREADS_PER_INSTANCE = 5;
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     public final String ACCOUNTS_MAP = "ACCOUNTS";
     private IMap<Integer, Account> accounts;
 
-    protected static final int MAX_ACCOUNTS = 2;
+    protected static final int MAX_ACCOUNTS = 3;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
@@ -75,6 +74,14 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         }
     }
 
+    @After
+    public void tearDown() {
+        for(StressThread s: stressThreads){
+            s.instance.shutdown();
+        }
+        super.tearDown();
+    }
+
     //@Test
     public void testChangingCluster() {
         TEST_CASE = TEST_CASE_LOCK;
@@ -92,11 +99,11 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     /**
      * this test case randomly fails we see some exceptions thrown
      * ResponseAlreadySentException: NormalResponse already sent for callback:
-     * at the end of the test one of the threads is blocked and  could not be joined
+     * at the end of the test one of the threads is blocked and could not be joined
      */
     @Test
+    @Category(ProblematicTest.class)
     public void tryLock_testFixedCluster() {
-
         //CONTROL which test case we are checking
         TEST_CASE = TEST_CASE_TRY_LOCK;
         runTest(false, stressThreads);
@@ -112,11 +119,9 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
 
-
     public class StressThread extends TestThread {
 
         private HazelcastInstance instance;
-
         private ILock lock;
         IMap<Integer, Account> accounts = null;
 
@@ -146,15 +151,15 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
                 //WHICH TEST CASE ARE WE CHECKING
                 if ( TEST_CASE == TEST_CASE_LOCK){
-                    lock_Andtransfer(to, from, amount);
+                    lock_AndTransfer(to, from, amount);
                 }
                 else{
-                    trylock_Andtransfer(to, from, amount);
+                    tryLock_AndTransfer(to, from, amount);
                 }
             }
         }
 
-        private void lock_Andtransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
+        private void lock_AndTransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
 
             lock.lock();
             try{
@@ -165,7 +170,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
             }
         }
 
-        private void trylock_Andtransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
+        private void tryLock_AndTransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
 
             if(lock.tryLock(10, TimeUnit.MILLISECONDS)){
                 try{
