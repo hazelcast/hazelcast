@@ -194,22 +194,31 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        return (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) invokeOperation(key, operation);
+        invalidateLocalNearCache(key);
+        return previousValue;
     }
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
         TryPutOperation operation = new TryPutOperation(name, key, value, getTimeInMillis(timeout, timeunit));
-        return (Boolean) invokeOperation(key, operation);
+        boolean putSuccessful = (Boolean) invokeOperation(key, operation);
+        if (putSuccessful) {
+            invalidateLocalNearCache(key);
+        }
+        return putSuccessful;
     }
 
     protected Data putIfAbsentInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        return (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) invokeOperation(key, operation);
+        invalidateLocalNearCache(key);
+        return previousValue;
     }
 
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutTransientOperation operation = new PutTransientOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         invokeOperation(key, operation);
+        invalidateLocalNearCache(key);
     }
 
     private Object invokeOperation(Data key, KeyBasedMapOperation operation) {
@@ -249,7 +258,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            ICompletableFuture<Data> future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            invalidateLocalNearCache(key);
+            return future;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -277,22 +288,46 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Data removeInternal(Data key) {
         RemoveOperation operation = new RemoveOperation(name, key);
-        return (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) invokeOperation(key, operation);
+        invalidateLocalNearCache(key);
+        return previousValue;
     }
 
     protected void deleteInternal(Data key) {
         RemoveOperation operation = new RemoveOperation(name, key);
         invokeOperation(key, operation);
+        invalidateLocalNearCache(key);
+    }
+
+    private void invalidateLocalNearCache(Data key) {
+        // invalidate local near cache to ensure this thread does not see its old state
+        // note: this is a local-only operation and therefore fast and safe to execute
+        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        if (nearCacheEnabled) {
+            final boolean cacheLocalEntries = mapConfig.getNearCacheConfig().isCacheLocalEntries();
+            if (cacheLocalEntries) {
+                final MapService mapService = getService();
+                mapService.invalidateNearCache(name, key);
+            }
+        }
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
         RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value);
-        return (Boolean) invokeOperation(key, operation);
+        boolean removed = (Boolean) invokeOperation(key, operation);
+        if (removed) {
+            invalidateLocalNearCache(key);
+        }
+        return removed;
     }
 
     protected boolean tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) {
         TryRemoveOperation operation = new TryRemoveOperation(name, key, getTimeInMillis(timeout, timeunit));
-        return (Boolean) invokeOperation(key, operation);
+        boolean removed = (Boolean) invokeOperation(key, operation);
+        if (removed) {
+            invalidateLocalNearCache(key);
+        }
+        return removed;
     }
 
     protected ICompletableFuture<Data> removeAsyncInternal(final Data key) {
@@ -301,7 +336,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         RemoveOperation operation = new RemoveOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            ICompletableFuture<Data> future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            invalidateLocalNearCache(key);
+            return future;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
