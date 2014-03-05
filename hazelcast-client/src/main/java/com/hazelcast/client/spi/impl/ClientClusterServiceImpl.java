@@ -241,8 +241,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
-                    members.clear();
-                    updateMembersRef();
                     fireConnectionEvent(true);
                 }
                 try {

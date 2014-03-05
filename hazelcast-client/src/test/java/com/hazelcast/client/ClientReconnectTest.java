@@ -16,11 +16,13 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,6 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
@@ -52,8 +56,8 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
-        Hazelcast.newHazelcastInstance();
-        waitForClientReconnect(client, 5);
+        final HazelcastInstance newInstance = Hazelcast.newHazelcastInstance();
+        waitForClientReconnect(client, newInstance);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
     }
@@ -71,10 +75,29 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         };
         m.addEntryListener(listener, true);
         h1.shutdown();
-        Hazelcast.newHazelcastInstance();
-        waitForClientReconnect(client, 5);
+        Thread.sleep(1000);
+        final HazelcastInstance newInstance = Hazelcast.newHazelcastInstance();
+        waitForClientReconnect(client, newInstance);
         m.put("key", "value");
         assertOpenEventually(latch, 10);
+    }
+
+
+    public static void waitForClientReconnect(HazelcastInstance client, HazelcastInstance instance) {
+        final Cluster cluster = client.getCluster();
+        int sleepMillis = 200;
+        for (int i = 0; i < 50; i++) {
+            final Set<Member> members = cluster.getMembers();
+            final Iterator<Member> iterator = members.iterator();
+            if (iterator.hasNext()) {
+                final Member member = iterator.next();
+                if( member.getUuid().equals(instance.getLocalEndpoint().getUuid())){
+                    return;
+                }
+            }
+            sleepMillis(sleepMillis);
+        }
+        throw new AssertionError("Client cannot reconnect in 10 seconds");
     }
 
 
