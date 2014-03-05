@@ -26,15 +26,12 @@ import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public abstract class HazelcastTestSupport {
 
@@ -63,6 +60,20 @@ public abstract class HazelcastTestSupport {
 
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
+    }
+
+    public static void assertIterableEquals(Iterable iter, Object... values) {
+        int counter = 0;
+        for (Object o : iter) {
+            if (values.length < counter + 1) {
+                throw new AssertionError("Iterator and values sizes are not equal");
+            }
+            assertEquals(values[counter], o);
+            counter++;
+        }
+        if (values.length != counter) {
+            throw new AssertionError("Iterator and values sizes are not equal");
+        }
     }
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
