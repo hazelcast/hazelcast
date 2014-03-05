@@ -30,7 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConstructorFunction;
@@ -64,24 +63,24 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         //init socketInterceptor
         SocketInterceptorConfig sic = config.getSocketInterceptorConfig();
         if (sic != null && sic.isEnabled()) {
-            SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
+            Object implementation = sic.getImplementation();
             if (implementation == null && sic.getClassName() != null) {
                 try {
-                    implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
+                    implementation = Class.forName(sic.getClassName()).newInstance();
                 } catch (Throwable e) {
                     logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
                 }
             }
             if (implementation != null) {
-                if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                if (!(implementation instanceof SocketInterceptor)) {
+                    logger.severe( "SocketInterceptor must be instance of " + SocketInterceptor.class.getName());
                     implementation = null;
                 } else {
                     logger.info("SocketInterceptor is enabled");
                 }
             }
             if (implementation != null) {
-                socketInterceptor =  implementation;
+                socketInterceptor =  (SocketInterceptor)implementation;
                 socketInterceptor.init(sic.getProperties());
             } else {
                 socketInterceptor = null;
