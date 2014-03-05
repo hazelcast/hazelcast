@@ -36,8 +36,8 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     public static boolean TEST_CASE_LOCK = true;
     public static boolean TEST_CASE_TRY_LOCK = false;
 
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static int THREADS_PER_INSTANCE = 5;
+    public static int TOTAL_HZ_CLIENT_INSTANCES = 1;
+    public static int THREADS_PER_INSTANCE = 15;
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
@@ -77,22 +77,22 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
+        TEST_CASE = TEST_CASE_LOCK;
         setKillThread(new KillMemberThread());
         runTest(true, stressThreads);
     }
 
     @Test
     public void lock_testFixedCluster() {
-
         //CONTROL which test case we are checking
         TEST_CASE = TEST_CASE_LOCK;
         runTest(false, stressThreads);
     }
 
     /**
-     * this test case randomly fails  looks like using a tryLock, some times blocks are will not return as the test some
-     * times fails with stress threads could not be joined  and we see some exceptions thrown
+     * this test case randomly fails we see some exceptions thrown
      * ResponseAlreadySentException: NormalResponse already sent for callback:
+     * at the end of the test one of the threads is blocked and  could not be joined
      */
     @Test
     public void tryLock_testFixedCluster() {

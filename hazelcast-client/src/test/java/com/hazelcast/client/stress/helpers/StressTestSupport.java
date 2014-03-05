@@ -86,13 +86,11 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
                 return false;
             }
         }
-
         stopTest();
 
         System.out.println("==================================================================");
         System.out.println("Test completed.");
         System.out.println("==================================================================");
-
         return true;
     }
 
