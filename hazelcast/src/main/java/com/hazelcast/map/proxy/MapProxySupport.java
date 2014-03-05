@@ -132,7 +132,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (nearCacheEnabled) {
             Object cached = mapService.getFromNearCache(name, key);
             if (cached != null) {
-                if (cached.equals(NearCache.NULL_OBJECT)) {
+                if (NearCache.NULL_OBJECT.equals(cached)) {
                     cached = null;
                 }
                 mapService.interceptAfterGet(name, cached);
@@ -176,7 +176,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
             Object cached = mapService.getFromNearCache(name, key);
-            if (cached != null && NearCache.NULL_OBJECT.equals(cached)) {
+            if (cached != null) {
+                if (NearCache.NULL_OBJECT.equals(cached)) {
+                    cached = null;
+                }
                 return new CompletedFuture<Data>(
                         nodeEngine.getSerializationService(),
                         cached,
@@ -450,8 +453,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             while (iterator.hasNext()) {
                 Data key = iterator.next();
                 Object cachedValue = mapService.getFromNearCache(name, key);
-                if (cachedValue != null && !NearCache.NULL_OBJECT.equals(cachedValue)) {
-                    result.put(key, cachedValue);
+                if (cachedValue != null) {
+                    if (!NearCache.NULL_OBJECT.equals(cachedValue)) {
+                        result.put(key, cachedValue);
+                    }
                     iterator.remove();
                 }
             }
