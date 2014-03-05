@@ -16,7 +16,9 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -42,6 +44,26 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     public void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+    @Test(timeout = 40000)
+    public void testChangeMemberAttributes() throws Exception {
+        final int count = 1000;
+
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final ClientConfig config = new ClientConfig();
+        final ListenerConfig listenerConfig = new ListenerConfig();
+        final CountDownLatch countDownLatch = new CountDownLatch(count);
+        listenerConfig.setImplementation(new LatchMembershipListener(countDownLatch));
+        config.addListenerConfig(listenerConfig);
+        HazelcastClient.newHazelcastClient(config);
+
+        final Member localMember = instance.getCluster().getLocalMember();
+        for (int i = 0; i < count; i++) {
+            localMember.setStringAttribute("key" + i, HazelcastTestSupport.randomString());
+        }
+
+        assertOpenEventually(countDownLatch, 30);
     }
 
     @Test(timeout = 120000)

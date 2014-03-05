@@ -91,7 +91,10 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        member.writeData(out);
+        out.writeBoolean(member != null);
+        if (member != null) {
+            member.writeData(out);
+        }
         out.writeInt(eventType);
         out.writeBoolean(memberAttributeChange != null);
         if (memberAttributeChange != null) {
@@ -101,8 +104,10 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        member = new MemberImpl();
-        member.readData(in);
+        if (in.readBoolean()) {
+            member = new MemberImpl();
+            member.readData(in);
+        }
         eventType = in.readInt();
         if (in.readBoolean()) {
             memberAttributeChange = new MemberAttributeChange();
