@@ -32,7 +32,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     private MemberAttributeOperationType operationType;
     private String key;
     private Object value;
-    private Member member;
+    private Member member; // never serialized!
 
     public MemberAttributeEvent() {
         super(null, null, MEMBER_ATTRIBUTE_CHANGED, null);
@@ -65,7 +65,6 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(key);
-        member.writeData(out);
         out.writeByte(operationType.id);
         if (operationType == PUT) {
             IOUtil.writeAttributeValue(value,out);
@@ -75,8 +74,6 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = in.readUTF();
-        member = new MemberImpl();
-        member.readData(in);
         operationType = MemberAttributeOperationType.getValue(in.readByte());
         if (operationType == PUT) {
             value = IOUtil.readAttributeValue(in);
