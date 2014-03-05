@@ -102,7 +102,7 @@ public abstract class HazelcastTestSupport {
     public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
-            assertTrue("CountDownLatch failed to complete within " + timeoutSeconds + " seconds", completed);
+            assertTrue("CountDownLatch failed to complete within " + timeoutSeconds + " seconds , count left:" + latch.getCount(), completed);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
