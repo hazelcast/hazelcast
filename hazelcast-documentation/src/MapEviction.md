@@ -6,7 +6,7 @@ LRU (Least Recently Used) and LFU (Least Frequently Used). This feature enables 
 a distributed cache. If `time-to-live-seconds` is not 0 then entries older than `time-to-live-seconds` value will get evicted,
 regardless of the eviction policy set. Here is a sample configuration for eviction:
 
-<b>Note that LRU/LFU evictions work when statistics enabled.
+Note that LRU/LFU evictions work when statistics enabled.
 
 ```xml
 <hazelcast>
