@@ -83,7 +83,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
 
     @After
     public void tearDown() {
-
         for(StressThread s: stressThreads){
             s.instance.shutdown();
         }
@@ -133,7 +132,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
         public int roleBacksTriggered =0;
 
         public StressThread(HazelcastInstance node){
-
             instance = node;
             accounts = instance.getMap(ACCOUNTS_MAP);
         }
@@ -155,7 +153,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
                 transfer(from, to, amount);
             }
         }
-
 
         //this method is responsible to obtaining the lock to do the transaction for the 2 accounts
         //and releasing the locks in the event of any thrown exceptions
@@ -180,8 +177,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
             } catch (InterruptedException e) {
             }
         }
-
-
 
         private void transferInTransactionContext(int fromAccountNumber, int toAccountNumber, long amount){
 

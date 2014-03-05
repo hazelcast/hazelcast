@@ -96,7 +96,6 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         return true;
     }
 
-
     /**
     * run all test threads for set amount of time
     * and wait for them to finish with a join,
