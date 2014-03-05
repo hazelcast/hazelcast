@@ -13,12 +13,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -30,7 +29,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     private static final TimeUnit timeunit = TimeUnit.MILLISECONDS;
 
-    private static final String mapName = generateMapName();
+    private static final String mapName = randomString();
 
     private HazelcastInstance hcInstance;
 
@@ -68,10 +67,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String value2 = map.remove(key);
             String value3 = map.get(key); // here we _might_ still see the value
 
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1.equals(value));
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
-            assertTrue("Wrong value3: " + key + "=" + value3, value3 == null);
+            assertNull(value0);
+            assertEquals(value,value1);
+            assertEquals(value, value2);
+            assertNull(value3);
 
         }
     }
@@ -89,9 +88,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.delete(key);
             String value3 = map.get(key); // here we _might_ still see the value
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1.equals(value));
-            assertTrue("Wrong value3: " + key + "=" + value3, value3 == null);
+            assertNull(value0);
+            assertEquals(value,value1);
+            assertNull(value3);
         }
     }
 
@@ -107,9 +106,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.remove(key, value);
             String value3 = map.get(key); // here we _might_ still see the value
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1.equals(value));
-            assertTrue("Wrong value3: " + key + "=" + value3, value3 == null);
+            assertNull(value0);
+            assertEquals(value, value1);
+            assertNull(value3);
         }
     }
 
@@ -125,9 +124,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.tryRemove(key, timeout, timeunit);
             String value3 = map.get(key); // here we _might_ still see the value
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1.equals(value));
-            assertTrue("Wrong value3: " + key + "=" + value3, value3 == null);
+            assertNull(value0);
+            assertEquals(value, value1);
+            assertNull(value3);
         }
     }
 
@@ -150,10 +149,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             }
             String value3 = map.get(key); // here we _might_ still see the value
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1.equals(value));
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
-            assertTrue("Wrong value3: " + key + "=" + value3, value3 == null);
+            assertNull(value0);
+            assertEquals(value, value1);
+            assertEquals(value, value2);
+            assertNull(value3);
         }
     }
 
@@ -171,9 +170,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String value1 = map.put(key, value);
             String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1 == null);
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
+            assertNull(value0);
+            assertNull(value1);
+            assertEquals(value, value2);
         }
     }
 
@@ -188,8 +187,8 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.tryPut(key, value, timeout, timeunit);
             String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
+            assertNull(value0);
+            assertEquals(value, value2);
         }
     }
 
@@ -204,9 +203,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String value1 = map.putIfAbsent(key, value);
             String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1 == null);
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
+            assertNull(value0);
+            assertEquals(value, value2);
+            assertNull(value1);
         }
     }
 
@@ -221,8 +220,8 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.putTransient(key, value, 0, timeunit);
             String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
+            assertNull(value0);
+            assertEquals(value, value2);
         }
     }
 
@@ -243,9 +242,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             }
             String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1 == null);
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
+            assertNull(value0);
+            assertNull(value1);
+            assertEquals(value, value2);
         }
     }
 
@@ -262,10 +261,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.evict(key);
             String value3 = map.get(key); // here we _might_ still see the value
 
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value1: " + key + "=" + value1, value1.equals(value));
-            assertTrue("Wrong value3: " + key + "=" + value3, value3 == null);
-
+            assertNull(value0);
+            assertEquals(value, value1);
+            assertNull(value3);
         }
     }
 
@@ -281,8 +279,8 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.set(key, value);
             String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 == null);
-            assertTrue("Wrong value2: " + key + "=" + value2, value2.equals(value));
+            assertNull(value0);
+            assertEquals(value, value2);
 
 
         }
@@ -302,16 +300,9 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             map.replace(key, valueNew);
             String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
             // assert
-            assertTrue("Wrong value0: There should be no such value in the map: " + key + "=" + value0, value0 != null);
-            assertTrue("Wrong value2: " + key + "=" + value2, valueNew.equals(value2));
-
-
+            assertNotNull(value0);
+            assertEquals(valueNew, value2);
         }
-    }
-
-    private static String generateMapName() {
-        final String name = UUID.randomUUID().toString();
-        return name;
     }
 
 }

@@ -1078,14 +1078,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     private void invalidateLocalNearCache(Data key) {
         // invalidate local near cache to ensure this thread does not see its old state
         // note: this is a local-only operation and therefore fast and safe to execute
-        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
-        if (nearCacheEnabled) {
-            final boolean cacheLocalEntries = mapConfig.getNearCacheConfig().isCacheLocalEntries();
-            if (cacheLocalEntries) {
-                final MapService mapService = getService();
-                mapService.invalidateNearCache(name, key);
-            }
+        final MapConfig config = mapConfig;
+        final boolean nearCacheEnabled = config.isNearCacheEnabled();
+        if (!nearCacheEnabled) {
+            return;
         }
+        final boolean cacheLocalEntries = config.getNearCacheConfig().isCacheLocalEntries();
+        if (!cacheLocalEntries) {
+            return;
+        }
+        final MapService mapService = getService();
+        mapService.invalidateNearCache(name, key);
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
