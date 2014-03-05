@@ -399,7 +399,6 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         for (int i = 0; i < size; i++) {
             final Future<Integer> async = map.getAsync(i);
-            System.out.println(async.get());
         }
 
         NearCacheStats stats2 =   map.getLocalMapStats().getNearCacheStats();
