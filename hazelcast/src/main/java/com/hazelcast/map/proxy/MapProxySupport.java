@@ -202,9 +202,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
         TryPutOperation operation = new TryPutOperation(name, key, value, getTimeInMillis(timeout, timeunit));
         boolean putSuccessful = (Boolean) invokeOperation(key, operation);
-        if (putSuccessful) {
-            invalidateLocalNearCache(key);
-        }
+        invalidateLocalNearCache(key);
         return putSuccessful;
     }
 
@@ -269,18 +267,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
         ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue);
         boolean replaceSuccessful = (Boolean) invokeOperation(key, operation);
-        if (replaceSuccessful) {
-            invalidateLocalNearCache(key);
-        }
+        invalidateLocalNearCache(key);
         return replaceSuccessful;
     }
 
     protected Data replaceInternal(final Data key, final Data value) {
         ReplaceOperation operation = new ReplaceOperation(name, key, value);
         final Data result = (Data) invokeOperation(key, operation);
-        if (result != null) {
-            invalidateLocalNearCache(key);
-        }
+        invalidateLocalNearCache(key);
         return result;
     }
 
@@ -293,9 +287,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected boolean evictInternal(final Data key) {
         EvictOperation operation = new EvictOperation(name, key, false);
         final boolean evictSuccess = (Boolean) invokeOperation(key, operation);
-        if (evictSuccess) {
-            invalidateLocalNearCache(key);
-        }
+        invalidateLocalNearCache(key);
         return evictSuccess;
     }
 
@@ -315,18 +307,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected boolean removeInternal(final Data key, final Data value) {
         RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value);
         boolean removed = (Boolean) invokeOperation(key, operation);
-        if (removed) {
-            invalidateLocalNearCache(key);
-        }
+        invalidateLocalNearCache(key);
         return removed;
     }
 
     protected boolean tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) {
         TryRemoveOperation operation = new TryRemoveOperation(name, key, getTimeInMillis(timeout, timeunit));
         boolean removed = (Boolean) invokeOperation(key, operation);
-        if (removed) {
-            invalidateLocalNearCache(key);
-        }
+        invalidateLocalNearCache(key);
         return removed;
     }
 
