@@ -72,8 +72,6 @@ public class MapUpdateStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
-
     public void assertResult() {
         int[] increments = new int[MAP_SIZE];
         for (StressThread t : stressThreads) {

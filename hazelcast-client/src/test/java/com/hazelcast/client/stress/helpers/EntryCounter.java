@@ -6,7 +6,7 @@ import com.hazelcast.core.EntryListener;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-public class EnteryCounter implements EntryListener {
+public class EntryCounter implements EntryListener {
 
     public AtomicLong totalAdded= new AtomicLong();
     public AtomicLong totalUpdated= new AtomicLong();

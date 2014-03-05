@@ -179,7 +179,7 @@ public class SortLimitTest extends HazelcastTestSupport {
 
         Collection<Integer> values = map.values(predicate);
         assertEquals(pageSize, values.size());
-        for (Integer val : values) {
+        for(Integer val:values){
             assertEquals(value--, val);
         }
 
@@ -187,10 +187,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         predicate.nextPage();
         assertEquals(value + 1, predicate.getAnchor().getValue());
         values = map.values(predicate);
-        assertEquals(4, values.size());
-        for (Integer val : values) {
-            assertEquals(value--, val);
-        }
+        assertEquals(4, values.size());for(Integer val : values){assertEquals(value--, val);}
 
         predicate.nextPage();
         assertEquals(value + 1, predicate.getAnchor().getValue());

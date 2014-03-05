@@ -2,7 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.EnteryCounter;
+import com.hazelcast.client.stress.helpers.EntryCounter;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -93,7 +93,7 @@ public class PubIfAbsentStressTest extends StressTestSupport {
             }
         }
 
-        //checking the map size and EnteryCounter add up
+        //checking the map size and EntryCounter add up
         HazelcastInstance hz = cluster.getRandomNode();
         IMap map = hz.getMap(MAP_NAME);
 
@@ -104,10 +104,10 @@ public class PubIfAbsentStressTest extends StressTestSupport {
 
             long enterysAdded = stressThreads[i].enteryCounter.totalAdded.get();
 
-            assertEquals("entery Counter ", enterysAdded, map.size());
+            assertEquals("entry Counter ", enterysAdded, map.size());
         }
 
-        assertEquals("total iPutCount and map size don't match", total, map.size());
+        assertEquals("total putCount and map size don't match", total, map.size());
     }
 
 
@@ -117,12 +117,11 @@ public class PubIfAbsentStressTest extends StressTestSupport {
         private IMap map;
 
         private int key=0;
-
         public long iPutCount=0;
 
         public Set iput = new HashSet();
 
-        public EnteryCounter enteryCounter = new EnteryCounter();
+        public EntryCounter enteryCounter = new EntryCounter();
 
         public StressThread(HazelcastInstance instance){
 

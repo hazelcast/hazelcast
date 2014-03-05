@@ -108,7 +108,7 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
         public void doRun() throws Exception {
             while (!isStopped()) {
                 int index = random.nextInt(REFERENCE_COUNT);
-                int increment =1; // random.nextInt(100);
+                int increment = random.nextInt(100);
                 increments[index] += increment;
                 IAtomicLong reference = references[index];
                 reference.addAndGet(increment);

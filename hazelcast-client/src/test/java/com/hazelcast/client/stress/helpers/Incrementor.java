@@ -2,10 +2,9 @@ package com.hazelcast.client.stress.helpers;
 
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-
 import java.util.Map;
 
-public class Incromentor implements EntryProcessor<Object, Integer> {
+public class Incrementor implements EntryProcessor<Object, Integer> {
 
 
     public Object process(Map.Entry<Object, Integer> entry) {

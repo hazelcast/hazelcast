@@ -2,7 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.Incromentor;
+import com.hazelcast.client.stress.helpers.Incrementor;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -20,7 +20,7 @@ import java.util.concurrent.Future;
 import static junit.framework.Assert.assertEquals;
 
 /**
- * This tests verifies that submit to keys called on map keys are exicuted the expeted number of times in a
+ * This tests verifies that submit to keys called on map keys are executed the expected number of times in a
  * multi threaded test.
  */
 @RunWith(HazelcastSerialClassRunner.class)
@@ -102,7 +102,7 @@ public class SubmitToKeyStressTest extends StressTestSupport {
             instance = node;
             map = instance.getMap(MAP_NAME);
 
-            task = new Incromentor();
+            task = new Incrementor();
         }
 
         @Override

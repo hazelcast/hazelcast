@@ -2,7 +2,7 @@ package com.hazelcast.client.stress.helpers;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
+import com.hazelcast.test.modularhelpers.ClusterSupport;
 import org.junit.After;
 import org.junit.Before;
 
@@ -23,7 +23,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     //todo: should be system property
     public static int KILL_DELAY_SECONDS = RUNNING_TIME_SECONDS / 4;
 
-    protected SimpleClusterUtil cluster = new SimpleClusterUtil(CLUSTER_SIZE);
+    protected ClusterSupport cluster = new ClusterSupport(CLUSTER_SIZE);
 
     private CountDownLatch startLatch;
     private Thread killThread = null;
@@ -97,10 +97,11 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     }
 
 
-    /*run all test threads for set amount of time
+    /**
+    * run all test threads for set amount of time
     * and wait for them to finish with a join,
-    * then calls assertResult(), to do you post test asserting
-    * */
+    * then calls assertResult(), which you can override to do your post test asserting
+    */
     public void runTest(boolean clusterChangeEnabled, TestThread[] threads) {
         setClusterChangeEnabled(clusterChangeEnabled);
         runTestReportLoop();
@@ -108,10 +109,11 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         assertResult();
     }
 
-    /* Called after the test has run and we have joined all thread
-    *  Do you post test asserting hear
+    /**
+    * Called after the test has run and we have joined all thread
+    * Do you post test asserting hear
     */
-    abstract public void assertResult();
+    public void assertResult(){}
 
 
     protected final void setStopOnError(boolean stopOnError) {
@@ -159,7 +161,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         protected final Random random = new Random();
 
         public TestThread() {
-            setName(getClass().getName() + "(" + ID_GENERATOR.getAndIncrement() +")");
+            setName(getClass().getName() + ID_GENERATOR.getAndIncrement());
         }
 
         @Override
@@ -200,11 +202,11 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public class KillMemberOwning extends TestThread {
+    public class KillMemberOwningKeyThread extends TestThread {
 
         private Object key = null;
 
-        public KillMemberOwning(Object key){
+        public KillMemberOwningKeyThread(Object key){
             this.key = key;
         }
 

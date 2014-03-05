@@ -2,25 +2,16 @@ package com.hazelcast.client.queue;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
-import junit.framework.Assert;
+import com.hazelcast.test.modularhelpers.ClusterSupport;
 import junit.framework.TestCase;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Queue;
-import java.util.Random;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -32,13 +23,13 @@ public class ClientQueueDisruptionTest {
     HazelcastInstance client1;
     HazelcastInstance client2;
 
-    SimpleClusterUtil cluster;
+    ClusterSupport cluster;
 
     @Before
     public void init(){
         Hazelcast.shutdownAll();
 
-        cluster = new SimpleClusterUtil(3);
+        cluster = new ClusterSupport(3);
         cluster.initCluster();
 
         ClientConfig clientConfig = new ClientConfig();

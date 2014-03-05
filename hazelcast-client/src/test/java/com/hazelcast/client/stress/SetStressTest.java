@@ -50,7 +50,6 @@ public class SetStressTest extends StressTestSupport {
         }
     }
 
-
     @After
     public void tearDown() {
 
@@ -73,17 +72,17 @@ public class SetStressTest extends StressTestSupport {
     public void assertResult() {
 
         HazelcastInstance hz = cluster.getRandomNode();
-        ISet<Long> expeted = hz.getSet("set");
+        ISet<Long> expected = hz.getSet("set");
 
         long total=0;
         for ( StressThread s : stressThreads ) {
             total += s.count;
 
             long itemCount = s.itemCounter.totalAdded.get();
-            assertEquals(s.itemCounter + " itemCounter instance has wrong total ", itemCount, expeted.size());
+            assertEquals(s.itemCounter + " itemCounter instance has wrong total ", itemCount, expected.size());
         }
 
-        assertEquals(expeted+" total count != set size ", total, (long) expeted.size());
+        assertEquals(expected+" total count != set size ", total, (long) expected.size());
     }
 
 

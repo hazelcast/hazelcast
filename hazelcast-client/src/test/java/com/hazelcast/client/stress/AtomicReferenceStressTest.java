@@ -90,7 +90,6 @@ public class AtomicReferenceStressTest extends StressTestSupport {
         public long count=0;
 
         public StressThread(HazelcastInstance node){
-
             instance = node;
             ref = instance.getAtomicReference("ref");
             ref.set(0l);

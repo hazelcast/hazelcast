@@ -49,7 +49,6 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
 
-
     @Before
     public void setUp() {
         super.setUp();
@@ -90,12 +89,12 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
-
+    /**
+     * this test case randomly fails  looks like using a tryLock, some times blocks are will not return as the test some
+     * times fails with stress threads could not be joined  and we see some exceptions thrown
+     * ResponseAlreadySentException: NormalResponse already sent for callback:
+     */
     @Test
-    //this test case randomly fails  looks like using a tryLock, some times blocks are will not return as the test some
-    //times fails with stress threads could not be joined  and we see some exceptions thrown
-    //ResponseAlreadySentException: NormalResponse already sent for callback:
     public void tryLock_testFixedCluster() {
 
         //CONTROL which test case we are checking
@@ -112,7 +111,6 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
-
 
 
     public class StressThread extends TestThread {

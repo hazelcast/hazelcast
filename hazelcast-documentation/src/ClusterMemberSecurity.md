@@ -39,7 +39,7 @@ You can define as many asLoginModules you wanted in configuration. Those are exe
 package com.hazelcast.security;
 /**
  * ICredentialsFactory is used to create Credentials objects to be used
- * during node authentication before connection decliened by master node.
+ * during node authentication before connection accepted by master node.
  */
 public interface ICredentialsFactory {
 

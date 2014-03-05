@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 
-public class SimpleClusterUtil {
+public class ClusterSupport {
 
     private Random random = new Random();
 
@@ -25,9 +25,8 @@ public class SimpleClusterUtil {
     private List<HazelcastInstance> cluster;
     private Config config = new Config();
 
-    public SimpleClusterUtil(int clusterSZ){
+    public ClusterSupport(int clusterSZ){
         initialClusterSize = clusterSZ;
-        //cluster = Collections.synchronizedList( new ArrayList<HazelcastInstance>(initialClusterSize) );
         cluster = new CopyOnWriteArrayList<HazelcastInstance>();
     }
 
@@ -93,9 +92,7 @@ public class SimpleClusterUtil {
 
             }
         }
-
     }
-
 
     public void shutDown() {
 
@@ -104,7 +101,7 @@ public class SimpleClusterUtil {
     }
 
     public void addNode(){
-        cluster.add( factory.newHazelcastInstance( config ) );
+        cluster.add( factory.newHazelcastInstance(config) );
     }
 
     public Config getConfig(){

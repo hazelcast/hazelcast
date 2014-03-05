@@ -34,7 +34,6 @@ public class AccountTransactionStressTest extends StressTestSupport {
     private static final String ACCOUNTS_MAP = "ACOUNTS";
     private  IMap<Integer, Account> accounts;
 
-
     public static final int TOTAL_HZ_CLIENT_INSTANCES = 3;
     public static final int THREADS_PER_INSTANCE = 5;
 
@@ -81,7 +80,6 @@ public class AccountTransactionStressTest extends StressTestSupport {
         super.tearDown();
     }
 
-
     //@Test
     public void testChangingCluster() {
         runTest(true, stressThreads);
@@ -92,9 +90,7 @@ public class AccountTransactionStressTest extends StressTestSupport {
         runTest(false, stressThreads);
     }
 
-
     public void assertResult() {
-
         long total=0;
         for(Account a : accounts.values()){
             total += a.getBalance();
@@ -110,7 +106,6 @@ public class AccountTransactionStressTest extends StressTestSupport {
         private IMap<Integer, Account> accounts;
 
         public StressThread(HazelcastInstance node){
-
             instance = node;
             accounts = instance.getMap(ACCOUNTS_MAP);
         }
@@ -133,24 +128,23 @@ public class AccountTransactionStressTest extends StressTestSupport {
             }
         }
 
-        private void lockAccounts_andTransfer(int fromAccountNumber, int toAccountNumber, long amount){
-            try {
-                if ( accounts.tryLock(fromAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
-                    try{
-                        if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
-                            try{
+        private void lockAccounts_andTransfer(int fromAccountNumber, int toAccountNumber, long amount) throws InterruptedException {
 
-                                transfer(fromAccountNumber, toAccountNumber, amount);
+            if ( accounts.tryLock(fromAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                try{
+                    if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
+                        try{
 
-                            } finally {
-                                accounts.unlock(toAccountNumber);
-                            }
+                            transfer(fromAccountNumber, toAccountNumber, amount);
+
+                        } finally {
+                            accounts.unlock(toAccountNumber);
                         }
-                    } finally {
-                        accounts.unlock(fromAccountNumber);
                     }
+                } finally {
+                    accounts.unlock(fromAccountNumber);
                 }
-            } catch (InterruptedException e) {}
+            }
         }
 
         private void transfer(int fromAccountNumber, int toAccountNumber, long amount){

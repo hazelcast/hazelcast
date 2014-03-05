@@ -220,7 +220,9 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
             }
         }
 
-        //cause a role back by throwing an exception and count the number this thread cause
+        /**
+         * cause a role back by throwing an exception and count the number this thread cause
+         */
         private void trigerRoleBack_WithException_AtRandom() throws Exception{
             if(random.nextInt(100)==0){
                 roleBacksTriggered++;

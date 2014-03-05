@@ -83,8 +83,6 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         System.out.println("==================================================================");
     }
 
-    //no assert at end of test, all assert in doRun
-    public void assertResult(){}
 
     public class StressThread extends TestThread {
 

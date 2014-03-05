@@ -35,7 +35,6 @@ public class AtomicLongAddStressTest extends StressTestSupport {
 
     @Before
     public void setUp() {
-
         super.setUp();
 
         int index=0;
@@ -67,7 +66,7 @@ public class AtomicLongAddStressTest extends StressTestSupport {
     @Test
     public void testChangingCluster() {
 
-        setKillThread( new KillMemberOwning(atomicKey) );
+        setKillThread( new KillMemberOwningKeyThread(atomicKey) );
         runTest(true, stressThreads);
     }
 
@@ -99,7 +98,6 @@ public class AtomicLongAddStressTest extends StressTestSupport {
         public AtomicInteger count = new AtomicInteger(0);
 
         public StressThread(HazelcastInstance node){
-
             instance = node;
             atomicLong = instance.getAtomicLong(atomicKey);
         }
