@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
@@ -30,10 +31,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.nio.SocketInterceptorTest.MySocketInterceptor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
@@ -44,6 +49,38 @@ public class ClientSocketInterceptorTest {
     public void cleanup() throws Exception {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testIssue1444() throws InterruptedException {
+        Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        final SocketInterceptorConfig sic = new SocketInterceptorConfig();
+        sic.setEnabled(true);
+        final ClientSocketInterceptor interceptor = new ClientSocketInterceptor();
+        sic.setImplementation(interceptor);
+        clientConfig.setSocketInterceptorConfig(sic);
+        HazelcastClient.newHazelcastClient(clientConfig);
+        assertTrue(interceptor.await(5));
+    }
+
+    public static class ClientSocketInterceptor implements SocketInterceptor {
+
+        CountDownLatch latch = new CountDownLatch(1);
+
+        @Override
+        public void init(Properties properties) {
+            latch.countDown();
+        }
+
+        @Override
+        public void onConnect(Socket connectedSocket) throws IOException {
+
+        }
+
+        public boolean await(int timeout) throws InterruptedException {
+            return latch.await(timeout, TimeUnit.SECONDS);
+        }
     }
 
     @Test(timeout = 120000)
