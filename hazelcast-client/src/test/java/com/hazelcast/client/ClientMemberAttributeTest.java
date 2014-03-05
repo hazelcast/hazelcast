@@ -48,7 +48,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
     @Test(timeout = 40000)
     public void testChangeMemberAttributes() throws Exception {
-        final int count = 1000;
+        final int count = 100;
 
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final ClientConfig config = new ClientConfig();
