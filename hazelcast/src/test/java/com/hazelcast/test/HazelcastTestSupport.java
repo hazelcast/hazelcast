@@ -45,19 +45,6 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
-    public static void assertSizeEventually(int expectedSize, Collection c){
-        assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds){
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the collection is incorrect", expectedSize, c.size());
-            }
-        }, timeoutSeconds);
-    }
-
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
     }
