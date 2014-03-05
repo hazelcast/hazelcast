@@ -109,19 +109,19 @@ In the above example, *Home*, *Scripting*, *Console*, *queue1* and *map1* window
 
 
 ##Home Page
-This is the first page appearing after logging in. It gives an overview of the cluster connected. Below subsections describe each portion on the page.
+This is the first page appearing after logging in. It gives an overview of the cluster connected. Below subsections describe each portion of the page.
 
 ####Cluster Info
 On top of the page, **Cluster Info** is placed, as shown below.
 
 ![](images/HomeClusterInfo.jpg)
 
--	Version		: Shows the release number of Hazelcast used.
--	Start Time	: It is the date and time (UTC) when first node of the connected cluster was started.
--	Up Time		: Shows the period of time in days, hours, minutes and seconds for which connected Hazelcast cluster is up.
--	Used Memory	: Shows the real-time total memory used in the whole cluster.
--	Free Memory	: Shows the real-time memory that is free in the whole cluster.
--	Max Memory	: Shows the maximum memory than can be used in the whole cluster.
+-	**Version**: Shows the release number of Hazelcast used.
+-	**Start Time**: It is the date and time (UTC) when first node of the connected cluster was started.
+-	**Up Time**: Shows the period of time in days, hours, minutes and seconds for which connected Hazelcast cluster is up.
+-	**Used Memory**: Shows the real-time total memory used in the whole cluster.
+-	**Free Memory**: Shows the real-time memory that is free in the whole cluster.
+-	**Max Memory**: Shows the maximum memory that the whole cluster has.
 
 ####CPU Load Averages & Utilization
 This part of the page provides information related to load and utilization of CPUs for each node, as shown below.
@@ -143,7 +143,7 @@ This part of the page graphically provides the cluster wise breakdown of memory,
 
 ![](images/Home-MemoryDistribution.jpg)
 
-In the above example, you can see 0.32% of the total memory is used by Hazelcast maps (it can be seen by moving the mouse cursor on it), 64.43% is used by non-Hazelcast entities and 35.24% of the total memory is free.
+In the above example, you can see 0.32% of the total memory is used by Hazelcast maps (it can be seen by moving the mouse cursor on it), 58.75% is used by non-Hazelcast entities and 40.85% of the total memory is free.
 
 ####Map Memory Distribution
 This part is actually the breakdown of the blue area shown in **Memory Distribution** graph explained above. It provides the percentage values of the memories used by each map, out of the total cluster memory reserved for all Hazelcast maps.
@@ -157,16 +157,21 @@ This part is useful to check how the cluster in general behaves. It lists the no
 
 ![](images/Home-HealthCheckbuttonpressed.jpg)
 
-You can see each node's IP address and port by clicking on the plus sign at the **Members** 
+You can see each node's IP address and port by clicking on the plus sign at the **Members**.
 
 ####Partition Distribution
+This pie chart shows what percentage of partitions each node has, as shown below.
 
 ![](images/Home-PartitionDistribution.jpg)
 
+You can see each node's partition percentages by moving the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see [Advanced Configuration Properties](http://hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#advanced-configuration-properties)).
+
 ####System Warnings
+This part of the page shows informative warnings in situations like shutting down a node, as shown below.
 
 ![](images/SystemWarnings.jpg)
 
+Warnings can be cleared by clicking on the **Clear** link placed at top right of the window.
 
 
 ---
@@ -175,36 +180,86 @@ You can see each node's IP address and port by clicking on the plus sign at the 
 
 ## Maps
 
-Map instances are listed on the left panel. When you click on a map, a new tab for monitoring this map instance is opened on the right. In this tab, you can monitor metrics also re-configure the map.
+Map instances are listed under the **Maps** menu item on the left. When you click on a map, a new tab for monitoring that map instance is opened on the right, as shown below. In this tab, you can monitor metrics and also re-configure the selected map.
 
 ![](images/MapsHome.jpg)
+
+Below subsections explain the 
 
 
 ### Monitoring Maps
 
 In map page you can monitor instance metrics by 2 charts and 2 datatables. First data table "Memory Data Table" gives the memory metrics distributed over members. "Throughput Data Table" gives information about the operations performed on instance (get, put, remove) Each chart monitors a type data of the instance on cluster. You can change the type by clicking on chart. The possible ones are: Size, Throughput, Memory, Backup Size, Backup Memory, Hits, Locked Entries, Puts, Gets, Removes...
 
-![](images/mapchart.jpg)
 
 #### Size
 ???
+
+![](images/Map-Size.jpg)
+
+???
+
 #### Throughput
 ???
+
+![](images/Map-Throughput.jpg)
+
+???
+
 #### Memory
 ???
+
+![](images/Map-Memory.jpg)
+
+???
+
 #### Backup Size
 ???
+
+![](images/Map-BackupSize.jpg)
+
+???
+
 #### Backup Memory
 ???
+
+![](images/Map-BackupMemory.jpg)
+
+???
+
 #### Hits
 ???
+
+![](images/Map-Hits.jpg)
+
+???
+
 #### Locked Entries
 ???
+
+![](images/Map-LockedEntries.jpg)
+
+???
+
 #### Puts/s
 ???
+
+![](images/Map-Puts.jpg)
+
+???
+
 #### Gets/s
 ???
+
+![](images/Map-Gets.jpg)
+
+???
+
 #### Removes/s
+???
+
+![](images/Map-Removes.jpg)
+
 ???
 
 
@@ -213,13 +268,13 @@ In map page you can monitor instance metrics by 2 charts and 2 datatables. First
 
 You can open "Map Browser" tool by clicking "Browse" button on map tab page. Using map browser, you can reach map's entries by keys. Besides its value, extra informations such as entry's cost, expiration time is provided.
 
-[![](images/mapbrowse.jpg)](images/mapbrowse.jpg)
+![](images/Map-MapBrowser.jpg)
 
 ### Map Config
 
 You can open "Map Configuration" tool by clicking "Config" button on map tab page. This button is disabled for users with Read-Only permission. Using map config tool you can adjust map's setting. You can change backup count, max size, max idle(seconds), eviction policy, cache value, read backup data, backup count of the map.
 
-![](images/mapconfig.jpg)
+![](images/Map-MapConfig.jpg)
 
 ---
 
