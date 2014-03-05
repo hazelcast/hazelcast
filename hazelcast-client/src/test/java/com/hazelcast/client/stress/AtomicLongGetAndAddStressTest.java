@@ -97,6 +97,7 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport {
 
         public StressThread(HazelcastInstance node){
             instance = node;
+            //we are using only 1 instance of atomicLong to create high contention between threads
             atomicLong = instance.getAtomicLong(atomicKey);
         }
 
