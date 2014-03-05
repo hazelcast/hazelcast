@@ -1,4 +1,3 @@
-
 ### Eviction
 
 Hazelcast also supports policy based eviction for distributed map. Currently supported eviction policies are
@@ -21,8 +20,7 @@ Note that LRU/LFU evictions work when statistics enabled.
 
         <!--
             Maximum number of seconds for each entry to stay in the map. Entries that are
-            older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
-            will get automatically evicted from the map.
+            older than <time-to-live-seconds> will get automatically evicted from the map.
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
         <time-to-live-seconds>0</time-to-live-seconds>
