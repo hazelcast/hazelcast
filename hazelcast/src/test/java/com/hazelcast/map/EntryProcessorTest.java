@@ -67,6 +67,68 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertFalse("The predicate shouldn't be applied if indexing works!", predicate.didApply());
     }
 
+    /**
+     * Reproducer for https://github.com/hazelcast/hazelcast/issues/1854
+     * Similar to above tests but with executeOnKeys instead.
+     */
+    @Test
+    public void testExecuteOnKeysBackupOperation() {
+        Config cfg = new Config();
+        cfg.getMapConfig("test").setBackupCount(1);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance newPrimary=null;
+        IMap<String, TempData> map = instance1.getMap("test");
+            map.put("a", new TempData("foo", "bar"));
+            map.put("b", new TempData("foo", "bar"));
+            map.executeOnKeys(map.keySet(), new DeleteEntryProcessor());
+            // Now the entry has been removed from the primary store but not the backup.
+            // Let's kill the primary and execute the logging processor again...
+            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+
+            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+                instance1.shutdown();
+                newPrimary = instance2;
+            } else {
+                instance2.shutdown();
+                newPrimary = instance1;
+            }
+            //Make sure there are no entries left
+            IMap<String, TempData> map2 = newPrimary.getMap("test");
+            Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
+            assertEquals(0, executedEntries.size());
+    }
+
+    /**
+     * Reproducer for https://github.com/hazelcast/hazelcast/issues/1854
+     * This one with index which results in an exception.
+     */
+    @Test
+    public void testExecuteOnKeysBackupOperationIndexed() throws Exception {
+        Config cfg = new Config();
+        cfg.getMapConfig("test").setBackupCount(1).addMapIndexConfig(new MapIndexConfig("attr1", false));
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        IMap<String, TempData> map = instance1.getMap("test");
+        HazelcastInstance newPrimary=null;
+            map.put("a", new TempData("foo", "bar"));
+            map.put("b", new TempData("abc", "123"));
+            map.executeOnKeys(map.keySet(), new DeleteEntryProcessor());
+            // Now the entry has been removed from the primary store but not the backup.
+            // Let's kill the primary and execute the logging processor again...
+            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+                instance1.shutdown();
+                newPrimary = instance2;
+            } else {
+                instance2.shutdown();
+                newPrimary = instance1;
+            }
+            IMap<String, TempData> map2 = newPrimary.getMap("test");
+            //Make sure there are no entries left
+            Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
+            assertEquals(0, executedEntries.size());
+     }
     @Test
     public void testEntryProcessorDeleteWithPredicate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
