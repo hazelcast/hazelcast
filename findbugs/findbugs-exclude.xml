@@ -81,6 +81,9 @@
         <Package name="com.hazelcast.partition.impl" />
     </Match>
 
+    <Match>
+        <Package name="com.hazelcast.client.examples" />
+    </Match>
 
     <!-- todo: these findbugs warnings needs to be fixed -->
     <Match>
