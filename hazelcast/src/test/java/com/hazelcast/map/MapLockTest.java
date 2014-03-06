@@ -171,7 +171,6 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-
     @Test(timeout = 100000)
     public void testLockEvictionWithMigration() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -201,102 +200,64 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue(latch.await(60, TimeUnit.SECONDS));
     }
 
-
     @Test(timeout = 1000*15, expected = IllegalMonitorStateException.class)
     public void testLockOwnership() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
 
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
-        final IMap map1 = node1.getMap("map");
-
         final HazelcastInstance node2 = nodeFactory.newHazelcastInstance(config);
+
+        final IMap map1 = node1.getMap("map");
         final IMap map2 = node2.getMap("map");
 
         map1.lock(1);
-
         map2.unlock(1);
     }
 
     @Test(timeout = 1000*30)
-    public void testLockAbsentKey() throws Exception {
+    public void testAbsentKeyIsLocked() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        final String MAP_A = "MAP_A";
+        final String KEY = "KEY";
+        final String VAL_2 = "VAL_2";
 
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance node2 = nodeFactory.newHazelcastInstance();
 
-        final String MAP_A = "MAP_A";
-
         final IMap map1 = node1.getMap(MAP_A);
         final IMap map2 = node2.getMap(MAP_A);
 
-        final String KEY = "KEY", VAL_2 = "VAL_2";
-
-        //lock a absent key from map1 (from node1)
         map1.lock(KEY);
+        boolean putResult = map2.tryPut(KEY, VAL_2, 2, TimeUnit.SECONDS);
 
-
-        //this put from (map2 node2) will block waiting for the absent key to be unlocked
-        final CountDownLatch startedLatch = new CountDownLatch(1);
-        final CountDownLatch putlatch = new CountDownLatch(1);
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                startedLatch.countDown();
-                map2.put(KEY, VAL_2);
-                putlatch.countDown();
-            }
-        });
-        t.start();
-
-        //wait as best we can for the thread to run and block on the put operation from map2 node2
-        assertTrue(startedLatch.await(5, TimeUnit.SECONDS));
-
-
+        Assert.assertFalse("the result of try put should be false as the absent key is locked", putResult);
         assertTrueEventually(new AssertTask() {
             public void run() {
                 Assert.assertEquals("the key should be absent ", null, map1.get(KEY));
                 Assert.assertEquals("the key should be absent ", null, map2.get(KEY));
             }
         });
-
-
-        map1.unlock(KEY);
-
-        //the put from (map2 node2) should now complete, as the absent KEY it is waiting on is unlocked
-        assertTrue(putlatch.await(10, TimeUnit.SECONDS));
-
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                Assert.assertEquals(VAL_2, map1.get(KEY));
-                Assert.assertEquals(VAL_2, map2.get(KEY));
-            }
-        });
     }
 
-
     @Test
-    public void testLockTTLKey() throws InterruptedException {
-
+    public void testLockTTLKey() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
 
         final IMap map = node1.getMap("map");
+        final String KEY = "key";
+        final String VAL = "val";
 
-        final String KEY = "key", VAL = "val";
-
-        final int TTL_MILLIS = 1000;
-
-        map.put(KEY, VAL, TTL_MILLIS, TimeUnit.MILLISECONDS);
-
+        final int TTL_SEC = 1;
+        map.put(KEY, VAL, TTL_SEC, TimeUnit.SECONDS);
         map.lock(KEY);
 
-        Thread.sleep(TTL_MILLIS * 2);
+        sleepSeconds(TTL_SEC * 2);
 
-        assertEquals("waited until the TTL for KEY has expired, but as KEY is locked, we expect VAL", VAL, map.get(KEY));
-
+        assertEquals("TTL of KEY has expired, KEY is locked, we expect VAL", VAL, map.get(KEY));
         map.unlock(KEY);
-
-        assertEquals("unlocked the KEY after TTL of KEY has expired, we expect null", null, map.get(KEY));
+        assertEquals("TTL of KEY has expired, KEY is unlocked, we expect null", null, map.get(KEY));
     }
-
 }
