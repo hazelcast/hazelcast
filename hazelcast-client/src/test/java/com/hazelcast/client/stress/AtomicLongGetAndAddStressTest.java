@@ -27,7 +27,7 @@ import static junit.framework.Assert.assertEquals;
 public class AtomicLongGetAndAddStressTest extends StressTestSupport {
 
     public static int TOTAL_HZ_CLIENT_INSTANCES = 1;
-    public static int THREADS_PER_INSTANCE = 5;
+    public static int THREADS_PER_INSTANCE = 15;
 
     private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 

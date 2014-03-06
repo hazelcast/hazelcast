@@ -43,7 +43,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     public final String ACCOUNTS_MAP = "ACCOUNTS";
     private IMap<Integer, Account> accounts;
 
-    protected static final int MAX_ACCOUNTS = 3;
+    protected static final int MAX_ACCOUNTS = 300;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;

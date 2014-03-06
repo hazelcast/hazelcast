@@ -18,7 +18,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
     public final static AtomicLong ID_GENERATOR = new AtomicLong(1);
     //todo: should be system property
-    public static int RUNNING_TIME_SECONDS = 10;
+    public static int RUNNING_TIME_SECONDS = 180;
     //todo: should be system property
     public static int CLUSTER_SIZE = 3;
     //todo: should be system property
