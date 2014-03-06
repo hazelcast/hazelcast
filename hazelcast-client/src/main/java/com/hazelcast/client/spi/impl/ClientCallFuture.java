@@ -197,7 +197,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     }
 
     public boolean resend() {
-        if (reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
+        if (handler == null && reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
             return false;
         }
         executionService.execute(new ReSendTask());
