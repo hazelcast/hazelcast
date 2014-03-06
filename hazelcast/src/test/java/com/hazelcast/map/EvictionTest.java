@@ -203,9 +203,16 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        Thread.sleep(1200);
 
-        assertTrue(map.size() <= (size * n * (100 - mc.getEvictionPercentage()) / 100));
+        while(true){
+            System.out.println("==>>"+map.size());
+            sleepSeconds(1);
+        }
+
+
+        //Thread.sleep(1200);
+
+        //assertTrue(map.size() <= (size * n * (100 - mc.getEvictionPercentage()) / 100));
     }
 
     // current eviction check period is 1 second.

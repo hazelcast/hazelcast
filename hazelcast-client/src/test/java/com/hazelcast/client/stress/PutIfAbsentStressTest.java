@@ -29,7 +29,7 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class PubIfAbsentStressTest extends StressTestSupport {
+public class PutIfAbsentStressTest extends StressTestSupport {
 
     public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
     public static int THREADS_PER_INSTANCE = 5;
@@ -76,7 +76,7 @@ public class PubIfAbsentStressTest extends StressTestSupport {
     }
 
     public void assertResult() {
-        //there should be no intersection of the set ok keys put but any threads
+        //there should be no intersection of the set of keys put but any threads
         for ( int i = 0; i < stressThreads.length; i++ ) {
             for ( int j = i+1; j < stressThreads.length; j++ ) {
 
