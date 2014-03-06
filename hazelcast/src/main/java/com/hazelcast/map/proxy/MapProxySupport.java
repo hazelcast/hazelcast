@@ -229,9 +229,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Future f;
             Object o;
+            OperationService operationService = nodeEngine.getOperationService();
             if (mapConfig.isStatisticsEnabled()) {
                 long time = System.currentTimeMillis();
-                f = nodeEngine.getOperationService()
+                f = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
                         .invoke();
@@ -244,7 +245,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     localMapStats.incrementGets(System.currentTimeMillis() - time);
 
             } else {
-                f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .setResultDeserialized(false).invoke();
                 o = f.get();
             }
             return o;

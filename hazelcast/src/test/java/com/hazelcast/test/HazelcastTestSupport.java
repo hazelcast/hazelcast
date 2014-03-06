@@ -45,19 +45,6 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
-    public static void assertSizeEventually(int expectedSize, Collection c){
-        assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds){
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the collection is incorrect", expectedSize, c.size());
-            }
-        }, timeoutSeconds);
-    }
-
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
     }
@@ -71,9 +58,21 @@ public abstract class HazelcastTestSupport {
             assertEquals(values[counter], o);
             counter++;
         }
-        if (values.length != counter) {
-            throw new AssertionError("Iterator and values sizes are not equal");
-        }
+
+        assertEquals("Iterator and values sizes are not equal", values.length, counter);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Collection c){
+        assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds){
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("the size of the collection is correct",expectedSize, c.size());
+            }
+        },timeoutSeconds);
     }
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
@@ -208,7 +207,7 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
-    protected static void warmUpPartitions(HazelcastInstance... instances)  {
+    protected static void warmUpPartitions(HazelcastInstance... instances){
         try {
             TestUtil.warmUpPartitions(instances);
         } catch (InterruptedException e) {
