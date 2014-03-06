@@ -34,7 +34,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -439,9 +443,7 @@ public class EvictionTest extends HazelcastTestSupport {
             IMap<Object, Object> map = instances[0].getMap(mapName);
             for (int i = 0; i < size; i++) {
                 map.put(i, i);
-                if (i < 100) {
-                    map.get(i);
-                } else if (i >= size - 100) {
+                if (i < 100 || i >= size - 100) {
                     map.get(i);
                 }
             }
