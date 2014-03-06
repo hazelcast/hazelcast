@@ -60,4 +60,6 @@ ClientConfig config = new ClientConfig();
 config.getSocketOptions().setSocketFactory(new SSLSocketFactory(props));
 ```
 
-You can also set `keyStore` and `keyStorePassword` through `javax.net.ssl.keyStore` and `javax.net.ssl.keyStorePassword` system properties. *Note that, you can not use SSL when [Hazelcast Encryption](#encryption) is enabled.*
+You can also set `keyStore` and `keyStorePassword` through `javax.net.ssl.keyStore` and `javax.net.ssl.keyStorePassword` system properties. 
+
+*Note that, you can not use SSL when [Hazelcast Encryption](#encryption) is enabled.*

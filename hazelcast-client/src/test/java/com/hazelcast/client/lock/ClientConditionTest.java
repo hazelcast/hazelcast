@@ -5,6 +5,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -122,20 +123,18 @@ public class ClientConditionTest extends HazelcastTestSupport{
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final String name = "testLockConditionSignalAllShutDownKeyOwner";
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final AtomicInteger count = new AtomicInteger(0);
         final int size = 50;
-        int k = 0;
         final HazelcastInstance keyOwner = Hazelcast.newHazelcastInstance();
-        final Member keyOwnerMember = keyOwner.getCluster().getLocalMember();
-        final PartitionService partitionService = instance.getPartitionService();
-        while (!keyOwnerMember.equals(partitionService.getPartition(++k).getOwner())) {
-            Thread.sleep(10);
-        }
 
-        final ILock lock = client.getLock(k);
+        warmUpPartitions(hz, keyOwner);
+
+        final String key = generateKeyOwnedBy(keyOwner);
+
+        final ILock lock = client.getLock(key);
         final ICondition condition = lock.newCondition(name);
 
         final CountDownLatch awaitLatch = new CountDownLatch(size);
@@ -147,7 +146,6 @@ public class ClientConditionTest extends HazelcastTestSupport{
                     try {
                         awaitLatch.countDown();
                         condition.await();
-                        Thread.sleep(5);
                         if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
                         }

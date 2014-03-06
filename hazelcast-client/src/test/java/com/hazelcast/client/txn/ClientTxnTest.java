@@ -25,6 +25,7 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -77,7 +78,7 @@ public class ClientTxnTest {
 
             context.commitTransaction();
             fail("commit should throw exception!!!");
-        } catch (Exception e){
+        } catch (TransactionException e){
             context.rollbackTransaction();
             latch.countDown();
         }

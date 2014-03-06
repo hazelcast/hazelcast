@@ -52,6 +52,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             op.setCallerUuid(endpoint.getUuid());
             InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, target)
                     .setTryCount(TRY_COUNT)
+                    .setResultDeserialized(false)
                     .setCallback(new SingleTargetCallback(target, callback));
             builder.invoke();
         }

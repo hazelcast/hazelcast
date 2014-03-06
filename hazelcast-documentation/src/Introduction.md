@@ -35,7 +35,7 @@ Hazelcast is a clustering and highly scalable data distribution platform for Jav
 
 To install Hazelcast:
 
--   Download hazelcast-*version*.zip from [www.hazelcast.com](http://www.hazelcast.com)
+-   Download hazelcast-*version*.zip from [www.hazelcast.org](http://www.hazelcast.org/download/)
 
 -   Unzip hazelcast-*version*.zip file
 
