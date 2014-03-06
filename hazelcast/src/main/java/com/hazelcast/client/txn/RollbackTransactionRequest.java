@@ -18,21 +18,16 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.TransactionPermission;
 
-import java.io.IOException;
+import java.security.Permission;
 
-/**
- * @author ali 6/7/13
- */
-public class RollbackTransactionRequest extends BaseTransactionRequest implements Portable {
-
+public class RollbackTransactionRequest extends BaseTransactionRequest {
 
     public RollbackTransactionRequest() {
     }
 
+    @Override
     public Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         endpoint.getTransactionContext(txnId).rollbackTransaction();
@@ -40,16 +35,23 @@ public class RollbackTransactionRequest extends BaseTransactionRequest implement
         return null;
     }
 
+    @Override
     public String getServiceName() {
         return ClientEngineImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientTxnPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientTxnPortableHook.ROLLBACK;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
+    }
 }

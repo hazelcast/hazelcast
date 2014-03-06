@@ -342,7 +342,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (logger.isFinestEnabled()) {
             log(Level.FINEST, "Destroying " + connection);
         }
-        activeConnections.remove((TcpIpConnection) connection);
+        activeConnections.remove(connection);
         final Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);

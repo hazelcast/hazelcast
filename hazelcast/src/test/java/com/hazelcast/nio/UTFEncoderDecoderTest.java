@@ -142,8 +142,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testComplexObject() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
         original.setAccessible(true);
 

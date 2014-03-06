@@ -161,7 +161,7 @@ public class IssuesTest extends HazelcastTestSupport {
         IMap<String, String> map = h.getMap("testIssue174NearCacheContainsKeySingleNode");
         map.put("key", "value");
         assertTrue(map.containsKey("key"));
-        h.getLifecycleService().shutdown();
+        h.shutdown();
     }
 
     @Test

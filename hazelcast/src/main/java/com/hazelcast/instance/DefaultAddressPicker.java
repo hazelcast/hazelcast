@@ -107,7 +107,7 @@ class DefaultAddressPicker implements AddressPicker {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
                         logger.severe(msg, e);
-                        throw new HazelcastException(msg,error);
+                        throw new HazelcastException(msg, error);
                     }
                 }
             }
@@ -126,6 +126,9 @@ class DefaultAddressPicker implements AddressPicker {
                 publicAddress = bindAddress;
                 log(Level.FINEST, "Using public address the same as the bind address. " + publicAddress);
             }
+        } catch (RuntimeException re) {
+            logger.severe(re);
+            throw re;
         } catch (Exception e) {
             logger.severe(e);
             throw e;
@@ -196,7 +199,7 @@ class DefaultAddressPicker implements AddressPicker {
                             addressDomainMap.put(address, s);
                         }
                     } catch (UnknownHostException e) {
-                        logger.severe( "Could not resolve address: " + s);
+                        logger.severe("Could not resolve address: " + s);
                     }
                 }
             }

@@ -18,15 +18,16 @@ package com.hazelcast.security.permission;
 
 
 public class ExecutorServicePermission extends InstancePermission {
-	
-	private final static int ALL 			= CREATE | DESTROY ;
 
-	public ExecutorServicePermission(String name, String... actions) {
-		super(name, actions);
-	}
+    private static final int ALL = CREATE | DESTROY;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+    public ExecutorServicePermission(String name, String... actions) {
+        super(name, actions);
+    }
+
+    @Override
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -38,6 +39,6 @@ public class ExecutorServicePermission extends InstancePermission {
                 mask |= DESTROY;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 }

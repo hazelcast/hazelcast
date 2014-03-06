@@ -48,11 +48,11 @@ public class PublishOperation extends AbstractNamedOperation {
     @Override
     public void run() throws Exception {
         TopicService service = getService();
-        final Member publishingMember = getNodeEngine().getClusterService().getMember(getCallerAddress());
+        Member publishingMember = getNodeEngine().getClusterService().getMember(getCallerAddress());
         TopicEvent topicEvent = new TopicEvent(name, message, publishingMember);
-        final EventService eventService = getNodeEngine().getEventService();
-        final Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
-        final Lock lock = service.getOrderLock(name);
+        EventService eventService = getNodeEngine().getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
+        Lock lock = service.getOrderLock(name);
         lock.lock();
         try {
             eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent, name.hashCode());

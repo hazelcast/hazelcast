@@ -11,7 +11,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -20,11 +19,9 @@ import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
@@ -161,6 +158,8 @@ public class TimedMemberStateFactory {
             }
 
             return defaultValue;
+        } catch (RuntimeException re) {
+            throw re;
         } catch (Exception e) {
             return defaultValue;
         }
@@ -206,13 +205,6 @@ public class TimedMemberStateFactory {
                         memberState.putLocalExecutorStats(executorService.getName(), stats);
                         count++;
                     }
-                } else if (distributedObject instanceof ReplicatedMapProxy) {
-                    ReplicatedMapProxy replicatedMap = (ReplicatedMapProxy) distributedObject;
-                    if (config.findReplicatedMapConfig(replicatedMap.getName()).isStatisticsEnabled()) {
-                        LocalReplicatedMapStatsImpl stats =
-                                (LocalReplicatedMapStatsImpl) replicatedMap.getReplicatedMapStats();
-                        memberState.putLocalReplicatedMapStats(replicatedMap.getName(), stats);
-                    }
                 }
             }
         }
@@ -241,12 +233,6 @@ public class TimedMemberStateFactory {
                     IMap map = (IMap) distributedObject;
                     if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("c:" + map.getName());
-                        count++;
-                    }
-                } else if (distributedObject instanceof ReplicatedMap) {
-                    ReplicatedMap replicatedMap = (ReplicatedMap) distributedObject;
-                    if (config.findReplicatedMapConfig(replicatedMap.getName()).isStatisticsEnabled()) {
-                        setLongInstanceNames.add("r:" + replicatedMap.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {

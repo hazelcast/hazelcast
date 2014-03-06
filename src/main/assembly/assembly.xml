@@ -97,9 +97,9 @@
             <directory>hazelcast-documentation/target/</directory>
             <outputDirectory>docs/manual</outputDirectory>
             <includes>
-                <include>pdf/hazelcast-documentation.pdf</include>
-                <include>single_html/**</include>
-                <include>multi_html/**</include>
+                <include>pdf/hazelcast-documentation-${project.version}.pdf</include>
+                <include>html/**</include>
+                <include>html-single/**</include>
             </includes>
         </fileSet>
         <fileSet>

@@ -51,7 +51,7 @@ public interface ILogger {
      * Logs message with associated throwable information at {@link Level#FINEST}.
      *
      * @param message the message to log
-     * @param thrown the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message.
      */
     void finest(String message, Throwable thrown);
 
@@ -80,7 +80,7 @@ public interface ILogger {
      * Logs message with associated throwable information at {@link Level#SEVERE}.
      *
      * @param message the message to log
-     * @param thrown the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message.
      */
     void severe(String message, Throwable thrown);
 
@@ -102,14 +102,14 @@ public interface ILogger {
      * Logs message with associated throwable information at {@link Level#WARNING}.
      *
      * @param message the message to log
-     * @param thrown the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message.
      */
     void warning(String message, Throwable thrown);
 
     /**
      * Logs a message at the provided Level.
      *
-     * @param level the Level of logging.
+     * @param level   the Level of logging.
      * @param message the message to log.
      */
     void log(Level level, String message);
@@ -118,7 +118,7 @@ public interface ILogger {
      * Logs message with associated throwable information at the provided level.
      *
      * @param message the message to log
-     * @param thrown the Throwable associated to the message.
+     * @param thrown  the Throwable associated to the message.
      */
     void log(Level level, String message, Throwable thrown);
 

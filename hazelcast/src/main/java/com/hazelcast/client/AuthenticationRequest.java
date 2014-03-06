@@ -31,19 +31,17 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Level;
 
-public final class AuthenticationRequest extends CallableClientRequest implements Portable {
+public final class AuthenticationRequest extends CallableClientRequest {
 
     private Credentials credentials;
-
     private ClientPrincipal principal;
-
     private boolean reAuth;
-
-    private boolean firstConnection = false;
+    private boolean firstConnection;
 
     public AuthenticationRequest() {
     }
@@ -58,6 +56,16 @@ public final class AuthenticationRequest extends CallableClientRequest implement
     }
 
     public Object call() throws Exception {
+        boolean authenticated = authenticate();
+
+        if (authenticated) {
+            return handleAuthenticated();
+        } else {
+            return handleUnauthenticated();
+        }
+    }
+
+    private boolean authenticate() {
         ClientEngineImpl clientEngine = getService();
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
@@ -66,55 +74,74 @@ public final class AuthenticationRequest extends CallableClientRequest implement
             authenticated = false;
             logger.severe("Could not retrieve Credentials object!");
         } else if (clientEngine.getSecurityContext() != null) {
-            credentials.setEndpoint(connection.getInetAddress().getHostAddress());
-            try {
-                SecurityContext securityContext = clientEngine.getSecurityContext();
-                LoginContext lc = securityContext.createClientLoginContext(credentials);
-                lc.login();
-                endpoint.setLoginContext(lc);
-                authenticated = true;
-            } catch (LoginException e) {
-                logger.warning(e);
-                authenticated = false;
-            }
+            authenticated = authenticate(clientEngine.getSecurityContext());
+        } else if (credentials instanceof UsernamePasswordCredentials) {
+            UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
+            authenticated = authenticate(usernamePasswordCredentials);
         } else {
-            if (credentials instanceof UsernamePasswordCredentials) {
-                final UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-                GroupConfig groupConfig = clientEngine.getConfig().getGroupConfig();
-                final String nodeGroupName = groupConfig.getName();
-                final String nodeGroupPassword = groupConfig.getPassword();
-                authenticated = (nodeGroupName.equals(usernamePasswordCredentials.getUsername())
-                        && nodeGroupPassword.equals(usernamePasswordCredentials.getPassword()));
-            } else {
-                authenticated = false;
-                logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster " +
-                        "group-name and group-password should be used for authentication!\n" +
-                        "Current credentials type is: " + credentials.getClass().getName());
-            }
+            authenticated = false;
+            logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
+                    + "group-name and group-password should be used for authentication!\n"
+                    + "Current credentials type is: " + credentials.getClass().getName());
         }
+
+
         logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
                 + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
-        if (authenticated) {
-            if (principal != null && reAuth) {
-                principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
-                reAuthLocal();
-                final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
-                for (MemberImpl member : members) {
-                    if (!member.localMember()) {
-                        clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid(), firstConnection), member.getAddress());
-                    }
+        return authenticated;
+    }
+
+    private boolean authenticate(UsernamePasswordCredentials credentials) {
+        ClientEngineImpl clientEngine = getService();
+        GroupConfig groupConfig = clientEngine.getConfig().getGroupConfig();
+        String nodeGroupName = groupConfig.getName();
+        String nodeGroupPassword = groupConfig.getPassword();
+        boolean usernameMatch = nodeGroupName.equals(credentials.getUsername());
+        boolean passwordMatch = nodeGroupPassword.equals(credentials.getPassword());
+        return usernameMatch && passwordMatch;
+    }
+
+    private boolean authenticate(SecurityContext securityContext) {
+        Connection connection = endpoint.getConnection();
+        credentials.setEndpoint(connection.getInetAddress().getHostAddress());
+        try {
+            LoginContext lc = securityContext.createClientLoginContext(credentials);
+            lc.login();
+            endpoint.setLoginContext(lc);
+            return true;
+        } catch (LoginException e) {
+            ILogger logger = clientEngine.getLogger(getClass());
+            logger.warning(e);
+            return false;
+        }
+    }
+
+    private Object handleUnauthenticated() {
+        ClientEngineImpl clientEngine = getService();
+        clientEngine.removeEndpoint(endpoint.getConnection());
+        return new AuthenticationException("Invalid credentials!");
+    }
+
+    private Object handleAuthenticated() {
+        ClientEngineImpl clientEngine = getService();
+
+        if (principal != null && reAuth) {
+            principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
+            reAuthLocal();
+            Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
+            for (MemberImpl member : members) {
+                if (!member.localMember()) {
+                    ClientReAuthOperation op = new ClientReAuthOperation(principal.getUuid(), firstConnection);
+                    clientEngine.sendOperation(op, member.getAddress());
                 }
             }
-            if (principal == null) {
-                principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
-            }
-            endpoint.authenticated(principal, firstConnection);
-            clientEngine.bind(endpoint);
-            return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
-        } else {
-            clientEngine.removeEndpoint(connection);
-            return new AuthenticationException("Invalid credentials!");
         }
+        if (principal == null) {
+            principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
+        }
+        endpoint.authenticated(principal, firstConnection);
+        clientEngine.bind(endpoint);
+        return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
     }
 
     private void reAuthLocal() {
@@ -168,5 +195,10 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         principal = reader.readPortable("principal");
         reAuth = reader.readBoolean("reAuth");
         firstConnection = reader.readBoolean("firstConnection");
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

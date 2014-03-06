@@ -47,13 +47,13 @@ public class ClientAtomicLongTest {
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient(null);
+        client = HazelcastClient.newHazelcastClient();
         l = client.getAtomicLong(name);
     }
 
     @AfterClass
     public static void destroy() {
-        client.getLifecycleService().shutdown();
+        client.shutdown();
         Hazelcast.shutdownAll();
     }
 

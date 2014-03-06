@@ -18,12 +18,13 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
+import com.hazelcast.security.permission.TransactionPermission;
+import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionAccessor;
 
-/**
- * @author ali 14/02/14
- */
+import java.security.Permission;
+
 public class PrepareTransactionRequest extends BaseTransactionRequest {
 
     public PrepareTransactionRequest() {
@@ -31,21 +32,30 @@ public class PrepareTransactionRequest extends BaseTransactionRequest {
 
     @Override
     protected Object innerCall() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
-        final Transaction transaction = TransactionAccessor.getTransaction(endpoint.getTransactionContext(txnId));
+        ClientEndpoint endpoint = getEndpoint();
+        TransactionContext transactionContext = endpoint.getTransactionContext(txnId);
+        Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
         transaction.prepare();
         return null;
     }
 
+    @Override
     public String getServiceName() {
         return ClientEngineImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientTxnPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientTxnPortableHook.PREPARE;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
     }
 }

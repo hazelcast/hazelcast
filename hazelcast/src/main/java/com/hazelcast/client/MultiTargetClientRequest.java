@@ -17,44 +17,62 @@
 package com.hazelcast.client;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @author mdogan 5/3/13
- */
+import static java.util.Collections.synchronizedSet;
+
 public abstract class MultiTargetClientRequest extends ClientRequest {
 
+    public static final int TRY_COUNT = 100;
+
+
+    @Override
     final void process() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
+        ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = createOperationFactory();
         Collection<Address> targets = getTargets();
         if (targets.isEmpty()) {
             endpoint.sendResponse(reduce(new HashMap<Address, Object>()), getCallId());
             return;
         }
+
         MultiTargetCallback callback = new MultiTargetCallback(targets);
         for (Address target : targets) {
-            final Operation op = operationFactory.createOperation();
+            Operation op = operationFactory.createOperation();
             op.setCallerUuid(endpoint.getUuid());
-            final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, target)
-                    .setTryCount(100)
+            InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, target)
+                    .setTryCount(TRY_COUNT)
+                    .setResultDeserialized(false)
                     .setCallback(new SingleTargetCallback(target, callback));
             builder.invoke();
         }
     }
 
-    private class MultiTargetCallback {
+
+    protected abstract OperationFactory createOperationFactory();
+
+    protected abstract Object reduce(Map<Address, Object> map);
+
+    public abstract Collection<Address> getTargets();
+
+    private final class MultiTargetCallback {
 
         final Collection<Address> targets;
         final ConcurrentMap<Address, Object> results;
 
         private MultiTargetCallback(Collection<Address> targets) {
-            this.targets = Collections.synchronizedSet(new HashSet<Address>(targets));
-            results = new ConcurrentHashMap<Address, Object>(targets.size());
+            this.targets = synchronizedSet(new HashSet<Address>(targets));
+            this.results = new ConcurrentHashMap<Address, Object>(targets.size());
         }
 
         public void notify(Address target, Object result) {
@@ -67,13 +85,13 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
                 throw new IllegalArgumentException("Unknown target! -> " + target);
             }
             if (targets.isEmpty()) {
-                final Object response = reduce(results);
+                Object response = reduce(results);
                 endpoint.sendResponse(response, getCallId());
             }
         }
     }
 
-    private static class SingleTargetCallback implements Callback<Object> {
+    private static final class SingleTargetCallback implements Callback<Object> {
 
         final Address target;
         final MultiTargetCallback parent;
@@ -83,15 +101,11 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             this.parent = parent;
         }
 
+        @Override
         public void notify(Object object) {
             parent.notify(target, object);
         }
     }
 
-    protected abstract OperationFactory createOperationFactory();
-
-    protected abstract Object reduce(Map<Address, Object> map);
-
-    public abstract Collection<Address> getTargets();
 
 }

@@ -260,14 +260,6 @@
         </entry-listeners>
     </multimap>
 
-    <replicatedmap name="default">
-        <in-memory-format>OBJECT</in-memory-format>
-        <concurrency-level>32</concurrency-level>
-        <replication-delay-millis>100</replication-delay-millis>
-        <async-fillup>true</async-fillup>
-        <statistics-enabled>true</statistics-enabled>
-    </replicatedmap>
-
     <list name="default">
         <statistics-enabled>false</statistics-enabled>
         <max-size>0</max-size>

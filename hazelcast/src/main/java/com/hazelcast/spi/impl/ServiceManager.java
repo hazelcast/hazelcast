@@ -37,9 +37,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -74,7 +73,7 @@ final class ServiceManager {
         // register core services
         logger.finest( "Registering core services...");
         registerService(ClusterServiceImpl.SERVICE_NAME, node.getClusterService());
-        registerService(PartitionServiceImpl.SERVICE_NAME, node.getPartitionService());
+        registerService(InternalPartitionService.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
@@ -98,7 +97,6 @@ final class ServiceManager {
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
                 registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
-                registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
                 registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
             }
 

@@ -19,22 +19,19 @@ package com.hazelcast.queue.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: ahmetmircik
- * Date: 10/1/13
- * Time: 10:34 AM
- */
-public class TxnPeekRequest extends BaseTransactionRequest implements Portable {
+public class TxnPeekRequest extends BaseTransactionRequest {
 
     private String name;
 
@@ -82,5 +79,9 @@ public class TxnPeekRequest extends BaseTransactionRequest implements Portable {
         super.read(reader);
         name = reader.readUTF("n");
         timeout = reader.readLong("t");
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_READ);
     }
 }

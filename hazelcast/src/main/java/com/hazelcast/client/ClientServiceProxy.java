@@ -22,9 +22,6 @@ import com.hazelcast.core.ClientService;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 5/14/13
- */
 final class ClientServiceProxy implements ClientService {
 
     private final ClientEngineImpl clientEngine;
@@ -33,14 +30,17 @@ final class ClientServiceProxy implements ClientService {
         this.clientEngine = clientEngine;
     }
 
+    @Override
     public Collection<Client> getConnectedClients() {
-        return clientEngine.getEndpoints();
+        return clientEngine.getClients();
     }
 
+    @Override
     public String addClientListener(ClientListener clientListener) {
         return clientEngine.addClientListener(clientListener);
     }
 
+    @Override
     public boolean removeClientListener(String registrationId) {
         return clientEngine.removeClientListener(registrationId);
     }

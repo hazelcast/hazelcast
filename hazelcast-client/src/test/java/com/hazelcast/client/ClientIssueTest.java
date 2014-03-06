@@ -143,7 +143,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
         }
 
         lock.lock();
-        hz1.getLifecycleService().shutdown();
+        hz1.shutdown();
         lock.unlock();
     }
 
@@ -216,7 +216,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
         map.put("key1", "value1");
 
-        instance.getLifecycleService().shutdown();
+        instance.shutdown();
 
         try {
             map.get("key1");
@@ -413,7 +413,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
-        instance1.getLifecycleService().shutdown();
+        instance1.shutdown();
 
         final Thread thread = new Thread() {
             @Override

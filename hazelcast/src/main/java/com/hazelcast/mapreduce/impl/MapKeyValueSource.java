@@ -20,11 +20,13 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.PartitionIdAware;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -64,8 +66,13 @@ public class MapKeyValueSource<K, V>
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
+        InternalPartitionService ps = nei.getPartitionService();
         MapService mapService = nei.getService(MapService.SERVICE_NAME);
         ss = nei.getSerializationService();
+        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        if (partitionOwner == null) {
+            return false;
+        }
         RecordStore recordStore = mapService.getRecordStore(partitionId, mapName);
         iterator = recordStore.entrySetData().iterator();
         return true;

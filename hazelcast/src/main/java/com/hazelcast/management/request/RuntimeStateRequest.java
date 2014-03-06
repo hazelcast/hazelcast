@@ -27,7 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.InternalPartitionService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -54,7 +54,7 @@ public class RuntimeStateRequest implements ConsoleRequest {
         HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
         Node node = instance.node;
         ClusterServiceImpl cluster = node.getClusterService();
-        PartitionServiceImpl partitionService = node.partitionService;
+        InternalPartitionService partitionService = node.partitionService;
         Collection<LockResource> lockedRecords = collectLockState(instance);
         Map<Address, Connection> connectionMap = node.connectionManager.getReadonlyConnectionMap();
 

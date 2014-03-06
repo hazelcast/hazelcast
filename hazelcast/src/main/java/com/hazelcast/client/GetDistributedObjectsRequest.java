@@ -18,28 +18,27 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
-/**
- * User: sancar
- * Date: 8/16/13
- * Time: 10:35 AM
- */
-public class GetDistributedObjectsRequest extends ClientRequest implements Portable {
+public class GetDistributedObjectsRequest extends ClientRequest {
     @Override
     void process() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
-        final Collection<DistributedObject> distributedObjects = clientEngine.getProxyService().getAllDistributedObjects();
-        final SerializationService serializationService = getClientEngine().getSerializationService();
-        final ArrayList<Data> dataArrayList = new ArrayList<Data>(distributedObjects.size());
+        ClientEndpoint endpoint = getEndpoint();
+        Collection<DistributedObject> distributedObjects = clientEngine.getProxyService().getAllDistributedObjects();
+        SerializationService serializationService = clientEngine.getSerializationService();
+
+        List<Data> dataArrayList = new ArrayList<Data>(distributedObjects.size());
         for (DistributedObject distributedObject : distributedObjects) {
-            final DistributedObjectInfo distributedObjectInfo = new DistributedObjectInfo(distributedObject.getServiceName(), distributedObject.getName());
-            dataArrayList.add(serializationService.toData(distributedObjectInfo));
+            DistributedObjectInfo distributedObjectInfo = new DistributedObjectInfo(
+                    distributedObject.getServiceName(), distributedObject.getName());
+            Data data = serializationService.toData(distributedObjectInfo);
+            dataArrayList.add(data);
         }
         SerializableCollection collection = new SerializableCollection(dataArrayList);
         endpoint.sendResponse(collection, getCallId());
@@ -58,4 +57,8 @@ public class GetDistributedObjectsRequest extends ClientRequest implements Porta
         return ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

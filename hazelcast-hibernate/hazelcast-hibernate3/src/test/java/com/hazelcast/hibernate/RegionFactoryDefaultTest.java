@@ -31,6 +31,10 @@ import org.junit.runner.RunWith;
 import java.util.Date;
 import java.util.Properties;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
@@ -52,7 +56,7 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         } catch (Exception ex) {
             ex.printStackTrace();
             tx.rollback();
-            Assert.fail(ex.getMessage());
+            fail(ex.getMessage());
         } finally {
             session.close();
         }
@@ -60,11 +64,11 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         session = sf.openSession();
         try {
             e = (DummyEntity) session.get(DummyEntity.class, 1L);
-            Assert.assertEquals("test", e.getName());
-            Assert.assertNull(e.getDate());
+            assertEquals("test", e.getName());
+            assertNull(e.getDate());
         } catch (Exception ex) {
             ex.printStackTrace();
-            Assert.fail(ex.getMessage());
+            fail(ex.getMessage());
         } finally {
             session.close();
         }
@@ -73,8 +77,8 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         tx = session.beginTransaction();
         try {
             e = (DummyEntity) session.get(DummyEntity.class, 1L);
-            Assert.assertEquals("test", e.getName());
-            Assert.assertNull(e.getDate());
+            assertEquals("test", e.getName());
+            assertNull(e.getDate());
             e.setName("dummy");
             e.setDate(new Date());
             session.update(e);
@@ -82,7 +86,7 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         } catch (Exception ex) {
             ex.printStackTrace();
             tx.rollback();
-            Assert.fail(ex.getMessage());
+            fail(ex.getMessage());
         } finally {
             session.close();
         }
@@ -90,11 +94,11 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         session = sf.openSession();
         try {
             e = (DummyEntity) session.get(DummyEntity.class, 1L);
-            Assert.assertEquals("dummy", e.getName());
+            assertEquals("dummy", e.getName());
             Assert.assertNotNull(e.getDate());
         } catch (Exception ex) {
             ex.printStackTrace();
-            Assert.fail(ex.getMessage());
+            fail(ex.getMessage());
         } finally {
             session.close();
         }

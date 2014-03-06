@@ -39,8 +39,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_keyAttribute() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
@@ -59,8 +58,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_key() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+         HazelcastInstance hz = createHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
@@ -78,8 +76,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_this() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+         HazelcastInstance hz = createHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
@@ -97,8 +94,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_attribute() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance();
+       HazelcastInstance hz = createHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 

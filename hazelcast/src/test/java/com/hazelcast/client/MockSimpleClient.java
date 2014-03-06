@@ -47,7 +47,9 @@ public class MockSimpleClient implements SimpleClient {
     }
 
     public void auth() throws IOException {
-        clientEngine.getEndpoint(connection);
+        //we need to call this so that the endpoint is created for the connection. Normally this is done from
+        //the ConnectionManager.
+        clientEngine.getConnectionListener().connectionAdded(connection);
         AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
         send(auth);
         receive();

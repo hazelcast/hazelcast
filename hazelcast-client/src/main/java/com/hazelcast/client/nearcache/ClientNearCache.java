@@ -28,8 +28,6 @@ import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.replicatedmap.client.ClientReplicatedMapAddEntryListenerRequest;
-import com.hazelcast.replicatedmap.client.ClientReplicatedMapRemoveEntryListenerRequest;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -104,13 +102,6 @@ public class ClientNearCache<K> {
             EventHandler handler;
             if (cacheType == ClientNearCacheType.Map) {
                 request = new MapAddEntryListenerRequest(mapName, false);
-                handler = new EventHandler<PortableEntryEvent>() {
-                    public void handle(PortableEntryEvent event) {
-                        cache.remove(event.getKey());
-                    }
-                };
-            } else if (cacheType == ClientNearCacheType.ReplicatedMap) {
-                request = new ClientReplicatedMapAddEntryListenerRequest(mapName, null, null);
                 handler = new EventHandler<PortableEntryEvent>() {
                     public void handle(PortableEntryEvent event) {
                         cache.remove(event.getKey());
@@ -249,8 +240,6 @@ public class ClientNearCache<K> {
             BaseClientRemoveListenerRequest request;
             if (cacheType == ClientNearCacheType.Map) {
                 request = new MapRemoveEntryListenerRequest(mapName, registrationId);
-            } else if (cacheType == ClientNearCacheType.ReplicatedMap) {
-                request = new ClientReplicatedMapRemoveEntryListenerRequest(mapName, registrationId);
             } else {
                 throw new IllegalStateException("Near cache is not available for this type of data structure");
             }

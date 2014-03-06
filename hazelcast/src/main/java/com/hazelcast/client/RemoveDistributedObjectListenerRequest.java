@@ -16,11 +16,9 @@
 
 package com.hazelcast.client;
 
-/**
- * @author ali 23/12/13
- */
-public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveListenerRequest {
+import java.security.Permission;
 
+public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveListenerRequest {
 
     public RemoveDistributedObjectListenerRequest() {
     }
@@ -29,20 +27,28 @@ public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveList
         super(null, registrationId);
     }
 
+    @Override
     public Object call() throws Exception {
         return clientEngine.getProxyService().removeProxyListener(registrationId);
     }
 
+    @Override
     public String getServiceName() {
         return null;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientPortableHook.REMOVE_LISTENER;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

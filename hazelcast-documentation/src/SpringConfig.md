@@ -166,7 +166,8 @@ Example:
 <hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
 <hz:lock id="lock" instance-ref="instance" name="lock"/>
 ```
-[**Injecting Typed Collections/Maps**](#SpringInjectingTypedBean)
+
+
 
 Spring tries to create a new `Map`/`Collection` instance and fill the new instance by iterating and converting values of the original `Map`/`Collection` (`IMap`, `IQueue` etc.) to required types when generic type parameters of the original `Map`/`Collection` and the target property/attribute do not match.
 
@@ -206,4 +207,5 @@ public class SomeBean {
     ...
 }
 ```
-*For more info see [Spring issue-3407](https://jira.springsource.org/browse/SPR-3407).*
+
+For more information please see [Spring issue-3407](https://jira.springsource.org/browse/SPR-3407).

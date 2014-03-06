@@ -100,7 +100,7 @@ public class HazelcastXaTest {
         final com.hazelcast.transaction.impl.Transaction transaction = TransactionAccessor.getTransaction(context);
         transaction.prepare();
 
-        instance1.getLifecycleService().shutdown();
+        instance1.shutdown();
 
         assertEquals("value", instance2.getMap("map").get("key"));
 
@@ -123,7 +123,7 @@ public class HazelcastXaTest {
         final TransactionalMap<Object, Object> map = context1.getMap("map");
         map.put("key", "value");
         xaResource.prepare(myXid);
-        instance1.getLifecycleService().shutdown();
+        instance1.shutdown();
 
         assertNull(instance2.getMap("map").get("key"));
 

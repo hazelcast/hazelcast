@@ -17,17 +17,25 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +53,43 @@ public class MapReduceTest
         extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
+
+    @Test(timeout = 30000)
+    public void testPartitionPostpone()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(3, h1.getCluster().getMembers().size());
+            }
+        });
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        KeyValueSource<Integer, Integer> kvs = KeyValueSource.fromMap(m1);
+        KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+        Job<Integer, Integer> job = tracker.newJob(wrapper);
+        ICompletableFuture<Map<String, List<Integer>>> future =
+                job.mapper(new TestMapper())
+                        .submit();
+
+        Map<String, List<Integer>> result = future.get();
+
+        assertEquals(100, result.size());
+        for (List<Integer> value : result.values()) {
+            assertEquals(1, value.size());
+        }
+    }
 
     @Test(timeout = 30000, expected = ExecutionException.class)
     public void testExceptionDistribution()
@@ -663,7 +708,7 @@ public class MapReduceTest
         public void map(Integer key, Integer value, Context<String, Integer> collector) {
             try {
                 Thread.sleep(1000);
-            } catch(Exception ignore) {
+            } catch (Exception ignore) {
             }
             collector.emit(String.valueOf(key), value);
         }
@@ -760,6 +805,98 @@ public class MapReduceTest
                 sum += entry.getValue();
             }
             return sum;
+        }
+    }
+
+    public static class MapKeyValueSourceAdapter<K, V>
+            extends KeyValueSource<K, V>
+            implements DataSerializable, PartitionIdAware {
+
+        private volatile KeyValueSource<K, V> keyValueSource;
+        private int openCount = 0;
+
+        public MapKeyValueSourceAdapter() {
+        }
+
+        public MapKeyValueSourceAdapter(KeyValueSource<K, V> keyValueSource) {
+            this.keyValueSource = keyValueSource;
+        }
+
+        @Override
+        public boolean open(NodeEngine nodeEngine) {
+            if (openCount < 2) {
+                openCount++;
+                return false;
+            }
+            return keyValueSource.open(nodeEngine);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return keyValueSource.hasNext();
+        }
+
+        @Override
+        public K key() {
+            return keyValueSource.key();
+        }
+
+        @Override
+        public Map.Entry<K, V> element() {
+            return keyValueSource.element();
+        }
+
+        @Override
+        public boolean reset() {
+            return keyValueSource.reset();
+        }
+
+        @Override
+        public boolean isAllKeysSupported() {
+            return keyValueSource.isAllKeysSupported();
+        }
+
+        @Override
+        public Collection<K> getAllKeys0() {
+            return keyValueSource.getAllKeys0();
+        }
+
+        public static <K1, V1> KeyValueSource<K1, V1> fromMap(IMap<K1, V1> map) {
+            return KeyValueSource.fromMap(map);
+        }
+
+        public static <K1, V1> KeyValueSource<K1, V1> fromMultiMap(MultiMap<K1, V1> multiMap) {
+            return KeyValueSource.fromMultiMap(multiMap);
+        }
+
+        public static <V1> KeyValueSource<String, V1> fromList(IList<V1> list) {
+            return KeyValueSource.fromList(list);
+        }
+
+        public static <V1> KeyValueSource<String, V1> fromSet(ISet<V1> set) {
+            return KeyValueSource.fromSet(set);
+        }
+
+        @Override
+        public void close() throws IOException {
+            keyValueSource.close();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(keyValueSource);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            keyValueSource = in.readObject();
+        }
+
+        @Override
+        public void setPartitionId(int partitionId) {
+            if (keyValueSource instanceof PartitionIdAware) {
+                ((PartitionIdAware) keyValueSource).setPartitionId(partitionId);
+            }
         }
     }
 

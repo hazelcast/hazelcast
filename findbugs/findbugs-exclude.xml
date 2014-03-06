@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+
+    <!--comment out packages as they pass findbugs. e.g. examples now passes-->
+
+    <Match>
+        <Package name="com.hazelcast.examples" />
+    </Match>
+
+    <Match>
+        <Package name="com.hazelcast.ascii.rest" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.ascii.memcache" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.util" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.transaction.impl" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.management.request" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.instance" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.core" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.nio.ssl" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.spi.impl" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.nio.serialization" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.security" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.config" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.map" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.util.executor" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.cluster.client" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.cluster" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.nio.ascii" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.management" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.map.proxy" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.ascii" />
+    </Match>
+
+    <Match>
+        <Package name="com.hazelcast.nio.partition" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition.client" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition.impl" />
+    </Match>
+
+
+    <!-- todo: these findbugs warnings needs to be fixed -->
+    <Match>
+        <Package name="com.hazelcast.jca" />
+    </Match>
+
+
+</FindBugsFilter>

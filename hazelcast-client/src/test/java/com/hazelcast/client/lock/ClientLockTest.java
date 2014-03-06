@@ -30,9 +30,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author ali 5/28/13
@@ -48,13 +46,13 @@ public class ClientLockTest {
     @BeforeClass
     public static void init() {
         Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        hz = HazelcastClient.newHazelcastClient();
         l = hz.getLock(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 
@@ -81,7 +79,7 @@ public class ClientLockTest {
 
     @Test
     public void testLockTtl() throws Exception {
-        l.lock( 3, TimeUnit.SECONDS);
+        l.lock(3, TimeUnit.SECONDS);
         final CountDownLatch latch = new CountDownLatch(2);
         new Thread() {
             public void run() {
@@ -89,7 +87,7 @@ public class ClientLockTest {
                     latch.countDown();
                 }
                 try {
-                    if (l.tryLock( 5, TimeUnit.SECONDS)) {
+                    if (l.tryLock(5, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -104,12 +102,12 @@ public class ClientLockTest {
     @Test
     public void testTryLock() throws Exception {
 
-        assertTrue(l.tryLock( 2, TimeUnit.SECONDS));
+        assertTrue(l.tryLock(2, TimeUnit.SECONDS));
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(!l.tryLock( 2, TimeUnit.SECONDS)){
+                    if (!l.tryLock(2, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -122,10 +120,10 @@ public class ClientLockTest {
         assertTrue(l.isLocked());
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(l.tryLock( 20, TimeUnit.SECONDS)){
+                    if (l.tryLock(20, TimeUnit.SECONDS)) {
                         latch2.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -144,7 +142,7 @@ public class ClientLockTest {
     public void testForceUnlock() throws Exception {
         l.lock();
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 l.forceUnlock();
                 latch.countDown();

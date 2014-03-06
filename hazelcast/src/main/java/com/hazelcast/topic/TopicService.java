@@ -20,10 +20,12 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.spi.*;
-import com.hazelcast.topic.proxy.TopicProxy;
-import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
-import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
@@ -33,21 +35,24 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
 public class TopicService implements ManagedService, RemoteService, EventPublishingService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
     public static final int ORDERING_LOCKS_LENGTH = 1000;
 
+    final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
     private final Lock[] orderingLocks = new Lock[ORDERING_LOCKS_LENGTH];
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
-
-    private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction = new ConstructorFunction<String, LocalTopicStatsImpl>() {
-        public LocalTopicStatsImpl createNew(String mapName) {
-            return new LocalTopicStatsImpl();
-        }
-    };
+    private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction =
+            new ConstructorFunction<String, LocalTopicStatsImpl>() {
+                public LocalTopicStatsImpl createNew(String mapName) {
+                    return new LocalTopicStatsImpl();
+                }
+            };
+    private EventService eventService;
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -55,6 +60,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         for (int i = 0; i < orderingLocks.length; i++) {
             orderingLocks[i] = new ReentrantLock();
         }
+        eventService = nodeEngine.getEventService();
     }
 
     @Override
@@ -74,14 +80,18 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     private int getOrderLockIndex(String key) {
         int hash = key.hashCode();
-        return hash != Integer.MIN_VALUE ? (Math.abs(hash) % orderingLocks.length) : 0;
+        if (hash == Integer.MIN_VALUE) {
+            return 0;
+        } else {
+            return Math.abs(hash) % orderingLocks.length;
+        }
     }
 
     @Override
     public TopicProxy createDistributedObject(String name) {
-        if (isGlobalOrderingEnabled(name)){
+        if (isGlobalOrderingEnabled(name)) {
             return new TotalOrderedTopicProxy(name, nodeEngine, this);
-        }else{
+        } else {
             return new TopicProxy(name, nodeEngine, this);
         }
     }
@@ -102,11 +112,12 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         Object msgObject = nodeEngine.toObject(topicEvent.data);
         Message message = new Message(topicEvent.name, msgObject, topicEvent.publishTime, topicEvent.publishingMember);
         incrementReceivedMessages(topicEvent.name);
-        ((MessageListener) listener).onMessage(message);
+        MessageListener messageListener = (MessageListener) listener;
+        messageListener.onMessage(message);
     }
 
     public LocalTopicStatsImpl getLocalTopicStats(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(statsMap, name, statsMap, localTopicStatsConstructorFunction);
+        return getOrPutSynchronized(statsMap, name, statsMap, localTopicStatsConstructorFunction);
     }
 
     public void incrementPublishes(String topicName) {
@@ -118,19 +129,16 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public void publishEvent(String name, TopicEvent event) {
-        EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
         eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, name.hashCode());
     }
 
-    public String addMessageListener(String name, MessageListener listener){
-        EventService eventService = nodeEngine.getEventService();
+    public String addMessageListener(String name, MessageListener listener) {
         EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
         return eventRegistration.getId();
     }
 
     public boolean removeMessageListener(String name, String registrationId) {
-        EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 }

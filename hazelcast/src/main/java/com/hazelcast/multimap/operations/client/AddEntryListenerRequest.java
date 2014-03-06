@@ -17,6 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.*;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.multimap.MultiMapPortableHook;
@@ -57,21 +58,9 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
         final MultiMapService service = getService();
-        EntryListener listener = new EntryListener() {
-
-            public void entryAdded(EntryEvent event) {
-                send(event);
-            }
-
-            public void entryRemoved(EntryEvent event) {
-                send(event);
-            }
-
-            public void entryUpdated(EntryEvent event) {
-                send(event);
-            }
-
-            public void entryEvicted(EntryEvent event) {
+        EntryListener listener = new EntryAdapter() {
+            @Override
+            public void onEntryEvent(EntryEvent event) {
                 send(event);
             }
 

@@ -25,46 +25,57 @@ import java.util.logging.Level;
  */
 public abstract class AbstractLogger implements ILogger {
 
+    @Override
     public void finest(String message) {
         log(Level.FINEST, message);
     }
 
+    @Override
     public void finest(String message, Throwable thrown) {
         log(Level.FINEST, message, thrown);
     }
 
+    @Override
     public void finest(Throwable thrown) {
         log(Level.FINEST, thrown.getMessage(), thrown);
     }
 
+    @Override
     public boolean isFinestEnabled() {
         return isLoggable(Level.FINEST);
     }
 
+    @Override
     public void info(String message) {
         log(Level.INFO, message);
     }
 
+    @Override
     public void severe(String message) {
         log(Level.SEVERE, message);
     }
 
+    @Override
     public void severe(Throwable thrown) {
         log(Level.SEVERE, thrown.getMessage(), thrown);
     }
 
+    @Override
     public void severe(String message, Throwable thrown) {
         log(Level.SEVERE, message, thrown);
     }
 
+    @Override
     public void warning(String message) {
         log(Level.WARNING, message);
     }
 
+    @Override
     public void warning(Throwable thrown) {
         log(Level.WARNING, thrown.getMessage(), thrown);
     }
 
+    @Override
     public void warning(String message, Throwable thrown) {
         log(Level.WARNING, message, thrown);
     }

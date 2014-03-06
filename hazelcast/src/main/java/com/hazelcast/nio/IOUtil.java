@@ -233,6 +233,8 @@ public final class IOUtil {
         } else if(type.equals(String.class)) {
             out.writeByte(PRIMITIVE_TYPE_UTF);
             out.writeUTF((String) value);
+        } else {
+            throw new IllegalStateException("Illegal attribute type id found");
         }
     }
 
@@ -256,7 +258,7 @@ public final class IOUtil {
             case PRIMITIVE_TYPE_UTF:
                 return in.readUTF();
         }
-        throw new IllegalStateException("Illegal type id found");
+        throw new IllegalStateException("Illegal attribute type id found");
     }
 
     /**

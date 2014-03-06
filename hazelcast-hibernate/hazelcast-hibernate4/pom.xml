@@ -18,22 +18,23 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.hazelcast</groupId>
-        <artifactId>hazelcast-hibernate</artifactId>
-        <version>3.2-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
     <name>hazelcast-hibernate4</name>
     <artifactId>hazelcast-hibernate4</artifactId>
     <packaging>jar</packaging>
 
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-hibernate</artifactId>
+        <version>3.2-RC2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <properties>
         <hibernate.core.version>4.1.0.Final</hibernate.core.version>
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
-    
-    
+
     <build>
         <plugins>
             <plugin>

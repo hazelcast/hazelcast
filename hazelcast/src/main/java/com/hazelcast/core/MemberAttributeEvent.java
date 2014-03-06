@@ -16,8 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,12 +25,11 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.cluster.MemberAttributeChangedOperation.DELTA_MEMBER_PROPERTIES_OP_PUT;
-import static com.hazelcast.cluster.MemberAttributeChangedOperation.DELTA_MEMBER_PROPERTIES_OP_REMOVE;
+import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
 public class MemberAttributeEvent extends MembershipEvent implements DataSerializable {
 
-    private MapOperationType operationType;
+    private MemberAttributeOperationType operationType;
     private String key;
     private Object value;
     private Member member;
@@ -39,7 +38,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         super(null, null, MEMBER_ATTRIBUTE_CHANGED, null);
     }
 
-    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MapOperationType operationType, String key, Object value) {
+    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType, String key, Object value) {
         super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, null);
         this.member = member;
         this.operationType = operationType;
@@ -47,7 +46,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         this.value = value;
     }
 
-    public MapOperationType getOperationType() {
+    public MemberAttributeOperationType getOperationType() {
         return operationType;
     }
 
@@ -67,16 +66,9 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(key);
         member.writeData(out);
-        switch (operationType) {
-            case PUT:
-                out.writeByte(DELTA_MEMBER_PROPERTIES_OP_PUT);
-                IOUtil.writeAttributeValue(value, out);
-                break;
-            case REMOVE:
-                out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
-                break;
-            default:
-                throw new IllegalStateException("Unknown operation type: " + operationType);
+        out.writeByte(operationType.id);
+        if (operationType == PUT) {
+            IOUtil.writeAttributeValue(value,out);
         }
     }
 
@@ -85,18 +77,9 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         key = in.readUTF();
         member = new MemberImpl();
         member.readData(in);
-        int operation = in.readByte();
-        switch (operation)
-        {
-            case DELTA_MEMBER_PROPERTIES_OP_PUT:
-                operationType = MapOperationType.PUT;
-                value = IOUtil.readAttributeValue(in);
-                break;
-            case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
-                operationType = MapOperationType.REMOVE;
-                break;
-            default:
-                throw new IllegalStateException("Unknown operation type received: " + operationType);
+        operationType = MemberAttributeOperationType.getValue(in.readByte());
+        if (operationType == PUT) {
+            value = IOUtil.readAttributeValue(in);
         }
         this.source = member;
     }

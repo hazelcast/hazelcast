@@ -45,11 +45,9 @@ public class DistributedMapperMapReduceTest
     public void testMapperReducer()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        final Config config = new Config();
-
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -82,11 +80,9 @@ public class DistributedMapperMapReduceTest
     public void testMapperReducerCollator()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        final Config config = new Config();
-
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -118,11 +114,9 @@ public class DistributedMapperMapReduceTest
     public void testAsyncMapperReducer()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        final Config config = new Config();
-
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -172,11 +166,9 @@ public class DistributedMapperMapReduceTest
     public void testAsyncMapperReducerCollator()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        final Config config = new Config();
-
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {

@@ -24,12 +24,12 @@ import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.util.logging.Level;
 
-/**
- * @author mdogan 6/6/13
- */
 public final class ReplicaErrorLogger {
 
-    public static void log(Throwable e, final ILogger logger) {
+    private ReplicaErrorLogger() {
+    }
+
+    public static void log(Throwable e, ILogger logger) {
         if (e instanceof RetryableException) {
             Level level = Level.INFO;
             if (e instanceof CallerNotMemberException
@@ -44,6 +44,4 @@ public final class ReplicaErrorLogger {
             logger.warning(e);
         }
     }
-
-    private ReplicaErrorLogger() {}
 }

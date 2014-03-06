@@ -223,7 +223,15 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 .processRequest(supervisor.getJobOwner(), new PostPonePartitionProcessing(name, jobId, partitionId), name);
 
         if (result.getResultState() != SUCCESSFUL) {
-            throw new RuntimeException("Could not postpone processing for partitionId " + partitionId);
+            throw new RuntimeException("Could not postpone processing for partitionId " + partitionId + " -> "
+                    + result.getResultState());
+        }
+    }
+
+    private void handleProcessorThrowable(Throwable t) {
+        notifyRemoteException(supervisor, t);
+        if (t instanceof Error) {
+            ExceptionUtil.sneakyThrow(t);
         }
     }
 
@@ -270,7 +278,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                         postponePartitionProcessing(partitionId);
                     }
                 } catch (Throwable t) {
-                    notifyRemoteException(supervisor, t);
+                    handleProcessorThrowable(t);
                 }
             }
         }
@@ -334,10 +342,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     postponePartitionProcessing(partitionId);
                 }
             } catch (Throwable t) {
-                notifyRemoteException(supervisor, t);
-                if (t instanceof Error) {
-                    ExceptionUtil.sneakyThrow(t);
-                }
+                handleProcessorThrowable(t);
             }
         }
     }

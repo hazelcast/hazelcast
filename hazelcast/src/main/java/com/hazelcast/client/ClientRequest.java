@@ -22,19 +22,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- *
- * @author mdogan 4/29/13
- */
-public abstract class ClientRequest implements Portable {
+public abstract class ClientRequest implements Portable, SecureRequest {
 
-    int callId = -1;
-
-    transient ClientEngineImpl clientEngine;
-
-    transient Object service;
-
-    transient ClientEndpoint endpoint;
+    protected int callId = -1;
+    protected transient ClientEngineImpl clientEngine;
+    protected transient Object service;
+    protected transient ClientEndpoint endpoint;
 
     abstract void process() throws Exception;
 
@@ -72,21 +65,21 @@ public abstract class ClientRequest implements Portable {
         this.callId = callId;
     }
 
+    @Override
     public final void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("cId", callId);
         write(writer);
     }
 
-    public  void write(PortableWriter writer) throws IOException {
-
+    public void write(PortableWriter writer) throws IOException {
     }
 
+    @Override
     public final void readPortable(PortableReader reader) throws IOException {
         callId = reader.readInt("cId");
         read(reader);
     }
 
     public void read(PortableReader reader) throws IOException {
-
     }
 }

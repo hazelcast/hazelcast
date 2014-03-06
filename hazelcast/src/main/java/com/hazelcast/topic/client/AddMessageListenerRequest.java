@@ -35,7 +35,8 @@ import com.hazelcast.topic.TopicService;
 import java.io.IOException;
 import java.security.Permission;
 
-public class AddMessageListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
+public class AddMessageListenerRequest extends CallableClientRequest
+        implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
 
@@ -98,6 +99,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
             this.callId = callId;
         }
 
+        @Override
         public void onMessage(Message message) {
             if (!endpoint.live()) {
                 return;

@@ -17,11 +17,14 @@
 package com.hazelcast.topic.client;
 
 import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.TopicPortableHook;
 import com.hazelcast.topic.TopicService;
 
-public class RemoveMessageListenerRequest extends BaseClientRemoveListenerRequest {
+import java.security.Permission;
 
+public class RemoveMessageListenerRequest extends BaseClientRemoveListenerRequest {
 
     public RemoveMessageListenerRequest() {
     }
@@ -51,4 +54,8 @@ public class RemoveMessageListenerRequest extends BaseClientRemoveListenerReques
         return TopicPortableHook.REMOVE_LISTENER;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new TopicPermission(name, ActionConstants.ACTION_LISTEN);
+    }
 }

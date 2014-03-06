@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.2-SNAPSHOT</version>
+    <version>3.2-RC2-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -58,7 +58,8 @@
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
-        <findbugs.maven.plugin.version>2.5.2</findbugs.maven.plugin.version>
+        <findbugs.maven.plugin.version>2.5.3</findbugs.maven.plugin.version>
+        <checkstyle.maven.plugin.version>2.11</checkstyle.maven.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <junit.version>4.11</junit.version>
         <junit-benchmarks.version>0.7.2</junit-benchmarks.version>
@@ -66,6 +67,7 @@
         <mockito.all.version>1.9.5</mockito.all.version>
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
+        <main.basedir>${project.basedir}</main.basedir>
     </properties>
     <licenses>
         <license>
@@ -133,6 +135,17 @@
 
         <plugins>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.6.4</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/hazelcast/examples/**/*.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven.assembly.plugin.version}</version>
@@ -144,6 +157,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
@@ -168,7 +182,9 @@
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <parallel>methods</parallel -->
 
-                    <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
+                    <!-- the argLine variable is needed for jacoco-->
+                    <argLine>
+                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
@@ -184,6 +200,81 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>test-coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.6.4.201312101107</version>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/hazelcast/examples/**/*.class</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>default-prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>default-report</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                            <!-- execution>
+                                <id>default-check</id>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <rule implementation="org.jacoco.maven.RuleConfiguration">
+                                            <element>BUNDLE</element>
+                                            <limits>
+                                                <limit implementation="org.jacoco.report.check.Limit">
+                                                    <counter>COMPLEXITY</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>0.60</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                                </configuration>
+                            </execution -->
+                        </executions>
+                    </plugin>
+
+                    <!-- we need to copy the sure-fire plugin because we need to add a argLine variable for jacoco-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <argLine>
+                                ${argLine}
+                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.logging.type=none
+                                -Dhazelcast.test.use.network=false
+                            </argLine>
+                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
+                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>release</id>
             <properties>
@@ -380,6 +471,59 @@
         </profile>
 
         <profile>
+            <id>qa</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>${checkstyle.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>checkstyle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <configLocation>${main.basedir}/checkstyle/checkstyle.xml</configLocation>
+                            <suppressionsLocation>${main.basedir}/checkstyle/suppressions.xml</suppressionsLocation>
+                            <headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</headerLocation>
+                            <enableRSS>false</enableRSS>
+                            <linkXRef>true</linkXRef>
+                            <consoleOutput>true</consoleOutput>
+                            <failsOnError>true</failsOnError>
+                            <failOnViolation>true</failOnViolation>
+                            <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                            <enableRulesSummary>true</enableRulesSummary>
+                            <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>findbugs-maven-plugin</artifactId>
+                        <version>${findbugs.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <failOnError>true</failOnError>
+                            <excludeFilterFile>${main.basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>slow-test</id>
             <build>
                 <plugins>
@@ -421,7 +565,8 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
+                            </groups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
@@ -483,7 +628,7 @@
             </build>
         </profile>
 
-   </profiles>
+    </profiles>
 
     <distributionManagement>
         <repository>

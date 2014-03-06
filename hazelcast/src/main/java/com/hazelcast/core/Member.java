@@ -61,7 +61,7 @@ public interface Member extends DataSerializable, Endpoint {
      *
      * @return UUID of this member.
      */
-    public String getUuid();
+    String getUuid();
 
     /**
      * Returns configured attributes for this member.<br/>

@@ -25,6 +25,10 @@ public class SystemObjectLog extends SystemLog {
 
     @Override
     public String toString() {
-        return (obj == null) ? "NULL" : obj.toString();
+        if (obj == null) {
+            return "NULL";
+        } else {
+            return obj.toString();
+        }
     }
 }

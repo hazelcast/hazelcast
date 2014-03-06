@@ -239,6 +239,61 @@ public class XMLConfigBuilderTest {
         assertEquals("someToken",manCenterCfg.getSecurityToken());
         assertEquals("someUrl",manCenterCfg.getUrl());
     }
+    @Test
+    public void testNullManagementCenterConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<management-center>"+
+                        "</management-center>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertFalse(manCenterCfg.isEnabled());
+        assertNull(manCenterCfg.getClusterId());
+        assertNull(manCenterCfg.getSecurityToken());
+        assertNull(manCenterCfg.getUrl());
+    }
+    @Test
+    public void testEmptyManagementCenterConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertFalse(manCenterCfg.isEnabled());
+        assertNull(manCenterCfg.getClusterId());
+        assertNull(manCenterCfg.getSecurityToken());
+        assertNull(manCenterCfg.getUrl());
+    }
+    @Test
+    public void testNotEnabledManagementCenterConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<management-center enabled=\"false\">"+
+                        "</management-center>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertFalse(manCenterCfg.isEnabled());
+        assertNull(manCenterCfg.getClusterId());
+        assertNull(manCenterCfg.getSecurityToken());
+        assertNull(manCenterCfg.getUrl());
+    }
+    @Test
+    public void testNotEnabledWithURLManagementCenterConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<management-center enabled=\"false\">"+
+                        "http://localhost:8080/mancenter"+
+                        "</management-center>"+
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
+        assertFalse(manCenterCfg.isEnabled());
+        assertNull(manCenterCfg.getClusterId());
+        assertNull(manCenterCfg.getSecurityToken());
+        assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
+    }
 
     @Test
     public void testManagementCenterConfig_onlySecurityTokenSet() {
@@ -282,7 +337,6 @@ public class XMLConfigBuilderTest {
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, mapStoreConfig.getInitialLoadMode());
     }
-
     @Test(expected = HazelcastException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =

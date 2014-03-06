@@ -16,6 +16,7 @@
 
 package com.hazelcast.topic.client;
 
+import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.nio.ObjectDataInput;
@@ -54,8 +55,9 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
 
     @Override
     protected int getPartition() {
-        Data key = getClientEngine().toData(name);
-        return getClientEngine().getPartitionService().getPartitionId(key);
+        ClientEngine clientEngine = getClientEngine();
+        Data key = clientEngine.toData(name);
+        return clientEngine.getPartitionService().getPartitionId(key);
     }
 
     @Override
@@ -80,7 +82,7 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         ObjectDataOutput out = writer.getRawDataOutput();
         message.writeData(out);
     }

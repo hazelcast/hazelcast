@@ -1,7 +1,9 @@
 
 ### IPv6 Support
 
-Hazelcast supports IPv6 addresses seamlessly. [ *IPv6 support has been switched off by default. [See note below](#IPv6-Note)* ] All you need is to define IPv6 addresses or interfaces in [network configuration](#NetworkConfig). Only limitation at the moment is you can not define wildcard IPv6 addresses in [TCP-IP](#ConfigTcpIp) join configuration. [Interfaces](#ConfigSpecifyInterfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces same as IPv4 interfaces.
+Hazelcast supports IPv6 addresses seamlessly (This support is switched off by default, please see the note at the end of this section).
+
+All you need is to define IPv6 addresses or interfaces in [network configuration](#network-configuration). Only limitation at the moment is you can not define wildcard IPv6 addresses in [TCP-IP](#configuring-tcp-ip-cluster) join configuration. [Interfaces](#specifying-network-interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces same as IPv4 interfaces.
 
 ```xml
 <hazelcast>

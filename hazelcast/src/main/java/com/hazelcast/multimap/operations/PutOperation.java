@@ -52,7 +52,7 @@ public class PutOperation extends MultiMapBackupAwareOperation {
         MultiMapContainer container = getOrCreateContainer();
         recordId = container.nextId();
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
-        Collection<MultiMapRecord> coll = container.getOrCreateMultiMapWrapper(dataKey).getCollection();
+        Collection<MultiMapRecord> coll = container.getOrCreateMultiMapWrapper(dataKey).getCollection(false);
         if (index == -1) {
             response = coll.add(record);
         } else {

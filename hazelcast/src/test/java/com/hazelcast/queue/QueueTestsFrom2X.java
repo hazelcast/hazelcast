@@ -17,23 +17,36 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 6/3/13
@@ -46,8 +59,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     public void testQueueItemListener() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(8);
         final String value = "hello";
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance(null);
+        final HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> queue = instance.getQueue("testQueueItemListener");
         queue.addItemListener(new ItemListener<String>() {
             public void itemAdded(ItemEvent<String> itemEvent) {
@@ -76,8 +88,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testQueueAddAll() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance(null);
+        final HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> queue = instance.getQueue("testQueueAddAll");
         String[] items = new String[]{"one", "two", "three", "four"};
         queue.addAll(Arrays.asList(items));
@@ -88,8 +99,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testQueueContains() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance(null);
+        final HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> queue = instance.getQueue("testQueueContains");
         String[] items = new String[]{"one", "two", "three", "four"};
         queue.addAll(Arrays.asList(items));
@@ -101,8 +111,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testQueueContainsAll() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance(null);
+        final HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> queue = instance.getQueue("testQueueContainsAll");
         String[] items = new String[]{"one", "two", "three", "four"};
         List<String> list = Arrays.asList(items);
@@ -112,8 +121,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testQueueRemove() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> q = instance.getQueue("testQueueRemove");
         for (int i = 0; i < 10; i++) {
             q.offer("item" + i);
@@ -161,8 +169,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void issue370() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance h1 = factory.newHazelcastInstance(new Config());
-        HazelcastInstance h2 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance h1 = factory.newHazelcastInstance();
+        HazelcastInstance h2 = factory.newHazelcastInstance();
         Queue<String> q1 = h1.getQueue("q");
         Queue<String> q2 = h2.getQueue("q");
         for (int i = 0; i < 5; i++) {
@@ -176,13 +184,13 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         assertEquals(2, q2.size());
-        h1 = factory.newHazelcastInstance(new Config());
+        h1 = factory.newHazelcastInstance();
         q1 = h1.getQueue("q");
         assertEquals(2, q1.size());
         assertEquals(2, q2.size());
-        h2.getLifecycleService().shutdown();
+        h2.shutdown();
         assertEquals(2, q1.size());
     }
 
@@ -192,7 +200,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
         final int total = 10;
         final Collection<Integer> results = new ArrayList<Integer>(5);
-        final HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance hz1 = factory.newHazelcastInstance();
         final CountDownLatch latchOffer = new CountDownLatch(1);
         final CountDownLatch latchTake = new CountDownLatch(1);
         new Thread(new Runnable() {
@@ -208,7 +216,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
             }
         }).start();
 
-        final HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance hz2 = factory.newHazelcastInstance();
         new Thread(new Runnable() {
             public void run() {
                 for (int i = 0; i < total; i++) {
@@ -217,11 +225,11 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
                 latchOffer.countDown();
             }
         }).start();
-        Assert.assertTrue(latchOffer.await(100, TimeUnit.SECONDS));
-        Assert.assertTrue(latchTake.await(10, TimeUnit.SECONDS));
-        Assert.assertTrue(hz1.getQueue("q").isEmpty());
-        hz1.getLifecycleService().shutdown();
-        Assert.assertTrue(hz2.getQueue("q").isEmpty());
+        assertTrue(latchOffer.await(100, TimeUnit.SECONDS));
+        assertTrue(latchTake.await(10, TimeUnit.SECONDS));
+        assertTrue(hz1.getQueue("q").isEmpty());
+        hz1.shutdown();
+        assertTrue(hz2.getQueue("q").isEmpty());
 
         final Object[] objects = new Object[total];
         for (int i = 0; i < total; i++) {
@@ -232,11 +240,9 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void issue427QOfferIncorrectWithinTransaction() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-
-        Config config = new Config();
+         Config config = new Config();
         config.getQueueConfig("default").setMaxSize(100);
-        HazelcastInstance h = factory.newHazelcastInstance(config);
+        HazelcastInstance h = createHazelcastInstance(config);
         final TransactionContext transactionContext = h.newTransactionContext();
         transactionContext.beginTransaction();
         final TransactionalQueue q = transactionContext.getQueue("default");
@@ -249,18 +255,17 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
         assertEquals(100, h.getQueue("default").size());
         assertFalse(result);
-        h.getLifecycleService().shutdown();
+        h.shutdown();
     }
 
     @Test
     public void testListenerLifecycle() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         // IQueue
         final long sleep = 2000;
         final String name = "listenerLifecycle";
         IQueue q = instance.getQueue(name);
-        final CountDownLatch qLatch = new CountDownLatch(3) ;
+        final CountDownLatch qLatch = new CountDownLatch(3);
         final ItemListener ql = new ItemListener() {
             public void itemAdded(ItemEvent itemEvent) {
                 qLatch.countDown();
@@ -289,8 +294,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void testQueueOfferCommitSize() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(new Config());
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
@@ -309,8 +314,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void testQueueOfferRollbackSize() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(new Config());
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
@@ -328,8 +333,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void testQueuePollCommitSize() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(new Config());
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
@@ -355,8 +360,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void testQueuePollRollbackSize() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(new Config());
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final TransactionContext context = instance1.newTransactionContext();
         final IQueue<Object> q = instance1.getQueue("testQueuePollRollbackSize");
 
@@ -379,8 +384,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void testQueueOrderAfterPollRollback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(new Config());
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final TransactionContext context = instance1.newTransactionContext();
         final IQueue<Integer> queue = instance1.getQueue("testQueueOrderAfterPollRollback");
 
@@ -408,8 +413,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
      */
     @Test
     public void issue99TestQueueTakeAndDuringRollback() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance hz = createHazelcastInstance();
         final String name = "issue99TestQueueTakeAndDuringRollback";
         final IQueue q = hz.getQueue(name);
         q.offer("item");
@@ -458,8 +462,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
      */
     @Test
     public void issue114TestQueueListenersUnderTransaction() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        final HazelcastInstance hz = createHazelcastInstance();
         final String name = "issue99TestQueueTakeAndDuringRollback";
         final IQueue testQueue = hz.getQueue(name);
 
@@ -469,6 +472,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
             public void itemAdded(ItemEvent<String> item) {
                 offerLatch.countDown();
             }
+
             public void itemRemoved(ItemEvent<String> item) {
                 pollLatch.countDown();
             }
@@ -484,11 +488,11 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final TransactionContext context2 = hz.newTransactionContext();
         context2.beginTransaction();
         final TransactionalQueue<Object> queue2 = context2.getQueue(name);
-        Assert.assertEquals("tx Hello", queue2.poll());
-        Assert.assertEquals("tx World", queue2.poll());
+        assertEquals("tx Hello", queue2.poll());
+        assertEquals("tx World", queue2.poll());
         context2.commitTransaction();
 
-        Assert.assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
-        Assert.assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
+        assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
+        assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
     }
 }

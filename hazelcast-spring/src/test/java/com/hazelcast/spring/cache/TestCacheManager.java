@@ -33,6 +33,9 @@ import org.springframework.test.context.ContextConfiguration;
 import javax.annotation.Resource;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"cacheManager-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
@@ -53,29 +56,29 @@ public class TestCacheManager {
     @Test
     public void test() {
         for (int i = 0; i < 100; i++) {
-            Assert.assertEquals("name:" + i, bean.getName(i));
-            Assert.assertEquals("city:" + i, bean.getCity(i));
+            assertEquals("name:" + i, bean.getName(i));
+            assertEquals("city:" + i, bean.getCity(i));
         }
     }
 
     @Test
     public void testNull() {
         for (int i = 0; i < 100; i++) {
-            Assert.assertNull(bean.getNull());
+            assertNull(bean.getNull());
         }
     }
 
     @Test
     public void testTTL() throws InterruptedException {
         final String name = bean.getNameWithTTL();
-        Assert.assertEquals("ali", name);
+        assertEquals("ali", name);
         final String nameFromCache = bean.getNameWithTTL();
-        Assert.assertEquals("ali", nameFromCache);
+        assertEquals("ali", nameFromCache);
 
         Thread.sleep(3000);
 
         final String nameFromCacheAfterTTL = bean.getNameWithTTL();
-        Assert.assertNull(nameFromCacheAfterTTL);
+        assertNull(nameFromCacheAfterTTL);
 
     }
 

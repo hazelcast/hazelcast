@@ -20,13 +20,11 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.util.Map;
 
-/**
- * @author mdogan 5/3/13
- */
 public abstract class AllPartitionsClientRequest extends ClientRequest {
 
+    @Override
     final void process() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
+        ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
         Map<Integer, Object> map = clientEngine.invokeOnAllPartitions(getServiceName(), operationFactory);
         Object result = reduce(map);

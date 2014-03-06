@@ -27,9 +27,13 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
+import java.security.Permission;
 
-public class ClientJobProcessInformationRequest
-        extends InvocationClientRequest {
+/**
+ * This class is used to retrieve current processed records and other statistics from
+ * emitting client to the job owning node.
+ */
+public class ClientJobProcessInformationRequest extends InvocationClientRequest {
 
     private String name;
     private String jobId;
@@ -89,4 +93,8 @@ public class ClientJobProcessInformationRequest
         return MapReducePortableHook.CLIENT_JOB_PROCESS_INFO_REQUEST;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

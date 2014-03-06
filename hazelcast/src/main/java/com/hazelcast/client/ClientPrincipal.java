@@ -22,13 +22,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 5/6/13
- */
 public final class ClientPrincipal implements Portable {
 
     private String uuid;
-
     private String ownerUuid;
 
     public ClientPrincipal() {
@@ -71,13 +67,21 @@ public final class ClientPrincipal implements Portable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ClientPrincipal that = (ClientPrincipal) o;
 
-        if (ownerUuid != null ? !ownerUuid.equals(that.ownerUuid) : that.ownerUuid != null) return false;
-        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
+        if (ownerUuid != null ? !ownerUuid.equals(that.ownerUuid) : that.ownerUuid != null) {
+            return false;
+        }
+        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) {
+            return false;
+        }
 
         return true;
     }

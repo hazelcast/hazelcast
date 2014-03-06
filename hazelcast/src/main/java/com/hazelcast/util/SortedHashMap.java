@@ -268,7 +268,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         Entry<K, V> after;
         Entry<K, V> before;
         long accessCount = 1;
-        long lastAccess = 0;
         int hash = -1;
 
         Entry(int hash, K key, V value, Entry<K, V> next) {
@@ -276,7 +275,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             this.value = value;
             this.hash = hash;
             this.next = next;
-            lastAccess = Clock.currentTimeMillis();
         }
 
         public K getKey() {
@@ -347,7 +345,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
 
         void touch(SortedHashMap<K, V> lm, OrderingType orderingType) {
             if (orderingType != OrderingType.NONE) {
-                lastAccess = Clock.currentTimeMillis();
                 accessCount++;
                 lm.modCount++;
                 if (orderingType == OrderingType.LFU) {

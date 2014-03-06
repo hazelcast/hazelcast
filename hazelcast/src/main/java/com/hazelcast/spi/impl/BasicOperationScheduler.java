@@ -111,11 +111,20 @@ public final class BasicOperationScheduler {
         int size = 0;
         for (PartitionThread t : partitionThreads) {
             size += t.workQueue.size();
-            size += t.priorityQueue.size();
         }
 
         //todo: we don't include the globalExecutor?
         return size;
+    }
+
+
+    public int getPriorityOperationExecutorQueueSize() {
+        int size = 0;
+        for (PartitionThread t : partitionThreads) {
+            size += t.priorityQueue.size();
+        }
+
+       return size;
     }
 
     public void execute(final Object task, int partitionId, boolean priority) {

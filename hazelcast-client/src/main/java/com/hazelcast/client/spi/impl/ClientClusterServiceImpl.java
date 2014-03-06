@@ -16,22 +16,35 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.ClientImpl;
+import com.hazelcast.client.ClientPrincipal;
+import com.hazelcast.client.ClientResponse;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
@@ -43,7 +56,17 @@ import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EventListener;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -205,6 +228,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                             return;
                         }
                     }
+                    getInvocationService().triggerFailedListeners();
                     loadInitialMemberList();
                     listenMembershipEvents();
                 } catch (Exception e) {
@@ -226,6 +250,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     break;
                 }
             }
+        }
+
+        private ClientInvocationServiceImpl getInvocationService(){
+            return (ClientInvocationServiceImpl)client.getInvocationService();
         }
 
         private ClientConnection pickConnection() throws Exception {
@@ -297,7 +325,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     if (memberMap != null) {
                         for (MemberImpl target : memberMap.values()) {
                             if (target.getUuid().equals(memberAttributeChange.getUuid())) {
-                                final MapOperationType operationType = memberAttributeChange.getOperationType();
+                                final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
                                 final String key = memberAttributeChange.getKey();
                                 final Object value = memberAttributeChange.getValue();
                                 target.updateAttribute(operationType, key, value);

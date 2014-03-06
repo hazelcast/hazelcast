@@ -23,20 +23,17 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.transaction.TransactionManagerService;
 
-/**
- * @author mdogan 4/25/13
- */
 public interface ClientEngine {
 
     int getClientEndpointCount();
 
-    PartitionService getPartitionService();
+    InternalPartitionService getPartitionService();
 
     ClusterService getClusterService();
 

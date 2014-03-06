@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,6 +60,29 @@ import static org.junit.Assert.*;
 public class TopicTest extends HazelcastTestSupport {
 
     @Test
+   public void testDestroyTopicRemovesStatistics(){
+        HazelcastInstance instance = createHazelcastInstance();
+        final ITopic topic = instance.getTopic("foo");
+        topic.publish("foobar");
+
+        //we need to give the message the chance to be processed, else the topic statistics are recreated.
+        //so in theory the destroy for the topic is broken.
+        sleepSeconds(1);
+
+        topic.destroy();
+
+        final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                boolean containsStats = topicService.statsMap.containsKey(topic.getName());
+                assertFalse(containsStats);
+            }
+        });
+    }
+
+    @Test
     public void testTopicPublishingMember() {
         final Config config = new Config();
         config.getTopicConfig("default").setGlobalOrderingEnabled(true);
@@ -79,11 +103,12 @@ public class TopicTest extends HazelcastTestSupport {
                     ITopic<Long> topic = instance.getTopic(name);
                     topic.addMessageListener(new MessageListener<Long>() {
                         public void onMessage(Message<Long> message) {
-                            if (message.getPublishingMember().equals(instance.getCluster().getLocalMember()))
+                            Member publishingMember = message.getPublishingMember();
+                            if (publishingMember.equals(instance.getCluster().getLocalMember()))
                                 count.incrementAndGet();
-                            if (message.getPublishingMember().equals(message.getMessageObject()))
+                            if (publishingMember.equals(message.getMessageObject()))
                                 count1.incrementAndGet();
-                            if (message.getPublishingMember().localMember())
+                            if (publishingMember.localMember())
                                 count2.incrementAndGet();
                         }
                     });
@@ -95,19 +120,20 @@ public class TopicTest extends HazelcastTestSupport {
         try {
             mainLatch.await(1, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            fail();
         }
+
         for (int i = 0; i < k; i++) {
-            final HazelcastInstance instance = instances[i];
+            HazelcastInstance instance = instances[i];
             instance.getTopic(name).publish(instance.getCluster().getLocalMember());
         }
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                Assert.assertEquals(k, count.get());
-                Assert.assertEquals(k * k, count1.get());
-                Assert.assertEquals(k, count2.get());
+                assertEquals(k, count.get());
+                assertEquals(k * k, count1.get());
+                assertEquals(k, count2.get());
             }
         });
     }
@@ -307,14 +333,14 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void testName() {
-        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createHazelcastInstance();
         ITopic<?> topic = hClient.getTopic("testName");
-        Assert.assertEquals("testName", topic.getName());
+        assertEquals("testName", topic.getName());
     }
 
     @Test
     public void addMessageListener() throws InterruptedException {
-        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createHazelcastInstance();
         ITopic<String> topic = hClient.getTopic("addMessageListener");
         final CountDownLatch latch = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
@@ -339,15 +365,14 @@ public class TopicTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }));
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
         hz.getTopic(name).publish(1);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
     public void addTwoMessageListener() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         ITopic<String> topic = hazelcastInstance.getTopic("addTwoMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
@@ -372,7 +397,7 @@ public class TopicTest extends HazelcastTestSupport {
     @Test
     public void removeMessageListener() throws InterruptedException {
         try {
-            HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+            HazelcastInstance hazelcastInstance = createHazelcastInstance();
             ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
             final CountDownLatch latch = new CountDownLatch(2);
             final CountDownLatch cp = new CountDownLatch(1);
@@ -427,7 +452,7 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void testPerformance() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         int count = 10000;
         final ITopic topic = hazelcastInstance.getTopic("perf");
         ExecutorService ex = Executors.newFixedThreadPool(10);
@@ -445,7 +470,7 @@ public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void add2listenerAndRemoveOne() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
         final CountDownLatch latch = new CountDownLatch(4);
         final CountDownLatch cp = new CountDownLatch(2);
@@ -476,7 +501,7 @@ public class TopicTest extends HazelcastTestSupport {
         cp.await();
         topic.publish(message + "2");
         Thread.sleep(100);
-        Assert.assertEquals(1, latch.getCount());
+        assertEquals(1, latch.getCount());
     }
 
     /**
@@ -512,14 +537,14 @@ public class TopicTest extends HazelcastTestSupport {
         topic1.publish(message);
         assertTrue(latch1.await(5, TimeUnit.SECONDS));
 
-        h1.getLifecycleService().shutdown();
+        h1.shutdown();
         topic2.publish(message);
         assertTrue(latch2.await(5, TimeUnit.SECONDS));
     }
 
     @Test
     public void testTopicStats() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         ITopic<String> topic = hazelcastInstance.getTopic("testTopicStats");
 
         final CountDownLatch latch1 = new CountDownLatch(1000);
@@ -543,7 +568,7 @@ public class TopicTest extends HazelcastTestSupport {
         assertTrue(latch2.await(1, TimeUnit.MINUTES));
 
         LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
-        Assert.assertEquals(1000, stats.getPublishOperationCount());
-        Assert.assertEquals(2000, stats.getReceiveOperationCount());
+        assertEquals(1000, stats.getPublishOperationCount());
+        assertEquals(2000, stats.getReceiveOperationCount());
     }
 }

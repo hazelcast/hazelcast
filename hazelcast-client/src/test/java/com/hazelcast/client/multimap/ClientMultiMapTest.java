@@ -52,13 +52,13 @@ public class ClientMultiMapTest {
         MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
         multiMapConfig.setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
         Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient(null);
+        hz = HazelcastClient.newHazelcastClient();
         mm = hz.getMultiMap(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 
@@ -144,7 +144,7 @@ public class ClientMultiMapTest {
         final CountDownLatch latch2Add = new CountDownLatch(3);
         final CountDownLatch latch2Remove = new CountDownLatch(3);
 
-        EntryListener listener1 = new EntryListener() {
+        EntryListener listener1 = new EntryAdapter() {
 
             public void entryAdded(EntryEvent event) {
                 latch1Add.countDown();
@@ -153,15 +153,9 @@ public class ClientMultiMapTest {
             public void entryRemoved(EntryEvent event) {
                 latch1Remove.countDown();
             }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
-            }
         };
 
-        EntryListener listener2 = new EntryListener() {
+        EntryListener listener2 = new EntryAdapter() {
 
             public void entryAdded(EntryEvent event) {
                 latch2Add.countDown();
@@ -170,16 +164,10 @@ public class ClientMultiMapTest {
             public void entryRemoved(EntryEvent event) {
                 latch2Remove.countDown();
             }
+      };
 
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
-            }
-        };
-
-        mm.addEntryListener(listener1, true);
-        mm.addEntryListener(listener2, "key3", true);
+        final String firstRegId = mm.addEntryListener(listener1, true);
+        final String secondRegId = mm.addEntryListener(listener2, "key3", true);
 
         mm.put("key1", "value1");
         mm.put("key1", "value2");
@@ -200,6 +188,9 @@ public class ClientMultiMapTest {
 
         assertTrue(latch2Add.await(20, TimeUnit.SECONDS));
         assertTrue(latch2Remove.await(20, TimeUnit.SECONDS));
+
+        assertTrue(mm.removeEntryListener(firstRegId));
+        assertTrue(mm.removeEntryListener(secondRegId));
     }
 
 

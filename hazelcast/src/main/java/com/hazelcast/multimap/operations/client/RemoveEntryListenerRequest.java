@@ -19,6 +19,10 @@ package com.hazelcast.multimap.operations.client;
 import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
+
+import java.security.Permission;
 
 /**
  * @author ali 23/12/13
@@ -50,4 +54,7 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
         return MultiMapPortableHook.REMOVE_ENTRY_LISTENER;
     }
 
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_LISTEN);
+    }
 }

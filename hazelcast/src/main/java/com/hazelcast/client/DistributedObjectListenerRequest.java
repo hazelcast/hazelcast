@@ -18,52 +18,60 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 
-/**
- * @ali 10/7/13
- */
-public class DistributedObjectListenerRequest extends CallableClientRequest implements Portable, RetryableRequest {
+import java.security.Permission;
+
+public class DistributedObjectListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     public DistributedObjectListenerRequest() {
     }
 
+    @Override
     public Object call() throws Exception {
-        final DistributedObjectListener listener = new DistributedObjectListener() {
-            public void distributedObjectCreated(DistributedObjectEvent event) {
-                send(event);
-            }
-
-            public void distributedObjectDestroyed(DistributedObjectEvent event) {
-
-            }
-
-            private void send(DistributedObjectEvent event){
-                if (endpoint.live()){
-                    final PortableDistributedObjectEvent portableDistributedObjectEvent
-                            = new PortableDistributedObjectEvent(event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
-                    endpoint.sendEvent(portableDistributedObjectEvent, getCallId());
-                }
-            }
-        };
-
-        final String registrationId = clientEngine.getProxyService().addProxyListener(listener);
+        ProxyService proxyService = clientEngine.getProxyService();
+        String registrationId = proxyService.addProxyListener(new MyDistributedObjectListener());
         endpoint.setDistributedObjectListener(registrationId);
         return registrationId;
     }
 
+    @Override
     public String getServiceName() {
         return null;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientPortableHook.LISTENER;
     }
 
+    private class MyDistributedObjectListener implements DistributedObjectListener {
+        @Override
+        public void distributedObjectCreated(DistributedObjectEvent event) {
+            send(event);
+        }
 
+        @Override
+        public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        }
+
+        private void send(DistributedObjectEvent event) {
+            if (endpoint.live()) {
+                PortableDistributedObjectEvent portableEvent = new PortableDistributedObjectEvent(
+                        event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
+                endpoint.sendEvent(portableEvent, getCallId());
+            }
+        }
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

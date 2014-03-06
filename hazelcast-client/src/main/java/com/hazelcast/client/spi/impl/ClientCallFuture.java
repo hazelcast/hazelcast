@@ -196,7 +196,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return connection;
     }
 
-    private boolean resend() {
+    public boolean resend() {
         if (reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
             return false;
         }
@@ -225,7 +225,11 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             try {
                 invocationService.reSend(ClientCallFuture.this);
             } catch (Exception e) {
-                setResponse(e);
+                if (handler != null) {
+                    invocationService.registerFailedListener(ClientCallFuture.this);
+                } else {
+                    setResponse(e);
+                }
             }
         }
     }

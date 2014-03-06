@@ -38,7 +38,6 @@ import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
@@ -171,13 +170,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
 
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a replicated-map instance with a null name is not allowed!");
-        }
-        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
-    }
-
     public JobTracker getJobTracker(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a job tracker instance with a null name is not allowed!");
@@ -191,7 +183,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (key == null) {
             throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
         }
-        return getDistributedObject(LockService.SERVICE_NAME, LockProxy.convertToStringKey(key, node.getSerializationService()));
+        String name = LockProxy.convertToStringKey(key, node.getSerializationService());
+        return getLock(name);
     }
 
     public ILock getLock(String key) {

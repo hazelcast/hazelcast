@@ -24,7 +24,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -60,7 +60,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
 
-        PartitionService partitionService = getNodeEngine().getPartitionService();
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         Set<Data> keysToInvalidate = new HashSet<Data>();
         for (Map.Entry<Data, Data> entry : entries) {
             Data dataKey = entry.getKey();

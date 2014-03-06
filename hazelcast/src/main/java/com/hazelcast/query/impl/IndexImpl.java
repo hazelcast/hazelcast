@@ -40,6 +40,7 @@ public class IndexImpl implements Index {
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 
+    @Override
     public void removeEntryIndex(Data indexKey) {
         Comparable oldValue = recordValues.remove(indexKey);
         if (oldValue != null) {
@@ -47,6 +48,7 @@ public class IndexImpl implements Index {
         }
     }
 
+    @Override
     public void clear() {
         recordValues.clear();
         indexStore.clear();
@@ -56,6 +58,7 @@ public class IndexImpl implements Index {
         return indexStore.getRecordMap(indexValue);
     }
 
+    @Override
     public void saveEntryIndex(QueryableEntry e) throws QueryException {
         Data key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
@@ -80,6 +83,7 @@ public class IndexImpl implements Index {
         }
     }
 
+    @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
         if (values.length == 1) {
             return indexStore.getRecords(convert(values[0]));
@@ -94,10 +98,12 @@ public class IndexImpl implements Index {
         }
     }
 
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         return indexStore.getRecords(convert(value));
     }
 
+    @Override
     public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         MultiResultSet results = new MultiResultSet();
         indexStore.getSubRecordsBetween(results, convert(from), convert(to));
@@ -119,16 +125,18 @@ public class IndexImpl implements Index {
         return recordValues;
     }
 
+    @Override
     public String getAttributeName() {
         return attribute;
     }
 
+    @Override
     public boolean isOrdered() {
         return ordered;
     }
 
     public final static class NullObject implements Comparable {
-
+        @Override
         public int compareTo(Object o) {
             if (o == this || o instanceof NullObject) return 0;
             return -1;
@@ -140,8 +148,10 @@ public class IndexImpl implements Index {
         }
 
         @Override
-        public boolean equals(Object o){
-            return this.compareTo(o)==0;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return true;
         }
     }
 }

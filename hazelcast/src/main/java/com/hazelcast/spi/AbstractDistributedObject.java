@@ -24,7 +24,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 
-    protected static final PartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
+    protected static final PartitioningStrategy PARTITIONING_STRATEGY = StringPartitioningStrategy.INSTANCE;
 
     private volatile NodeEngine nodeEngine;
     private volatile S service;
@@ -99,8 +99,8 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         if (o == null || getClass() != o.getClass()) return false;
 
         DistributedObject that = (DistributedObject) o;
-        Object id = getId();
-        if (id != null ? !id.equals(that.getId()) : that.getId() != null) return false;
+        Object name = getName();
+        if (name != null ? !name.equals(that.getName()) : that.getName() != null) return false;
 
         String serviceName = getServiceName();
         if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) return false;
@@ -111,7 +111,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     @Override
     public int hashCode() {
         int result = getServiceName() != null ? getServiceName().hashCode() : 0;
-        result = 31 * result + (getId() != null ? getId().hashCode() : 0);
+        result = 31 * result + (getName() != null ? getName().hashCode() : 0);
         return result;
     }
 }

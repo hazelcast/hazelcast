@@ -107,8 +107,7 @@ public class TrackableJobFuture<V>
     public V get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         ValidationUtil.isNotNull(unit, "unit");
-        latch.await(timeout, unit);
-        if (!isDone()) {
+        if (!latch.await(timeout, unit) || !isDone()) {
             throw new TimeoutException("timeout reached");
         }
         return getResult();

@@ -14,4 +14,5 @@ As of version 3.1, Spring Framework provides support for adding caching into an 
     <constructor-arg ref="instance"/>
 </bean>
 ```
-*For more info see [Spring Cache Abstraction](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html).*
+
+For more information please see [Spring Cache Abstraction](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html).

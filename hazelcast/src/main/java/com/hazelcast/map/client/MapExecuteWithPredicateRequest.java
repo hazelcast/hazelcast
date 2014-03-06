@@ -25,13 +25,15 @@ import com.hazelcast.map.operation.PartitionWideEntryWithPredicateOperationFacto
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,7 +41,7 @@ import java.util.Set;
  * date: 9/16/13
  * author: eminn
  */
-public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest implements Portable {
+public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest {
     private String name;
     private EntryProcessor processor;
     private Predicate predicate;
@@ -99,5 +101,9 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest i
         final ObjectDataInput in = reader.getRawDataInput();
         processor = in.readObject();
         predicate = in.readObject();
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
     }
 }

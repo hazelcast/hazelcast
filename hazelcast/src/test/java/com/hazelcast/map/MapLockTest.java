@@ -80,7 +80,7 @@ public class MapLockTest extends HazelcastTestSupport {
         new Thread(runnable).start();
         try {
             Thread.sleep(1000);
-            h2.getLifecycleService().shutdown();
+            h2.shutdown();
             latch.await();
             for (int i = 0; i < size; i++) {
                 assertFalse(map1.isLocked(i));
@@ -102,7 +102,7 @@ public class MapLockTest extends HazelcastTestSupport {
         final IMap map = instance1.getMap(mapName);
         map.put(1, 1);
         map.lock(1, 1, TimeUnit.SECONDS);
-        Assert.assertTrue(map.isLocked(1));
+        assertTrue(map.isLocked(1));
         final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -111,7 +111,7 @@ public class MapLockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 100000)

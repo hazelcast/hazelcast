@@ -27,26 +27,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class TimedMemberState implements DataSerializable, Cloneable {
+public final class TimedMemberState implements DataSerializable, Cloneable {
 
     long time;
-    MemberState memberState = null;
-    Set<String> instanceNames = null;
+    MemberState memberState;
+    Set<String> instanceNames;
     List<String> memberList;
     Boolean master;
     String clusterName;
 
-    public TimedMemberState clone() {
-        TimedMemberState st = new TimedMemberState();
-        st.setTime(time);
-        st.setMemberState(memberState);
-        st.setInstanceNames(instanceNames);
-        st.setMemberList(memberList);
-        st.setMaster(master);
-        st.setClusterName(clusterName);
-        return st;
+    @Override
+    public TimedMemberState clone() throws CloneNotSupportedException {
+        TimedMemberState state = (TimedMemberState) super.clone();
+        state.setTime(time);
+        state.setMemberState(memberState);
+        state.setInstanceNames(instanceNames);
+        state.setMemberList(memberList);
+        state.setMaster(master);
+        state.setClusterName(clusterName);
+        return state;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(time);
         out.writeBoolean(master);
@@ -68,6 +70,7 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         time = in.readLong();
         master = in.readBoolean();
@@ -127,18 +130,6 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         this.instanceNames = longInstanceNames;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("TimedMemberState{\n");
-        sb.append("\t");
-        sb.append(memberState);
-        sb.append("\n");
-        sb.append("}\n");
-        sb.append("Instances : ");
-        sb.append(instanceNames);
-        return sb.toString();
-    }
-
     public MemberState getMemberState() {
         return memberState;
     }
@@ -149,18 +140,33 @@ public class TimedMemberState implements DataSerializable, Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TimedMemberState that = (TimedMemberState) o;
 
-        if (time != that.time) return false;
-        if (clusterName != null ? !clusterName.equals(that.clusterName) : that.clusterName != null) return false;
-        if (instanceNames != null ? !instanceNames.equals(that.instanceNames) : that.instanceNames != null)
+        if (time != that.time) {
             return false;
-        if (master != null ? !master.equals(that.master) : that.master != null) return false;
-        if (memberList != null ? !memberList.equals(that.memberList) : that.memberList != null) return false;
-        if (memberState != null ? !memberState.equals(that.memberState) : that.memberState != null) return false;
+        }
+        if (clusterName != null ? !clusterName.equals(that.clusterName) : that.clusterName != null) {
+            return false;
+        }
+        if (instanceNames != null ? !instanceNames.equals(that.instanceNames) : that.instanceNames != null) {
+            return false;
+        }
+        if (master != null ? !master.equals(that.master) : that.master != null) {
+            return false;
+        }
+        if (memberList != null ? !memberList.equals(that.memberList) : that.memberList != null) {
+            return false;
+        }
+        if (memberState != null ? !memberState.equals(that.memberState) : that.memberState != null) {
+            return false;
+        }
 
         return true;
     }
@@ -174,5 +180,17 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         result = 31 * result + (master != null ? master.hashCode() : 0);
         result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("TimedMemberState{\n");
+        sb.append("\t");
+        sb.append(memberState);
+        sb.append("\n");
+        sb.append("}\n");
+        sb.append("Instances : ");
+        sb.append(instanceNames);
+        return sb.toString();
     }
 }

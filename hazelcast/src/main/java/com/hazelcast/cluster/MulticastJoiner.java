@@ -98,7 +98,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 if (msg != null && msg instanceof JoinMessage) {
                     JoinMessage joinRequest = (JoinMessage) msg;
                     if (node.getThisAddress() != null && !node.getThisAddress().equals(joinRequest.getAddress())) {
-                        q.offer(joinRequest);
+                        q.add(joinRequest);
                     }
                 }
             }

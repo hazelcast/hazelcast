@@ -51,7 +51,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapEntryListener() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
 
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapEntryListener");
         final CountDownLatch latchAdded = new CountDownLatch(3);
@@ -111,7 +111,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapPutAndGet() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
 
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapPutAndGet");
         map.put("Hello", "World");
@@ -133,7 +133,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapPutGetRemove() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
 
         MultiMap mm = instance.getMultiMap("testMultiMapPutGetRemove");
         mm.put("1", "C");
@@ -168,7 +168,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapClear() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapClear");
         map.put("Hello", "World");
         assertEquals(1, map.size());
@@ -178,7 +178,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapContainsKey() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapContainsKey");
         map.put("Hello", "World");
         assertTrue(map.containsKey("Hello"));
@@ -186,7 +186,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapContainsValue() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapContainsValue");
         map.put("Hello", "World");
         assertTrue(map.containsValue("World"));
@@ -194,7 +194,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapContainsEntry() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapContainsEntry");
         map.put("Hello", "World");
         assertTrue(map.containsEntry("Hello", "World"));
@@ -210,7 +210,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
      * Issue 818
      */
     public void testMultiMapWithCustomSerializable() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
 
         MultiMap map = instance.getMultiMap("testMultiMapWithCustomSerializable");
         map.put("1", new CustomSerializable());
@@ -221,7 +221,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testContains() throws Exception {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         instance.getConfig().addMultiMapConfig(new MultiMapConfig().setName("testContains").setBinary(false));
 
         MultiMap<String, ComplexValue> multiMap = instance.getMultiMap("testContains");
@@ -250,7 +250,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapKeySet() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapKeySet");
         map.put("Hello", "World");
         map.put("Hello", "Europe");
@@ -265,7 +265,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapValues() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapValues");
         map.put("Hello", "World");
         map.put("Hello", "Europe");
@@ -280,7 +280,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapRemove() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapRemove");
         map.put("Hello", "World");
         map.put("Hello", "Europe");
@@ -302,7 +302,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapRemoveEntries() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapRemoveEntries");
         map.put("Hello", "World");
         map.put("Hello", "Europe");
@@ -318,7 +318,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapEntrySet() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapEntrySet");
         map.put("Hello", "World");
         map.put("Hello", "Europe");
@@ -339,7 +339,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapValueCount() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap<Integer, String> map = instance.getMultiMap("testMultiMapValueCount");
         map.put(1, "World");
         map.put(2, "Africa");
@@ -355,30 +355,30 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void testMultiMapContainsEntryTxn() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         final TransactionContext context = instance.newTransactionContext();
         final MultiMap<Object, Object> mm = instance.getMultiMap("testMultiMapContainsEntry");
         mm.put("1", "value");
-        Assert.assertTrue(mm.containsEntry("1", "value"));
+        assertTrue(mm.containsEntry("1", "value"));
 
         context.beginTransaction();
         TransactionalMultiMap txnMap = context.getMultiMap("testMultiMapContainsEntry");
         txnMap.put("1", "value2");
-        Assert.assertTrue(mm.containsEntry("1", "value"));
-        Assert.assertFalse(mm.containsEntry("1", "value2"));
+        assertTrue(mm.containsEntry("1", "value"));
+        assertFalse(mm.containsEntry("1", "value2"));
         txnMap.remove("1", "value2");
-        Assert.assertTrue(mm.containsEntry("1", "value"));
-        Assert.assertFalse(mm.containsEntry("1", "value2"));
+        assertTrue(mm.containsEntry("1", "value"));
+        assertFalse(mm.containsEntry("1", "value2"));
         context.commitTransaction();
 
-        Assert.assertTrue(mm.containsEntry("1", "value"));
+        assertTrue(mm.containsEntry("1", "value"));
         assertEquals(1, mm.size());
     }
 
 
     @Test
     public void testMultiMapPutRemoveWithTxn() {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstance();
         MultiMap multiMap = instance.getMultiMap("testMultiMapPutRemoveWithTxn");
 
         multiMap.put("1", "C");

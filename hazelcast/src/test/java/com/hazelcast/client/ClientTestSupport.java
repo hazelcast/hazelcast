@@ -71,7 +71,7 @@ public abstract class ClientTestSupport extends HazelcastTestSupport {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            instance.getLifecycleService().shutdown();
+            instance.shutdown();
         }
     }
 

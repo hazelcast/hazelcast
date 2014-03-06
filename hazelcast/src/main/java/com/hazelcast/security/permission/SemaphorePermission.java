@@ -18,19 +18,20 @@ package com.hazelcast.security.permission;
 
 
 public class SemaphorePermission extends InstancePermission {
-	
-	private final static int ACQUIRE 		= 0x4;
-	private final static int RELEASE 		= 0x8;
-    private final static int READ	 		= 0x16;
-	
-	private final static int ALL 			= CREATE | DESTROY | ACQUIRE | RELEASE | READ;
 
-	public SemaphorePermission(String name, String... actions) {
-		super(name, actions);
-	}
+   private static final int ACQUIRE = 0x4;
+   private static final int RELEASE = 0x8;
+   private static final int READ = 0x16;
 
-	protected int initMask(String[] actions) {
-		int mask = NONE;
+   private static final int ALL = CREATE | DESTROY | ACQUIRE | RELEASE | READ;
+
+    public SemaphorePermission(String name, String... actions) {
+        super(name, actions);
+    }
+
+    @Override
+    protected int initMask(String[] actions) {
+        int mask = NONE;
         for (String action : actions) {
             if (ActionConstants.ACTION_ALL.equals(action)) {
                 return ALL;
@@ -48,6 +49,6 @@ public class SemaphorePermission extends InstancePermission {
                 mask |= READ;
             }
         }
-		return mask;
-	}
+        return mask;
+    }
 }

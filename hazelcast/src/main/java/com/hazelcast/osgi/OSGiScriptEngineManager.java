@@ -21,13 +21,20 @@ import com.hazelcast.logging.Logger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-import javax.script.*;
-
+import javax.script.Bindings;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
+import javax.script.SimpleBindings;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class acts as a delegate for all the available ScriptEngineManagers. Unluckily, the standard did not
@@ -69,6 +76,8 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
 */
 
 public class OSGiScriptEngineManager extends ScriptEngineManager {
+
+    private final ILogger logger = Logger.getLogger(getClass());
     private Bindings bindings;
     private Map<ScriptEngineManager, ClassLoader> classLoaders;
     private BundleContext context;
@@ -91,20 +100,21 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
      * (...)//do stuff
      * osgiManager=(OSGiScriptEngineManager)manager;//cast to ease reading
      * osgiManager.reloadManagers();
-     *
+     * <p/>
      * manager.setBindings(new OSGiBindings());//or you can use your own bindings implementation
-     *
+     * <p/>
      * </code>
-     *
      */
     public void reloadManagers() {
         this.classLoaders = findManagers(context);
     }
 
+    @Override
     public Object get(String key) {
         return bindings.get(key);
     }
 
+    @Override
     public Bindings getBindings() {
         return bindings;
     }
@@ -112,114 +122,118 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
     /**
      * Follows the same behavior of @link javax.script.ScriptEngineManager#setBindings(Bindings)
      * This means that the same bindings are applied to all the underlying managers.
+     *
      * @param bindings
      */
+    @Override
     public void setBindings(Bindings bindings) {
         this.bindings = bindings;
         for (ScriptEngineManager manager : classLoaders.keySet()) {
             manager.setBindings(bindings);
         }
-
     }
 
+    @Override
     public ScriptEngine getEngineByExtension(String extension) {
         //TODO this is a hack to deal with context class loader issues
         ScriptEngine engine = null;
         for (ScriptEngineManager manager : classLoaders.keySet()) {
-            ClassLoader old = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(classLoaders.get(manager));
+            Thread currentThread = Thread.currentThread();
+            ClassLoader old = currentThread.getContextClassLoader();
+            currentThread.setContextClassLoader(classLoaders.get(manager));
             engine = manager.getEngineByExtension(extension);
-            Thread.currentThread().setContextClassLoader(old);
-            if (engine != null) break;
+            currentThread.setContextClassLoader(old);
+            if (engine != null) {
+                break;
+            }
         }
         return engine;
     }
 
+    @Override
     public ScriptEngine getEngineByMimeType(String mimeType) {
         //TODO this is a hack to deal with context class loader issues
         ScriptEngine engine = null;
         for (ScriptEngineManager manager : classLoaders.keySet()) {
-            ClassLoader old = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(classLoaders.get(manager));
+            Thread currentThread = Thread.currentThread();
+            ClassLoader old = currentThread.getContextClassLoader();
+            currentThread.setContextClassLoader(classLoaders.get(manager));
             engine = manager.getEngineByMimeType(mimeType);
-            Thread.currentThread().setContextClassLoader(old);
-            if (engine != null) break;
+            currentThread.setContextClassLoader(old);
+            if (engine != null) {
+                break;
+            }
         }
         return engine;
     }
 
+    @Override
     public ScriptEngine getEngineByName(String shortName) {
         //TODO this is a hack to deal with context class loader issues
         for (ScriptEngineManager manager : classLoaders.keySet()) {
-            ClassLoader old = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(classLoaders.get(manager));
+            Thread currentThread = Thread.currentThread();
+            ClassLoader old = currentThread.getContextClassLoader();
+            ClassLoader contextClassLoader = classLoaders.get(manager);
+            currentThread.setContextClassLoader(contextClassLoader);
             ScriptEngine engine = manager.getEngineByName(shortName);
-            Thread.currentThread().setContextClassLoader(old);
+            currentThread.setContextClassLoader(old);
             if (engine != null) {
-                return new OSGiScriptEngine(engine, new OSGiScriptEngineFactory(engine.getFactory(), classLoaders.get(manager)));
+                OSGiScriptEngineFactory factory = new OSGiScriptEngineFactory(engine.getFactory(), contextClassLoader);
+                return new OSGiScriptEngine(engine, factory);
             }
         }
         return null;
     }
 
+    @Override
     public List<ScriptEngineFactory> getEngineFactories() {
         List<ScriptEngineFactory> osgiFactories = new ArrayList<ScriptEngineFactory>();
         for (ScriptEngineManager engineManager : classLoaders.keySet()) {
             for (ScriptEngineFactory factory : engineManager.getEngineFactories()) {
-                osgiFactories.add(new OSGiScriptEngineFactory(factory, classLoaders.get(engineManager)));
+                OSGiScriptEngineFactory scriptEngineFactory
+                        = new OSGiScriptEngineFactory(factory, classLoaders.get(engineManager));
+                osgiFactories.add(scriptEngineFactory);
             }
         }
         return osgiFactories;
     }
 
+    @Override
     public void put(String key, Object value) {
         bindings.put(key, value);
     }
 
+    @Override
     public void registerEngineExtension(String extension, ScriptEngineFactory factory) {
-        for (ScriptEngineManager engineManager : classLoaders.keySet())
+        for (ScriptEngineManager engineManager : classLoaders.keySet()) {
             engineManager.registerEngineExtension(extension, factory);
+        }
     }
 
+    @Override
     public void registerEngineMimeType(String type, ScriptEngineFactory factory) {
-        for (ScriptEngineManager engineManager : classLoaders.keySet())
+        for (ScriptEngineManager engineManager : classLoaders.keySet()) {
             engineManager.registerEngineMimeType(type, factory);
+        }
     }
 
+    @Override
     public void registerEngineName(String name, ScriptEngineFactory factory) {
-        for (ScriptEngineManager engineManager : classLoaders.keySet())
+        for (ScriptEngineManager engineManager : classLoaders.keySet()) {
             engineManager.registerEngineName(name, factory);
+        }
     }
 
     private Map<ScriptEngineManager, ClassLoader> findManagers(BundleContext context) {
         Map<ScriptEngineManager, ClassLoader> managers = new HashMap<ScriptEngineManager, ClassLoader>();
         try {
             for (String factoryName : findFactoryCandidates(context)) {
-                //We do not really need the class, but we need the classloader
-                ClassLoader factoryLoader;
-                try {
-                    factoryLoader = Class.forName(factoryName).getClassLoader();
-                }
-                catch (ClassNotFoundException cnfe) {
-                    // may fail if script implementation is not in environment
-                    logger.warning("Found ScriptEngineFactory candidate for " + factoryName + ", but cannot load class! -> " + cnfe);
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(cnfe);
-                    }
+                ClassLoader factoryClassLoader = loadScriptEngineFactoryClassLoader(factoryName);
+                if (factoryClassLoader == null) {
                     continue;
                 }
-                try {
-                    ScriptEngineManager manager = new ScriptEngineManager(factoryLoader);
-                    manager.setBindings(bindings);
-                    managers.put(manager, factoryLoader);
-                } catch (Exception e) {
-                    // may fail if script implementation is not in environment
-                    logger.warning("Found ScriptEngineFactory candidate for " + factoryName + ", but could not load ScripEngineManager! -> " + e);
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(e);
-                    }
-                    continue;
-                }
+
+                createScriptEngineManager(managers, factoryName, factoryClassLoader);
             }
             return managers;
         } catch (IOException ioe) {
@@ -227,8 +241,40 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         }
     }
 
+    private ClassLoader loadScriptEngineFactoryClassLoader(String factoryName) {
+        //We do not really need the class, but we need the classloader
+        try {
+            return Class.forName(factoryName).getClassLoader();
+        } catch (ClassNotFoundException cnfe) {
+            // may fail if script implementation is not in environment
+            logger.warning("Found ScriptEngineFactory candidate for "
+                    + factoryName + ", but cannot load class! -> " + cnfe);
+            if (logger.isFinestEnabled()) {
+                logger.finest(cnfe);
+            }
+            return null;
+        }
+    }
+
+    private void createScriptEngineManager(Map<ScriptEngineManager, ClassLoader> managers, String factoryName,
+                                           ClassLoader factoryLoader) {
+        try {
+            ScriptEngineManager manager = new ScriptEngineManager(factoryLoader);
+            manager.setBindings(bindings);
+            managers.put(manager, factoryLoader);
+        } catch (Exception e) {
+            // may fail if script implementation is not in environment
+            logger.warning("Found ScriptEngineFactory candidate for " + factoryName
+                    + ", but could not load ScripEngineManager! -> " + e);
+            if (logger.isFinestEnabled()) {
+                logger.finest(e);
+            }
+        }
+    }
+
     /**
      * Iterates through all bundles to get the available @link ScriptEngineFactory classes
+     *
      * @return the names of the available ScriptEngineFactory classes
      * @throws IOException
      */
@@ -236,14 +282,17 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         Bundle[] bundles = context.getBundles();
         List<String> factoryCandidates = new ArrayList<String>();
         for (Bundle bundle : bundles) {
-            if (bundle.getSymbolicName().equals("system.bundle")) continue;
-            Enumeration urls = bundle.findEntries("META-INF/services", "javax.script.ScriptEngineFactory", false);
-            if (urls == null)
+            if (bundle.getSymbolicName().equals("system.bundle")) {
                 continue;
+            }
+            Enumeration urls = bundle.findEntries("META-INF/services", "javax.script.ScriptEngineFactory", false);
+            if (urls == null) {
+                continue;
+            }
             while (urls.hasMoreElements()) {
                 URL u = (URL) urls.nextElement();
                 BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(u.openStream()));
+                        new InputStreamReader(u.openStream(), "UTF-8"));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
@@ -258,6 +307,4 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         factoryCandidates.add("com.sun.script.javascript.RhinoScriptEngineFactory");
         return factoryCandidates;
     }
-
-    private final ILogger logger = Logger.getLogger(getClass());
 }
