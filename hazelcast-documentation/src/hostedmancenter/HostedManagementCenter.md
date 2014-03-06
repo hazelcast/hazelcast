@@ -184,7 +184,7 @@ Map instances are listed under the **Maps** menu item on the left. When you clic
 
 ![](images/MapsHome.jpg)
 
-Below subsections explain the 
+Below subsections explain the portions of this window.
 
 
 ### Monitoring Maps
