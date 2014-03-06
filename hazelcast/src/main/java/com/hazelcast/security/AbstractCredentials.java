@@ -36,18 +36,20 @@ public abstract class AbstractCredentials implements Credentials, Portable {
     }
 
     public AbstractCredentials(String principal) {
-        super();
         this.principal = principal;
     }
 
+    @Override
     public final String getEndpoint() {
         return endpoint;
     }
 
+    @Override
     public final void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
     }
 
+    @Override
     public String getPrincipal() {
         return principal;
     }
@@ -60,35 +62,44 @@ public abstract class AbstractCredentials implements Credentials, Portable {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((principal == null) ? 0 : principal.hashCode());
+        if (principal == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + principal.hashCode();
+        }
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         AbstractCredentials other = (AbstractCredentials) obj;
         if (principal == null) {
-            if (other.principal != null)
+            if (other.principal != null) {
                 return false;
-        } else if (!principal.equals(other.principal))
+            }
+        } else if (!principal.equals(other.principal)) {
             return false;
+        }
         return true;
     }
 
-
+    @Override
     public final void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("principal", principal);
         writer.writeUTF("endpoint", endpoint);
         writePortableInternal(writer);
     }
 
+    @Override
     public final void readPortable(PortableReader reader) throws IOException {
         principal = reader.readUTF("principal");
         endpoint = reader.readUTF("endpoint");

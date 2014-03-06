@@ -57,7 +57,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertEquals(50, cfg.getMaxSizeConfig().getSize());
         sf.close();
         assertTrue(hz.getLifecycleService().isRunning());
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
     }
 
     @Test
@@ -82,7 +82,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertTrue(clientConfig.getNetworkConfig().isRedoOperation());
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
-        main.getLifecycleService().shutdown();
+        main.shutdown();
         Thread.sleep(1000 * 3); // let client to reconnect
         assertEquals(1, hz.getCluster().getMembers().size());
 
@@ -109,7 +109,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertTrue(hz == HazelcastAccessor.getHazelcastInstance(sf));
         sf.close();
         assertTrue(hz.getLifecycleService().isRunning());
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
     }
 
     private Properties getDefaultProperties() {

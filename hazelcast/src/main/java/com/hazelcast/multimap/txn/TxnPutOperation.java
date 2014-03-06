@@ -56,7 +56,7 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
             response = false;
             return;
         }
-        Collection<MultiMapRecord> coll = wrapper.getCollection();
+        Collection<MultiMapRecord> coll = wrapper.getCollection(false);
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
         coll.add(record);
     }

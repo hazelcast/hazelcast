@@ -32,7 +32,7 @@ final class ClientServiceProxy implements ClientService {
 
     @Override
     public Collection<Client> getConnectedClients() {
-        return clientEngine.getEndpoints();
+        return clientEngine.getClients();
     }
 
     @Override

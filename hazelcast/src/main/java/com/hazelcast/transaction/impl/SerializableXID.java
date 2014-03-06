@@ -38,8 +38,8 @@ public class SerializableXID implements Xid, DataSerializable {
 
     public SerializableXID(int formatId, byte[] globalTransactionId, byte[] branchQualifier) {
         this.formatId = formatId;
-        this.globalTransactionId = globalTransactionId;
-        this.branchQualifier = branchQualifier;
+        this.globalTransactionId = Arrays.copyOf(globalTransactionId, globalTransactionId.length);
+        this.branchQualifier = Arrays.copyOf(branchQualifier, branchQualifier.length);
     }
 
     @Override
@@ -49,12 +49,12 @@ public class SerializableXID implements Xid, DataSerializable {
 
     @Override
     public byte[] getGlobalTransactionId() {
-        return globalTransactionId;
+        return Arrays.copyOf(globalTransactionId, globalTransactionId.length) ;
     }
 
     @Override
     public byte[] getBranchQualifier() {
-        return branchQualifier;
+        return Arrays.copyOf(branchQualifier, branchQualifier.length);
     }
 
     @Override

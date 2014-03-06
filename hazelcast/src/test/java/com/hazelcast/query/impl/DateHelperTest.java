@@ -30,6 +30,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author mdogan 7/4/13
  */
@@ -51,9 +53,9 @@ public class DateHelperTest {
         Calendar cal2 = Calendar.getInstance(Locale.US);
         cal2.setTimeInMillis(date2.getTime());
 
-        Assert.assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
-        Assert.assertEquals(cal1.get(Calendar.MONTH), cal2.get(Calendar.MONTH));
-        Assert.assertEquals(cal1.get(Calendar.DAY_OF_MONTH), cal2.get(Calendar.DAY_OF_MONTH));
+        assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
+        assertEquals(cal1.get(Calendar.MONTH), cal2.get(Calendar.MONTH));
+        assertEquals(cal1.get(Calendar.DAY_OF_MONTH), cal2.get(Calendar.DAY_OF_MONTH));
     }
 
     @Test
@@ -68,12 +70,12 @@ public class DateHelperTest {
         Calendar cal2 = Calendar.getInstance(Locale.US);
         cal2.setTimeInMillis(date2.getTime());
 
-        Assert.assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
-        Assert.assertEquals(cal1.get(Calendar.MONTH), cal2.get(Calendar.MONTH));
-        Assert.assertEquals(cal1.get(Calendar.DAY_OF_MONTH), cal2.get(Calendar.DAY_OF_MONTH));
-        Assert.assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
-        Assert.assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
-        Assert.assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
+        assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
+        assertEquals(cal1.get(Calendar.MONTH), cal2.get(Calendar.MONTH));
+        assertEquals(cal1.get(Calendar.DAY_OF_MONTH), cal2.get(Calendar.DAY_OF_MONTH));
+        assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
+        assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
+        assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
     }
 
     @Test
@@ -88,12 +90,12 @@ public class DateHelperTest {
         Calendar cal2 = Calendar.getInstance(Locale.US);
         cal2.setTimeInMillis(date2.getTime());
 
-        Assert.assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
-        Assert.assertEquals(cal1.get(Calendar.MONTH), cal2.get(Calendar.MONTH));
-        Assert.assertEquals(cal1.get(Calendar.DAY_OF_MONTH), cal2.get(Calendar.DAY_OF_MONTH));
-        Assert.assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
-        Assert.assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
-        Assert.assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
+        assertEquals(cal1.get(Calendar.YEAR), cal2.get(Calendar.YEAR));
+        assertEquals(cal1.get(Calendar.MONTH), cal2.get(Calendar.MONTH));
+        assertEquals(cal1.get(Calendar.DAY_OF_MONTH), cal2.get(Calendar.DAY_OF_MONTH));
+        assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
+        assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
+        assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
     }
 
     @Test
@@ -108,9 +110,9 @@ public class DateHelperTest {
         Calendar cal2 = Calendar.getInstance(Locale.US);
         cal2.setTimeInMillis(time2.getTime());
 
-        Assert.assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
-        Assert.assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
-        Assert.assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
+        assertEquals(cal1.get(Calendar.HOUR_OF_DAY), cal2.get(Calendar.HOUR_OF_DAY));
+        assertEquals(cal1.get(Calendar.MINUTE), cal2.get(Calendar.MINUTE));
+        assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
     }
 }
 

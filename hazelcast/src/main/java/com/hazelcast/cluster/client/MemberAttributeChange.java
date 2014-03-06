@@ -16,26 +16,27 @@
 
 package com.hazelcast.cluster.client;
 
-import com.hazelcast.map.operation.MapOperationType;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import static com.hazelcast.cluster.MemberAttributeChangedOperation.*;
 
 import java.io.IOException;
+
+import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
 public class MemberAttributeChange implements DataSerializable {
 
     private String uuid;
-    private MapOperationType operationType;
+    private MemberAttributeOperationType operationType;
     private String key;
     private Object value;
 
     public MemberAttributeChange() {
     }
 
-    public MemberAttributeChange(String uuid, MapOperationType operationType, String key, Object value) {
+    public MemberAttributeChange(String uuid, MemberAttributeOperationType operationType, String key, Object value) {
         this.uuid = uuid;
         this.operationType = operationType;
         this.key = key;
@@ -46,7 +47,7 @@ public class MemberAttributeChange implements DataSerializable {
         return uuid;
     }
 
-    public MapOperationType getOperationType() {
+    public MemberAttributeOperationType getOperationType() {
         return operationType;
     }
 
@@ -62,14 +63,9 @@ public class MemberAttributeChange implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(uuid);
         out.writeUTF(key);
-        switch (operationType) {
-            case PUT:
-                out.writeByte(DELTA_MEMBER_PROPERTIES_OP_PUT);
-                IOUtil.writeAttributeValue(value, out);
-                break;
-            case REMOVE:
-                out.writeByte(DELTA_MEMBER_PROPERTIES_OP_REMOVE);
-                break;
+        out.writeByte(operationType.id);
+        if (operationType == PUT) {
+            IOUtil.writeAttributeValue(value, out);
         }
     }
 
@@ -77,15 +73,9 @@ public class MemberAttributeChange implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         uuid = in.readUTF();
         key = in.readUTF();
-        int operation = in.readByte();
-        switch (operation) {
-            case DELTA_MEMBER_PROPERTIES_OP_PUT:
-                operationType = MapOperationType.PUT;
-                value = IOUtil.readAttributeValue(in);
-                break;
-            case DELTA_MEMBER_PROPERTIES_OP_REMOVE:
-                operationType = MapOperationType.REMOVE;
-                break;
+        operationType = MemberAttributeOperationType.getValue(in.readByte());
+        if (operationType == PUT) {
+            value = IOUtil.readAttributeValue(in);
         }
     }
 

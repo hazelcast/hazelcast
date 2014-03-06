@@ -24,29 +24,31 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author mdogan 9/16/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class InvocationTest extends HazelcastTestSupport {
@@ -96,6 +98,9 @@ public class InvocationTest extends HazelcastTestSupport {
         }
     }
 
+    /**
+     * Operation send to a specific member.
+     */
     private static class TargetOperation extends AbstractOperation {
         public void run() throws InterruptedException {
             Thread.sleep(5000);
@@ -103,6 +108,9 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
 
+    /**
+     * Operation send to a specific target partition.
+     */
     private static class PartitionTargetOperation extends AbstractOperation implements PartitionAwareOperation {
 
         public void run() throws InterruptedException {
@@ -113,15 +121,14 @@ public class InvocationTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz = createHazelcastInstance();
         final IQueue<Object> q = hz.getQueue("queue");
 
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
 
         OpThread thread = new OpThread("Queue Thread", latch, interruptedFlag) {
-            protected void doOp()throws InterruptedException {
+            protected void doOp() throws InterruptedException {
                 q.poll(1, TimeUnit.MINUTES);
             }
         };
@@ -154,7 +161,7 @@ public class InvocationTest extends HazelcastTestSupport {
 
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     // because max timeout=2000 we get timeout exception which we should not
@@ -177,15 +184,14 @@ public class InvocationTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final Config config = new Config();
+       final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
 
         hz.getLock("testWaitingInfinitelyForTryLock").lock();
 
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     hz.getLock("testWaitingInfinitelyForTryLock").tryLock(5, TimeUnit.SECONDS);
@@ -202,8 +208,7 @@ public class InvocationTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp2() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz = createHazelcastInstance();
         final ILock lock = hz.getLock("lock");
         lock.lock();
         assertTrue(lock.isLockedByCurrentThread());
@@ -236,7 +241,7 @@ public class InvocationTest extends HazelcastTestSupport {
     private abstract class OpThread extends Thread {
         final CountDownLatch latch;
         final AtomicBoolean interruptionCaught = new AtomicBoolean(false);
-        final AtomicBoolean interruptedFlag ;
+        final AtomicBoolean interruptedFlag;
 
         protected OpThread(String name, CountDownLatch latch, AtomicBoolean interruptedFlag) {
             super(name);
@@ -259,6 +264,6 @@ public class InvocationTest extends HazelcastTestSupport {
             return interruptionCaught.get();
         }
 
-        protected abstract void doOp()throws InterruptedException;
+        protected abstract void doOp() throws InterruptedException;
     }
 }

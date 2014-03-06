@@ -16,6 +16,7 @@
 
 package com.hazelcast.examples;
 
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
@@ -554,20 +555,9 @@ public class AllTest {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 final CountDownLatch latch = new CountDownLatch(1);
-                EntryListener listener = new EntryListener() {
-                    public void entryAdded(EntryEvent entryEvent) {
-                        latch.countDown();
-                    }
-
-                    public void entryRemoved(EntryEvent entryEvent) {
-                        latch.countDown();
-                    }
-
-                    public void entryUpdated(EntryEvent entryEvent) {
-                        latch.countDown();
-                    }
-
-                    public void entryEvicted(EntryEvent entryEvent) {
+                EntryListener listener = new EntryAdapter() {
+                    @Override
+                    public void onEntryEvent(EntryEvent event) {
                         latch.countDown();
                     }
                 };
@@ -590,20 +580,9 @@ public class AllTest {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
                 final CountDownLatch latch = new CountDownLatch(1);
-                EntryListener listener = new EntryListener() {
-                    public void entryAdded(EntryEvent entryEvent) {
-                        latch.countDown();
-                    }
-
-                    public void entryRemoved(EntryEvent entryEvent) {
-                        latch.countDown();
-                    }
-
-                    public void entryUpdated(EntryEvent entryEvent) {
-                        latch.countDown();
-                    }
-
-                    public void entryEvicted(EntryEvent entryEvent) {
+                EntryListener listener = new EntryAdapter() {
+                    @Override
+                    public void onEntryEvent(EntryEvent event) {
                         latch.countDown();
                     }
                 };

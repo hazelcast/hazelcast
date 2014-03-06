@@ -18,19 +18,21 @@ package com.hazelcast.queue.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/23/13
  */
-public class RemainingCapacityRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public class RemainingCapacityRequest extends CallableClientRequest implements RetryableRequest {
 
     protected String name;
 
@@ -65,5 +67,9 @@ public class RemainingCapacityRequest extends CallableClientRequest implements P
 
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_READ);
     }
 }

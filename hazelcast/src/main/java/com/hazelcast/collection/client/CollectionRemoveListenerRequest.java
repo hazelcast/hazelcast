@@ -17,18 +17,16 @@
 package com.hazelcast.collection.client;
 
 import com.hazelcast.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.EventService;
 
 import java.io.IOException;
+import java.security.Permission;
 
-/**
- * @author ali 23/12/13
- */
 public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerRequest {
 
     private String serviceName;
@@ -67,5 +65,10 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         serviceName = reader.readUTF("s");
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return ActionConstants.getPermission(name, serviceName, ActionConstants.ACTION_LISTEN);
     }
 }

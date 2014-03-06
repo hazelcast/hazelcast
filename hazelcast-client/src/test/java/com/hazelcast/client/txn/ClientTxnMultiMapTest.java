@@ -37,7 +37,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 6/10/13
@@ -52,21 +55,19 @@ public class ClientTxnMultiMapTest {
     static HazelcastInstance second;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         server = Hazelcast.newHazelcastInstance();
-//        second = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        hz = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        hz.shutdown();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testRemove() throws Exception {
-
         final String NAME = "test";
         final String KEY = "key";
         final String VALUE = "value";
@@ -75,13 +76,14 @@ public class ClientTxnMultiMapTest {
         TransactionContext tx = hz.newTransactionContext();
 
         tx.beginTransaction();
-        tx.getMultiMap(NAME).remove(KEY,VALUE);
+        tx.getMultiMap(NAME).remove(KEY, VALUE);
         tx.commitTransaction();
 
-        assertEquals(Collections.EMPTY_LIST,hz.getMultiMap(NAME).get(KEY));
+        assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(NAME).get(KEY));
 
 
     }
+
     @Test
     public void testRemoveAll() throws Exception {
 
@@ -98,7 +100,7 @@ public class ClientTxnMultiMapTest {
         tx.beginTransaction();
         tx.getMultiMap(NAME).remove(KEY);
         tx.commitTransaction();
-        assertEquals(Collections.EMPTY_LIST,hz.getMultiMap(NAME).get(KEY));
+        assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(NAME).get(KEY));
     }
 
     @Test

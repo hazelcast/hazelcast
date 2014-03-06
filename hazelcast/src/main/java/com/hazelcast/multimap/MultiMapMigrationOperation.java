@@ -56,7 +56,7 @@ public class MultiMapMigrationOperation extends AbstractOperation {
                 Data key = collectionEntry.getKey();
                 key.writeData(out);
                 MultiMapWrapper wrapper = collectionEntry.getValue();
-                Collection<MultiMapRecord> coll = wrapper.getCollection();
+                Collection<MultiMapRecord> coll = wrapper.getCollection(false);
                 out.writeInt(coll.size());
                 String collectionType = MultiMapConfig.ValueCollectionType.SET.name();
                 if (coll instanceof List){

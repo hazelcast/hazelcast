@@ -25,6 +25,7 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -57,16 +58,19 @@ import static com.hazelcast.util.UuidUtil.buildRandomUuidString;
 public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
 
+    public static final int SYNC_FREQUENCY = 100;
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
-    private volatile long lastSubmitTime = 0L;
+    private final ILogger logger;
+    private volatile long lastSubmitTime;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        this.logger = nodeEngine.getLogger(ExecutorServiceProxy.class);
     }
 
     @Override
@@ -128,7 +132,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     private <T> RunnableAdapter<T> createRunnableAdapter(Runnable command) {
-        if (command == null) throw new NullPointerException();
+        if (command == null) {
+            throw new NullPointerException();
+        }
         return new RunnableAdapter<T>(command);
     }
 
@@ -164,23 +170,26 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        if (task == null) throw new NullPointerException();
+        if (task == null) {
+            throw new NullPointerException();
+        }
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
 
         Callable<T> callable = createRunnableAdapter(task);
-        final NodeEngine nodeEngine = getNodeEngine();
-        final String uuid = buildRandomUuidString();
-        final int partitionId = getTaskPartitionId(callable);
+        NodeEngine nodeEngine = getNodeEngine();
+        String uuid = buildRandomUuidString();
+        int partitionId = getTaskPartitionId(callable);
 
         CallableTaskOperation op = new CallableTaskOperation(name, uuid, callable);
-        final ICompletableFuture future = invoke(partitionId, op);
-        final boolean sync = checkSync();
+        ICompletableFuture future = invoke(partitionId, op);
+        boolean sync = checkSync();
         if (sync) {
             try {
                 future.get();
-            } catch (Exception ignored) {
+            } catch (Exception exception) {
+                logger.warning(exception);
             }
             return new CompletedFuture<T>(nodeEngine.getSerializationService(), result, getAsyncExecutor());
         }
@@ -200,16 +209,18 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId, boolean preventSync) {
-        if (task == null) throw new NullPointerException();
+        if (task == null) {
+            throw new NullPointerException();
+        }
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
-        final NodeEngine nodeEngine = getNodeEngine();
-        final String uuid = buildRandomUuidString();
+        NodeEngine nodeEngine = getNodeEngine();
+        String uuid = buildRandomUuidString();
 
-        final boolean sync = !preventSync && checkSync();
+        boolean sync = !preventSync && checkSync();
         CallableTaskOperation op = new CallableTaskOperation(name, uuid, task);
-        final ICompletableFuture future = invoke(partitionId, op);
+        ICompletableFuture future = invoke(partitionId, op);
         if (sync) {
             Object response;
             try {
@@ -222,13 +233,17 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, partitionId);
     }
 
+    /**
+     * This is a hack to prevent overloading the system with unprocessed tasks. Once backpressure is added, this can
+     * be removed.
+     */
     private boolean checkSync() {
         boolean sync = false;
-        final long last = lastSubmitTime;
-        final long now = Clock.currentTimeMillis();
+        long last = lastSubmitTime;
+        long now = Clock.currentTimeMillis();
         if (last + 10 < now) {
             consecutiveSubmits.set(0);
-        } else if (consecutiveSubmits.incrementAndGet() % 100 == 0) {
+        } else if (consecutiveSubmits.incrementAndGet() % SYNC_FREQUENCY == 0) {
             sync = true;
         }
         lastSubmitTime = now;
@@ -236,7 +251,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     private <T> int getTaskPartitionId(Callable<T> task) {
-        final int partitionId;
+        int partitionId;
         if (task instanceof PartitionAware) {
             final Object partitionKey = ((PartitionAware) task).getPartitionKey();
             partitionId = getNodeEngine().getPartitionService().getPartitionId(partitionKey);
@@ -248,23 +263,25 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     @Override
     public <T> Future<T> submitToKeyOwner(Callable<T> task, Object key) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         return submitToPartitionOwner(task, nodeEngine.getPartitionService().getPartitionId(key), false);
     }
 
     @Override
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
-        if (task == null) throw new NullPointerException();
+        if (task == null) {
+            throw new NullPointerException();
+        }
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
-        final NodeEngine nodeEngine = getNodeEngine();
-        final String uuid = buildRandomUuidString();
-        final Address target = ((MemberImpl) member).getAddress();
+        NodeEngine nodeEngine = getNodeEngine();
+        String uuid = buildRandomUuidString();
+        Address target = ((MemberImpl) member).getAddress();
 
-        final boolean sync = checkSync();
+        boolean sync = checkSync();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, task);
-        final InternalCompletableFuture future = nodeEngine.getOperationService().invokeOnTarget(
+        InternalCompletableFuture future = nodeEngine.getOperationService().invokeOnTarget(
                 DistributedExecutorService.SERVICE_NAME, op, target);
         if (sync) {
             Object response;
@@ -280,7 +297,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     @Override
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
-        final Map<Member, Future<T>> futures = new HashMap<Member, Future<T>>(members.size());
+        Map<Member, Future<T>> futures = new HashMap<Member, Future<T>>(members.size());
         for (Member member : members) {
             futures.put(member, submitToMember(task, member));
         }
@@ -289,7 +306,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     @Override
     public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         return submitToMembers(task, nodeEngine.getClusterService().getMembers());
     }
 
@@ -327,21 +344,23 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         CallableTaskOperation op = new CallableTaskOperation(name, null, task);
-        nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                op, partitionId).setCallback(new ExecutionCallbackAdapter(callback)).invoke();
+        OperationService operationService = nodeEngine.getOperationService();
+        operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
+                .setCallback(new ExecutionCallbackAdapter(callback))
+                .invoke();
     }
 
     @Override
     public <T> void submit(Callable<T> task, ExecutionCallback<T> callback) {
-        final int partitionId = getTaskPartitionId(task);
+        int partitionId = getTaskPartitionId(task);
         submitToPartitionOwner(task, callback, partitionId);
     }
 
     @Override
     public <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         submitToPartitionOwner(task, callback, nodeEngine.getPartitionService().getPartitionId(key));
     }
 
@@ -349,21 +368,23 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, task);
-        nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                op, ((MemberImpl) member).getAddress())
-                .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
+        OperationService operationService = nodeEngine.getOperationService();
+        Address address = ((MemberImpl) member).getAddress();
+        operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
+                .setCallback(new ExecutionCallbackAdapter(callback))
+                .invoke();
     }
 
     private String getRejectionMessage() {
-        return "ExecutorService[" + name + "] is shutdown! In order to create a new ExecutorService with name '" +
-                name + "', you need to destroy current ExecutorService first!";
+        return "ExecutorService[" + name + "] is shutdown! In order to create a new ExecutorService with name '"
+                + name + "', you need to destroy current ExecutorService first!";
     }
 
     @Override
     public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(nodeEngine,
                 members, callback);
 
@@ -374,14 +395,14 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     @Override
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         submitToMembers(task, nodeEngine.getClusterService().getMembers(), callback);
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        final List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
-        final List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
+        List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
+        List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
         for (Callable<T> task : tasks) {
             futures.add(submit(task));
         }
@@ -398,7 +419,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
+                                         long timeout, TimeUnit unit) throws InterruptedException {
         if (unit == null) {
             throw new NullPointerException("unit must not be null");
         }
@@ -406,8 +428,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             throw new NullPointerException("tasks must not be null");
         }
         long timeoutNanos = unit.toNanos(timeout);
-        final List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
-        final List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
+        List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
+        List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
         boolean done = true;
         try {
             for (Callable<T> task : tasks) {
@@ -432,7 +454,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                     value = e;
                 } catch (TimeoutException e) {
                     done = false;
-                    for (int o = i; o < size; o++) {
+                    for (int l = i; l < size; l++) {
                         Future<T> f = futures.get(i);
                         if (!f.isDone()) {
                             result.add(f);
@@ -452,14 +474,18 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                 timeoutNanos -= System.nanoTime() - start;
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+            logger.severe(t);
         } finally {
             if (!done) {
-                for (Future<T> aResult : result) {
-                    aResult.cancel(true);
-                }
+                cancelAll(result);
             }
             return result;
+        }
+    }
+
+    private static <T> void cancelAll(List<Future<T>> result) {
+        for (Future<T> aResult : result) {
+            aResult.cancel(true);
         }
     }
 
@@ -469,7 +495,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException {
         throw new UnsupportedOperationException();
     }
 
@@ -515,7 +542,10 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         for (Future f : calls) {
             try {
                 f.get(1, TimeUnit.SECONDS);
-            } catch (Exception ignored) {
+            } catch (Exception exception) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest(exception);
+                }
             }
         }
     }

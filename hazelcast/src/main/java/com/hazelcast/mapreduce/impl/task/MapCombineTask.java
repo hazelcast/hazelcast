@@ -223,7 +223,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 .processRequest(supervisor.getJobOwner(), new PostPonePartitionProcessing(name, jobId, partitionId), name);
 
         if (result.getResultState() != SUCCESSFUL) {
-            throw new RuntimeException("Could not postpone processing for partitionId " + partitionId);
+            throw new RuntimeException("Could not postpone processing for partitionId " + partitionId + " -> "
+                    + result.getResultState());
         }
     }
 

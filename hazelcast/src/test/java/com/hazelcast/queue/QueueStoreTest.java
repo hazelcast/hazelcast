@@ -28,17 +28,21 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -62,15 +66,14 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+         HazelcastInstance instance = createHazelcastInstance(config);
 
         for (int i = 0; i < maxSize * 2; i++) {
             queueStore.store.put((long) i, i);
         }
 
         IQueue<Object> queue = instance.getQueue("testQueueStore");
-        Assert.assertEquals("Queue Size should be equal to max size", maxSize, queue.size());
+        assertEquals("Queue Size should be equal to max size", maxSize, queue.size());
     }
 
     @Test
@@ -87,8 +90,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setProperty("bulk-load", "100");
         qConfig.setQueueStoreConfig(queueStoreConfig);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         for (int i = 0; i < 10; i++) {
             TransactionContext context = instance.newTransactionContext();
@@ -154,7 +156,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueueStore() {
+    public void testQueueStore() throws InterruptedException {
         Config config = new Config();
         int maxSize = 2000;
         QueueConfig queueConfig = config.getQueueConfig("testQueueStore");
@@ -178,23 +180,18 @@ public class QueueStoreTest extends HazelcastTestSupport {
             queue.offer(i + maxSize / 2);
         }
 
-        instance.getLifecycleService().shutdown();
+        instance.shutdown();
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         IQueue<Object> queue2 = instance2.getQueue("testQueueStore");
-        Assert.assertEquals(maxSize, queue2.size());
+        assertEquals(maxSize, queue2.size());
 
-
-        Assert.assertEquals(maxSize, queueStore.store.size());
+        assertEquals(maxSize, queueStore.store.size());
         for (int i = 0; i < maxSize; i++) {
-            Assert.assertEquals(i, queue2.poll());
+            assertEquals(i, queue2.poll());
         }
 
-        try {
-            queueStore.assertAwait(3);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        queueStore.assertAwait(3);
     }
 
     public static class TestQueueStore implements QueueStore {

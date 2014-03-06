@@ -130,7 +130,7 @@ public class ClientQueuePerformanceTest {
 
         latch.await();
 
-        server.getLifecycleService().shutdown();
+        server.shutdown();
 
         latch1.await();
 

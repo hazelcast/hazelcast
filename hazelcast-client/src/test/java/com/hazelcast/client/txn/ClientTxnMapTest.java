@@ -57,13 +57,12 @@ public class ClientTxnMapTest {
     @BeforeClass
     public static void init() {
         server = Hazelcast.newHazelcastInstance();
-//        second = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient(null);
+        client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
     public static void destroy() {
-        client.getLifecycleService().shutdown();
+        client.shutdown();
         Hazelcast.shutdownAll();
     }
 

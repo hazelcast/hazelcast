@@ -28,13 +28,15 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @ali 07/12/13
+ * This class is a special Predicate which helps to get a page-by-page result of a query
+ * Can be constructed with a page-size, an inner predicate for filtering, A comparator for sorting  \
+ * This class is not thread-safe and stateless. To be able to reuse for another query, one should call {@link PagingPredicate#reset()}
  */
 public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
     private Predicate predicate;
 
-    private Comparator comparator;
+    private Comparator<Map.Entry> comparator;
 
     private int pageSize;
 
@@ -44,9 +46,20 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
     private IterationType iterationType;
 
+
+    /**
+     * Used for serialization internally
+     */
     public PagingPredicate() {
     }
 
+    /**
+     * Construct with a pageSize
+     * results will not be filtered
+     * results will be natural ordered
+     * throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @param pageSize
+     */
     public PagingPredicate(int pageSize) {
         if (pageSize <= 0) {
             throw new IllegalArgumentException("pageSize should be greater than 0 !!!");
@@ -54,17 +67,44 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         this.pageSize = pageSize;
     }
 
+    /**
+     * Construct with an inner predicate and pageSize
+     * results will be filtered via inner predicate
+     * results will be natural ordered
+     * throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
+     * @param predicate
+     * @param pageSize
+     */
     public PagingPredicate(Predicate predicate, int pageSize) {
         this(pageSize);
         setInnerPredicate(predicate);
     }
 
-    public PagingPredicate(Comparator comparator, int pageSize) {
+    /**
+     * Construct with a comparator and pageSize
+     * results will not be filtered
+     * results will be ordered via comparator
+     * throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * @param comparator
+     * @param pageSize
+     */
+    public PagingPredicate(Comparator<Map.Entry> comparator, int pageSize) {
         this(pageSize);
         this.comparator = comparator;
     }
 
-    public PagingPredicate(Predicate predicate, Comparator comparator, int pageSize) {
+    /**
+     * Construct with an inner predicate, comparator and pageSize
+     * results will be filtered via inner predicate
+     * results will be ordered via comparator
+     * throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
+     * @param predicate
+     * @param comparator
+     * @param pageSize
+     */
+    public PagingPredicate(Predicate predicate, Comparator<Map.Entry> comparator, int pageSize) {
         this(pageSize);
         setInnerPredicate(predicate);
         this.comparator = comparator;
@@ -77,6 +117,12 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         this.predicate = predicate;
     }
 
+    /**
+     * Used if inner predicate is instanceof {@link IndexAwarePredicate} for filtering
+     *
+     * @param queryContext
+     * @return
+     */
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             Set<QueryableEntry> set = ((IndexAwarePredicate) predicate).filter(queryContext);
@@ -101,6 +147,12 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return null;
     }
 
+    /**
+     * Used if inner predicate is instanceof {@link IndexAwarePredicate} for checking if indexed
+     *
+     * @param queryContext
+     * @return
+     */
     public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
@@ -108,6 +160,12 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return false;
     }
 
+    /**
+     * Used for delegating filtering to inner predicate
+     *
+     * @param mapEntry
+     * @return
+     */
     public boolean apply(Map.Entry mapEntry) {
         if (predicate != null) {
             return predicate.apply(mapEntry);
@@ -115,22 +173,40 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return true;
     }
 
+    /**
+     * After each query, an anchor entry is set for that page
+     * anchor entry is the last entry of the query
+     *
+     * @param anchor
+     */
+
     void setAnchor(Map.Entry anchor) {
-        if (anchor != null) {
-            anchorMap.put(page + 1, anchor);
+        if (anchor == null) {
+            previousPage();
+            return;
         }
+        anchorMap.put(page + 1, anchor);
     }
 
+    /**
+     * resets for reuse
+     */
     public void reset() {
         iterationType = null;
         anchorMap.clear();
         page = 0;
     }
 
+    /**
+     * setting the page value to next page
+     */
     public void nextPage() {
         page++;
     }
 
+    /**
+     * setting the page value to previous page
+     */
     public void previousPage() {
         if (page != 0) {
             page--;
@@ -157,7 +233,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return predicate;
     }
 
-    public Comparator getComparator() {
+    public Comparator<Map.Entry> getComparator() {
         return comparator;
     }
 

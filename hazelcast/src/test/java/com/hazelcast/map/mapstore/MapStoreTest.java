@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
@@ -47,7 +46,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -99,7 +97,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         IMap map = instance1.getMap("testMapGetAll");
 
-        final HashSet<String> keys = new HashSet<String>();
+        final HashSet<String> keys = new HashSet<String>(3);
         keys.add("key1");
         keys.add("key3");
         keys.add("key4");
@@ -115,8 +113,6 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testSlowStore() throws Exception {
-
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final TestMapStore store = new WaitingOnFirstTestMapStore();
         Config cfg = new Config();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -124,7 +120,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setWriteDelaySeconds(1);
         mapStoreConfig.setImplementation(store);
         cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h1 = createHazelcastInstance(cfg);
         final IMap<Integer, Integer> map = h1.getMap("testSlowStore");
         int count = 1000;
         for (int i = 0; i < count; i++) {
@@ -140,10 +136,10 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test (timeout = 120000)
+    @Test(timeout = 120000)
     public void testInitialLoadModeEager() {
         int size = 100000;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         Config cfg = new Config();
         GroupConfig groupConfig = new GroupConfig("testEager");
         cfg.setGroupConfig(groupConfig);
@@ -161,11 +157,12 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     }
 
-    @Test (timeout = 120000)
-    @Category(ProblematicTest.class)
+    @Test(timeout = 120000)
     public void testInitialLoadModeEagerMultipleThread() {
+        final int instanceCount = 2;
         final int size = 100000;
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
+        final CountDownLatch countDownLatch = new CountDownLatch(instanceCount - 1);
         final Config cfg = new Config();
         GroupConfig groupConfig = new GroupConfig("testEager");
         cfg.setGroupConfig(groupConfig);
@@ -181,16 +178,23 @@ public class MapStoreTest extends HazelcastTestSupport {
                 HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
                 final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerMultipleThread");
                 assertEquals(size, map.size());
+                countDownLatch.countDown();
             }
         };
         new Thread(runnable).start();
+
+        assertOpenEventually(countDownLatch, 120);
         IMap map = instance1.getMap("testInitialLoadModeEagerMultipleThread");
         assertEquals(size, map.size());
+
     }
-    @Test (timeout = 120000)
-    public void testInitialLoadModeEagerWhileStoppigOneNode() {
+
+    @Test(timeout = 120000)
+    public void testInitialLoadModeEagerWhileStoppigOneNode() throws InterruptedException {
+        final int instanceCount = 2;
         final int size = 100000;
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
+        final CountDownLatch countDownLatch = new CountDownLatch(instanceCount - 1);
         final Config cfg = new Config();
         GroupConfig groupConfig = new GroupConfig("testEager");
         cfg.setGroupConfig(groupConfig);
@@ -199,10 +203,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
         cfg.getMapConfig("testInitialLoadModeEagerWhileStoppigOneNode").setMapStoreConfig(mapStoreConfig);
-
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
@@ -211,15 +213,19 @@ public class MapStoreTest extends HazelcastTestSupport {
                     Thread.sleep(3000);
                     final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
                     assertEquals(size, map.size());
+                    countDownLatch.countDown();
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
             }
         };
         new Thread(runnable).start();
-        IMap map = instance1.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
+        assertOpenEventually(countDownLatch, 120);
+
+        final IMap<Object, Object> map2 = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
+        final int map2Size = map2.size();
+        assertEquals(size, map2Size);
     }
 
     @Test
@@ -238,10 +244,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("testMapInitialLoad");
-        System.out.println("getMap finished. mode:" + mapStoreConfig.getInitialLoadMode());
         assertEquals(size, map.size());
-        System.out.println(map.size());
-
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
@@ -415,8 +418,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 5);
         config.getMapConfig("default").setMaxIdleSeconds(10);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = createHazelcastInstance(config);
         IMap map = h1.getMap("default");
 
         final int total = 10;
@@ -443,8 +445,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         testMapStore.loadAllLatch = new CountDownLatch(1);
         final Config config = newConfig(testMapStore, 2);
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance node1 = createHazelcastInstance(config);
         final IMap map = node1.getMap(mapName);
         // check if load all called.
         assertTrue("map store loadAllKeys must be called", testMapStore.loadAllLatch.await(10, TimeUnit.SECONDS));
@@ -668,7 +669,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testOneMemberWriteThroughWithLRU() throws Exception {
-        int size = 10000;
+        final int size = 10000;
         TestMapStore testMapStore = new TestMapStore(size * 2, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
@@ -681,13 +682,22 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
+        final CountDownLatch countDownLatch = new CountDownLatch(10000);
+        map.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                countDownLatch.countDown();
+            }
+        }, false);
+
         for (int i = 0; i < size * 2; i++) {
             map.put(i, new Employee("joe", i, true, 100.00));
         }
         assertEquals(testMapStore.getStore().size(), size * 2);
-        Thread.sleep(1000);
-        assertTrue(map.size() > size / 2);
-        assertTrue(map.size() <= size);
+        countDownLatch.await(5, TimeUnit.SECONDS);
+        final String msgFailure = String.format("map size: %d put size: %d", map.size(), size);
+        assertTrue(msgFailure, map.size() > size / 2);
+        assertTrue(msgFailure, map.size() <= size);
         assertEquals(testMapStore.getStore().size(), size * 2);
     }
 
@@ -696,8 +706,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = createHazelcastInstance(config);
         Employee employee = new Employee("joe", 25, true, 100.00);
         Employee newEmployee = new Employee("ali", 26, true, 1000);
         testMapStore.insert("1", employee);
@@ -880,7 +889,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
         assertEquals(1000, map3.size());
-        h3.getLifecycleService().shutdown();
+        h3.shutdown();
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
@@ -922,8 +931,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config config = new Config();
         SimpleMapStore store = new SimpleMapStore();
         config.getMapConfig("testMapstoreDeleteOnClear").setMapStoreConfig(new MapStoreConfig().setEnabled(true).setImplementation(store));
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         IMap<Object, Object> map = hz.getMap("testMapstoreDeleteOnClear");
         int size = 10;
         for (int i = 0; i < size; i++) {
@@ -992,8 +1000,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                 .getMapConfig("testIssue806CustomTTLForNull")
                 .setMapStoreConfig(new MapStoreConfig()
                         .setImplementation(myMapStore));
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance hc = createHazelcastInstance(config);
         IMap<Object, Object> map = hc.getMap("testIssue806CustomTTLForNull");
         map.get("key");
         assertNull(map.get("key"));
@@ -1025,8 +1032,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         config
                 .getMapConfig("testIssue991EvictedNullIssue")
                 .setMapStoreConfig(mapStoreConfig);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance hc = createHazelcastInstance(config);
         IMap<Object, Object> map = hc.getMap("testIssue991EvictedNullIssue");
         map.get("key");
         assertNull(map.get("key"));
@@ -1056,8 +1062,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         testMapStore.getStore().putAll(mapForStore);
 
         Config config = newConfig(testMapStore, 0);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("default");
 
         assertEquals(map.keySet(), mapForStore.keySet());
@@ -1154,22 +1159,10 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap(mapName);
         final CountDownLatch latch = new CountDownLatch(mapSize);
-        map.addEntryListener(new EntryListener() {
+        map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
             }
         }, true);
         // create all partition recordstores.
@@ -1230,18 +1223,18 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
+        final int size = 1000;
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackup";
         config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "50");
-        MapConfig writeBehindBackup = config.getMapConfig(name);
+        MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
-        int size = 1000;
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 90, 30);
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120, 10);
         mapStoreConfig.setImplementation(mapStore);
-        writeBehindBackup.setMapStoreConfig(mapStoreConfig);
+        writeBehindBackupConfig.setMapStoreConfig(mapStoreConfig);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -1284,8 +1277,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 2);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = createHazelcastInstance(config);
         IMap<Object, Object> map = h1.getMap("testWriteBehindSameSecondSameKey");
         final int size1 = 20;
         final int size2 = 10;
@@ -1316,8 +1308,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         InputStream is = getClass().getResourceAsStream("/com/hazelcast/config/hazelcast-mapstore-config.xml");
         XmlConfigBuilder builder = new XmlConfigBuilder(is);
         Config config = builder.build();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         MapProxyImpl map = (MapProxyImpl) hz.getMap(mapName);
         MapService mapService = (MapService) map.getService();
         MapContainer mapContainer = mapService.getMapContainer(mapName);
@@ -1404,10 +1395,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
 
         public void awaitStores() {
-            try {
-                assertTrue(latch.await(waitSecond, TimeUnit.SECONDS));
-            } catch (InterruptedException e) {
-            }
+            assertOpenEventually(latch, waitSecond);
         }
 
         @Override

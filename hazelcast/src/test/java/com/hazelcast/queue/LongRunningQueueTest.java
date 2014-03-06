@@ -144,7 +144,7 @@ public class LongRunningQueueTest {
             if(latch.await(30, TimeUnit.SECONDS)){
                 Thread.sleep(2*1000);
                 if (shutdown){
-                    ins.getLifecycleService().shutdown();
+                    ins.shutdown();
                 }
                 System.out.println("successfully stopped");
                 return true;

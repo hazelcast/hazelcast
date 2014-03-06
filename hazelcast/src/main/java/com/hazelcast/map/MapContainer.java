@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public class MapContainer {
 
     private final String name;
-    private final MapConfig mapConfig;
+    private volatile MapConfig mapConfig;
     private final RecordFactory recordFactory;
     private final MapService mapService;
     private final MapStoreWrapper storeWrapper;
@@ -112,7 +112,7 @@ public class MapContainer {
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
-            storeWrapper = new MapStoreWrapper(store, mapConfig.getName(), mapStoreConfig.isEnabled());
+            storeWrapper = new MapStoreWrapper(store, name, mapStoreConfig.isEnabled());
         } else {
             storeWrapper = null;
         }
@@ -271,6 +271,10 @@ public class MapContainer {
 
     public int getAsyncBackupCount() {
         return mapConfig.getAsyncBackupCount();
+    }
+
+    public void setMapConfig(MapConfig mapConfig) {
+        this.mapConfig = mapConfig;
     }
 
     public MapConfig getMapConfig() {

@@ -98,13 +98,9 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
                 final int instanceIndex = j;
                 new Thread(new Runnable() {
                     public void run() {
-                        final HazelcastInstance h = instances[instanceIndex];
-                        try {
-                            warmUpPartitions(h);
-                            counts.offer(getLocalPartitionsCount(h));
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        HazelcastInstance h = instances[instanceIndex];
+                        warmUpPartitions(h);
+                        counts.offer(getLocalPartitionsCount(h));
                     }
                 }).start();
             }

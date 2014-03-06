@@ -18,8 +18,8 @@ package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -146,7 +146,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     }
 
     private int getPartitionId(String name) {
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
     }

@@ -22,7 +22,7 @@ Here are the steps:
 ```
 -   Start your Hazelcast cluster.
 
--   Browse to `http://localhost:8080/mancenter`-*version* and login. **Initial login username/passwords is `admin/admin`**
+-   Browse to `http://localhost:8080/mancenter`-*version* and login. **Initial login username/password is `admin/admin`**
 
 *Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory setting "hazelcast.mancenter.home" system property.*
 

@@ -18,11 +18,11 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
 import com.hazelcast.cluster.MemberAttributeChangedOperation;
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -38,8 +38,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
+import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
@@ -161,7 +165,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         return Collections.unmodifiableMap(attributes);
     }
 
-    public void updateAttribute(MapOperationType operationType, String key, Object value) {
+    public void updateAttribute(MemberAttributeOperationType operationType, String key, Object value) {
         switch (operationType) {
             case PUT:
                 attributes.put(key, value);
@@ -169,6 +173,8 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             case REMOVE:
                 attributes.remove(key);
                 break;
+            default:
+                throw new IllegalArgumentException("Not a known OperationType " + operationType);
         }
     }
 
@@ -263,7 +269,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             NodeEngineImpl nodeEngine = instance.node.nodeEngine;
             OperationService os = nodeEngine.getOperationService();
             MemberAttributeChangedOperation operation =
-                    new MemberAttributeChangedOperation(MapOperationType.REMOVE, key, null);
+                    new MemberAttributeChangedOperation(REMOVE, key, null);
             String uuid = nodeEngine.getLocalMember().getUuid();
             operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
             try {
@@ -303,6 +309,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(uuid);
+        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -373,7 +380,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             NodeEngineImpl nodeEngine = instance.node.nodeEngine;
             OperationService os = nodeEngine.getOperationService();
             MemberAttributeChangedOperation operation =
-                    new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
+                    new MemberAttributeChangedOperation(PUT, key, value);
             String uuid = nodeEngine.getLocalMember().getUuid();
             operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
             try {

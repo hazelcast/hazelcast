@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -40,6 +41,40 @@ import static org.junit.Assert.*;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MultiMapTest extends HazelcastTestSupport {
+
+    /**
+     * ConcurrentModificationExceptions
+     */
+    @Test
+    public void testIssue1882() {
+        String mmName = "mm";
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final Config config = new Config();
+        final MultiMapConfig multiMapConfig = config.getMultiMapConfig(mmName);
+        multiMapConfig.setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final String key = generateKeyOwnedBy(instance1);
+
+        final MultiMap<Object, Object> mm1 = instance1.getMultiMap("mm");
+        mm1.put(key, 1);
+        mm1.put(key, 2);
+        final AtomicBoolean running = new AtomicBoolean(true);
+        new Thread(){
+            @Override
+            public void run() {
+                int count = 3;
+                while (running.get()) {
+                    mm1.put(key, count++);
+                }
+            }
+        }.start();
+
+
+        for (int i=0; i<10; i++) {
+            mm1.get(key);
+        }
+    }
 
     @Test
     public void testPutGetRemoveWhileCollectionTypeSet() throws InterruptedException {
@@ -202,19 +237,13 @@ public class MultiMapTest extends HazelcastTestSupport {
 
         final Set keys = new HashSet();
 
-        EntryListener listener = new EntryListener() {
+        EntryListener listener = new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
                 keys.add(event.getKey());
             }
 
             public void entryRemoved(EntryEvent event) {
                 keys.remove(event.getKey());
-            }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
             }
         };
 
@@ -268,8 +297,7 @@ public class MultiMapTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }));
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMultiMap(name).put(1, 1);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
@@ -308,7 +336,7 @@ public class MultiMapTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                instances[0].getLifecycleService().shutdown();
+                instances[0].shutdown();
             }
         }.start();
 

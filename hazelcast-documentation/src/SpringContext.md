@@ -2,7 +2,7 @@
 
 ## Spring Managed Context
 
-It's often desired to access Spring managed beans, to apply bean properties or to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware` or to apply bean post-processing such as `InitializingBean`, `@PostConstruct` like annotations while using Hazelcast distributed `ExecutorService` or more generally any Hazelcast managed object. Achieving those features are as simple as adding `@SpringAware` annotation to your distributed object types. Once you have configured HazelcastInstance as explained in [Spring configuration](#SpringConfig), just mark any distributed type with `@SpringAware` annotation.
+It's often desired to access Spring managed beans, to apply bean properties or to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware` or to apply bean post-processing such as `InitializingBean`, `@PostConstruct` like annotations while using Hazelcast distributed `ExecutorService` or more generally any Hazelcast managed object. Achieving those features are as simple as adding `@SpringAware` annotation to your distributed object types. Once you have configured HazelcastInstance as explained in [Spring configuration](#spring-integration), just mark any distributed type with `@SpringAware` annotation.
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -124,4 +124,5 @@ IMap<String, SomeValue> map = hazelcast.getMap("values");
 SomeValue value = map.get("key");
 Assert.assertTrue(value.init);
 ```
+
 *Note that, Spring managed properties/fields are marked as `transient`.*

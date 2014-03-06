@@ -18,15 +18,16 @@ package com.hazelcast.security.permission;
 
 public class AtomicReferencePermission extends InstancePermission {
 
-    private final static int READ = 0x4;
-    private final static int MODIFY = 0x8;
+    private static final int READ = 0x4;
+    private static final int MODIFY = 0x8;
 
-    private final static int ALL = READ | MODIFY | CREATE | DESTROY;
+    private static final int ALL = READ | MODIFY | CREATE | DESTROY;
 
     public AtomicReferencePermission(String name, String... actions) {
         super(name, actions);
     }
 
+    @Override
     protected int initMask(String[] actions) {
         int mask = NONE;
         for (String action : actions) {

@@ -47,9 +47,6 @@ public abstract class Operation implements DataSerializable {
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private String callerUuid;
-    // not used anymore, keeping just for serialization compatibility
-    @Deprecated
-    private boolean async = false;
     private String executorName;
 
     // injected
@@ -273,7 +270,6 @@ public abstract class Operation implements DataSerializable {
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
         out.writeUTF(callerUuid);
-        out.writeBoolean(async);  // not used anymore
         out.writeUTF(executorName);
         writeInternal(out);
     }
@@ -287,7 +283,6 @@ public abstract class Operation implements DataSerializable {
         invocationTime = in.readLong();
         callTimeout = in.readLong();
         callerUuid = in.readUTF();
-        async = in.readBoolean();  // not used anymore
         executorName = in.readUTF();
         readInternal(in);
     }

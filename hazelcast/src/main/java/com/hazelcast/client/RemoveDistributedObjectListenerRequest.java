@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import java.security.Permission;
+
 public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveListenerRequest {
 
     public RemoveDistributedObjectListenerRequest() {
@@ -43,5 +45,10 @@ public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveList
     @Override
     public int getClassId() {
         return ClientPortableHook.REMOVE_LISTENER;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

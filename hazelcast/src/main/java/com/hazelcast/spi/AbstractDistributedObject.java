@@ -24,7 +24,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 
-    protected static final PartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
+    protected static final PartitioningStrategy PARTITIONING_STRATEGY = StringPartitioningStrategy.INSTANCE;
 
     private volatile NodeEngine nodeEngine;
     private volatile S service;

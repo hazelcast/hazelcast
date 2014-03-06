@@ -70,9 +70,9 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
             return false;
         }
 
-        final Future f = invokeCancelOperation(mayInterruptIfRunning);
+        Future f = invokeCancelOperation(mayInterruptIfRunning);
         try {
-            final Boolean b = (Boolean) f.get();
+            Boolean b = (Boolean) f.get();
             if (b != null && b) {
                 setError(new CancellationException());
                 cancelled = true;

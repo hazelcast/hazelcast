@@ -16,7 +16,9 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -42,6 +44,26 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     public void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+    @Test(timeout = 40000)
+    public void testChangeMemberAttributes() throws Exception {
+        final int count = 100;
+
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final ClientConfig config = new ClientConfig();
+        final ListenerConfig listenerConfig = new ListenerConfig();
+        final CountDownLatch countDownLatch = new CountDownLatch(count);
+        listenerConfig.setImplementation(new LatchMembershipListener(countDownLatch));
+        config.addListenerConfig(listenerConfig);
+        HazelcastClient.newHazelcastClient(config);
+
+        final Member localMember = instance.getCluster().getLocalMember();
+        for (int i = 0; i < count; i++) {
+            localMember.setStringAttribute("key" + i, HazelcastTestSupport.randomString());
+        }
+
+        assertOpenEventually(countDownLatch, 30);
     }
 
     @Test(timeout = 120000)
@@ -79,9 +101,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
             assertEquals(123, (int) m.getIntAttribute("Test"));
         }
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -121,9 +143,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         assertTrue(found);
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -177,9 +199,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         assertTrue(found);
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -234,8 +256,8 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         assertTrue(found);
 
         client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     @Test(timeout = 120000)
@@ -288,9 +310,9 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         assertTrue(found);
 
-        client.getLifecycleService().shutdown();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
+        client.shutdown();
+        h1.shutdown();
+        h2.shutdown();
     }
 
     private static class LatchMembershipListener implements MembershipListener {

@@ -92,7 +92,6 @@ public class JobProcessInformationImpl
     public boolean updatePartitionState(int partitionId, JobPartitionState oldPartitionState,
                                         JobPartitionState newPartitionState) {
 
-        ValidationUtil.isNotNull(newPartitionState, "newPartitionState");
         while (true) {
             JobPartitionState[] oldPartitionStates = getPartitionStates();
             if (oldPartitionStates[partitionId] != oldPartitionState) {
