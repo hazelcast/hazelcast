@@ -535,6 +535,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the current thread becomes disabled for thread scheduling
      * purposes and lies dormant until the lock has been acquired.
      * <p/>
+     * You get a lock whether the value is present in the map or not. Other
+     * threads (possibly on other systems) would block on their invoke of
+     * <code>lock()</code> until the non-existent key is unlocked. If the lock
+     * holder introduces the key to the map, the <code>put()</code> operation
+     * is not blocked. If a thread not holding a lock on the non-existent key
+     * tries to introduce the key while a lock exists on the non-existent key,
+     * the <code>put()</code> operation blocks until it is unlocked.
+     * <p/>
      * Scope of the lock is this map only.
      * Acquired lock is only for the key in this map.
      * <p/>
