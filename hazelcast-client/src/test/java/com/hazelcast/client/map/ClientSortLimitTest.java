@@ -121,8 +121,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         Collection<Integer> values = map.values(predicate);
         values = map.values(predicate);
 
-        assertEquals(9, predicate.getPage());
-        assertEquals(5, values.size());
+        assertEquals( size/pageSize - 1, predicate.getPage());
         assertIterableEquals(values, 45, 46, 47, 48, 49);
     }
 
