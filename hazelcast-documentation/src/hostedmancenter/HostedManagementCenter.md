@@ -11,30 +11,36 @@ Hazelcast Hosted Management Center enables you to monitor and manage your nodes 
 
 ---
 
-## Installation
+## Configuration
+In order to monitor your cluster in Hosted Management Center, `hazelcast.hosted.management.enabled` system property needs to be set as `true` on your cluster. This can be done with one of the ways listed below:
+
+1- Using JVM command line argument `-Dhazelcast.hosted.management.enabled=true`
+
+or
+ 
+2- Adding the snippet below to your `hazelcast.xml` configuration file. 
+
+
+```xml
+<properties>
+     <property name="hazelcast.hosted.management.enabled">true</property>
+</properties>
+```
+
+
+Also, `security-token` property in the management center configuration should be specified. This token can be grabbed from Hosted Management Center after registration. It can be added to ``as below like the following snippet on your hazelcast.xml configuration file.
+
+```xml
+<management-center security-token="YOUR_SECURITY_TOKEN" />
+```
+
 
 Basically, `mancenter`-*version*`.war` application should be deployed into the Java web server and  Hazelcast nodes should be configured to communicate with this application, i.e. Hazelcast nodes should know the URL of `mancenter` application before they are started.
 
-Here are the steps:
-
--   Download the latest Hazelcast zip from [hazelcast.org](http://www.hazelcast.org/download/).
-
--   Zip contains `mancenter`-*version*`.war` file. Deploy it to your web server (Tomcat, Jetty etc.) Let's say it is running at`http://localhost:8080/mancenter-`*version*
-
--   Start your web server and make sure `http://localhost:8080/mancenter`-*version*` is up.
-
--   Configure your Hazelcast nodes by adding the URL of your web app to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
-
-```xml
-<management-center enabled="true">http://localhost:8080/mancenter-version</management-center>
-```
--   Start your Hazelcast cluster.
-
-*Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory setting "hazelcast.mancenter.home" system property.*
 
 ---
 
-## Login & Sign Up
+## Sign Up & Login
 After the cluster has started, go to `http://localhost:8080/mancenter`-*version* using any web browser. Below page will load.
 
 ![](images/1Login.jpg)
@@ -50,13 +56,12 @@ Once the credentials are entered and **Login** key is pressed, the tool will ask
 
 Select the cluster and hit **Connect** button.
 
----
+If your cluster is not configured for the Hosted Management Center, the tool shows a warning as shown below.
 
-## User Administration
+![](images/Warning.jpg)
 
-Default credentials are for the admin user. In the `Administration` tab, Admin can add/remove/update users and control user read/write permissions.
+You can click on the link written on this warning and see the explanation on how to configure the cluster.
 
-![](images/admin.jpg)
 
 ---
 
@@ -186,95 +191,47 @@ Map instances are listed under the **Maps** menu item on the left. When you clic
 
 Below subsections explain the portions of this window.
 
-
-### Monitoring Maps
-
-In map page you can monitor instance metrics by 2 charts and 2 datatables. First data table "Memory Data Table" gives the memory metrics distributed over members. "Throughput Data Table" gives information about the operations performed on instance (get, put, remove) Each chart monitors a type data of the instance on cluster. You can change the type by clicking on chart. The possible ones are: Size, Throughput, Memory, Backup Size, Backup Memory, Hits, Locked Entries, Puts, Gets, Removes...
-
-
-#### Size
-???
-
-![](images/Map-Size.jpg)
-
-???
-
-#### Throughput
-???
-
-![](images/Map-Throughput.jpg)
-
-???
-
-#### Memory
-???
-
-![](images/Map-Memory.jpg)
-
-???
-
-#### Backup Size
-???
-
-![](images/Map-BackupSize.jpg)
-
-???
-
-#### Backup Memory
-???
-
-![](images/Map-BackupMemory.jpg)
-
-???
-
-#### Hits
-???
-
-![](images/Map-Hits.jpg)
-
-???
-
-#### Locked Entries
-???
-
-![](images/Map-LockedEntries.jpg)
-
-???
-
-#### Puts/s
-???
-
-![](images/Map-Puts.jpg)
-
-???
-
-#### Gets/s
-???
-
-![](images/Map-Gets.jpg)
-
-???
-
-#### Removes/s
-???
-
-![](images/Map-Removes.jpg)
-
-???
-
-
-
 ### Map Browser
 
-You can open "Map Browser" tool by clicking "Browse" button on map tab page. Using map browser, you can reach map's entries by keys. Besides its value, extra informations such as entry's cost, expiration time is provided.
+Map Browser is a tool used to retrieve properties of the entries stored in the selected map. It can be opened by clicking on the **Map Browser** button, located at top right of the window. Once opened, the tool appears as a dialog, as shown below.
 
 ![](images/Map-MapBrowser.jpg)
 
-### Map Config
+Once the key and key's type is specified on top of the tool and **Browse** button is clicked on, key's properties along with its value is listed.
 
-You can open "Map Configuration" tool by clicking "Config" button on map tab page. This button is disabled for users with Read-Only permission. Using map config tool you can adjust map's setting. You can change backup count, max size, max idle(seconds), eviction policy, cache value, read backup data, backup count of the map.
+### Map Config
+By using Map Config tool, you can set selected map's attributes like the backup count, TTL, and eviction policy. It can be opened by clicking on the **Map Config** button, located at top right of the window. Once opened, the tool appears as a dialog, as shown below.
 
 ![](images/Map-MapConfig.jpg)
+
+Once the desired attributes are changed, click on the **Update** button to save changes.
+
+
+### Map Monitoring
+
+Besides Map Browser and Map Config tools, this page has many  monitoring options explained below. All of these perform  real-time monitoring. 
+
+On top of the page, there are small charts to monitor the size, throughput, memory usage, backup size, etc. of the selected map in real-time. All charts' X-axis shows the current system time. Other small monitoring charts can be selected using ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart. When it is clicked, the whole list of monitoring options are listed, as shown below.
+
+![](images/SelectConfOpt.jpg)
+
+When you click on a desired monitoring, the chart is loaded with the selected option. Also, a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
+
+-	**Size**: Monitors the size of the map. Y-axis is the entry count (should be multiplied by 1000).
+-	**Throughput**: Monitors get, put and remove operations performed on the map. Y-axis is the operation count.
+-	**Memory**: Monitors the memory usage on the map. Y-axis is the memory count.
+-	**Backups**: It is the chart loaded when "Backup Size" is selected. Monitors the size of the backups in the map. Y-axis is the backup entry count (should be multiplied by 1000).
+-	**Backup Memory**: It is the chart loaded when "Backup Mem." is selected. Monitors the memory usage of the backups. Y-axis is the memory count.
+-	**Hits**: Monitors the hit count of the map.
+-	**Puts/s, Gets/s, Removes/s**: These three charts monitor the put, get and remove operations (per second) performed on the selected map.
+
+
+Under these charts, there are **Map Memory** and **Map Throughput** data tables.
+
+![](images/Map-MemoryDataTable.jpg)
+
+gives the memory metrics distributed over members. gives information about the operations performed on instance (get, put, remove) 
+
 
 ---
 
