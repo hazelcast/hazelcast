@@ -75,8 +75,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testExecuteOnKeysBackupOperation() {
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
         HazelcastInstance newPrimary=null;
         IMap<String, TempData> map = instance1.getMap("test");
             map.put("a", new TempData("foo", "bar"));
@@ -107,8 +109,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testExecuteOnKeysBackupOperationIndexed() throws Exception {
         Config cfg = new Config();
         cfg.getMapConfig("test").setBackupCount(1).addMapIndexConfig(new MapIndexConfig("attr1", false));
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
         IMap<String, TempData> map = instance1.getMap("test");
         HazelcastInstance newPrimary=null;
             map.put("a", new TempData("foo", "bar"));
