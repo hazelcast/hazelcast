@@ -44,11 +44,6 @@ public class MapStableReadStressTest extends StressTestSupport {
         map = client.getMap("map");
         fillMap();
 
-        stressThreads = new StressThread[CLIENT_THREAD_COUNT];
-        for (int k = 0; k < stressThreads.length; k++) {
-            stressThreads[k] = new StressThread();
-            stressThreads[k].start();
-        }
     }
 
     @After
@@ -88,6 +83,10 @@ public class MapStableReadStressTest extends StressTestSupport {
     }
 
     public class StressThread extends TestThread {
+
+        public StressThread(HazelcastInstance node){
+            super(node);
+        }
 
         @Override
         public void doRun() throws Exception {

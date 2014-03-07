@@ -46,11 +46,7 @@ public class MapUpdateStressTest extends StressTestSupport<MapUpdateStressTest.S
 
         fillMap();
 
-        stressThreads = new StressThread[CLIENT_THREAD_COUNT];
-        for (int k = 0; k < stressThreads.length; k++) {
-            stressThreads[k] = new StressThread();
-            stressThreads[k].start();
-        }
+
     }
 
     @After
@@ -113,6 +109,10 @@ public class MapUpdateStressTest extends StressTestSupport<MapUpdateStressTest.S
     public class StressThread extends TestThread {
 
         private final int[] increments = new int[MAP_SIZE];
+
+        public StressThread(HazelcastInstance node){
+            super(node);
+        }
 
         @Override
         public void doRun() throws Exception {

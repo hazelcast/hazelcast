@@ -1,6 +1,7 @@
 package com.hazelcast.client.stress.helpers;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,6 +45,8 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
 
     private boolean clusterChangeEnabled = true;
 
+    protected ClientConfig clientConfig = new ClientConfig();
+
     protected List<T> stressThreads = new ArrayList<T>();
 
 
@@ -51,12 +54,16 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
         cluster.initCluster();
     }
 
+    public void setClientConfig(ClientConfig clientConfig){
+        this.clientConfig = clientConfig;
+    }
+
     public void setUp(Object yourThis) {
         cluster.initCluster();
 
         for ( int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++ ) {
 
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient();
+            HazelcastInstance instance = HazelcastClient.newHazelcastClient(clientConfig);
 
             for ( int j = 0; j < THREADS_PER_INSTANCE; j++ ) {
                 T t = getInstanceOfT(yourThis, instance);
@@ -187,11 +194,11 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
         }
     }
 
-    public class KillMemberThread extends TestThread {
+    public class KillMemberThread extends Thread {
         @Override
-        public void doRun() throws Exception {
+        public void run(){
 
-            while ( stoped.get() !=0 ) {
+            while ( stopTest.get() !=0 ) {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
                 } catch (InterruptedException e) {
@@ -203,7 +210,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
         }
     }
 
-    public class KillMemberOwningKeyThread extends TestThread {
+    public class KillMemberOwningKeyThread extends Thread {
         private Object key = null;
 
         public KillMemberOwningKeyThread(Object key){
@@ -211,8 +218,8 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
         }
 
         @Override
-        public void doRun() throws Exception {
-            while ( stoped.get() != 0 ) {
+        public void run() {
+            while ( stopTest.get() != 0 ) {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
                 } catch (InterruptedException e) {

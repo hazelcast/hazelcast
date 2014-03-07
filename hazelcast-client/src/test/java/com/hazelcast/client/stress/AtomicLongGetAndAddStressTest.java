@@ -32,11 +32,12 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongG
 
     @Before
     public void setUp() {
-
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
+        super.setClientConfig(clientConfig);
         super.setUp(this);
+
         acutal = cluster.getRandomNode().getAtomicLong(atomicKey);
     }
 
@@ -62,8 +63,6 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongG
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
         private IAtomicLong atomicLong;
         public AtomicInteger count = new AtomicInteger(0);
 
@@ -74,12 +73,9 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongG
         }
 
         public void doRun() throws Exception {
-
-
-                int inc = 1;
-                atomicLong.getAndAdd(inc);
-                count.addAndGet(inc);
-
+            int inc = 1;
+            atomicLong.getAndAdd(inc);
+            count.addAndGet(inc);
         }
     }
 

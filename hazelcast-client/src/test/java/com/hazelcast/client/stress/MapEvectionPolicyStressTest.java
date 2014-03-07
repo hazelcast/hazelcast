@@ -43,8 +43,9 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(1000);
         mc.setMaxSizeConfig(msc);
-
         cluster.setConfig( config );
+
+
         super.setUp();
 
         map = cluster.getRandomNode().getMap(MAP_NAME);
