@@ -870,7 +870,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
-            System.out.println("Serializing object " + this);
             serializationCount.incrementAndGet();
             out.writeObject(attr1);
             out.writeObject(attr2);
@@ -879,7 +878,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public void readData(ObjectDataInput in) throws IOException {
             attr1 = in.readObject();
             attr2 = in.readObject();
-            System.out.println("Deserializing object " + this);
             deserializationCount.incrementAndGet();
         }
     }
@@ -895,7 +893,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         public Object process(Map.Entry<String, Issue1764Data> entry) {
-            System.out.println("Updating entry " + entry.getValue());
             Issue1764Data data = entry.getValue();
             data.setAttr1(newValue);
             entry.setValue(data);
