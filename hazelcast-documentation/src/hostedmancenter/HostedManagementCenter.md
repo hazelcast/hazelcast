@@ -9,10 +9,16 @@
 
 Hazelcast Hosted Management Center enables you to monitor and manage your nodes running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail, update map configurations and take thread dump from nodes. With its scripting and console module, you can run scripts (JavaScript, Groovy etc.) and commands on your nodes. It is a web based tool and you can deploy it into your internal server and serve your users.
 
+To be able to use Hosted Management Center to monitor your cluster:
+
+1- You need to configure your cluster so it can be connected from this tool.
+
+2- You need to sign up on the tool to create an account.
+
 ---
 
 ## Configuration
-In order to monitor your cluster in Hosted Management Center, `hazelcast.hosted.management.enabled` system property needs to be set as `true` on your cluster. This can be done with one of the ways listed below:
+In order to monitor your cluster in Hosted Management Center, `hazelcast.hosted.management.enabled` system property needs to be set as `true` in your cluster. This can be done with one of the ways listed below:
 
 1- Using JVM command line argument `-Dhazelcast.hosted.management.enabled=true`
 
@@ -28,27 +34,24 @@ or
 ```
 
 
-Also, `security-token` property in the management center configuration should be specified. This token can be grabbed from Hosted Management Center after registration. It can be added to ``as below like the following snippet on your hazelcast.xml configuration file.
+Also, `security-token` property in the management center configuration should be specified. This token can be grabbed from Hosted Management Center after registration (please see next section). It can be added to `hazelcast.xml` configuration file with below line.
 
 ```xml
 <management-center security-token="YOUR_SECURITY_TOKEN" />
 ```
 
-
-Basically, `mancenter`-*version*`.war` application should be deployed into the Java web server and  Hazelcast nodes should be configured to communicate with this application, i.e. Hazelcast nodes should know the URL of `mancenter` application before they are started.
-
-
 ---
 
 ## Sign Up & Login
-After the cluster has started, go to `http://localhost:8080/mancenter`-*version* using any web browser. Below page will load.
+Go to [http://manage.hazelcast.com/3.2/](http://manage.hazelcast.com/3.2/) using any web browser. Below page will load.
 
 ![](images/1Login.jpg)
 
-Initial login username/password is `admin/admin`.
+Click on **Sign Up** link and fill the form that will appear and ask your name, company, e-mail and password. Once you click on the **Sign Up** button on this form, you will be directed to the page where cluster configuration is explained and security token is provided, as shown below.
 
-???
-???
+![](images/RegistrationWindow.jpg)
+
+Add this token (value of the *security-token*) to your `hazelcast.xml` configuration file as explained in [Configuration](#configuration) section above. Click on **Back to Dashboard** button and login page loads.
 
 Once the credentials are entered and **Login** key is pressed, the tool will ask from the user to choose a cluster, as shown below.
 
@@ -56,11 +59,7 @@ Once the credentials are entered and **Login** key is pressed, the tool will ask
 
 Select the cluster and hit **Connect** button.
 
-If your cluster is not configured for the Hosted Management Center, the tool shows a warning as shown below.
-
-![](images/Warning.jpg)
-
-You can click on the link written on this warning and see the explanation on how to configure the cluster.
+If the tool shows a warning as shown below, check your cluster's configuration and be sure you performed the steps explained in [Configuration](#configuration) section above.
 
 
 ---
@@ -158,7 +157,7 @@ This part is actually the breakdown of the blue area shown in **Memory Distribut
 In the above example, you can see 49.55% of the total map memory is used by **map1** and 49.55% is used by **map2**.
 
 ####Health Check
-This part is useful to check how the cluster in general behaves. It lists the nodes (cluster members), locks and partition mismatches along with the information related to migrations and node interconnections. To see these, just click on the **Check Cluster Health** button. A sample is shown below.
+This part is useful to check how the cluster in general behaves. It lists the nodes (cluster members), locks and partition mismatches along with the information related to migrations and node interconnections. To see these, just click on **Check Cluster Health** button. A sample is shown below.
 
 ![](images/Home-HealthCheckbuttonpressed.jpg)
 
@@ -197,19 +196,19 @@ Map Browser is a tool used to retrieve properties of the entries stored in the s
 
 ![](images/Map-MapBrowser.jpg)
 
-Once the key and key's type is specified on top of the tool and **Browse** button is clicked on, key's properties along with its value is listed.
+Once the key and key's type is specified and **Browse** button is clicked, key's properties along with its value is listed.
 
 ### Map Config
 By using Map Config tool, you can set selected map's attributes like the backup count, TTL, and eviction policy. It can be opened by clicking on the **Map Config** button, located at top right of the window. Once opened, the tool appears as a dialog, as shown below.
 
 ![](images/Map-MapConfig.jpg)
 
-Once the desired attributes are changed, click on the **Update** button to save changes.
+Change any attribute as required and click **Update** button to save changes.
 
 
 ### Map Monitoring
 
-Besides Map Browser and Map Config tools, this page has many  monitoring options explained below. All of these perform  real-time monitoring. 
+Besides Map Browser and Map Config tools, this page has many  monitoring options explained below. All of these perform real-time monitoring. 
 
 On top of the page, there are small charts to monitor the size, throughput, memory usage, backup size, etc. of the selected map in real-time. All charts' X-axis shows the current system time. Other small monitoring charts can be selected using ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart. When it is clicked, the whole list of monitoring options are listed, as shown below.
 
@@ -226,11 +225,21 @@ When you click on a desired monitoring, the chart is loaded with the selected op
 -	**Puts/s, Gets/s, Removes/s**: These three charts monitor the put, get and remove operations (per second) performed on the selected map.
 
 
-Under these charts, there are **Map Memory** and **Map Throughput** data tables.
+Under these charts, there are **Map Memory** and **Map Throughput** data tables. Map Memory data table provides memory metrics distributed over nodes, as shown below.
 
 ![](images/Map-MemoryDataTable.jpg)
 
-gives the memory metrics distributed over members. gives information about the operations performed on instance (get, put, remove) 
+From left to right, this table lists the IP address and port, entry counts, memory used by entries, backup entry counts, memory used by backup entries, events, hits, locks and dirty entries (in the cases where *MapStore* is enabled, these are the entries that are put to/removed from the map but not written to/removed from a database yet) of each node in the map. You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
+
+Map Throughput data table provides information about the operations (get, put, remove) performed on each node in the map, as shown below.
+
+![](images/Map-MapThroughputDataTable.jpg)
+
+From left to right, this table lists the IP address and port of each node, put, get and remove operations on each node, average put, get, remove latencies and maximum put, get, remove latencies on each node. 
+
+You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+
+You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
 
 ---

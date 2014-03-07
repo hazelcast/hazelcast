@@ -54,6 +54,28 @@ import static org.junit.Assert.*;
 public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
+    public void testUpdate_Issue_1764() {
+        Config cfg = new Config();
+        cfg.getMapConfig("test").setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+
+        try {
+            IMap<String, Issue1764Data> map = instance1.getMap("test");
+            map.put("a", new Issue1764Data("foo", "bar"));
+            map.put("b", new Issue1764Data("abc", "123"));
+            Set<String> keys = new HashSet<String>();
+            keys.add("a");
+            map.executeOnKeys(keys, new Issue1764UpdatingEntryProcessor("test"));
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+            fail("ClassCastException must not happen!");
+        }
+    }
+
+    @Test
     @Ignore
     public void testIndexAware_Issue_1719() {
         Config cfg = new Config();
@@ -67,6 +89,72 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertFalse("The predicate shouldn't be applied if indexing works!", predicate.didApply());
     }
 
+    /**
+     * Reproducer for https://github.com/hazelcast/hazelcast/issues/1854
+     * Similar to above tests but with executeOnKeys instead.
+     */
+    @Test
+    public void testExecuteOnKeysBackupOperation() {
+        Config cfg = new Config();
+        cfg.getMapConfig("test").setBackupCount(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        HazelcastInstance newPrimary=null;
+        IMap<String, TempData> map = instance1.getMap("test");
+            map.put("a", new TempData("foo", "bar"));
+            map.put("b", new TempData("foo", "bar"));
+            map.executeOnKeys(map.keySet(), new DeleteEntryProcessor());
+            // Now the entry has been removed from the primary store but not the backup.
+            // Let's kill the primary and execute the logging processor again...
+            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+
+            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+                instance1.shutdown();
+                newPrimary = instance2;
+            } else {
+                instance2.shutdown();
+                newPrimary = instance1;
+            }
+            //Make sure there are no entries left
+            IMap<String, TempData> map2 = newPrimary.getMap("test");
+            Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
+            assertEquals(0, executedEntries.size());
+    }
+
+    /**
+     * Reproducer for https://github.com/hazelcast/hazelcast/issues/1854
+     * This one with index which results in an exception.
+     */
+    @Test
+    public void testExecuteOnKeysBackupOperationIndexed() throws Exception {
+        Config cfg = new Config();
+        cfg.getMapConfig("test").setBackupCount(1).addMapIndexConfig(new MapIndexConfig("attr1", false));
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap<String, TempData> map = instance1.getMap("test");
+        HazelcastInstance newPrimary=null;
+            map.put("a", new TempData("foo", "bar"));
+            map.put("b", new TempData("abc", "123"));
+            map.executeOnKeys(map.keySet(), new DeleteEntryProcessor());
+            // Now the entry has been removed from the primary store but not the backup.
+            // Let's kill the primary and execute the logging processor again...
+            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+                instance1.shutdown();
+                newPrimary = instance2;
+            } else {
+                instance2.shutdown();
+                newPrimary = instance1;
+            }
+            IMap<String, TempData> map2 = newPrimary.getMap("test");
+            //Make sure there are no entries left
+            Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
+            assertEquals(0, executedEntries.size());
+     }
     @Test
     public void testEntryProcessorDeleteWithPredicate() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -751,4 +839,70 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     }
 
+    public static class Issue1764Data implements DataSerializable{
+
+        public static AtomicInteger serializationCount = new AtomicInteger();
+        public static AtomicInteger deserializationCount = new AtomicInteger();
+
+        private String attr1;
+        private String attr2;
+
+        public Issue1764Data() {
+            //For deserialization...
+        }
+
+        public Issue1764Data(String attr1, String attr2) {
+            this.attr1 = attr1;
+            this.attr2 = attr2;
+        }
+
+        public String getAttr1() {
+            return attr1;
+        }
+        public void setAttr1(String attr1) {
+            this.attr1 = attr1;
+        }
+        public String getAttr2() {
+            return attr2;
+        }
+        public void setAttr2(String attr2) {
+            this.attr2 = attr2;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + attr1 + " " + attr2 + "]";
+        }
+
+        public void writeData(ObjectDataOutput out) throws IOException {
+            serializationCount.incrementAndGet();
+            out.writeObject(attr1);
+            out.writeObject(attr2);
+        }
+
+        public void readData(ObjectDataInput in) throws IOException {
+            attr1 = in.readObject();
+            attr2 = in.readObject();
+            deserializationCount.incrementAndGet();
+        }
+    }
+
+    public static class Issue1764UpdatingEntryProcessor
+            extends AbstractEntryProcessor<String, Issue1764Data> {
+
+        private static final long serialVersionUID = 1L;
+        private String newValue;
+
+        public Issue1764UpdatingEntryProcessor(String newValue) {
+            this.newValue = newValue;
+        }
+
+        public Object process(Map.Entry<String, Issue1764Data> entry) {
+            Issue1764Data data = entry.getValue();
+            data.setAttr1(newValue);
+            entry.setValue(data);
+            return true;
+        }
+
+    }
 }
