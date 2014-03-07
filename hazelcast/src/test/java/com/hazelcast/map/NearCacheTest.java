@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -38,19 +38,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-/**
- * User: ahmetmircik
- * Date: 10/31/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class NearCacheTest extends HazelcastTestSupport {
@@ -142,21 +138,16 @@ public class NearCacheTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCacheEvictionByUsingMapTTLEviction() throws InterruptedException {
-        final int maxSizePerNode = 50;
         final int instanceCount = 3;
+        final int ttl = 1;
+        final int size = 1000;
         final Config cfg = new Config();
         final String mapName = "_testNearCacheEvictionByUsingMapTTLEviction_";
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         cfg.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
         final MapConfig mapConfig = cfg.getMapConfig(mapName);
-        mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        final MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        maxSizeConfig.setSize(maxSizePerNode);
-        mapConfig.setMaxSizeConfig(maxSizeConfig);
-        final int ttl = 1;
-        final int size = 1000;
         mapConfig.setTimeToLiveSeconds(ttl);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
@@ -174,23 +165,37 @@ public class NearCacheTest extends HazelcastTestSupport {
         }, false);
         //populate map
         for (int i = 0; i < size; i++) {
-            //these gets bring NULL objects to near cache.
+            //populate.
+            map1.put(i, i);
+            //bring near caches. -- here is a time window
+            //that "i" already evicted. so a "get" brings
+            //a NULL object to the near cache.
             map1.get(i);
             map2.get(i);
             map3.get(i);
-            //this put invalidates near cache.
-            map1.put(i, i);
         }
         //wait operations to complete
         assertOpenEventually(latch);
         //check map size after eviction.
-        assertEquals(0,map1.size());
-        assertEquals(0,map2.size());
-        assertEquals(0,map3.size());
-        //near cache sizes should be zero.
-        assertEquals(0,getNearCache(mapName,instance1).size());
-        assertEquals(0,getNearCache(mapName,instance2).size());
-        assertEquals(0,getNearCache(mapName,instance3).size());
+        assertEquals(0, map1.size());
+        assertEquals(0, map2.size());
+        assertEquals(0, map3.size());
+        //near cache sizes should be zero after eviction.
+        assertEquals(0, countNotNullValuesInNearCacheSize(mapName, instance1));
+        assertEquals(0, countNotNullValuesInNearCacheSize(mapName, instance2));
+        assertEquals(0, countNotNullValuesInNearCacheSize(mapName, instance3));
+    }
+
+    private int countNotNullValuesInNearCacheSize(String mapName, HazelcastInstance instance) {
+        final NearCache nearCache = getNearCache(mapName, instance);
+        final Collection<NearCache.CacheRecord> values = nearCache.getReadonlyMap().values();
+        int count = 0;
+        for (NearCache.CacheRecord e : values) {
+            if (!NearCache.NULL_OBJECT.equals(e.getValue())) {
+                count++;
+            }
+        }
+        return count;
     }
 
 
