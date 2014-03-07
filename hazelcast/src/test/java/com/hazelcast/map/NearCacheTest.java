@@ -166,7 +166,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         final IMap map2 = instance2.getMap(mapName);
         final IMap map3 = instance3.getMap(mapName);
         //observe eviction
-        final CountDownLatch latch = new CountDownLatch(size - maxSizePerNode);
+        final CountDownLatch latch = new CountDownLatch(size);
         map1.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
@@ -174,28 +174,25 @@ public class NearCacheTest extends HazelcastTestSupport {
         }, false);
         //populate map
         for (int i = 0; i < size; i++) {
-            map1.put(i, i);
-        }
-        final int expectedMaxSizeAfterEvictions = maxSizePerNode * instanceCount;
-        //populate near caches
-        for (int i = 0; i < expectedMaxSizeAfterEvictions; i++) {
+            //these gets bring NULL objects to near cache.
             map1.get(i);
             map2.get(i);
             map3.get(i);
+            //this put invalidates near cache.
+            map1.put(i, i);
         }
         //wait operations to complete
         assertOpenEventually(latch);
-        //check map sizes after eviction.
-        assertTrue(map1.size() <= expectedMaxSizeAfterEvictions);
-        assertEquals(map1.size(), map2.size());
-        assertEquals(map1.size(), map3.size());
-        // these gets should return null after near cache eviction
-        for (int i = expectedMaxSizeAfterEvictions; i < size; i++) {
-            assertNull(map1.get(i));
-            assertNull(map2.get(i));
-            assertNull(map3.get(i));
-        }
+        //check map size after eviction.
+        assertEquals(0,map1.size());
+        assertEquals(0,map2.size());
+        assertEquals(0,map3.size());
+        //near cache sizes should be zero.
+        assertEquals(0,getNearCache(mapName,instance1).size());
+        assertEquals(0,getNearCache(mapName,instance2).size());
+        assertEquals(0,getNearCache(mapName,instance3).size());
     }
+
 
     @Test
     public void testNearCacheStats() throws Exception {
