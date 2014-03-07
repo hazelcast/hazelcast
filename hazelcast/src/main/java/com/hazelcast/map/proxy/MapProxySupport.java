@@ -385,7 +385,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 Data key = iterator.next();
                 Object cachedValue = mapService.getFromNearCache(name, key);
                 if (cachedValue != null && !NearCache.NULL_OBJECT.equals(cachedValue)) {
-                    result.put(key, cachedValue);
+                    result.put(mapService.toObject(key), mapService.toObject(cachedValue));
                     iterator.remove();
                 }
             }
