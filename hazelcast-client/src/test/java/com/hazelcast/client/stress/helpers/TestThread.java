@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -15,7 +16,7 @@ public abstract class TestThread extends Thread {
     public final Random random = new Random();
     public volatile Throwable error = null;
 
-    public static volatile AtomicInteger stoped;
+    public static volatile AtomicBoolean stoped;
 
     private CountDownLatch startLatch;
 
@@ -31,10 +32,9 @@ public abstract class TestThread extends Thread {
         try {
             startLatch.await();
 
-            while(stoped.get()!=0){
+            while ( stoped.get() == false ){
                 doRun();
             }
-
         } catch (Throwable t) {
             error = t;
             t.printStackTrace();
@@ -51,7 +51,7 @@ public abstract class TestThread extends Thread {
         this.startLatch = startLatch;
     }
 
-    public void setStoped(AtomicInteger stoped){
+    public void setStoped(AtomicBoolean stoped){
         this.stoped = stoped;
     }
 }

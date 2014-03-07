@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,7 +42,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
 
     private Thread killThread = null;
 
-    private volatile AtomicInteger stopTest = new AtomicInteger(1);
+    private volatile AtomicBoolean stopTest = new AtomicBoolean(false);
 
     private boolean clusterChangeEnabled = true;
 
@@ -156,7 +157,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
                     System.err.println("==================================================================");
                     System.err.println("Test ended premature!");
                     System.err.println("==================================================================");
-                    stopTest.decrementAndGet();
+                    stopTest.set(true);
                     return;
                 }
             }
@@ -164,7 +165,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
         System.out.println("==================================================================");
         System.out.println("Test completed.");
         System.out.println("==================================================================");
-        stopTest.decrementAndGet();
+        stopTest.set(true);
         return;
     }
 
@@ -198,7 +199,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
         @Override
         public void run(){
 
-            while ( stopTest.get() !=0 ) {
+            while ( stopTest.get() == false ) {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
                 } catch (InterruptedException e) {
@@ -219,7 +220,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
 
         @Override
         public void run() {
-            while ( stopTest.get() != 0 ) {
+            while ( stopTest.get() == false ) {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
                 } catch (InterruptedException e) {
