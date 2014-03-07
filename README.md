@@ -76,6 +76,18 @@ Hazelcast has 3 testing profiles:
 * **Slow Tests**: Type `mvn test -P slow-test` to run tests those are either slow or cannot be run in-parallel.
 * **All Tests**: Type `mvn test -P all-tests` to run all test serially using network.
 
+### Contributing to Hazelcast
+
+We encourage pull requests and process them promptly.
+
+To contribute:
+
+* see our https://hazelcast.atlassian.net/wiki/display/COM/Developing+with+Git for our Git process
+* complete the [Hazelcast Contributor Agreement] (https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Community)
+
+For an enhancement or larger feature, create a GitHub issue first to discuss.
+
+
 ### Mail Group
 
 Please join the mail group if you are interested in using or developing Hazelcast.
