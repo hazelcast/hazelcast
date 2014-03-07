@@ -375,6 +375,10 @@ public class NearCacheTest extends HazelcastTestSupport {
         final Map<Integer, Integer> all = map.getAll(keys);
         NearCacheStats stats2 = map.getLocalMapStats().getNearCacheStats();
         assertTrue("hits", 400 < stats2.getHits());
+        for (int i = 0; i < size; i++) {
+            assertEquals(i,(int)all.get(i));
+        }
+
     }
 
     @Test
