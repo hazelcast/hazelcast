@@ -4,6 +4,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.*;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -88,7 +89,8 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
             }
 
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                mapService.publishEvent(getCallerAddress(), name, eventType, key, (Data)mapEntry.getValue(), dataValue);
+                Data dataOldValue = mapService.toData(mapEntry.getValue());
+                mapService.publishEvent(getCallerAddress(), name, eventType, key, dataOldValue, dataValue);
                 if (mapContainer.isNearCacheEnabled()
                         && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
                     mapService.invalidateAllNearCaches(name, key);
@@ -98,7 +100,13 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
                         mapService.publishWanReplicationRemove(name, key, Clock.currentTimeMillis());
                     } else {
                         Record r = recordStore.getRecord(key);
-                        SimpleEntryView entryView = new SimpleEntryView(key, mapService.toData(dataValue), r.getStatistics(), r.getCost(), r.getVersion());
+
+                        Data tempValue = mapService.toData(dataValue);
+                        RecordStatistics statistics = r.getStatistics();
+                        long cost = r.getCost();
+                        long version = r.getVersion();
+
+                        SimpleEntryView entryView = new SimpleEntryView(key, tempValue, statistics, cost, version);
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }
