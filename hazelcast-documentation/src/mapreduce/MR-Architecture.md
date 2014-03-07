@@ -12,7 +12,7 @@ you requested the JobTracker from your running / connected Hazelcast we submit t
 ICompletableFuture which gives us a chance of waiting for the result to be calculated or adding a callback 
 to go a more reactive way.
 
-The example expects that the chunksize is 0 or 1 so an emitted value is directly send to the reducers.
+The example expects that the chunk size is 0 or 1 so an emitted value is directly send to the reducers.
 Internally the job is prepared, started and executed on all nodes as shown below whereas the first node
 acts as the job owner (job emitter):
 
@@ -73,7 +73,7 @@ the external API and the impl package which itself contains the internal impleme
  - The operation package contains all operations that are used by the workers or job owner to coordinate work and sync partition or reducer processing
  - The task package contains all classes that execute the actual map reduce operation. It features the supervisor, mapping phase implementation and mapping and reducing tasks
 
-And now to the technical walkthrough.
+And now to the technical walk-through.
 As stated above a map reduce Job is always retrieved from a named JobTracker which in case is
 implemented in NodeJobTracker (extends AbstractJobTracker) and is configured using the configuration
 DSL. All of the internal implementation is completely ICompletableFuture driven and mostly non
@@ -119,12 +119,12 @@ JobSupervisor asks all nodes for their reduced results and executes a potentiall
 calculate the overall result before removing itself from the JobTracker, doing some final cleanup and
 returning the result to the requester (using the internal TrackableJobFuture).
 
-If a job is cancelled while execution all partitions are immediately set to CANCELLED state and a
+If a job is canceled while execution all partitions are immediately set to CANCELLED state and a
 CancelJobSupervisorOperation is executed on all nodes to kill the running processes.
 
 While the operation is running in addition to the default operations some more are like
 ProcessStatsUpdateOperation (updates processed records statistics) or NotifyRemoteExceptionOperation
 (notifies the nodes that the sending node encountered an unrecoverable situation and the Job needs to
-be cancelled - e.g. NullPointerException inside of a Mapper) are executed against the job owner to keep
+be canceled - e.g. NullPointerException inside of a Mapper) are executed against the job owner to keep
 track of the process.
 

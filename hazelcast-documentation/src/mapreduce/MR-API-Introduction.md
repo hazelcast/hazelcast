@@ -107,7 +107,7 @@ version.
 The KeyValueSource is able to either wrap Hazelcast data structures (like IMap, MultiMap, IList, ISet) into
 key-value pair input sources or to build your own custom key-value input source. Using the later option
 it is possible to feed Hazelcast MapReduce with all kind of data like just-in-time downloaded webpage
-contents or data files. People with knowlegde of hadoop will recognize similarities to the Input class.
+contents or data files. People with knowledge of hadoop will recognize similarities to the Input class.
 
 You can imagine a KeyValueSource as a bigger `java.util.Iterator` implementation. Whereas most methods
 are required to be implemented `getAllKeys` is optional to implement. If implementation is able to
@@ -195,7 +195,7 @@ The LifecycleMapper interface or its adapter class LifecycleMapperAdapter can be
 implementation lifecycle aware. That means it will be notified when mapping of a partition or set of data
 begins and when the last entry was mapped.
 
-Only special algorithms might have a need for those additional lifecyce events to do preparation, cleanup
+Only special algorithms might have a need for those additional lifecycle events to do preparation, cleanup
 or emit additional values. 
 
 ### Combiner / CombinerFactory
@@ -328,7 +328,7 @@ use cases and the generics of the framework always help in finding the correct s
 
 A KeyPredicate can be used to pre-select if a key should be given for mapping in the mapping phase. If the
 KeyValueSource implementation is able to know all keys upfront to execution the keys are filtered before
-the operations are devided to the different cluster nodes.
+the operations are divided to the different cluster nodes.
 
 It is also possible to be used to select only a special range of data (e.g. a time-frame) or similar use
 cases.
@@ -425,7 +425,7 @@ scheduled or intermediate chunks are lost.
 **retry-count**
 
 The retry-count is currently not used but reserved for later use where the framework will automatically try
-to restart / retry operations from a available savepoint.
+to restart / retry operations from a available save point.
 
 **chunk-size**
 
