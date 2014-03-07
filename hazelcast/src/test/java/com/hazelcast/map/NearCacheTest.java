@@ -141,24 +141,24 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testNearCacheEvictionByUsingMapTTLEviction() throws InterruptedException {
+        final int maxSizePerNode = 50;
+        final int instanceCount = 3;
         final Config cfg = new Config();
-        final String mapName = "testNearCacheEvictionByUsingMapTTLEviction";
+        final String mapName = "testNearCacheEvictionByUsingMapTTLEviction_" + randomString();
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         cfg.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
-        final MapConfig mc = cfg.getMapConfig(mapName);
-        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        final MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(50);
-        mc.setMaxSizeConfig(msc);
-        final int maxTTL = 2;
-        final int size = 100000;
-        final int nsize = size / 5;
-        mc.setTimeToLiveSeconds(maxTTL);
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        final MapConfig mapConfig = cfg.getMapConfig(mapName);
+        mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        final MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
+        maxSizeConfig.setSize(maxSizePerNode);
+        mapConfig.setMaxSizeConfig(maxSizeConfig);
+        final int ttl = 1;
+        final int size = 1000;
+        mapConfig.setTimeToLiveSeconds(ttl);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         final HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
@@ -166,7 +166,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         final IMap map2 = instance2.getMap(mapName);
         final IMap map3 = instance3.getMap(mapName);
         //observe eviction
-        final CountDownLatch latch = new CountDownLatch(size - nsize);
+        final CountDownLatch latch = new CountDownLatch(size - maxSizePerNode);
         map1.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
@@ -177,19 +177,19 @@ public class NearCacheTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
         //populate near caches
-        for (int i = 0; i < nsize; i++) {
+        for (int i = 0; i < maxSizePerNode * instanceCount; i++) {
             map1.get(i);
             map2.get(i);
             map3.get(i);
         }
         //wait operations to complete
-        latch.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
         //check map sizes after eviction.
-        assertEquals(0, map1.size());
+        assertTrue(map1.size() <= instanceCount * maxSizePerNode);
         assertEquals(map1.size(), map2.size());
         assertEquals(map1.size(), map3.size());
         // these gets should return null after near cache eviction
-        for (int i = 0; i < nsize; i++) {
+        for (int i = maxSizePerNode * instanceCount; i < size; i++) {
             assertNull(map1.get(i));
             assertNull(map2.get(i));
             assertNull(map3.get(i));
