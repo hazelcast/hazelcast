@@ -35,78 +35,50 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientLockWithClusterProblemsTest {
-
+public class ClientLockWithTerminationTest {
     private HazelcastInstance node1;
     private HazelcastInstance node2;
-
     private HazelcastInstance client1;
     private HazelcastInstance client2;
-
     private String keyOwnedByNode1;
-
 
     @Before
     public void setup() throws InterruptedException {
-
         node1 = Hazelcast.newHazelcastInstance();
         node2 = Hazelcast.newHazelcastInstance();
-
         client1 = HazelcastClient.newHazelcastClient();
         client2 = HazelcastClient.newHazelcastClient();
-
         keyOwnedByNode1 = HazelcastTestSupport.generateKeyOwnedBy(node1);
     }
-
 
     @After
     public void clear() throws IOException {
         Hazelcast.shutdownAll();
     }
 
-
-    @Test
-    public void testObtainLockTwice() throws InterruptedException {
-
-        ILock lock = client1.getLock(keyOwnedByNode1);
-        lock.lock();
-
-        lock = client2.getLock(keyOwnedByNode1);
-
-        boolean lockObtained = lock.tryLock(5, TimeUnit.SECONDS);
-
-        assertFalse("Lock obtained by 2 client ", lockObtained);
-    }
-
-
     @Test
     public void testLockOnClientCrash() throws InterruptedException {
-
         ILock lock = client1.getLock(keyOwnedByNode1);
         lock.lock();
 
         client1.getLifecycleService().terminate();
 
-        lock = client2.getLock("a");
+        lock = client2.getLock(keyOwnedByNode1);
+        boolean lockObtained = lock.tryLock();
 
-        boolean lockObtained = lock.tryLock(5, TimeUnit.SECONDS);
-
-        assertTrue("Lock was Not Obtained after 5 seconds lock should be released on client1 crash", lockObtained);
+        assertTrue("Lock was Not Obtained, lock should be released on client crash", lockObtained);
     }
-
 
     @Test
     public void testLockOnClient_withNodeCrash() throws InterruptedException {
-
         ILock lock = client1.getLock(keyOwnedByNode1);
         lock.lock();
 
         node1.getLifecycleService().terminate();
 
         lock = client2.getLock(keyOwnedByNode1);
+        boolean lockObtained = lock.tryLock();
 
-        boolean lockObtained = lock.tryLock(6, TimeUnit.SECONDS);
-
-        assertFalse("Lock was obtained by 2 diffrent clients ", lockObtained);
+        assertFalse("Lock was obtained by 2 different clients ", lockObtained);
     }
 }
