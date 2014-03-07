@@ -18,12 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapLoader;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -38,9 +40,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -296,26 +300,25 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     @Test
-    /**
-     * failed randomly, a candidate to {@link ProblematicTest}
-     * @ali reason of the fail can be that map.put sends an invalidation,
-     * there is no guarantee that map.get will execute after this invalidation occurs
-     * if invalidation occurs after map.get then test fails
-     */
     public void testCacheLocalEntries() {
         int n = 2;
         String mapName = "test";
 
         Config config = new Config();
-        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setCacheLocalEntries(true));
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setCacheLocalEntries(true);
+        final MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setNearCacheConfig(nearCacheConfig);
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapStoreConfig.setImplementation(new InitMapLoader());
+        mapConfig.setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstanceFactory(n).newInstances(config)[0];
 
         IMap<String, String> map = instance.getMap(mapName);
 
         int noOfEntries = 100;
-        for (int i = 0; i < noOfEntries; i++) {
-            map.put("key" + i, "value" + i);
-        }
 
         //warm-up cache
         for (int i = 0; i < noOfEntries; i++) {
@@ -324,6 +327,37 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         NearCache nearCache = getNearCache(mapName, instance);
         assertEquals(noOfEntries, nearCache.size());
+    }
+
+    public static class InitMapLoader implements MapLoader {
+
+        final Map map;
+
+        public InitMapLoader() {
+            map = new HashMap();
+            for (int i = 0; i < 100; i++) {
+                map.put("key" + i, "value" + i);
+            }
+        }
+
+        @Override
+        public Object load(Object key) {
+            return map.get(key);
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            final HashMap hashMap = new HashMap();
+            for (Object key : keys) {
+                hashMap.put(key, map.get(key));
+            }
+            return hashMap;
+        }
+
+        @Override
+        public Set loadAllKeys() {
+            return map.keySet();
+        }
     }
 
 
