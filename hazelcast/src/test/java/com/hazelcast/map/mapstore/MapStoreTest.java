@@ -1335,10 +1335,12 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         final IMap<String, String> map = instance1.getMap(mapName);
         final String key = "key";
+        final String value = "value";
         //executeOnKey
-        map.executeOnKey(key, new ValueSetterEntryProcessor("value"));
+        map.executeOnKey(key, new ValueSetterEntryProcessor(value));
         mapStore.awaitStores();
 
+        assertEquals(value,map.get(key));
         assertEquals(1, mapStore.count.intValue());
     }
 
