@@ -23,7 +23,7 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapEvectionPolicyStressTest extends StressTestSupport {
+public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPolicyStressTest.StressThread> {
 
     private static final String MAP_NAME = "evictMap";
     private IMap map;
@@ -45,8 +45,7 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
         mc.setMaxSizeConfig(msc);
         cluster.setConfig( config );
 
-
-        super.setUp();
+        super.setUp(this);
 
         map = cluster.getRandomNode().getMap(MAP_NAME);
     }
@@ -70,24 +69,19 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
         private IMap map;
         private int key=0;
-        private int keySufix;
+        private int keySufix=1;
 
         public StressThread(HazelcastInstance node){
             super(node);
-            this.keySufix = keySufix;
             map = instance.getMap(MAP_NAME);
         }
 
         @Override
         public void doRun() throws Exception {
-
             map.put(key +" "+keySufix, key);
             key++;
-
         }
     }
 }

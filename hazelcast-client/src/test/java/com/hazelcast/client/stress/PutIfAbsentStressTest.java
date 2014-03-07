@@ -39,15 +39,6 @@ public class PutIfAbsentStressTest extends StressTestSupport<PutIfAbsentStressTe
         super.setUp();
     }
 
-    @After
-    public void tearDown() {
-
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
-    }
-
     //@Test
     public void testChangingCluster() {
         runTest(true);

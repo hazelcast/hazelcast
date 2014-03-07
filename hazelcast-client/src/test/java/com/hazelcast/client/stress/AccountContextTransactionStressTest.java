@@ -121,7 +121,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
                     try{
                         if ( accounts.tryLock(toAccountNumber, 50, TimeUnit.MILLISECONDS) ) {
                             try {
-
                                 //now all needed locks are obtained do the transation between acounts
                                 transferInTransactionContext(fromAccountNumber, toAccountNumber, amount);
 
@@ -184,5 +183,4 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
             }
         }
     }
-
 }

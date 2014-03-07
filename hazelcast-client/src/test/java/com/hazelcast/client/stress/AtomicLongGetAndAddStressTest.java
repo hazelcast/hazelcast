@@ -54,7 +54,6 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongG
 
     @Override
     public void assertResult() {
-
         long expetedTotal=0;
         for ( StressThread s : stressThreads ) {
             expetedTotal += s.count.get();
@@ -78,5 +77,4 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongG
             count.addAndGet(inc);
         }
     }
-
 }

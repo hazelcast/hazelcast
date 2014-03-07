@@ -39,15 +39,6 @@ public class SubmitToKeyStressTest extends StressTestSupport<SubmitToKeyStressTe
         hz.getMap(MAP_NAME).put(0, 0);
     }
 
-    @After
-    public void tearDown() {
-
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
-    }
-
     //@Test
     public void testChangingCluster() {
         runTest(true);
@@ -85,12 +76,9 @@ public class SubmitToKeyStressTest extends StressTestSupport<SubmitToKeyStressTe
 
         @Override
         public void doRun() throws Exception {
-
-
-                Future f = map.submitToKey(0, task);
-                Object obj = f.get();
-                totalOpps++;
-
+            Future f = map.submitToKey(0, task);
+            Object obj = f.get();
+            totalOpps++;
         }
     }
 

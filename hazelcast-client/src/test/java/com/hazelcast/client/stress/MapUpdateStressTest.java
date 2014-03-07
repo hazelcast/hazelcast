@@ -27,7 +27,6 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class MapUpdateStressTest extends StressTestSupport<MapUpdateStressTest.StressThread>{
 
-    public static final int CLIENT_THREAD_COUNT = 5;
     public static final int MAP_SIZE = 100 * 1000;
 
     private HazelcastInstance client;
@@ -45,17 +44,6 @@ public class MapUpdateStressTest extends StressTestSupport<MapUpdateStressTest.S
         map = client.getMap("map");
 
         fillMap();
-
-
-    }
-
-    @After
-    public void tearDown() {
-        super.tearDown();
-
-        if (client != null) {
-            client.shutdown();
-        }
     }
 
     //@Test

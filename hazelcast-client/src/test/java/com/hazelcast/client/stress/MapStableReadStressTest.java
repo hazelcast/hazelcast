@@ -24,38 +24,27 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapStableReadStressTest extends StressTestSupport {
+public class MapStableReadStressTest extends StressTestSupport<MapStableReadStressTest.StressThread>{
 
-    public static final int CLIENT_THREAD_COUNT = 5;
     public static final int MAP_SIZE = 100 * 1000;
-
-    private HazelcastInstance client;
-    private IMap<Integer, Integer> map;
-    private StressThread[] stressThreads;
+    private static final String mapName = "map";
 
     @Before
     public void setUp() {
-        super.setUp();
-
+        RUNNING_TIME_SECONDS=10;
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
-        client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        map = client.getMap("map");
-        fillMap();
+        super.setClientConfig(clientConfig);
+        super.setUp(this);
 
-    }
-
-    @After
-    public void tearDown() {
-        super.tearDown();
-
-        if (client != null) {
-            client.shutdown();
+        IMap map = cluster.getRandomNode().getMap(mapName);
+        for (int k = 0; k < MAP_SIZE; k++) {
+            map.put(k, k);
         }
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }
@@ -65,36 +54,20 @@ public class MapStableReadStressTest extends StressTestSupport {
         runTest(false);
     }
 
-    private void fillMap() {
-        System.out.println("==================================================================");
-        System.out.println("Inserting data in map");
-        System.out.println("==================================================================");
-
-        for (int k = 0; k < MAP_SIZE; k++) {
-            map.put(k, k);
-            if (k % 10000 == 0) {
-                System.out.println("Inserted data: "+k);
-            }
-        }
-
-        System.out.println("==================================================================");
-        System.out.println("Completed with inserting data in map");
-        System.out.println("==================================================================");
-    }
-
     public class StressThread extends TestThread {
+
+        private IMap<Integer, Integer> map;
 
         public StressThread(HazelcastInstance node){
             super(node);
+            map = instance.getMap(mapName);
         }
 
         @Override
         public void doRun() throws Exception {
-
-                int key = random.nextInt(MAP_SIZE);
-                int value = map.get(key);
-                assertEquals("The value for the key was not consistent", key, value);
-
+            int key = random.nextInt(MAP_SIZE);
+            int value = map.get(key);
+            assertEquals("The value for the key was not consistent", key, value);
         }
     }
 }

@@ -33,8 +33,8 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
     //todo: should be system property
     public static int KILL_DELAY_SECONDS = RUNNING_TIME_SECONDS / 4;
 
-    public final int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public final int THREADS_PER_INSTANCE = 5;
+    public int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public int THREADS_PER_INSTANCE = 5;
 
     protected ClusterSupport cluster = new ClusterSupport(CLUSTER_SIZE);
 

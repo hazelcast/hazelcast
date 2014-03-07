@@ -58,15 +58,6 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
         }
     }
 
-    @After
-    public void tearDown() {
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
-    }
-
-
     @Test
     public void lock_testFixedCluster() {
         //CONTROL which test case we are checking

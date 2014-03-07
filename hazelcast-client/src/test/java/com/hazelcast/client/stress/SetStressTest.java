@@ -34,14 +34,6 @@ public class SetStressTest extends StressTestSupport<SetStressTest.StressThread>
         super.setUp();
     }
 
-    @After
-    public void tearDown() {
-
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
-    }
 
     //@Test
     public void testChangingCluster() {

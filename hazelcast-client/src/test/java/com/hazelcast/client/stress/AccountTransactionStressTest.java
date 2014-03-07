@@ -49,15 +49,6 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
         }
     }
 
-    @After
-    public void tearDown() {
-
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
-    }
-
     //@Test
     public void testChangingCluster() {
         runTest(true);
