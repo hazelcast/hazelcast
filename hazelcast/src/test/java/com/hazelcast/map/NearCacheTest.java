@@ -176,8 +176,9 @@ public class NearCacheTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map1.put(i, i);
         }
+        final int expectedMaxSizeAfterEvictions = maxSizePerNode * instanceCount;
         //populate near caches
-        for (int i = 0; i < maxSizePerNode * instanceCount; i++) {
+        for (int i = 0; i < expectedMaxSizeAfterEvictions; i++) {
             map1.get(i);
             map2.get(i);
             map3.get(i);
@@ -185,11 +186,11 @@ public class NearCacheTest extends HazelcastTestSupport {
         //wait operations to complete
         assertOpenEventually(latch);
         //check map sizes after eviction.
-        assertTrue(map1.size() <= instanceCount * maxSizePerNode);
+        assertTrue(map1.size() <= expectedMaxSizeAfterEvictions);
         assertEquals(map1.size(), map2.size());
         assertEquals(map1.size(), map3.size());
         // these gets should return null after near cache eviction
-        for (int i = maxSizePerNode * instanceCount; i < size; i++) {
+        for (int i = expectedMaxSizeAfterEvictions; i < size; i++) {
             assertNull(map1.get(i));
             assertNull(map2.get(i));
             assertNull(map3.get(i));
