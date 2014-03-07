@@ -29,7 +29,7 @@ import com.hazelcast.spi.annotation.Beta;
  * times <b>once the configuration is finished</b>.
  * </p>
  * <p>
- * <b>Caution: The generic types of Jobs change depending on the used methods which can make it needed to use
+ * <b>Caution: The generic types of Jobs change depending on the used methods which can make it necessary to use
  * different assignment variables when used over multiple source lines.</b>
  * </p>
  * <p>

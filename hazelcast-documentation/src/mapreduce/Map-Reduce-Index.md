@@ -10,19 +10,22 @@ is to map your source data into a collection of key-value pairs and reducing tho
 step towards the final result.
 
 The main idea can be written down using 3 simple steps:
+
   1. Read source data
   2. Map data to one or multiple key-value pairs
   3. Reduce all pairs with the same key
 
-_Use Cases_
+**Use Cases**
 
 The best known example for map-reduce algorithms are text processing like counting the word frequency in large
 texts or websites but there are more interesting example use cases out there like:
-  - Log Analysis
-  - Data Querying
-  - Aggregation and summing
-  - Distributed Sorts
-  - ETL (Extract Transform Load)
-  - Credit and Risk management
-  - Fraud detection
-  - and more...
+
+ - Log Analysis
+ - Data Querying
+ - Aggregation and summing
+ - Distributed Sort
+ - ETL (Extract Transform Load)
+ - Credit and Risk management
+ - Fraud detection
+ - and more...
+

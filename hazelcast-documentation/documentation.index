@@ -47,8 +47,8 @@ src/ExecutorService.md
 src/mapreduce/Map-Reduce-Index.md
     src/mapreduce/MapReduce-Essentials.md
     #src/mapreduce/Design-Patterns.md
-    #src/mapreduce/MR-API-Introduction.md
-    #src/mapreduce/MR-Architecture.md
+    src/mapreduce/MR-API-Introduction.md
+    src/mapreduce/MR-Architecture.md
 src/HttpSessionClustering.md
 src/WanReplication.md
 src/Config.md
