@@ -39,7 +39,7 @@ import com.hazelcast.spi.annotation.Beta;
  * IMap&lt;Integer, Integer> map = (...) hz.getMap( "default" );
  * JobTracker tracker = hz.getJobTracker( "default" );
  * Job&lt;Integer, Integer> job = tracker.newJob( KeyValueSource.fromMap( map ) );
- * CompletableFuture&lt;Map&lt;String, Integer>> future = job
+ * ICompletableFuture&lt;Map&lt;String, Integer>> future = job
  *      .mapper( buildMapper() ).reducer( buildReducer() ).submit();
  * Map&lt;String, Integer> results = future.get();
  * </pre>

@@ -22,7 +22,7 @@ import java.io.Serializable;
 
 /**
  * This interface is used to pre evaluate keys before spreading the MapReduce task to the cluster.
- * Preselecting keys can speed up the job since not all partitions may be used.
+ * Pre-selecting keys can speed up the job since not all partitions may be used.
  *
  * @param <Key> key type
  * @since 3.2

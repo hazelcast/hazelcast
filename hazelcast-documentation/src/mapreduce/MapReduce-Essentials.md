@@ -1,3 +1,4 @@
+
 ## Map Reduce Essentials
 
 This section will give a deeper insight on the map-reduce pattern and help to understand the semantics behind
@@ -19,15 +20,15 @@ final result and returned to the requester.
 ![](images/mapreduce_workflow_small.png)
 
 The corresponding map and reduce function in pseudo code would look like the following. The Hazelcast code
-example will be shown in the next subchapter.
+example will be shown in the next sub-chapter.
 
 ```plain
-map(key:String, document:String):Void ->
+map( key:String, document:String ):Void ->
     for each w:word in document:
-        emit(w, 1)
+        emit( w, 1 )
 
-reduce(word:String, counts:List[Int]):Int ->
-    return sum(counts)
+reduce( word:String, counts:List[Int] ):Int ->
+    return sum( counts )
 ```
 
 ### Map Reduce Phases
@@ -64,8 +65,8 @@ pairs send through the wire there is now only one for the key "planet".
 The pseudo code for a combiner is pretty the same as for the reducer.
 
 ```text
-combine(word:String, counts:List[Int]):Void ->
-    emit(word, sum(counts))
+combine( word:String, counts:List[Int] ):Void ->
+    emit( word, sum( counts ) )
 ```
 
 #### Grouping / Shuffling Phase
@@ -94,7 +95,7 @@ reducing is finished the original job initiator requests all reduced results and
 
 ### Additional Map Reduce material
 
-The internet is full of useful resources to find deeper information on map-reduce. Here is a short collection
+The Internet is full of useful resources to find deeper information on map-reduce. Here is a short collection
 of some more introduction material. In addition there are a lot of amazing books written about all kinds of
 map-reduce patterns and how to write a map-reduce function for your use case. To name them all is sadly out
 of scope of this documentation.
