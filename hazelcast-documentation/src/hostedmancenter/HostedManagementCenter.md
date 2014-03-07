@@ -177,9 +177,7 @@ This part of the page shows informative warnings in situations like shutting dow
 
 Warnings can be cleared by clicking on the **Clear** link placed at top right of the window.
 
-
 ---
-
 
 
 ## Maps
@@ -246,156 +244,119 @@ You can navigate through the pages using the buttons placed at the bottom right 
 
 ## Queues
 
-Queues is the second data structure that you can monitor in management center. You can activate the Queue Tab by clicking the instance name listed on the left panel under queues part. The queue page consists of the charts monitoring data about the queue. You can change the data to be monitored by clicking on the chart. Available options are Size, Polls, Offers.
+Using the menu item **Queues**, you can monitor your queues data structure. When you expand this menu item and click on a queue, a new tab for monitoring that queue instance is opened on the right, as shown below.
 
-![](images/queue.jpg)
+![](images/Queues-Home.jpg)
+
+
+On top of the page, there are small charts to monitor the size, offers and polls of the selected queue in real-time. All charts' X-axis shows the current system time. and a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
+
+-	**Size**: Monitors the size of the queue. Y-axis is the entry count (should be multiplied by 1000).
+-	**Offers**: Monitors the offers sent to the selected queue. Y-axis is the offer count.
+-	**Polls**: Monitors the polls sent to the selected queue. Y-axis is the poll count.
+
+
+Under these charts, there are **Queue Statistics** and **Queue Operation Statistics** tables. Queue Statistics table provides item and backup item counts in the queue and age statistics of items and backup items at each node, as shown below.
+
+![](images/QueueStatistics.jpg)
+
+From left to right, this table lists the IP address and port, items and backup items on the queue of each node, and maximum, minimum and average age of items in the queue. You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
+
+Queue Operations Statistics table provides information about the operations (offers, polls, events) performed on the queues, as shown below.
+
+![](images/QueueOperationStatistics.jpg)
+
+From left to right, this table lists the IP address and port of each node, and counts of offers, rejected offers, polls, poll misses and events. 
+
+You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+
+You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
 ---
 
 ##Topics
 
-You can monitor your topics' metrics by clicking the topic name listed on the left panel under topics part. There are two charts which reflects live data, and a datatable lists the live data distributed among members.
+You can monitor your topics' metrics by clicking the topic name listed on the left panel under **Topics** menu item. A new tab for monitoring that topic instance is opened on the right, as shown below.
 
-![](images/topic.jpg)
+**??? No Topics seen on the HMC Test Cluster ???**
+
+There are two charts which reflects live data, and a data table lists the live data distributed among members.
+
 
 ---
 
 ##MultiMaps
-???
+This monitoring option is similar to the **Maps** one. Same monitoring charts and data tables are used to monitor MultiMaps. Differences are not being able to browse the MultiMaps and to re-configure it. Please see [Maps](#maps).
 
 ---
 
 ##Executors
-???
+Executor instances are listed under the **Executors** menu item on the left. When you click on a executor, a new tab for monitoring that executor instance is opened on the right, as shown below.
+
+![](images/ExecutorsHome.jpg)
+
+On top of the page, there are small charts to monitor the pending, started, completed, etc. executors in real-time. All charts' X-axis shows the current system time. Other small monitoring charts can be selected using ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart. When it is clicked, the whole list of monitoring options are listed, as shown below.
+
+![](images/SelectExecMonOpt.jpg)
+
+When you click on a desired monitoring, the chart is loaded with the selected option. Also, a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
+
+-	**Pending**: Monitors the pending executors. Y-axis is the ???.
+-	**Started**: Monitors the started executors. Y-axis is the executor count.
+-	**Start Lat. (msec)**: Shows the latency when executors are started. Y-axis is the duration in milliseconds.
+-	**Completed**: Monitors the completed executors. Y-axis is the executor count.
+-	**Comp. Time (msec)**: Shows the completion period of executors. Y-axis is the duration in milliseconds.
+
+Under these charts, there is **Executor Operation Statistics** table, as shown below.
+
+![](images/ExecutorOperationStats.jpg)
+
+From left to right, this table lists the IP address and port of nodes, counts of pending, started and completed executors per second, execution time and average start latency of executors on each node. You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
 ---
 
 
 ## Members
 
-The current members in the cluster are listed on the bottom side of the left panel. You can monitor each member on tab page displayed by clicking on member items.
+This menu item is used to monitor each cluster member (node) and also perform operations like running garbage colletion (GC) and taking a thread dump. Once a member is selected form the menu, a new tab for monitoring that member is opened on the right, as shown below.
 
-![](images/member.jpg)
+![](images/MembersHome.jpg)
 
+**CPU Utilization** chart shows the CPU usage on the selected member in percentage. **Memory Utilization** chart shows the memory usage on the selected member with three different metrics (maximum, used and total memory). Both of these charts can be opened as separate windows using the ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart, a more clearer view can be obtained by this way.
 
-### Monitoring
+The window titled with **Partitions** shows which partitions are assigned to the selected member. **Runtime** is a dynamically updated window tab showing the processor number, start and up times, maximum, total and free memory sizes of the selected member. Next to this, there is **Properties** tab showing the system properties. **Member Configuration** window shows the connected Hazelcast cluster's XML configuration.
 
-In members page there are 4 inner tab pages to monitor meber's state and properties. Runtime: Runtime properties about memory, threads are given. This data updates dynamically. Properties: System properties are displayed. Configuration: Configuration xml initially set can be viewed here. Partitions: The partitions belongs to this member are listed.
+Besides the aforementioned monitoring charts and windows, there are also operations you can perform on the selected memberthrough this page. You can see operation buttons located at top right of the page, explained below:
 
-![](images/memberconf.jpg)
-
-### Operations
-
-Besides monitoring you can perform certain actions on members. You can take thread dump of the member and you can perform garbage collection on the selected member.
-
-![](images/mapoperations.jpg)
-
-
+-	**Run GC**: When pressed, garbage collection is executed on the selected member. A notification stating that the GC execution was successful will be shown.
+-	**Thread Dump**: When pressed, thread dump of the selected member is taken and shown as a separate dialog to th user.
+-	**Shutdown Node**: It is used to shutdown the selected member.
 
 ---
 
 ## Scripting
 
-In scripting part, you can execute your own code on your cluster. In the left part you can select members, on which the code will be executed. Also you can select over scripting languages: Javascript, Groovy, JRuby, BeanShell. This part is only enabled for users with read/write permissions for current cluster.
+Scripting feature of this tool is used to execute codes on the cluster. You can open this feature as a tab by selecting **Scripting** located at the toolbar on top. Once selected, it is opened as shown below.
 
-![](images/scripting.jpg)
+![](images/Scripting.jpg)
+
+In this window, **Scripting** part is the actual coding editor. You can select the members on which the code will be executed from the **Members** list shown at the right side of the window. Below the members list there is a combo box enabling you to select a scripting language. Currently, Javascript, Ruby, Groovy and Python languages are supported. After you write your script and press **Execute** button, you can see the execution result in the **Result** part of the window. 
+
+There are also **Save** and **Delete** buttons on top right of the scripting editor. You can save your scripts by pressing the **Save** button after you type a name for the script into the field next to this button. The scripts you saved are listed in the **Saved Scripts** part of the window, located at the bottom right of the page. You can simply click on a saved script from this list to execute or edit it. And, if you want to remove a script that you wrote and save before, just select it from this list and press **Delete** button.
 
 ---
 
 ## Console
 
-The console tool enables you execute commands on the cluster. You can read or write on instances but first you should set namespace. For example if you have a map with name "mapCustomers". To get a customer with key "Jack" you should first set the namespace with command "ns mapCustomers". Then you can take the object by "m.get Jack" Here is the command list:
+Hosted Management Center has also a console feature that enables you execute commands on the cluster. For example, you can perform "put"s and "get"s on a map, after you set the namespace with the command `ns <name of your map>`. Same is valid for queues, topics, etc. To execute your command, just type it into the field below the console and press **Enter**. You can type `help` to see all commands that can be used. 
 
-```
--- General commands
-echo true|false                      //turns on/off echo of commands (default false)
-silent true|false                    //turns on/off silent of command output (default false)
-<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current iteration (0..<number-1>)
-&<number> <command>                  //forks <number> threads to execute <command>, replace $t in <command> with current thread number (0..<number-1>
-     When using #x or &x, is is advised to use silent true as well.
-     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key index is specified
-jvm                                  //displays info about the runtime
-who                                  //displays info about the cluster
-whoami                               //displays info about this cluster member
-ns <string>                          //switch the namespace for using the distributed queue/map/set/list <string> (defaults to "default"
-@<file>                              //executes the given <file> script. Use '//' for comments in the script
+Console window can be opened by clicking on the **Console** button located at the toolbar. A sample view with some commands executed can ben seen below.
 
--- Queue commands
-q.offer <string>                     //adds a string object to the queue
-q.poll                               //takes an object from the queue
-q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or byte[<size>])
-q.pollmany <number>                  //takes indicated number of objects from the queue
-q.iterator [remove]                  //iterates the queue, remove if specified
-q.size                               //size of the queue
-q.clear                              //clears the queue
-
--- Set commands
-s.add <string>                       //adds a string object to the set
-s.remove <string>                    //removes the string object from the set
-s.addmany <number>                   //adds indicated number of string objects to the set ('obj<i>')
-s.removemany <number>                //takes indicated number of objects from the set
-s.iterator [remove]                  //iterates the set, removes if specified
-s.size                               //size of the set
-s.clear                              //clears the set
-
--- Lock commands
-lock <key>                           //same as Hazelcast.getLock(key).lock()
-tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()
-tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds
-unlock <key>                         //same as Hazelcast.getLock(key).unlock()
-
--- Map commands
-m.put <key> <value>                  //puts an entry to the map
-m.remove <key>                       //removes the entry of given key from the map
-m.get <key>                          //returns the value of given key from the map
-m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], <index>+(0..<number>)
-m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', <index>+(0..<number>)
-     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key <index> is specified
-m.keys                               //iterates the keys of the map
-m.values                             //iterates the values of the map
-m.entries                            //iterates the entries of the map
-m.iterator [remove]                  //iterates the keys of the map, remove if specified
-m.size                               //size of the map
-m.clear                              //clears the map
-m.destroy                            //destroys the map
-m.lock <key>                         //locks the key
-m.tryLock <key>                      //tries to lock the key and returns immediately
-m.tryLock <key> <time>               //tries to lock the key within given seconds
-m.unlock <key>                       //unlocks the key
-
--- List commands:
-l.add <string>
-l.add <index> <string>
-l.contains <string>
-l.remove <string>
-l.remove <index>
-l.set <index> <string>
-l.iterator [remove]
-l.size
-l.clear
--- IAtomicLong commands:
-a.get
-a.set <long>
-a.inc
-a.dec
--- Executor Service commands:
-execute <echo-input>                //executes an echo task on random member
-execute0nKey    <echo-input> <key>      //executes an echo task on the member that owns the given key
-execute0nMember <echo-input> <key>  //executes an echo task on the member with given index
-execute0nMembers <echo-input>       //executes an echo task on all of the members
-```
-![](images/console.jpg)
+![](images/Console.jpg)
 
 ---
 
 ##Documentation
-???
+To see the documentation, click on the **Documentation** button located at the toolbar. This document will appear as a tab.
 
----
-
-## Time Travel
-
-Time Travel mode is activated by clicking clock icon on top right toolbar. In time travel mode, the time is paused and the full state of the cluster is displayed according the time selected on time slider. You can change time either by Prev/Next buttons or sliding the slider. Also you can change the day by clicking calendar icon. Management center stores the states in you local disk, while your web server is alive. So if you slide to a time when you do not have data, the reports will be seen as empty.
-
-![](images/timetravel.jpg)
 
