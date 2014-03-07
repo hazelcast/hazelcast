@@ -62,12 +62,17 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
 
-        IMap<String, Issue1764Data> map = instance1.getMap("test");
-        map.put("a", new Issue1764Data("foo", "bar"));
-        map.put("b", new Issue1764Data("abc", "123"));
-        Set<String> keys = new HashSet<String>();
-        keys.add("a");
-        map.executeOnKeys(keys, new Issue1764UpdatingEntryProcessor("test"));
+        try {
+            IMap<String, Issue1764Data> map = instance1.getMap("test");
+            map.put("a", new Issue1764Data("foo", "bar"));
+            map.put("b", new Issue1764Data("abc", "123"));
+            Set<String> keys = new HashSet<String>();
+            keys.add("a");
+            map.executeOnKeys(keys, new Issue1764UpdatingEntryProcessor("test"));
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+            fail("ClassCastException must not happen!");
+        }
     }
 
     @Test
