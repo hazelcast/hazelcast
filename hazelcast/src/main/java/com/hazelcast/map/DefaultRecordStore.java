@@ -190,6 +190,21 @@ public class DefaultRecordStore implements RecordStore {
         records.put(key, record);
     }
 
+    public void putBackup(Map.Entry<Data, Object> entry) {
+        Data dataKey = entry.getKey();
+        Object value = entry.getValue();
+        Record record = records.get(dataKey);
+        if (record == null) {
+            record = mapService.createRecord(name, dataKey, value, -1);
+            records.put(dataKey, record);
+            updateSizeEstimator(calculateRecordSize(record));
+        } else {
+            updateSizeEstimator(-calculateRecordSize(record));
+            setRecordValue(record, value);
+            updateSizeEstimator(calculateRecordSize(record));
+        }
+    }
+
     public void deleteRecord(Data key) {
         Record record = records.remove(key);
         if (record != null) {

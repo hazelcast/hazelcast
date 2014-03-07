@@ -51,7 +51,7 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
             if (entry.getValue() == null){
                 recordStore.remove(key);
             } else {
-                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(key,entry.getValue()));
+                recordStore.putBackup(new AbstractMap.SimpleImmutableEntry<Data, Object>(key,entry.getValue()));
             }
 
         }

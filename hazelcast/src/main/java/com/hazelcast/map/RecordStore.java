@@ -43,6 +43,8 @@ public interface RecordStore {
 
     void put(Map.Entry<Data, Object> entry);
 
+    void putBackup(Map.Entry<Data, Object> entry);
+
     Object replace(Data dataKey, Object value);
 
     boolean replace(Data dataKey, Object oldValue, Object newValue);
