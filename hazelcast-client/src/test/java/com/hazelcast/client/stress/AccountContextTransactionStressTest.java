@@ -59,7 +59,6 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
         }
     }
 
-
     @Test
     public void testFixedCluster() {
         runTest(false);
