@@ -3,6 +3,7 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -61,12 +62,12 @@ public class MapStableReadStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     private void fillMap() {
@@ -90,11 +91,11 @@ public class MapStableReadStressTest extends StressTestSupport {
 
         @Override
         public void doRun() throws Exception {
-            while (!isStopped()) {
+
                 int key = random.nextInt(MAP_SIZE);
                 int value = map.get(key);
                 assertEquals("The value for the key was not consistent", key, value);
-            }
+
         }
     }
 }

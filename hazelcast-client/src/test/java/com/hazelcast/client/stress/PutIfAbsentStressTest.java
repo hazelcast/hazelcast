@@ -4,6 +4,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.EntryCounter;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -29,31 +30,13 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class PutIfAbsentStressTest extends StressTestSupport {
-
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static int THREADS_PER_INSTANCE = 5;
-
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
+public class PutIfAbsentStressTest extends StressTestSupport<PutIfAbsentStressTest.StressThread>{
 
     private static final String MAP_NAME = "putIfAbsentStressTest";
 
     @Before
     public void setUp() {
         super.setUp();
-
-        int index=0;
-        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
-
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
-
-            for (int j = 0; j < THREADS_PER_INSTANCE; j++) {
-
-                StressThread t = new StressThread(instance);
-                t.start();
-                stressThreads[index++] = t;
-            }
-        }
     }
 
     @After
@@ -67,21 +50,21 @@ public class PutIfAbsentStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
         //there should be no intersection of the set of keys put but any threads
-        for ( int i = 0; i < stressThreads.length; i++ ) {
-            for ( int j = i+1; j < stressThreads.length; j++ ) {
+        for ( int i = 0; i < stressThreads.size(); i++ ) {
+            for ( int j = i+1; j < stressThreads.size(); j++ ) {
 
-                Set a = stressThreads[i].iput;
-                Set b = stressThreads[j].iput;
+                Set a = stressThreads.get(i).iput;
+                Set b = stressThreads.get(j).iput;
 
                 Set interSec = new HashSet(a);
 
@@ -96,11 +79,11 @@ public class PutIfAbsentStressTest extends StressTestSupport {
         IMap map = hz.getMap(MAP_NAME);
 
         long total=0;
-        for ( int i = 0; i < stressThreads.length; i++ ) {
+        for ( int i = 0; i < stressThreads.size(); i++ ) {
 
-            total += stressThreads[i].iPutCount;
+            total += stressThreads.get(i).iPutCount;
 
-            long enterysAdded = stressThreads[i].enteryCounter.totalAdded.get();
+            long enterysAdded = stressThreads.get(i).enteryCounter.totalAdded.get();
 
             assertEquals("entry Counter ", enterysAdded, map.size());
         }
@@ -120,9 +103,8 @@ public class PutIfAbsentStressTest extends StressTestSupport {
 
         public EntryCounter enteryCounter = new EntryCounter();
 
-        public StressThread(HazelcastInstance instance){
-
-            this.instance = instance;
+        public StressThread(HazelcastInstance node){
+            super(node);
             map = instance.getMap(MAP_NAME);
 
             map.addEntryListener(enteryCounter, false);
@@ -130,16 +112,11 @@ public class PutIfAbsentStressTest extends StressTestSupport {
 
         @Override
         public void doRun() throws Exception {
-
-            while ( !isStopped() ) {
-
-                if ( map.putIfAbsent(key, this.getName()+" "+key) == null ){
-
-                    iput.add(key);
-                    iPutCount++;
-                }
-                key++;
+            if ( map.putIfAbsent(key, this.getName()+" "+key) == null ){
+                iput.add(key);
+                iPutCount++;
             }
+            key++;
         }
     }
 

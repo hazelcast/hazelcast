@@ -2,9 +2,8 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.stress.helpers.Account;
-import com.hazelcast.client.stress.helpers.FailedTransferRecord;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
-import com.hazelcast.client.stress.helpers.TransferRecord;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -15,9 +14,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
@@ -29,15 +25,10 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class AccountTransactionStressTest extends StressTestSupport {
+public class AccountTransactionStressTest extends StressTestSupport<AccountTransactionStressTest.StressThread>{
 
     private static final String ACCOUNTS_MAP = "ACOUNTS";
     private  IMap<Integer, Account> accounts;
-
-    public static final int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static final int THREADS_PER_INSTANCE = 5;
-
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     //low number of accounts for high lock contention
     protected static final int MAX_ACCOUNTS = 3;
@@ -47,7 +38,7 @@ public class AccountTransactionStressTest extends StressTestSupport {
 
     @Before
     public void setUp() {
-        super.setUp();
+        super.setUp(this);
 
         HazelcastInstance hz = cluster.getRandomNode();
         accounts = hz.getMap(ACCOUNTS_MAP);
@@ -55,19 +46,6 @@ public class AccountTransactionStressTest extends StressTestSupport {
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
             Account a = new Account(i, INITIAL_VALUE);
             accounts.put(a.getAcountNumber(), a);
-        }
-
-        int index=0;
-        for ( int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++ ) {
-
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient();
-
-            for ( int j = 0; j < THREADS_PER_INSTANCE; j++ ) {
-
-                StressThread t = new StressThread(instance);
-                t.start();
-                stressThreads[index++] = t;
-            }
         }
     }
 
@@ -82,12 +60,12 @@ public class AccountTransactionStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
@@ -99,20 +77,20 @@ public class AccountTransactionStressTest extends StressTestSupport {
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
 
-    public class StressThread extends TestThread{
+    public class StressThread extends TestThread {
 
         private HazelcastInstance instance;
         private IMap<Integer, Account> accounts;
 
         public StressThread(HazelcastInstance node){
-            instance = node;
+            super(node);
             accounts = instance.getMap(ACCOUNTS_MAP);
         }
 
         @Override
         public void doRun() throws Exception {
 
-            while ( !isStopped() ) {
+
 
                 long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
                 int from = 0;
@@ -124,7 +102,7 @@ public class AccountTransactionStressTest extends StressTestSupport {
                 }
 
                 lockAccounts_andTransfer(from, to, amount);
-            }
+
         }
 
         private void lockAccounts_andTransfer(int fromAccountNumber, int toAccountNumber, long amount) throws InterruptedException {

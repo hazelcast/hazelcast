@@ -3,6 +3,7 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -60,12 +61,12 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     private void initializeReferences() {
@@ -86,12 +87,12 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
 
         @Override
         public void doRun() throws Exception {
-            while (!isStopped()) {
+
                 int key = random.nextInt(REFERENCE_COUNT);
                 IAtomicLong reference = references[key];
                 long value = reference.get();
                 assertEquals(format("The value for atomic reference: %s was not consistent", reference), key, value);
-            }
+
         }
     }
 }

@@ -4,6 +4,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.ItemCounter;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -25,29 +26,12 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class SetStressTest extends StressTestSupport {
+public class SetStressTest extends StressTestSupport<SetStressTest.StressThread> {
 
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static int THREADS_PER_INSTANCE = 5;
-
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     @Before
     public void setUp() {
         super.setUp();
-
-        int index=0;
-        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
-
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
-
-            for (int j = 0; j < THREADS_PER_INSTANCE; j++) {
-
-                StressThread t = new StressThread(instance);
-                t.start();
-                stressThreads[index++] = t;
-            }
-        }
     }
 
     @After
@@ -61,12 +45,12 @@ public class SetStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
@@ -85,7 +69,7 @@ public class SetStressTest extends StressTestSupport {
         assertEquals(expected+" total count != set size ", total, (long) expected.size());
     }
 
-    public class StressThread extends TestThread{
+    public class StressThread extends TestThread {
 
         private HazelcastInstance instance;
 
@@ -97,22 +81,17 @@ public class SetStressTest extends StressTestSupport {
         public ItemCounter itemCounter = new ItemCounter();
 
         public StressThread(HazelcastInstance node){
-
-            instance = node;
-
+            super(node);
             set = instance.getSet("set");
             set.addItemListener(itemCounter, false);
         }
 
         @Override
         public void doRun() throws Exception {
-
-            while ( !isStopped() ) {
-                if ( set.add(key) ) {
-                    count++;
-                }
-                key++;
+            if ( set.add(key) ) {
+                count++;
             }
+            key++;
         }
     }
 

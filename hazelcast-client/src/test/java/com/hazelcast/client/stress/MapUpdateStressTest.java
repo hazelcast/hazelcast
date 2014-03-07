@@ -3,6 +3,7 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -24,7 +25,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapUpdateStressTest extends StressTestSupport {
+public class MapUpdateStressTest extends StressTestSupport<MapUpdateStressTest.StressThread>{
 
     public static final int CLIENT_THREAD_COUNT = 5;
     public static final int MAP_SIZE = 100 * 1000;
@@ -63,12 +64,12 @@ public class MapUpdateStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
@@ -100,9 +101,6 @@ public class MapUpdateStressTest extends StressTestSupport {
     }
 
     private void fillMap() {
-        System.out.println("==================================================================");
-        System.out.println("Inserting data in map");
-        System.out.println("==================================================================");
 
         for (int k = 0; k < MAP_SIZE; k++) {
             map.put(k, 0);
@@ -110,10 +108,6 @@ public class MapUpdateStressTest extends StressTestSupport {
                 System.out.println("Inserted data: " + k);
             }
         }
-
-        System.out.println("==================================================================");
-        System.out.println("Completed with inserting data in map");
-        System.out.println("==================================================================");
     }
 
     public class StressThread extends TestThread {
@@ -122,7 +116,7 @@ public class MapUpdateStressTest extends StressTestSupport {
 
         @Override
         public void doRun() throws Exception {
-            while (!isStopped()) {
+
                 int key = random.nextInt(MAP_SIZE);
                 int increment = random.nextInt(10);
                 increments[key] += increment;
@@ -134,7 +128,7 @@ public class MapUpdateStressTest extends StressTestSupport {
                         break;
                     }
                 }
-            }
+
         }
 
         public void addIncrements(int[] increments) {

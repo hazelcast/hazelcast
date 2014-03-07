@@ -4,6 +4,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.Account;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
@@ -29,16 +30,11 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
+public class AccountTransactionGlobalLockStressTest extends StressTestSupport<AccountTransactionGlobalLockStressTest.StressThread> {
 
     public static boolean TEST_CASE;
     public static boolean TEST_CASE_LOCK = true;
     public static boolean TEST_CASE_TRY_LOCK = false;
-
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static int THREADS_PER_INSTANCE = 5;
-
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     public final String ACCOUNTS_MAP = "ACCOUNTS";
     private IMap<Integer, Account> accounts;
@@ -50,7 +46,8 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
 
     @Before
     public void setUp() {
-        super.setUp();
+        super.RUNNING_TIME_SECONDS=10;
+        super.setUp(this);
 
         HazelcastInstance hz = cluster.getRandomNode();
         accounts = hz.getMap(ACCOUNTS_MAP);
@@ -58,19 +55,6 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
             Account a = new Account(i, INITIAL_VALUE);
             accounts.put(a.getAcountNumber(), a);
-        }
-
-        int index=0;
-        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
-
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
-
-            for (int j = 0; j < THREADS_PER_INSTANCE; j++) {
-
-                StressThread t = new StressThread(instance);
-                t.start();
-                stressThreads[index++] = t;
-            }
         }
     }
 
@@ -82,18 +66,12 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
         super.tearDown();
     }
 
-    //@Test
-    public void testChangingCluster() {
-        TEST_CASE = TEST_CASE_LOCK;
-        setKillThread(new KillMemberThread());
-        runTest(true, stressThreads);
-    }
 
     @Test
     public void lock_testFixedCluster() {
         //CONTROL which test case we are checking
         TEST_CASE = TEST_CASE_LOCK;
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     /**
@@ -106,7 +84,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     public void tryLock_testFixedCluster() {
         //CONTROL which test case we are checking
         TEST_CASE = TEST_CASE_TRY_LOCK;
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
@@ -120,25 +98,20 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
         private ILock lock;
         IMap<Integer, Account> accounts = null;
 
         public StressThread( HazelcastInstance node ){
-
-            this.instance = node;
-
+            super(node);
             //with this "global Lock only one transfer at a time is allowed"
             lock = instance.getLock("globalLock");
-
             accounts = instance.getMap(ACCOUNTS_MAP);
         }
 
         //@Override
         public void doRun() throws Exception {
 
-            while ( !isStopped() ) {
+
 
                 long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
                 int from = 0;
@@ -156,7 +129,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport {
                 else{
                     tryLock_AndTransfer(to, from, amount);
                 }
-            }
+
         }
 
         private void lock_AndTransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {

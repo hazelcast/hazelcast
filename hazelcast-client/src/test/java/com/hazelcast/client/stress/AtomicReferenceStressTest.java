@@ -3,6 +3,7 @@ package com.hazelcast.client.stress;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -21,48 +22,21 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class AtomicReferenceStressTest extends StressTestSupport {
-
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static int THREADS_PER_INSTANCE = 5;
-
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
+public class AtomicReferenceStressTest extends StressTestSupport<AtomicReferenceStressTest.StressThread> {
 
     @Before
     public void setUp() {
-        super.setUp();
-
-        int index=0;
-        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
-
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
-
-            for (int j = 0; j < THREADS_PER_INSTANCE; j++) {
-
-                StressThread t = new StressThread(instance);
-                t.start();
-                stressThreads[index++] = t;
-            }
-        }
-    }
-
-    @After
-    public void tearDown() {
-
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
+        super.setUp(this);
     }
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
@@ -78,7 +52,7 @@ public class AtomicReferenceStressTest extends StressTestSupport {
         assertEquals(expeted+" has failed writes ", total, (long) expeted.get());
     }
 
-    public class StressThread extends TestThread{
+    public class StressThread extends TestThread {
 
         private HazelcastInstance instance;
 
@@ -87,20 +61,16 @@ public class AtomicReferenceStressTest extends StressTestSupport {
         public long count=0;
 
         public StressThread(HazelcastInstance node){
-            instance = node;
+            super(node);
             ref = instance.getAtomicReference("ref");
             ref.set(0l);
         }
 
         @Override
         public void doRun() throws Exception {
-
-            while ( !isStopped() ) {
-
-                long i = ref.get();
-                if ( ref.compareAndSet(i, i + 1) ){
-                    count++;
-                }
+            long i = ref.get();
+            if ( ref.compareAndSet(i, i + 1) ){
+                count++;
             }
         }
     }

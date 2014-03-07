@@ -1,10 +1,7 @@
 package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.stress.helpers.Account;
-import com.hazelcast.client.stress.helpers.FailedTransferRecord;
-import com.hazelcast.client.stress.helpers.StressTestSupport;
-import com.hazelcast.client.stress.helpers.TransferRecord;
+import com.hazelcast.client.stress.helpers.*;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
@@ -29,7 +26,7 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class AccountContextTransactionStressTest extends StressTestSupport {
+public class AccountContextTransactionStressTest extends StressTestSupport<AccountContextTransactionStressTest.StressThread>{
 
     public static final String ACCOUNTS_MAP = "ACOUNTS";
     public static final String PROCESED_TRANS_MAP ="PROCESSED";
@@ -39,20 +36,16 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
     private IMap<Long, FailedTransferRecord> failed;
     private IMap<Integer, Account> accounts;
 
-    public static final int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static final int THREADS_PER_INSTANCE = 5;
-
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
-
     //keeping number of accounts low for high Lock contention as we are locking on map keys (account numbers)
-    protected static final int MAX_ACCOUNTS = 3;
+    protected static final int MAX_ACCOUNTS = 3000;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
 
     @Before
     public void setUp() {
-        super.setUp();
+        RUNNING_TIME_SECONDS=10;
+        super.setUp(this);
 
         HazelcastInstance hz = cluster.getRandomNode();
 
@@ -60,42 +53,16 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
         failed = hz.getMap(FAILED_TRANS_MAP);
         accounts = hz.getMap(ACCOUNTS_MAP);
 
-        //init accounts
         for ( int i=0; i < MAX_ACCOUNTS; i++ ) {
             Account a = new Account(i, INITIAL_VALUE);
             accounts.put(a.getAcountNumber(), a);
         }
-
-        int index=0;
-        for ( int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++ ) {
-
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient();
-
-            for ( int j = 0; j < THREADS_PER_INSTANCE; j++ ) {
-
-                StressThread t = new StressThread(instance);
-                t.start();
-                stressThreads[index++] = t;
-            }
-        }
     }
 
-    @After
-    public void tearDown() {
-        for(StressThread s: stressThreads){
-            s.instance.shutdown();
-        }
-        super.tearDown();
-    }
-
-    //@Test
-    public void testChangingCluster() {
-        runTest(true, stressThreads);
-    }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
@@ -117,38 +84,33 @@ public class AccountContextTransactionStressTest extends StressTestSupport {
 
         assertEquals("number of role Backs triggered and failed transaction count not equal", expeted_roleBacks, failed.size());
 
-        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, acutalValue);
+        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE+1, acutalValue);
     }
 
-    public class StressThread extends TestThread{
-
-        private HazelcastInstance instance;
+    public class StressThread extends TestThread {
         private IMap<Integer, Account> accounts;
 
         public int transactionsProcessed=0;
-        public int roleBacksTriggered =0;
+        public int roleBacksTriggered=0;
 
         public StressThread(HazelcastInstance node){
-            instance = node;
+            super(node);
             accounts = instance.getMap(ACCOUNTS_MAP);
         }
 
         @Override
         public void doRun() throws Exception {
 
-            while ( !isStopped() ) {
+            long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
+            int from = 0;
+            int to = 0;
 
-                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
-                int from = 0;
-                int to = 0;
-
-                while ( from == to ) {
-                    from = random.nextInt(MAX_ACCOUNTS);
-                    to = random.nextInt(MAX_ACCOUNTS);
-                }
-
-                transfer(from, to, amount);
+            while ( from == to ) {
+                from = random.nextInt(MAX_ACCOUNTS);
+                to = random.nextInt(MAX_ACCOUNTS);
             }
+
+            transfer(from, to, amount);
         }
 
         //this method is responsible to obtaining the lock to do the transaction for the 2 accounts

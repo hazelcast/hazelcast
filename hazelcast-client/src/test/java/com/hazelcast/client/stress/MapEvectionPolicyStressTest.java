@@ -2,8 +2,8 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.EntryCounter;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
+import com.hazelcast.client.stress.helpers.TestThread;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -11,14 +11,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -28,11 +24,6 @@ import static junit.framework.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class MapEvectionPolicyStressTest extends StressTestSupport {
-
-    public static int TOTAL_HZ_CLIENT_INSTANCES = 3;
-    public static int THREADS_PER_INSTANCE = 5;
-
-    private StressThread[] stressThreads = new StressThread[TOTAL_HZ_CLIENT_INSTANCES * THREADS_PER_INSTANCE];
 
     private static final String MAP_NAME = "evictMap";
     private IMap map;
@@ -57,29 +48,16 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
         super.setUp();
 
         map = cluster.getRandomNode().getMap(MAP_NAME);
-
-        int index=0;
-        for (int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++) {
-
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient(new ClientConfig());
-
-            for (int j = 0; j < THREADS_PER_INSTANCE; j++) {
-
-                StressThread t = new StressThread(instance, index);
-                t.start();
-                stressThreads[index++] = t;
-            }
-        }
     }
 
     //@Test
     public void testChangingCluster() {
-        runTest(true, stressThreads);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        runTest(false, stressThreads);
+        runTest(false);
     }
 
     public void assertResult() {
@@ -97,8 +75,8 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
         private int key=0;
         private int keySufix;
 
-        public StressThread(HazelcastInstance instance, int keySufix){
-            this.instance = instance;
+        public StressThread(HazelcastInstance node){
+            super(node);
             this.keySufix = keySufix;
             map = instance.getMap(MAP_NAME);
         }
@@ -106,10 +84,9 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
         @Override
         public void doRun() throws Exception {
 
-            while ( !isStopped() ) {
-                map.put(key +" "+keySufix, key);
-                key++;
-            }
+            map.put(key +" "+keySufix, key);
+            key++;
+
         }
     }
 }
