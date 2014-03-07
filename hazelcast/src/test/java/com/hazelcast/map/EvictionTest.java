@@ -569,7 +569,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
+    public void testMapRecordIdleEvictionOnMigration() {
         Config cfg = new Config();
         final String name = "testMapRecordIdleEvictionOnMigration";
         MapConfig mc = cfg.getMapConfig(name);
@@ -594,7 +594,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         // wait until some time that is close to eviction
-        Thread.sleep((maxIdleSeconds - 5) * 1000);
+        sleepSeconds(maxIdleSeconds - 5);
 
         // touch the ones you dont want to be evicted.
         for (int i = 0; i < nsize; i++) {
