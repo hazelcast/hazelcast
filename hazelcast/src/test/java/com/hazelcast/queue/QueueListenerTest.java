@@ -37,43 +37,40 @@ import static junit.framework.Assert.assertTrue;
 @Category(QuickTest.class)
 public class QueueListenerTest extends HazelcastTestSupport {
 
+    private String Qname = "Q";
+    private int totalQput=2000;
+
+    private Config cfg = new Config();
+    private SimpleItemListener simpleItemListener = new SimpleItemListener(totalQput);
+    private ItemListenerConfig itemListenerConfig = new ItemListenerConfig();
+    private QueueConfig qConfig = new QueueConfig();
+
     @Test
     public void testItemListener_addedToQueueConfig_Issue366() throws InterruptedException {
 
-        int count=2000;
-
-        ItemListenerConfig itemListenerConfig = new ItemListenerConfig();
-        itemListenerConfig.setImplementation(new SimpleItemListener(count));
+        itemListenerConfig.setImplementation(simpleItemListener);
         itemListenerConfig.setIncludeValue(true);
 
-        QueueConfig qConfig = new QueueConfig();
-        qConfig.setName("Q");
+        qConfig.setName(Qname);
         qConfig.addItemListenerConfig(itemListenerConfig);
-
-        Config cfg = new Config();
         cfg.addQueueConfig(qConfig);
 
         HazelcastInstance node1 =  Hazelcast.newHazelcastInstance(cfg);
-
-        for(int i=0; i<count/2; i++) {
-            node1.getQueue("Q").put(i);
+        IQueue queue = node1.getQueue(Qname);
+        for(int i=0; i<totalQput/2; i++) {
+            queue.put(i);
         }
 
         HazelcastInstance node2 =  Hazelcast.newHazelcastInstance(cfg);
 
-        for(int i=0; i<count/4; i++) {
-            node1.getQueue("Q").put(i);
+        for(int i=0; i<totalQput/4; i++) {
+            queue.put(i);
         }
 
-        List<ItemListenerConfig> configs = qConfig.getItemListenerConfigs();
-        SimpleItemListener simpleItemListener = (SimpleItemListener) configs.get(0).getImplementation();
-
-        assertTrue(simpleItemListener.added.await(10, TimeUnit.SECONDS));
+        assertTrue(simpleItemListener.added.await(3, TimeUnit.SECONDS));
     }
 
-
     private static class SimpleItemListener implements ItemListener {
-
         public CountDownLatch added;
 
         public SimpleItemListener(int CountDown){
@@ -87,5 +84,4 @@ public class QueueListenerTest extends HazelcastTestSupport {
         public void itemRemoved(ItemEvent itemEvent) {
         }
     }
-
 }
