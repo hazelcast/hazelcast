@@ -145,7 +145,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         final int maxSizePerNode = 50;
         final int instanceCount = 3;
         final Config cfg = new Config();
-        final String mapName = "testNearCacheEvictionByUsingMapTTLEviction_" + randomString();
+        final String mapName = "_testNearCacheEvictionByUsingMapTTLEviction_";
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         cfg.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
