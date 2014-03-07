@@ -46,7 +46,6 @@ src/ExecutorService.md
 	src/ExecutionCallback.md
 src/HttpSessionClustering.md
 src/WanReplication.md
-src/SPI.md
 src/Config.md
 	src/ConfigGroup.md
 	src/NetworkConfig.md
