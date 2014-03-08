@@ -181,6 +181,18 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
 
 
     private final void joinAll() {
+
+        if(killThread != null){
+            try{
+                killThread.join( (KILL_DELAY_SECONDS + 4) * 1000 );
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Interrupted while joining KillThread:");
+            }
+            if (killThread.isAlive()) {
+                throw new RuntimeException("KillThread is still alive");
+            }
+        }
+
         for (TestThread t : stressThreads) {
             try {
                 t.join(1000 * 5);
@@ -207,13 +219,15 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
     public class KillMemberThread extends Thread {
         @Override
         public void run(){
-
-            while ( stopTest.get() == false ) {
+            while ( true ) {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
                 } catch (InterruptedException e) {
                 }
 
+                if(stopTest.get() == false){
+                    break;
+                }
                 cluster.shutDownRandomNode();
                 cluster.addNode();
             }
@@ -229,12 +243,15 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
 
         @Override
         public void run() {
-            while ( stopTest.get() == false ) {
+            while ( true ) {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
                 } catch (InterruptedException e) {
                 }
 
+                if ( stopTest.get() == false ) {
+                    break;
+                }
                 cluster.shutDownNodeOwning(key);
                 cluster.addNode();
             }
