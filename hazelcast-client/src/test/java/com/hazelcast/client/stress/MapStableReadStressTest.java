@@ -31,12 +31,13 @@ public class MapStableReadStressTest extends StressTestSupport<MapStableReadStre
 
     @Before
     public void setUp() {
-        RUNNING_TIME_SECONDS=10;
+        cluster.initCluster();
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
-        super.setClientConfig(clientConfig);
-        super.setUp(this);
+        setClientConfig(clientConfig);
+        initStressThreadsWithClient(this);
 
         IMap map = cluster.getRandomNode().getMap(mapName);
         for (int k = 0; k < MAP_SIZE; k++) {

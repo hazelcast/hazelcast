@@ -44,11 +44,13 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
 
     @Before
     public void setUp() {
-        RUNNING_TIME_SECONDS=10;
-        super.setUp(this);
+        cluster.initCluster();
+        initStressThreadsWithClient(this);
 
+
+        //DANGER I get the maps from a cluster node and in a Changing cluster, that node could be killed
+        //the at the end of the test I use the map again and it breaks,
         HazelcastInstance hz = cluster.getRandomNode();
-
         processed = hz.getMap(PROCESED_TRANS_MAP);
         failed = hz.getMap(FAILED_TRANS_MAP);
         accounts = hz.getMap(ACCOUNTS_MAP);
@@ -83,7 +85,7 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
 
         assertEquals("number of role Backs triggered and failed transaction count not equal", expeted_roleBacks, failed.size());
 
-        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE+1, acutalValue);
+        assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, acutalValue);
     }
 
     public class StressThread extends TestThread {

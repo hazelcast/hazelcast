@@ -3,6 +3,7 @@ package com.hazelcast.client.stress.helpers;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.modularhelpers.ClusterSupport;
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertNull;
 public abstract class StressTestSupport<T extends TestThread> extends HazelcastTestSupport {
 
     //todo: should be system property
-    public static int RUNNING_TIME_SECONDS = 180;
+    public static int RUNNING_TIME_SECONDS = 10;
     //todo: should be system property
     public static int CLUSTER_SIZE = 3;
     //todo: should be system property
@@ -51,20 +52,28 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
     protected List<T> stressThreads = new ArrayList<T>();
 
 
-    public void setUp() {
-        cluster.initCluster();
-    }
-
     public void setClientConfig(ClientConfig clientConfig){
         this.clientConfig = clientConfig;
     }
 
-    public void setUp(Object yourThis) {
-        cluster.initCluster();
+    public void initStressThreadsWithClient(StressTestSupport yourThis) {
+        initStressThreads(yourThis, true);
+    }
+
+    public void initStressThreadsWithClusterMembers(StressTestSupport yourThis) {
+        initStressThreads(yourThis, false);
+    }
+
+    private void initStressThreads(StressTestSupport yourThis, boolean clientInstance) {
 
         for ( int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++ ) {
 
-            HazelcastInstance instance = HazelcastClient.newHazelcastClient(clientConfig);
+            HazelcastInstance instance;
+            if(clientInstance){
+                instance = HazelcastClient.newHazelcastClient(clientConfig);
+            }else{
+                instance = Hazelcast.newHazelcastInstance();
+            }
 
             for ( int j = 0; j < THREADS_PER_INSTANCE; j++ ) {
                 T t = getInstanceOfT(yourThis, instance);

@@ -36,7 +36,8 @@ public class PutIfAbsentStressTest extends StressTestSupport<PutIfAbsentStressTe
 
     @Before
     public void setUp() {
-        super.setUp();
+        cluster.initCluster();
+        initStressThreadsWithClient(this);
     }
 
     //@Test
@@ -83,21 +84,15 @@ public class PutIfAbsentStressTest extends StressTestSupport<PutIfAbsentStressTe
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
         private IMap map;
-
         private int key=0;
         public long iPutCount=0;
-
         public Set iput = new HashSet();
-
         public EntryCounter enteryCounter = new EntryCounter();
 
         public StressThread(HazelcastInstance node){
             super(node);
             map = instance.getMap(MAP_NAME);
-
             map.addEntryListener(enteryCounter, false);
         }
 
@@ -110,5 +105,4 @@ public class PutIfAbsentStressTest extends StressTestSupport<PutIfAbsentStressTe
             key++;
         }
     }
-
 }

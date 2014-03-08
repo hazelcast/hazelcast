@@ -26,10 +26,11 @@ public class AtomicReferenceStressTest extends StressTestSupport<AtomicReference
 
     @Before
     public void setUp() {
-        super.setUp(this);
+        cluster.initCluster();
+        initStressThreadsWithClient(this);
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }
@@ -40,7 +41,6 @@ public class AtomicReferenceStressTest extends StressTestSupport<AtomicReference
     }
 
     public void assertResult() {
-
         long total=0;
         for ( StressThread s : stressThreads ) {
             total += s.count;
@@ -53,11 +53,7 @@ public class AtomicReferenceStressTest extends StressTestSupport<AtomicReference
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
-
-        IAtomicReference<Long> ref;
-
+        private IAtomicReference<Long> ref;
         public long count=0;
 
         public StressThread(HazelcastInstance node){
@@ -68,8 +64,8 @@ public class AtomicReferenceStressTest extends StressTestSupport<AtomicReference
 
         @Override
         public void doRun() throws Exception {
-            long i = ref.get();
-            if ( ref.compareAndSet(i, i + 1) ){
+            long expeted = ref.get();
+            if ( ref.compareAndSet(expeted, expeted+1) ){
                 count++;
             }
         }

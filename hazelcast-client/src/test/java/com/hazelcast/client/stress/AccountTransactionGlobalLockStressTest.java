@@ -46,8 +46,8 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
 
     @Before
     public void setUp() {
-        super.RUNNING_TIME_SECONDS=10;
-        super.setUp(this);
+        cluster.initCluster();
+        initStressThreadsWithClient(this);
 
         HazelcastInstance hz = cluster.getRandomNode();
         accounts = hz.getMap(ACCOUNTS_MAP);
@@ -84,7 +84,6 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
         for(Account a : accounts.values()){
             total += a.getBalance();
         }
-
         assertEquals("concurrent transfers caused system total value gain/loss", TOTAL_VALUE, total);
     }
 
@@ -102,25 +101,22 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
         //@Override
         public void doRun() throws Exception {
 
+            long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
+            int from = 0;
+            int to = 0;
 
+            while ( from == to ) {
+                from = random.nextInt(MAX_ACCOUNTS);
+                to = random.nextInt(MAX_ACCOUNTS);
+            }
 
-                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
-                int from = 0;
-                int to = 0;
-
-                while ( from == to ) {
-                    from = random.nextInt(MAX_ACCOUNTS);
-                    to = random.nextInt(MAX_ACCOUNTS);
-                }
-
-                //WHICH TEST CASE ARE WE CHECKING
-                if ( TEST_CASE == TEST_CASE_LOCK){
-                    lock_AndTransfer(to, from, amount);
-                }
-                else{
-                    tryLock_AndTransfer(to, from, amount);
-                }
-
+            //WHICH TEST CASE ARE WE CHECKING
+            if ( TEST_CASE == TEST_CASE_LOCK){
+                lock_AndTransfer(to, from, amount);
+            }
+            else{
+                tryLock_AndTransfer(to, from, amount);
+            }
         }
 
         private void lock_AndTransfer(int fromAccountNumber, int toAccountNumber, long amount) throws Exception {
@@ -156,5 +152,4 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
             accounts.put(toAccount.getAcountNumber(), toAccount);
         }
     }
-
 }

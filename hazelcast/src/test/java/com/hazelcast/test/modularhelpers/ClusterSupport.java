@@ -95,7 +95,6 @@ public class ClusterSupport {
     }
 
     public void shutDown() {
-
         Hazelcast.shutdownAll();
         cluster=null;
     }

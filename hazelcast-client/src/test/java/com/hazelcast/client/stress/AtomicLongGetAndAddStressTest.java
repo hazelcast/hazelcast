@@ -4,6 +4,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.client.stress.helpers.TestThread;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -28,17 +29,16 @@ import static junit.framework.Assert.assertEquals;
 public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongGetAndAddStressTest.StressThread> {
 
     private String atomicKey = "atomicL";
-    private IAtomicLong acutal;
 
     @Before
     public void setUp() {
+        cluster.initCluster();
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
-        super.setClientConfig(clientConfig);
-        super.setUp(this);
-
-        acutal = cluster.getRandomNode().getAtomicLong(atomicKey);
+        setClientConfig(clientConfig);
+        initStressThreadsWithClient(this);
     }
 
     @Test
@@ -58,7 +58,10 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongG
         for ( StressThread s : stressThreads ) {
             expetedTotal += s.count.get();
         }
-        assertEquals(acutal + " has value " + acutal.get(), expetedTotal, acutal.get());
+        HazelcastInstance hz = cluster.getRandomNode();
+        IAtomicLong atomicLong = hz.getAtomicLong(atomicKey);
+
+        assertEquals(atomicLong + " has value " + atomicLong.get(), expetedTotal, atomicLong.get());
     }
 
     public class StressThread extends TestThread {

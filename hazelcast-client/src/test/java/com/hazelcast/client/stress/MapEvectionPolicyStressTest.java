@@ -31,10 +31,7 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
     @Before
     public void setUp() {
 
-        super.RUNNING_TIME_SECONDS=10;
-
         Config config = new Config();
-
         MapConfig mc = config.getMapConfig(MAP_NAME);
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mc.setEvictionPercentage(0);
@@ -43,9 +40,11 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(1000);
         mc.setMaxSizeConfig(msc);
-        cluster.setConfig( config );
 
-        super.setUp(this);
+        cluster.setConfig( config );
+        cluster.initCluster();
+
+        initStressThreadsWithClient(this);
 
         map = cluster.getRandomNode().getMap(MAP_NAME);
     }
@@ -62,10 +61,9 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
 
     public void assertResult() {
 
-        while(true){
             System.out.println("==>>"+map.size());
             sleepSeconds(1);
-        }
+
     }
 
     public class StressThread extends TestThread {

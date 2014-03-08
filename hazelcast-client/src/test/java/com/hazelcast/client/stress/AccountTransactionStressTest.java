@@ -38,7 +38,8 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
 
     @Before
     public void setUp() {
-        super.setUp(this);
+        cluster.initCluster();
+        initStressThreadsWithClient(this);
 
         HazelcastInstance hz = cluster.getRandomNode();
         accounts = hz.getMap(ACCOUNTS_MAP);
@@ -69,8 +70,6 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
         private IMap<Integer, Account> accounts;
 
         public StressThread(HazelcastInstance node){
@@ -81,19 +80,16 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
         @Override
         public void doRun() throws Exception {
 
+            long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
+            int from = 0;
+            int to = 0;
 
+            while ( from == to ) {
+                from = random.nextInt(MAX_ACCOUNTS);
+                to = random.nextInt(MAX_ACCOUNTS);
+            }
 
-                long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
-                int from = 0;
-                int to = 0;
-
-                while ( from == to ) {
-                    from = random.nextInt(MAX_ACCOUNTS);
-                    to = random.nextInt(MAX_ACCOUNTS);
-                }
-
-                lockAccounts_andTransfer(from, to, amount);
-
+            lockAccounts_andTransfer(from, to, amount);
         }
 
         private void lockAccounts_andTransfer(int fromAccountNumber, int toAccountNumber, long amount) throws InterruptedException {
@@ -126,5 +122,4 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
             accounts.put(to.getAcountNumber(), to);
         }
     }
-
 }

@@ -32,14 +32,14 @@ public class SubmitToKeyStressTest extends StressTestSupport<SubmitToKeyStressTe
 
     @Before
     public void setUp() {
-        super.setUp();
+        cluster.initCluster();
+        initStressThreadsWithClient(this);
 
-        //make the initial key val that all threads will run tasks on
         HazelcastInstance hz = cluster.getRandomNode();
         hz.getMap(MAP_NAME).put(0, 0);
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }
@@ -62,8 +62,6 @@ public class SubmitToKeyStressTest extends StressTestSupport<SubmitToKeyStressTe
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
         private EntryProcessor task;
         private IMap map;
         private int totalOpps=0;

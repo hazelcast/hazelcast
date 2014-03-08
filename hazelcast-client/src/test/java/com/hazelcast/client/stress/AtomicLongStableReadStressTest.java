@@ -22,26 +22,29 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class AtomicLongStableReadStressTest extends StressTestSupport<AtomicLongStableReadStressTest.StressThread> {
     public static final int REFERENCE_COUNT = 10 * 1000;
-    private IAtomicLong[] references = new IAtomicLong[REFERENCE_COUNT];
+    public static final String atomicName = "atomicreference:";
 
     @Before
     public void setUp() {
-        TOTAL_HZ_CLIENT_INSTANCES = 1;
-        THREADS_PER_INSTANCE = 15;
+        cluster.initCluster();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
-        super.setClientConfig(clientConfig);
-        super.setUp(this);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        for (int k = 0; k < references.length; k++) {
-            references[k] = client.getAtomicLong("atomicreference:" + k);
-            references[k].set(k);
+        setClientConfig(clientConfig);
+
+        TOTAL_HZ_CLIENT_INSTANCES = 1;
+        THREADS_PER_INSTANCE = 15;
+        initStressThreadsWithClient(this);
+
+        HazelcastInstance node = cluster.getRandomNode();
+        for (int key = 0; key < REFERENCE_COUNT; key++) {
+           IAtomicLong atomic = node.getAtomicLong(atomicName+key);
+           atomic.set(key);
         }
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }
@@ -60,7 +63,7 @@ public class AtomicLongStableReadStressTest extends StressTestSupport<AtomicLong
         @Override
         public void doRun() throws Exception {
             int key = random.nextInt(REFERENCE_COUNT);
-            IAtomicLong reference = references[key];
+            IAtomicLong reference = instance.getAtomicLong(atomicName+key);
             long value = reference.get();
             assertEquals(format("The value for atomic reference: %s was not consistent", reference), key, value);
         }

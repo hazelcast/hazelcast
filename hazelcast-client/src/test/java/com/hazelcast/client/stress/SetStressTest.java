@@ -28,14 +28,13 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class SetStressTest extends StressTestSupport<SetStressTest.StressThread> {
 
-
     @Before
     public void setUp() {
-        super.setUp();
+        cluster.initCluster();
+        initStressThreadsWithClient(this);
     }
 
-
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }
@@ -62,11 +61,7 @@ public class SetStressTest extends StressTestSupport<SetStressTest.StressThread>
     }
 
     public class StressThread extends TestThread {
-
-        private HazelcastInstance instance;
-
-        ISet<Long> set;
-
+        public ISet<Long> set;
         public long count=0;
         public long key=0;
 
