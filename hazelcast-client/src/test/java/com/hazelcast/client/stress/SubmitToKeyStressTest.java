@@ -79,5 +79,4 @@ public class SubmitToKeyStressTest extends StressTestSupport<SubmitToKeyStressTe
             totalOpps++;
         }
     }
-
 }

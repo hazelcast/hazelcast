@@ -34,6 +34,10 @@ public class AtomicLongGetAndAddStressTest extends StressTestSupport<AtomicLongG
     public void setUp() {
         cluster.initCluster();
 
+        TOTAL_HZ_CLIENT_INSTANCES = 1;
+        THREADS_PER_INSTANCE = 15;
+
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
