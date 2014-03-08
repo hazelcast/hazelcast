@@ -6,8 +6,8 @@
 To understand the following technical internals we first will have a short look at what happens in terms
 of an example workflow.
 
-So due to the above example code we have string keys and integer values and the resulting emitted values
-are the same. Imagine you have a three node cluster and initiate the map reduce job on the first node. After
+To make the understanding simple we think of an IMap<String, Integer> and emitted keys to have the same types.
+Imagine you have a three node cluster and initiate the map reduce job on the first node. After
 you requested the JobTracker from your running / connected Hazelcast we submit the task and retrieve the 
 ICompletableFuture which gives us a chance of waiting for the result to be calculated or adding a callback 
 to go a more reactive way.
