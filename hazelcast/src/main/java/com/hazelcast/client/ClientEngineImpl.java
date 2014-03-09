@@ -306,7 +306,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     private void sendClientEvent(ClientEndpoint endpoint) {
-        if (endpoint.isFirstConnection()) {
+        if (!endpoint.isFirstConnection()) {
             final EventService eventService = nodeEngine.getEventService();
             final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
             eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
