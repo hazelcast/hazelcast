@@ -177,7 +177,7 @@ public final class HazelcastClient implements HazelcastInstance {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             final HazelcastClient client = new HazelcastClient(config);
             client.start();
-            OutOfMemoryErrorDispatcher.addHandler(OUT_OF_MEMORY_HANDLER);
+            OutOfMemoryErrorDispatcher.setClientHandler(OUT_OF_MEMORY_HANDLER);
             OutOfMemoryErrorDispatcher.register(client);
             proxy = new HazelcastClientProxy(client);
             CLIENTS.put(client.id, proxy);
