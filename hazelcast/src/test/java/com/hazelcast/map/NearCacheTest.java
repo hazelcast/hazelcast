@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
@@ -109,10 +111,15 @@ public class NearCacheTest extends HazelcastTestSupport {
         long firstRead = System.currentTimeMillis() - begin;
 
         begin = System.currentTimeMillis();
-        map.getAll(keys);
+        final Map<Integer,Integer> all = map.getAll(keys);
         long secondRead = System.currentTimeMillis() - begin;
 
         Assert.assertTrue(secondRead < firstRead);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i,(int)all.get(i));
+
+        }
     }
 
 
