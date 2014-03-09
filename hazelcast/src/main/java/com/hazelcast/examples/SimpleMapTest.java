@@ -28,6 +28,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,6 +45,7 @@ public final class SimpleMapTest {
     private final HazelcastInstance instance;
     private final ILogger logger;
     private final Stats stats = new Stats();
+    private final Random random;
 
     private final int threadCount;
     private final int entryCount;
@@ -70,6 +72,7 @@ public final class SimpleMapTest {
 
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
+        random = new Random();
     }
 
     /**
@@ -128,8 +131,8 @@ public final class SimpleMapTest {
                 public void run() {
                     try {
                         while (true) {
-                            int key = (int) (Math.random() * entryCount);
-                            int operation = ((int) (Math.random() * 100));
+                            int key = (int) (random.nextFloat() * entryCount);
+                            int operation = ((int) (random.nextFloat() * 100));
                             if (operation < getPercentage) {
                                 map.get(String.valueOf(key));
                                 stats.gets.incrementAndGet();
