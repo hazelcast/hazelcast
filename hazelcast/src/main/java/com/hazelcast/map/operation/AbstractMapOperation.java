@@ -18,8 +18,6 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 public abstract class AbstractMapOperation extends AbstractNamedOperation {
