@@ -52,7 +52,7 @@ class TypeConverters {
             String enumString = value.toString();
             if (enumString.contains(".")) {
                 // there is a dot  in the value specifier, keep part after last dot
-                enumString = enumString.substring(1 + enumString.lastIndexOf("."));
+                enumString = enumString.substring(1 + enumString.lastIndexOf('.'));
             }
             return enumString;
         }
