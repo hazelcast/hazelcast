@@ -171,8 +171,9 @@ class Parser {
         }
         String sql = in;
         if (indexIn != NO_INDEX) {
-            final int indexOpen = in.indexOf("(", indexIn);
-            final int indexClose = in.indexOf(")", indexOpen);
+
+            final int indexOpen = in.indexOf('(', indexIn);
+            final int indexClose = in.indexOf(')', indexOpen);
             String sub = in.substring(indexOpen, indexClose + 1);
             sub = sub.replaceAll(" ", "");
             sql = in.substring(0, indexOpen) + sub
