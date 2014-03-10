@@ -1,8 +1,8 @@
 package com.hazelcast.client.stress;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.StressTestSupport;
-import com.hazelcast.client.stress.helpers.TestThread;
+import com.hazelcast.client.stress.support.StressTestSupport;
+import com.hazelcast.client.stress.support.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -58,7 +58,7 @@ public class AtomicLongStableReadStressTest extends StressTestSupport<AtomicLong
         }
 
         @Override
-        public void doRun() throws Exception {
+        public void testLoop() throws Exception {
             int key = random.nextInt(REFERENCE_COUNT);
             IAtomicLong reference = instance.getAtomicLong(atomicName+key);
             long value = reference.get();

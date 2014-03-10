@@ -1,14 +1,13 @@
 package com.hazelcast.client.stress;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.StressTestSupport;
-import com.hazelcast.client.stress.helpers.TestThread;
+import com.hazelcast.client.stress.support.StressTestSupport;
+import com.hazelcast.client.stress.support.TestThread;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
@@ -64,11 +63,13 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
     }
 
     public void assertResult() {
-
-        assertTrue("map size is bigger than the configured Max size ", map.size() < maxSize * cluster.getSize() );
-            System.out.println("==>>"+map.size());
-            sleepSeconds(1);
-
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue("map size is bigger than the configured Max size ", map.size() < maxSize * cluster.getSize());
+                System.out.println("==>>"+map.size());
+            }
+        });
     }
 
     public class StressThread extends TestThread {
@@ -82,7 +83,7 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
         }
 
         @Override
-        public void doRun() throws Exception {
+        public void testLoop() throws Exception {
             map.put(key +" "+keySufix, key);
             key++;
         }

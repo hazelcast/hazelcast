@@ -1,14 +1,12 @@
 package com.hazelcast.client.stress;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.stress.helpers.StressTestSupport;
-import com.hazelcast.client.stress.helpers.TestThread;
+import com.hazelcast.client.stress.support.StressTestSupport;
+import com.hazelcast.client.stress.support.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -66,7 +64,7 @@ public class MapStableReadStressTest extends StressTestSupport<MapStableReadStre
         }
 
         @Override
-        public void doRun() throws Exception {
+        public void testLoop() throws Exception {
             int key = random.nextInt(MAP_SIZE);
             int value = map.get(key);
             assertEquals("The value for the key was not consistent", key, value);

@@ -1,12 +1,10 @@
-package com.hazelcast.client.stress.helpers;
+package com.hazelcast.client.stress.support;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertNull;
@@ -33,7 +31,7 @@ public abstract class TestThread extends Thread {
             startLatch.await();
 
             while ( stoped.get() == false ){
-                doRun();
+                testLoop();
             }
         } catch (Throwable t) {
             error = t;
@@ -45,7 +43,7 @@ public abstract class TestThread extends Thread {
         assertNull(getName() + " encountered an error", error);
     }
 
-    public abstract void doRun() throws Exception;
+    public abstract void testLoop() throws Exception;
 
     public void setStartLatch(CountDownLatch startLatch){
         this.startLatch = startLatch;

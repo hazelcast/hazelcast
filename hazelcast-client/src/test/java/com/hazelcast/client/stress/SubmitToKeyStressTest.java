@@ -1,16 +1,13 @@
 package com.hazelcast.client.stress;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.Incrementor;
-import com.hazelcast.client.stress.helpers.StressTestSupport;
-import com.hazelcast.client.stress.helpers.TestThread;
+import com.hazelcast.client.stress.support.StressTestSupport;
+import com.hazelcast.client.stress.support.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -73,7 +70,7 @@ public class SubmitToKeyStressTest extends StressTestSupport<SubmitToKeyStressTe
         }
 
         @Override
-        public void doRun() throws Exception {
+        public void testLoop() throws Exception {
             Future f = map.submitToKey(0, task);
             Object obj = f.get();
             totalOpps++;

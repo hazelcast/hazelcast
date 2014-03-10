@@ -1,4 +1,4 @@
-package com.hazelcast.client.stress.helpers;
+package com.hazelcast.client.stress.support;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;

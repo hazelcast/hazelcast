@@ -1,14 +1,14 @@
 package com.hazelcast.client.stress;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.stress.helpers.*;
+import com.hazelcast.client.stress.support.StressTestSupport;
+import com.hazelcast.client.stress.support.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -26,7 +26,7 @@ import static junit.framework.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class AccountContextTransactionStressTest extends StressTestSupport<AccountContextTransactionStressTest.StressThread>{
+public class AccountContextTransactionStressTest extends StressTestSupport<AccountContextTransactionStressTest.StressThread> {
 
     public static final String ACCOUNTS_MAP = "ACOUNTS";
     public static final String PROCESED_TRANS_MAP ="PROCESSED";
@@ -102,7 +102,7 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
         }
 
         @Override
-        public void doRun() throws Exception {
+        public void testLoop() throws Exception {
 
             long amount = random.nextInt(MAX_TRANSFER_VALUE)+1;
             int from = 0;
