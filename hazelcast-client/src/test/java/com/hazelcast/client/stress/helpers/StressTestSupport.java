@@ -8,19 +8,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.modularhelpers.ClusterSupport;
 import org.junit.After;
-import org.junit.Before;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.core.Hazelcast.newHazelcastInstance;
 import static org.junit.Assert.assertNull;
@@ -34,7 +29,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
     //todo: should be system property
     public static int KILL_DELAY_SECONDS = RUNNING_TIME_SECONDS / 4;
 
-    public int TOTAL_HZ_CLIENT_INSTANCES = 3;
+    public int TOTAL_HZ_INSTANCES = 3;
     public int THREADS_PER_INSTANCE = 5;
 
     protected ClusterSupport cluster = new ClusterSupport(CLUSTER_SIZE);
@@ -66,7 +61,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
 
     private void initStressThreads(StressTestSupport yourThis, boolean clientInstance) {
 
-        for ( int i = 0; i < TOTAL_HZ_CLIENT_INSTANCES; i++ ) {
+        for ( int i = 0; i < TOTAL_HZ_INSTANCES; i++ ) {
 
             HazelcastInstance instance;
             if(clientInstance){

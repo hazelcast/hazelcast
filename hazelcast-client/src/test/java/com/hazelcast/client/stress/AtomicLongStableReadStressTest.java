@@ -1,15 +1,12 @@
 package com.hazelcast.client.stress;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.client.stress.helpers.TestThread;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,7 +30,7 @@ public class AtomicLongStableReadStressTest extends StressTestSupport<AtomicLong
 
         setClientConfig(clientConfig);
 
-        TOTAL_HZ_CLIENT_INSTANCES = 1;
+        TOTAL_HZ_INSTANCES = 1;
         THREADS_PER_INSTANCE = 15;
         initStressThreadsWithClient(this);
 

@@ -17,6 +17,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  *
@@ -28,6 +29,8 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
     private static final String MAP_NAME = "evictMap";
     private IMap map;
 
+    private int maxSize = 1000;
+
     @Before
     public void setUp() {
 
@@ -38,7 +41,7 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
 
         MaxSizeConfig msc = new MaxSizeConfig();
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(1000);
+        msc.setSize(maxSize);
         mc.setMaxSizeConfig(msc);
 
         cluster.setConfig( config );
@@ -62,6 +65,7 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
 
     public void assertResult() {
 
+        assertTrue("map size is bigger than the configured Max size ", map.size() < maxSize * cluster.getSize() );
             System.out.println("==>>"+map.size());
             sleepSeconds(1);
 
