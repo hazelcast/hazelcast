@@ -41,11 +41,8 @@ public class MapUpdateStressTest extends StressTestSupport<MapUpdateStressTest.S
         setClientConfig(clientConfig);
         initStressThreadsWithClient(this);
 
-        //SO THERES IS a problem hear,  cus this map could come from a cluster not that is terminated
-        //and we use it in the assert at the end.
         HazelcastInstance node = cluster.getRandomNode();
         IMap map = node.getMap(mapName);
-
         for (int k = 0; k < MAP_SIZE; k++) {
             map.put(k, 0);
         }

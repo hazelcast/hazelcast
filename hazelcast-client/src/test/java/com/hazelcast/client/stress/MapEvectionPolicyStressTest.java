@@ -46,10 +46,11 @@ public class MapEvectionPolicyStressTest extends StressTestSupport<MapEvectionPo
 
         initStressThreadsWithClient(this);
 
-        map = cluster.getRandomNode().getMap(MAP_NAME);
+        HazelcastInstance hz = stressThreads.get(0).instance;
+        map = hz.getMap(MAP_NAME);
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }

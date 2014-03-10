@@ -39,7 +39,8 @@ public class MapStableReadStressTest extends StressTestSupport<MapStableReadStre
         setClientConfig(clientConfig);
         initStressThreadsWithClient(this);
 
-        IMap map = cluster.getRandomNode().getMap(mapName);
+        HazelcastInstance hz = cluster.getRandomNode();
+        IMap map = hz.getMap(mapName);
         for (int k = 0; k < MAP_SIZE; k++) {
             map.put(k, k);
         }

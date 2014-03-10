@@ -40,7 +40,7 @@ public class PutIfAbsentStressTest extends StressTestSupport<PutIfAbsentStressTe
         initStressThreadsWithClient(this);
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }

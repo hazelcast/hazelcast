@@ -39,7 +39,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
     public final String ACCOUNTS_MAP = "ACCOUNTS";
     private IMap<Integer, Account> accounts;
 
-    protected static final int MAX_ACCOUNTS = 300;
+    protected static final int MAX_ACCOUNTS = 2;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
@@ -49,7 +49,7 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
         cluster.initCluster();
         initStressThreadsWithClient(this);
 
-        HazelcastInstance hz = cluster.getRandomNode();
+        HazelcastInstance hz = stressThreads.get(0).instance;
         accounts = hz.getMap(ACCOUNTS_MAP);
 
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
@@ -71,12 +71,24 @@ public class AccountTransactionGlobalLockStressTest extends StressTestSupport<Ac
      * at the end of the test one of the threads is blocked and could not be joined
      */
     @Test
-    @Category(ProblematicTest.class)
     public void tryLock_testFixedCluster() {
         //CONTROL which test case we are checking
         TEST_CASE = TEST_CASE_TRY_LOCK;
         runTest(false);
     }
+
+    @Test
+    public void lock_testChangingCluster() {
+        TEST_CASE = TEST_CASE_LOCK;
+        runTest(true);
+    }
+
+    @Test
+    public void tryLock_testChangingCluster() {
+        TEST_CASE = TEST_CASE_TRY_LOCK;
+        runTest(true);
+    }
+
 
     public void assertResult() {
 

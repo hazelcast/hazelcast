@@ -184,7 +184,7 @@ public abstract class StressTestSupport<T extends TestThread> extends HazelcastT
 
         if(killThread != null){
             try{
-                killThread.join( (KILL_DELAY_SECONDS + 4) * 1000 );
+                killThread.join( (KILL_DELAY_SECONDS * 2) * 1000 );
             } catch (InterruptedException e) {
                 throw new RuntimeException("Interrupted while joining KillThread:");
             }

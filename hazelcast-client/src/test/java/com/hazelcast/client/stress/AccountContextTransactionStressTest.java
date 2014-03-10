@@ -47,10 +47,7 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
         cluster.initCluster();
         initStressThreadsWithClient(this);
 
-
-        //DANGER I get the maps from a cluster node and in a Changing cluster, that node could be killed
-        //the at the end of the test I use the map again and it breaks,
-        HazelcastInstance hz = cluster.getRandomNode();
+        HazelcastInstance hz = stressThreads.get(0).instance;
         processed = hz.getMap(PROCESED_TRANS_MAP);
         failed = hz.getMap(FAILED_TRANS_MAP);
         accounts = hz.getMap(ACCOUNTS_MAP);
@@ -64,6 +61,11 @@ public class AccountContextTransactionStressTest extends StressTestSupport<Accou
     @Test
     public void testFixedCluster() {
         runTest(false);
+    }
+
+    @Test
+    public void testChangingCluster() {
+        runTest(true);
     }
 
     public void assertResult() {

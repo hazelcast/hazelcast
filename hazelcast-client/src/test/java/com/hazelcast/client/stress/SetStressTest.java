@@ -28,6 +28,8 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class SetStressTest extends StressTestSupport<SetStressTest.StressThread> {
 
+    protected String setName = "setName1";
+
     @Before
     public void setUp() {
         cluster.initCluster();
@@ -47,7 +49,7 @@ public class SetStressTest extends StressTestSupport<SetStressTest.StressThread>
     public void assertResult() {
 
         HazelcastInstance hz = cluster.getRandomNode();
-        ISet<Long> expected = hz.getSet("set");
+        ISet<Long> expected = hz.getSet(setName);
 
         long total=0;
         for ( StressThread s : stressThreads ) {
@@ -69,7 +71,7 @@ public class SetStressTest extends StressTestSupport<SetStressTest.StressThread>
 
         public StressThread(HazelcastInstance node){
             super(node);
-            set = instance.getSet("set");
+            set = instance.getSet(setName);
             set.addItemListener(itemCounter, false);
         }
 

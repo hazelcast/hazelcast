@@ -31,7 +31,7 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
     private  IMap<Integer, Account> accounts;
 
     //low number of accounts for high lock contention
-    protected static final int MAX_ACCOUNTS = 3;
+    protected static final int MAX_ACCOUNTS = 2;
     protected static final long INITIAL_VALUE = 100;
     protected static final long TOTAL_VALUE = INITIAL_VALUE * MAX_ACCOUNTS;
     protected static final int MAX_TRANSFER_VALUE = 100;
@@ -41,7 +41,7 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
         cluster.initCluster();
         initStressThreadsWithClient(this);
 
-        HazelcastInstance hz = cluster.getRandomNode();
+        HazelcastInstance hz = stressThreads.get(0).instance;
         accounts = hz.getMap(ACCOUNTS_MAP);
 
         for ( int i=0; i< MAX_ACCOUNTS; i++ ) {
@@ -50,7 +50,7 @@ public class AccountTransactionStressTest extends StressTestSupport<AccountTrans
         }
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         runTest(true);
     }
