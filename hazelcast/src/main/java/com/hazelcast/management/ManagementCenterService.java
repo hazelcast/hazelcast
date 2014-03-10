@@ -19,14 +19,36 @@ package com.hazelcast.management;
 import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.operation.CollectMemberStateOperation;
 import com.hazelcast.management.operation.UpdateManagementCenterUrlOperation;
-import com.hazelcast.management.request.*;
+import com.hazelcast.management.request.ClusterPropsRequest;
+import com.hazelcast.management.request.ConsoleCommandRequest;
+import com.hazelcast.management.request.ConsoleRequest;
+import com.hazelcast.management.request.EvictLocalMapRequest;
+import com.hazelcast.management.request.ExecuteScriptRequest;
+import com.hazelcast.management.request.GetLogsRequest;
+import com.hazelcast.management.request.GetMapEntryRequest;
+import com.hazelcast.management.request.GetMemberSystemPropertiesRequest;
+import com.hazelcast.management.request.GetSystemWarningsRequest;
+import com.hazelcast.management.request.MapConfigRequest;
+import com.hazelcast.management.request.MemberConfigRequest;
+import com.hazelcast.management.request.RunGcRequest;
+import com.hazelcast.management.request.RuntimeStateRequest;
+import com.hazelcast.management.request.ShutdownMemberRequest;
+import com.hazelcast.management.request.ThreadDumpRequest;
+import com.hazelcast.management.request.VersionMismatchLogRequest;
 import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
@@ -34,13 +56,33 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
@@ -64,6 +106,8 @@ public class ManagementCenterService {
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final String clusterId;
     private final String securityToken;
+    private final TimedMemberStateFactory timedMemberStateFactory;
+
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged = false;
@@ -81,6 +125,7 @@ public class ManagementCenterService {
         stateSendThread = new StateSendThread();
         serializationService = instance.node.getSerializationService();
         identifier = newManagementCenterIdentifier();
+        timedMemberStateFactory = new TimedMemberStateFactory(instance);
         registerListeners();
         logHostedManagementCenterMessages();
     }
@@ -124,7 +169,7 @@ public class ManagementCenterService {
     }
 
     private void registerListeners() {
-        if(!managementCenterConfig.isEnabled()){
+        if (!managementCenterConfig.isEnabled()) {
             return;
         }
 
@@ -163,7 +208,7 @@ public class ManagementCenterService {
     private String getClusterId() {
         String clusterId = managementCenterConfig.getClusterId();
 
-        if(!isNullOrEmpty(clusterId)){
+        if (!isNullOrEmpty(clusterId)) {
             return clusterId;
         }
 
@@ -321,7 +366,7 @@ public class ManagementCenterService {
     }
 
     private boolean isRunning() {
-        return isRunning.get();
+        return isRunning.get() && instance.node.isActive();
     }
 
     private void post(HttpURLConnection connection) throws IOException {
@@ -342,13 +387,15 @@ public class ManagementCenterService {
         }
     }
 
+    public TimedMemberState createMemberState() {
+        return timedMemberStateFactory.createTimedMemberState();
+    }
+
     private class StateSendThread extends Thread {
-        private final TimedMemberStateFactory timedMemberStateFactory;
         private final int updateIntervalMs;
 
         private StateSendThread() {
             super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
-            timedMemberStateFactory = new TimedMemberStateFactory(instance);
             updateIntervalMs = calcUpdateInterval();
         }
 
@@ -361,8 +408,12 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    sleepOnVersionMismatch();
-                    sendState();
+                    if (isMaster()) {
+                        final Set<Member> members = instance.node.getClusterService().getMembers();
+                        final List<TimedMemberState> memberStates = collectStatsFromNodes(members);
+                        sleepOnVersionMismatch();
+                        sendStates(memberStates);
+                    }
                     sleep();
                 }
             } catch (Throwable throwable) {
@@ -372,11 +423,78 @@ public class ManagementCenterService {
             }
         }
 
+        private List<TimedMemberState> collectStatsFromNodes(Set<Member> members) throws ExecutionException {
+            if (members.isEmpty()) {
+                return Collections.EMPTY_LIST;
+            }
+            OperationService operationService = instance.node.nodeEngine.getOperationService();
+            ArrayList<TimedMemberState> results = new ArrayList<TimedMemberState>();
+            HashMap<Address, InternalCompletableFuture> futures = new HashMap<Address, InternalCompletableFuture>();
+            for (Member member : members) {
+                MemberImpl impl = (MemberImpl) member;
+                final Address address = impl.getAddress();
+                if (address.equals(instance.node.getLocalMember().getAddress())) {
+                    continue;
+                }
+                final InternalCompletableFuture future = operationService.createInvocationBuilder(MapService.SERVICE_NAME, new CollectMemberStateOperation(), address).invoke();
+                futures.put(address, future);
+            }
+            ArrayList<Address> missingStats = new ArrayList<Address>();
+            for (Map.Entry<Address, InternalCompletableFuture> entry : futures.entrySet()) {
+                Object o = null;
+                try {
+                    o = entry.getValue().get(2, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    logger.warning("Time out while collecting member state" ,e);
+                } catch (TargetNotMemberException e) {
+                    logger.warning(e.getMessage());
+                } catch (InterruptedException e) {
+                    logger.warning(e.getMessage());
+                }
+                if (o == null) {
+                    missingStats.add(entry.getKey());
+                    continue;
+                }
+                results.add((TimedMemberState) o);
+            }
+            if (!missingStats.isEmpty()) {
+                // wait 2 seconds for retry
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    logger.warning(e.getMessage());
+                }
+            }
+            for (Address address : missingStats) {
+                TimedMemberState retry = null;
+                try {
+                    retry = retry(address);
+                } catch (TimeoutException e) {
+                    logger.warning("Time out while collecting member state" ,e);
+                } catch (TargetNotMemberException e) {
+                    logger.warning(e.getMessage());
+                } catch (InterruptedException e) {
+                    logger.warning(e.getMessage());
+                }
+                if (retry != null) {
+                    results.add(retry);
+                }
+            }
+            results.add(createMemberState());
+            return results;
+        }
+
+        private TimedMemberState retry(Address address) throws ExecutionException, InterruptedException, TimeoutException {
+            OperationService operationService = instance.node.nodeEngine.getOperationService();
+            final InternalCompletableFuture<TimedMemberState> future = operationService.createInvocationBuilder(MapService.SERVICE_NAME, new CollectMemberStateOperation(), address).invoke();
+            return future.get(2, TimeUnit.SECONDS);
+        }
+
         private void sleep() throws InterruptedException {
             Thread.sleep(updateIntervalMs);
         }
 
-        private void sendState() throws InterruptedException, MalformedURLException {
+        private void sendStates(List<TimedMemberState> states) throws InterruptedException, MalformedURLException {
             URL url = newCollectorUrl();
             try {
                 //todo: does the connection not need to be closed?
@@ -385,8 +503,10 @@ public class ManagementCenterService {
                 try {
                     identifier.write(outputStream);
                     ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
-                    TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
-                    timedMemberState.writeData(out);
+                    out.writeInt(states.size());
+                    for (TimedMemberState state : states) {
+                        state.writeData(out);
+                    }
                     outputStream.flush();
                     post(connection);
                 } finally {
@@ -432,6 +552,10 @@ public class ManagementCenterService {
 
             return new URL(url);
         }
+    }
+
+    private boolean isMaster() {
+        return instance.node.isMaster();
     }
 
     private class TaskPollThread extends Thread {
