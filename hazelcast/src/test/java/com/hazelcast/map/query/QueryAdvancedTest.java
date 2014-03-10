@@ -26,6 +26,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -122,17 +123,16 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
+    @Test
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        int size = 50000;
+        int size = 500;
         for (int i = 0; i < size; i++) {
             imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
         }
@@ -140,18 +140,22 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
-        long startNow = Clock.currentTimeMillis();
-        while ((Clock.currentTimeMillis() - startNow) < 10000) {
-            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
-            for (Employee employee : values) {
-                assertTrue(employee.isActive());
+
+        final IMap employees = h1.getMap("employees");
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+                for (Employee employee : values) {
+                    assertTrue(employee.isActive());
+                }
+                assertEquals(6, values.size());
             }
-            assertEquals(556, values.size());
-        }
+        },3);
+
     }
 
-    @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
+    @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
          TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -159,17 +163,17 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        for (int i = 0; i < 500; i++) {
-            Map temp = new HashMap(100);
-            for (int j = 0; j < 100; j++) {
+        for (int i = 0; i < 50; i++) {
+            Map temp = new HashMap(10);
+            for (int j = 0; j < 10; j++) {
                 String key = String.valueOf((i * 100000) + j);
                 temp.put(key, new Employee("name" + key, i % 60, ((i & 1) == 1), (double) i));
             }
             imap.putAll(temp);
         }
-        assertEquals(50000, imap.size());
+        assertEquals(500, imap.size());
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
-        assertEquals(6400, entries.size());
+        assertEquals(30, entries.size());
 
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
@@ -177,12 +181,11 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         long startNow = Clock.currentTimeMillis();
         while ((Clock.currentTimeMillis() - startNow) < 10000) {
             entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
-            assertEquals(6400, entries.size());
+            assertEquals(30, entries.size());
         }
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testTwoNodesWithPartialIndexes() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -191,7 +194,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        for (int i = 0; i < 5000; i++) {
+        for (int i = 0; i < 500; i++) {
             Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
             imap.put(String.valueOf(i), employee);
         }
@@ -202,20 +205,20 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         Collection<Employee> entries = imap.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
-        assertEquals(50, entries.size());
+        assertEquals(5, entries.size());
         for (Employee e : entries) {
             assertEquals("name3", e.getName());
             assertEquals("city3", e.getCity());
         }
         entries = imap.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
-        assertEquals(50, entries.size());
+        assertEquals(5, entries.size());
         for (Employee e : entries) {
             assertEquals("name3", e.getName());
             assertEquals("city3", e.getCity());
             assertTrue(e.getAge() > 2);
         }
         entries = imap.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
-        assertEquals(50, entries.size());
+        assertEquals(5, entries.size());
         for (Employee e : entries) {
             assertTrue(e.getName().startsWith("name3"));
             assertTrue(e.getCity().startsWith("city3"));
@@ -459,33 +462,39 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         doFunctionalQueryTest(imap);
     }
 
-    @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
-    public void testShutDown() {
+    @Test
+    public void testMapWithIndexAfterShutDown() {
         Config cfg = new Config();
-        cfg.getMapConfig("testShutDown").addMapIndexConfig(new MapIndexConfig("typeName", false));
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
-        IMap map = instance.getMap("testShutDown");
-        int allsize = 10000;
-        int targetSize = 3000;
-        for (int i = 0; i < allsize; i++) {
+        cfg.getMapConfig("testMapWithIndexAfterShutDown").addMapIndexConfig(new MapIndexConfig("typeName", false));
+
+        HazelcastInstance[] instances = createHazelcastInstanceFactory(3).newInstances(cfg);
+
+        IMap map = instances[0].getMap("testMapWithIndexAfterShutDown");
+        int SAMPLE_SIZE_1 = 100;
+        int SAMPLE_SIZE_2 = 30;
+        int TOTAL_SIZE = SAMPLE_SIZE_1 + SAMPLE_SIZE_2;
+
+        for (int i = 0; i < SAMPLE_SIZE_1; i++) {
             map.put(i, new ValueType("type"+i));
         }
 
-        for (int i = allsize; i < allsize+targetSize; i++) {
+        for (int i = SAMPLE_SIZE_1; i < TOTAL_SIZE; i++) {
             map.put(i, new ValueType("typex"));
         }
-        assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
-        instance2.shutdown();
-        // todo: this test fails if you first check the query, see issue 1282
-        assertEquals(allsize + targetSize, map.size());
-        assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
-        instance3.shutdown();
-        assertEquals(allsize + targetSize, map.size());
-        assertEquals(targetSize, map.values(new SqlPredicate("typeName = typex")).size());
+
+        Collection typexValues = map.values(new SqlPredicate("typeName = typex"));
+        assertEquals(SAMPLE_SIZE_2, typexValues.size());
+
+        instances[1].shutdown();
+
+        typexValues = map.values(new SqlPredicate("typeName = typex"));
+        assertEquals(TOTAL_SIZE, map.size());
+        assertEquals(SAMPLE_SIZE_2,typexValues.size());
+
+        instances[2].shutdown();
+
+        assertEquals(TOTAL_SIZE, map.size());
+        assertEquals(SAMPLE_SIZE_2, map.values(new SqlPredicate("typeName = typex")).size());
     }
 
 
