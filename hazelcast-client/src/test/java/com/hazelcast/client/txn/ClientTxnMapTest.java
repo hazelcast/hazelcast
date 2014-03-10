@@ -253,7 +253,7 @@ public class ClientTxnMapTest {
 
     @Test
     public void testPutAndRoleBack() throws Exception {
-        final String name = "defMap";
+        final String name = "testPutAndRoleBack";
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();

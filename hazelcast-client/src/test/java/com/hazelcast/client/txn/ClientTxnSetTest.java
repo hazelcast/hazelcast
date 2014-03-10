@@ -24,9 +24,7 @@ import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -44,14 +42,14 @@ public class ClientTxnSetTest {
     static HazelcastInstance server;
     static HazelcastInstance second;
 
-    @BeforeClass
-    public static void init(){
+    @Before
+    public void init(){
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient();
     }
 
-    @AfterClass
-    public static void destroy() {
+    @After
+    public void destroy() {
         hz.shutdown();
         Hazelcast.shutdownAll();
     }

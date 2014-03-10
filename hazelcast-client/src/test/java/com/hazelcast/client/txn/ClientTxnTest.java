@@ -27,9 +27,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -49,8 +47,8 @@ public class ClientTxnTest {
     static HazelcastInstance server;
     static HazelcastInstance second;
 
-    @BeforeClass
-    public static void init(){
+    @Before
+    public void init(){
         server = Hazelcast.newHazelcastInstance();
         final ClientConfig config = new ClientConfig();
         config.getNetworkConfig().setRedoOperation(true);
@@ -58,8 +56,8 @@ public class ClientTxnTest {
         second = Hazelcast.newHazelcastInstance();
     }
 
-    @AfterClass
-    public static void destroy() {
+    @After
+    public void destroy() {
         hz.shutdown();
         Hazelcast.shutdownAll();
     }
