@@ -80,8 +80,6 @@ public class ClientTxnMultiMapTest {
         tx.commitTransaction();
 
         assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(NAME).get(KEY));
-
-
     }
 
     @Test
@@ -142,5 +140,22 @@ public class ClientTxnMultiMapTest {
         } finally {
             ex.shutdownNow();
         }
+    }
+
+    @Test
+    public void testPutAndRoleBack() throws Exception {
+        final String NAME = "test";
+        final String KEY = "key";
+        final String VALUE = "value";
+
+        TransactionContext tx = hz.newTransactionContext();
+
+        tx.beginTransaction();
+        TransactionalMultiMap map = tx.getMultiMap(NAME);
+        map.put(KEY, VALUE);
+        map.put(KEY, VALUE);
+        tx.rollbackTransaction();
+
+        assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(NAME).get(KEY));
     }
 }

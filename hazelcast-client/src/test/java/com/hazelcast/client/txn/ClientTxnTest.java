@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -85,7 +86,36 @@ public class ClientTxnTest {
 
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-//
+
+        final IQueue<Object> q = hz.getQueue("testTxnRollback");
+        assertNull(q.poll());
+        assertEquals(0, q.size());
+    }
+
+    @Test
+    public void testTxnRollbackOnServerCrash() throws Exception {
+
+        final TransactionContext context = hz.newTransactionContext();
+        CountDownLatch latch = new CountDownLatch(1);
+        try {
+            context.beginTransaction();
+
+            final TransactionalQueue queue = context.getQueue("testTxnRollback");
+
+
+            String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+            queue.offer(key);
+            server.getLifecycleService().terminate();
+
+            context.commitTransaction();
+            fail("commit should throw exception!!!");
+        } catch (TransactionException e){
+            context.rollbackTransaction();
+            latch.countDown();
+        }
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+
         final IQueue<Object> q = hz.getQueue("testTxnRollback");
         assertNull(q.poll());
         assertEquals(0, q.size());

@@ -76,4 +76,21 @@ public class ClientTxnListTest {
         assertEquals(1, l.size());
 
     }
+
+    @Test
+    public void testAddAndRoleBack() throws Exception {
+        final IList l = hz.getList(name);
+        l.add("item1");
+
+        final TransactionContext context = hz.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalList<Object> list = context.getList(name);
+
+        assertTrue(list.add("item2"));
+        assertEquals(2, list.size());
+
+        context.rollbackTransaction();
+
+        assertEquals(1, l.size());
+    }
 }

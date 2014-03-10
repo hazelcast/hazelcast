@@ -75,4 +75,18 @@ public class ClientTxnSetTest {
         assertEquals(1, s.size());
 
     }
+
+    @Test
+    public void testAddRollBack() throws Exception {
+        final ISet s = hz.getSet(name);
+        s.add("item1");
+
+        final TransactionContext context = hz.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalSet<Object> set = context.getSet(name);
+        assertTrue(set.add("item2"));
+        context.rollbackTransaction();
+
+        assertEquals(1, s.size());
+    }
 }

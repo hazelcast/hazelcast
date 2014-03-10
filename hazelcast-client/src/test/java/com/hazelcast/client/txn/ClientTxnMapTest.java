@@ -251,4 +251,19 @@ public class ClientTxnMapTest {
 
     }
 
+    @Test
+    public void testPutAndRoleBack() throws Exception {
+        final String name = "defMap";
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> map = context.getMap(name);
+
+        map.put("key1", "value1");
+        assertEquals("value1", map.get("key1"));
+
+        context.rollbackTransaction();
+
+        assertNull(client.getMap(name).get("key1"));
+    }
 }

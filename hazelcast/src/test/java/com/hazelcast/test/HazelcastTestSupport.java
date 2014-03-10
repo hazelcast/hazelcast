@@ -215,7 +215,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected static String generateKeyOwnedBy(HazelcastInstance instance) {
+    public static String generateKeyOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
         for(;;){
@@ -227,7 +227,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected static String generateKeyNotOwnedBy(HazelcastInstance instance)  {
+    public static String generateKeyNotOwnedBy(HazelcastInstance instance)  {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
         for(;;){

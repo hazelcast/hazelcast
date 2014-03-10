@@ -124,4 +124,16 @@ public class ClientTxnQueueTest {
         assertEquals(1, hz.getQueue(name).size());
     }
 
+    @Test
+    public void testTransactionalOfferRoleBack() throws Exception {
+        final String name = "testTransactionalOfferPoll1";
+
+        final TransactionContext context = hz.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> q = context.getQueue(name);
+        assertTrue(q.offer("ali"));
+        context.rollbackTransaction();
+
+        assertEquals(0, hz.getQueue(name).size());
+    }
 }
