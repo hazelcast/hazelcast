@@ -21,8 +21,24 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
@@ -31,6 +47,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
@@ -396,4 +413,51 @@ public class ClientIssueTest {
 
     }
 
+    @Test /*issue #1957 */
+    public void testClientPortableWithoutRegisteringToNode() {
+        Hazelcast.newHazelcastInstance();
+        final SerializationConfig serializationConfig = new SerializationConfig();
+        serializationConfig.addPortableFactory(5, new PortableFactory() {
+            public Portable create(int classId) {
+                return new SamplePortable();
+            }
+        });
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setSerializationConfig(serializationConfig);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Integer, SamplePortable> sampleMap = client.getMap("sampleMap");
+        sampleMap.put(1, new SamplePortable(666));
+        final SamplePortable samplePortable = sampleMap.get(1);
+        assertEquals(666, samplePortable.a);
+    }
+
+    static class SamplePortable implements Portable {
+        public int a;
+
+        public SamplePortable(int a) {
+            this.a = a;
+        }
+
+        public SamplePortable() {
+
+        }
+
+        public int getFactoryId() {
+            return 5;
+        }
+
+        public int getClassId() {
+            return 6;
+        }
+
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeInt("a", a);
+        }
+
+        public void readPortable(PortableReader reader) throws IOException {
+            a = reader.readInt("a");
+        }
+    }
 }
