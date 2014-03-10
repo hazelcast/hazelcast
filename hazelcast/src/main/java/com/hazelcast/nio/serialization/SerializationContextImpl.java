@@ -18,12 +18,12 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.zip.DataFormatException;
@@ -31,22 +31,26 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 /**
-* @author mdogan 7/29/13
-*/
+ * @author mdogan 7/29/13
+ */
 final class SerializationContextImpl implements SerializationContext {
 
     final int version;
-    final Map<Integer, PortableContext> portableContextMap;
+    final ConcurrentHashMap<Integer, PortableContext> portableContextMap = new ConcurrentHashMap<Integer, PortableContext>();
     final SerializationServiceImpl serializationService;
+    final ConstructorFunction<Integer, PortableContext> constructorFunction = new ConstructorFunction<Integer, PortableContext>() {
+        public PortableContext createNew(Integer arg) {
+            return new PortableContext();
+        }
+    };
 
     SerializationContextImpl(SerializationServiceImpl serializationService, Collection<Integer> portableFactories, int version) {
         this.serializationService = serializationService;
         this.version = version;
-        final Map<Integer, PortableContext> portableMap = new HashMap<Integer, PortableContext>();
+
         for (int factoryId : portableFactories) {
-            portableMap.put(factoryId, new PortableContext());
+            portableContextMap.put(factoryId, new PortableContext()) ;
         }
-        portableContextMap = portableMap; // do not modify!
     }
 
     public ClassDefinition lookup(int factoryId, int classId) {
@@ -85,11 +89,7 @@ final class SerializationContextImpl implements SerializationContext {
     }
 
     private PortableContext getPortableContext(int factoryId) {
-        final PortableContext ctx = portableContextMap.get(factoryId);
-        if (ctx == null) {
-            throw new HazelcastSerializationException("Could not find PortableFactory for factoryId: " + factoryId);
-        }
-        return ctx;
+        return ConcurrencyUtil.getOrPutIfAbsent(portableContextMap, factoryId, constructorFunction);
     }
 
     public int getVersion() {
