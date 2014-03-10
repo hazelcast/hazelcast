@@ -1,12 +1,12 @@
 package com.hazelcast.client.stress;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.support.StressTestSupport;
+import com.hazelcast.client.stress.support.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,63 +23,47 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapUpdateStressTest extends StressTestSupport {
+public class MapUpdateStressTest extends StressTestSupport<MapUpdateStressTest.StressThread>{
 
-    public static final int CLIENT_THREAD_COUNT = 5;
     public static final int MAP_SIZE = 100 * 1000;
+    private String mapName = "TestUpdateMap";
 
-    private HazelcastInstance client;
-    private IMap<Integer, Integer> map;
-    private StressThread[] stressThreads;
 
     @Before
     public void setUp() {
-        super.setUp();
+        cluster.initCluster();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
-        client = HazelcastClient.newHazelcastClient(clientConfig);
-        map = client.getMap("map");
+        clientConfig.getNetworkConfig().setRedoOperation(true);
 
-        stressThreads = new StressThread[CLIENT_THREAD_COUNT];
-        for (int k = 0; k < stressThreads.length; k++) {
-            stressThreads[k] = new StressThread();
-            stressThreads[k].start();
+        setClientConfig(clientConfig);
+        initStressThreadsWithClient(this);
+
+        HazelcastInstance node = cluster.getRandomNode();
+        IMap map = node.getMap(mapName);
+        for (int k = 0; k < MAP_SIZE; k++) {
+            map.put(k, 0);
         }
     }
 
-    @After
-    public void tearDown() {
-        super.tearDown();
-
-        if (client != null) {
-            client.shutdown();
-        }
-    }
-
-    //@Test
+    @Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
+        runTest(false);
     }
 
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
-        fillMap();
-        startAndWaitForTestCompletion();
-        joinAll(stressThreads);
-        assertNoUpdateFailures();
-    }
-
-    private void assertNoUpdateFailures() {
+    public void assertResult() {
         int[] increments = new int[MAP_SIZE];
         for (StressThread t : stressThreads) {
             t.addIncrements(increments);
         }
+
+        HazelcastInstance node = cluster.getRandomNode();
+        IMap<Integer, Integer> map = node.getMap(mapName);
 
         Set<Integer> failedKeys = new HashSet<Integer>();
         for (int k = 0; k < MAP_SIZE; k++) {
@@ -103,39 +87,25 @@ public class MapUpdateStressTest extends StressTestSupport {
         fail("There are failed writes, number of failures:" + failedKeys.size());
     }
 
-    private void fillMap() {
-        System.out.println("==================================================================");
-        System.out.println("Inserting data in map");
-        System.out.println("==================================================================");
-
-        for (int k = 0; k < MAP_SIZE; k++) {
-            map.put(k, 0);
-            if (k % 10000 == 0) {
-                System.out.println("Inserted data: " + k);
-            }
-        }
-
-        System.out.println("==================================================================");
-        System.out.println("Completed with inserting data in map");
-        System.out.println("==================================================================");
-    }
 
     public class StressThread extends TestThread {
 
         private final int[] increments = new int[MAP_SIZE];
+        private IMap<Integer, Integer> map;
+
+        public StressThread(HazelcastInstance node){
+            super(node);
+            map = instance.getMap(mapName);
+        }
 
         @Override
-        public void doRun() throws Exception {
-            while (!isStopped()) {
-                int key = random.nextInt(MAP_SIZE);
-                int increment = random.nextInt(10);
+        public void testLoop() throws Exception {
+            int key = random.nextInt(MAP_SIZE);
+            int oldValue = map.get(key);
+            int increment = random.nextInt(10);
+
+            if (map.replace(key, oldValue, oldValue + increment)) {
                 increments[key] += increment;
-                for (; ; ) {
-                    int oldValue = map.get(key);
-                    if (map.replace(key, oldValue, oldValue + increment)) {
-                        break;
-                    }
-                }
             }
         }
 

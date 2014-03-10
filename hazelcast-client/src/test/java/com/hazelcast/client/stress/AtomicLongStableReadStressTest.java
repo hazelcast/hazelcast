@@ -1,12 +1,12 @@
 package com.hazelcast.client.stress;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.support.StressTestSupport;
+import com.hazelcast.client.stress.support.TestThread;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -17,84 +17,52 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class AtomicLongStableReadStressTest extends StressTestSupport {
-
-    public static final int CLIENT_THREAD_COUNT = 5;
+public class AtomicLongStableReadStressTest extends StressTestSupport<AtomicLongStableReadStressTest.StressThread> {
     public static final int REFERENCE_COUNT = 10 * 1000;
-
-    private HazelcastInstance client;
-    private IAtomicLong[] references;
-    private StressThread[] stressThreads;
+    public static final String atomicName = "atomicreference:";
 
     @Before
     public void setUp() {
-        super.setUp();
+        cluster.initCluster();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
-        client = HazelcastClient.newHazelcastClient(clientConfig);
-        references = new IAtomicLong[REFERENCE_COUNT];
-        for (int k = 0; k < references.length; k++) {
-            references[k] = client.getAtomicLong("atomicreference:" + k);
-        }
+        clientConfig.getNetworkConfig().setRedoOperation(true);
 
-        stressThreads = new StressThread[CLIENT_THREAD_COUNT];
-        for (int k = 0; k < stressThreads.length; k++) {
-            stressThreads[k] = new StressThread();
-            stressThreads[k].start();
-        }
-    }
+        setClientConfig(clientConfig);
 
-    @After
-    public void tearDown() {
-        super.tearDown();
+        TOTAL_HZ_INSTANCES = 1;
+        THREADS_PER_INSTANCE = 15;
+        initStressThreadsWithClient(this);
 
-        if (client != null) {
-            client.shutdown();
+        HazelcastInstance node = cluster.getRandomNode();
+        for (int key = 0; key < REFERENCE_COUNT; key++) {
+           IAtomicLong atomic = node.getAtomicLong(atomicName+key);
+           atomic.set(key);
         }
     }
 
     @Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
-    }
-
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
-        initializeReferences();
-        startAndWaitForTestCompletion();
-        joinAll(stressThreads);
-    }
-
-    private void initializeReferences() {
-        System.out.println("==================================================================");
-        System.out.println("Initializing references");
-        System.out.println("==================================================================");
-
-        for (int k = 0; k < references.length; k++) {
-            references[k].set(k);
-        }
-
-        System.out.println("==================================================================");
-        System.out.println("Completed with initializing references");
-        System.out.println("==================================================================");
+        runTest(false);
     }
 
     public class StressThread extends TestThread {
 
+        public StressThread(HazelcastInstance node){
+            super(node);
+        }
+
         @Override
-        public void doRun() throws Exception {
-            while (!isStopped()) {
-                int key = random.nextInt(REFERENCE_COUNT);
-                IAtomicLong reference = references[key];
-                long value = reference.get();
-                assertEquals(format("The value for atomic reference: %s was not consistent", reference), key, value);
-            }
+        public void testLoop() throws Exception {
+            int key = random.nextInt(REFERENCE_COUNT);
+            IAtomicLong reference = instance.getAtomicLong(atomicName+key);
+            long value = reference.get();
+            assertEquals(format("The value for atomic reference: %s was not consistent", reference), key, value);
         }
     }
 }

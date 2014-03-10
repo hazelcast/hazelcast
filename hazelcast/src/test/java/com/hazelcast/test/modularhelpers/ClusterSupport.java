@@ -1,16 +1,19 @@
 package com.hazelcast.test.modularhelpers;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 
-public class SimpleClusterUtil {
+public class ClusterSupport {
 
     private Random random = new Random();
 
@@ -22,14 +25,9 @@ public class SimpleClusterUtil {
     private List<HazelcastInstance> cluster;
     private Config config = new Config();
 
-    public SimpleClusterUtil(String groupName, int clusterSZ){
+    public ClusterSupport(int clusterSZ){
         initialClusterSize = clusterSZ;
-        setupMultiCast(groupName, clusterSZ);
-    }
-
-    public void setupMultiCast(String groupName, int clusterSZ){
-        cluster = new ArrayList<HazelcastInstance>(clusterSZ);
-        config.getGroupConfig().setName(groupName);
+        cluster = new CopyOnWriteArrayList<HazelcastInstance>();
     }
 
     public void initCluster(){
@@ -66,25 +64,51 @@ public class SimpleClusterUtil {
 
     public void terminateRandomNode(){
         HazelcastInstance node = getRandomNode();
-        node.getLifecycleService().terminate();
         cluster.remove(node);
+
+        node.getLifecycleService().terminate();
     }
 
-    public void terminateAllNodes(){
-        for(HazelcastInstance node : cluster){
-            node.getLifecycleService().terminate();
-            cluster.remove(node);
+    public void shutDownRandomNode(){
+        HazelcastInstance node = getRandomNode();
+        cluster.remove(node);
+        node.shutdown();
+    }
+
+
+    public void shutDownNodeOwning(Object key){
+
+        HazelcastInstance node = getRandomNode();
+        Member owner = node.getPartitionService().getPartition(key).getOwner();
+
+        for (HazelcastInstance hz : cluster) {
+
+            Member local = hz.getCluster().getLocalMember();
+
+            if ( owner.getUuid().equals(local.getUuid()) ){
+
+                cluster.remove(hz);
+                hz.shutdown();
+
+            }
         }
+    }
+
+    public void shutDown() {
+        Hazelcast.shutdownAll();
+        cluster=null;
     }
 
     public void addNode(){
-        if(cluster.size() < maxClusterSize){
-            cluster.add( factory.newHazelcastInstance( config ) );
-        }
+        cluster.add( factory.newHazelcastInstance(config) );
     }
 
     public Config getConfig(){
         return config;
+    }
+
+    public void setConfig(Config config){
+        this.config = config;
     }
 
     public void assertClusterSizeEventually(final int sz){
