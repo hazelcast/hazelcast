@@ -43,7 +43,9 @@ public interface RecordStore {
 
     void put(Map.Entry<Data, Object> entry);
 
-    void putBackup(Map.Entry<Data, Object> entry);
+    Record putBackup(Data key, Object value);
+
+    Record putBackup(Data key, Object value, long ttl, boolean shouldSchedule);
 
     Object replace(Data dataKey, Object value);
 

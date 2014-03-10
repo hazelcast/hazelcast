@@ -47,26 +47,15 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
         recordStore = mapService.getRecordStore(partitionId, name);
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
         for (Map.Entry<Data, Data> entry : entries) {
-            Data dataKey = entry.getKey();
-            Data dataValue = entry.getValue();
-            Record record = recordStore.getRecord(dataKey);
-            if (record == null) {
-                record = mapService.createRecord(name, dataKey, dataValue, -1, false);
-                updateSizeEstimator(calculateRecordSize(record));
-                recordStore.putRecord(dataKey, record);
-            } else {
-                updateSizeEstimator(-calculateRecordSize(record));
-                mapContainer.getRecordFactory().setValue(record, dataValue);
-                updateSizeEstimator(calculateRecordSize(record));
-            }
+            recordStore.putBackup(entry.getKey(), entry.getValue());
         }
     }
 
-    private void updateSizeEstimator( long recordSize ) {
-        recordStore.getSizeEstimator().add( recordSize );
+    private void updateSizeEstimator(long recordSize) {
+        recordStore.getSizeEstimator().add(recordSize);
     }
 
-    private long calculateRecordSize( Record record ) {
+    private long calculateRecordSize(Record record) {
         return recordStore.getSizeEstimator().getCost(record);
     }
 
