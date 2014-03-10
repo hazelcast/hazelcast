@@ -43,13 +43,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
+
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.HashMap;
@@ -82,7 +84,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     private static final int ONE_KB = 1024;
     private static final int ONE_THOUSAND = 1000;
     private static final int ONE_HUNDRED = 100;
-    private static final int ONE_MINUTE = 60;
     private static final int ONE_HOUR = 3600;
 
     private IQueue<Object> queue;
@@ -196,7 +197,13 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
      */
     static class DefaultLineReader implements LineReader {
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+
+        private BufferedReader in;
+
+        public DefaultLineReader() throws UnsupportedEncodingException {
+            in = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
+        }
+
 
         public String readLine() throws Exception {
             return in.readLine();
@@ -204,7 +211,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
 
-    //CECKSTYLE:OFF
+    //CHECKSTYLE:OFF
 
     /**
      * Handle a command
@@ -545,7 +552,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("Executing script file " + f.getAbsolutePath());
         if (f.exists()) {
             try {
-                BufferedReader br = new BufferedReader(new FileReader(f));
+                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
                 String l = br.readLine();
                 while (l != null) {
                     handleCommand(l);
@@ -723,7 +730,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     // ==================== map ===================================
 
     protected void handleMapPut(String[] args) {
-        println(getMap().put(args[1], args[2]));
+        if (args.length == 1) {
+            println("m.put requires a key and a value. You have not specified either.");
+        } else if (args.length == 2) {
+            println("m.put requires a key and a value. You have only specified the key " + args[1]);
+        } else if (args.length > 3) {
+            println("m.put takes two arguments, a key and a value. You have specified more than two arguments.");
+        } else {
+            println(getMap().put(args[1], args[2]));
+        }
     }
 
     protected void handleMapPutAsync(String[] args) {

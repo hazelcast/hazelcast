@@ -5,7 +5,7 @@
 
 In this short tutorial, we will create simple Java application using Hazelcast distributed map and queue. Then we will run our application twice to have two nodes (JVMs) clustered and finalize this tutorial with connecting to our cluster from another Java application by using Hazelcast Native Java Client API.
 
--   Download the latest [Hazelcast zip](http://www.hazelcast.org/download/).
+-   Download the latest [Hazelcast ZIP](http://www.hazelcast.org/download/).
 
 -   Unzip it and add the `lib/hazelcast.jar` to your class path.
 
@@ -55,7 +55,7 @@ Members [2] {
 }                              
 ```
 
--	Now, you can use the **Management Center** to monitor and configure your maps, topics, queues and members, and also the see the logs. Please see [Management Center](#management-center) for usage explanations. 
+-	Now, you can use the **Management Center** to monitor your maps, queues, other distributed data structures and nodes. Please see [Management Center](#management-center) for usage explanations. 
 
 **Connecting Hazelcast Cluster with Java Client API**
 
@@ -83,7 +83,7 @@ public class GettingStartedClient {
     }
 }
 ```
--   When you run it, you will see the client properly connects to the cluster and print the map size as 3.
+-   When you run it, you will see the client properly connecting to the cluster and printing the map size as **3**.
 
 **What is Next?**
 

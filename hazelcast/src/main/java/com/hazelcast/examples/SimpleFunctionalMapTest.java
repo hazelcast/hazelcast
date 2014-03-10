@@ -22,6 +22,7 @@ import com.hazelcast.core.IMap;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -29,13 +30,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A simple functinoal Map test
+ * A simple functional Map test
  */
 public final class SimpleFunctionalMapTest {
 
     private static final int ENTRY_COUNT = 1000;
     private static final int KB = 10240;
     private static final int STATS_SECONDS = 10;
+    private static final Random RANDOM = new Random();
 
     private SimpleFunctionalMapTest() {
     }
@@ -45,6 +47,7 @@ public final class SimpleFunctionalMapTest {
      * No args
      */
     public static void main(String[] args) {
+
         int threadCount = 40;
         final Stats stats = new Stats();
         final HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(null);
@@ -54,8 +57,8 @@ public final class SimpleFunctionalMapTest {
                 public void run() {
                     IMap map = hazelcast.getMap("default");
                     while (true) {
-                        int keyInt = (int) (Math.random() * ENTRY_COUNT);
-                        int operation = ((int) (Math.random() * 1000)) % 20;
+                        int keyInt = (int) (RANDOM.nextFloat() * ENTRY_COUNT);
+                        int operation = ((int) (RANDOM.nextFloat() * 1000)) % 20;
                         Object key = String.valueOf(keyInt);
                         if (operation < 1) {
                             map.size();
@@ -121,7 +124,7 @@ public final class SimpleFunctionalMapTest {
     }
 
     public static Object createValue() {
-        int numberOfK = (((int) (Math.random() * 1000)) % 40) + 1;
+        int numberOfK = (((int) (RANDOM.nextFloat() * 1000)) % 40) + 1;
         return new byte[numberOfK * KB];
     }
 

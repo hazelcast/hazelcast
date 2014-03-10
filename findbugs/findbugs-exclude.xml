@@ -3,9 +3,16 @@
 
     <!--comment out packages as they pass findbugs. e.g. examples now passes-->
 
+    <!--Examples Package is now turned on.-->
+    <!--<Match>-->
+    <!--<Package name="com.hazelcast.examples" />-->
+    <!--</Match>-->
     <Match>
-        <Package name="com.hazelcast.examples" />
+        <Class name="com.hazelcast.examples.TestApp"/>
+        <!--System.exit()-->
+        <Bug code="Dm" />
     </Match>
+
 
     <Match>
         <Package name="com.hazelcast.ascii.rest" />
@@ -81,11 +88,17 @@
         <Package name="com.hazelcast.partition.impl" />
     </Match>
 
+    <Match>
+        <Package name="com.hazelcast.client.examples" />
+    </Match>
 
     <!-- todo: these findbugs warnings needs to be fixed -->
     <Match>
         <Package name="com.hazelcast.jca" />
     </Match>
+
+
+
 
 
 </FindBugsFilter>
