@@ -27,6 +27,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +44,9 @@ public class ClientLockTest {
     static final String name = "test";
     static HazelcastInstance hz;
     static ILock l;
+
+    static Integer upTotal =0;
+    static Integer downTotal =0;
 
     @BeforeClass
     public static void init() {
@@ -181,5 +186,45 @@ public class ClientLockTest {
             }
         }.start();
         assertTrue(latch.await(1, TimeUnit.MINUTES));
+    }
+
+    @Test
+    public void concurrent_TryLockTest() throws InterruptedException {
+
+        upTotal =0;
+        downTotal =0;
+
+        final Random random = new Random();
+        ArrayList<CountDownLatch> latches = new ArrayList<CountDownLatch>();
+        final ILock lock = hz.getLock("concurrent_TryLockTest");
+
+        for ( int threads=0; threads<8; threads++ ) {
+
+            final CountDownLatch latch = new CountDownLatch(1);
+            latches.add(latch);
+            new Thread() {
+                public void run()  {
+
+                    for ( int i=0; i<1000 * 10; i++ ) {
+                        try {
+                            if(lock.tryLock(10, TimeUnit.MILLISECONDS)){
+                                int dif = random.nextInt(1000);
+                                upTotal += dif;
+                                downTotal -= dif;
+                                lock.unlock();
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    latch.countDown();
+                }
+            }.start();
+        }
+
+        for(CountDownLatch latch : latches){
+            assertTrue("a thread failed to complete in as least 1 minutes", latch.await(1, TimeUnit.MINUTES));
+        }
+        assertTrue("concurrent access to locked code caused wrong total", upTotal + downTotal == 0);
     }
 }
