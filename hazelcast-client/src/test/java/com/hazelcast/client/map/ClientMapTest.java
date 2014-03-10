@@ -18,15 +18,9 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.stress.AtomicLongUpdateStressTest;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.core.*;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
@@ -45,12 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -806,4 +795,66 @@ public class ClientMapTest {
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
         assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());
     }
+
+
+    @Test
+    public void concurrent_MapTryLockTest() throws InterruptedException {
+        final String upKey = "upKey";
+        final String downKey = "upKey";
+        final IMap<String, Integer> map = client.getMap("concurrent_MapTryLockTest");
+
+        map.put(upKey, 0);
+        map.put(downKey, 0);
+
+        final Random random = new Random();
+        ArrayList<CountDownLatch> latches = new ArrayList<CountDownLatch>();
+
+        for ( int threads=0; threads<8; threads++ ) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            latches.add(latch);
+            new Thread() {
+                public void run()  {
+                    for ( int i=0; i<1000 * 10; i++ ) {
+                        try {
+                            if(map.tryLock(upKey ,1, TimeUnit.MILLISECONDS)){
+                                try{
+                                    if(map.tryLock(downKey, 1, TimeUnit.MILLISECONDS)){
+                                        try {
+                                            int upTotal = map.get(upKey);
+                                            int downTotal = map.get(downKey);
+
+                                            int dif = random.nextInt(1000);
+                                            upTotal += dif;
+                                            downTotal -= dif;
+
+                                            map.put(upKey, upTotal);
+                                            map.put(downKey, downTotal);
+                                        }finally {
+                                            map.unlock(downKey);
+                                        }
+                                    }
+                                }finally {
+                                    map.unlock(upKey);
+                                }
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    latch.countDown();
+
+                    System.out.println("==>> END");
+                }
+            }.start();
+        }
+
+        int upTotal = map.get(upKey);
+        int downTotal = map.get(downKey);
+
+        for(CountDownLatch latch : latches){
+            assertTrue("a thread failed to complete in as least 2 minutes", latch.await(2, TimeUnit.MINUTES));
+        }
+        assertTrue("concurrent access to locked code caused wrong total", upTotal + downTotal == 0);
+    }
+
 }
