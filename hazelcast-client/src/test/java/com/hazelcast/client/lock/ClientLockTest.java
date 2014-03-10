@@ -27,8 +27,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -44,9 +42,6 @@ public class ClientLockTest {
     static final String name = "test";
     static HazelcastInstance hz;
     static ILock l;
-
-    static Integer upTotal =0;
-    static Integer downTotal =0;
 
     @BeforeClass
     public static void init() {
@@ -187,5 +182,4 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
-
 }
