@@ -82,7 +82,6 @@ public class ClientTxnTest {
             latch.countDown();
         }
 
-
         assertTrue(latch.await(10, TimeUnit.SECONDS));
 
         final IQueue<Object> q = hz.getQueue("testTxnRollback");
@@ -99,7 +98,6 @@ public class ClientTxnTest {
             context.beginTransaction();
 
             final TransactionalQueue queue = context.getQueue("testTxnRollback");
-
 
             String key = HazelcastTestSupport.generateKeyOwnedBy(server);
             queue.offer(key);
