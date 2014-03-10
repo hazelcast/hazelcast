@@ -53,7 +53,7 @@ public class ClientTxnTest {
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
         final ClientConfig config = new ClientConfig();
-        config.setRedoOperation(true);
+        config.getNetworkConfig().setRedoOperation(true);
         hz = HazelcastClient.newHazelcastClient(config);
         second = Hazelcast.newHazelcastInstance();
     }
