@@ -18,7 +18,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
     public final static AtomicLong ID_GENERATOR = new AtomicLong(1);
     //todo: should be system property
-    public static int RUNNING_TIME_SECONDS = 180;
+    public static int RUNNING_TIME_SECONDS = 10;
     //todo: should be system property
     public static int CLUSTER_SIZE = 3;
     //todo: should be system property
@@ -132,6 +132,23 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
     }
 
     public final void joinAll(TestThread... threads) {
+
+        if(killThread!=null){
+            try {
+                killThread.join((KILL_DELAY_SECONDS * 2) * 1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Interrupted while joining thread:" + killThread);
+            }
+
+            if (killThread.isAlive()) {
+                System.err.println("Could not join killThread :" + killThread.getName() + ", it is still alive");
+                for (StackTraceElement e : killThread.getStackTrace()) {
+                    System.err.println("\tat " + e);
+                }
+                throw new RuntimeException("Could not join killThread:" + killThread + ", thread is still alive");
+            }
+        }
+
         for (TestThread t : threads) {
             try {
                 t.join(60000);
@@ -190,6 +207,10 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                 }
 
+                if(stopTest){
+                    return;
+                }
+
                 cluster.shutDownRandomNode();
                 cluster.addNode();
             }
@@ -210,6 +231,10 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS));
                 } catch (InterruptedException e) {
+                }
+
+                if(stopTest){
+                    return;
                 }
 
                 cluster.shutDownNodeOwning(key);

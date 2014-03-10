@@ -9,6 +9,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  *
@@ -37,10 +39,9 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
     private static final String MAP_NAME = "evictMap";
     private IMap map;
 
+    private int MAX_SIZE_PER_NODE = 1000;
     @Before
     public void setUp() {
-
-        super.RUNNING_TIME_SECONDS=10;
 
         Config config = new Config();
 
@@ -50,10 +51,10 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
 
         MaxSizeConfig msc = new MaxSizeConfig();
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(1000);
+        msc.setSize(MAX_SIZE_PER_NODE);
         mc.setMaxSizeConfig(msc);
 
-        cluster.setConfig( config );
+        cluster.setConfig(config);
         super.setUp();
 
         map = cluster.getRandomNode().getMap(MAP_NAME);
@@ -84,10 +85,12 @@ public class MapEvectionPolicyStressTest extends StressTestSupport {
 
     public void assertResult() {
 
-        while(true){
-            System.out.println("==>>"+map.size());
-            sleepSeconds(1);
-        }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue("map siz is great than configured max size per node ", map.size() < MAX_SIZE_PER_NODE * cluster.getSize()  );
+            }
+        });
     }
 
     public class StressThread extends TestThread {
