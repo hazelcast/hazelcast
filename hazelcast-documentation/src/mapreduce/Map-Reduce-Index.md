@@ -29,4 +29,3 @@ texts or websites but there are more interesting example use cases out there lik
  - Credit and Risk management
  - Fraud detection
  - and more...
-

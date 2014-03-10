@@ -8,8 +8,8 @@ of an example workflow.
 
 To make the understanding simple we think of an IMap<String, Integer> and emitted keys to have the same types.
 Imagine you have a three node cluster and initiate the map reduce job on the first node. After
-you requested the JobTracker from your running / connected Hazelcast we submit the task and retrieve the 
-ICompletableFuture which gives us a chance of waiting for the result to be calculated or adding a callback 
+you requested the JobTracker from your running / connected Hazelcast we submit the task and retrieve the
+ICompletableFuture which gives us a chance of waiting for the result to be calculated or adding a callback
 to go a more reactive way.
 
 The example expects that the chunk size is 0 or 1 so an emitted value is directly send to the reducers.
@@ -20,41 +20,41 @@ acts as the job owner (job emitter):
 Node1 starts map reduce job
 Node1 emits key=Foo, value=1
 Node1 does PartitionService::getKeyOwner(Foo) => results in Node3
- 
+
 Node2 emits key=Foo, value=14
 Node2 asks jobOwner (Node1) for keyOwner of Foo => results in Node3
- 
+
 Node1 sends chunk for key=Foo to Node3
- 
+
 Node3 receives chunk for key=Foo and looks if there is already a Reducer,
       if not creates one for key=Foo
 Node3 processes chunk for key=Foo
- 
+
 Node2 sends chunk for key=Foo to Node3
- 
+
 Node3 receives chunk for key=Foo and looks if there is already a Reducer and uses
       the previous one
 Node3 processes chunk for key=Foo
- 
+
 Node1 send LastChunk information to Node3 because processing local values finished
- 
+
 Node2 emits key=Foo, value=27
 Node2 has cached keyOwner of Foo => results in Node3
 Node2 sends chunk for key=Foo to Node3
- 
+
 Node3 receives chunk for key=Foo and looks if there is already a Reducer and uses
       the previous one
 Node3 processes chunk for key=Foo
- 
+
 Node2 send LastChunk information to Node3 because processing local values finished
- 
-Node3 finishes reducing for key=Foo 
- 
+
+Node3 finishes reducing for key=Foo
+
 Node1 registers its local partitions are processed
 Node2 registers its local partitions are processed
- 
+
 Node1 sees all partitions processed and requests reducing from all nodes
- 
+
 Node1 merges all reduced results together in a final structure and returns it
 ```
 

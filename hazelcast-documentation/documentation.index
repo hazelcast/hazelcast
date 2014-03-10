@@ -1,3 +1,4 @@
+# You can now add comments using a hash-sign upfront the line :)
 src/Introduction.md
 	src/GettingStarted.md
 	src/MigrationTo3.md
@@ -46,7 +47,6 @@ src/ExecutorService.md
 	src/ExecutionCallback.md
 src/mapreduce/Map-Reduce-Index.md
     src/mapreduce/MapReduce-Essentials.md
-    #src/mapreduce/Design-Patterns.md
     src/mapreduce/MR-API-Introduction.md
     src/mapreduce/MR-Architecture.md
 src/HttpSessionClustering.md

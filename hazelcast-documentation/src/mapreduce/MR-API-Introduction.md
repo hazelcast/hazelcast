@@ -8,12 +8,12 @@ The Hazelcast API for map reduce operations consists of a fluent DSL like config
 jobs. JobTracker is the basic entry point to all map reduce operations and is retrieved from
 `com.hazelcast.core.HazelcastInstance` by calling `getJobTracker` and supplying the name of the required JobTracker
 configuration. The configuration for JobTrackers will be discussed later, for now we focus on the API itself.
-In addition the complete submission part of the API is build to support a fully reactive way of programming. 
+In addition the complete submission part of the API is build to support a fully reactive way of programming.
 
 To make introduction, to people that are already used to hadoop, as easy as possible we decided to create the
 class names as familiar as possible to their counterparts on hadoop. That means while most users will recognize
 a lot of similar sounding classes the way to configure the jobs is more fluent due to the already mentioned
-DSL like styled API. 
+DSL like styled API.
 
 While building the example we will go through as much options as possible, e.g. we create a specialized JobTracker
 configuration (at the end). Special JobTracker configuration aren't required, as for all other Hazelcast
@@ -44,7 +44,7 @@ JobTracker jobTracker = hazelcastInstance.getJobTracker( "default" );
 ```
 
 JobTracker is retrieved using the same kind of entry point as most other Hazelcast features. After building
-the cluster connection you use the created HazelcastInstance to request the configured (or default) 
+the cluster connection you use the created HazelcastInstance to request the configured (or default)
 JobTracker from Hazelcast.
 
 Next step will be to create a new Job and configure it to execute our first map reduce request against
@@ -74,7 +74,7 @@ not yet discussed.
 **Since the Job class is highly depending on generics to support type safety the generics change over
 time and may not be assignment compatible to old variable types. To create full potential of the fluent
 API we recommend to use fluent method chaining as shown in this example to prevent of to much variables
-to be needed.** 
+to be needed.**
 
 ```java
 IMap<String, String> map = hazelcastInstance.getMap( "articles" );
@@ -90,13 +90,13 @@ ICompletableFuture<Map<String, Long>> future = job
 // Attach a callback listener
 future.andThen( buildCallback() );
 
-// Wait and retrieve the result 
+// Wait and retrieve the result
 Map<String, Long> result = future.get();
 ```
 
 As seen above we create the Job instance and define a mapper, a combiner, a reducer and eventually submit
 the request to the cluster. The `submit` method returns an ICompletableFuture what we can use to attach
-our callbacks or just wait for the result to be processed in a blocking fashion. 
+our callbacks or just wait for the result to be processed in a blocking fashion.
 
 There are more options available for job configuration like define a general chunk size or on what keys
 the operation will be operate. For more information please consolidate the Javadoc matching your used Hazelcast
@@ -151,7 +151,7 @@ The `com.hazelcast.mapreduce.PartitionIdAware` interface can be implemented by t
 if the underlying data set is aware of the Hazelcast partitioning schema (as it is for all internal data
 structures). If this interface is implemented the same KeyValueSource instance is reused multiple times
 for all partitions on the cluster node. As a consequence the `close` and `open` methods are also executed
-multiple times but once per partitionId. 
+multiple times but once per partitionId.
 
 ### Mapper
 
@@ -186,7 +186,7 @@ public class TokenizerMapper implements Mapper<String, String, String, Long> {
 ```
 
 The code is pretty basic and just splits the mapped texts into their tokens and iterate over the tokenizer
-as long as there are more tokens and emits a pair per word. What is to note, we're not yet collecting 
+as long as there are more tokens and emits a pair per word. What is to note, we're not yet collecting
 multiple occurrences of the same word but just fire every word on its own.
 
 **LifecycleMapper / LifecycleMapperAdapter**
@@ -196,7 +196,7 @@ implementation lifecycle aware. That means it will be notified when mapping of a
 begins and when the last entry was mapped.
 
 Only special algorithms might have a need for those additional lifecycle events to do preparation, cleanup
-or emit additional values. 
+or emit additional values.
 
 ### Combiner / CombinerFactory
 
@@ -376,13 +376,13 @@ TrackableJob trackableJob = jobTracker.getTrackableJob(jobId);
 
 JobProcessInformation stats = trackableJob.getJobProcessInformation();
 int processedRecords = stats.getProcessedRecords();
-log( "ProcessedRecords: " + processedRecords ); 
+log( "ProcessedRecords: " + processedRecords );
 
 JobPartitionState[] partitionStates = stats.getPartitionStates();
 for ( JobPartitionState partitionState : partitionStates ) {
   log( "PartitionOwner: " + partitionState.getOwner()
-          + ", Processing state: " + partitionState.getState().name() ); 
-} 
+          + ", Processing state: " + partitionState.getState().name() );
+}
 
 ```
 

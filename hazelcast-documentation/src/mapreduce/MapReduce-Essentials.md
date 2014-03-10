@@ -11,15 +11,15 @@ implementation to help adopters with hadoop background to quickly get familiar w
 
 The following flowchart demonstrates a basic workflow of the already mentioned word-count example (distributed
 occurrences analysis). From left to right it iterates over all entries of a data structure (in this case an
-IMap). In the mapping phase it splits the sentence in single words and emits a key-value pair per word with 
+IMap). In the mapping phase it splits the sentence in single words and emits a key-value pair per word with
 the word as a key and 1 as the value. In the next phase values are collected (grouped) and transported to their
-corresponding reducers where they are eventually reduced to a single key-value pair with the value as the 
+corresponding reducers where they are eventually reduced to a single key-value pair with the value as the
 number of occurrences of the word. As the last step the different reducer results are grouped up to the
 final result and returned to the requester.
 
 ![](images/mapreduce_workflow_small.png)
 
-In pseudo code the corresponding map and reduce function would look like the following. We will show the 
+In pseudo code the corresponding map and reduce function would look like the following. We will show the
 Hazelcast code example will be shown in the next sub-chapter.
 
 ```plain
@@ -36,7 +36,7 @@ reduce( word:String, counts:List[Int] ):Int ->
 As seen in the workflow example a map-reduce process consists of multiple phases. The original map-reduce
 pattern describes two phases (map, reduce) and one optional phase (combine). In Hazelcast these phases are
 either only existing virtually to explain the data flow or are executed in parallel during the real operation
-while the general idea is still persists.  
+while the general idea is still persists.
 
 (K x V)\* -> (L x W)*
 
@@ -85,12 +85,12 @@ A reduced representation of the reduce phase:
 
 L x W\* -> X*
 
-(l, [w*1*, ..., w*n*]) -> [x*1*, ..., x*n*] 
+(l, [w*1*, ..., w*n*]) -> [x*1*, ..., x*n*]
 
 #### Producing the final result
 
 This also is not a real map-reduce phase but the final step in Hazelcast after all reducers notified that
-reducing has finished. The original job initiator then requests all reduced results and builds the final result. 
+reducing has finished. The original job initiator then requests all reduced results and builds the final result.
 
 
 ### Additional Map Reduce material
