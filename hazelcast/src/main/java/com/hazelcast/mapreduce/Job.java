@@ -29,7 +29,7 @@ import com.hazelcast.spi.annotation.Beta;
  * times <b>once the configuration is finished</b>.
  * </p>
  * <p>
- * <b>Caution: The generic types of Jobs change depending on the used methods which can make it needed to use
+ * <b>Caution: The generic types of Jobs change depending on the used methods which can make it necessary to use
  * different assignment variables when used over multiple source lines.</b>
  * </p>
  * <p>
@@ -39,7 +39,7 @@ import com.hazelcast.spi.annotation.Beta;
  * IMap&lt;Integer, Integer> map = (...) hz.getMap( "default" );
  * JobTracker tracker = hz.getJobTracker( "default" );
  * Job&lt;Integer, Integer> job = tracker.newJob( KeyValueSource.fromMap( map ) );
- * CompletableFuture&lt;Map&lt;String, Integer>> future = job
+ * ICompletableFuture&lt;Map&lt;String, Integer>> future = job
  *      .mapper( buildMapper() ).reducer( buildReducer() ).submit();
  * Map&lt;String, Integer> results = future.get();
  * </pre>
