@@ -28,6 +28,7 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.*;
 
 /**
@@ -36,11 +37,8 @@ import static org.junit.Assert.*;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnSetTest {
-
-    static final String name = "test";
     static HazelcastInstance hz;
     static HazelcastInstance server;
-    static HazelcastInstance second;
 
     @Before
     public void init(){
@@ -56,12 +54,13 @@ public class ClientTxnSetTest {
 
     @Test
     public void testAddRemove() throws Exception {
-        final ISet s = hz.getSet(name);
+        String setName = randomString();
+        final ISet s = hz.getSet(setName);
         s.add("item1");
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalSet<Object> set = context.getSet(name);
+        final TransactionalSet<Object> set = context.getSet(setName);
         assertTrue(set.add("item2"));
         assertEquals(2, set.size());
         assertEquals(1, s.size());
@@ -71,18 +70,18 @@ public class ClientTxnSetTest {
         context.commitTransaction();
 
         assertEquals(1, s.size());
-
     }
 
     @Test
     public void testAddRollBack() throws Exception {
-        final ISet s = hz.getSet(name);
+        String setName = randomString();
+        final ISet s = hz.getSet(setName);
         s.add("item1");
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalSet<Object> set = context.getSet(name);
-        assertTrue(set.add("item2"));
+        final TransactionalSet<Object> set = context.getSet(setName);
+        set.add("item2");
         context.rollbackTransaction();
 
         assertEquals(1, s.size());

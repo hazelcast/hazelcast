@@ -28,6 +28,7 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.*;
 
 /**
@@ -36,16 +37,12 @@ import static org.junit.Assert.*;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnListTest {
-
-    static final String name = "test";
     static HazelcastInstance hz;
     static HazelcastInstance server;
-    static HazelcastInstance second;
 
     @Before
     public void init(){
         server = Hazelcast.newHazelcastInstance();
-//        second = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
     }
 
@@ -57,12 +54,13 @@ public class ClientTxnListTest {
 
     @Test
     public void testAddRemove() throws Exception {
-        final IList l = hz.getList(name);
+        String listName = randomString();
+        final IList l = hz.getList(listName);
         l.add("item1");
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalList<Object> list = context.getList(name);
+        final TransactionalList<Object> list = context.getList(listName);
         assertTrue(list.add("item2"));
         assertEquals(2, list.size());
         assertEquals(1, l.size());
@@ -72,20 +70,19 @@ public class ClientTxnListTest {
         context.commitTransaction();
 
         assertEquals(1, l.size());
-
     }
 
     @Test
     public void testAddAndRoleBack() throws Exception {
-        final IList l = hz.getList(name);
+        String listName = randomString();
+        final IList l = hz.getList(listName);
         l.add("item1");
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalList<Object> list = context.getList(name);
+        final TransactionalList<Object> list = context.getList(listName);
 
         assertTrue(list.add("item2"));
-        assertEquals(2, list.size());
 
         context.rollbackTransaction();
 

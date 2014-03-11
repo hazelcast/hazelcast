@@ -94,15 +94,16 @@ public class ClientTxnTest {
 
         final TransactionContext context = hz.newTransactionContext();
         CountDownLatch latch = new CountDownLatch(1);
-        try {
-            context.beginTransaction();
 
-            final TransactionalQueue queue = context.getQueue("testTxnRollback");
+        context.beginTransaction();
 
-            String key = HazelcastTestSupport.generateKeyOwnedBy(server);
-            queue.offer(key);
-            server.getLifecycleService().terminate();
+        final TransactionalQueue queue = context.getQueue("testTxnRollback");
 
+        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+        queue.offer(key);
+        server.getLifecycleService().terminate();
+
+        try{
             context.commitTransaction();
             fail("commit should throw exception!!!");
         } catch (TransactionException e){

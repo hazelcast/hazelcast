@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.*;
 
 /**
@@ -126,7 +127,7 @@ public class ClientTxnQueueTest {
 
     @Test
     public void testTransactionalOfferRoleBack() throws Exception {
-        final String name = "testTransactionalOfferPoll1";
+        final String name = randomString();
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
