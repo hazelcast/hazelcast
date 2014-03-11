@@ -211,15 +211,15 @@
                         <version>${jacoco.version}</version>
                         <configuration>
                             <excludes>
-                                <exclude>com/hazelcast/examples/*.class</exclude>
-                                <exclude>com/hazelcast/client/examples/ClientTestApp.*</exclude>
-                                <exclude>com/hazelcast/concurrent/atomiclong/client/*.class</exclude>
-                                <exclude>com/hazelcast/concurrent/atomicreference/client/*.class</exclude>
-                                <exclude>com/hazelcast/concurrent/countdownlatch/client/*.class</exclude>
-                                <exclude>com/hazelcast/concurrent/idgen/client/*.class</exclude>
-                                <exclude>com/hazelcast/concurrent/lock/client/*.class</exclude>
-                                <exclude>com/hazelcast/concurrent/semaphore/client/*.class</exclude>
-                                <exclude>com/hazelcast/executor/client/*.class</exclude>
+                                <exclude>**/com/hazelcast/examples/*.class</exclude>
+                                <exclude>**/com/hazelcast/client/examples/ClientTestApp.*</exclude>
+                                <exclude>**/com/hazelcast/concurrent/atomiclong/client/*.class</exclude>
+                                <exclude>**/com/hazelcast/concurrent/atomicreference/client/*.class</exclude>
+                                <exclude>**/com/hazelcast/concurrent/countdownlatch/client/*.class</exclude>
+                                <exclude>**/com/hazelcast/concurrent/idgen/client/*.class</exclude>
+                                <exclude>**/com/hazelcast/concurrent/lock/client/*.class</exclude>
+                                <exclude>**/com/hazelcast/concurrent/semaphore/client/*.class</exclude>
+                                <exclude>**/com/hazelcast/executor/client/*.class</exclude>
                             </excludes>
                         </configuration>
                         <executions>
