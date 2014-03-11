@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.TransactionAccessor;
@@ -47,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class HazelcastXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
