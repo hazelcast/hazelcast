@@ -68,6 +68,7 @@
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
+        <jacoco.version>0.6.5.201403032054</jacoco.version>
     </properties>
     <licenses>
         <license>
@@ -137,7 +138,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.6.4</version>
+                <version>${jacoco.version}</version>
                 <configuration>
                     <excludes>
                         <exclude>com/hazelcast/examples/**/*.class</exclude>
@@ -207,18 +208,18 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.6.4.201312101107</version>
+                        <version>${jacoco.version}</version>
                         <configuration>
                             <excludes>
-                                <exclude>com/hazelcast/examples/**</exclude>
-                                <exclude>com/hazelcast/client/examples/**</exclude>
-                                <exclude>com/hazelcast/concurrent/atomiclong/client/**</exclude>
-                                <exclude>com/hazelcast/concurrent/atomicreference/client/**</exclude>
-                                <exclude>com/hazelcast/concurrent/countdownlatch/client/**</exclude>
-                                <exclude>com/hazelcast/concurrent/idgen/client/**</exclude>
-                                <exclude>com/hazelcast/concurrent/lock/client/**</exclude>
-                                <exclude>com/hazelcast/concurrent/semaphore/client/**</exclude>
-                                <exclude>com/hazelcast/executor/client/**</exclude>
+                                <exclude>com/hazelcast/examples/*.class</exclude>
+                                <exclude>com/hazelcast/client/examples/*.class</exclude>
+                                <exclude>com/hazelcast/concurrent/atomiclong/client/*.class</exclude>
+                                <exclude>com/hazelcast/concurrent/atomicreference/client/*.class</exclude>
+                                <exclude>com/hazelcast/concurrent/countdownlatch/client/*.class</exclude>
+                                <exclude>com/hazelcast/concurrent/idgen/client/*.class</exclude>
+                                <exclude>com/hazelcast/concurrent/lock/client/*.class</exclude>
+                                <exclude>com/hazelcast/concurrent/semaphore/client/*.class</exclude>
+                                <exclude>com/hazelcast/executor/client/*.class</exclude>
                             </excludes>
                         </configuration>
                         <executions>
