@@ -44,8 +44,8 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -183,7 +183,7 @@ public class HazelcastXaTest {
                 }
             });
         }
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 20);
         final IMap m = instance.getMap("m");
         for (int i = 0; i < 10; i++) {
             assertFalse(m.isLocked(i));
