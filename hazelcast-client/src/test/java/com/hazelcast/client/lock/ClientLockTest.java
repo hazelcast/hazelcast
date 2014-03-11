@@ -188,6 +188,7 @@ public class ClientLockTest {
         assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
 
+
     @Test
     public void concurrent_TryLockTest() throws InterruptedException {
         AtomicInteger upTotal = new AtomicInteger(0);
@@ -206,12 +207,12 @@ public class ClientLockTest {
     }
 
     static class TryLockThread extends Thread{
-        static private final Random random = new Random();
-        private ILock lock;
-        private AtomicInteger upTotal;
-        private AtomicInteger downTotal;
+        static protected final Random random = new Random();
+        protected ILock lock;
+        protected AtomicInteger upTotal;
+        protected AtomicInteger downTotal;
 
-        TryLockThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal){
+        public TryLockThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal){
             this.lock = lock;
             this.upTotal = upTotal;
             this.downTotal = downTotal;
@@ -219,11 +220,49 @@ public class ClientLockTest {
 
         public void run()  {
             for ( int i=0; i<1000*10; i++ ) {
+                if(lock.tryLock()){
+                    work();
+                    lock.unlock();
+                }
+            }
+        }
+
+        protected void work(){
+            int delta = random.nextInt(1000);
+            upTotal.addAndGet(delta);
+            downTotal.addAndGet(-delta);
+        }
+    }
+
+
+    @Test
+    public void concurrent_TryLock_WithTimeOutTest() throws InterruptedException {
+        AtomicInteger upTotal = new AtomicInteger(0);
+        AtomicInteger downTotal = new AtomicInteger(0);
+
+        final ILock lock = hz.getLock("concurrent_TryLockWithTimeOutTest");
+        Thread threads[] = new Thread[8];
+        for ( int i=0; i<threads.length; i++ ) {
+            Thread t = new TryLockWithTimeOutThread(lock, upTotal, downTotal);
+            t.start();
+            threads[i] = t;
+        }
+
+        assertJoinable(threads);
+        assertTrue("concurrent access to locked code caused wrong total", upTotal.get() + downTotal.get() == 0);
+    }
+
+    static class TryLockWithTimeOutThread extends TryLockThread{
+
+        public TryLockWithTimeOutThread(ILock lock, AtomicInteger upTotal, AtomicInteger downTotal){
+            super(lock, upTotal, downTotal);
+        }
+
+        public void run()  {
+            for ( int i=0; i<1000*10; i++ ) {
                 try {
                     if(lock.tryLock(10, TimeUnit.MILLISECONDS)){
-                        int delta = random.nextInt(1000);
-                        upTotal.addAndGet(delta);
-                        downTotal.addAndGet(-delta);
+                        work();
                         lock.unlock();
                     }
                 } catch (InterruptedException e) {
