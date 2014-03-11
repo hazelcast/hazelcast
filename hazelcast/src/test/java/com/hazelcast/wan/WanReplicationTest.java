@@ -38,6 +38,8 @@ import static org.junit.Assert.*;
 @Category(SlowTest.class)
 public class WanReplicationTest extends HazelcastTestSupport{
 
+    private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 10 * 60;
+
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
     private HazelcastInstance[] clusterA = new HazelcastInstance[2];
@@ -187,7 +189,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
             public void run() {
                 assertTrue(checkKeysIn(cluster, mapName, start, end) );
             }
-        });
+        },ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
     }
 
     private void assertDataInFrom(final HazelcastInstance[] cluster, final String mapName, final int start, final int end, final HazelcastInstance[] sourceCluster){
@@ -195,7 +197,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
             public void run() {
                 assertTrue(checkDataInFrom(cluster, mapName, start, end, sourceCluster) );
             }
-        });
+        },ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
     }
 
     private void assertKeysNotIn(final HazelcastInstance[] cluster, final String mapName, final int start, final int end){
@@ -203,7 +205,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
             public void run() {
                 assertTrue(checkKeysNotIn(cluster, mapName, start, end) );
             }
-        });
+        },ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
     }
 
 
