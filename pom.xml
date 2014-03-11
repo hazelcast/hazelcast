@@ -68,7 +68,6 @@
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
-        <sonar.profile>test-coverage</sonar.profile>
     </properties>
     <licenses>
         <license>
