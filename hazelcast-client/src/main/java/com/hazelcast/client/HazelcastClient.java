@@ -104,7 +104,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class HazelcastClient implements HazelcastInstance {
 
-    private final static ClientOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new ClientOutOfMemoryHandler();
+    static {
+        OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
+    }
+
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
     private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private final int id = CLIENT_ID.getAndIncrement();
@@ -178,7 +181,6 @@ public final class HazelcastClient implements HazelcastInstance {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             final HazelcastClient client = new HazelcastClient(config);
             client.start();
-            OutOfMemoryErrorDispatcher.addHandler(OUT_OF_MEMORY_HANDLER);
             OutOfMemoryErrorDispatcher.register(client);
             proxy = new HazelcastClientProxy(client);
             CLIENTS.put(client.id, proxy);
