@@ -228,6 +228,19 @@
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
+                                <configuration>
+                                    <excludes>
+                                        <exclude>**/com/hazelcast/examples/**</exclude>
+                                        <exclude>**/com/hazelcast/client/examples/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/atomiclong/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/atomicreference/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/countdownlatch/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/idgen/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/lock/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/semaphore/client/**</exclude>
+                                        <exclude>**/com/hazelcast/executor/client/**</exclude>
+                                    </excludes>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>default-report</id>
@@ -235,6 +248,19 @@
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
+                                <configuration>
+                                    <excludes>
+                                        <exclude>**/com/hazelcast/examples/**</exclude>
+                                        <exclude>**/com/hazelcast/client/examples/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/atomiclong/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/atomicreference/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/countdownlatch/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/idgen/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/lock/client/**</exclude>
+                                        <exclude>**/com/hazelcast/concurrent/semaphore/client/**</exclude>
+                                        <exclude>**/com/hazelcast/executor/client/**</exclude>
+                                    </excludes>
+                                </configuration>
                             </execution>
                             <!-- execution>
                                 <id>default-check</id>
