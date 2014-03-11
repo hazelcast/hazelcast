@@ -28,7 +28,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
-import com.hazelcast.map.record.*;
+import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
@@ -37,8 +38,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.*;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -58,7 +60,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 
@@ -474,8 +475,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public void destroyDistributedObject(String name) {
         final MapContainer mapContainer = mapContainers.remove(name);
-        if(mapContainer != null)
-        {
+        if (mapContainer != null) {
             mapContainer.shutDownMapStoreScheduledExecutor();
         }
         final PartitionContainer[] containers = partitionContainers;
@@ -651,7 +651,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
-  public Object toObject(Object data) {
+    public Object toObject(Object data) {
         if (data == null)
             return null;
         if (data instanceof Data) {

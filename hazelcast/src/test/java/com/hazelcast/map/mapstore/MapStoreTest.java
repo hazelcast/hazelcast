@@ -21,6 +21,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.monitor.LocalMapStats;
@@ -1054,6 +1055,98 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         assertEquals("value"+ (size1-1), testMapStore.getStore().get("key"));
         assertEquals("value"+ (size2-1), testMapStore.getStore().get("key"+(size2-1)));
+    }
+
+    @Test
+    public void testMapStoreNotCalledFromEntryProcessorBackup() throws Exception {
+        final String mapName = "testMapStoreNotCalledFromEntryProcessorBackup_" + randomString();
+        final int instanceCount = 2;
+        Config config = new Config();
+        // Configure map with one backup and dummy map store
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setBackupCount(1);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(1, 120);
+        mapStoreConfig.setImplementation(mapStore);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final IMap<String, String> map = instance1.getMap(mapName);
+        final String key = "key";
+        final String value = "value";
+        //executeOnKey
+        map.executeOnKey(key, new ValueSetterEntryProcessor(value));
+        mapStore.awaitStores();
+
+        assertEquals(value,map.get(key));
+        assertEquals(1, mapStore.count.intValue());
+    }
+
+    private static class ValueSetterEntryProcessor extends AbstractEntryProcessor<String, String> {
+        private final String value;
+
+        ValueSetterEntryProcessor(String value) {
+            this.value = value;
+        }
+
+        public Object process(Map.Entry entry) {
+            entry.setValue(value);
+            return null;
+        }
+    }
+
+
+
+    public static class MapStoreWithStoreCount extends SimpleMapStore {
+        final CountDownLatch latch;
+        final int waitSecond;
+        final AtomicInteger count = new AtomicInteger(0);
+        final int sleepStoreAllSeconds;
+
+        public MapStoreWithStoreCount(int expectedStore, int seconds) {
+            latch = new CountDownLatch(expectedStore);
+            waitSecond = seconds;
+            sleepStoreAllSeconds = 0;
+        }
+
+        public MapStoreWithStoreCount(int expectedStore, int seconds, int sleepStoreAllSeconds) {
+            latch = new CountDownLatch(expectedStore);
+            waitSecond = seconds;
+            this.sleepStoreAllSeconds = sleepStoreAllSeconds;
+        }
+
+        public void awaitStores() {
+            try {
+                latch.await(waitSecond, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+               new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void store(Object key, Object value) {
+            latch.countDown();
+            super.store(key, value);
+            count.incrementAndGet();
+        }
+
+        @Override
+        public void storeAll(Map map) {
+            if (sleepStoreAllSeconds > 0) {
+                try {
+                    Thread.sleep(sleepStoreAllSeconds * 1000);
+                } catch (InterruptedException e) {
+                }
+            }
+            for (Object o : map.keySet()) {
+                latch.countDown();
+                count.incrementAndGet();
+            }
+            super.storeAll(map);
+        }
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {

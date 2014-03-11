@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author enesakar 1/17/13
  */
 public class DefaultRecordStore implements RecordStore {
+    private static final long DEFAULT_TTL = -1;
     private final String name;
     private final int partitionId;
     private final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
@@ -188,6 +189,24 @@ public class DefaultRecordStore implements RecordStore {
 
     public void putRecord(Data key, Record record) {
         records.put(key, record);
+    }
+
+    public Record putBackup(Data key, Object value) {
+        return putBackup(key, value, DEFAULT_TTL, true);
+    }
+
+    public Record putBackup(Data key, Object value, long ttl, boolean shouldSchedule) {
+        Record record = records.get(key);
+        if (record == null) {
+            record = mapService.createRecord(name, key, value, ttl, shouldSchedule);
+            records.put(key, record);
+            updateSizeEstimator(calculateRecordSize(record));
+        } else {
+            updateSizeEstimator(-calculateRecordSize(record));
+            setRecordValue(record, value);
+            updateSizeEstimator(calculateRecordSize(record));
+        }
+        return record;
     }
 
     public void deleteRecord(Data key) {
@@ -356,7 +375,7 @@ public class DefaultRecordStore implements RecordStore {
         if (mapContainer.getStore() != null) {
             final Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
             if (value != null) {
-                record = mapService.createRecord(name, dataKey, value, -1);
+                record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL);
                 records.put(dataKey, record);
                 if (enableIndex) {
                     saveIndex(record);
@@ -520,7 +539,7 @@ public class DefaultRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 value = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (value != null) {
-                    record = mapService.createRecord(name, dataKey, value, -1);
+                    record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL);
                     records.put(dataKey, record);
                     saveIndex(record);
                     updateSizeEstimator(calculateRecordSize(record));
@@ -567,7 +586,7 @@ public class DefaultRecordStore implements RecordStore {
             Object value = entry.getValue();
             Data dataKey = keyMapForLoader.get(objectKey);
             if (value != null) {
-                Record record = mapService.createRecord(name, dataKey, value, -1);
+                Record record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL);
                 records.put(dataKey, record);
                 saveIndex(record);
                 updateSizeEstimator(calculateRecordSize(record));
@@ -587,7 +606,7 @@ public class DefaultRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (value != null) {
-                    record = mapService.createRecord(name, dataKey, value, -1);
+                    record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL);
                     records.put(dataKey, record);
                     updateSizeEstimator(calculateRecordSize(record));
                 }
@@ -608,7 +627,7 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            record = mapService.createRecord(name, dataKey, value, -1);
+            record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL);
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             // increase size.
@@ -689,7 +708,7 @@ public class DefaultRecordStore implements RecordStore {
         Object newValue = null;
         if (record == null) {
             newValue = mergingEntry.getValue();
-            record = mapService.createRecord(name, dataKey, newValue, -1);
+            record = mapService.createRecord(name, dataKey, newValue, DEFAULT_TTL);
             mapStoreWrite(record, dataKey, newValue);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
@@ -822,7 +841,7 @@ public class DefaultRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
-                    record = mapService.createRecord(name, dataKey, oldValue, -1);
+                    record = mapService.createRecord(name, dataKey, oldValue, DEFAULT_TTL);
                     records.put(dataKey, record);
                     updateSizeEstimator(calculateRecordSize(record));
                 }

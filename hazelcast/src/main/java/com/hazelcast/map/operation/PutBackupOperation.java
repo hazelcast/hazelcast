@@ -43,16 +43,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public void run() {
-        Record record = recordStore.getRecord(dataKey);
-        if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl, false);
-            updateSizeEstimator(calculateRecordSize(record));
-            recordStore.putRecord(dataKey, record);
-        } else {
-            updateSizeEstimator(-calculateRecordSize(record));
-            mapContainer.getRecordFactory().setValue(record, dataValue);
-            updateSizeEstimator(calculateRecordSize(record));
-        }
+        recordStore.putBackup(dataKey, dataValue, ttl, false);
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
         }

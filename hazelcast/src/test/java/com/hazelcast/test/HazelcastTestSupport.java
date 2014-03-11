@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author mdogan 5/24/13
@@ -151,5 +152,9 @@ public abstract class HazelcastTestSupport {
                 System.err.println("\tat " + trace[j]);
             }
         }
+    }
+
+    public static String randomString(){
+        return UUID.randomUUID().toString();
     }
 }
