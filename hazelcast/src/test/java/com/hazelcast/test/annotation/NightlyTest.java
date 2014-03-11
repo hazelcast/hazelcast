@@ -20,5 +20,5 @@ package com.hazelcast.test.annotation;
  * @author mdogan 5/21/13
  */
 
-public final class SlowTest {
+public final class NightlyTest {
 }

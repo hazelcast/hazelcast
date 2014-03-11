@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
@@ -15,13 +14,12 @@ import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.BrokenBarrierException;
@@ -35,7 +33,7 @@ import static org.junit.Assert.*;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class WanReplicationTest extends HazelcastTestSupport{
 
     private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 10 * 60;
