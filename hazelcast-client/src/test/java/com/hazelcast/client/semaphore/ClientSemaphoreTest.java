@@ -121,16 +121,16 @@ public class ClientSemaphoreTest {
 
 
     @Test
-    public void trySemaphoreTest() {
-        trySemaphoreTest(false);
+    public void concurrent_trySemaphoreTest() {
+        concurrent_trySemaphoreTest(false);
     }
 
     @Test
-    public void trySemaphoreWithTimeOutTest() {
-        trySemaphoreTest(true);
+    public void concurrent_trySemaphoreWithTimeOutTest() {
+        concurrent_trySemaphoreTest(true);
     }
 
-    public void trySemaphoreTest(boolean tryWithTimeOut) {
+    public void concurrent_trySemaphoreTest(boolean tryWithTimeOut) {
         final ISemaphore semaphore = client.getSemaphore(randomString());
         semaphore.init(1);
 
