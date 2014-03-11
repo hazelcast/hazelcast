@@ -1,34 +1,26 @@
 package com.hazelcast.map;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.*;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -38,11 +30,15 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     private static final long timeout = 100L;
 
+    private static final int instanceCount = 2;
+
     private static final TimeUnit timeunit = TimeUnit.MILLISECONDS;
 
     private static final String mapName = NearCacheLocalInvalidationTest.class.getCanonicalName();
 
     private HazelcastInstance hcInstance;
+
+    private HazelcastInstance hcInstance2;
 
     @Before
     public void setUp() throws Exception {
@@ -56,13 +52,15 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         nearCacheConfig.setCacheLocalEntries(true); // this enables the local caching
         mapConfig.setNearCacheConfig(nearCacheConfig);
         // create Hazelcast instance
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         hcInstance = factory.newHazelcastInstance(config);
+        hcInstance2 = factory.newHazelcastInstance(config);
     }
 
     @After
     public void tearDown() throws Exception {
         hcInstance.getLifecycleService().shutdown();
+        hcInstance2.getLifecycleService().shutdown();
     }
 
 
@@ -318,63 +316,50 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testExecuteOnKey() {
-        final IMap<String, Text> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(mapName);
         // loop over several keys to make sure we have keys on both instances
         for (int k = 0; k < numIterations; k++) {
             String key = "executeOnKey_" + String.valueOf(k);
-            Text value0 = new Text("content" + k);
-            // put and get to make sure entry exists *and* is in local near cache
-            map.put(key, value0);
-            map.get(key);
-            Text value1 = map.get(key);
-            Text value2 = map.get(key);
-            assertTrue("reference in local near cache must be the same (k=" + k + ")" + value1 + " =? " + value2, value1 == value2);
-            // execute reading entry processor (no invalidation required)
-            final HashSet<String> strings = new HashSet<String>();
-            strings.add(key);
-            map.executeOnKey(key, new ReadingEntryProcessor());
-            // execute writing entry processor (this must locally invalidate near cache)
-            map.executeOnKey(key, new WritingEntryProcessor());
-            Text value4 = map.get(key);
-            assertFalse("reference must change by writing (k=" + k + ")", value1 == value4);
+            // bring null local cache.
+            final String expectedNull = map.get(key);
+            assertNull(expectedNull);
+            final Object o = map.executeOnKey(key, new WritingEntryProcessor());
+            final String newValue = (String) o;
+            String value2 = map.get(key);
+            assertEquals(newValue, value2);
         }
     }
 
     @Test
     public void testExecuteOnKeys() {
-        final IMap<String, Text> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(mapName);
         // loop over several keys to make sure we have keys on both instances
         for (int k = 0; k < numIterations; k++) {
             String key = "executeOnKeys_" + String.valueOf(k);
-            Text value0 = new Text("content" + k);
-            // put and get to make sure entry exists *and* is in local near cache
-            map.put(key, value0);
-            map.get(key);
-            Text value1 = map.get(key);
-            Text value2 = map.get(key);
-            assertTrue("reference in local near cache must be the same (k=" + k + ")" + value1 + " =? " + value2,
-                    value1 == value2);
-            // execute reading entry processor (no invalidation required)
+            // bring null to local cache.
+            final String expectedNull = map.get(key);
+            assertNull(expectedNull);
             final HashSet<String> keys = new HashSet<String>();
             keys.add(key);
-            map.executeOnKeys(keys, new ReadingEntryProcessor());
-            // execute writing entry processor (this must locally invalidate near cache)
-            map.executeOnKeys(keys, new WritingEntryProcessor());
-//            map.executeOnKeys(strings, new WritingEntryProcessor());
-            Text value4 = map.get(key);
-            assertFalse("reference must change by writing (k=" + k + ")", value1 == value4);
+            final Object o = map.executeOnKeys(keys, new WritingEntryProcessor());
+            final Map<String,String> result = (Map) o;
+            for (Map.Entry<String,String> e: result.entrySet()) {
+                final String newValue = e.getValue();
+                final String cachedValue = map.get(e.getKey());
+                assertEquals(newValue, cachedValue);
+            }
         }
     }
 
     /**
      * An entry processor which only reads.
      */
-    public static class ReadingEntryProcessor extends AbstractEntryProcessor<String, Text> {
+    public static class ReadingEntryProcessor extends AbstractEntryProcessor<String, String> {
 
         private static final long serialVersionUID = 1L;
 
         @Override
-        public Object process(Map.Entry<String, Text> entry) {
+        public Object process(Map.Entry<String, String> entry) {
             return "read";
         }
 
@@ -383,40 +368,14 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
     /**
      * An entry processor which writes (changes the value and calls Entry.setValue()).
      */
-    public static class WritingEntryProcessor extends AbstractEntryProcessor<String, Text> {
+    public static class WritingEntryProcessor extends AbstractEntryProcessor<String, String> {
 
         private static final long serialVersionUID = 1L;
 
         @Override
-        public Object process(Map.Entry<String, Text> entry) {
-            Text text = entry.getValue();
-            text.setContent("new content");
-            entry.setValue(text);
-            return "written";
-        }
-    }
-
-    public static class Text implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        private String content = "original content";
-
-        public Text(String content) {
-            this.content = content;
-        }
-
-        public String getContent() {
-            return content;
-        }
-
-        public void setContent(String content) {
-            this.content = content;
-        }
-
-        @Override
-        public String toString() {
-            return getContent();
+        public Object process(Map.Entry<String, String> entry) {
+            entry.setValue("new value");
+            return "new value";
         }
     }
 

@@ -480,10 +480,63 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
+    public void invalidateAllNearCaches(String mapName, Data key, String uuid) {
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            try {
+                final String uuid1 = member.getUuid();
+                if (member.localMember() || uuid1.equals(uuid)
+                        ) {
+                    continue;
+                }
+                Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
+                nodeEngine.getOperationService().send(operation, member.getAddress());
+            } catch (Throwable throwable) {
+                throw new HazelcastException(throwable);
+            }
+        }
+        final String uuid1 = nodeEngine.getLocalMember().getUuid();
+        if(uuid1.equals(uuid)){
+            return;
+        }
+        // below local invalidation is for the case the data is cached before partition is owned/migrated
+        invalidateNearCache(mapName, key);
+    }
+
+
+    public void invalidateLocalNearCache(String mapName, Data key) {
+        if (!isNearCacheLocalEntryCachingEnabled(mapName)) {
+            return;
+        }
+        invalidateNearCache(mapName, key);
+    }
+
+    public void invalidateLocalNearCache(String mapName, Set<Data> keys) {
+        if (!isNearCacheLocalEntryCachingEnabled(mapName)) {
+            return;
+        }
+        invalidateNearCache(mapName, keys);
+    }
+
+
     public boolean isNearCacheAndInvalidationEnabled(String mapName) {
         final MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
+    }
+
+    private boolean isNearCacheLocalEntryCachingEnabled(String mapName) {
+        final MapContainer mapContainer = getMapContainer(mapName);
+        final MapConfig config = mapContainer.getMapConfig();
+        final boolean nearCacheEnabled = config.isNearCacheEnabled();
+        if (!nearCacheEnabled) {
+            return false;
+        }
+        final boolean cacheLocalEntries = config.getNearCacheConfig().isCacheLocalEntries();
+        if (!cacheLocalEntries) {
+            return false;
+        }
+        return true;
     }
 
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
