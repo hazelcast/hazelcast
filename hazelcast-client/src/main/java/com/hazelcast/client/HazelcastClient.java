@@ -91,6 +91,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientTransactionManager transactionManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
+    private final LoadBalancer loadBalancer;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
@@ -119,10 +120,11 @@ public final class HazelcastClient implements HazelcastInstance {
         transactionManager = new ClientTransactionManager(this);
         executionService = new ClientExecutionServiceImpl(instanceName, threadGroup, Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
         clusterService = new ClientClusterServiceImpl(this);
-        LoadBalancer loadBalancer = config.getLoadBalancer();
-        if (loadBalancer == null) {
-            loadBalancer = new RoundRobinLB();
+        LoadBalancer lb = config.getLoadBalancer();
+        if (lb == null) {
+            lb = new RoundRobinLB();
         }
+        loadBalancer = lb;
         if (config.isSmartRouting()) {
             connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
         } else {
@@ -130,7 +132,6 @@ public final class HazelcastClient implements HazelcastInstance {
         }
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
-        loadBalancer.init(getCluster(), config);
         proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
     }
@@ -185,6 +186,7 @@ public final class HazelcastClient implements HazelcastInstance {
             lifecycleService.shutdown();
             throw e;
         }
+        loadBalancer.init(getCluster(), config);
         partitionService.start();
     }
 
