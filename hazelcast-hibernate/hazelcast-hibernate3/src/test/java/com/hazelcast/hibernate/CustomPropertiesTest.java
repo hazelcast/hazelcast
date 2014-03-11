@@ -27,6 +27,7 @@ import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -41,7 +42,7 @@ import java.util.Properties;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class CustomPropertiesTest extends HibernateTestSupport {
 
     @Test

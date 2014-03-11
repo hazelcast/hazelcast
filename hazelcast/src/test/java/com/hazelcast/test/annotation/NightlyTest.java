@@ -16,9 +16,9 @@
 
 package com.hazelcast.test.annotation;
 
-/**
- * @author mdogan 5/21/13
- */
 
+/**
+ * A Nightly test is a test that can take up a lot of time and is not executed very frequently, e.g. every night.
+ */
 public final class NightlyTest {
 }
