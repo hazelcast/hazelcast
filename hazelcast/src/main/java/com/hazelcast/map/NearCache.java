@@ -19,12 +19,14 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -217,6 +219,10 @@ public class NearCache {
     public void clear() {
         cache.clear();
         resetSizeEstimator();
+    }
+
+    public Map<Data, CacheRecord> getReadonlyMap() {
+        return Collections.unmodifiableMap(cache);
     }
 
     public class CacheRecord implements Comparable<CacheRecord> {
