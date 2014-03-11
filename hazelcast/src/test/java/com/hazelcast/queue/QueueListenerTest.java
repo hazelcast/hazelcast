@@ -22,6 +22,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,13 +56,14 @@ public class QueueListenerTest extends HazelcastTestSupport {
         qConfig.addItemListenerConfig(itemListenerConfig);
         cfg.addQueueConfig(qConfig);
 
-        HazelcastInstance node1 =  Hazelcast.newHazelcastInstance(cfg);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance node1 =  factory.newHazelcastInstance(cfg);
         IQueue queue = node1.getQueue(Qname);
         for(int i=0; i<totalQput/2; i++) {
             queue.put(i);
         }
 
-        HazelcastInstance node2 =  Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance node2 =  factory.newHazelcastInstance(cfg);
 
         for(int i=0; i<totalQput/4; i++) {
             queue.put(i);
