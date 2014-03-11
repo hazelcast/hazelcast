@@ -1,13 +1,15 @@
 package com.hazelcast.map;
 
-import com.hazelcast.config.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +22,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -43,7 +44,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         // create config
-        Config config = new XmlConfigBuilder().build();
+        Config config = new Config();
         // configure near cache
         MapConfig mapConfig = config.getMapConfig(mapName);
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -342,8 +343,8 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             final HashSet<String> keys = new HashSet<String>();
             keys.add(key);
             final Object o = map.executeOnKeys(keys, new WritingEntryProcessor());
-            final Map<String,String> result = (Map) o;
-            for (Map.Entry<String,String> e: result.entrySet()) {
+            final Map<String, String> result = (Map) o;
+            for (Map.Entry<String, String> e : result.entrySet()) {
                 final String newValue = e.getValue();
                 final String cachedValue = map.get(e.getKey());
                 assertEquals(newValue, cachedValue);

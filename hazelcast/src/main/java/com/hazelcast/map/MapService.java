@@ -495,10 +495,6 @@ public class MapService implements ManagedService, MigrationAwareService,
                 throw new HazelcastException(throwable);
             }
         }
-        final String uuid1 = nodeEngine.getLocalMember().getUuid();
-        if(uuid1.equals(uuid)){
-            return;
-        }
         // below local invalidation is for the case the data is cached before partition is owned/migrated
         invalidateNearCache(mapName, key);
     }

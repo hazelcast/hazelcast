@@ -80,7 +80,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 eventType = __NO_NEED_TO_FIRE_EVENT;
             } else {
                 eventType = EntryEventType.UPDATED;
-                invalidateLocalNearCache(dataKey);
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
                 dataValue = mapService.toData(entry.getValue());
