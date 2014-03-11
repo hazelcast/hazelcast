@@ -52,8 +52,9 @@ public class ClientLockWithTerminationTest {
     }
 
     @After
-    public void clear() throws IOException {
+    public void tearDown() throws IOException {
         Hazelcast.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Test
