@@ -922,7 +922,6 @@ public class ClientMapTest {
                             map.unlock(upKey);
                         }
                     }
-
                 }
             }catch(InterruptedException e){
             }
