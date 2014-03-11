@@ -480,25 +480,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
-    public void invalidateAllNearCaches(String mapName, Data key, String uuid) {
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (MemberImpl member : members) {
-            try {
-                final String uuid1 = member.getUuid();
-                if (member.localMember() || uuid1.equals(uuid)
-                        ) {
-                    continue;
-                }
-                Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
-                nodeEngine.getOperationService().send(operation, member.getAddress());
-            } catch (Throwable throwable) {
-                throw new HazelcastException(throwable);
-            }
-        }
-        // below local invalidation is for the case the data is cached before partition is owned/migrated
-        invalidateNearCache(mapName, key);
-    }
-
 
     public void invalidateLocalNearCache(String mapName, Data key) {
         if (!isNearCacheLocalEntryCachingEnabled(mapName)) {
