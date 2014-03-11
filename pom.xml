@@ -212,7 +212,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>com/hazelcast/examples/*.class</exclude>
-                                <exclude>com/hazelcast/client/examples/ClientTestApp.class</exclude>
+                                <exclude>com/hazelcast/client/examples/ClientTestApp.*</exclude>
                                 <exclude>com/hazelcast/concurrent/atomiclong/client/*.class</exclude>
                                 <exclude>com/hazelcast/concurrent/atomicreference/client/*.class</exclude>
                                 <exclude>com/hazelcast/concurrent/countdownlatch/client/*.class</exclude>
