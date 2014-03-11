@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -45,6 +46,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -799,62 +801,133 @@ public class ClientMapTest {
 
     @Test
     public void concurrent_MapTryLockTest() throws InterruptedException {
-        final String upKey = "upKey";
-        final String downKey = "upKey";
         final IMap<String, Integer> map = client.getMap("concurrent_MapTryLockTest");
+        final String upKey = "upKey";
+        final String downKey = "downKey";
 
         map.put(upKey, 0);
         map.put(downKey, 0);
 
-        final Random random = new Random();
-        ArrayList<CountDownLatch> latches = new ArrayList<CountDownLatch>();
-
-        for ( int threads=0; threads<8; threads++ ) {
-            final CountDownLatch latch = new CountDownLatch(1);
-            latches.add(latch);
-            new Thread() {
-                public void run()  {
-                    for ( int i=0; i<1000 * 10; i++ ) {
-                        try {
-                            if(map.tryLock(upKey ,1, TimeUnit.MILLISECONDS)){
-                                try{
-                                    if(map.tryLock(downKey, 1, TimeUnit.MILLISECONDS)){
-                                        try {
-                                            int upTotal = map.get(upKey);
-                                            int downTotal = map.get(downKey);
-
-                                            int dif = random.nextInt(1000);
-                                            upTotal += dif;
-                                            downTotal -= dif;
-
-                                            map.put(upKey, upTotal);
-                                            map.put(downKey, downTotal);
-                                        }finally {
-                                            map.unlock(downKey);
-                                        }
-                                    }
-                                }finally {
-                                    map.unlock(upKey);
-                                }
-                            }
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    latch.countDown();
-
-                    System.out.println("==>> END");
-                }
-            }.start();
+        Thread threads[] = new Thread[8];
+        for ( int i=0; i< threads.length; i++ ) {
+            Thread t = new MapTryLockThread(map, upKey, downKey);
+            t.start();
+            threads[i] = t;
         }
+
+        assertJoinable(threads);
 
         int upTotal = map.get(upKey);
         int downTotal = map.get(downKey);
 
-        for(CountDownLatch latch : latches){
-            assertTrue("a thread failed to complete in as least 2 minutes", latch.await(2, TimeUnit.MINUTES));
-        }
         assertTrue("concurrent access to locked code caused wrong total", upTotal + downTotal == 0);
     }
 
+    static class MapTryLockThread extends Thread {
+        static private Random random = new Random();
+        private IMap<String, Integer> map;
+        private String upKey;
+        private String downKey;
+
+        public MapTryLockThread(IMap map, String upKey, String downKey){
+            this.map = map;
+            this.upKey = upKey;
+            this.downKey = downKey;
+        }
+
+        public void run() {
+            for ( int i=0; i<1000*10; i++ ) {
+                if(map.tryLock(upKey)){
+                    try{
+                        if(map.tryLock(downKey)){
+                            try {
+                                int upTotal = map.get(upKey);
+                                int downTotal = map.get(downKey);
+
+                                int dif = random.nextInt(1000);
+                                upTotal += dif;
+                                downTotal -= dif;
+
+                                map.put(upKey, upTotal);
+                                map.put(downKey, downTotal);
+                            }finally {
+                                map.unlock(downKey);
+                            }
+                        }
+                    }finally {
+                        map.unlock(upKey);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void concurrent_MapTryLockTimeOutTest() throws InterruptedException {
+        final IMap<String, Integer> map = client.getMap("concurrent_MapTryLockTimeOutTest");
+        final String upKey = "upKey";
+        final String downKey = "downKey";
+
+        map.put(upKey, 0);
+        map.put(downKey, 0);
+
+        Thread threads[] = new Thread[8];
+        for ( int i=0; i< threads.length; i++ ) {
+            Thread t = new MapTryLockTimeOutThread(map, upKey, downKey);
+            t.start();
+            threads[i] = t;
+        }
+
+        assertJoinable(threads);
+
+        int upTotal = map.get(upKey);
+        int downTotal = map.get(downKey);
+
+        assertTrue("concurrent access to locked code caused wrong total ", upTotal + downTotal == 0);
+    }
+
+    static class MapTryLockTimeOutThread extends Thread {
+        static private Random random = new Random();
+        private IMap<String, Integer> map;
+        private String upKey;
+        private String downKey;
+
+        public MapTryLockTimeOutThread(IMap map, String upKey, String downKey){
+            this.map = map;
+            this.upKey = upKey;
+            this.downKey = downKey;
+        }
+
+        public void run() {
+            try {
+                for ( int i=0; i<1000*10; i++ ) {
+                    if(map.tryLock(upKey, 5, TimeUnit.MILLISECONDS)){
+                        try{
+                            if(map.tryLock(downKey, 5, TimeUnit.MILLISECONDS )){
+                                try {
+                                    int upTotal = map.get(upKey);
+                                    int downTotal = map.get(downKey);
+
+                                    int dif = random.nextInt(1000);
+                                    upTotal += dif;
+                                    downTotal -= dif;
+
+                                    map.put(upKey, upTotal);
+                                    map.put(downKey, downTotal);
+                                }finally {
+                                    map.unlock(downKey);
+                                }
+                            }
+                        }finally {
+                            map.unlock(upKey);
+                        }
+                    }
+
+                }
+            }catch(InterruptedException e){
+            }
+        }
+    }
+
 }
+
