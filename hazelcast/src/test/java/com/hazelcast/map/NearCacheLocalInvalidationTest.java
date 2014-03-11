@@ -21,7 +21,10 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -283,7 +286,6 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         for (int k = 0; k < numIterations; k++) {
             String key = "set_" + String.valueOf(k);
             String value = "merhaba-" + key;
-
             // test
             String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
             map.set(key, value);
@@ -303,7 +305,6 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "replace_" + String.valueOf(k);
             String value = "merhaba-" + key;
             String valueNew = "merhaba-new" + key;
-
             // test
             map.put(key, value);
             String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
@@ -350,20 +351,6 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
                 assertEquals(newValue, cachedValue);
             }
         }
-    }
-
-    /**
-     * An entry processor which only reads.
-     */
-    public static class ReadingEntryProcessor extends AbstractEntryProcessor<String, String> {
-
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public Object process(Map.Entry<String, String> entry) {
-            return "read";
-        }
-
     }
 
     /**
