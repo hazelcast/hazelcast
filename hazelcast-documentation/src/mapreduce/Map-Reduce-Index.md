@@ -1,7 +1,7 @@
 
 # Hazelcast MapReduce
 
-Ever since Google released its [research white paper on map-reduce](http://labs.google.com/papers/mapreduce.html)
+Ever since Google released its [research white paper on map-reduce](http://research.google.com/archive/mapreduce.html)
 you've heard about it. With hadoop as the most common and well known implementation, map-reduce received a broad
 audience and made it into all kinds of business applications dominated by data-warehouses.
 
