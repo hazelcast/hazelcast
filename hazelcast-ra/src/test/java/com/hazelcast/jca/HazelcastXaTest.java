@@ -21,6 +21,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -51,6 +53,7 @@ import static org.junit.Assert.*;
 public class HazelcastXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
+    static final ILogger logger = Logger.getLogger(HazelcastXaTest.class);
 
     UserTransactionManager tm = null;
 
@@ -164,7 +167,7 @@ public class HazelcastXaTest {
     public void testParallel() throws Exception {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 
-        final int size = 300;
+        final int size = 20;
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(size);
         for (int i = 0; i < size; i++) {
@@ -173,14 +176,14 @@ public class HazelcastXaTest {
                     try {
                         txn(instance);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.severe("Exception during txn", e);
                     } finally {
                         latch.countDown();
                     }
                 }
             });
         }
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
         final IMap m = instance.getMap("m");
         for (int i = 0; i < 10; i++) {
             assertFalse(m.isLocked(i));
