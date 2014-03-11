@@ -970,7 +970,6 @@
         <xs:restriction base="xs:string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
-            <xs:enumeration value="CACHED"/>
         </xs:restriction>
     </xs:simpleType>
 
