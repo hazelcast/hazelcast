@@ -31,7 +31,8 @@ import java.io.IOException;
 /**
  * @author ali 1/16/13
  */
-public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, WaitSupport {
+public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation
+        implements BackupAwareOperation, WaitSupport {
 
     protected long threadId;
 
@@ -63,10 +64,6 @@ public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOpera
 
     public boolean shouldWait() {
         return !getOrCreateContainer().canAcquireLock(dataKey, getCallerUuid(), threadId);
-    }
-
-    public long getWaitTimeoutMillis() {
-        return -1;
     }
 
     public void onWaitExpire() {

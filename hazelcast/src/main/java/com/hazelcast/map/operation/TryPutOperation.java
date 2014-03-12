@@ -16,20 +16,15 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
-import java.io.IOException;
 
 public class TryPutOperation extends BasePutOperation {
 
-    private long timeout;
     private boolean successful;
 
     public TryPutOperation(String name, Data dataKey, Data value, long timeout) {
         super(name, dataKey, value);
-        this.timeout = timeout;
+        setWaitTimeout(timeout);
     }
 
     public TryPutOperation() {
@@ -44,10 +39,6 @@ public class TryPutOperation extends BasePutOperation {
             super.afterRun();
     }
 
-    public long getWaitTimeoutMillis() {
-        return timeout;
-    }
-
     public boolean shouldBackup() {
         return successful;
     }
@@ -58,19 +49,6 @@ public class TryPutOperation extends BasePutOperation {
 
     public Object getResponse() {
         return successful;
-    }
-
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(timeout);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        timeout = in.readLong();
     }
 
     @Override

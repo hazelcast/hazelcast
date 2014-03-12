@@ -53,6 +53,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.ArrayList;
@@ -129,7 +130,8 @@ final class BasicOperationService implements InternalOperationService {
         operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
 
         executionService = nodeEngine.getExecutionService();
-        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 5, coreSize * 100000);
+        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 5, coreSize * 100000,
+                ExecutorType.CONCRETE);
 
         responseExecutor = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,

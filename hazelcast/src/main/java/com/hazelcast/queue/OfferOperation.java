@@ -89,7 +89,7 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     public boolean shouldWait() {
         QueueContainer container = getOrCreateContainer();
-        return getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity();
+        return getWaitTimeout() != 0 && !container.hasEnoughCapacity();
     }
 
     public void onWaitExpire() {

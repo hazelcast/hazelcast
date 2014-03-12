@@ -200,7 +200,7 @@ public final class ProxyManager {
         try {
             client.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
         clientProxy.setContext(new ClientContext(client.getSerializationService(), client.getClientClusterService(),
                 client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig()));
@@ -211,6 +211,9 @@ public final class ProxyManager {
     }
 
     public void destroy() {
+        for (ClientProxy proxy : proxies.values()) {
+            proxy.onShutdown();
+        }
         proxies.clear();
     }
 

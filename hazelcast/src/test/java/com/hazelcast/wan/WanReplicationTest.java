@@ -65,6 +65,11 @@ public class WanReplicationTest extends HazelcastTestSupport{
         configC.getNetworkConfig().setPort(5901);
     }
 
+    @After
+    public void cleanup() {
+        HazelcastInstanceFactory.shutdownAll();
+    }
+
 
     private void initCluster(HazelcastInstance[] cluster, Config config){
         for(int i=0; i<cluster.length; i++){

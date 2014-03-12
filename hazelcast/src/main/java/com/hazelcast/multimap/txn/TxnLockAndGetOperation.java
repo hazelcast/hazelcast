@@ -35,7 +35,6 @@ import java.io.IOException;
  */
 public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport, TxnMultiMapOperation {
 
-    long timeout;
     long ttl;
     long threadId;
 
@@ -44,9 +43,9 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
 
     public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, long threadId) {
         super(name, dataKey);
-        this.timeout = timeout;
         this.ttl = ttl;
         this.threadId = threadId;
+        setWaitTimeout(timeout);
     }
 
     public void run() throws Exception {
@@ -71,24 +70,18 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         return !getOrCreateContainer().canAcquireLock(dataKey, getCallerUuid(), threadId);
     }
 
-    public long getWaitTimeoutMillis() {
-        return timeout;
-    }
-
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(timeout);
         out.writeLong(ttl);
         out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        timeout = in.readLong();
         ttl = in.readLong();
         threadId = in.readLong();
     }
