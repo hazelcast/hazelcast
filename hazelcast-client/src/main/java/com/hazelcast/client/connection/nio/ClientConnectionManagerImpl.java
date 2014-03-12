@@ -337,9 +337,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return callIdIncrementer.incrementAndGet();
     }
 
-    class ClientPacketProcessor implements Runnable {
+    private class ClientPacketProcessor implements Runnable {
 
-        ClientPacket packet;
+        final ClientPacket packet;
 
         ClientPacketProcessor(ClientPacket packet) {
             this.packet = packet;
