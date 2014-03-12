@@ -93,7 +93,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final SerializationContext serializationContext;
 
-    private Thread socketAcceptorThread; // accessed only in synchronized block
+    private volatile Thread socketAcceptorThread; // accessed only in synchronized block
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
@@ -463,15 +463,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
     }
 
-    private synchronized void shutdownSocketAcceptor() {
+    private void shutdownSocketAcceptor() {
         log(Level.FINEST, "Shutting down SocketAcceptor thread.");
-        socketAcceptorThread.interrupt();
+        Thread killingThread = socketAcceptorThread;
+        if (killingThread == null) {
+            return;
+        }
+        socketAcceptorThread = null;
+        killingThread.interrupt();
         try {
-            socketAcceptorThread.join(1000 * 10);
+            killingThread.join(1000 * 10);
         } catch (InterruptedException e) {
             logger.finest(e);
         }
-        socketAcceptorThread = null;
     }
 
     public int getCurrentClientConnections() {
