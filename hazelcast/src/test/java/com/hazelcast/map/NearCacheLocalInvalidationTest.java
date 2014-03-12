@@ -366,7 +366,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
     }
 
     private static String getMapName(){
-        return mapName + randomString();
+        return randomMapName(mapName);
     }
 
 }
