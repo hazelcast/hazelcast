@@ -36,7 +36,7 @@ import static org.junit.Assert.*;
 @Category(NightlyTest.class)
 public class WanReplicationTest extends HazelcastTestSupport{
 
-    private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 10 * 60;
+    private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 2 * 60;
 
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
