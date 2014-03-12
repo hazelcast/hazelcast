@@ -210,17 +210,7 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
                         <configuration>
-                            <excludes>
-                                <exclude>**/com/hazelcast/examples/**</exclude>
-                                <exclude>**/com/hazelcast/client/examples/**</exclude>
-                                <exclude>**/com/hazelcast/concurrent/atomiclong/client/**</exclude>
-                                <exclude>**/com/hazelcast/concurrent/atomicreference/client/**</exclude>
-                                <exclude>**/com/hazelcast/concurrent/countdownlatch/client/**</exclude>
-                                <exclude>**/com/hazelcast/concurrent/idgen/client/**</exclude>
-                                <exclude>**/com/hazelcast/concurrent/lock/client/**</exclude>
-                                <exclude>**/com/hazelcast/concurrent/semaphore/client/**</exclude>
-                                <exclude>**/com/hazelcast/executor/client/**</exclude>
-                            </excludes>
+
                         </configuration>
                         <executions>
                             <execution>
@@ -228,37 +218,16 @@
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
-                                <configuration>
-                                    <excludes>
-                                        <exclude>**/com/hazelcast/examples/**</exclude>
-                                        <exclude>**/com/hazelcast/client/examples/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/atomiclong/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/atomicreference/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/countdownlatch/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/idgen/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/lock/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/semaphore/client/**</exclude>
-                                        <exclude>**/com/hazelcast/executor/client/**</exclude>
-                                    </excludes>
-                                </configuration>
                             </execution>
                             <execution>
                                 <id>default-report</id>
-                                <phase>prepare-package</phase>
+                                <phase>test</phase>
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
                                 <configuration>
                                     <excludes>
-                                        <exclude>**/com/hazelcast/examples/**</exclude>
-                                        <exclude>**/com/hazelcast/client/examples/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/atomiclong/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/atomicreference/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/countdownlatch/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/idgen/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/lock/client/**</exclude>
-                                        <exclude>**/com/hazelcast/concurrent/semaphore/client/**</exclude>
-                                        <exclude>**/com/hazelcast/executor/client/**</exclude>
+                                        <exclude>**/ClientTestApp.class</exclude>
                                     </excludes>
                                 </configuration>
                             </execution>
