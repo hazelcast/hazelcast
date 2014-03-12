@@ -67,11 +67,6 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         hcInstance2.getLifecycleService().shutdown();
     }
 
-    private static String getMapName(){
-        return mapName + randomString();
-    }
-
-
     @Test
     public void testRemove() {
         final IMap<String, String> map = hcInstance.getMap(getMapName());
@@ -368,6 +363,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             entry.setValue("new value");
             return "new value";
         }
+    }
+
+    private static String getMapName(){
+        return mapName + randomString();
     }
 
 }
