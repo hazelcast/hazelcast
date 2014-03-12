@@ -35,6 +35,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.TraceableOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -493,6 +494,48 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
     }
 
+    public static class TraceableIsStillExecuting extends AbstractOperation {
+
+        private String serviceName;
+        private Object identifier;
+
+        TraceableIsStillExecuting() {
+        }
+
+        public TraceableIsStillExecuting(String serviceName, Object identifier) {
+            this.serviceName = serviceName;
+            this.identifier = identifier;
+        }
+
+        @Override
+        public void run() throws Exception {
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
+            boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(),
+                    serviceName, identifier);
+            getResponseHandler().sendResponse(executing);
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            serviceName = in.readUTF();
+            identifier = in.readObject();
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeUTF(serviceName);
+            out.writeObject(identifier);
+        }
+    }
+
     private class ReInvocationTask implements Runnable {
         public void run() {
             doInvoke();
@@ -811,8 +854,15 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             // ask if op is still being executed?
             Boolean executing = Boolean.FALSE;
             try {
-                final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName,
-                        new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null, null, true);
+                Operation isStillExecuting;
+                if (op instanceof TraceableOperation) {
+                    TraceableOperation traceable = (TraceableOperation) op;
+                    isStillExecuting = new TraceableIsStillExecuting(serviceName, traceable.getTraceIdentifier());
+                } else {
+                    isStillExecuting = new IsStillExecuting(op.getCallId());
+                }
+                final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName, isStillExecuting,
+                        target, 0, 0, 5000, null, null, true);
                 Future f = inv.invoke();
                 // TODO: @mm - improve logging (see SystemLogService)
                 logger.warning("Asking if operation execution has been started: " + toString());

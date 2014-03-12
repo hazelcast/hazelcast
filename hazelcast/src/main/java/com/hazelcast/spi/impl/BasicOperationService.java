@@ -34,6 +34,7 @@ import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupCompletionCallback;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Notifier;
@@ -731,6 +732,20 @@ final class BasicOperationService implements InternalOperationService {
     @PrivateApi
     boolean isOperationExecuting(Address callerAddress, String callerUuid, long operationCallId) {
         return executingCalls.containsKey(new RemoteCallKey(callerAddress, callerUuid, operationCallId));
+    }
+
+    @PrivateApi
+    boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
+        Object service = nodeEngine.getService(serviceName);
+        if (service == null) {
+            logger.severe("Not able to find operation execution info. Invalid service: " + serviceName);
+            return false;
+        }
+        if (service instanceof ExecutionTracingService) {
+            return ((ExecutionTracingService) service).isOperationExecuting(callerAddress, callerUuid, identifier);
+        }
+        logger.severe("Not able to find operation execution info. Invalid service: " + service);
+        return false;
     }
 
     @Override
