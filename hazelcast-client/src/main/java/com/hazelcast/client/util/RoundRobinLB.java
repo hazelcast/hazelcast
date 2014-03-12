@@ -24,7 +24,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RoundRobinLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
 
-    private final AtomicInteger index = new AtomicInteger(0);
+    private final AtomicInteger indexRef;
+
+    public RoundRobinLB() {
+        this((int)System.nanoTime());
+    }
+
+    public RoundRobinLB(int seed) {
+        indexRef  = new AtomicInteger(seed);
+    }
 
     public Member next() {
         final Member[] members = getMembers();
@@ -32,6 +40,6 @@ public class RoundRobinLB extends AbstractLoadBalancer implements LoadBalancer, 
             return null;
         }
         final int length = members.length;
-        return members[(index.getAndAdd(1) % length + length) % length];
+        return members[(indexRef.getAndAdd(1) % length + length) % length];
     }
 }
