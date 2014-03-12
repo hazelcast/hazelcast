@@ -76,8 +76,8 @@ public class PartitionRuntimeState implements DataSerializable {
                 } else {
                     Integer knownIndex = addressIndexes.get(address);
                     if (knownIndex == null && index == 0) {
-                        throw new IllegalStateException("Unknown owner address in partition state! " +
-                                "Address: " + address + ", " + partition);
+                        throw new IllegalStateException("Unknown owner address in partition state! "
+                                + "Address: " + address + ", " + partition);
                     }
                     partitionInfo.addressIndexes[index] = knownIndex != null ? addressIndexes.get(address) : -1;
                 }
