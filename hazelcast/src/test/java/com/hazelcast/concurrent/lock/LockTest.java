@@ -592,7 +592,6 @@ public class LockTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    @Category(ProblematicTest.class)//TODO
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
