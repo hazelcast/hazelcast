@@ -63,6 +63,10 @@ public interface RecordStore {
 
     void putRecord(Data key, Record record);
 
+    Record putBackup(Data key, Object value);
+
+    Record putBackup(Data key, Object value, long ttl, boolean shouldSchedule);
+
     void deleteRecord(Data key);
 
     Map<Data, Record> getReadonlyRecordMap();
