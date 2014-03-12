@@ -34,9 +34,9 @@ import java.util.Map;
 
 public class PartitionRuntimeState implements DataSerializable {
 
-    protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
+    protected final ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
 
-    private Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
+    private final Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private long masterTime = Clock.currentTimeMillis();
     private int version;
     private Collection<MigrationInfo> completedMigrations;
@@ -69,13 +69,17 @@ public class PartitionRuntimeState implements DataSerializable {
     protected void setPartitions(InternalPartition[] partitions, Map<Address, Integer> addressIndexes) {
         for (InternalPartition partition : partitions) {
             ShortPartitionInfo partitionInfo = new ShortPartitionInfo(partition.getPartitionId());
-            for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
-                Address address = partition.getReplicaAddress(i);
+            for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
+                Address address = partition.getReplicaAddress(index);
                 if (address == null) {
-                    partitionInfo.addressIndexes[i] = -1;
+                    partitionInfo.addressIndexes[index] = -1;
                 } else {
                     Integer knownIndex = addressIndexes.get(address);
-                    partitionInfo.addressIndexes[i] = (knownIndex == null) ? -1 : knownIndex;
+                    if (knownIndex == null && index == 0) {
+                        throw new IllegalStateException("Unknown owner address in partition state! " +
+                                "Address: " + address + ", " + partition);
+                    }
+                    partitionInfo.addressIndexes[index] = knownIndex != null ? addressIndexes.get(address) : -1;
                 }
             }
             partitionInfos.add(partitionInfo);
@@ -195,7 +199,7 @@ public class PartitionRuntimeState implements DataSerializable {
     private static class ShortPartitionInfo implements DataSerializable {
 
         int partitionId;
-        int[] addressIndexes = new int[InternalPartition.MAX_REPLICA_COUNT];
+        final int[] addressIndexes = new int[InternalPartition.MAX_REPLICA_COUNT];
 
         ShortPartitionInfo(int partitionId) {
             this.partitionId = partitionId;

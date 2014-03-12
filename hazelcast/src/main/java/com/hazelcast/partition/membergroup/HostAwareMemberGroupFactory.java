@@ -29,7 +29,7 @@ import java.util.Set;
 public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     @Override
-    protected Set<MemberGroup> createInternalMemberGroups(Collection<Member> allMembers) {
+    protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
         Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
         for (Member member : allMembers) {
             Address address = ((MemberImpl) member).getAddress();

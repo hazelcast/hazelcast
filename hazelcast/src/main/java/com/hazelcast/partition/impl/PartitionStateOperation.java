@@ -17,40 +17,31 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.JoinOperation;
-import com.hazelcast.cluster.MemberInfo;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
-import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 public final class PartitionStateOperation extends AbstractOperation
         implements MigrationCycleOperation, JoinOperation {
 
     private PartitionRuntimeState partitionState;
+    private boolean sync;
 
     public PartitionStateOperation() {
     }
 
-    public PartitionStateOperation(Collection<MemberImpl> members,
-                                   InternalPartition[] partitions,
-                                   Collection<MigrationInfo> migrationInfos,
-                                   long masterTime, int version) {
-        List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
-        for (MemberImpl member : members) {
-            MemberInfo memberInfo = new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes());
-            memberInfos.add(memberInfo);
-        }
-        partitionState = new PartitionRuntimeState(memberInfos, partitions, migrationInfos, masterTime, version);
+    public PartitionStateOperation(PartitionRuntimeState partitionState) {
+        this(partitionState, false);
+    }
+
+    public PartitionStateOperation(PartitionRuntimeState partitionState, boolean sync) {
+        this.partitionState = partitionState;
+        this.sync = sync;
     }
 
     @Override
@@ -62,7 +53,12 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public boolean returnsResponse() {
-        return false;
+        return sync;
+    }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
     }
 
     @Override
@@ -75,11 +71,13 @@ public final class PartitionStateOperation extends AbstractOperation
         super.readInternal(in);
         partitionState = new PartitionRuntimeState();
         partitionState.readData(in);
+        sync = in.readBoolean();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         partitionState.writeData(out);
+        out.writeBoolean(sync);
     }
 }

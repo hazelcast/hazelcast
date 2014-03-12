@@ -18,6 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.CallerNotMemberException;
+import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -34,7 +35,8 @@ public final class ReplicaErrorLogger {
             Level level = Level.INFO;
             if (e instanceof CallerNotMemberException
                     || e instanceof WrongTargetException
-                    || e instanceof TargetNotMemberException) {
+                    || e instanceof TargetNotMemberException
+                    || e instanceof PartitionMigratingException) {
                 level = Level.FINEST;
             }
             if (logger.isLoggable(level)) {

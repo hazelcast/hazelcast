@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition.membergroup;
+package com.hazelcast.spi;
 
-import com.hazelcast.core.Member;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-public class SingleMemberGroupFactory implements MemberGroupFactory {
-
-    @Override
-    public Set<MemberGroup> createMemberGroups(Collection<? extends Member> members) {
-        Set<MemberGroup> groups = new HashSet<MemberGroup>(members.size());
-        for (Member member : members) {
-            groups.add(new SingleMemberGroup(member));
-        }
-        return groups;
-    }
+/**
+ * Marker interface for non-thread-safe classes.
+ */
+public interface NonThreadSafe {
 }
