@@ -438,7 +438,7 @@ public class EvictionTest extends HazelcastTestSupport {
         try {
             final int k = 2;
             final int size = 10000;
-            final String mapName = "testEvictionLFU2_" + randomString();
+            final String mapName = randomMapName("testEvictionLFU2");
             Config cfg = new Config();
             MapConfig mc = cfg.getMapConfig(mapName);
             mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
@@ -498,7 +498,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testMapRecordIdleEviction() throws InterruptedException {
-        final String mapName = "testMapRecordIdleEviction";
+        final String mapName = randomMapName("testMapRecordIdleEviction");
         final int maxIdleSeconds = 5;
         final int size = 1000;
         final int expectedEntryCountAfterIdleEviction = size / 100;
