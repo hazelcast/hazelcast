@@ -18,24 +18,18 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
-import java.io.IOException;
-
 public class AwaitOperation extends BaseCountDownLatchOperation implements WaitSupport, IdentifiedDataSerializable {
-
-    private long timeout;
 
     public AwaitOperation() {
     }
 
     public AwaitOperation(String name, long timeout) {
         super(name);
-        this.timeout = timeout;
+        setWaitTimeout(timeout);
     }
 
     public void run() throws Exception {
@@ -58,25 +52,8 @@ public class AwaitOperation extends BaseCountDownLatchOperation implements WaitS
     }
 
     @Override
-    public long getWaitTimeoutMillis() {
-        return timeout;
-    }
-
-    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(false);
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(timeout);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        timeout = in.readLong();
     }
 
     @Override
