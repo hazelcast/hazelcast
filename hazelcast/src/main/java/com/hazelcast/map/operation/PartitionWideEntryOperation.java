@@ -18,7 +18,12 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.map.*;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapEntrySimple;
+import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -100,11 +105,9 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                     recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
                 }
             }
-
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
                 mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(record.getValue()), dataValue);
-                if (mapContainer.isNearCacheEnabled()
-                        && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+                if (mapService.isNearCacheAndInvalidationEnabled(name)) {
                     mapService.invalidateAllNearCaches(name, dataKey);
                 }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
