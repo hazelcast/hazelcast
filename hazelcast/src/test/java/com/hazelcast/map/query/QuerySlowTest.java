@@ -120,7 +120,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
-        for (int i = 0; i < 50000; i++) {
+        for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         long start = Clock.currentTimeMillis();
@@ -137,7 +137,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("salary", false);
         imap.addIndex("active", false);
-        for (int i = 0; i < 50000; i++) {
+        for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         imap.put(String.valueOf(10), new SampleObjects.Employee("name" + 10, 10, true, 44010.99D));
@@ -145,7 +145,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         start = Clock.currentTimeMillis();
         entries = imap.entrySet(new SqlPredicate("active and salary between 44010.99 and 44032.01"));
         long tookWithIndex = (Clock.currentTimeMillis() - start);
-        assertEquals(13, entries.size());
+        assertEquals(2, entries.size());
         boolean foundFirst = false;
         boolean foundLast = false;
         for (Map.Entry entry : entries) {
