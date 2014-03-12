@@ -51,7 +51,7 @@ import java.util.concurrent.TimeoutException;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
-    private static final long MIN_TIMEOUT = 10000;
+    private static final long PLUS_TIMEOUT = 10000;
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     protected final long callTimeout;
@@ -93,17 +93,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
             if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
-                 /*
-                  * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
-                  * long callTimeout = Math.min(waitTimeoutMillis, defaultCallTimeout);
-                  * callTimeout = Math.max(a, minTimeout);
-                  * return callTimeout;
-                  *
-                  * Below two lines are shortened version of above*
-                  * using min(max(x,y),z)=max(min(x,z),min(y,z))
-                  */
-                final long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT);
-                return Math.min(max, defaultCallTimeout);
+                return waitTimeoutMillis + (defaultCallTimeout > PLUS_TIMEOUT ? PLUS_TIMEOUT : defaultCallTimeout);
             }
         }
         return defaultCallTimeout;
