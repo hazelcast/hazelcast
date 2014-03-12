@@ -456,7 +456,7 @@ public class WebFilter implements Filter {
                         cacheEntry.value = value;
                         cacheEntry.reload = false;
                     }
-                    localCache.put(name, NULL_ENTRY);
+                    localCache.put(name, cacheEntry);
                 }
                 return cacheEntry != NULL_ENTRY ? cacheEntry.value : null;
             }

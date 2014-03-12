@@ -24,6 +24,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.After;
@@ -50,7 +51,7 @@ import static org.junit.Assert.*;
  * @author ali 14/02/14
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class ClientXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());

@@ -68,6 +68,7 @@
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
+        <jacoco.version>0.6.5.201403032054</jacoco.version>
     </properties>
     <licenses>
         <license>
@@ -137,7 +138,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.6.4</version>
+                <version>${jacoco.version}</version>
                 <configuration>
                     <excludes>
                         <exclude>com/hazelcast/examples/**/*.class</exclude>
@@ -207,12 +208,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.6.4.201312101107</version>
-                        <configuration>
-                            <excludes>
-                                <exclude>com/hazelcast/examples/**/*.class</exclude>
-                            </excludes>
-                        </configuration>
+                        <version>${jacoco.version}</version>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
@@ -222,10 +218,15 @@
                             </execution>
                             <execution>
                                 <id>default-report</id>
-                                <phase>prepare-package</phase>
+                                <phase>test</phase>
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
+                                <configuration>
+                                    <excludes>
+                                        <exclude>**/ClientTestApp.class</exclude>
+                                    </excludes>
+                                </configuration>
                             </execution>
                             <!-- execution>
                                 <id>default-check</id>
@@ -257,8 +258,9 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                          <!--       ${argLine} -->
+
                             <argLine>
-                                ${argLine}
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
