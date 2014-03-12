@@ -58,23 +58,19 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     }
 
     @Override
-    public final long getWaitTimeoutMillis() {
-        return timeout;
-    }
-
-    @Override
     public final WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(namespace, key);
     }
 
     @Override
     public final boolean shouldWait() {
-        return timeout != 0 && !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+        return getWaitTimeout() != 0 && !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
     }
 
     @Override
     public final void onWaitExpire() {
         Object response;
+        long timeout = getWaitTimeout();
         if (timeout < 0 || timeout == Long.MAX_VALUE) {
             response = new OperationTimeoutException();
         } else {

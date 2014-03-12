@@ -112,7 +112,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     public void await(WaitSupport waitSupport) {
         final WaitNotifyKey key = waitSupport.getWaitKey();
         final Queue<WaitingOp> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
-        long timeout = waitSupport.getWaitTimeoutMillis();
+        long timeout = waitSupport.getWaitTimeout();
         WaitingOp waitingOp = new WaitingOp(q, waitSupport);
         waitingOp.setNodeEngine(nodeEngine);
         if (timeout > -1 && timeout < 1500) {
@@ -248,8 +248,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             this.op = (Operation) waitSupport;
             this.waitSupport = waitSupport;
             this.queue = queue;
-            this.expirationTime = waitSupport.getWaitTimeoutMillis() < 0 ? -1
-                    : Clock.currentTimeMillis() + waitSupport.getWaitTimeoutMillis();
+            this.expirationTime = waitSupport.getWaitTimeout() < 0 ? -1
+                    : Clock.currentTimeMillis() + waitSupport.getWaitTimeout();
             this.setPartitionId(op.getPartitionId());
         }
 
@@ -312,15 +312,16 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         @Override
         public void run() throws Exception {
             if (valid) {
-                if (isCancelled() && queue.remove(this)) {
-                    op.getResponseHandler().sendResponse(error);
-                } else if (isExpired() && queue.remove(this)) {
+                if (isExpired() && queue.remove(this)) {
                     waitSupport.onWaitExpire();
+                } else if (isCancelled() && queue.remove(this)) {
+                    op.getResponseHandler().sendResponse(error);
                 }
             }
         }
 
-        //If you don't think instances of this class will ever be inserted into a HashMap/HashTable, the recommended hashCode implementation to use is:
+        //If you don't think instances of this class will ever be inserted into a HashMap/HashTable,
+        // the recommended hashCode implementation to use is:
         public int hashCode() {
             assert false : "hashCode not designed";
             return 42; // any arbitrary constant will do

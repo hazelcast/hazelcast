@@ -54,7 +54,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -137,8 +137,8 @@ final class BasicOperationService implements InternalOperationService {
         operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
 
         executionService = nodeEngine.getExecutionService();
-
-        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 10, coreSize * 100000);
+        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 5, coreSize * 100000,
+                ExecutorType.CONCRETE);
 
         responseExecutor = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
@@ -263,7 +263,7 @@ final class BasicOperationService implements InternalOperationService {
             boolean urgent = op.isUrgent();
             executor.execute(op, partitionId, urgent);
         } else {
-            ManagedExecutorService executor = executionService.getExecutor(executorName);
+            ExecutorService executor = executionService.getExecutor(executorName);
             if (executor == null) {
                 throw new IllegalStateException("Could not found executor with name: " + executorName);
             }
@@ -314,7 +314,7 @@ final class BasicOperationService implements InternalOperationService {
                 if (executorName == null) {
                     processOperation(op);
                 } else {
-                    ManagedExecutorService executor = executionService.getExecutor(executorName);
+                    ExecutorService executor = executionService.getExecutor(executorName);
                     if (executor == null) {
                         throw new IllegalStateException("Could not found executor with name: " + executorName);
                     }

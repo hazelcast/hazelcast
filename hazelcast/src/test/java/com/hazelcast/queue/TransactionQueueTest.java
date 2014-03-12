@@ -24,6 +24,7 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -168,11 +169,8 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         queue.poll();
     }
 
-    /**
-     * Moved from {@link com.hazelcast.test.annotation.ProblematicTest}
-     * @throws Exception
-     */
     @Test
+    @Category(ProblematicTest.class)
     public void testIssue859And863() throws Exception {
         final int numberOfMessages = 2000;
         final AtomicInteger count = new AtomicInteger();
