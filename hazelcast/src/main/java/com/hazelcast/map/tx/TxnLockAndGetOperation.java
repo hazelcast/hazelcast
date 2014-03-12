@@ -28,7 +28,6 @@ import java.io.IOException;
 
 public class TxnLockAndGetOperation extends LockAwareOperation {
 
-    private long timeout;
     private VersionedValue response;
     private String ownerUuid;
 
@@ -37,8 +36,8 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
 
     public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid) {
         super(name, dataKey, ttl);
-        this.timeout = timeout;
         this.ownerUuid = ownerUuid;
+        setWaitTimeout(timeout);
     }
 
     @Override
@@ -56,11 +55,6 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     }
 
     @Override
-    public long getWaitTimeoutMillis() {
-        return timeout;
-    }
-
-    @Override
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);
@@ -74,14 +68,12 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(timeout);
         out.writeUTF(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        timeout = in.readLong();
         ownerUuid = in.readUTF();
     }
 
@@ -89,7 +81,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     @Override
     public String toString() {
         return "TxnLockAndGetOperation{" +
-                "timeout=" + timeout +
+                "timeout=" + getWaitTimeout() +
                 ", thread=" + getThreadId() +
                 '}';
     }

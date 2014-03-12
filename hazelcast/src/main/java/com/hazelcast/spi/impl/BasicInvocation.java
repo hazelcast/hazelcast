@@ -144,7 +144,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         final long defaultCallTimeout = operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
-            final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
+            final long waitTimeoutMillis = op.getWaitTimeout();
             if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
                 /*
                  * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
@@ -238,6 +238,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                     response = RETRY_RESPONSE;
                     if (logger.isFinestEnabled()) {
                         logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+                    }
+                    if (op instanceof WaitSupport) {
+                        // decrement wait-timeout by call-timeout
+                        long waitTimeout = op.getWaitTimeout();
+                        waitTimeout -= callTimeout;
+                        op.setWaitTimeout(waitTimeout);
                     }
                     invokeCount--;
                 } else {

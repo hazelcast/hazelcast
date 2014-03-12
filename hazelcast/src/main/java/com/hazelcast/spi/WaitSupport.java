@@ -22,7 +22,7 @@ public interface WaitSupport {
 
     boolean shouldWait();
 
-    long getWaitTimeoutMillis();
+    long getWaitTimeout();
 
     void onWaitExpire();
 }
