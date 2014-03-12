@@ -17,10 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.core.*;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -30,6 +27,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ValidationUtil;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -612,9 +610,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         Future f = nodeEngine.getExecutionService().submit("hz:system", task);
                         futures.add(f);
                     }
+                    long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
                     for (Future f : futures) {
                         try {
-                            f.get();
+                            waitOnFutureInterruptible(f, callTimeout, TimeUnit.MILLISECONDS);
                         } catch (Exception e) {
                             logger.severe("While merging...", e);
                         }
@@ -622,6 +621,28 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     lifecycleService.fireLifecycleEvent(MERGED);
                 }
             });
+        }
+    }
+
+    private <V> V waitOnFutureInterruptible(Future<V> future, long timeout, TimeUnit timeUnit)
+            throws ExecutionException, InterruptedException, TimeoutException {
+
+        ValidationUtil.isNotNull(timeUnit, "timeUnit");
+        long deadline = Clock.currentTimeMillis() + timeUnit.toMillis(timeout);
+        while (true) {
+            long localTimeout = Math.min(1000 * 10, deadline);
+            try {
+                return future.get(localTimeout, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException te) {
+                deadline -= localTimeout;
+                if (deadline <= 0) {
+                    throw te;
+                }
+                if (!node.isActive()) {
+                    future.cancel(true);
+                    throw new HazelcastInstanceNotActiveException();
+                }
+            }
         }
     }
 

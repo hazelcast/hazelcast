@@ -24,7 +24,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -439,7 +438,7 @@ public class EvictionTest extends HazelcastTestSupport {
         try {
             final int k = 2;
             final int size = 10000;
-            final String mapName = "testEvictionLFU2_"+randomString();
+            final String mapName = randomMapName("testEvictionLFU2");
             Config cfg = new Config();
             MapConfig mc = cfg.getMapConfig(mapName);
             mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
@@ -497,50 +496,38 @@ public class EvictionTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testMapRecordIdleEviction() throws InterruptedException {
+        final String mapName = randomMapName("testMapRecordIdleEviction");
+        final int maxIdleSeconds = 5;
+        final int size = 1000;
+        final int expectedEntryCountAfterIdleEviction = size / 100;
         Config cfg = new Config();
-        MapConfig mc = cfg.getMapConfig("testMapRecordIdleEviction");
-        int maxIdleSeconds = 8;
-        int size = 1000;
-        final int nsize = size / 10;
+        MapConfig mc = cfg.getMapConfig(mapName);
         mc.setMaxIdleSeconds(maxIdleSeconds);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(cfg);
-        final IMap map = instances[0].getMap("testMapRecordIdleEviction");
-        final CountDownLatch latch = new CountDownLatch(size - nsize);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        final IMap map = instance.getMap(mapName);
+        final CountDownLatch latch = new CountDownLatch(size - expectedEntryCountAfterIdleEviction);
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
             }
         }, false);
-
-        final Thread thread = new Thread(new Runnable() {
-            public void run() {
-                while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        for (int i = 0; i < nsize; i++) {
-                            map.get(i);
-                        }
-                        Thread.sleep(100);
-                    } catch (HazelcastInstanceNotActiveException e) {
-                        return;
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-            }
-        });
-        thread.start();
-
+        //populate map.
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
-        assertEquals(nsize, map.size());
-
-        thread.interrupt();
-        thread.join(5000);
+        //use some entries.
+        for (; ; ) {
+            for (int i = 0; i < expectedEntryCountAfterIdleEviction; i++) {
+                map.get(i);
+            }
+            if (latch.getCount() == 0) {
+                break;
+            }
+        }
+        assertEquals(expectedEntryCountAfterIdleEviction, map.size());
     }
 
     @Test
@@ -605,7 +592,7 @@ public class EvictionTest extends HazelcastTestSupport {
         //wait until eviction is complete
         assertOpenEventually(latch);
 
-        assertEquals("not all idle values evicted!",nsize, map.size());
+        assertEquals("not all idle values evicted!", nsize, map.size());
 
     }
 
@@ -699,7 +686,7 @@ public class EvictionTest extends HazelcastTestSupport {
         //wait until eviction is complete
         assertOpenEventually(latch);
 
-        assertEquals("not all values evicted!",0,map.size());
+        assertEquals("not all values evicted!", 0, map.size());
     }
 
     /**
