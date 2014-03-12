@@ -75,8 +75,8 @@ public class CompletableFutureTask<V> extends FutureTask<V> implements ICompleta
             return;
         }
         for (;;) {
-            ExecutionCallbackNode oldCallbackHead = callbackHead;
-            ExecutionCallbackNode newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
+            ExecutionCallbackNode<V> oldCallbackHead = callbackHead;
+            ExecutionCallbackNode<V> newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
             if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
                 break;
             }

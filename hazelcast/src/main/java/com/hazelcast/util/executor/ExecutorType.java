@@ -16,19 +16,6 @@
 
 package com.hazelcast.util.executor;
 
-import java.util.concurrent.ExecutorService;
-
-public interface ManagedExecutorService extends ExecutorService {
-
-    String getName();
-
-    long getCompletedTaskCount();
-
-    int getMaximumPoolSize();
-
-    int getPoolSize();
-
-    int getQueueSize();
-
-    int getRemainingQueueCapacity();
+public enum ExecutorType {
+    CACHED, CONCRETE
 }
