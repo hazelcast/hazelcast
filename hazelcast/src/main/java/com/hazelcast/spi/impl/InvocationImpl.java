@@ -24,17 +24,34 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionView;
-import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.exception.CallTimeoutException;
+import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableIOException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
-    private static final long PLUS_TIMEOUT = 10000;
+    private static final long MIN_TIMEOUT = 10000;
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     protected final long callTimeout;
@@ -76,7 +93,17 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
             if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
-                return waitTimeoutMillis + (defaultCallTimeout > PLUS_TIMEOUT ? PLUS_TIMEOUT : defaultCallTimeout);
+                 /*
+                  * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
+                  * long callTimeout = Math.min(waitTimeoutMillis, defaultCallTimeout);
+                  * callTimeout = Math.max(a, minTimeout);
+                  * return callTimeout;
+                  *
+                  * Below two lines are shortened version of above*
+                  * using min(max(x,y),z)=max(min(x,z),min(y,z))
+                  */
+                final long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT);
+                return Math.min(max, defaultCallTimeout);
             }
         }
         return defaultCallTimeout;
@@ -309,7 +336,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     }
                 }
                 return resolvedResponse;
-            }finally{
+            } finally {
                 cleanup();
             }
         }
@@ -318,7 +345,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             OperationServiceImpl operationService = nodeEngine.operationService;
             long callId = op.getCallId();
             if (callId > 0) {
-                if(op instanceof BackupAwareOperation){
+                if (op instanceof BackupAwareOperation) {
                     operationService.deregisterBackupCall(op.getCallId());
                 }
                 operationService.deregisterRemoteCall(op.getCallId());
@@ -345,7 +372,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     timeout = decrementTimeout(timeout, lastPollTime);
                 } catch (InterruptedException e) {
                     // do not allow interruption while waiting for a response!
-                    logger.finest( Thread.currentThread().getName() + " is interrupted while waiting " +
+                    logger.finest(Thread.currentThread().getName() + " is interrupted while waiting " +
                             "response for operation " + op);
                     interrupted = e;
                     if (!nodeEngine.isActive()) {
@@ -410,7 +437,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
                     if (!ok) {
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Backup response cannot be received -> " + InvocationImpl.this.toString());
+                            logger.finest("Backup response cannot be received -> " + InvocationImpl.this.toString());
                         }
                         if (nodeEngine.getClusterService().getMember(target) == null) {
                             return RETRY_RESPONSE;
