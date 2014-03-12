@@ -49,7 +49,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         // create config
         Config config = new Config();
         // configure near cache
-        MapConfig mapConfig = config.getMapConfig(mapName);
+        MapConfig mapConfig = config.getMapConfig(mapName + "*");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setEvictionPolicy("NONE");
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -67,10 +67,14 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         hcInstance2.getLifecycleService().shutdown();
     }
 
+    private static String getMapName(){
+        return mapName + randomString();
+    }
+
 
     @Test
     public void testRemove() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "remove_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -90,7 +94,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testDelete() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "delete_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -109,7 +113,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveValue() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "removevalue_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -127,7 +131,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testTryRemove() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "tryremove_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -145,7 +149,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsync() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "removeasync_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -173,11 +177,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testPut() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "put_" + String.valueOf(k);
             String value = "merhaba-" + key;
-
             // test
             String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
             String value1 = map.put(key, value);
@@ -191,7 +194,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testTryPut() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "tryput_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -207,7 +210,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testPutIfAbsent() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "putifabsent_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -224,7 +227,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testPutTransient() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "puttransient_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -240,7 +243,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAsync() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "putasync_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -264,7 +267,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testEvict() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "evict_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -282,7 +285,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testSet() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "set_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -300,7 +303,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testReplace() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         for (int k = 0; k < numIterations; k++) {
             String key = "replace_" + String.valueOf(k);
             String value = "merhaba-" + key;
@@ -318,7 +321,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testExecuteOnKey() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         // loop over several keys to make sure we have keys on both instances
         for (int k = 0; k < numIterations; k++) {
             String key = "executeOnKey_" + String.valueOf(k);
@@ -334,7 +337,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     @Test
     public void testExecuteOnKeys() {
-        final IMap<String, String> map = hcInstance.getMap(mapName);
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
         // loop over several keys to make sure we have keys on both instances
         for (int k = 0; k < numIterations; k++) {
             String key = "executeOnKeys_" + String.valueOf(k);
