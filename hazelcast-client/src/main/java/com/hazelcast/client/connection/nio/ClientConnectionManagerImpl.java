@@ -295,7 +295,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         socketChannel.connect(address.getInetSocketAddress());
         SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
         final ClientConnection clientConnection = new ClientConnection(this, inSelector, outSelector,
-                connectionIdGen.incrementAndGet(), socketChannelWrapper);
+                connectionIdGen.incrementAndGet(), socketChannelWrapper, client.getClientExecutionService());
         socketChannel.configureBlocking(true);
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(socket);
@@ -330,6 +330,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     public void handlePacket(ClientPacket packet) {
+        final ClientConnection conn = (ClientConnection)packet.getConn();
+        conn.incrementPacketCount();
         client.getClientExecutionService().execute(new ClientPacketProcessor(packet));
     }
 
@@ -356,6 +358,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             } else {
                 handlePacket(response, clientResponse.isError(), callId, conn);
             }
+            conn.decrementPacketCount();
         }
 
         private void handlePacket(Object response, boolean isError, int callId, ClientConnection conn) {
