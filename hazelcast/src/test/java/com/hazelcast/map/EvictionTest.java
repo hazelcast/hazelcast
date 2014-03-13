@@ -737,9 +737,9 @@ public class EvictionTest extends HazelcastTestSupport {
                 count.incrementAndGet();
             }
         }, true);
-        map.put(1, 1, 3, TimeUnit.SECONDS);
-        map.put(2, 2, 3, TimeUnit.SECONDS);
-        final int expected = map.remove(1) == null ? 1 : 2;
+        // ttl is 2 seconds.
+        map.put(1, 1, 2, TimeUnit.SECONDS);
+        final int expected = (map.remove(1) == null ? 1 : 0);
 
         assertTrueEventually(new AssertTask() {
             @Override
