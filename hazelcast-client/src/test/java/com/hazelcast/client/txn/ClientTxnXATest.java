@@ -18,10 +18,7 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.ClientOutOfMemoryHandler;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.TransactionalList;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
