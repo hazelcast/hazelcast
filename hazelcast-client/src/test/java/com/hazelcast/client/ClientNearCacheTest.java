@@ -23,11 +23,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastTest;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -143,6 +145,7 @@ public class ClientNearCacheTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void nearCashWithMaxSizeSet() {
         final String mapName = "nearCashWithMaxSizeSet";
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
