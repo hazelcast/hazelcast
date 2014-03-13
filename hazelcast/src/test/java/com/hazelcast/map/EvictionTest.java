@@ -38,7 +38,6 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -46,11 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -742,14 +737,14 @@ public class EvictionTest extends HazelcastTestSupport {
                 count.incrementAndGet();
             }
         }, true);
-        map.put(1, 1, 1, TimeUnit.SECONDS);
-        map.put(2, 2, 1, TimeUnit.SECONDS);
-        map.remove(1);
-        Thread.sleep(1000);
+        map.put(1, 1, 3, TimeUnit.SECONDS);
+        map.put(2, 2, 3, TimeUnit.SECONDS);
+        final int expected = map.remove(1) == null ? 1 : 2;
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(1, count.get());
+                assertEquals(expected, count.get());
             }
         });
     }
