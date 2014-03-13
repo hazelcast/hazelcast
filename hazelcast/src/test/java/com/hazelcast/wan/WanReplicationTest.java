@@ -36,7 +36,7 @@ import static org.junit.Assert.*;
 @Category(NightlyTest.class)
 public class WanReplicationTest extends HazelcastTestSupport{
 
-    private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 2 * 60;
+    private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 3 * 60;
 
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
@@ -119,10 +119,12 @@ public class WanReplicationTest extends HazelcastTestSupport{
     }
 
 
-
-    private void setupReplicateFrom(Config fromConfig, Config toConfig, int clusterSz, String setupName, String policy){
-        WanReplicationConfig wanConfig = new WanReplicationConfig();
-        wanConfig.setName(setupName);
+    private void setupReplicateFrom(Config fromConfig, Config toConfig, int clusterSz, String setupName, String policy) {
+        WanReplicationConfig wanConfig = fromConfig.getWanReplicationConfig(setupName);
+        if (wanConfig == null) {
+            wanConfig = new WanReplicationConfig();
+            wanConfig.setName(setupName);
+        }
         wanConfig.addTargetClusterConfig(targetCluster(toConfig, clusterSz));
 
         WanReplicationRef wanRef = new WanReplicationRef();
@@ -138,6 +140,14 @@ public class WanReplicationTest extends HazelcastTestSupport{
         IMap m = node.getMap(mapName);
         for(; start<end; start++)
             m.put(start, node.getConfig().getGroupConfig().getName()+start);
+    }
+
+    private void increaseHitCount(HazelcastInstance[] cluster, String mapName, int start, int end, int repeat) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for(; start<end; start++)
+            for(int i=0; i<repeat; i++)
+            m.get(start);
     }
 
     private void removeDataIn(HazelcastInstance[] cluster, String mapName, int start, int end){
@@ -284,7 +294,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     //"Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
     @Test
-    @Category(ProblematicTest.class)
+    @Ignore //replica of replica is not supported
     public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -378,8 +388,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
         assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
 
-        createDataIn(clusterB, "map", 0, 1000);
-        createDataIn(clusterB, "map", 0, 1000);
+        increaseHitCount(clusterB, "map", 0, 1000, 10);
         createDataIn(clusterB, "map", 0, 1000);
 
 
@@ -393,8 +402,9 @@ public class WanReplicationTest extends HazelcastTestSupport{
     @Category(ProblematicTest.class)
     public void VTopo_2passiveReplicar_1producer_Test(){
 
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
+        String replicaName="multiReplica";
+        setupReplicateFrom(configA, configB, clusterB.length, replicaName, PassThroughMergePolicy.class.getName());
+        setupReplicateFrom(configA, configC, clusterC.length, replicaName, PassThroughMergePolicy.class.getName());
         initAllClusters();
 
 
@@ -506,13 +516,14 @@ public class WanReplicationTest extends HazelcastTestSupport{
         createDataIn(clusterA, "map", 0, 1000);
         assertDataInFrom(clusterB, "map", 0, 1000, clusterA);
 
+        increaseHitCount(clusterB, "map", 0, 500, 10);
         createDataIn(clusterB, "map", 0, 500);
         assertDataInFrom(clusterA, "map", 0, 500, clusterB);
     }
 
     //("Issue #1372  is a chain of replicars a valid topology")//TODO
     @Test
-    @Category(ProblematicTest.class)
+    @Ignore // replica of replica is not supported
     public void chainTopo_2passiveReplicars_1producer(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
