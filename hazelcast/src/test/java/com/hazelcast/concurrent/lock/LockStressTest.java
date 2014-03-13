@@ -23,10 +23,12 @@ import static org.junit.Assert.assertTrue;
 @Category(NightlyTest.class)
 public class LockStressTest extends HazelcastTestSupport {
 
+    private static final int TIMEOUT_MILLS = 4 * 60 * 1000;
+
     /**
      * Test for issue 267
      */
-    @Test(timeout = 1000 * 100)
+    @Test(timeout = TIMEOUT_MILLS)
     public void testHighConcurrentLockAndUnlock() {
         final HazelcastInstance hz = createHazelcastInstance();
         final String key = "key";
@@ -71,7 +73,7 @@ public class LockStressTest extends HazelcastTestSupport {
         }
 
         try {
-            assertTrue("Lock tasks stuck!", latch.await(2, TimeUnit.MINUTES));
+            assertTrue("Lock tasks stuck!", latch.await(TIMEOUT_MILLS, TimeUnit.MILLISECONDS));
             assertEquals((threadCount * lockCountPerThread), totalCount.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
