@@ -494,7 +494,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
                 assertEquals(SAMPLE_SIZE_2, values.size());
             }
         });
-//        assertEquals(SAMPLE_SIZE_2,typexValues.size());
 
         instances[2].shutdown();
 
