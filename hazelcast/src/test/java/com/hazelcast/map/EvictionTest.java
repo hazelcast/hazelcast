@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -686,7 +687,11 @@ public class EvictionTest extends HazelcastTestSupport {
         //wait until eviction is complete
         assertOpenEventually(latch);
 
-        assertEquals("not all values evicted!", 0, map.size());
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertEquals(0, map.size());
+            }
+        });
     }
 
     /**
