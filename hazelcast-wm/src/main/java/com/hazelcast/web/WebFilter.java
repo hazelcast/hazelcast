@@ -617,15 +617,16 @@ public class WebFilter implements Filter {
         }
 
         private Set<String> selectKeys() {
-            if (!deferredWrite) {
-                return getClusterMap().keySet(new SessionAttributePredicate(id));
-            }
             Set<String> keys = new HashSet<String>();
-            Iterator<Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, LocalCacheEntry> entry = iterator.next();
-                if (!entry.getValue().removed) {
-                    keys.add(entry.getKey());
+            if (!deferredWrite) {
+                for (String qualifiedAttributeKey : getClusterMap().keySet(new SessionAttributePredicate(id))) {
+                    keys.add(extractAttributeKey(qualifiedAttributeKey));
+                }
+            } else {
+                for (Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
+                    if (!entry.getValue().removed) {
+                        keys.add(entry.getKey());
+                    }
                 }
             }
             return keys;
