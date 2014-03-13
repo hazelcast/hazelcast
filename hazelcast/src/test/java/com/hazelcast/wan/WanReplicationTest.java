@@ -530,9 +530,8 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    //("Issue #1372 is a ring topology valid")//TODO
     @Test
-    @Category(ProblematicTest.class)
+    @Ignore // currently Ring is not supported!
     public void replicationRing(){
 
         setupReplicateFrom(configA, configB, clusterB.length,"atob", PassThroughMergePolicy.class.getName());
