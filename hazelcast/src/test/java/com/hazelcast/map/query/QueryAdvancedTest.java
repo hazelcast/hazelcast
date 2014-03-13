@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
