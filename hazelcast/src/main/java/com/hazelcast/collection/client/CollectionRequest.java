@@ -53,11 +53,6 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     }
 
     @Override
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
-    @Override
     public String getServiceName() {
         return serviceName;
     }

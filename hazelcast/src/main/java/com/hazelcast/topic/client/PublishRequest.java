@@ -61,11 +61,6 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
     }
 
     @Override
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
-    @Override
     public String getServiceName() {
         return TopicService.SERVICE_NAME;
     }
