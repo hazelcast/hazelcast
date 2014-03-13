@@ -411,7 +411,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     public void testGetAsync() throws Exception {
         final String mapName = "testGetAsyncWithNearCache";
         Config config = new Config();
-        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(false));
         final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = hazelcastInstanceFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = hazelcastInstanceFactory.newHazelcastInstance(config);
