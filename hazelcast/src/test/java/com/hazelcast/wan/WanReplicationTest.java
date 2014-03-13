@@ -121,8 +121,11 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     private void setupReplicateFrom(Config fromConfig, Config toConfig, int clusterSz, String setupName, String policy){
-        WanReplicationConfig wanConfig = new WanReplicationConfig();
-        wanConfig.setName(setupName);
+        WanReplicationConfig wanConfig = fromConfig.getWanReplicationConfig(setupName);
+        if(wanConfig == null) {
+            wanConfig = new WanReplicationConfig();
+            wanConfig.setName(setupName);
+        }
         wanConfig.addTargetClusterConfig(targetCluster(toConfig, clusterSz));
 
         WanReplicationRef wanRef = new WanReplicationRef();
@@ -290,8 +293,8 @@ public class WanReplicationTest extends HazelcastTestSupport{
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
 
-        setupReplicateFrom(configC, configA, clusterA.length, "ctoa", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configC, configB, clusterB.length, "ctob", PassThroughMergePolicy.class.getName());
+        setupReplicateFrom(configC, configA, clusterA.length, "ctox", PassThroughMergePolicy.class.getName());
+        setupReplicateFrom(configC, configB, clusterB.length, "ctox", PassThroughMergePolicy.class.getName());
 
         initAllClusters();
 
@@ -386,30 +389,27 @@ public class WanReplicationTest extends HazelcastTestSupport{
         assertDataInFrom(clusterC, "map", 0, 1000, clusterB);
     }
 
-
-
     //("Issue #1368 multi replicar topology cluster A replicates to B and C")
     @Test
     @Category(ProblematicTest.class)
     public void VTopo_2passiveReplicar_1producer_Test(){
-
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
+        String wanConfigName = "VTopo_2passiveReplicar_1producer_Test";
+        setupReplicateFrom(configA, configB, clusterB.length, wanConfigName, PassThroughMergePolicy.class.getName());
+        setupReplicateFrom(configA, configC, clusterC.length, wanConfigName, PassThroughMergePolicy.class.getName());
         initAllClusters();
+        String mapName = "map";
+        createDataIn(clusterA, mapName, 0, 1000);
 
+        assertKeysIn(clusterB, mapName, 0, 1000);
+        assertKeysIn(clusterC, mapName, 0, 1000);
 
-        createDataIn(clusterA, "map", 0, 1000);
+        removeDataIn(clusterA, mapName, 0, 1000);
 
-        assertKeysIn(clusterB, "map", 0, 1000);
-        assertKeysIn(clusterC, "map", 0, 1000);
+        assertKeysNotIn(clusterB, mapName, 0, 1000);
+        assertKeysNotIn(clusterC, mapName, 0, 1000);
 
-        removeDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysNotIn(clusterB, "map", 0, 1000);
-        assertKeysNotIn(clusterC, "map", 0, 1000);
-
-        assertDataSize(clusterB, "map", 0);
-        assertDataSize(clusterC, "map", 0);
+        assertDataSize(clusterB, mapName, 0);
+        assertDataSize(clusterC, mapName, 0);
     }
 
 
