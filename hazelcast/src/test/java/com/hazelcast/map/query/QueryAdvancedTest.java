@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
@@ -469,9 +470,9 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
         HazelcastInstance[] instances = createHazelcastInstanceFactory(3).newInstances(cfg);
 
-        IMap map = instances[0].getMap("testMapWithIndexAfterShutDown");
-        int SAMPLE_SIZE_1 = 100;
-        int SAMPLE_SIZE_2 = 30;
+        final IMap map = instances[0].getMap("testMapWithIndexAfterShutDown");
+        final int SAMPLE_SIZE_1 = 100;
+        final int SAMPLE_SIZE_2 = 30;
         int TOTAL_SIZE = SAMPLE_SIZE_1 + SAMPLE_SIZE_2;
 
         for (int i = 0; i < SAMPLE_SIZE_1; i++) {
@@ -487,14 +488,24 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
         instances[1].shutdown();
 
-        typexValues = map.values(new SqlPredicate("typeName = typex"));
         assertEquals(TOTAL_SIZE, map.size());
-        assertEquals(SAMPLE_SIZE_2,typexValues.size());
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                final Collection values = map.values(new SqlPredicate("typeName = typex"));
+                assertEquals(SAMPLE_SIZE_2, values.size());
+            }
+        });
+//        assertEquals(SAMPLE_SIZE_2,typexValues.size());
 
         instances[2].shutdown();
 
         assertEquals(TOTAL_SIZE, map.size());
-        assertEquals(SAMPLE_SIZE_2, map.values(new SqlPredicate("typeName = typex")).size());
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                final Collection values = map.values(new SqlPredicate("typeName = typex"));
+                assertEquals(SAMPLE_SIZE_2, values.size());
+            }
+        });
     }
 
 
