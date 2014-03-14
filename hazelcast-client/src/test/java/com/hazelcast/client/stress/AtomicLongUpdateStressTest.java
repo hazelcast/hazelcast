@@ -2,6 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -62,23 +63,16 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true, stressThreads);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
+        runTest(false, stressThreads);
     }
 
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
 
-        startAndWaitForTestCompletion();
-        joinAll(stressThreads);
-        assertNoUpdateFailures();
-    }
-
-    private void assertNoUpdateFailures() {
+    public void assertResult() {
         int[] increments = new int[REFERENCE_COUNT];
         for (StressThread t : stressThreads) {
             t.addIncrements(increments);
