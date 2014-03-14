@@ -27,6 +27,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -482,7 +483,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testCancellationAwareTask() throws ExecutionException, InterruptedException {
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        SleepingTask task = new SleepingTask(5000);
         ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask");
         Future future = executor.submit(task);
         try {
@@ -506,7 +507,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testCancellationAwareTask2() {
-        Callable task1 = new CancellationAwareTask(5000);
+        Callable task1 = new SleepingTask(5000);
         ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask", 1);
         executor.submit(task1);
 
@@ -646,14 +647,14 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         assertFalse(executor.isShutdown());
         // Only one task
         ArrayList<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
-        tasks.add(new CancellationAwareTask(0));
+        tasks.add(new SleepingTask(0));
         List<Future<Boolean>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), 1);
         assertEquals(futures.get(0).get(), Boolean.TRUE);
         // More tasks
         tasks.clear();
         for (int i = 0; i < COUNT; i++) {
-            tasks.add(new CancellationAwareTask(i < 2 ? 0 : 20000));
+            tasks.add(new SleepingTask(i < 2 ? 0 : 20000));
         }
         futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), COUNT);
@@ -760,7 +761,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
         latch.await(2, TimeUnit.MINUTES);
 
-        final Future<Boolean> f = executorService.submit(new CancellationAwareTask(10000));
+        final Future<Boolean> f = executorService.submit(new SleepingTask(10000));
         Thread.sleep(1000);
         f.cancel(true);
         try {
@@ -1215,6 +1216,25 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         assertEquals("success", reference2.get());
     }
 
+    @Test
+    public void testLongRunningCallable() throws ExecutionException, InterruptedException, TimeoutException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        Config config = new Config();
+        long callTimeout = 3000;
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeout));
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        IExecutorService executor = hz1.getExecutorService("test");
+        Future<Boolean> f = executor
+                .submitToMember(new SleepingTask(callTimeout * 3), hz2.getCluster().getLocalMember());
+
+        Boolean result = f.get(1, TimeUnit.MINUTES);
+        assertTrue(result);
+    }
+
     private static class ScriptRunnable implements Runnable, Serializable, HazelcastInstanceAware {
         private final String script;
         private final Map<String, Object> map;
@@ -1310,11 +1330,11 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
-    public static class CancellationAwareTask implements Callable<Boolean>, Serializable {
+    public static class SleepingTask implements Callable<Boolean>, Serializable {
 
         long sleepTime = 10000;
 
-        public CancellationAwareTask(long sleepTime) {
+        public SleepingTask(long sleepTime) {
             this.sleepTime = sleepTime;
         }
 
@@ -1352,6 +1372,5 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             localMember = hazelcastInstance.getCluster().getLocalMember();
         }
     }
-
 }
 
