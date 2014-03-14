@@ -48,7 +48,7 @@ public class EncryptionTest {
     /**
      * Simple symmetric encryption test.
      */
-    @Test(timeout = 1000 * 30)
+    @Test
     public void testSymmetricEncryption() throws Exception {
         Config config = new Config();
         SymmetricEncryptionConfig encryptionConfig = new SymmetricEncryptionConfig();
