@@ -901,9 +901,9 @@ public class ClientMapTest {
         public void run() {
             try {
                 for ( int i=0; i<1000*10; i++ ) {
-                    if(map.tryLock(upKey, 5, TimeUnit.MILLISECONDS)){
+                    if(map.tryLock(upKey, 1, TimeUnit.MILLISECONDS)){
                         try{
-                            if(map.tryLock(downKey, 5, TimeUnit.MILLISECONDS )){
+                            if(map.tryLock(downKey, 1, TimeUnit.MILLISECONDS )){
                                 try {
                                     int upTotal = map.get(upKey);
                                     int downTotal = map.get(downKey);
