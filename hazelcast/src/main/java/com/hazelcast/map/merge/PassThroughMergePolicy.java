@@ -27,7 +27,7 @@ import java.io.IOException;
  * Built-in MergePolicy implementation.
  * <p/>
  * PassThroughMergePolicy causes the merging entry to be merged from source to destination map
- * if source entry has updated more recently than the destination entry.
+ * unless merging entry is null.
  *
  * <p/>
  *

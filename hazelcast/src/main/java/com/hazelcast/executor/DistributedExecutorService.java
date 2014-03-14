@@ -18,7 +18,9 @@ package com.hazelcast.executor;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
@@ -38,7 +40,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class DistributedExecutorService implements ManagedService, RemoteService {
+public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -144,6 +146,12 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private void startPending(String name) {
         getLocalExecutorStats(name).startPending();
+    }
+
+    @Override
+    public boolean isOperationExecuting(Address callerAddress, String callerUuid, Object identifier) {
+        String uuid = String.valueOf(identifier);
+        return submittedTasks.containsKey(uuid);
     }
 
     private final class CallableProcessor extends FutureTask implements Runnable {

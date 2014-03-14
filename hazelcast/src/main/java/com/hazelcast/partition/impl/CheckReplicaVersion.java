@@ -50,7 +50,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
         long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
-        long currentVersion = currentVersions[replicaIndex];
+        long currentVersion = currentVersions[replicaIndex - 1];
 
         if (currentVersion == version) {
             response = true;
@@ -113,6 +113,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
         sb.append("CheckReplicaVersion");
         sb.append("{partition=").append(getPartitionId());
         sb.append(", replica=").append(getReplicaIndex());
+        sb.append(", version=").append(version);
         sb.append('}');
         return sb.toString();
     }

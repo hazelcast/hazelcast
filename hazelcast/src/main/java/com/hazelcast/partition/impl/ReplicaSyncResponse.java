@@ -41,13 +41,15 @@ public class ReplicaSyncResponse extends Operation
 
     private byte[] data;
     private long[] replicaVersions;
+    private boolean compressed;
 
     public ReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(byte[] data, long[] replicaVersions) {
+    public ReplicaSyncResponse(byte[] data, long[] replicaVersions, boolean compressed) {
         this.data = data;
         this.replicaVersions = replicaVersions;
+        this.compressed = compressed;
     }
 
     @Override
@@ -63,9 +65,9 @@ public class ReplicaSyncResponse extends Operation
         int replicaIndex = getReplicaIndex();
         BufferObjectDataInput in = null;
         try {
-            if (data != null) {
+            if (data != null && data.length > 0) {
                 logApplyReplicaSync(partitionId, replicaIndex);
-                byte[] taskData = IOUtil.decompress(data);
+                byte[] taskData = compressed ? IOUtil.decompress(data) : data;
                 in = serializationService.createObjectDataInput(taskData);
                 int size = in.readInt();
                 for (int i = 0; i < size; i++) {
@@ -137,12 +139,14 @@ public class ReplicaSyncResponse extends Operation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         IOUtil.writeByteArray(out, data);
         out.writeLongArray(replicaVersions);
+        out.writeBoolean(compressed);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         data = IOUtil.readByteArray(in);
         replicaVersions = in.readLongArray();
+        compressed = in.readBoolean();
     }
 
     @Override

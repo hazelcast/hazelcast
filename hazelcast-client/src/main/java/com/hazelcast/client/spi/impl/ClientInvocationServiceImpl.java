@@ -172,10 +172,10 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(future.getRequest());
         if (!connection.write(new DataAdapter(data))) {
-            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
             final int callId = future.getRequest().getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);
+            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
         }
     }
 

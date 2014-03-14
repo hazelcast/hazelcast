@@ -47,9 +47,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Internal executor rejected task: " + r + ", because client is shutting down...");
-                        }
+                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+                        logger.finest(message);
+                        throw new RejectedExecutionException(message);
                     }
                 });
         executor = new ThreadPoolExecutor(poolSize, poolSize, 0L, TimeUnit.MILLISECONDS,
@@ -57,9 +57,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Rejected task: " + r + ", because client is shutting down...");
-                        }
+                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+                        logger.finest(message);
+                        throw new RejectedExecutionException(message);
                     }
                 });
 

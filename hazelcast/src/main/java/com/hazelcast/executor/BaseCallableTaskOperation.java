@@ -22,11 +22,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.TraceableOperation;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-abstract class BaseCallableTaskOperation extends Operation {
+abstract class BaseCallableTaskOperation extends Operation implements TraceableOperation {
 
     protected String name;
     protected String uuid;
@@ -79,6 +80,11 @@ abstract class BaseCallableTaskOperation extends Operation {
     @Override
     public final Object getResponse() {
         return null;
+    }
+
+    @Override
+    public Object getTraceIdentifier() {
+        return uuid;
     }
 
     @Override
