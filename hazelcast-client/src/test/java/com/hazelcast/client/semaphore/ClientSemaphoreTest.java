@@ -119,7 +119,6 @@ public class ClientSemaphoreTest {
 
     }
 
-
     @Test
     public void concurrent_trySemaphoreTest() {
         concurrent_trySemaphoreTest(false);
@@ -130,25 +129,20 @@ public class ClientSemaphoreTest {
         concurrent_trySemaphoreTest(true);
     }
 
-    public void concurrent_trySemaphoreTest(boolean tryWithTimeOut) {
+    public void concurrent_trySemaphoreTest(final boolean tryWithTimeOut) {
         final ISemaphore semaphore = client.getSemaphore(randomString());
         semaphore.init(1);
-
         final AtomicInteger upTotal = new AtomicInteger(0);
         final AtomicInteger downTotal = new AtomicInteger(0);
 
-        SemaphoreTestThread threads[] = new SemaphoreTestThread[8];
+        final SemaphoreTestThread threads[] = new SemaphoreTestThread[8];
         for(int i=0; i<threads.length; i++){
-
             SemaphoreTestThread t;
-
             if(tryWithTimeOut){
                 t = new TrySemaphoreTimeOutThread(semaphore, upTotal, downTotal);
-            }
-            else{
+            }else{
                 t = new TrySemaphoreThread(semaphore, upTotal, downTotal);
             }
-
             t.start();
             threads[i] = t;
         }
@@ -161,47 +155,15 @@ public class ClientSemaphoreTest {
         assertTrue("concurrent access to locked code caused wrong total", upTotal.get() + downTotal.get() == 0);
     }
 
-    static abstract class SemaphoreTestThread extends Thread{
-        static private final Random random = new Random();
-        protected ISemaphore semaphore ;
-        protected AtomicInteger upTotal;
-        protected AtomicInteger downTotal;
-        public Throwable error =null;
-
-        public SemaphoreTestThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal){
-            this.semaphore = semaphore;
-            this.upTotal = upTotal;
-            this.downTotal = downTotal;
-        }
-
-        public void run(){
-            try{
-                doRun();
-            }catch (Throwable e){
-                error = e;
-            }
-        }
-
-        abstract void doRun() throws Exception;
-
-        protected void work(){
-            int delta = random.nextInt(1000);
-            upTotal.addAndGet(delta);
-            downTotal.addAndGet(-delta);
-        }
-    }
-
     static class TrySemaphoreThread extends SemaphoreTestThread{
         public TrySemaphoreThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal){
             super(semaphore, upTotal, downTotal);
         }
 
-        public void doRun() throws Exception{
-            for ( int i=0; i<1000*10; i++ ) {
-                if(semaphore.tryAcquire()){
-                    work();
-                    semaphore.release();
-                }
+        public void iterativeTest() throws Exception{
+            if(semaphore.tryAcquire()){
+                work();
+                semaphore.release();
             }
         }
     }
@@ -211,13 +173,44 @@ public class ClientSemaphoreTest {
             super(semaphore, upTotal, downTotal);
         }
 
-        public void doRun() throws Exception{
-            for ( int i=0; i<1000*10; i++ ) {
-                if(semaphore.tryAcquire(10, TimeUnit.MILLISECONDS )){
-                    work();
-                    semaphore.release();
-                }
+        public void iterativeTest() throws Exception{
+            if(semaphore.tryAcquire(10, TimeUnit.MILLISECONDS )){
+                work();
+                semaphore.release();
             }
+        }
+    }
+
+    static abstract class SemaphoreTestThread extends Thread{
+        static private final int MAX_ITTERATIONS = 1000*10;
+        static private final Random random = new Random();
+        protected final ISemaphore semaphore ;
+        protected final AtomicInteger upTotal;
+        protected final AtomicInteger downTotal;
+        public volatile Throwable error =null;
+
+        public SemaphoreTestThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal){
+            this.semaphore = semaphore;
+            this.upTotal = upTotal;
+            this.downTotal = downTotal;
+        }
+
+        final public void run(){
+            try{
+                for ( int i=0; i<MAX_ITTERATIONS; i++ ) {
+                    iterativeTest();
+                }
+            }catch (Throwable e){
+                error = e;
+            }
+        }
+
+        abstract void iterativeTest() throws Exception;
+
+        protected void work(){
+            final int delta = random.nextInt(1000);
+            upTotal.addAndGet(delta);
+            downTotal.addAndGet(-delta);
         }
     }
 }
