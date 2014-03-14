@@ -274,7 +274,7 @@ public class ClientLockTest {
 
         public void doRun() throws Exception{
             for ( int i=0; i<1000*10; i++ ) {
-                if(lock.tryLock(10, TimeUnit.MILLISECONDS)){
+                if(lock.tryLock(1, TimeUnit.MILLISECONDS)){
                     work();
                     lock.unlock();
                 }
