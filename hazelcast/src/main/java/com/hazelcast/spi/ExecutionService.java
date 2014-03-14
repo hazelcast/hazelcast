@@ -17,9 +17,14 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A Service responsible for providing access to 'system' executors and customer executors.
@@ -30,15 +35,15 @@ import java.util.concurrent.*;
  */
 public interface ExecutionService {
 
-    static final String SYSTEM_EXECUTOR = "hz:system";
-    static final String OPERATION_EXECUTOR = "hz:operation";
-    static final String ASYNC_EXECUTOR = "hz:async";
-    static final String SCHEDULED_EXECUTOR = "hz:scheduled";
-    static final String CLIENT_EXECUTOR = "hz:client";
-    static final String QUERY_EXECUTOR = "hz:query";
-    static final String IO_EXECUTOR = "hz:io";
+    String SYSTEM_EXECUTOR = "hz:system";
+    String OPERATION_EXECUTOR = "hz:global-operation";
+    String ASYNC_EXECUTOR = "hz:async";
+    String SCHEDULED_EXECUTOR = "hz:scheduled";
+    String CLIENT_EXECUTOR = "hz:client";
+    String QUERY_EXECUTOR = "hz:query";
+    String IO_EXECUTOR = "hz:io";
 
-    ExecutorService register(String name, int poolSize, int queueCapacity);
+    ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type);
 
     ManagedExecutorService getExecutor(String name);
 

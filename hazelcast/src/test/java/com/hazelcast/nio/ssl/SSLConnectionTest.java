@@ -24,11 +24,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.SocketChannelWrapper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,7 +49,7 @@ import static com.hazelcast.instance.TestUtil.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class SSLConnectionTest {
 
     @BeforeClass

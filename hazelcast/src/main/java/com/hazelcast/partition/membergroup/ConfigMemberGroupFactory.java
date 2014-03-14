@@ -42,7 +42,7 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
     }
 
     @Override
-    protected Set<MemberGroup> createInternalMemberGroups(Collection<Member> members) {
+    protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> members) {
         Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
         for (Member member : members) {
             for (Entry<Integer, MemberGroupConfig> groupConfigEntry : memberGroupConfigMap.entrySet()) {

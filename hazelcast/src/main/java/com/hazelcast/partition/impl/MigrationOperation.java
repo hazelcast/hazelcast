@@ -57,17 +57,15 @@ public final class MigrationOperation extends BaseMigrationOperation {
     private long[] replicaVersions;
     private Collection<Operation> tasks;
     private byte[] taskData;
-    private int taskCount;
     private boolean compressed;
 
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, byte[] taskData,
-                              int taskCount, boolean compressed) {
+    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions,
+            byte[] taskData, boolean compressed) {
         super(migrationInfo);
         this.replicaVersions = replicaVersions;
-        this.taskCount = taskCount;
         this.taskData = taskData;
         this.compressed = compressed;
     }
@@ -165,20 +163,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 Operation task = (Operation) serializationService.readObject(in);
                 tasks.add(task);
             }
-
-            if (taskCount != tasks.size()) {
-                logTaskCountMismatch(size);
-            }
         } finally {
             closeResource(in);
         }
-    }
-
-    private void logTaskCountMismatch(int size) {
-        getLogger().severe("Migration task count mismatch! => "
-                + "expected-count: " + size + ", actual-count: " + tasks.size()
-                + "\nfrom: " + migrationInfo.getSource() + ", partition: " + getPartitionId()
-                + ", replica: " + getReplicaIndex());
     }
 
     private byte[] toData() throws IOException {
@@ -208,7 +195,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(compressed);
-        out.writeInt(taskCount);
         out.writeInt(taskData.length);
         out.write(taskData);
         out.writeLongArray(replicaVersions);
@@ -218,7 +204,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         compressed = in.readBoolean();
-        taskCount = in.readInt();
         int size = in.readInt();
         taskData = new byte[size];
         in.readFully(taskData);
@@ -231,7 +216,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
         sb.append(getClass().getName());
         sb.append("{partitionId=").append(getPartitionId());
         sb.append(", migration=").append(migrationInfo);
-        sb.append(", taskCount=").append(taskCount);
         sb.append(", compressed=").append(compressed);
         sb.append('}');
         return sb.toString();

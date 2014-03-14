@@ -54,7 +54,8 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                         .setReplicaIndex(getReplicaIndex())
                         .setResponseHandler(responseQueue)
                         .setServiceName(getServiceName())
-                        .setService(getService());
+                        .setService(getService())
+                        .setCallerUuid(getCallerUuid());
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 responses.put(partitionId, responseQueue);
                 nodeEngine.getOperationService().executeOperation(op);

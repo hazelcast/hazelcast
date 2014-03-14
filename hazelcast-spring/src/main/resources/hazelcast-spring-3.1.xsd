@@ -954,7 +954,7 @@
         <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="BINARY"/>
     </xs:complexType>
 
-    <xs:simpleType name="eviction-policy">
+    <xs:simpleType name="eviction-policy-enum">
         <xs:restriction base="xs:string">
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
@@ -962,12 +962,19 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="in-memory-format">
-        <xs:restriction base="non-space-string">
+    <xs:simpleType name="eviction-policy">
+        <xs:union memberTypes="eviction-policy-enum non-space-string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="in-memory-format-enum">
+        <xs:restriction base="xs:string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
-            <xs:enumeration value="CACHED"/>
         </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="in-memory-format">
+        <xs:union memberTypes="in-memory-format-enum non-space-string"/>
     </xs:simpleType>
 
 </xs:schema>

@@ -118,6 +118,14 @@ public abstract class HazelcastTestSupport {
         return UUID.randomUUID().toString();
     }
 
+    public static String randomMapName(String mapNamePrefix){
+        return mapNamePrefix + randomString();
+    }
+
+    public static String randomMapName(){
+        return randomString();
+    }
+
 
     public static void sleepMillis(int millis) {
         try {
