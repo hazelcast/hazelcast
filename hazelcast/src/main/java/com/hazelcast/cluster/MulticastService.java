@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -157,7 +158,7 @@ public class MulticastService implements Runnable {
                     input.close();
                 }
             } catch (Exception e) {
-                if (e instanceof EOFException) {
+                if (e instanceof EOFException || e instanceof HazelcastSerializationException) {
                     logger.warning("Received data format is invalid." +
                             " (An old version of Hazelcast may be running here.)", e);
                 } else {
