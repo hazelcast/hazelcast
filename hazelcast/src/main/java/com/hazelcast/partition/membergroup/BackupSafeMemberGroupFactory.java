@@ -25,7 +25,7 @@ import java.util.Set;
 abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     @Override
-    public final Collection<MemberGroup> createMemberGroups(Collection<Member> members) {
+    public final Collection<MemberGroup> createMemberGroups(Collection<? extends Member> members) {
         Collection<MemberGroup> groups = createInternalMemberGroups(members);
         if (groups.size() == 1 && members.size() > 1) {
             // If there are more than one members and just one group
@@ -44,6 +44,6 @@ abstract class BackupSafeMemberGroupFactory implements MemberGroupFactory {
         return groups;
     }
 
-    protected abstract Set<MemberGroup> createInternalMemberGroups(Collection<Member> allMembers);
+    protected abstract Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers);
 
 }
