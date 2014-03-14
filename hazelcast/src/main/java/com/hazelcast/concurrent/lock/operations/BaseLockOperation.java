@@ -36,7 +36,6 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
     protected Data key;
     protected long threadId;
     protected long ttl = DEFAULT_LOCK_TTL;
-    protected long timeout = -1;
     protected transient Object response;
     private transient boolean asyncBackup;
 
@@ -53,7 +52,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
-        this.timeout = timeout;
+        setWaitTimeout(timeout);
     }
 
     public BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, long timeout) {
@@ -61,7 +60,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         this.key = key;
         this.threadId = threadId;
         this.ttl = ttl;
-        this.timeout = timeout;
+        setWaitTimeout(timeout);
     }
 
     @Override
@@ -111,7 +110,6 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         key.writeData(out);
         out.writeLong(threadId);
         out.writeLong(ttl);
-        out.writeLong(timeout);
     }
 
     @Override
@@ -122,6 +120,5 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
         key.readData(in);
         threadId = in.readLong();
         ttl = in.readLong();
-        timeout = in.readLong();
     }
 }

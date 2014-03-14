@@ -42,6 +42,10 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
     private final boolean sync;
 
     public SyncReplicaVersion(int syncReplicaIndex, Callback<Object> callback) {
+        if (syncReplicaIndex < 1 || syncReplicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("Replica index should be in range [1-"
+                    + InternalPartition.MAX_BACKUP_COUNT + "]");
+        }
         this.syncReplicaIndex = syncReplicaIndex;
         this.callback = callback;
         this.sync = callback != null;
@@ -59,6 +63,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
         InternalPartition partition = partitionService.getPartition(partitionId);
         Address target = partition.getReplicaAddress(replicaIndex);
         if (target == null) {
+            notifyCallback(false);
             return;
         }
 
@@ -68,18 +73,29 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
     private void invokeCheckReplicaVersion(int partitionId, int replicaIndex, Address target) {
         InternalPartitionServiceImpl partitionService = getService();
         long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
-        CheckReplicaVersion op = createCheckReplicaVersion(partitionId, replicaIndex, currentVersions[replicaIndex]);
+        long currentReplicaVersion = currentVersions[replicaIndex - 1];
 
-        NodeEngine nodeEngine = getNodeEngine();
-        OperationService operationService = nodeEngine.getOperationService();
-        if (sync) {
-            operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, op, target)
-                    .setCallback(callback)
-                    .setTryCount(OPERATION_TRY_COUNT)
-                    .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
-                    .invoke();
+        if (currentReplicaVersion > 0) {
+            CheckReplicaVersion op = createCheckReplicaVersion(partitionId, replicaIndex, currentReplicaVersion);
+            NodeEngine nodeEngine = getNodeEngine();
+            OperationService operationService = nodeEngine.getOperationService();
+            if (sync) {
+                operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, op, target)
+                        .setCallback(callback)
+                        .setTryCount(OPERATION_TRY_COUNT)
+                        .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
+                        .invoke();
+            } else {
+                operationService.send(op, target);
+            }
         } else {
-            operationService.send(op, target);
+            notifyCallback(true);
+        }
+    }
+
+    private void notifyCallback(boolean result) {
+        if (callback != null) {
+            callback.notify(result);
         }
     }
 

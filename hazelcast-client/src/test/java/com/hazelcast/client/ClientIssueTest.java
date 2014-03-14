@@ -20,8 +20,13 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -33,6 +38,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
@@ -370,6 +376,26 @@ public class ClientIssueTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testClientPortableWithoutRegisteringToNode() {
+        Hazelcast.newHazelcastInstance();
+        final SerializationConfig serializationConfig = new SerializationConfig();
+        serializationConfig.addPortableFactory(5,new PortableFactory() {
+            public Portable create(int classId) {
+                return new SamplePortable();
+            }
+        });
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setSerializationConfig(serializationConfig);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Integer, SamplePortable> sampleMap = client.getMap(randomString());
+        sampleMap.put(1,new SamplePortable(666));
+        final SamplePortable samplePortable = sampleMap.get(1);
+        assertEquals(666,samplePortable.a);
+    }
+
+    @Test
     public void testCredentials() {
         final Config config = new Config();
         config.getGroupConfig().setName("foo").setPassword("bar");
@@ -446,6 +472,34 @@ public class ClientIssueTest extends HazelcastTestSupport {
         assertFalse(m.removeEntryListener("foo"));
 
 
+    }
+
+    static class SamplePortable implements Portable{
+        public int a;
+
+        public SamplePortable(int a){
+                              this.a = a;
+        }
+
+        public SamplePortable(){
+
+        }
+
+        public int getFactoryId() {
+            return 5;
+        }
+
+        public int getClassId() {
+            return 6;
+        }
+
+        public void writePortable(PortableWriter writer) throws IOException {
+              writer.writeInt("a",a);
+        }
+
+        public void readPortable(PortableReader reader) throws IOException {
+                                   a = reader.readInt("a");
+        }
     }
 
 }

@@ -19,11 +19,12 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
@@ -39,7 +40,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.nio.IOUtil.compress;
 
 public final class ReplicaSyncRequest extends Operation
         implements PartitionAwareOperation, MigrationCycleOperation {
@@ -55,10 +55,23 @@ public final class ReplicaSyncRequest extends Operation
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-        partitionService.incrementReplicaSyncProcessCount();
+        ILogger logger = nodeEngine.getLogger(getClass());
 
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
+
+        if (!partitionService.incrementReplicaSyncProcessCount()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Max parallel replication process limit exceeded! " +
+                        "Could not run replica sync -> " + toString());
+            }
+            ReplicaSyncRetryResponse response = new ReplicaSyncRetryResponse();
+            response.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+            Address target = getCallerAddress();
+            OperationService operationService = nodeEngine.getOperationService();
+            operationService.send(response, target);
+            return;
+        }
 
         try {
             Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
@@ -73,6 +86,7 @@ public final class ReplicaSyncRequest extends Operation
                 }
             }
             byte[] data = null;
+            boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
             if (tasks.isEmpty()) {
                 logNoReplicaDataFound(partitionId, replicaIndex);
             } else {
@@ -83,14 +97,17 @@ public final class ReplicaSyncRequest extends Operation
                     for (Operation task : tasks) {
                         serializationService.writeObject(out, task);
                     }
-                    data = compress(out.toByteArray());
+                    data = out.toByteArray();
+                    if (compress) {
+                        data = IOUtil.compress(data);
+                    }
                 } finally {
                     closeResource(out);
                 }
             }
 
             long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
-            ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
+            ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions, compress);
             syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             Address target = getCallerAddress();
             logSendSyncResponse(partitionId, replicaIndex, target);
@@ -104,6 +121,7 @@ public final class ReplicaSyncRequest extends Operation
     private void logSendSyncResponse(int partitionId, int replicaIndex, Address target) {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         ILogger logger = nodeEngine.getLogger(getClass());
+
         if (logger.isFinestEnabled()) {
             logger.finest("Sending sync response to -> " + target + "; for partition: " + partitionId
                     + ", replica: " + replicaIndex);
@@ -112,10 +130,10 @@ public final class ReplicaSyncRequest extends Operation
 
     private void logNoReplicaDataFound(int partitionId, int replicaIndex) {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         ILogger logger = nodeEngine.getLogger(getClass());
 
         if (logger.isFinestEnabled()) {
+            InternalPartitionService partitionService = nodeEngine.getPartitionService();
             logger.finest("No replica data is found for partition: " + partitionId
                     + ", replica: " + replicaIndex + "\n" + partitionService.getPartition(partitionId));
         }

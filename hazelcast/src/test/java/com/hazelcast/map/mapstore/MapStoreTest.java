@@ -24,6 +24,7 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
@@ -1317,6 +1318,47 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(2, keys.size());
         assertEquals("true", mapStoreWrapper.load("my-prop-1"));
         assertEquals("foo", mapStoreWrapper.load("my-prop-2"));
+    }
+
+    @Test
+    public void testMapStoreNotCalledFromEntryProcessorBackup() throws Exception {
+        final String mapName = "testMapStoreNotCalledFromEntryProcessorBackup_" + randomString();
+        final int instanceCount = 2;
+        Config config = new Config();
+        // Configure map with one backup and dummy map store
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setBackupCount(1);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(1, 120);
+        mapStoreConfig.setImplementation(mapStore);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final IMap<String, String> map = instance1.getMap(mapName);
+        final String key = "key";
+        final String value = "value";
+        //executeOnKey
+        map.executeOnKey(key, new ValueSetterEntryProcessor(value));
+        mapStore.awaitStores();
+
+        assertEquals(value,map.get(key));
+        assertEquals(1, mapStore.count.intValue());
+    }
+
+    private static class ValueSetterEntryProcessor extends AbstractEntryProcessor<String, String> {
+        private final String value;
+
+        ValueSetterEntryProcessor(String value) {
+            this.value = value;
+        }
+
+        public Object process(Map.Entry entry) {
+            entry.setValue(value);
+            return null;
+        }
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {

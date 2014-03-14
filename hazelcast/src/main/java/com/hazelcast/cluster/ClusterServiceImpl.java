@@ -16,7 +16,15 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -27,15 +35,43 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ValidationUtil;
+import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -79,7 +115,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 
-    private final AtomicReference<Map<Address, MemberImpl>> membersMapRef = new AtomicReference<Map<Address, MemberImpl>>(Collections.EMPTY_MAP);
+    private final AtomicReference<Map<Address, MemberImpl>> membersMapRef
+            = new AtomicReference<Map<Address, MemberImpl>>(Collections.EMPTY_MAP);
 
     private final AtomicReference<Set<MemberImpl>> membersRef = new AtomicReference<Set<MemberImpl>>(Collections.EMPTY_SET);
 
@@ -119,7 +156,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         String executorName = "hz:cluster";
-        executionService.register(executorName, 8, 100000);
+        executionService.register(executorName, 2, 1000, ExecutorType.CACHED);
 
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
@@ -612,9 +649,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         Future f = nodeEngine.getExecutionService().submit("hz:system", task);
                         futures.add(f);
                     }
+                    long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
                     for (Future f : futures) {
                         try {
-                            f.get();
+                            waitOnFutureInterruptible(f, callTimeout, TimeUnit.MILLISECONDS);
                         } catch (Exception e) {
                             logger.severe("While merging...", e);
                         }
@@ -622,6 +660,28 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     lifecycleService.fireLifecycleEvent(MERGED);
                 }
             });
+        }
+    }
+
+    private <V> V waitOnFutureInterruptible(Future<V> future, long timeout, TimeUnit timeUnit)
+            throws ExecutionException, InterruptedException, TimeoutException {
+
+        ValidationUtil.isNotNull(timeUnit, "timeUnit");
+        long deadline = Clock.currentTimeMillis() + timeUnit.toMillis(timeout);
+        while (true) {
+            long localTimeout = Math.min(1000 * 10, deadline);
+            try {
+                return future.get(localTimeout, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException te) {
+                deadline -= localTimeout;
+                if (deadline <= 0) {
+                    throw te;
+                }
+                if (!node.isActive()) {
+                    future.cancel(true);
+                    throw new HazelcastInstanceNotActiveException();
+                }
+            }
         }
     }
 
