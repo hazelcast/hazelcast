@@ -141,10 +141,16 @@ public class InvocationTest extends HazelcastTestSupport {
 
     @Test
     public void testWaitingIndefinitely() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
+
+        // need to warm-up partitions,
+        // since waiting for lock backup can take up to 5 seconds
+        // and that may cause OperationTimeoutException with "No response for 4000 ms" error.
+        warmUpPartitions(instances);
 
         instances[0].getLock("testWaitingIndefinitely").lock();
 
