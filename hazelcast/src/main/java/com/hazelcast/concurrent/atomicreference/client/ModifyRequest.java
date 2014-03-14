@@ -56,11 +56,6 @@ public abstract class ModifyRequest extends PartitionClientRequest implements Po
     }
 
     @Override
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
-    @Override
     public String getServiceName() {
         return AtomicReferenceService.SERVICE_NAME;
     }
