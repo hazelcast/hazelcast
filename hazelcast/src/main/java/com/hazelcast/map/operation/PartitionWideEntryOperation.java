@@ -106,7 +106,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 }
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(record.getValue()), dataValue);
+                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(record.getValue()), mapService.toData(valueAfterProcess));
                 if (mapService.isNearCacheAndInvalidationEnabled(name)) {
                     mapService.invalidateAllNearCaches(name, dataKey);
                 }

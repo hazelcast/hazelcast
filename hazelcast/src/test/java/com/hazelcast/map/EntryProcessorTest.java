@@ -839,6 +839,65 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     }
 
+    @Test
+    public void testExecuteMultipleEntriesListener() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hazel = nodeFactory.newHazelcastInstance();
+
+        final IMap<String, String> map = hazel.getMap("testExecuteMultipleEntriesListener");
+        final String key = "key";
+        final String value = "value";
+        final String newValue = "newValue";
+
+        map.put(key, value);
+
+        class ClassCatchExceptionListener implements EntryListener<String, String> {
+            boolean classCastException = false;
+            String message = "";
+
+            @Override
+            public void entryAdded(EntryEvent<String, String> event) {
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<String, String> event) {
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                try {
+                    assertTrue(event.getValue().equals(newValue));
+                }
+                catch (ClassCastException e) {
+                    classCastException = true;
+                    message = e.getMessage();
+                }
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<String, String> event) {
+            }
+        }
+
+        final ClassCatchExceptionListener listener = new ClassCatchExceptionListener();
+
+        map.addLocalEntryListener(listener);
+
+        map.executeOnEntries(new AbstractEntryProcessor<String, String>() {
+            @Override
+            public Object process(Map.Entry<String, String> entry) {
+                entry.setValue(newValue);
+
+                // Return something that's not a String
+                return 1;
+            }
+        });
+
+        if (listener.classCastException) {
+            fail(listener.message);
+        }
+    }
+
     public static class Issue1764Data implements DataSerializable{
 
         public static AtomicInteger serializationCount = new AtomicInteger();
