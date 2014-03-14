@@ -556,7 +556,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private Address getMemberAddress(Member member) {
         MemberImpl m = getContext().getClusterService().getMember(member.getUuid());
         if (m == null) {
-            throw new HazelcastException("Member[" + m + "] is not available!!!");
+            throw new HazelcastException(member + " is not available!!!");
         }
         return m.getAddress();
     }
