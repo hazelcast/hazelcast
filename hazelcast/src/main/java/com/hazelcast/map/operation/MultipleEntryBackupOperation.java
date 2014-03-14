@@ -11,7 +11,6 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +23,7 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
     private Set<Data> keys;
     private EntryBackupProcessor backupProcessor;
 
-    public MultipleEntryBackupOperation(){
+    public MultipleEntryBackupOperation() {
     }
 
     public MultipleEntryBackupOperation(String name, Set<Data> keys, EntryBackupProcessor backupProcessor) {
@@ -36,19 +35,23 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
     @Override
     public void run() throws Exception {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(),name);
+        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         MapEntrySimple entry;
 
-        for(Data key:keys)
-        {
-            if(partitionService.getPartitionId(key) != getPartitionId())
+        for (Data key : keys) {
+            if (partitionService.getPartitionId(key) != getPartitionId())
                 continue;
             Object objectKey = mapService.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
             final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
-            entry = new MapEntrySimple(objectKey,valueBeforeProcess);
+            entry = new MapEntrySimple(objectKey, valueBeforeProcess);
             backupProcessor.processBackup(entry);
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(key,entry.getValue()));
+            if (entry.getValue() == null) {
+                recordStore.remove(key);
+            } else {
+                recordStore.putBackup(key, entry.getValue());
+            }
+
         }
 
     }
@@ -76,8 +79,7 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
         super.writeInternal(out);
         out.writeObject(backupProcessor);
         out.writeInt(keys.size());
-        for(Data key:keys)
-        {
+        for (Data key : keys) {
             key.writeData(out);
         }
     }

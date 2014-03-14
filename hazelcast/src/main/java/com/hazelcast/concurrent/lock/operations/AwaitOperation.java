@@ -88,11 +88,6 @@ public class AwaitOperation extends BaseLockOperation
     }
 
     @Override
-    public long getWaitTimeoutMillis() {
-        return timeout;
-    }
-
-    @Override
     public boolean shouldBackup() {
         return true;
     }

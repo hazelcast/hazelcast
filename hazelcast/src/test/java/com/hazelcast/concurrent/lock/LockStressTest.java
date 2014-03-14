@@ -3,7 +3,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -20,13 +20,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class LockStressTest extends HazelcastTestSupport {
+
+    private static final int TIMEOUT_MILLS = 4 * 60 * 1000;
 
     /**
      * Test for issue 267
      */
-    @Test(timeout = 1000 * 100)
+    @Test(timeout = TIMEOUT_MILLS)
     public void testHighConcurrentLockAndUnlock() {
         final HazelcastInstance hz = createHazelcastInstance();
         final String key = "key";
@@ -71,7 +73,7 @@ public class LockStressTest extends HazelcastTestSupport {
         }
 
         try {
-            assertTrue("Lock tasks stuck!", latch.await(2, TimeUnit.MINUTES));
+            assertTrue("Lock tasks stuck!", latch.await(TIMEOUT_MILLS, TimeUnit.MILLISECONDS));
             assertEquals((threadCount * lockCountPerThread), totalCount.get());
         } catch (InterruptedException e) {
             e.printStackTrace();

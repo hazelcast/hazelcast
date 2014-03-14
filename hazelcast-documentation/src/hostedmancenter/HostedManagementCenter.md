@@ -5,44 +5,53 @@
 
 
 
-## Introduction
+# Introduction
 
-Hazelcast Hosted Management Center enables you to monitor and manage your nodes running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail, update map configurations and take thread dump from nodes. With its scripting and console module, you can run scripts (JavaScript, Groovy etc.) and commands on your nodes. It is a web based tool and you can deploy it into your internal server and serve your users.
+Hazelcast Hosted Management Center enables you to monitor and manage your nodes running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail, update map configurations and take thread dump from nodes. With its scripting and console module, you can run scripts (JavaScript, Groovy, etc.) and commands on your nodes. It is a web based tool and you can deploy it into your internal server and serve your users. ^super^script 
+
+To be able to use Hosted Management Center to monitor your cluster:
+
+1- You need to configure your cluster so it can be connected from this tool.
+
+2- You need to sign up on the tool to create an account.
 
 ---
 
-## Installation
+# Configuration
+In order to monitor your cluster in Hosted Management Center, `hazelcast.hosted.management.enabled` system property needs to be set as `true` in your cluster. This can be done with one of the ways listed below:
 
-Basically, `mancenter`-*version*`.war` application should be deployed into the Java web server and  Hazelcast nodes should be configured to communicate with this application, i.e. Hazelcast nodes should know the URL of `mancenter` application before they are started.
+1- Using JVM command line argument `-Dhazelcast.hosted.management.enabled=true`
 
-Here are the steps:
+or
+ 
+2- Adding the snippet below to your `hazelcast.xml` configuration file. 
 
--   Download the latest Hazelcast zip from [hazelcast.org](http://www.hazelcast.org/download/).
-
--   Zip contains `mancenter`-*version*`.war` file. Deploy it to your web server (Tomcat, Jetty etc.) Let's say it is running at`http://localhost:8080/mancenter-`*version*
-
--   Start your web server and make sure `http://localhost:8080/mancenter`-*version*` is up.
-
--   Configure your Hazelcast nodes by adding the URL of your web app to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
 
 ```xml
-<management-center enabled="true">http://localhost:8080/mancenter-version</management-center>
+<properties>
+     <property name="hazelcast.hosted.management.enabled">true</property>
+</properties>
 ```
--   Start your Hazelcast cluster.
 
-*Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory setting "hazelcast.mancenter.home" system property.*
+
+Also, `security-token` property in the management center configuration should be specified. This token can be grabbed from Hosted Management Center after registration (please see next section). It can be added to `hazelcast.xml` configuration file with below line.
+
+```xml
+<management-center security-token="YOUR_SECURITY_TOKEN" />
+```
 
 ---
 
-## Login & Sign Up
-After the cluster has started, go to `http://localhost:8080/mancenter`-*version* using any web browser. Below page will load.
+# Sign Up & Login
+Go to [http://manage.hazelcast.com/3.2/](http://manage.hazelcast.com/3.2/) using any web browser. Below page will load.
 
 ![](images/1Login.jpg)
 
-Initial login username/password is `admin/admin`.
+Click on **Sign Up** link and fill the form that will appear and ask your name, company, e-mail and password. Once you click on the **Sign Up** button on this form, you will be directed to the page where cluster configuration is explained and security token is provided, as shown below.
 
-???
-???
+![](images/RegistrationWindow.jpg)
+
+Add this token (value of the *security-token*) to your `hazelcast.xml` configuration file as explained in [Configuration](#configuration) section above. Click on **Back to Dashboard** button and login page loads.
 
 Once the credentials are entered and **Login** key is pressed, the tool will ask from the user to choose a cluster, as shown below.
 
@@ -50,17 +59,12 @@ Once the credentials are entered and **Login** key is pressed, the tool will ask
 
 Select the cluster and hit **Connect** button.
 
----
+If the tool shows a warning as shown below, check your cluster's configuration and be sure you performed the steps explained in [Configuration](#configuration) section above.
 
-## User Administration
-
-Default credentials are for the admin user. In the `Administration` tab, Admin can add/remove/update users and control user read/write permissions.
-
-![](images/admin.jpg)
 
 ---
 
-## Tool Overview
+# Tool Overview
 
 Once the page is loaded after selecting a cluster, tool's home page appears as shown below.
 
@@ -70,7 +74,7 @@ This page provides the fundamental properties of the selected cluster which are 
 
 It also has a toolbar on the top and a menu on the left.
 
-####Toolbar
+## Toolbar
 Toolbar has the following buttons:
 
 -	**Home**: When pressed, loads the home page shown above. Please see [Home Page](#homepage).
@@ -84,7 +88,7 @@ Toolbar has the following buttons:
      The user can select any cluster and once selected, the page immediately loads with the selected cluster's information.
 -	**Logout**: It is used to close the current user's session.
 
-####Menu
+## Menu
 Home page includes a menu on the left which lists the distributed data structures in the cluster and also all cluster members (nodes), as shown below.
 
 ![](images/LeftMenu.jpg)
@@ -98,7 +102,7 @@ Menu items can be expanded/collapsed by clicking on them. Below is the list of m
 -	[Executors](#executors)
 -	[Members](#members)
 
-####Tabbed View
+## Tabbed View
 Each time an item from the toolbar or menu is selected, it is added to main view as a tab, as shown below.
 
 ![](images/TabbedView.jpg)
@@ -108,10 +112,10 @@ In the above example, *Home*, *Scripting*, *Console*, *queue1* and *map1* window
 ---
 
 
-##Home Page
+# Home Page
 This is the first page appearing after logging in. It gives an overview of the cluster connected. Below subsections describe each portion of the page.
 
-####Cluster Info
+## Cluster Info
 On top of the page, **Cluster Info** is placed, as shown below.
 
 ![](images/HomeClusterInfo.jpg)
@@ -123,7 +127,7 @@ On top of the page, **Cluster Info** is placed, as shown below.
 -	**Free Memory**: Shows the real-time memory that is free in the whole cluster.
 -	**Max Memory**: Shows the maximum memory that the whole cluster has.
 
-####CPU Load Averages & Utilization
+## CPU Load Averages & Utilization
 This part of the page provides information related to load and utilization of CPUs for each node, as shown below.
 
 ![](images/Home-CPULoadAveragesUtilization.jpg)
@@ -131,54 +135,52 @@ This part of the page provides information related to load and utilization of CP
 First column lists the nodes with their IPs and ports. Then, the loads on each CPU for the last 1, 5 and 15 minutes are listed. The last column (**Utilization(%)**) shows the utilization of CPUs graphically. When you move the mouse cursor on a desired graph, you can see the CPU utilization at the time to which cursor corresponds. In the above example, the CPU utilization at 10:53:25 (where the mouse cursor is on) is -1%. Graphs under this column shows the CPU utilizations approximately for the last 2 minutes.
 
 
-####Memory Usages
+## Memory Usages
 This part of the page provides information related to memory usages for each node, as shown below.
 
 ![](images/Home-MemoryUsages.jpg)
 
 First column lists the nodes with their IPs and ports. Then, used and free memories out of the total memory reserved for Hazelcast usage are shown, in real-time. **Max** column lists the maximum memory capacity of each node and **Percent** column lists the percentage value of used memory out of the maximum memory. The last column (**Used Memory(%)**) shows the memory usage of nodes graphically. When you move the mouse cursor on a desired graph, you can see the memory usage at the time to which cursor corresponds. In the above example, the memory usage at 10:53:55 (where the mouse cursor is on) is 32 MB. Graphs under this column shows the memory usages approximately for the last 2 minutes.
 
-####Memory Distribution
+## Memory Distribution
 This part of the page graphically provides the cluster wise breakdown of memory, as shown below. Blue area is the memory used by maps, dark yellow area is the memory used by non-Hazelcast entities and green area is the free memory (out of whole cluster`s memory capacity).
 
 ![](images/Home-MemoryDistribution.jpg)
 
 In the above example, you can see 0.32% of the total memory is used by Hazelcast maps (it can be seen by moving the mouse cursor on it), 58.75% is used by non-Hazelcast entities and 40.85% of the total memory is free.
 
-####Map Memory Distribution
+## Map Memory Distribution
 This part is actually the breakdown of the blue area shown in **Memory Distribution** graph explained above. It provides the percentage values of the memories used by each map, out of the total cluster memory reserved for all Hazelcast maps.
 
 ![](images/Home-MapMemoryDistribution.jpg)
 
 In the above example, you can see 49.55% of the total map memory is used by **map1** and 49.55% is used by **map2**.
 
-####Health Check
-This part is useful to check how the cluster in general behaves. It lists the nodes (cluster members), locks and partition mismatches along with the information related to migrations and node interconnections. To see these, just click on the **Check Cluster Health** button. A sample is shown below.
+## Health Check
+This part is useful to check how the cluster in general behaves. It lists the nodes (cluster members), locks and partition mismatches along with the information related to migrations and node interconnections. To see these, just click on **Check Cluster Health** button. A sample is shown below.
 
 ![](images/Home-HealthCheckbuttonpressed.jpg)
 
 You can see each node's IP address and port by clicking on the plus sign at the **Members**.
 
-####Partition Distribution
+## Partition Distribution
 This pie chart shows what percentage of partitions each node has, as shown below.
 
 ![](images/Home-PartitionDistribution.jpg)
 
 You can see each node's partition percentages by moving the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see [Advanced Configuration Properties](http://hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#advanced-configuration-properties)).
 
-####System Warnings
+## System Warnings
 This part of the page shows informative warnings in situations like shutting down a node, as shown below.
 
 ![](images/SystemWarnings.jpg)
 
 Warnings can be cleared by clicking on the **Clear** link placed at top right of the window.
 
-
 ---
 
 
-
-## Maps
+# Maps
 
 Map instances are listed under the **Maps** menu item on the left. When you click on a map, a new tab for monitoring that map instance is opened on the right, as shown below. In this tab, you can monitor metrics and also re-configure the selected map.
 
@@ -186,250 +188,180 @@ Map instances are listed under the **Maps** menu item on the left. When you clic
 
 Below subsections explain the portions of this window.
 
+## Map Browser
 
-### Monitoring Maps
-
-In map page you can monitor instance metrics by 2 charts and 2 datatables. First data table "Memory Data Table" gives the memory metrics distributed over members. "Throughput Data Table" gives information about the operations performed on instance (get, put, remove) Each chart monitors a type data of the instance on cluster. You can change the type by clicking on chart. The possible ones are: Size, Throughput, Memory, Backup Size, Backup Memory, Hits, Locked Entries, Puts, Gets, Removes...
-
-
-#### Size
-???
-
-![](images/Map-Size.jpg)
-
-???
-
-#### Throughput
-???
-
-![](images/Map-Throughput.jpg)
-
-???
-
-#### Memory
-???
-
-![](images/Map-Memory.jpg)
-
-???
-
-#### Backup Size
-???
-
-![](images/Map-BackupSize.jpg)
-
-???
-
-#### Backup Memory
-???
-
-![](images/Map-BackupMemory.jpg)
-
-???
-
-#### Hits
-???
-
-![](images/Map-Hits.jpg)
-
-???
-
-#### Locked Entries
-???
-
-![](images/Map-LockedEntries.jpg)
-
-???
-
-#### Puts/s
-???
-
-![](images/Map-Puts.jpg)
-
-???
-
-#### Gets/s
-???
-
-![](images/Map-Gets.jpg)
-
-???
-
-#### Removes/s
-???
-
-![](images/Map-Removes.jpg)
-
-???
-
-
-
-### Map Browser
-
-You can open "Map Browser" tool by clicking "Browse" button on map tab page. Using map browser, you can reach map's entries by keys. Besides its value, extra informations such as entry's cost, expiration time is provided.
+Map Browser is a tool used to retrieve properties of the entries stored in the selected map. It can be opened by clicking on the **Map Browser** button, located at top right of the window. Once opened, the tool appears as a dialog, as shown below.
 
 ![](images/Map-MapBrowser.jpg)
 
-### Map Config
+Once the key and key's type is specified and **Browse** button is clicked, key's properties along with its value is listed.
 
-You can open "Map Configuration" tool by clicking "Config" button on map tab page. This button is disabled for users with Read-Only permission. Using map config tool you can adjust map's setting. You can change backup count, max size, max idle(seconds), eviction policy, cache value, read backup data, backup count of the map.
+## Map Config
+By using Map Config tool, you can set selected map's attributes like the backup count, TTL, and eviction policy. It can be opened by clicking on the **Map Config** button, located at top right of the window. Once opened, the tool appears as a dialog, as shown below.
 
 ![](images/Map-MapConfig.jpg)
 
----
-
-## Queues
-
-Queues is the second data structure that you can monitor in management center. You can activate the Queue Tab by clicking the instance name listed on the left panel under queues part. The queue page consists of the charts monitoring data about the queue. You can change the data to be monitored by clicking on the chart. Available options are Size, Polls, Offers.
-
-![](images/queue.jpg)
-
----
-
-##Topics
-
-You can monitor your topics' metrics by clicking the topic name listed on the left panel under topics part. There are two charts which reflects live data, and a datatable lists the live data distributed among members.
-
-![](images/topic.jpg)
-
----
-
-##MultiMaps
-???
-
----
-
-##Executors
-???
-
----
+Change any attribute as required and click **Update** button to save changes.
 
 
-## Members
+## Map Monitoring
 
-The current members in the cluster are listed on the bottom side of the left panel. You can monitor each member on tab page displayed by clicking on member items.
+Besides Map Browser and Map Config tools, this page has many  monitoring options explained below. All of these perform real-time monitoring. 
 
-![](images/member.jpg)
+On top of the page, there are small charts to monitor the size, throughput, memory usage, backup size, etc. of the selected map in real-time. All charts' X-axis shows the current system time. Other small monitoring charts can be selected using ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart. When it is clicked, the whole list of monitoring options are listed, as shown below.
+
+![](images/SelectConfOpt.jpg)
+
+When you click on a desired monitoring, the chart is loaded with the selected option. Also, a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
+
+-	**Size**: Monitors the size of the map. Y-axis is the entry count (should be multiplied by 1000).
+-	**Throughput**: Monitors get, put and remove operations performed on the map. Y-axis is the operation count.
+-	**Memory**: Monitors the memory usage on the map. Y-axis is the memory count.
+-	**Backups**: It is the chart loaded when "Backup Size" is selected. Monitors the size of the backups in the map. Y-axis is the backup entry count (should be multiplied by 1000).
+-	**Backup Memory**: It is the chart loaded when "Backup Mem." is selected. Monitors the memory usage of the backups. Y-axis is the memory count.
+-	**Hits**: Monitors the hit count of the map.
+-	**Puts/s, Gets/s, Removes/s**: These three charts monitor the put, get and remove operations (per second) performed on the selected map.
 
 
-### Monitoring
+Under these charts, there are **Map Memory** and **Map Throughput** data tables. Map Memory data table provides memory metrics distributed over nodes, as shown below.
 
-In members page there are 4 inner tab pages to monitor meber's state and properties. Runtime: Runtime properties about memory, threads are given. This data updates dynamically. Properties: System properties are displayed. Configuration: Configuration xml initially set can be viewed here. Partitions: The partitions belongs to this member are listed.
+![](images/Map-MemoryDataTable.jpg)
 
-![](images/memberconf.jpg)
+From left to right, this table lists the IP address and port, entry counts, memory used by entries, backup entry counts, memory used by backup entries, events, hits, locks and dirty entries (in the cases where *MapStore* is enabled, these are the entries that are put to/removed from the map but not written to/removed from a database yet) of each node in the map. You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
-### Operations
+Map Throughput data table provides information about the operations (get, put, remove) performed on each node in the map, as shown below.
 
-Besides monitoring you can perform certain actions on members. You can take thread dump of the member and you can perform garbage collection on the selected member.
+![](images/Map-MapThroughputDataTable.jpg)
 
-![](images/mapoperations.jpg)
+From left to right, this table lists the IP address and port of each node, put, get and remove operations on each node, average put, get, remove latencies and maximum put, get, remove latencies on each node. 
 
+You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+
+You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
 
 ---
 
-## Scripting
+# Queues
 
-In scripting part, you can execute your own code on your cluster. In the left part you can select members, on which the code will be executed. Also you can select over scripting languages: Javascript, Groovy, JRuby, BeanShell. This part is only enabled for users with read/write permissions for current cluster.
+Using the menu item **Queues**, you can monitor your queues data structure. When you expand this menu item and click on a queue, a new tab for monitoring that queue instance is opened on the right, as shown below.
 
-![](images/scripting.jpg)
+![](images/Queues-Home.jpg)
 
----
 
-## Console
+On top of the page, there are small charts to monitor the size, offers and polls of the selected queue in real-time. All charts' X-axis shows the current system time. And a chart can be opened as a separate dialog by clicking on the ![](images/Maximizechart.jpg) button placed at top right of each chart. Below monitoring charts are available:
 
-The console tool enables you execute commands on the cluster. You can read or write on instances but first you should set namespace. For example if you have a map with name "mapCustomers". To get a customer with key "Jack" you should first set the namespace with command "ns mapCustomers". Then you can take the object by "m.get Jack" Here is the command list:
+-	**Size**: Monitors the size of the queue. Y-axis is the entry count (should be multiplied by 1000).
+-	**Offers**: Monitors the offers sent to the selected queue. Y-axis is the offer count.
+-	**Polls**: Monitors the polls sent to the selected queue. Y-axis is the poll count.
 
-```
--- General commands
-echo true|false                      //turns on/off echo of commands (default false)
-silent true|false                    //turns on/off silent of command output (default false)
-<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current iteration (0..<number-1>)
-&<number> <command>                  //forks <number> threads to execute <command>, replace $t in <command> with current thread number (0..<number-1>
-     When using #x or &x, is is advised to use silent true as well.
-     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key index is specified
-jvm                                  //displays info about the runtime
-who                                  //displays info about the cluster
-whoami                               //displays info about this cluster member
-ns <string>                          //switch the namespace for using the distributed queue/map/set/list <string> (defaults to "default"
-@<file>                              //executes the given <file> script. Use '//' for comments in the script
 
--- Queue commands
-q.offer <string>                     //adds a string object to the queue
-q.poll                               //takes an object from the queue
-q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or byte[<size>])
-q.pollmany <number>                  //takes indicated number of objects from the queue
-q.iterator [remove]                  //iterates the queue, remove if specified
-q.size                               //size of the queue
-q.clear                              //clears the queue
+Under these charts, there are **Queue Statistics** and **Queue Operation Statistics** tables. Queue Statistics table provides item and backup item counts in the queue and age statistics of items and backup items at each node, as shown below.
 
--- Set commands
-s.add <string>                       //adds a string object to the set
-s.remove <string>                    //removes the string object from the set
-s.addmany <number>                   //adds indicated number of string objects to the set ('obj<i>')
-s.removemany <number>                //takes indicated number of objects from the set
-s.iterator [remove]                  //iterates the set, removes if specified
-s.size                               //size of the set
-s.clear                              //clears the set
+![](images/QueueStatistics.jpg)
 
--- Lock commands
-lock <key>                           //same as Hazelcast.getLock(key).lock()
-tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()
-tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds
-unlock <key>                         //same as Hazelcast.getLock(key).unlock()
+From left to right, this table lists the IP address and port, items and backup items on the queue of each node, and maximum, minimum and average age of items in the queue. You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
--- Map commands
-m.put <key> <value>                  //puts an entry to the map
-m.remove <key>                       //removes the entry of given key from the map
-m.get <key>                          //returns the value of given key from the map
-m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], <index>+(0..<number>)
-m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', <index>+(0..<number>)
-     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a start key <index> is specified
-m.keys                               //iterates the keys of the map
-m.values                             //iterates the values of the map
-m.entries                            //iterates the entries of the map
-m.iterator [remove]                  //iterates the keys of the map, remove if specified
-m.size                               //size of the map
-m.clear                              //clears the map
-m.destroy                            //destroys the map
-m.lock <key>                         //locks the key
-m.tryLock <key>                      //tries to lock the key and returns immediately
-m.tryLock <key> <time>               //tries to lock the key within given seconds
-m.unlock <key>                       //unlocks the key
+Queue Operations Statistics table provides information about the operations (offers, polls, events) performed on the queues, as shown below.
 
--- List commands:
-l.add <string>
-l.add <index> <string>
-l.contains <string>
-l.remove <string>
-l.remove <index>
-l.set <index> <string>
-l.iterator [remove]
-l.size
-l.clear
--- IAtomicLong commands:
-a.get
-a.set <long>
-a.inc
-a.dec
--- Executor Service commands:
-execute <echo-input>                //executes an echo task on random member
-execute0nKey    <echo-input> <key>      //executes an echo task on the member that owns the given key
-execute0nMember <echo-input> <key>  //executes an echo task on the member with given index
-execute0nMembers <echo-input>       //executes an echo task on all of the members
-```
-![](images/console.jpg)
+![](images/QueueOperationStatistics.jpg)
+
+From left to right, this table lists the IP address and port of each node, and counts of offers, rejected offers, polls, poll misses and events. 
+
+You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+
+You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
 ---
 
-##Documentation
-???
+# Topics
+
+You can monitor your topics' metrics by clicking the topic name listed on the left panel under **Topics** menu item. A new tab for monitoring that topic instance is opened on the right, as shown below.
+
+![](images/ManCenter-Topics.jpg)
+
+On top of the page, there are two charts to monitor the **Publishes** and **Receives** in real-time. They show the published and received message counts of the cluster, nodes of which are subscribed to the selected topic. Both charts' X-axis shows the current system time. and a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart.
+
+Under these charts, there is Topic Operation Statistics table. From left to right, this table lists the IP addresses and ports of each node, and counts of message published and receives per second in real-time. You can select the period in the combo box placed at top right corner of the table, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+
+You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
+
+
 
 ---
 
-## Time Travel
+# MultiMaps
+This monitoring option is similar to the **Maps** one. Same monitoring charts and data tables are used to monitor MultiMaps. Differences are; not being able to browse the MultiMaps and to re-configure it. Please see [Maps](#maps).
 
-Time Travel mode is activated by clicking clock icon on top right toolbar. In time travel mode, the time is paused and the full state of the cluster is displayed according the time selected on time slider. You can change time either by Prev/Next buttons or sliding the slider. Also you can change the day by clicking calendar icon. Management center stores the states in you local disk, while your web server is alive. So if you slide to a time when you do not have data, the reports will be seen as empty.
+---
 
-![](images/timetravel.jpg)
+# Executors
+Executor instances are listed under the **Executors** menu item on the left. When you click on a executor, a new tab for monitoring that executor instance is opened on the right, as shown below.
+
+![](images/ExecutorsHome.jpg)
+
+On top of the page, there are small charts to monitor the pending, started, completed, etc. executors in real-time. All charts' X-axis shows the current system time. Other small monitoring charts can be selected using ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart. When it is clicked, the whole list of monitoring options are listed, as shown below.
+
+![](images/SelectExecMonOpt.jpg)
+
+When you click on a desired monitoring, the chart is loaded with the selected option. Also, a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
+
+-	**Pending**: Monitors the pending executors. Y-axis is the executor count.
+-	**Started**: Monitors the started executors. Y-axis is the executor count.
+-	**Start Lat. (msec)**: Shows the latency when executors are started. Y-axis is the duration in milliseconds.
+-	**Completed**: Monitors the completed executors. Y-axis is the executor count.
+-	**Comp. Time (msec)**: Shows the completion period of executors. Y-axis is the duration in milliseconds.
+
+Under these charts, there is **Executor Operation Statistics** table, as shown below.
+
+![](images/ExecutorOperationStats.jpg)
+
+From left to right, this table lists the IP address and port of nodes, counts of pending, started and completed executors per second, execution time and average start latency of executors on each node. You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
+
+---
+
+
+# Members
+
+This menu item is used to monitor each cluster member (node) and also perform operations like running garbage colletion (GC) and taking a thread dump. Once a member is selected form the menu, a new tab for monitoring that member is opened on the right, as shown below.
+
+![](images/MembersHome.jpg)
+
+**CPU Utilization** chart shows the CPU usage on the selected member in percentage. **Memory Utilization** chart shows the memory usage on the selected member with three different metrics (maximum, used and total memory). Both of these charts can be opened as separate windows using the ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart, a more clearer view can be obtained by this way.
+
+The window titled with **Partitions** shows which partitions are assigned to the selected member. **Runtime** is a dynamically updated window tab showing the processor number, start and up times, maximum, total and free memory sizes of the selected member. Next to this, there is **Properties** tab showing the system properties. **Member Configuration** window shows the connected Hazelcast cluster's XML configuration.
+
+Besides the aforementioned monitoring charts and windows, there are also operations you can perform on the selected memberthrough this page. You can see operation buttons located at top right of the page, explained below:
+
+-	**Run GC**: When pressed, garbage collection is executed on the selected member. A notification stating that the GC execution was successful will be shown.
+-	**Thread Dump**: When pressed, thread dump of the selected member is taken and shown as a separate dialog to th user.
+-	**Shutdown Node**: It is used to shutdown the selected member.
+
+---
+
+# Scripting
+
+Scripting feature of this tool is used to execute codes on the cluster. You can open this feature as a tab by selecting **Scripting** located at the toolbar on top. Once selected, it is opened as shown below.
+
+![](images/Scripting.jpg)
+
+In this window, **Scripting** part is the actual coding editor. You can select the members on which the code will be executed from the **Members** list shown at the right side of the window. Below the members list there is a combo box enabling you to select a scripting language. Currently, Javascript, Ruby, Groovy and Python languages are supported. After you write your script and press **Execute** button, you can see the execution result in the **Result** part of the window. 
+
+There are also **Save** and **Delete** buttons on top right of the scripting editor. You can save your scripts by pressing the **Save** button after you type a name for the script into the field next to this button. The scripts you saved are listed in the **Saved Scripts** part of the window, located at the bottom right of the page. You can simply click on a saved script from this list to execute or edit it. And, if you want to remove a script that you wrote and save before, just select it from this list and press **Delete** button.
+
+---
+
+# Console
+
+Hosted Management Center has also a console feature that enables you execute commands on the cluster. For example, you can perform "put"s and "get"s on a map, after you set the namespace with the command `ns <name of your map>`. Same is valid for queues, topics, etc. To execute your command, just type it into the field below the console and press **Enter**. You can type `help` to see all commands that can be used. 
+
+Console window can be opened by clicking on the **Console** button located at the toolbar. A sample view with some commands executed can ben seen below.
+
+![](images/Console.jpg)
+
+---
+
+# Documentation
+To see the documentation, click on the **Documentation** button located at the toolbar. This document will appear as a tab.
+
 

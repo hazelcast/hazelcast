@@ -22,5 +22,5 @@ import java.util.Collection;
 
 public interface MemberGroupFactory {
 
-    Collection<MemberGroup> createMemberGroups(Collection<Member> members);
+    Collection<MemberGroup> createMemberGroups(Collection<? extends Member> members);
 }

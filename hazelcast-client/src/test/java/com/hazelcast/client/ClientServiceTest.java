@@ -118,5 +118,55 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
     }
 
+    @Test
+    public void testClientListenerForBothNodes(){
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final ClientListenerLatch clientListenerLatch = new ClientListenerLatch(2);
+
+        final ClientService clientService1 = instance1.getClientService();
+        clientService1.addClientListener(clientListenerLatch);
+        final ClientService clientService2 = instance2.getClientService();
+        clientService2.addClientListener(clientListenerLatch);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final String instance1Key = generateKeyOwnedBy(instance1);
+        final String instance2Key = generateKeyOwnedBy(instance2);
+
+        final IMap<Object, Object> map = client.getMap("map");
+        map.put(instance1Key, 0);
+        map.put(instance2Key, 0);
+
+        assertClientConnected(clientService1, clientService2);
+        assertOpenEventually(clientListenerLatch, 5);
+    }
+
+    private void assertClientConnected(ClientService... services){
+        for (final ClientService service : services) {
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(1, service.getConnectedClients().size());
+                }
+            }, 5);
+        }
+    }
+
+    public static class ClientListenerLatch extends CountDownLatch implements ClientListener {
+
+        public ClientListenerLatch(int count) {
+            super(count);
+        }
+
+        @Override
+        public void clientConnected(Client client) {
+            countDown();
+        }
+
+        @Override
+        public void clientDisconnected(Client client) {
+        }
+    }
+
 
 }

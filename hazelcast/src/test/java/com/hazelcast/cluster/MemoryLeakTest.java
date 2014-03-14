@@ -20,12 +20,9 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +33,7 @@ import static java.lang.Thread.sleep;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class MemoryLeakTest {
 
     @BeforeClass

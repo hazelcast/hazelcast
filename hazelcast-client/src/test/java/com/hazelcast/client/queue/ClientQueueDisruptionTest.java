@@ -2,11 +2,13 @@ package com.hazelcast.client.queue;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.modularhelpers.ClusterSupport;
+import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
 import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,16 +25,17 @@ public class ClientQueueDisruptionTest {
     HazelcastInstance client1;
     HazelcastInstance client2;
 
-    ClusterSupport cluster;
+    SimpleClusterUtil cluster;
 
     @Before
     public void init(){
         Hazelcast.shutdownAll();
 
-        cluster = new ClusterSupport(3);
+        cluster = new SimpleClusterUtil("A", 3);
         cluster.initCluster();
 
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setGroupConfig(new GroupConfig(cluster.getName()));
         client1  = HazelcastClient.newHazelcastClient(clientConfig);
         client2  = HazelcastClient.newHazelcastClient(clientConfig);
     }

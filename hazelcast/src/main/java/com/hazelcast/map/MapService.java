@@ -480,10 +480,40 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
+
+    public void invalidateLocalNearCache(String mapName, Data key) {
+        if (!isNearCacheLocalEntryCachingEnabled(mapName)) {
+            return;
+        }
+        invalidateNearCache(mapName, key);
+    }
+
+    public void invalidateLocalNearCache(String mapName, Set<Data> keys) {
+        if (!isNearCacheLocalEntryCachingEnabled(mapName)) {
+            return;
+        }
+        invalidateNearCache(mapName, keys);
+    }
+
+
     public boolean isNearCacheAndInvalidationEnabled(String mapName) {
         final MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
+    }
+
+    private boolean isNearCacheLocalEntryCachingEnabled(String mapName) {
+        final MapContainer mapContainer = getMapContainer(mapName);
+        final MapConfig config = mapContainer.getMapConfig();
+        final boolean nearCacheEnabled = config.isNearCacheEnabled();
+        if (!nearCacheEnabled) {
+            return false;
+        }
+        final boolean cacheLocalEntries = config.getNearCacheConfig().isCacheLocalEntries();
+        if (!cacheLocalEntries) {
+            return false;
+        }
+        return true;
     }
 
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {

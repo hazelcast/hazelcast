@@ -75,7 +75,7 @@ public final class PollOperation extends QueueBackupAwareOperation
     }
 
     public boolean shouldWait() {
-        return getWaitTimeoutMillis() != 0 && getOrCreateContainer().size() == 0;
+        return getWaitTimeout() != 0 && getOrCreateContainer().size() == 0;
     }
 
     public void onWaitExpire() {

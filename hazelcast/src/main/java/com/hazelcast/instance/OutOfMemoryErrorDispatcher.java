@@ -32,7 +32,10 @@ public final class OutOfMemoryErrorDispatcher {
     private static final AtomicReference<HazelcastInstance[]> instancesRef =
             new AtomicReference<HazelcastInstance[]>(EMPTY_INSTANCES);
 
+
     private static volatile OutOfMemoryHandler handler = new DefaultOutOfMemoryHandler();
+
+    private static volatile OutOfMemoryHandler clientHandler = null;
 
     //for testing only
     static HazelcastInstance[] current() {
@@ -43,7 +46,11 @@ public final class OutOfMemoryErrorDispatcher {
         handler = outOfMemoryHandler;
     }
 
-    static void register(HazelcastInstance instance) {
+    public static void setClientHandler(OutOfMemoryHandler outOfMemoryHandler) {
+        clientHandler = outOfMemoryHandler;
+    }
+
+    public static void register(HazelcastInstance instance) {
         isNotNull(instance, "instance");
 
         for (; ; ) {
@@ -62,7 +69,7 @@ public final class OutOfMemoryErrorDispatcher {
         }
     }
 
-    static void deregister(HazelcastInstance instance) {
+    public static void deregister(HazelcastInstance instance) {
         isNotNull(instance, "instance");
 
         for (; ; ) {
@@ -123,19 +130,25 @@ public final class OutOfMemoryErrorDispatcher {
     public static void onOutOfMemory(OutOfMemoryError outOfMemoryError) {
         isNotNull(outOfMemoryError, "outOfMemoryError");
 
-        OutOfMemoryHandler h = handler;
-        if (h == null) {
-            return;
-        }
-
         HazelcastInstance[] instances = removeRegisteredInstances();
         if (instances.length == 0) {
             return;
         }
 
-        try {
-            h.onOutOfMemory(outOfMemoryError, instances);
-        } catch (Throwable ignored) {
+        OutOfMemoryHandler h = clientHandler;
+        if (h != null) {
+            try {
+                h.onOutOfMemory(outOfMemoryError, instances);
+            } catch (Throwable ignored) {
+            }
+        }
+
+        h = handler;
+        if (h != null) {
+            try {
+                h.onOutOfMemory(outOfMemoryError, instances);
+            } catch (Throwable ignored) {
+            }
         }
     }
 
@@ -152,9 +165,11 @@ public final class OutOfMemoryErrorDispatcher {
 
         public void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances) {
             for (HazelcastInstance instance : hazelcastInstances) {
-                Helper.tryCloseConnections(instance);
-                Helper.tryStopThreads(instance);
-                Helper.tryShutdown(instance);
+                if (instance instanceof HazelcastInstanceImpl) {
+                    Helper.tryCloseConnections(instance);
+                    Helper.tryStopThreads(instance);
+                    Helper.tryShutdown(instance);
+                }
             }
             System.err.println(oom);
         }

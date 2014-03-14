@@ -90,5 +90,3 @@ XML Configuration
                 
 ```
 Note that the `id` that is passed to the `SerializationConfig` is same as the `factoryId` that `Foo` class returns.
-
-TODO: ClassDefinitionBuilder...

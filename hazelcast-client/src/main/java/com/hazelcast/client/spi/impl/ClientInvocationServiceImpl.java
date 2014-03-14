@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -102,10 +103,12 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     }
 
     public void triggerFailedListeners() {
-        for (ClientCallFuture failedListener : failedListeners) {
+        final Iterator<ClientCallFuture> iterator = failedListeners.iterator();
+        while (iterator.hasNext()) {
+            final ClientCallFuture failedListener = iterator.next();
+            iterator.remove();
             failedListener.resend();
         }
-        failedListeners.clear();
     }
 
     public void registerListener(String uuid, Integer callId) {
@@ -169,10 +172,10 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(future.getRequest());
         if (!connection.write(new DataAdapter(data))) {
-            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
             final int callId = future.getRequest().getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);
+            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
         }
     }
 

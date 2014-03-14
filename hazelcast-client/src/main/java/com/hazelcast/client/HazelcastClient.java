@@ -68,6 +68,7 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -77,6 +78,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -103,6 +105,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class HazelcastClient implements HazelcastInstance {
 
+    static {
+        OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
+    }
+
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
     private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private final int id = CLIENT_ID.getAndIncrement();
@@ -110,7 +116,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationService serializationService;
+    private final SerializationServiceImpl serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -119,6 +125,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientTransactionManager transactionManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
+    private final LoadBalancer loadBalancer;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
@@ -126,6 +133,7 @@ public final class HazelcastClient implements HazelcastInstance {
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
+        SerializationService ss;
         try {
             String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
             final PartitioningStrategy partitioningStrategy;
@@ -134,7 +142,7 @@ public final class HazelcastClient implements HazelcastInstance {
             } else {
                 partitioningStrategy = new DefaultPartitioningStrategy();
             }
-            serializationService = new SerializationServiceBuilder()
+            ss = new SerializationServiceBuilder()
                     .setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
                     .setClassLoader(config.getClassLoader())
                     .setConfig(config.getSerializationConfig())
@@ -143,19 +151,20 @@ public final class HazelcastClient implements HazelcastInstance {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        serializationService = (SerializationServiceImpl) ss;
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
                 Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
         transactionManager = new ClientTransactionManager(this);
-        LoadBalancer loadBalancer = config.getLoadBalancer();
-        if (loadBalancer == null) {
-            loadBalancer = new RoundRobinLB();
+        LoadBalancer lb = config.getLoadBalancer();
+        if (lb == null) {
+            lb = new RoundRobinLB();
         }
+        loadBalancer = lb;
         connectionManager = new ClientConnectionManagerImpl(this, loadBalancer);
         clusterService = new ClientClusterServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
-        loadBalancer.init(getCluster(), config);
         proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
     }
@@ -175,7 +184,7 @@ public final class HazelcastClient implements HazelcastInstance {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             final HazelcastClient client = new HazelcastClient(config);
             client.start();
-
+            OutOfMemoryErrorDispatcher.register(client);
             proxy = new HazelcastClientProxy(client);
             CLIENTS.put(client.id, proxy);
         } finally {
@@ -210,7 +219,7 @@ public final class HazelcastClient implements HazelcastInstance {
             lifecycleService.shutdown();
             throw e;
         }
-
+        loadBalancer.init(getCluster(), config);
         partitionService.start();
     }
 
@@ -440,5 +449,6 @@ public final class HazelcastClient implements HazelcastInstance {
         transactionManager.shutdown();
         connectionManager.shutdown();
         proxyManager.destroy();
+        serializationService.destroy();
     }
 }

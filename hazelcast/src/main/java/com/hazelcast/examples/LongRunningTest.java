@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,6 +42,7 @@ public class LongRunningTest {
     private static final Logger LOGGER = Logger.getLogger(LongRunningTest.class.getName());
 
     private final List<TheNode> nodes = new CopyOnWriteArrayList<TheNode>();
+    private final Random random;
     private int nodeIdGen;
     private int starts;
     private int stops;
@@ -65,6 +67,7 @@ public class LongRunningTest {
                 }
             }
         }
+        random = new Random();
     }
 
     public static void main(String[] args) {
@@ -155,12 +158,12 @@ public class LongRunningTest {
     }
 
     int random(int length) {
-        return ((int) (Math.random() * 10000000) % length);
+        return ((int) (random.nextFloat() * 10000000) % length);
     }
 
     int random(int from, int to) {
         double diff = (to - from);
-        return (int) (diff * Math.random() + from);
+        return (int) (diff * random.nextFloat() + from);
     }
 
     /**
@@ -209,7 +212,7 @@ public class LongRunningTest {
                         Map<String, byte[]> map = hazelcast.getMap("default");
                         while (running) {
                             try {
-                                int key = (int) (Math.random() * entryCount);
+                                int key = (int) (random.nextFloat() * entryCount);
                                 int operation = random(10);
                                 if (operation < 4) {
                                     map.put(String.valueOf(key), new byte[valueSize]);

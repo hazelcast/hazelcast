@@ -25,7 +25,7 @@ import java.util.Set;
 public class SingleMemberGroupFactory implements MemberGroupFactory {
 
     @Override
-    public Set<MemberGroup> createMemberGroups(Collection<Member> members) {
+    public Set<MemberGroup> createMemberGroups(Collection<? extends Member> members) {
         Set<MemberGroup> groups = new HashSet<MemberGroup>(members.size());
         for (Member member : members) {
             groups.add(new SingleMemberGroup(member));

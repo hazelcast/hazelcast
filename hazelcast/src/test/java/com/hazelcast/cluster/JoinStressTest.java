@@ -22,11 +22,10 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.Clock;
-import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,8 +44,8 @@ import static org.junit.Assert.assertTrue;
  */
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
-public class JoinStressTest {
+@Category(NightlyTest.class)
+public class JoinStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTCPIPJoinWithManyNodes() throws UnknownHostException, InterruptedException {
@@ -159,6 +158,8 @@ public class JoinStressTest {
     }
 
     private void multicastJoin(int count, final boolean sleep) throws InterruptedException {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(count);
+
         final Config config = new Config();
         config.setProperty("hazelcast.wait.seconds.before.join", "5");
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(25);
@@ -175,20 +176,17 @@ public class JoinStressTest {
                         } catch (InterruptedException ignored) {
                         }
                     }
-                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    HazelcastInstance h = nodeFactory.newHazelcastInstance(config);
                     map.put(index, h);
                     latch.countDown();
                 }
             });
         }
-        try {
-            assertTrue(latch.await(count * 10, TimeUnit.SECONDS));
-        } finally {
-            ex.shutdown();
-        }
+        assertOpenEventually(latch);
         for (HazelcastInstance h : map.values()) {
             assertEquals(count, h.getCluster().getMembers().size());
         }
+        ex.shutdown();
     }
 
 

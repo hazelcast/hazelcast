@@ -17,12 +17,20 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOSelector;
+import com.hazelcast.nio.Protocols;
+import com.hazelcast.nio.SocketChannelWrapper;
+import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -36,9 +44,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -66,18 +76,30 @@ public class ClientConnection implements Connection, Closeable {
             = new ConcurrentHashMap<Integer, ClientCallFuture>();
     private final ByteBuffer readBuffer;
     private final SerializationService serializationService;
+    private final ClientExecutionService executionService;
     private boolean readFromSocket = true;
+    private final AtomicInteger packetCount = new AtomicInteger(0);
 
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
-                            int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
+                int connectionId, SocketChannelWrapper socketChannelWrapper,
+                ClientExecutionService executionService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = connectionManager.getSerializationService();
+        this.executionService = executionService;
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
         this.readBuffer = ByteBuffer.allocate(socket.getReceiveBufferSize());
+    }
+
+    public void incrementPacketCount() {
+        packetCount.incrementAndGet();
+    }
+
+    public void decrementPacketCount() {
+        packetCount.decrementAndGet();
     }
 
     public void registerCallId(ClientCallFuture future) {
@@ -252,23 +274,53 @@ public class ClientConnection implements Connection, Closeable {
         }
         readHandler.shutdown();
         writeHandler.shutdown();
+        executionService.executeInternal(new CleanResourcesTask());
+    }
 
-        final HazelcastException response;
-        if (connectionManager.isLive()) {
-            response = new TargetDisconnectedException(remoteEndpoint);
-        } else {
-            response = new HazelcastException("Client is shutting down!!!");
+    private class CleanResourcesTask implements Runnable {
+        @Override
+        public void run() {
+            final HazelcastException response;
+            if (connectionManager.isLive()) {
+                waitForPacketsProcessed();
+                response = new TargetDisconnectedException(remoteEndpoint);
+            } else {
+                response = new HazelcastException("Client is shutting down!!!");
+            }
+
+            final Iterator<Map.Entry<Integer,ClientCallFuture>> iter = callIdMap.entrySet().iterator();
+            while (iter.hasNext()) {
+                final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
+                iter.remove();
+                entry.getValue().notify(response);
+                eventHandlerMap.remove(entry.getKey());
+            }
+            final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
+            while (iterator.hasNext()) {
+                final ClientCallFuture future = iterator.next();
+                iterator.remove();
+                future.notify(response);
+            }
         }
 
-        for (Map.Entry<Integer, ClientCallFuture> entry : callIdMap.entrySet()) {
-            entry.getValue().notify(response);
-            eventHandlerMap.remove(entry.getKey());
+        private void waitForPacketsProcessed() {
+            final long begin = System.currentTimeMillis();
+            int count = packetCount.get();
+            while (count != 0) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    logger.warning(e);
+                    break;
+                }
+                long elapsed = System.currentTimeMillis() - begin;
+                if (elapsed > 5000) {
+                    logger.warning("There are packets which are not processed " + count);
+                    break;
+                }
+                count = packetCount.get();
+            }
         }
-        callIdMap.clear();
-        for (ClientCallFuture future : eventHandlerMap.values()) {
-            future.notify(response);
-        }
-        eventHandlerMap.clear();
     }
 
     public void close(Throwable t) {

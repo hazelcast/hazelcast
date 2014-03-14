@@ -6,7 +6,7 @@ import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +23,7 @@ import static org.junit.Assert.fail;
  * and in the end we verify that the actual updates in the map, are the same as the expected updates.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class MapUpdateStressTest extends StressTestSupport {
 
     public static final int CLIENT_THREAD_COUNT = 5;
