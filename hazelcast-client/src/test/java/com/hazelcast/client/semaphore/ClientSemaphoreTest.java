@@ -174,7 +174,7 @@ public class ClientSemaphoreTest {
         }
 
         public void iterativeTest() throws Exception{
-            if(semaphore.tryAcquire(10, TimeUnit.MILLISECONDS )){
+            if(semaphore.tryAcquire(1, TimeUnit.MILLISECONDS )){
                 work();
                 semaphore.release();
             }
