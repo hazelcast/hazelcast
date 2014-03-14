@@ -50,7 +50,7 @@ public class ClientSemaphoreTest {
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient(null);
+        client = HazelcastClient.newHazelcastClient();
         s = client.getSemaphore(name);
     }
 
