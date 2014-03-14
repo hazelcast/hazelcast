@@ -86,11 +86,15 @@ src/ManagementCenter.md
 	src/Maps.md
 	src/Queues.md
 	src/Topics.md
+	src/MultiMaps.md
+	src/Executors.md
 	src/Members.md
-	src/Logs.md
 	src/Scripting.md
-	src/TimeTravel.md
 	src/Console.md
+	src/Alerts.md
+	src/Administration.md
+	src/TimeTravel.md
+	src/Documentation.md
 src/Misc.md
 	src/CommonGotchas.md
 	src/ClusterTestHowTo.md

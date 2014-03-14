@@ -20,6 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
+import com.hazelcast.util.executor.ExecutorType;
 
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -75,7 +76,7 @@ public final class BasicOperationScheduler {
         int coreSize = Runtime.getRuntime().availableProcessors();
         this.globalExecutorPriorityQueue = new ConcurrentLinkedQueue();
         this.globalExecutor = executionService.register(ExecutionService.OPERATION_EXECUTOR,
-                coreSize * 2, coreSize * 100000);
+                coreSize * 2, coreSize * 100000, ExecutorType.CONCRETE);
     }
 
     private PartitionThread createPartitionThread(int operationThreadId) {

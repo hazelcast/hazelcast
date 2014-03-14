@@ -757,7 +757,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .setResultDeserialized(false)
                     .invoke();
-            return (Data) future.get();
+            final Data data = (Data) future.get();
+            invalidateLocalNearCache(key);
+            return data;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -780,7 +782,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     }
                 }
             }
-
+            invalidateLocalNearCache(keys);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -796,10 +798,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             if (callback == null) {
                 return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             } else {
-                return nodeEngine.getOperationService()
+                ICompletableFuture future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setCallback(new MapExecutionCallbackAdapter(callback))
                         .invoke();
+                invalidateLocalNearCache(key);
+                return future;
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -818,7 +822,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     final MapService service = getService();
                     final MapEntrySet mapEntrySet = (MapEntrySet) o;
                     for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
+                        final Data key = entry.getKey();
                         result.put(service.toObject(entry.getKey()), service.toObject(entry.getValue()));
+                        invalidateLocalNearCache(key);
                     }
                 }
             }
@@ -844,7 +850,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     final MapService service = getService();
                     final MapEntrySet mapEntrySet = (MapEntrySet) o;
                     for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
-                        result.put(service.toObject(entry.getKey()), service.toObject(entry.getValue()));
+                        final Data key = entry.getKey();
+                        result.put(service.toObject(key), service.toObject(entry.getValue()));
+                        invalidateLocalNearCache(key);
                     }
                 }
             }
@@ -1071,19 +1079,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private void invalidateLocalNearCache(Data key) {
-        // invalidate local near cache to ensure this thread does not see its old state
-        // note: this is a local-only operation and therefore fast and safe to execute
-        final MapConfig config = mapConfig;
-        final boolean nearCacheEnabled = config.isNearCacheEnabled();
-        if (!nearCacheEnabled) {
+        if (key == null) {
             return;
         }
-        final boolean cacheLocalEntries = config.getNearCacheConfig().isCacheLocalEntries();
-        if (!cacheLocalEntries) {
+        getService().invalidateLocalNearCache(name, key);
+    }
+
+    private void invalidateLocalNearCache(Set<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
             return;
         }
-        final MapService mapService = getService();
-        mapService.invalidateNearCache(name, key);
+        getService().invalidateLocalNearCache(name, keys);
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

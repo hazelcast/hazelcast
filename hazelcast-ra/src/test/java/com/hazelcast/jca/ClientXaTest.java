@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.After;
@@ -42,15 +42,12 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.*;
 
-/**
- * @author ali 14/02/14
- */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class ClientXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
@@ -151,7 +148,7 @@ public class ClientXaTest {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        final int size = 150;
+        final int size = 20;
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(size);
         for (int i = 0; i < size; i++) {
@@ -167,7 +164,7 @@ public class ClientXaTest {
                 }
             });
         }
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 20);
         final IMap m = client.getMap("m");
         for (int i = 0; i < 10; i++) {
             assertFalse(m.isLocked(i));

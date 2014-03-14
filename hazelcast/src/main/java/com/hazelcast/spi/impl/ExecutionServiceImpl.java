@@ -26,7 +26,10 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.CachedExecutorServiceDelegate;
+import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.executor.NamedThreadPoolExecutor;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
@@ -35,10 +38,25 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 12/14/12
@@ -52,7 +70,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ILogger logger;
     private final CompletableFutureTask completableFutureTask;
 
-    private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<String, ManagedExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> executors
+            = new ConcurrentHashMap<String, ManagedExecutorService>();
 
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -78,13 +97,13 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         final int coreSize = Runtime.getRuntime().availableProcessors();
         // default executors
-        register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE);
-        register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000);
+        register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
+        register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000, ExecutorType.CACHED);
         defaultScheduledExecutorServiceDelegate = getScheduledExecutor(SCHEDULED_EXECUTOR);
 
         // Register CompletableFuture task
         completableFutureTask = new CompletableFutureTask();
-        scheduleWithFixedDelay(completableFutureTask, 100, 100, TimeUnit.MILLISECONDS);
+        scheduleWithFixedDelay(completableFutureTask, 1000, 100, TimeUnit.MILLISECONDS);
     }
 
     private void enableRemoveOnCancelIfAvailable() {
@@ -97,17 +116,13 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-    public ExecutorService register(String name, int poolSize, int queueCapacity) {
+    public ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type) {
         ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfigs().get(name);
         if (cfg != null) {
             poolSize = cfg.getPoolSize();
             queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Overriding ExecutorService['" + name + "'] pool-size and queue-capacity using " + cfg);
-            }
         }
-        final ManagedExecutorService executor = new ManagedExecutorService(nodeEngine, name, cachedExecutorService,
-                poolSize, queueCapacity);
+        ManagedExecutorService executor = createExecutor(name, poolSize, queueCapacity, type);
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
         }
@@ -119,9 +134,29 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
-                    return new ManagedExecutorService(nodeEngine, name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
+                    return createExecutor(name, cfg.getPoolSize(), queueCapacity, ExecutorType.CACHED);
                 }
             };
+
+    private ManagedExecutorService createExecutor(String name, int poolSize, int queueCapacity, ExecutorType type) {
+        ManagedExecutorService executor;
+        if (type == ExecutorType.CACHED) {
+            executor = new CachedExecutorServiceDelegate(nodeEngine, name, cachedExecutorService, poolSize, queueCapacity);
+        } else if (type == ExecutorType.CONCRETE) {
+            Node node = nodeEngine.getNode();
+            String internalName = name.startsWith("hz:") ? name.substring(3) : name;
+            NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
+                    60, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<Runnable>(queueCapacity),
+                    new PoolExecutorThreadFactory(node.threadGroup,
+                            node.getThreadPoolNamePrefix(internalName), node.getConfigClassLoader()));
+            pool.allowCoreThreadTimeOut(true);
+            executor = pool;
+        } else {
+            throw new IllegalArgumentException("Unknown executor type: " + type);
+        }
+        return executor;
+    }
 
     public ManagedExecutorService getExecutor(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);

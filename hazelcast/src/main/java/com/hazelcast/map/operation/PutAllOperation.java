@@ -21,6 +21,7 @@ import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,13 +33,16 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
     private MapEntrySet entrySet;
     private boolean initialLoad = false;
-    private MapEntrySet backupEntrySet;
+    private List<Map.Entry<Data,Data>> backupEntrySet;
+    private List<RecordInfo> backupRecordInfos;
 
     public PutAllOperation(String name, MapEntrySet entrySet) {
         super(name);
@@ -55,11 +59,11 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     }
 
     public void run() {
-        backupEntrySet = new MapEntrySet();
+        backupRecordInfos = new ArrayList<RecordInfo>();
+        backupEntrySet = new ArrayList<Map.Entry<Data,Data>>();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
-
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         Set<Data> keysToInvalidate = new HashSet<Data>();
         for (Map.Entry<Data, Data> entry : entries) {
@@ -67,10 +71,9 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
             Data dataValue = entry.getValue();
             if (partitionId == partitionService.getPartitionId(dataKey)) {
                 Data dataOldValue = null;
-                if(initialLoad) {
+                if (initialLoad) {
                     recordStore.putFromLoad(dataKey, dataValue, -1);
-                }
-                else {
+                } else {
                     dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, -1));
                 }
                 mapService.interceptAfterPut(name, dataValue);
@@ -83,6 +86,8 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                     mapService.publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);
+                RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer, recordStore.getRecord(dataKey), dataKey);
+                backupRecordInfos.add(replicationInfo);
             }
         }
         invalidateNearCaches(keysToInvalidate);
@@ -121,7 +126,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public boolean shouldBackup() {
-        return !backupEntrySet.getEntrySet().isEmpty();
+        return !backupEntrySet.isEmpty();
     }
 
     public final int getAsyncBackupCount() {
@@ -134,6 +139,6 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, backupEntrySet);
+        return new PutAllBackupOperation(name, backupEntrySet, backupRecordInfos);
     }
 }

@@ -103,6 +103,9 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected abstract void onDestroy();
 
+    protected void onShutdown() {
+    }
+
     protected <T> T invoke(ClientRequest req, Object key) {
         try {
             final Future future = getContext().getInvocationService().invokeOnKeyOwner(req, key);
@@ -165,5 +168,4 @@ public abstract class ClientProxy implements DistributedObject {
         result = 31 * result + objectName.hashCode();
         return result;
     }
-
 }

@@ -171,7 +171,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     }
 
     public void andThen(ExecutionCallback<V> callback) {
-        andThen(callback, executionService.getExecutor());
+        andThen(callback, executionService.getAsyncExecutor());
     }
 
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
