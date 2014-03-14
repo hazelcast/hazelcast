@@ -24,6 +24,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
 
+    public static final String QUEUE_SIZE_COMMAND = "size";
+
     public HttpGetCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
     }
@@ -40,9 +42,16 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             int indexEnd = uri.indexOf('/', URI_QUEUES.length());
             String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
             String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
-            int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
-            Object value = textCommandService.poll(queueName, seconds);
-            prepareResponse(command, value);
+
+            if (QUEUE_SIZE_COMMAND.equalsIgnoreCase(secondStr)) {
+                int size = textCommandService.size(queueName);
+                prepareResponse(command, Integer.toString(size));
+            } else {
+                int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
+                Object value = textCommandService.poll(queueName, seconds);
+                prepareResponse(command, value);
+            }
+
         } else if (uri.startsWith(URI_CLUSTER)) {
             Node node = textCommandService.getNode();
             StringBuilder res = new StringBuilder(node.getClusterService().membersString());
