@@ -77,6 +77,41 @@ public class DistributedMapperMapReduceTest
     }
 
     @Test(timeout = 30000)
+    public void testMapperCustomIntermediateCombinerReducer()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        ICompletableFuture<Map<String, Long>> future =
+                job.mapper(new GroupingTestMapper())
+                   .combiner(new TestIntermediateCombinerFactory())
+                   .reducer(new TestIntermediateReducerFactory())
+                   .submit();
+
+        // Precalculate results
+        int[] expectedResults = new int[4];
+        for (int i = 0; i < 100; i++) {
+            int index = i % 4;
+            expectedResults[index] += i;
+        }
+
+        Map<String, Long> result = future.get();
+
+        for (int i = 0; i < 4; i++) {
+            assertEquals(expectedResults[i], (long) result.get(String.valueOf(i)));
+        }
+    }
+
+    @Test(timeout = 30000)
     public void testMapperReducerCollator()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -302,6 +337,66 @@ public class DistributedMapperMapReduceTest
                 sum += entry.getValue();
             }
             return sum;
+        }
+    }
+
+
+    public static class TestIntermediateCombiner
+            extends Combiner<String, Integer, Long> {
+
+        private transient int sum;
+
+        @Override
+        public void combine(String key, Integer value) {
+            sum += value;
+        }
+
+        @Override
+        public Long finalizeChunk() {
+            int v = sum;
+            sum = 0;
+            return Long.valueOf(v);
+        }
+    }
+
+    public static class TestIntermediateCombinerFactory
+            implements CombinerFactory<String, Integer, Long> {
+
+        public TestIntermediateCombinerFactory() {
+        }
+
+        @Override
+        public Combiner<String, Integer, Long> newCombiner(String key) {
+            return new TestIntermediateCombiner();
+        }
+    }
+
+    public static class TestIntermediateReducer
+            extends Reducer<String, Long, Long> {
+
+        private transient long sum;
+
+        @Override
+        public void reduce(Long value) {
+            sum += value;
+        }
+
+        @Override
+        public Long finalizeReduce() {
+            return sum;
+        }
+    }
+
+    public static class TestIntermediateReducerFactory
+            implements ReducerFactory<String, Long, Long> {
+
+        public TestIntermediateReducerFactory() {
+        }
+
+
+        @Override
+        public Reducer<String, Long, Long> newReducer(String key) {
+            return new TestIntermediateReducer();
         }
     }
 
