@@ -3,20 +3,13 @@ package com.hazelcast.client.io;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class ClientIOExecutorPoolSizeLowTest {
 
     static final int COUNT = 1000;
@@ -213,14 +207,8 @@ public class ClientIOExecutorPoolSizeLowTest {
         IExecutorService executor = client.getExecutorService(randomString());
         final Future<String> f = executor.submit(new BasicTestTask());
         assertTrueEventually(new AssertTask() {
-            public void run() {
-                try {
-                    assertEquals(BasicTestTask.RESULT, f.get());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
+            public void run() throws ExecutionException, InterruptedException {
+                assertEquals(BasicTestTask.RESULT, f.get());
             }
         });
     }
