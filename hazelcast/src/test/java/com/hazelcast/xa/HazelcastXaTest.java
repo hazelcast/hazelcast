@@ -92,7 +92,31 @@ public class HazelcastXaTest {
     }
 
     @Test
-    public void testCommit() throws InterruptedException {
+    public void testRollbackAfterNodeShutdown() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        tm.begin();
+
+        final TransactionContext context = instance.newTransactionContext();
+        final XAResource xaResource = context.getXaResource();
+        final Transaction transaction = tm.getTransaction();
+        transaction.enlistResource(xaResource);
+
+        boolean error = false;
+        try {
+            final TransactionalMap m = context.getMap("m");
+            m.put("key", "value");
+            throw new RuntimeException("Exception for rolling back");
+        } catch (Exception e) {
+            error = true;
+        } finally {
+            close(error, xaResource);
+        }
+
+        assertNull(instance.getMap("m").get("key"));
+    }
+
+    @Test
+    public void testCommitAfterNodeShutdown() throws InterruptedException {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
@@ -211,7 +235,7 @@ public class HazelcastXaTest {
             final TransactionalMap m = context.getMap("m");
             m.put(random.nextInt(10), "value");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe("Exception during transaction", e);
             error = true;
         } finally {
             close(error, xaResource);

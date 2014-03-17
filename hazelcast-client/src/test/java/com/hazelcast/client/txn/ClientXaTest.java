@@ -91,6 +91,31 @@ public class ClientXaTest {
     }
 
     @Test
+    public void testRollbackAfterNodeShutdown() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        tm.begin();
+
+        final TransactionContext context = client.newTransactionContext();
+        final XAResource xaResource = context.getXaResource();
+        final Transaction transaction = tm.getTransaction();
+        transaction.enlistResource(xaResource);
+
+        boolean error = false;
+        try {
+            final TransactionalMap m = context.getMap("m");
+            m.put("key", "value");
+            throw new RuntimeException("Exception for rolling back");
+        } catch (Exception e) {
+            error = true;
+        } finally {
+            close(error, xaResource);
+        }
+
+        assertNull(client.getMap("m").get("key"));
+    }
+
+    @Test
     public void testRecovery() throws Exception {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
