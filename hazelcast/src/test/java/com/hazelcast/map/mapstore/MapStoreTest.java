@@ -1382,7 +1382,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     public static class RecordingMapStore implements MapStore<String, String> {
-
+        private static final boolean DEBUG = false;
         private ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
 
         public ConcurrentHashMap<String, String> getStore() {
@@ -1391,7 +1391,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         @Override
         public String load(String key) {
-            System.out.println("load(" + key + ") called.");
+            log("load(" + key + ") called.");
             return store.get(key);
         }
 
@@ -1399,7 +1399,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         public Map<String, String> loadAll(Collection<String> keys) {
             List<String> keysList = new ArrayList<String>(keys);
             Collections.sort(keysList);
-            System.out.println("loadAll(" + keysList + ") called.");
+            log("loadAll(" + keysList + ") called.");
             Map<String, String> result = new HashMap<String, String>();
             for (String key : keys) {
                 String value = store.get(key);
@@ -1412,34 +1412,34 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         @Override
         public Set<String> loadAllKeys() {
-            System.out.println("loadAllKeys() called.");
+            log("loadAllKeys() called.");
             Set<String> result = new HashSet<String>(store.keySet());
-            System.out.println("loadAllKeys result = " + result);
+            log("loadAllKeys result = " + result);
             return result;
         }
 
         @Override
         public void store(String key, String value) {
-            System.out.println("store(" + key + ") called.");
+            log("store(" + key + ") called.");
             String valuePrev = store.put(key, value);
             if (valuePrev != null) {
-                System.out.println("- Unexpected Update (operations reordered?): " + key);
+                log("- Unexpected Update (operations reordered?): " + key);
             }
         }
 
         @Override
         public void storeAll(Map<String, String> map) {
             TreeSet<String> setSorted = new TreeSet<String>(map.keySet());
-            System.out.println("storeAll(" + setSorted + ") called.");
+            log("storeAll(" + setSorted + ") called.");
             store.putAll(map);
         }
 
         @Override
         public void delete(String key) {
-            System.out.println("delete(" + key + ") called.");
+            log("delete(" + key + ") called.");
             String valuePrev = store.remove(key);
             if (valuePrev == null) {
-                System.out.println("- Unnecessary delete (operations reordered?): " + key);
+                log("- Unnecessary delete (operations reordered?): " + key);
             }
         }
 
@@ -1447,12 +1447,18 @@ public class MapStoreTest extends HazelcastTestSupport {
         public void deleteAll(Collection<String> keys) {
             List<String> keysList = new ArrayList<String>(keys);
             Collections.sort(keysList);
-            System.out.println("deleteAll(" + keysList + ") called.");
+            log("deleteAll(" + keysList + ") called.");
             for (String key : keys) {
                 String valuePrev = store.remove(key);
                 if (valuePrev == null) {
-                    System.out.println("- Unnecessary delete (operations reordered?): " + key);
+                    log("- Unnecessary delete (operations reordered?): " + key);
                 }
+            }
+        }
+
+        void log(String msg) {
+            if (DEBUG) {
+                System.out.println(msg);
             }
         }
 
