@@ -33,8 +33,6 @@
     <properties>
         <ironjacamar.version>1.0.10.Final</ironjacamar.version>
         <h2.version>1.3.168</h2.version>
-        <atomikos-version>3.9.2</atomikos-version>
-
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
@@ -51,12 +49,6 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atomikos</groupId>
-            <artifactId>transactions-jdbc</artifactId>
-            <scope>test</scope>
-            <version>${atomikos-version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
