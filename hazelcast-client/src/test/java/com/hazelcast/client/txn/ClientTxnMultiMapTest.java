@@ -148,8 +148,7 @@ public class ClientTxnMultiMapTest {
         final String name = randomString();
         final String key = "key";
         final String value = "value";
-
-        MultiMap multiMap = hz.getMultiMap(name);
+        final MultiMap multiMap = hz.getMultiMap(name);
 
         TransactionContext tx = hz.newTransactionContext();
         tx.beginTransaction();

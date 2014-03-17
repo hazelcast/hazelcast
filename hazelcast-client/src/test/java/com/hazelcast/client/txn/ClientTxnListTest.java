@@ -74,7 +74,7 @@ public class ClientTxnListTest {
 
     @Test
     public void testAddAndRoleBack() throws Exception {
-        String listName = randomString();
+        final String listName = randomString();
         final IList l = hz.getList(listName);
         l.add("item1");
 

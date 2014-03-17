@@ -74,16 +74,16 @@ public class ClientTxnSetTest {
 
     @Test
     public void testAddRollBack() throws Exception {
-        String setName = randomString();
-        final ISet s = hz.getSet(setName);
-        s.add("item1");
+        final String setName = randomString();
+        final ISet set = hz.getSet(setName);
+        set.add("item1");
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalSet<Object> set = context.getSet(setName);
-        set.add("item2");
+        final TransactionalSet<Object> setTxn = context.getSet(setName);
+        setTxn.add("item2");
         context.rollbackTransaction();
 
-        assertEquals(1, s.size());
+        assertEquals(1, set.size());
     }
 }

@@ -257,7 +257,7 @@ public class ClientTxnMapTest {
     public void testPutAndRoleBack() throws Exception {
         final String mapName = randomString();
         final String key = "key1";
-        IMap map = client.getMap(mapName);
+        final IMap map = client.getMap(mapName);
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
