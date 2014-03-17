@@ -64,13 +64,13 @@ public class ClientTxnTest {
 
     @Test
     public void testTxnRollback() throws Exception {
-
+        final String queueName = "testTxnRollback";
         final TransactionContext context = hz.newTransactionContext();
         CountDownLatch latch = new CountDownLatch(1);
         try {
             context.beginTransaction();
             assertNotNull(context.getTxnId());
-            final TransactionalQueue queue = context.getQueue("testTxnRollback");
+            final TransactionalQueue queue = context.getQueue(queueName);
             queue.offer("item");
 
             server.shutdown();
@@ -84,20 +84,20 @@ public class ClientTxnTest {
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
 
-        final IQueue<Object> q = hz.getQueue("testTxnRollback");
+        final IQueue<Object> q = hz.getQueue(queueName);
         assertNull(q.poll());
         assertEquals(0, q.size());
     }
 
     @Test
     public void testTxnRollbackOnServerCrash() throws Exception {
-
+        final String queueName = "testTxnRollbackOnServerCrash";
         final TransactionContext context = hz.newTransactionContext();
         CountDownLatch latch = new CountDownLatch(1);
 
         context.beginTransaction();
 
-        final TransactionalQueue queue = context.getQueue("testTxnRollback");
+        final TransactionalQueue queue = context.getQueue(queueName);
 
         String key = HazelcastTestSupport.generateKeyOwnedBy(server);
         queue.offer(key);
@@ -113,7 +113,7 @@ public class ClientTxnTest {
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
 
-        final IQueue<Object> q = hz.getQueue("testTxnRollback");
+        final IQueue<Object> q = hz.getQueue(queueName);
         assertNull(q.poll());
         assertEquals(0, q.size());
     }
