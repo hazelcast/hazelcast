@@ -145,14 +145,14 @@ public class DefaultRecordStore implements RecordStore {
         for (Record record : records.values()) {
             keys.add(record.getKey());
         }
-        EntryTaskScheduler writeScheduler = mapContainer.getMapStoreWriteScheduler();
+        EntryTaskScheduler writeScheduler = mapContainer.getMapStoreScheduler();
         if (writeScheduler != null) {
             Set<Data> processedKeys = writeScheduler.flush(keys);
             for (Data key : processedKeys) {
                 records.get(key).onStore();
             }
         }
-        EntryTaskScheduler deleteScheduler = mapContainer.getMapStoreDeleteScheduler();
+        EntryTaskScheduler deleteScheduler = mapContainer.getMapStoreScheduler();
         if (deleteScheduler != null) {
             deleteScheduler.flush(toBeRemovedKeys);
             toBeRemovedKeys.clear();
@@ -161,7 +161,7 @@ public class DefaultRecordStore implements RecordStore {
 
     private void flush(Data key) {
         checkIfLoaded();
-        EntryTaskScheduler writeScheduler = mapContainer.getMapStoreWriteScheduler();
+        EntryTaskScheduler writeScheduler = mapContainer.getMapStoreScheduler();
         Set<Data> keys = new HashSet<Data>(1);
         keys.add(key);
         if (writeScheduler != null) {
@@ -170,7 +170,7 @@ public class DefaultRecordStore implements RecordStore {
                 records.get(pkey).onStore();
             }
         }
-        EntryTaskScheduler deleteScheduler = mapContainer.getMapStoreDeleteScheduler();
+        EntryTaskScheduler deleteScheduler = mapContainer.getMapStoreScheduler();
         if (deleteScheduler != null) {
             if (toBeRemovedKeys.contains(key)) {
                 deleteScheduler.flush(keys);

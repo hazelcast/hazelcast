@@ -21,11 +21,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.MapContainer;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapStoreWrapper;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -1344,8 +1340,122 @@ public class MapStoreTest extends HazelcastTestSupport {
         map.executeOnKey(key, new ValueSetterEntryProcessor(value));
         mapStore.awaitStores();
 
-        assertEquals(value,map.get(key));
+        assertEquals(value, map.get(key));
         assertEquals(1, mapStore.count.intValue());
+    }
+
+    @Test
+    public void testMapStoreWriteDeleteOrder() {
+        final String mapName = randomMapName("testMapStoreWriteDeleteOrder");
+        final int numIterations = 40;
+        final int writeDelaySeconds = 10;
+        // create hazelcast config
+        Config config = new Config();
+        // create map store implementation
+        RecordingMapStore store = new RecordingMapStore();
+        // configure map store
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapStoreConfig.setClassName(null);
+        mapStoreConfig.setImplementation(store);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        // start hazelcast instance
+        HazelcastInstance hzInstance = createHazelcastInstance(config);
+        // loop over num iterations
+        IMap<String, String> map = hzInstance.getMap(mapName);
+        for (int k = 0; k < numIterations; k++) {
+            String key = String.valueOf(k + 10); // 2 digits for sorting in output
+            String value = "v:" + key;
+            // add entry
+            map.put(key, value);
+            // sleep 300ms
+            sleepMillis(300);
+            // remove entry
+            map.remove(key);
+        }
+        // wait for store to finish
+        sleepMillis(2 * 1000 * writeDelaySeconds);
+        // print store content
+        assertEquals(0, store.getStore().keySet().size());
+    }
+
+    public static class RecordingMapStore implements MapStore<String, String> {
+
+        private ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
+
+        public ConcurrentHashMap<String, String> getStore() {
+            return store;
+        }
+
+        @Override
+        public String load(String key) {
+            System.out.println("load(" + key + ") called.");
+            return store.get(key);
+        }
+
+        @Override
+        public Map<String, String> loadAll(Collection<String> keys) {
+            List<String> keysList = new ArrayList<String>(keys);
+            Collections.sort(keysList);
+            System.out.println("loadAll(" + keysList + ") called.");
+            Map<String, String> result = new HashMap<String, String>();
+            for (String key : keys) {
+                String value = store.get(key);
+                if (value != null) {
+                    result.put(key, value);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Set<String> loadAllKeys() {
+            System.out.println("loadAllKeys() called.");
+            Set<String> result = new HashSet<String>(store.keySet());
+            System.out.println("loadAllKeys result = " + result);
+            return result;
+        }
+
+        @Override
+        public void store(String key, String value) {
+            System.out.println("store(" + key + ") called.");
+            String valuePrev = store.put(key, value);
+            if (valuePrev != null) {
+                System.out.println("- Unexpected Update (operations reordered?): " + key);
+            }
+        }
+
+        @Override
+        public void storeAll(Map<String, String> map) {
+            TreeSet<String> setSorted = new TreeSet<String>(map.keySet());
+            System.out.println("storeAll(" + setSorted + ") called.");
+            store.putAll(map);
+        }
+
+        @Override
+        public void delete(String key) {
+            System.out.println("delete(" + key + ") called.");
+            String valuePrev = store.remove(key);
+            if (valuePrev == null) {
+                System.out.println("- Unnecessary delete (operations reordered?): " + key);
+            }
+        }
+
+        @Override
+        public void deleteAll(Collection<String> keys) {
+            List<String> keysList = new ArrayList<String>(keys);
+            Collections.sort(keysList);
+            System.out.println("deleteAll(" + keysList + ") called.");
+            for (String key : keys) {
+                String valuePrev = store.remove(key);
+                if (valuePrev == null) {
+                    System.out.println("- Unnecessary delete (operations reordered?): " + key);
+                }
+            }
+        }
+
     }
 
     private static class ValueSetterEntryProcessor extends AbstractEntryProcessor<String, String> {
