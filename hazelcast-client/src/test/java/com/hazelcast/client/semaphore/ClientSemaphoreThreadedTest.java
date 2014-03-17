@@ -6,6 +6,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -18,10 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-
-/**
- * Created by danny on 3/17/14.
- */
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -48,6 +45,7 @@ public class ClientSemaphoreThreadedTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void concurrent_trySemaphoreWithTimeOutTest() {
         concurrent_trySemaphoreTest(true);
     }
