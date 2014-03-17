@@ -30,6 +30,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -863,6 +864,7 @@ public class ClientMapTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void concurrent_MapTryLockTimeOutTest() throws InterruptedException {
         final IMap<String, Integer> map = client.getMap("concurrent_MapTryLockTimeOutTest");
         final String upKey = "upKey";
