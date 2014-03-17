@@ -887,7 +887,7 @@ public class ClientMapTest {
     }
 
     static class MapTryLockTimeOutThread extends Thread {
-        static private Random random = new Random();
+        private Random random = new Random();
         private IMap<String, Integer> map;
         private String upKey;
         private String downKey;
