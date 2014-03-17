@@ -44,14 +44,13 @@ public class ClientSemaphoreTest {
     static final String name = "test1";
     static HazelcastInstance client;
     static HazelcastInstance server;
-    static HazelcastInstance second;
-    static ISemaphore s;
+    static ISemaphore semaphore;
 
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
-        s = client.getSemaphore(name);
+        semaphore = client.getSemaphore(name);
     }
 
     @AfterClass
@@ -63,20 +62,20 @@ public class ClientSemaphoreTest {
     @Before
     @After
     public void clear() throws IOException {
-        s.reducePermits(100);
-        s.release(10);
+        semaphore.reducePermits(100);
+        semaphore.release(10);
     }
 
     @Test
     public void testAcquire() throws Exception {
 
-        assertEquals(10, s.drainPermits());
+        assertEquals(10, semaphore.drainPermits());
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(){
             public void run() {
                 try {
-                    s.acquire();
+                    semaphore.acquire();
                     latch.countDown();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -85,26 +84,26 @@ public class ClientSemaphoreTest {
         }.start();
         Thread.sleep(1000);
 
-        s.release(2);
+        semaphore.release(2);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertEquals(1, s.availablePermits());
+        assertEquals(1, semaphore.availablePermits());
 
     }
 
     @Test
     public void tryAcquire() throws Exception {
-        assertTrue(s.tryAcquire());
-        assertTrue(s.tryAcquire(9));
-        assertEquals(0, s.availablePermits());
-        assertFalse(s.tryAcquire(1, TimeUnit.SECONDS));
-        assertFalse(s.tryAcquire(2, 1, TimeUnit.SECONDS));
+        assertTrue(semaphore.tryAcquire());
+        assertTrue(semaphore.tryAcquire(9));
+        assertEquals(0, semaphore.availablePermits());
+        assertFalse(semaphore.tryAcquire(1, TimeUnit.SECONDS));
+        assertFalse(semaphore.tryAcquire(2, 1, TimeUnit.SECONDS));
 
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(){
             public void run() {
                 try {
-                    if(s.tryAcquire(2, 5, TimeUnit.SECONDS)){
+                    if(semaphore.tryAcquire(2, 5, TimeUnit.SECONDS)){
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -113,9 +112,9 @@ public class ClientSemaphoreTest {
             }
         }.start();
 
-        s.release(2);
+        semaphore.release(2);
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertEquals(0, s.availablePermits());
+        assertEquals(0, semaphore.availablePermits());
 
     }
 
@@ -152,7 +151,7 @@ public class ClientSemaphoreTest {
             assertNull("thread "+ t +" has error "+t.error, t.error);
         }
 
-        assertTrue("concurrent access to locked code caused wrong total", upTotal.get() + downTotal.get() == 0);
+        assertEquals("concurrent access to locked code caused wrong total", 0, upTotal.get() + downTotal.get());
     }
 
     static class TrySemaphoreThread extends SemaphoreTestThread{
@@ -183,11 +182,11 @@ public class ClientSemaphoreTest {
 
     static abstract class SemaphoreTestThread extends Thread{
         static private final int MAX_ITTERATIONS = 1000*10;
-        static private final Random random = new Random();
+        private final Random random = new Random();
         protected final ISemaphore semaphore ;
         protected final AtomicInteger upTotal;
         protected final AtomicInteger downTotal;
-        public volatile Throwable error =null;
+        public volatile Throwable error;
 
         public SemaphoreTestThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal){
             this.semaphore = semaphore;
