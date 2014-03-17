@@ -824,7 +824,7 @@ public class ClientMapTest {
     }
 
     static class MapTryLockThread extends Thread {
-        static private Random random = new Random();
+        private Random random = new Random();
         private IMap<String, Integer> map;
         private String upKey;
         private String downKey;
@@ -883,7 +883,7 @@ public class ClientMapTest {
         int upTotal = map.get(upKey);
         int downTotal = map.get(downKey);
 
-        assertTrue("concurrent access to locked code caused wrong total ", upTotal + downTotal == 0);
+        assertEquals("concurrent access to locked code caused wrong total ", 0, upTotal + downTotal);
     }
 
     static class MapTryLockTimeOutThread extends Thread {
