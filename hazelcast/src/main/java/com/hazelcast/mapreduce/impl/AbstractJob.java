@@ -208,7 +208,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
             if (AbstractJob.this.combinerFactory != null) {
                 throw new IllegalStateException("combinerFactory already set");
             }
-            AbstractJob.this.combinerFactory = AbstractJob.this.combinerFactory;
+            AbstractJob.this.combinerFactory = combinerFactory;
             return new ReducingJobImpl<EntryKey, Key, ValueOut>();
         }
 

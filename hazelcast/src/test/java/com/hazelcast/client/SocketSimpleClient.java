@@ -56,7 +56,6 @@ public class SocketSimpleClient implements SimpleClient {
         AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
         send(auth);
         receive();
-        receive();
     }
 
     public void send(Object o) throws IOException {
@@ -68,7 +67,8 @@ public class SocketSimpleClient implements SimpleClient {
     public Object receive() throws IOException {
         Data responseData = new Data();
         responseData.readData(in);
-        return getSerializationService().toObject(responseData);
+        ClientResponse clientResponse = getSerializationService().toObject(responseData);
+        return getSerializationService().toObject(clientResponse.getResponse());
     }
 
     public void close() throws IOException {

@@ -1,4 +1,4 @@
-
+# What's New in Hazelcast 3.2
 
 ## Release Notes
 ### RC2 Fixed Issues

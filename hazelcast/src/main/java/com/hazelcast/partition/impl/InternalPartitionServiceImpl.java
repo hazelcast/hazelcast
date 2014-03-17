@@ -428,13 +428,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         lock.lock();
         try {
             PartitionRuntimeState partitionState = createPartitionState(members);
-            PartitionInfo[] pp = partitionState.getPartitions();
-            for (PartitionInfo p : pp) {
-                if (p.getReplicaAddress(0) == null) {
-                    new IllegalStateException(p.toString()).printStackTrace();
-                }
-            }
-
             OperationService operationService = nodeEngine.getOperationService();
             List<Future> calls = new ArrayList<Future>(members.size());
 

@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -142,6 +143,19 @@ public class ClientNearCacheTest {
         NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
         assertEquals(1000, stats.getHits());
 
+    }
+
+    @Test
+    public void testIssue2009() throws Exception {
+        final String mapName = "testIssue2009";
+        ClientConfig config = new ClientConfig();
+        config.addNearCacheConfig(mapName, new NearCacheConfig());
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        IMap map = client.getMap(mapName);
+        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        assertNotNull(stats);
     }
 
     @Test

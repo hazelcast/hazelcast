@@ -669,6 +669,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public LocalMapStats getLocalMapStats() {
+        initNearCache();
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         if (nearCache != null) {
             localMapStats.setNearCacheStats(nearCache.getNearCacheStats());
