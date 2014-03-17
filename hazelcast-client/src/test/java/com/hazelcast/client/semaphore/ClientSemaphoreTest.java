@@ -18,6 +18,7 @@ package com.hazelcast.client.semaphore;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,20 +38,16 @@ import static org.junit.Assert.*;
 /**
  * @author ali 5/24/13
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientSemaphoreTest {
-
-    static final String name = "test1";
     static HazelcastInstance client;
     static HazelcastInstance server;
-    static ISemaphore semaphore;
 
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
-        semaphore = client.getSemaphore(name);
     }
 
     @AfterClass
@@ -59,17 +56,148 @@ public class ClientSemaphoreTest {
         Hazelcast.shutdownAll();
     }
 
-    @Before
-    @After
-    public void clear() throws IOException {
-        semaphore.reducePermits(100);
-        semaphore.release(10);
+    @Test
+    public void testSemaphoreInit() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        assertTrue(semaphore.init(10));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSemaphoreNegInit() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(-1);
     }
 
     @Test
-    public void testAcquire() throws Exception {
+    public void testRelease() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        semaphore.release();
+        assertEquals(1, semaphore.availablePermits());
+    }
 
+    @Test
+    public void testdrainPermits() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
         assertEquals(10, semaphore.drainPermits());
+    }
+
+    @Test
+    public void testAvailablePermits_AfterDrainPermits() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
+        semaphore.drainPermits();
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testTryAcquire_whenDrainPermits() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
+        semaphore.drainPermits();
+        assertFalse(semaphore.tryAcquire());
+    }
+
+    @Test
+    public void testAvailablePermits() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
+        assertEquals(10, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testAvailableReducePermits() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
+        semaphore.reducePermits(5);
+        assertEquals(5, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testAvailableReducePermits_WhenZero() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        semaphore.reducePermits(1);
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testTryAcquire_whenAvailable() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(1);
+        assertTrue(semaphore.tryAcquire());
+    }
+
+    @Test
+    public void testTryAcquire_whenUnAvailable() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        assertFalse(semaphore.tryAcquire());
+    }
+
+    @Test
+    public void testTryAcquire_whenAvailableWithTimeOut() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(1);
+        assertTrue(semaphore.tryAcquire(1, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testTryAcquire_whenUnAvailableWithTimeOut() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        assertFalse(semaphore.tryAcquire(1, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testTryAcquireMultiPermits_whenAvailable() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
+        assertTrue(semaphore.tryAcquire(5));
+    }
+
+    @Test
+    public void testTryAcquireMultiPermits_whenUnAvailable() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(5);
+        assertFalse(semaphore.tryAcquire(10));
+    }
+
+    @Test
+    public void testTryAcquireMultiPermits_whenAvailableWithTimeOut() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
+        assertTrue(semaphore.tryAcquire(5, 1, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testTryAcquireMultiPermits_whenUnAvailableWithTimeOut() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(5);
+        assertFalse(semaphore.tryAcquire(10, 1, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testTryAcquire_afterRelease() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        semaphore.release();
+        assertTrue(semaphore.tryAcquire());
+    }
+
+    @Test
+    public void testMulitReleaseTryAcquire() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        semaphore.release(5);
+        assertTrue(semaphore.tryAcquire(5));
+    }
+
+    @Test
+    public void testAcquire_Threaded() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(){
@@ -83,27 +211,22 @@ public class ClientSemaphoreTest {
             }
         }.start();
         Thread.sleep(1000);
-
         semaphore.release(2);
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertEquals(1, semaphore.availablePermits());
 
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(1, semaphore.availablePermits());
     }
 
     @Test
-    public void tryAcquire() throws Exception {
-        assertTrue(semaphore.tryAcquire());
-        assertTrue(semaphore.tryAcquire(9));
-        assertEquals(0, semaphore.availablePermits());
-        assertFalse(semaphore.tryAcquire(1, TimeUnit.SECONDS));
-        assertFalse(semaphore.tryAcquire(2, 1, TimeUnit.SECONDS));
-
+    public void tryAcquire_Threaded() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread(){
             public void run() {
                 try {
-                    if(semaphore.tryAcquire(2, 5, TimeUnit.SECONDS)){
+                    if(semaphore.tryAcquire(1, 5, TimeUnit.SECONDS)){
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -113,103 +236,7 @@ public class ClientSemaphoreTest {
         }.start();
 
         semaphore.release(2);
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertEquals(0, semaphore.availablePermits());
-
-    }
-
-    @Test
-    public void concurrent_trySemaphoreTest() {
-        concurrent_trySemaphoreTest(false);
-    }
-
-    @Test
-    public void concurrent_trySemaphoreWithTimeOutTest() {
-        concurrent_trySemaphoreTest(true);
-    }
-
-    public void concurrent_trySemaphoreTest(final boolean tryWithTimeOut) {
-        final ISemaphore semaphore = client.getSemaphore(randomString());
-        semaphore.init(1);
-        final AtomicInteger upTotal = new AtomicInteger(0);
-        final AtomicInteger downTotal = new AtomicInteger(0);
-
-        final SemaphoreTestThread threads[] = new SemaphoreTestThread[8];
-        for(int i=0; i<threads.length; i++){
-            SemaphoreTestThread t;
-            if(tryWithTimeOut){
-                t = new TrySemaphoreTimeOutThread(semaphore, upTotal, downTotal);
-            }else{
-                t = new TrySemaphoreThread(semaphore, upTotal, downTotal);
-            }
-            t.start();
-            threads[i] = t;
-        }
-        HazelcastTestSupport.assertJoinable(threads);
-
-        for(SemaphoreTestThread t : threads){
-            assertNull("thread "+ t +" has error "+t.error, t.error);
-        }
-
-        assertEquals("concurrent access to locked code caused wrong total", 0, upTotal.get() + downTotal.get());
-    }
-
-    static class TrySemaphoreThread extends SemaphoreTestThread{
-        public TrySemaphoreThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal){
-            super(semaphore, upTotal, downTotal);
-        }
-
-        public void iterativeTest() throws Exception{
-            if(semaphore.tryAcquire()){
-                work();
-                semaphore.release();
-            }
-        }
-    }
-
-    static class TrySemaphoreTimeOutThread extends SemaphoreTestThread{
-        public TrySemaphoreTimeOutThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal){
-            super(semaphore, upTotal, downTotal);
-        }
-
-        public void iterativeTest() throws Exception{
-            if(semaphore.tryAcquire(1, TimeUnit.MILLISECONDS )){
-                work();
-                semaphore.release();
-            }
-        }
-    }
-
-    static abstract class SemaphoreTestThread extends Thread{
-        static private final int MAX_ITTERATIONS = 1000*10;
-        private final Random random = new Random();
-        protected final ISemaphore semaphore ;
-        protected final AtomicInteger upTotal;
-        protected final AtomicInteger downTotal;
-        public volatile Throwable error;
-
-        public SemaphoreTestThread(ISemaphore semaphore, AtomicInteger upTotal, AtomicInteger downTotal){
-            this.semaphore = semaphore;
-            this.upTotal = upTotal;
-            this.downTotal = downTotal;
-        }
-
-        final public void run(){
-            try{
-                for ( int i=0; i<MAX_ITTERATIONS; i++ ) {
-                    iterativeTest();
-                }
-            }catch (Throwable e){
-                error = e;
-            }
-        }
-
-        abstract void iterativeTest() throws Exception;
-
-        protected void work(){
-            final int delta = random.nextInt(1000);
-            upTotal.addAndGet(delta);
-            downTotal.addAndGet(-delta);
-        }
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(1, semaphore.availablePermits());
     }
 }
