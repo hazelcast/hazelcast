@@ -81,9 +81,7 @@ public class ClientTxnListTest {
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
         final TransactionalList<Object> list = context.getList(listName);
-
-        assertTrue(list.add("item2"));
-
+        list.add("item2");
         context.rollbackTransaction();
 
         assertEquals(1, l.size());

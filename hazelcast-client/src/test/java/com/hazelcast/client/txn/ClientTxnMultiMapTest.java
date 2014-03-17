@@ -149,14 +149,15 @@ public class ClientTxnMultiMapTest {
         final String key = "key";
         final String value = "value";
 
-        TransactionContext tx = hz.newTransactionContext();
+        MultiMap multiMap = hz.getMultiMap(name);
 
+        TransactionContext tx = hz.newTransactionContext();
         tx.beginTransaction();
-        TransactionalMultiMap map = tx.getMultiMap(name);
-        map.put(key, value);
-        map.put(key, value);
+        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(name);
+        mulitMapTxn.put(key, value);
+        mulitMapTxn.put(key, value);
         tx.rollbackTransaction();
 
-        assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(name).get(key));
+        assertEquals(Collections.EMPTY_LIST, multiMap.get(key));
     }
 }

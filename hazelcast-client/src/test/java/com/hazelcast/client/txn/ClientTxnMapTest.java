@@ -255,17 +255,16 @@ public class ClientTxnMapTest {
 
     @Test
     public void testPutAndRoleBack() throws Exception {
-        final String name = randomString();
+        final String mapName = randomString();
+        final String key = "key1";
+        IMap map = client.getMap(mapName);
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> map = context.getMap(name);
-
-        map.put("key1", "value1");
-        assertEquals("value1", map.get("key1"));
-
+        final TransactionalMap<Object, Object> mapTxn = context.getMap(mapName);
+        mapTxn.put(key, "value1");
         context.rollbackTransaction();
 
-        assertNull(client.getMap(name).get("key1"));
+        assertNull(map.get(key));
     }
 }

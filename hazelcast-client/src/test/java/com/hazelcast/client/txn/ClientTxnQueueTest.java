@@ -19,6 +19,7 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -128,13 +129,14 @@ public class ClientTxnQueueTest {
     @Test
     public void testTransactionalOfferRoleBack() throws Exception {
         final String name = randomString();
+        final IQueue queue = hz.getQueue(name);
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        TransactionalQueue<String> q = context.getQueue(name);
-        assertTrue(q.offer("ali"));
+        TransactionalQueue<String> qTxn = context.getQueue(name);
+        qTxn.offer("ali");
         context.rollbackTransaction();
 
-        assertEquals(0, hz.getQueue(name).size());
+        assertEquals(0, queue.size());
     }
 }
